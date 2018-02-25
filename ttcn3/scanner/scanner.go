@@ -3,7 +3,6 @@ package scanner
 import (
 	"fmt"
 	"path/filepath"
-	"unicode"
 	"unicode/utf8"
 
 	"github.com/nokia/ntt/ttcn3/token"
@@ -181,9 +180,9 @@ func (s *Scanner) scanPreproc() string {
 		s.next()
 	}
 
-	if s.offset != s.lineOffset {
-		s.error(s.offset, "preprocessor statement must start at line")
-	}
+	//if offs != s.lineOffset {
+	//	s.error(s.offset, "preprocessor statement must start at line")
+	//}
 
 	lit := s.src[offs:s.offset]
 	if hasCR {
@@ -275,63 +274,6 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 	return tok, string(s.src[offs:s.offset])
 }
 
-// scanEscape parses an escape sequence where rune is the accepted
-// escaped quote. In case of a syntax error, it stops at the offending
-// character (without consuming it) and returns false. Otherwise
-// it returns true.
-func (s *Scanner) scanEscape(quote rune) bool {
-	offs := s.offset
-
-	var n int
-	var base, max uint32
-	switch s.ch {
-	case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', quote:
-		s.next()
-		return true
-	case '0', '1', '2', '3', '4', '5', '6', '7':
-		n, base, max = 3, 8, 255
-	case 'x':
-		s.next()
-		n, base, max = 2, 16, 255
-	case 'u':
-		s.next()
-		n, base, max = 4, 16, unicode.MaxRune
-	case 'U':
-		s.next()
-		n, base, max = 8, 16, unicode.MaxRune
-	default:
-		msg := "unknown escape sequence"
-		if s.ch < 0 {
-			msg = "escape sequence not terminated"
-		}
-		s.error(offs, msg)
-		return false
-	}
-
-	var x uint32
-	for n > 0 {
-		d := uint32(digitVal(s.ch))
-		if d >= base {
-			msg := fmt.Sprintf("illegal character %#U in escape sequence", s.ch)
-			if s.ch < 0 {
-				msg = "escape sequence not terminated"
-			}
-			s.error(s.offset, msg)
-			return false
-		}
-		x = x*base + d
-		s.next()
-		n--
-	}
-
-	if x > max || 0xD800 <= x && x < 0xE000 {
-		s.error(offs, "escape sequence is invalid Unicode code point")
-		return false
-	}
-
-	return true
-}
-
 func (s *Scanner) scanBString() string {
 	// opening ' already consumed
 	offs := s.offset - 1
@@ -372,7 +314,7 @@ func (s *Scanner) scanString() string {
 			break
 		}
 		if ch == '\\' {
-			s.scanEscape('"')
+			s.next()
 		}
 	}
 
