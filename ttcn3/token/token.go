@@ -76,10 +76,12 @@ const (
 	XOR // xor
 	NOT // not
 
-	AND4B  // and4b
-	OR4B   // or4b
-	XOR4B  // xor4b
-	NOT4B  // not4b
+	AND4B // and4b
+	OR4B  // or4b
+	XOR4B // xor4b
+	NOT4B // not4b
+
+	MODULE
 	keyword_end
 )
 
@@ -140,10 +142,12 @@ var tokens = [...]string{
 	XOR: "xor",
 	NOT: "not",
 
-	AND4B:  "and4b",
-	OR4B:   "or4b",
-	XOR4B:  "xor4b",
-	NOT4B:  "not4b",
+	AND4B: "and4b",
+	OR4B:  "or4b",
+	XOR4B: "xor4b",
+	NOT4B: "not4b",
+
+	MODULE: "module",
 }
 
 // String returns the string corresponding to the token tok.
