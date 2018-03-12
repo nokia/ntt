@@ -18,6 +18,7 @@ func (p *parser) parseModule() *ast.Module {
 	for p.tok != token.RBRACE {
 		decls = append(decls, p.parseModuleDef())
 	}
+	p.expect(token.RBRACE)
 
 	return &ast.Module{
 		Module:   pos,
@@ -28,6 +29,9 @@ func (p *parser) parseModule() *ast.Module {
 }
 
 func (p *parser) parseModuleDef() ast.Decl {
+	if p.trace {
+		defer un(trace(p, "ModuleDef"))
+	}
 	p.next()
 	return nil
 }

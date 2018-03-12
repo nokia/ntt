@@ -81,7 +81,21 @@ const (
 	XOR4B // xor4b
 	NOT4B // not4b
 
+	ALTSTEP
+	CONST
+	FUNCTION
+	IN
+	INOUT
 	MODULE
+	MODULEPAR
+	MTC
+	OUT
+	RETURN
+	RUNS
+	ON
+	SYSTEM
+	TESTCASE
+	VAR
 	keyword_end
 )
 
@@ -147,7 +161,21 @@ var tokens = [...]string{
 	XOR4B: "xor4b",
 	NOT4B: "not4b",
 
-	MODULE: "module",
+	ALTSTEP:   "altstep",
+	CONST:     "const",
+	FUNCTION:  "function",
+	IN:        "in",
+	INOUT:     "inout",
+	MODULE:    "module",
+	MODULEPAR: "modulepar",
+	MTC:       "mtc",
+	OUT:       "out",
+	RETURN:    "return",
+	RUNS:      "runs",
+	ON:        "on",
+	SYSTEM:    "system",
+	TESTCASE:  "testcase",
+	VAR:       "var",
 }
 
 // String returns the string corresponding to the token tok.
