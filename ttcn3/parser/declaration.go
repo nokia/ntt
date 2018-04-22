@@ -16,16 +16,24 @@ func (p *parser) parseDecl() ast.Decl {
 }
 
 func (p *parser) parseValueDecl() *ast.ValueDecl {
+	if p.trace {
+		defer un(trace(p, "ValueDecl"))
+	}
+
 	x := &ast.ValueDecl{DeclPos: p.pos, Kind: p.tok}
 	p.next()
 	x.Type = p.parseIdent()
 	x.Decls = p.parseExprList()
 
-	p.expect(token.SEMICOLON)
+	p.expectSemi()
 	return x
 }
 
 func (p *parser) parseFuncDecl() *ast.FuncDecl {
+	if p.trace {
+		defer un(trace(p, "FuncDecl"))
+	}
+
 	x := &ast.FuncDecl{FuncPos: p.pos, Kind: p.tok}
 	p.next()
 	x.Name = p.parseIdent()
@@ -46,13 +54,15 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	if p.tok == token.LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
+
+	p.expectSemi()
 	return x
 }
 
 func (p *parser) parseParameters() *ast.FieldList {
 	x := &ast.FieldList{From: p.pos}
 	p.expect(token.LPAREN)
-	for p.tok != token.RPAREN {
+	for p.tok != token.EOF && p.tok != token.RPAREN {
 		x.Fields = append(x.Fields, p.parseParameter())
 	}
 	p.expect(token.RPAREN)

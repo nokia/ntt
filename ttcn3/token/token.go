@@ -81,20 +81,24 @@ const (
 	XOR4B // xor4b
 	NOT4B // not4b
 
+	ALL
 	ALTSTEP
 	CONST
+	FROM
 	FUNCTION
+	IMPORT
 	IN
 	INOUT
 	MODULE
 	MODULEPAR
 	MTC
+	ON
 	OUT
 	RETURN
 	RUNS
-	ON
 	SYSTEM
 	TESTCASE
+	TYPE
 	VAR
 	keyword_end
 )
@@ -161,20 +165,24 @@ var tokens = [...]string{
 	XOR4B: "xor4b",
 	NOT4B: "not4b",
 
+	ALL:       "all",
 	ALTSTEP:   "altstep",
 	CONST:     "const",
+	FROM:      "from",
 	FUNCTION:  "function",
+	IMPORT:    "import",
 	IN:        "in",
 	INOUT:     "inout",
 	MODULE:    "module",
 	MODULEPAR: "modulepar",
 	MTC:       "mtc",
+	ON:        "on",
 	OUT:       "out",
 	RETURN:    "return",
 	RUNS:      "runs",
-	ON:        "on",
 	SYSTEM:    "system",
 	TESTCASE:  "testcase",
+	TYPE:      "type",
 	VAR:       "var",
 }
 

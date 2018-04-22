@@ -10,7 +10,7 @@ func TestModule(t *testing.T) {
         // Module foo is empty  
         module foo /* language "ttcn3" */
 		{
-			private const integer x := 1
+			const integer x := 1
 		}
 	 `
 

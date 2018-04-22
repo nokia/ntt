@@ -1,8 +1,9 @@
 package ast
 
 import (
-	"github.com/nokia/ntt/ttcn3/token"
 	"strings"
+
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // ----------------------------------------------------------------------------
@@ -265,28 +266,28 @@ type FieldList struct {
 	Fields []*Field
 }
 
-type SubType struct {
-	TypePos token.Pos
-	Name    *Ident
-	Type    Expr
-}
-
 func (x *Field) Pos() token.Pos     { return x.Type.Pos() }
 func (x *FieldList) Pos() token.Pos { return x.From }
-func (x *SubType) Pos() token.Pos   { return x.TypePos }
 
 func (x *Field) End() token.Pos     { return x.Type.End() }
 func (x *FieldList) End() token.Pos { return x.Fields[len(x.Fields)-1].End() }
-func (x *SubType) End() token.Pos   { return x.Name.End() }
 
 func (x *Field) exprNode()     {}
 func (x *FieldList) exprNode() {}
-func (x *SubType) exprNode()   {}
 
 // ----------------------------------------------------------------------------
 // Declarations
 
 type (
+	ImportDecl struct {
+		ImportPos   token.Pos
+		Module      *Ident
+		ImportSpecs []ImportSpec
+	}
+
+	ImportSpec struct {
+	}
+
 	ValueDecl struct {
 		DeclPos token.Pos
 		Kind    token.Token // VAR, CONST, MODULEPAT, TIMER, ...
@@ -306,16 +307,28 @@ type (
 		Extern  bool
 		Body    *BlockStmt
 	}
+
+	SubType struct {
+		TypePos token.Pos
+		Name    *Ident
+		Type    Expr
+	}
 )
 
-func (x *ValueDecl) Pos() token.Pos { return x.DeclPos }
-func (x *FuncDecl) Pos() token.Pos  { return x.FuncPos }
+func (x *ImportDecl) Pos() token.Pos { return x.ImportPos }
+func (x *ValueDecl) Pos() token.Pos  { return x.DeclPos }
+func (x *FuncDecl) Pos() token.Pos   { return x.FuncPos }
+func (x *SubType) Pos() token.Pos    { return x.TypePos }
 
-func (x *ValueDecl) End() token.Pos { return x.Decls[len(x.Decls)-1].End() }
-func (x *FuncDecl) End() token.Pos  { return x.Body.End() }
+func (x *ImportDecl) End() token.Pos { return x.Module.End() }
+func (x *ValueDecl) End() token.Pos  { return x.Decls[len(x.Decls)-1].End() }
+func (x *FuncDecl) End() token.Pos   { return x.Body.End() }
+func (x *SubType) End() token.Pos    { return x.Name.End() }
 
-func (x *ValueDecl) declNode() {}
-func (x *FuncDecl) declNode()  {}
+func (x *ImportDecl) declNode() {}
+func (x *ValueDecl) declNode()  {}
+func (x *FuncDecl) declNode()   {}
+func (x *SubType) declNode()    {}
 
 // -----------------------------------------------------------------------
 // Statements

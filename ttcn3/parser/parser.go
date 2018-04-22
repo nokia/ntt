@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/scanner"
 	"github.com/nokia/ntt/ttcn3/token"
-	"io"
-	"io/ioutil"
 )
 
 // If src != nil, readSource converts src to a []byte if possible;
@@ -453,25 +454,21 @@ func (p *parser) expect(tok token.Token) token.Pos {
 }
 
 func (p *parser) expectSemi() {
-	// semicolon is optional before a closing ')' or '}'
-	if p.tok != token.RPAREN && p.tok != token.RBRACE {
+	// semicolon is optional before a closing '}'
+	if p.tok != token.RBRACE {
 		switch p.tok {
-		case token.COMMA:
-			// permit a ',' instead of a ';' but complain
-			p.errorExpected(p.pos, "';'")
-			fallthrough
 		case token.SEMICOLON:
 			p.next()
 		default:
 			p.errorExpected(p.pos, "';'")
-			//p.advance(stmtStart)
+			p.advance(stmtStart)
 		}
 	}
 }
 
 func assert(cond bool, msg string) {
 	if !cond {
-		panic("go/parser internal error: " + msg)
+		panic("ttcn3/parser internal error: " + msg)
 	}
 }
 
@@ -503,4 +500,13 @@ func (p *parser) advance(to map[token.Token]bool) {
 			// over a non-terminating parse.
 		}
 	}
+}
+
+var stmtStart = map[token.Token]bool{
+	token.CONST:     true,
+	token.VAR:       true,
+	token.MODULEPAR: true,
+	token.FUNCTION:  true,
+	token.TESTCASE:  true,
+	token.ALTSTEP:   true,
 }

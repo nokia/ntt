@@ -15,6 +15,10 @@ func (p *parser) parseExprList() (list []ast.Expr) {
 }
 
 func (p *parser) parseExpr() ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Expr"))
+	}
+
 	return p.parseBinaryExpr(token.LowestPrec + 1)
 }
 

@@ -406,7 +406,7 @@ scanAgain:
 		case '@':
 			if s.ch == '>' {
 				tok = token.ROR
-                s.next()
+				s.next()
 			} else {
 				tok = token.MODIF
 				lit = s.scanModifier()
