@@ -22,11 +22,35 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 
 	x := &ast.ValueDecl{DeclPos: p.pos, Kind: p.tok}
 	p.next()
+	p.parseRestrictionSpec()
 	x.Type = p.parseIdent()
 	x.Decls = p.parseExprList()
 
 	p.expectSemi()
 	return x
+}
+
+func (p *parser) parseRestrictionSpec() *ast.RestrictionSpec {
+	switch p.tok {
+	case token.TEMPLATE:
+		x := &ast.RestrictionSpec{Kind: p.tok, KindPos: p.pos}
+		p.next()
+		if p.tok != token.LPAREN {
+			return x
+		}
+
+		p.next()
+		x.Kind = p.tok
+		x.KindPos = p.pos
+		p.next()
+		p.expect(token.RPAREN)
+
+	case token.OMIT, token.VALUE, token.PRESENT:
+		x := &ast.RestrictionSpec{Kind: p.tok, KindPos: p.pos}
+		p.next()
+		return x
+	}
+	return nil
 }
 
 func (p *parser) parseFuncDecl() *ast.FuncDecl {
@@ -39,17 +63,20 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	x.Name = p.parseIdent()
 	x.Params = p.parseParameters()
 	if p.tok == token.RUNS {
+		p.next()
 		p.expect(token.ON)
 		x.RunsOn = p.parseTypeRef()
 	}
 	if p.tok == token.MTC {
+		p.next()
 		x.Mtc = p.parseTypeRef()
 	}
 	if p.tok == token.SYSTEM {
+		p.next()
 		x.System = p.parseTypeRef()
 	}
 	if p.tok == token.RETURN {
-		x.Return = p.parseTypeRef()
+		x.Return = p.parseReturn()
 	}
 	if p.tok == token.LBRACE {
 		x.Body = p.parseBlockStmt()
@@ -59,11 +86,18 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	return x
 }
 
+func (p *parser) parseReturn() ast.Expr {
+	p.next()
+	p.parseRestrictionSpec()
+	return p.parseTypeRef()
+}
+
 func (p *parser) parseParameters() *ast.FieldList {
 	x := &ast.FieldList{From: p.pos}
 	p.expect(token.LPAREN)
 	for p.tok != token.EOF && p.tok != token.RPAREN {
 		x.Fields = append(x.Fields, p.parseParameter())
+		p.next()
 	}
 	p.expect(token.RPAREN)
 	return x
@@ -81,6 +115,7 @@ func (p *parser) parseParameter() *ast.Field {
 		p.next()
 	}
 
+	p.parseRestrictionSpec()
 	x.Type = p.parseTypeRef()
 	x.Name = p.parseExpr()
 

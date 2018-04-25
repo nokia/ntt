@@ -35,7 +35,6 @@ func (p *parser) parseTypeRef() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "TypeRef"))
 	}
-	x := p.parseIdent()
-	p.resolve(x)
+	x := p.parsePrimaryExpr()
 	return x
 }

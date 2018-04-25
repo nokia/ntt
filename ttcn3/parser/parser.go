@@ -133,6 +133,9 @@ type parser struct {
 	tok token.Token // one token look-ahead
 	lit string      // token literal
 
+	// Semicolon helper
+	seenBrace bool
+
 	// Error recovery
 	// (used to limit the number of calls to parser.advance
 	// w/o making scanning progress - avoids potential endless
@@ -374,7 +377,14 @@ func (p *parser) consumeCommentGroup(n int) (comments *ast.CommentGroup, endline
 func (p *parser) next() {
 	p.leadComment = nil
 	p.lineComment = nil
+	p.seenBrace = false
+
 	prev := p.pos
+
+	if p.tok == token.RBRACE {
+		p.seenBrace = true
+	}
+
 	p.next0()
 
 	if p.tok == token.COMMENT {
@@ -455,7 +465,7 @@ func (p *parser) expect(tok token.Token) token.Pos {
 
 func (p *parser) expectSemi() {
 	// semicolon is optional before a closing '}'
-	if p.tok != token.RBRACE {
+	if !p.seenBrace && p.tok != token.RBRACE {
 		switch p.tok {
 		case token.SEMICOLON:
 			p.next()

@@ -13,46 +13,15 @@ func (p *parser) parseModule() *ast.Module {
 	pos := p.expect(token.MODULE)
 	name := p.parseIdent()
 
-	// TODO: Language Specification
-
 	p.expect(token.LBRACE)
 
 	p.openScope()
 
 	var decls []ast.Decl
 	for p.tok != token.RBRACE && p.tok != token.EOF {
-		var d ast.Decl
-		switch p.tok {
-		case token.IMPORT:
-			d = p.parseImport()
-		case token.TYPE:
-			d = p.parseType()
-		case token.VAR, token.CONST, token.MODULEPAR:
-			d = p.parseValueDecl()
-		case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
-			d = p.parseFuncDecl()
-
-		/*
-			TODO:
-				* Module Definitions:
-					- [ ] Templates
-					- [ ] External Definitions
-
-				* Package Management:
-					- [ ] Import Statement
-					- [ ] Visibility
-					- [ ] Group Definitions
-		*/
-
-		default:
-			p.errorExpected(p.pos, "module definition")
-			p.next()
-		}
-		decls = append(decls, d)
+		decls = append(decls, p.parseModuleDef())
 	}
 	p.expect(token.RBRACE)
-
-	// TODO: With Statements
 
 	p.closeScope()
 
@@ -61,6 +30,23 @@ func (p *parser) parseModule() *ast.Module {
 		Name:     name,
 		Decls:    decls,
 		Comments: p.comments,
+	}
+}
+
+func (p *parser) parseModuleDef() ast.Decl {
+	switch p.tok {
+	case token.IMPORT:
+		return p.parseImport()
+	case token.TYPE:
+		return p.parseType()
+	case token.VAR, token.CONST, token.MODULEPAR:
+		return p.parseValueDecl()
+	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
+		return p.parseFuncDecl()
+	default:
+		p.errorExpected(p.pos, "module definition")
+		p.next()
+		return nil
 	}
 }
 

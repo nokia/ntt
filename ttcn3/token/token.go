@@ -92,13 +92,17 @@ const (
 	MODULE
 	MODULEPAR
 	MTC
+    OMIT
 	ON
 	OUT
+    PRESENT
 	RETURN
 	RUNS
 	SYSTEM
+    TEMPLATE
 	TESTCASE
 	TYPE
+    VALUE
 	VAR
 	keyword_end
 )
@@ -176,13 +180,17 @@ var tokens = [...]string{
 	MODULE:    "module",
 	MODULEPAR: "modulepar",
 	MTC:       "mtc",
+    OMIT:      "omit",
 	ON:        "on",
 	OUT:       "out",
+    PRESENT:   "present",
 	RETURN:    "return",
 	RUNS:      "runs",
 	SYSTEM:    "system",
+    TEMPLATE:  "template",
 	TESTCASE:  "testcase",
 	TYPE:      "type",
+    VALUE:     "value",
 	VAR:       "var",
 }
 

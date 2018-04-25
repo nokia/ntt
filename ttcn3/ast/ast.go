@@ -140,6 +140,17 @@ func (g *CommentGroup) Text() string {
 }
 
 // ----------------------------------------------------------------------------
+// Miscellaneous and types
+
+type (
+    // A RestrictionSpec represents template restrictions
+    RestrictionSpec struct {
+        Kind        token.Token
+        KindPos     token.Pos
+    }
+)
+
+// ----------------------------------------------------------------------------
 // Expressions and types
 
 // An expression is represented by a tree consisting of one
@@ -274,6 +285,7 @@ func (x *FieldList) End() token.Pos { return x.Fields[len(x.Fields)-1].End() }
 
 func (x *Field) exprNode()     {}
 func (x *FieldList) exprNode() {}
+
 
 // ----------------------------------------------------------------------------
 // Declarations
