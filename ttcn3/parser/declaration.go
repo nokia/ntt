@@ -23,6 +23,11 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 	x := &ast.ValueDecl{DeclPos: p.pos, Kind: p.tok}
 	p.next()
 	p.parseRestrictionSpec()
+
+	if p.tok == token.MODIF {
+		p.next()
+	}
+
 	x.Type = p.parseIdent()
 	x.Decls = p.parseExprList()
 
@@ -61,6 +66,11 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	x := &ast.FuncDecl{FuncPos: p.pos, Kind: p.tok}
 	p.next()
 	x.Name = p.parseIdent()
+
+	if p.tok == token.MODIF {
+		p.next()
+	}
+
 	x.Params = p.parseParameters()
 	if p.tok == token.RUNS {
 		p.next()
@@ -89,6 +99,9 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 func (p *parser) parseReturn() ast.Expr {
 	p.next()
 	p.parseRestrictionSpec()
+	if p.tok == token.MODIF {
+		p.next()
+	}
 	return p.parseTypeRef()
 }
 
