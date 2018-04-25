@@ -20,7 +20,7 @@ type Test struct {
 func TestFuncDecls(t *testing.T) {
 	funcDecls := []Test{
 		{PASS, `testcase f() {}`},
-		{PASS, `testcase f() runs on A[-] {}`},
+		{FAIL, `testcase f() runs on A[-] {}`},
 		{PASS, `testcase f() runs on C system C {}`},
 		{PASS, `function f() {}`},
 		{PASS, `function f() return int {}`},
@@ -28,7 +28,7 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `function f() return template(value) int {}`},
 		{PASS, `function f() return value int {}`},
 		{PASS, `function f @deterministic () {}`},
-		{PASS, `function f() runs on A[-] {}`},
+		{FAIL, `function f() runs on A[-] {}`},
 		{PASS, `function f() mtc C {}`},
 		{PASS, `function f() runs on C mtc C system C {}`},
 	}
@@ -112,8 +112,8 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `const int x := 1;`},
 		{PASS, `const int x := 1, yi := 2;`},
 		{PASS, `const int x[len] := 1, y := 2;`},
-		{PASS, `const a[-] x := 1;`},
-		{PASS, `const a[1] x[2][3] := x[4];`},
+		{FAIL, `const a[-] x := 1;`},
+		{FAIL, `const a[1] x[2][3] := x[4];`},
 		{PASS, `var int x, y := 2, z;`},
 		{PASS, `var template          int x;`},
 		{PASS, `var template(omit)    int x;`},
@@ -146,11 +146,11 @@ func TestFormalPars(t *testing.T) {
 		{PASS, `()`},
 		{PASS, `(int y)`},
 		{PASS, `(int x, int y)`},
-		{PASS, `(in int x, out int y, inout z)`},
+		{PASS, `(in int x, out int y, inout int z)`},
 		{PASS, `(in template(value) @fuzzy timer x := 1, out timer y)`},
 		{PASS, `(out timer y, in template(value) @fuzzy timer x := 1)`},
-		{PASS, `(out timer y := -, int value @fuzzy timer x := 1)`},
-		{PASS, `(out timer y := -, in int value timer x := (1,2,3))`},
+		{FAIL, `(out timer y := -, in value @fuzzy timer x := 1)`},
+		{FAIL, `(out timer y := -, in value timer x := (1,2,3))`},
 	}
 	testParse(t, formalPars, func(p *parser) { p.parseParameters() })
 }
