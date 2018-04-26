@@ -13,6 +13,17 @@ func (p *parser) parseModule() *ast.Module {
 	pos := p.expect(token.MODULE)
 	name := p.parseIdent()
 
+    if p.tok == token.LANGUAGE {
+        p.next()
+        for {
+            p.expect(token.STRING)
+            if p.tok != token.COMMA {
+                break
+            }
+            p.next()
+        }
+    }
+
 	p.expect(token.LBRACE)
 
 	p.openScope()

@@ -89,6 +89,7 @@ const (
 	IMPORT
 	IN
 	INOUT
+    LANGUAGE
 	MODULE
 	MODULEPAR
 	MTC
@@ -177,6 +178,7 @@ var tokens = [...]string{
 	IMPORT:    "import",
 	IN:        "in",
 	INOUT:     "inout",
+    LANGUAGE:  "language",
 	MODULE:    "module",
 	MODULEPAR: "modulepar",
 	MTC:       "mtc",

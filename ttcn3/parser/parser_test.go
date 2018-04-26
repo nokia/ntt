@@ -17,6 +17,15 @@ type Test struct {
 	input  string
 }
 
+func TestModules(t *testing.T) {
+	modules := []Test{
+		{PASS, `module m {}`},
+		{PASS, `module m language "str1", "str2" {}`},
+	}
+
+	testParse(t, modules, func(p *parser) { p.parseModule() })
+}
+
 func TestFuncDecls(t *testing.T) {
 	funcDecls := []Test{
 		{PASS, `testcase f() {}`},
@@ -34,15 +43,6 @@ func TestFuncDecls(t *testing.T) {
 	}
 
 	testParse(t, funcDecls, func(p *parser) { p.parseFuncDecl() })
-}
-
-func TestModules(t *testing.T) {
-	modules := []Test{
-		{PASS, `module m {}`},
-		{FAIL, `module m language "str1", "str2" {}`},
-	}
-
-	testParse(t, modules, func(p *parser) { p.parseModule() })
 }
 
 func TestModuleDefs(t *testing.T) {
