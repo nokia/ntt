@@ -7,12 +7,42 @@ import (
 
 func (p *parser) parseDecl() ast.Decl {
 	switch p.tok {
+	case token.TEMPLATE:
+		return p.parseTemplateDecl()
 	case token.VAR, token.CONST, token.MODULEPAR:
 		return p.parseValueDecl()
 	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
 		return p.parseFuncDecl()
+	default:
+		p.errorExpected(p.pos, "declaration")
 	}
 	return nil
+}
+
+func (p *parser) parseTemplateDecl() *ast.ValueDecl {
+	if p.trace {
+		defer un(trace(p, "TemplateDecl"))
+	}
+
+	x := &ast.ValueDecl{DeclPos: p.pos, Kind: p.tok}
+	p.next()
+
+	if p.tok == token.LPAREN {
+		p.next() // consume '('
+		p.next() // consume omit/value/...
+		p.expect(token.RPAREN)
+	}
+
+	if p.tok == token.MODIF {
+		p.next()
+	}
+
+	x.Type = p.parseIdent()
+	x.Decls = p.parseExprList()
+	p.parseParameters()
+
+	p.expectSemi()
+	return x
 }
 
 func (p *parser) parseValueDecl() *ast.ValueDecl {
@@ -108,8 +138,11 @@ func (p *parser) parseReturn() ast.Expr {
 func (p *parser) parseParameters() *ast.FieldList {
 	x := &ast.FieldList{From: p.pos}
 	p.expect(token.LPAREN)
-	for p.tok != token.EOF && p.tok != token.RPAREN {
+	for p.tok != token.RPAREN {
 		x.Fields = append(x.Fields, p.parseParameter())
+		if p.tok != token.COMMA {
+			break
+		}
 		p.next()
 	}
 	p.expect(token.RPAREN)
@@ -129,6 +162,9 @@ func (p *parser) parseParameter() *ast.Field {
 	}
 
 	p.parseRestrictionSpec()
+	if p.tok == token.MODIF {
+		p.next()
+	}
 	x.Type = p.parseTypeRef()
 	x.Name = p.parseExpr()
 

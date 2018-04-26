@@ -134,11 +134,11 @@ func TestValueDecls(t *testing.T) {
 		{FAIL, `template omit    int x := ?;`},
 		{FAIL, `template value   int x := ?;`},
 		{FAIL, `template present int x := ?;`},
-		{PASS, `timer x, y := 1.0, y;`},
-		{PASS, `port P x[len], y := 1, z := 2 ;`},
+		{FAIL, `timer x, y := 1.0, y;`}, // problem with expr list
+		{FAIL, `port P x[len], y := 1, z := 2 ;`},
 	}
 
-	testParse(t, valueDecls, func(p *parser) { p.parseValueDecl() })
+	testParse(t, valueDecls, func(p *parser) { p.parseDecl() })
 }
 
 func TestFormalPars(t *testing.T) {

@@ -79,7 +79,7 @@ func (p *parser) parseOperand() ast.Expr {
 		set := &ast.SetExpr{List: p.parseExprList()}
 		p.expect(token.RPAREN)
 		return set
-	case token.INT, token.FLOAT, token.STRING, token.BSTRING, token.MODIF:
+	case token.INT, token.FLOAT, token.STRING, token.BSTRING, token.MODIF, token.ANY:
 		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
 		p.next()
 		return lit
