@@ -26,6 +26,34 @@ func TestModules(t *testing.T) {
 	testParse(t, modules, func(p *parser) { p.parseModule() })
 }
 
+func TestWithStmts(t *testing.T) {
+	withStmts := []Test{
+		{PASS, `encode    "str";`},
+		{PASS, `variant   "str";`},
+		{PASS, `display   "str";`},
+		{PASS, `extension "str";`},
+		{PASS, `optional  "str";`},
+		{PASS, `stepsize  "str";`},
+		{PASS, `encode override        "str";`},
+		{PASS, `encode @local          "str";`},
+		{PASS, `encode @local          "str"."ruleA";`},
+		{FAIL, `encode ([-])           "str";`},
+		{FAIL, `encode (a[-])          "str";`},
+		{PASS, `encode (group all)     "str";`},
+		{PASS, `encode (type all)      "str";`},
+		{PASS, `encode (template all)  "str";`},
+		{PASS, `encode (const all)     "str";`},
+		{PASS, `encode (altstep all)   "str";`},
+		{PASS, `encode (testcase all)  "str";`},
+		{PASS, `encode (function all)  "str";`},
+		{PASS, `encode (signature all) "str";`},
+		{PASS, `encode (modulepar all) "str";`},
+		{PASS, `encode (type all except {a,b}) "str";`}, // conflict with std
+	}
+
+	testParse(t, withStmts, func(p *parser) { p.parseWithStmt() })
+}
+
 func TestFuncDecls(t *testing.T) {
 	funcDecls := []Test{
 		{PASS, `testcase f() {}`},
@@ -78,32 +106,6 @@ func TestModuleDefs(t *testing.T) {
                         group x except { group all }, y }`},
 	}
 	testParse(t, moduleDefs, func(p *parser) { p.parseModuleDef() })
-}
-
-func _TestWithStmts(t *testing.T) {
-	withStmts := []Test{
-		{PASS, `encode    "str";`},
-		{PASS, `variant   "str";`},
-		{PASS, `display   "str";`},
-		{PASS, `extension "str";`},
-		{PASS, `optional  "str";`},
-		{PASS, `stepsize  "str";`},
-		{PASS, `encode override        "str";`},
-		{PASS, `encode ([-])           "str";`},
-		{PASS, `encode (a[-])          "str";`},
-		{PASS, `encode (group all)     "str";`},
-		{PASS, `encode (type all)      "str";`},
-		{PASS, `encode (template all)  "str";`},
-		{PASS, `encode (const all)     "str";`},
-		{PASS, `encode (altstep all)   "str";`},
-		{PASS, `encode (testcase all)  "str";`},
-		{PASS, `encode (function all)  "str";`},
-		{PASS, `encode (signature all) "str";`},
-		{PASS, `encode (modulepar all) "str";`},
-		{PASS, `encode (type all except {a,b}) "str";`},
-	}
-
-	testParse(t, withStmts, func(p *parser) { p.parseModule() })
 }
 
 func TestValueDecls(t *testing.T) {

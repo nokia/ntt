@@ -84,27 +84,37 @@ const (
 	ALL
 	ALTSTEP
 	CONST
+	EXCEPT
 	FROM
 	FUNCTION
+	GROUP
 	IMPORT
 	IN
 	INOUT
-    LANGUAGE
 	MODULE
 	MODULEPAR
 	MTC
-    OMIT
 	ON
 	OUT
-    PRESENT
 	RETURN
 	RUNS
+	SIGNATURE
 	SYSTEM
-    TEMPLATE
 	TESTCASE
 	TYPE
-    VALUE
 	VAR
+	DISPLAY
+	ENCODE
+	EXTENSION
+	LANGUAGE
+	OMIT
+	OPTIONAL
+	OVERRIDE
+	PRESENT
+	STEPSIZE
+	TEMPLATE
+	VALUE
+	VARIANT
 	keyword_end
 )
 
@@ -173,27 +183,37 @@ var tokens = [...]string{
 	ALL:       "all",
 	ALTSTEP:   "altstep",
 	CONST:     "const",
+	EXCEPT:    "except",
 	FROM:      "from",
 	FUNCTION:  "function",
+	GROUP:     "group",
 	IMPORT:    "import",
 	IN:        "in",
 	INOUT:     "inout",
-    LANGUAGE:  "language",
 	MODULE:    "module",
 	MODULEPAR: "modulepar",
 	MTC:       "mtc",
-    OMIT:      "omit",
 	ON:        "on",
 	OUT:       "out",
-    PRESENT:   "present",
 	RETURN:    "return",
 	RUNS:      "runs",
+	SIGNATURE: "signature",
 	SYSTEM:    "system",
-    TEMPLATE:  "template",
 	TESTCASE:  "testcase",
 	TYPE:      "type",
-    VALUE:     "value",
 	VAR:       "var",
+	DISPLAY:   "display",
+	ENCODE:    "encode",
+	EXTENSION: "extension",
+	LANGUAGE:  "language",
+	OMIT:      "omit",
+	OPTIONAL:  "optional",
+	OVERRIDE:  "override",
+	PRESENT:   "present",
+	STEPSIZE:  "stepsize",
+	TEMPLATE:  "template",
+	VALUE:     "value",
+	VARIANT:   "variant",
 }
 
 // String returns the string corresponding to the token tok.
