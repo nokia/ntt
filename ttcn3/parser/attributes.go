@@ -65,13 +65,7 @@ func (p *parser) parseWithQualifier() {
 		if p.tok == token.EXCEPT {
 			p.next()
 			p.expect(token.LBRACE)
-			for {
-				p.parseTypeRef()
-				if p.tok != token.COMMA {
-					break
-				}
-				p.next()
-			}
+			p.parseRefList()
 			p.expect(token.RBRACE)
 		}
 	default:
