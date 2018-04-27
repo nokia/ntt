@@ -82,40 +82,55 @@ const (
 	NOT4B // not4b
 
 	ALL
+	ALT
 	ALTSTEP
+	BREAK
+	CASE
 	CONST
+	CONTINUE
+	DISPLAY
+	DO
+	ELSE
+	ENCODE
 	EXCEPT
+	EXTENSION
+	FOR
 	FROM
 	FUNCTION
+	GOTO
 	GROUP
+	IF
 	IMPORT
 	IN
 	INOUT
+	INTERLEAVE
+	LABEL
+	LANGUAGE
 	MODIFIES
 	MODULE
 	MODULEPAR
 	MTC
-	ON
-	OUT
-	RETURN
-	RUNS
-	SIGNATURE
-	SYSTEM
-	TESTCASE
-	TYPE
-	VAR
-	DISPLAY
-	ENCODE
-	EXTENSION
-	LANGUAGE
 	OMIT
+	ON
 	OPTIONAL
+	OUT
 	OVERRIDE
 	PRESENT
+	REPEAT
+	RETURN
+	RUNS
+	SELECT
+	SIGNATURE
 	STEPSIZE
+	SYSTEM
 	TEMPLATE
+	TESTCASE
+	TYPE
+	UNION
 	VALUE
+	VAR
 	VARIANT
+	WHILE
 	keyword_end
 )
 
@@ -181,41 +196,56 @@ var tokens = [...]string{
 	XOR4B: "xor4b",
 	NOT4B: "not4b",
 
-	ALL:       "all",
-	ALTSTEP:   "altstep",
-	CONST:     "const",
-	EXCEPT:    "except",
-	FROM:      "from",
-	FUNCTION:  "function",
-	GROUP:     "group",
-	IMPORT:    "import",
-	IN:        "in",
-	INOUT:     "inout",
-	MODIFIES:  "modifies",
-	MODULE:    "module",
-	MODULEPAR: "modulepar",
-	MTC:       "mtc",
-	ON:        "on",
-	OUT:       "out",
-	RETURN:    "return",
-	RUNS:      "runs",
-	SIGNATURE: "signature",
-	SYSTEM:    "system",
-	TESTCASE:  "testcase",
-	TYPE:      "type",
-	VAR:       "var",
-	DISPLAY:   "display",
-	ENCODE:    "encode",
-	EXTENSION: "extension",
-	LANGUAGE:  "language",
-	OMIT:      "omit",
-	OPTIONAL:  "optional",
-	OVERRIDE:  "override",
-	PRESENT:   "present",
-	STEPSIZE:  "stepsize",
-	TEMPLATE:  "template",
-	VALUE:     "value",
-	VARIANT:   "variant",
+	ALL:        "all",
+	ALT:        "alt",
+	ALTSTEP:    "altstep",
+	BREAK:      "break",
+	CASE:       "case",
+	CONST:      "const",
+	CONTINUE:   "continue",
+	DISPLAY:    "display",
+	DO:         "do",
+	ELSE:       "else",
+	ENCODE:     "encode",
+	EXCEPT:     "except",
+	EXTENSION:  "extension",
+	FOR:        "for",
+	FROM:       "from",
+	FUNCTION:   "function",
+	GOTO:       "goto",
+	GROUP:      "group",
+	IF:         "if",
+	IMPORT:     "import",
+	IN:         "in",
+	INOUT:      "inout",
+	INTERLEAVE: "interleave",
+	LABEL:      "label",
+	LANGUAGE:   "language",
+	MODIFIES:   "modifies",
+	MODULE:     "module",
+	MODULEPAR:  "modulepar",
+	MTC:        "mtc",
+	OMIT:       "omit",
+	ON:         "on",
+	OPTIONAL:   "optional",
+	OUT:        "out",
+	OVERRIDE:   "override",
+	PRESENT:    "present",
+	REPEAT:     "repeat",
+	RETURN:     "return",
+	RUNS:       "runs",
+	SELECT:     "select",
+	SIGNATURE:  "signature",
+	STEPSIZE:   "stepsize",
+	SYSTEM:     "system",
+	TEMPLATE:   "template",
+	TESTCASE:   "testcase",
+	TYPE:       "type",
+	UNION:      "union",
+	VALUE:      "value",
+	VAR:        "var",
+	VARIANT:    "variant",
+	WHILE:      "while",
 }
 
 // String returns the string corresponding to the token tok.
