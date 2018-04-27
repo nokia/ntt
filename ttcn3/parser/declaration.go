@@ -38,8 +38,16 @@ func (p *parser) parseTemplateDecl() *ast.ValueDecl {
 	}
 
 	x.Type = p.parseIdent()
-	x.Decls = p.parseExprList()
-	p.parseParameters()
+	p.parseIdent()
+	if p.tok == token.LPAREN {
+		p.parseParameters()
+	}
+	if p.tok == token.MODIFIES {
+		p.next()
+		p.parseIdent()
+	}
+	p.expect(token.ASSIGN)
+	p.parseExpr()
 
 	p.expectSemi()
 	return x

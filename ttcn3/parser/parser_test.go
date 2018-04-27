@@ -76,10 +76,10 @@ func TestFuncDecls(t *testing.T) {
 func TestModuleDefs(t *testing.T) {
 	moduleDefs := []Test{
 		{PASS, `import from m all;`},
-		{FAIL, `import from m language "str1", "str2" all;`},
-		{FAIL, `import from m recursive all;`},
-		{FAIL, `import from m all except {}`},
-		{FAIL, `import from m all except {
+		{PASS, `import from m language "str1", "str2" all;`},
+		{PASS, `import from m recursive all;`},
+		{PASS, `import from m all except {}`},
+		{PASS, `import from m all except {
                         template  all;
                         const     all;
                         altstep   all;
@@ -89,9 +89,9 @@ func TestModuleDefs(t *testing.T) {
                         modulepar all;
                         import    all;
                         type      all }`},
-		{FAIL, `import from m all except { group all }`},
-		{FAIL, `import from m all except { group x,y }`},
-		{FAIL, `import from m {
+		{PASS, `import from m all except { group all }`},
+		{PASS, `import from m all except { group x,y }`},
+		{PASS, `import from m {
                         template  all;
                         const i   all;
                         altstep   all;
@@ -101,7 +101,7 @@ func TestModuleDefs(t *testing.T) {
                         modulepar all;
                         import    all;
                         type      all }`},
-		{FAIL, `import from m {
+		{PASS, `import from m {
                         group all except x,y;
                         group x except { group all }, y }`},
 	}
@@ -126,16 +126,16 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `var present int x;`},
 		{PASS, `var value @lazy int x;`},
 		{PASS, `var value @lazy int x, y := ?;`},
-		{FAIL, `template int x := ?;`},
-		{FAIL, `template int x modifies y := ?;`},
-		{FAIL, `template int x(int i) := i;`},
-		{FAIL, `template @lazy int x := ?;`},
-		{FAIL, `template @lazy int x(int i) := i;`},
-		{FAIL, `template @lazy int  x(int i) modifies y := ?;`},
+		{PASS, `template int x := ?;`},
+		{PASS, `template int x modifies y := ?;`},
+		{PASS, `template int x(int i) := i;`},
+		{PASS, `template @lazy int x := ?;`},
+		{PASS, `template @lazy int x(int i) := i;`},
+		{PASS, `template @lazy int  x(int i) modifies y := ?;`},
 		{FAIL, `template @lazy a[-] x(int i) modifies y := ?;`},
-		{FAIL, `template omit    int x := ?;`},
-		{FAIL, `template value   int x := ?;`},
-		{FAIL, `template present int x := ?;`},
+		{PASS, `template(omit)    int x := ?;`},
+		{PASS, `template(value)   int x := ?;`},
+		{PASS, `template(present) int x := ?;`},
 		{FAIL, `timer x, y := 1.0, y;`}, // problem with expr list
 		{FAIL, `port P x[len], y := 1, z := 2 ;`},
 	}
