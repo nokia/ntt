@@ -178,3 +178,13 @@ func (p *parser) parseParameter() *ast.Field {
 
 	return x
 }
+
+func (p *parser) parseRefList() {
+	for {
+		p.parseTypeRef()
+		if p.tok != token.COMMA {
+			break
+		}
+		p.next()
+	}
+}

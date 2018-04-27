@@ -55,6 +55,10 @@ func (p *parser) parseWithStmt() ast.Node {
 
 func (p *parser) parseWithQualifier() {
 	switch p.tok {
+	case token.IDENT:
+		p.parseTypeRef()
+	case token.LBRACK:
+		p.parseIndexExpr(nil)
 	case token.TYPE, token.TEMPLATE, token.CONST, token.ALTSTEP, token.TESTCASE, token.FUNCTION, token.SIGNATURE, token.MODULEPAR, token.GROUP:
 		p.next()
 		p.expect(token.ALL)
@@ -70,10 +74,6 @@ func (p *parser) parseWithQualifier() {
 			}
 			p.expect(token.RBRACE)
 		}
-	case token.IDENT:
-		p.parseTypeRef()
-	case token.LBRACK:
-		p.parseIndexExpr(nil)
 	default:
 		p.errorExpected(p.pos, "with-qualifier")
 	}

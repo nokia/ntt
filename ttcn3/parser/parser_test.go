@@ -77,7 +77,6 @@ func TestModuleDefs(t *testing.T) {
 	moduleDefs := []Test{
 		{PASS, `import from m all;`},
 		{PASS, `import from m language "str1", "str2" all;`},
-		{PASS, `import from m recursive all;`},
 		{PASS, `import from m all except {}`},
 		{PASS, `import from m all except {
                         template  all;
@@ -93,7 +92,7 @@ func TestModuleDefs(t *testing.T) {
 		{PASS, `import from m all except { group x,y }`},
 		{PASS, `import from m {
                         template  all;
-                        const i   all;
+                        const     all;
                         altstep   all;
                         testcase  all;
                         function  all;
@@ -102,7 +101,6 @@ func TestModuleDefs(t *testing.T) {
                         import    all;
                         type      all }`},
 		{PASS, `import from m {
-                        group all except x,y;
                         group x except { group all }, y }`},
 	}
 	testParse(t, moduleDefs, func(p *parser) { p.parseModuleDef() })
