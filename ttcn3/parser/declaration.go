@@ -37,7 +37,7 @@ func (p *parser) parseTemplateDecl() *ast.ValueDecl {
 		p.next()
 	}
 
-	x.Type = p.parseIdent()
+	x.Type = p.parseTypeRef()
 	p.parseIdent()
 	if p.tok == token.LPAREN {
 		p.parseParameters()
@@ -66,7 +66,7 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 		p.next()
 	}
 
-	x.Type = p.parseIdent()
+	x.Type = p.parseTypeRef()
 	x.Decls = p.parseExprList()
 
 	p.expectSemi()

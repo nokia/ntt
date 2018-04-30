@@ -303,7 +303,7 @@ type (
 	ValueDecl struct {
 		DeclPos token.Pos
 		Kind    token.Token // VAR, CONST, MODULEPAT, TIMER, ...
-		Type    *Ident
+		Type    Expr
 		Decls   []Expr
 	}
 

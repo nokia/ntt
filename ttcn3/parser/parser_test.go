@@ -37,8 +37,8 @@ func TestWithStmts(t *testing.T) {
 		{PASS, `encode override        "str";`},
 		{PASS, `encode @local          "str";`},
 		{PASS, `encode @local          "str"."ruleA";`},
-		{FAIL, `encode ([-])           "str";`},
-		{FAIL, `encode (a[-])          "str";`},
+		{PASS, `encode ([-])           "str";`},
+		{PASS, `encode (a[-])          "str";`},
 		{PASS, `encode (group all)     "str";`},
 		{PASS, `encode (type all)      "str";`},
 		{PASS, `encode (template all)  "str";`},
@@ -54,10 +54,22 @@ func TestWithStmts(t *testing.T) {
 	testParse(t, withStmts, func(p *parser) { p.parseWithStmt() })
 }
 
+func TestExprs(t *testing.T) {
+	exprs := []Test{
+		{PASS, `-`},
+		{PASS, `a[-]`},
+		{PASS, `-1 * x`},
+		{PASS, `-x * y`},
+		{PASS, `x := (1+2)*3, y:=a.f()`},
+	}
+
+	testParse(t, exprs, func(p *parser) { p.parseExprList() })
+}
+
 func TestFuncDecls(t *testing.T) {
 	funcDecls := []Test{
 		{PASS, `testcase f() {}`},
-		{FAIL, `testcase f() runs on A[-] {}`},
+		{PASS, `testcase f() runs on A[-] {}`},
 		{PASS, `testcase f() runs on C system C {}`},
 		{PASS, `function f() {}`},
 		{PASS, `function f() return int {}`},
@@ -65,7 +77,7 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `function f() return template(value) int {}`},
 		{PASS, `function f() return value int {}`},
 		{PASS, `function f @deterministic () {}`},
-		{FAIL, `function f() runs on A[-] {}`},
+		{PASS, `function f() runs on A[-] {}`},
 		{PASS, `function f() mtc C {}`},
 		{PASS, `function f() runs on C mtc C system C {}`},
 	}
@@ -112,8 +124,8 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `const int x := 1;`},
 		{PASS, `const int x := 1, yi := 2;`},
 		{PASS, `const int x[len] := 1, y := 2;`},
-		{FAIL, `const a[-] x := 1;`},
-		{FAIL, `const a[1] x[2][3] := x[4];`},
+		{PASS, `const a[-] x := 1;`},
+		{PASS, `const a[1] x[2][3] := x[4];`},
 		{PASS, `var int x, y := 2, z;`},
 		{PASS, `var template          int x;`},
 		{PASS, `var template(omit)    int x;`},
@@ -130,7 +142,7 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `template @lazy int x := ?;`},
 		{PASS, `template @lazy int x(int i) := i;`},
 		{PASS, `template @lazy int  x(int i) modifies y := ?;`},
-		{FAIL, `template @lazy a[-] x(int i) modifies y := ?;`},
+		{PASS, `template @lazy a[-] x(int i) modifies y := ?;`},
 		{PASS, `template(omit)    int x := ?;`},
 		{PASS, `template(value)   int x := ?;`},
 		{PASS, `template(present) int x := ?;`},
@@ -149,8 +161,8 @@ func TestFormalPars(t *testing.T) {
 		{PASS, `(in int x, out int y, inout int z)`},
 		{PASS, `(in template(value) @fuzzy timer x := 1, out timer y)`},
 		{PASS, `(out timer y, in template(value) @fuzzy timer x := 1)`},
-		{FAIL, `(out timer y := -, in value @fuzzy timer x := 1)`},
-		{FAIL, `(out timer y := -, in value timer x := (1,2,3))`},
+		{PASS, `(out timer y := -, in value @fuzzy timer x := 1)`},
+		{PASS, `(out timer y := -, in value timer x := (1,2,3))`},
 	}
 	testParse(t, formalPars, func(p *parser) { p.parseParameters() })
 }

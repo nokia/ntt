@@ -19,7 +19,13 @@ func (p *parser) parseExpr() ast.Expr {
 		defer un(trace(p, "Expr"))
 	}
 
-	return p.parseBinaryExpr(token.LowestPrec + 1)
+	x := p.parseBinaryExpr(token.LowestPrec + 1)
+
+	if p.tok == token.ASSIGN {
+		p.next()
+		p.parseExpr()
+	}
+	return x
 }
 
 func (p *parser) parseBinaryExpr(prec1 int) ast.Expr {
@@ -44,6 +50,9 @@ func (p *parser) parseUnaryExpr() ast.Expr {
 	case token.SUB, token.ADD, token.NOT, token.NOT4B, token.EXCL:
 		op, pos := p.tok, p.pos
 		p.next()
+		if op == token.SUB && (p.tok == token.COMMA || p.tok == token.SEMICOLON || p.tok == token.RBRACE || p.tok == token.RBRACK || p.tok == token.EOF) {
+			return nil
+		}
 		return &ast.UnaryExpr{Op: op, OpPos: pos, X: p.parseUnaryExpr()}
 	}
 	return p.parsePrimaryExpr()
@@ -79,7 +88,8 @@ func (p *parser) parseOperand() ast.Expr {
 		set := &ast.SetExpr{List: p.parseExprList()}
 		p.expect(token.RPAREN)
 		return set
-	case token.INT, token.FLOAT, token.STRING, token.BSTRING, token.MODIF, token.ANY:
+	case token.INT, token.FLOAT, token.STRING, token.BSTRING,
+		token.ANY:
 		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
 		p.next()
 		return lit
