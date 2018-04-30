@@ -146,8 +146,8 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `template(omit)    int x := ?;`},
 		{PASS, `template(value)   int x := ?;`},
 		{PASS, `template(present) int x := ?;`},
-		{FAIL, `timer x, y := 1.0, y;`}, // problem with expr list
-		{FAIL, `port P x[len], y := 1, z := 2 ;`},
+		{PASS, `timer x, y := 1.0, y;`},
+		{PASS, `port P x[len], y := 1, z := 2 ;`},
 	}
 
 	testParse(t, valueDecls, func(p *parser) { p.parseDecl() })

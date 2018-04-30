@@ -78,7 +78,7 @@ L:
 
 func (p *parser) parseOperand() ast.Expr {
 	switch p.tok {
-	case token.IDENT:
+	case token.IDENT, token.TIMER:
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		p.next()
 		return id

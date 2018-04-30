@@ -115,6 +115,7 @@ const (
 	OPTIONAL
 	OUT
 	OVERRIDE
+	PORT
 	PRESENT
 	REPEAT
 	RETURN
@@ -125,6 +126,7 @@ const (
 	SYSTEM
 	TEMPLATE
 	TESTCASE
+	TIMER
 	TYPE
 	UNION
 	VALUE
@@ -230,6 +232,7 @@ var tokens = [...]string{
 	OPTIONAL:   "optional",
 	OUT:        "out",
 	OVERRIDE:   "override",
+	PORT:       "port",
 	PRESENT:    "present",
 	REPEAT:     "repeat",
 	RETURN:     "return",
@@ -240,6 +243,7 @@ var tokens = [...]string{
 	SYSTEM:     "system",
 	TEMPLATE:   "template",
 	TESTCASE:   "testcase",
+	TIMER:      "timer",
 	TYPE:       "type",
 	UNION:      "union",
 	VALUE:      "value",

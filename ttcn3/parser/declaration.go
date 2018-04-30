@@ -9,7 +9,8 @@ func (p *parser) parseDecl() ast.Decl {
 	switch p.tok {
 	case token.TEMPLATE:
 		return p.parseTemplateDecl()
-	case token.VAR, token.CONST, token.MODULEPAR:
+	case token.VAR, token.CONST, token.MODULEPAR,
+		token.TIMER, token.PORT:
 		return p.parseValueDecl()
 	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
 		return p.parseFuncDecl()
@@ -66,7 +67,9 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 		p.next()
 	}
 
-	x.Type = p.parseTypeRef()
+	if x.Kind != token.TIMER {
+		x.Type = p.parseTypeRef()
+	}
 	x.Decls = p.parseExprList()
 
 	p.expectSemi()
