@@ -48,7 +48,7 @@ func TestWithStmts(t *testing.T) {
 		{PASS, `encode (function all)  "str";`},
 		{PASS, `encode (signature all) "str";`},
 		{PASS, `encode (modulepar all) "str";`},
-		{PASS, `encode (type all except {a,b}) "str";`}, // conflict with std
+		{PASS, `encode (type all except {a,b}) "str";`},
 	}
 
 	testParse(t, withStmts, func(p *parser) { p.parseWithStmt() })
@@ -61,6 +61,10 @@ func TestExprs(t *testing.T) {
 		{PASS, `-1 * x`},
 		{PASS, `-x * y`},
 		{PASS, `x := (1+2)*3, y:=a.f()`},
+		{PASS, `send() to 80`},
+		{PASS, `send() to v_dst`},
+		{PASS, `receive from ip.address:?`},
+		{PASS, `receive from ip.address:? -> @index x`},
 	}
 
 	testParse(t, exprs, func(p *parser) { p.parseExprList() })

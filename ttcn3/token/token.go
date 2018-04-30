@@ -133,6 +133,11 @@ const (
 	VAR
 	VARIANT
 	WHILE
+	PARAM
+	REDIRECT
+	SENDER
+	TIMESTAMP
+	TO
 	keyword_end
 )
 
@@ -250,6 +255,11 @@ var tokens = [...]string{
 	VAR:        "var",
 	VARIANT:    "variant",
 	WHILE:      "while",
+	PARAM:      "param",
+	REDIRECT:   "redirect",
+	SENDER:     "sender",
+	TIMESTAMP:  "timestamp",
+	TO:         "to",
 }
 
 // String returns the string corresponding to the token tok.

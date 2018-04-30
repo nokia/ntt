@@ -50,6 +50,7 @@ func (p *parser) parseUnaryExpr() ast.Expr {
 	case token.SUB, token.ADD, token.NOT, token.NOT4B, token.EXCL:
 		op, pos := p.tok, p.pos
 		p.next()
+		// handle unused expr '-'
 		if op == token.SUB && (p.tok == token.COMMA || p.tok == token.SEMICOLON || p.tok == token.RBRACE || p.tok == token.RBRACK || p.tok == token.EOF) {
 			return nil
 		}
@@ -73,6 +74,16 @@ L:
 			break L
 		}
 	}
+
+	if p.tok == token.TO || p.tok == token.FROM {
+		p.next()
+		p.parseExpr()
+	}
+
+	if p.tok == token.REDIRECT {
+		p.parseRedirect()
+	}
+
 	return x
 }
 
@@ -120,4 +131,38 @@ func (p *parser) parseCallExpr(x ast.Expr) ast.Expr {
 	}
 	p.expect(token.RPAREN)
 	return &ast.CallExpr{Fun: x, Args: list}
+}
+
+func (p *parser) parseRedirect() ast.Expr {
+	p.next()
+
+	if p.tok == token.VALUE {
+		p.next()
+		p.parseExprList()
+	}
+
+	if p.tok == token.PARAM {
+		p.next()
+		p.parseExprList()
+	}
+
+	if p.tok == token.SENDER {
+		p.next()
+		p.parsePrimaryExpr()
+	}
+
+	if p.tok == token.MODIF {
+		p.next()
+		if p.tok == token.VALUE {
+			p.next()
+		}
+		p.parsePrimaryExpr()
+	}
+
+	if p.tok == token.TIMESTAMP {
+		p.next()
+		p.parsePrimaryExpr()
+	}
+
+	return nil
 }
