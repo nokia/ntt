@@ -50,7 +50,6 @@ func (p *parser) parseTemplateDecl() *ast.ValueDecl {
 	p.expect(token.ASSIGN)
 	p.parseExpr()
 
-	p.expectSemi()
 	return x
 }
 
@@ -71,8 +70,6 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 		x.Type = p.parseTypeRef()
 	}
 	x.Decls = p.parseExprList()
-
-	p.expectSemi()
 	return x
 }
 
@@ -133,7 +130,6 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		x.Body = p.parseBlockStmt()
 	}
 
-	p.expectSemi()
 	return x
 }
 

@@ -6,10 +6,14 @@ import (
 )
 
 func (p *parser) parseBlockStmt() *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BlockStmt"))
+	}
+
 	x := &ast.BlockStmt{LBrace: p.pos}
 	p.expect(token.LBRACE)
 	p.openScope()
-	for p.tok != token.RBRACE {
+	for p.tok != token.EOF && p.tok != token.RBRACE {
 		x.Stmts = append(x.Stmts, p.parseStmt())
 	}
 	p.closeScope()
@@ -17,7 +21,20 @@ func (p *parser) parseBlockStmt() *ast.BlockStmt {
 	return x
 }
 
+func (p *parser) parseSimpleStmt() ast.Stmt {
+	if p.trace {
+		defer un(trace(p, "SimpleStmt"))
+	}
+
+	p.parseExpr()
+	return nil
+}
+
 func (p *parser) parseStmt() ast.Stmt {
+	if p.trace {
+		defer un(trace(p, "Stmt"))
+	}
+
 	switch p.tok {
 	case token.VAR, token.CONST:
 		p.parseDecl()
@@ -38,7 +55,9 @@ func (p *parser) parseStmt() ast.Stmt {
 		p.parseSelect()
 	case token.ALT, token.INTERLEAVE:
 		p.next()
-		p.parseAltBody()
+		p.parseBlockStmt()
+	case token.LBRACK:
+		p.parseAltGuard()
 	case token.FOR:
 		p.parseForLoop()
 	case token.WHILE:
@@ -48,7 +67,7 @@ func (p *parser) parseStmt() ast.Stmt {
 	case token.IF:
 		p.parseIfStmt()
 	default:
-		p.errorExpected(p.pos, "statement")
+		p.parseSimpleStmt()
 	}
 	p.expectSemi()
 	return nil
@@ -61,8 +80,8 @@ func (p *parser) parseForLoop() {
 		p.parseValueDecl()
 	} else {
 		p.parseExpr()
-		p.expect(token.SEMICOLON)
 	}
+	p.expect(token.SEMICOLON)
 	p.parseExpr()
 	p.expect(token.SEMICOLON)
 	p.parseExpr()
@@ -131,6 +150,21 @@ func (p *parser) parseCaseStmt() {
 	p.parseBlockStmt()
 }
 
-func (p *parser) parseAltBody() {
-	p.parseBlockStmt()
+func (p *parser) parseAltGuard() {
+	p.next()
+	if p.tok == token.ELSE {
+		p.next()
+		p.expect(token.RBRACK)
+		p.parseBlockStmt()
+		return
+	}
+
+	if p.tok != token.RBRACK {
+		p.parseExpr()
+	}
+	p.expect(token.RBRACK)
+	p.parseSimpleStmt()
+	if p.tok == token.LBRACE {
+		p.parseBlockStmt()
+	}
 }
