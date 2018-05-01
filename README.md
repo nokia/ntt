@@ -9,6 +9,11 @@ academia. Unfortunately tool support for TTCN-3 is quite antiquated.
 
 [etsi-homepage]: http://www.ttcn-3.org/
 
-Please note, that NTT is still in its early stages. Documentation and
-functionality will grow over time. If you are interested in contributing, just
-create a pull-request.
+Please note, that NTT is still work in progress. First task is to provide a
+TTCN-3 parser, which supports core language specification as well as behaviour
+types and advances parametrization.
+
+Documentation and functionality will grow over time. If you are interested in
+contributing, just create a pull-request.
+
+
