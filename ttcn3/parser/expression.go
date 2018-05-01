@@ -89,10 +89,15 @@ L:
 
 func (p *parser) parseOperand() ast.Expr {
 	switch p.tok {
-	case token.IDENT, token.TIMER:
+	case token.IDENT, token.TIMER, token.TESTCASE:
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		p.next()
 		return id
+	case token.LBRACE:
+		p.next()
+		p.parseExprList()
+		p.expect(token.RBRACE)
+		return nil
 	case token.LPAREN:
 		p.next()
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
@@ -100,7 +105,7 @@ func (p *parser) parseOperand() ast.Expr {
 		p.expect(token.RPAREN)
 		return set
 	case token.INT, token.FLOAT, token.STRING, token.BSTRING,
-		token.ANY:
+		token.ANY, token.MUL:
 		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
 		p.next()
 		return lit
