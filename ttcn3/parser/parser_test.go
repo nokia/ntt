@@ -95,6 +95,13 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `function f() mtc C {}`},
 		{PASS, `function f() runs on C mtc C system C {}`},
 		{PASS, `altstep as() { var roi[-] a[4][4]; [] receive; [else] {}}`},
+		{PASS, `external function f();`},
+		{PASS, `signature f();`},
+		{PASS, `signature f() exception (integer);`},
+		{PASS, `signature f() return int;`},
+		{PASS, `signature f() return int exception (integer, a.b[0]);`},
+		{PASS, `signature f() noblock;`},
+		{PASS, `signature f() noblock exception (integer, a.b[0]);`},
 	}
 
 	testParse(t, funcDecls, func(p *parser) { p.parseFuncDecl() })
@@ -129,6 +136,10 @@ func TestModuleDefs(t *testing.T) {
                         type      all }`},
 		{PASS, `import from m {
                         group x except { group all }, y }`},
+
+		{PASS, `friend module m;`},
+		{PASS, `public modulepar integer x;`},
+		{PASS, `private function fn() {}`},
 	}
 	testParse(t, moduleDefs, func(p *parser) { p.parseModuleDef() })
 }
@@ -163,6 +174,7 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `template(present) int x := ?;`},
 		{PASS, `timer x, y := 1.0, y;`},
 		{PASS, `port P x[len], y := 1, z := 2 ;`},
+		{PASS, `modulepar RoI[-] x, y:=23, z;`},
 	}
 
 	testParse(t, valueDecls, func(p *parser) { p.parseDecl() })
@@ -182,8 +194,53 @@ func TestFormalPars(t *testing.T) {
 	testParse(t, formalPars, func(p *parser) { p.parseParameters() })
 }
 
+func TestTypes(t *testing.T) {
+	types := []Test{
+		// Subtypes
+		{PASS, `type integer t`},
+		{PASS, `type int t (0..255)`},
+		{PASS, `type int t length(2)`},
+		{PASS, `type int t (0,1) length(2)`},
+		{PASS, `type a[0] t[len][-] (lower()..upper()) length(2)`},
+
+		// List Types
+		{PASS, `type set of int s`},
+		{PASS, `type set length(2) of int s`},
+		{PASS, `type set length(2) of int s length(2)`},
+		{PASS, `type set length(2) of int s (0,1,2) length(2)`},
+		{PASS, `type set of set of int s`},
+		{PASS, `type set length(1) of set length(2) of int() s length(3)`},
+
+		// Struct Types
+		{PASS, `type set s {}`},
+		{PASS, `type set s {int a optional }`},
+		{PASS, `type set s {set length(1) of set length(2) of int() f1[-][-] (0,1,2) length(3) optional`},
+		{PASS, `type union s {@default set of int f1 optional}`},
+		{PASS, `type enumerated a[1][2] {e, e[3], e[-](1)`},
+
+		// Port Types
+		{PASS, `type port p message {address a.b[-]}`},
+		{PASS, `type port p message {inout float, a.b[-]}`},
+		{PASS, `type port p message {map param (out int i:=1)}`},
+		{PASS, `type port p message {unmap param (out int i:=1)}`},
+		{PASS, `type port p procedure {}`},
+
+		// Component Types
+		{PASS, `type port p mixed {}`},
+		{PASS, `type component C {}`},
+		{PASS, `type component C extends C[-], mod.Base {}`},
+
+		// Behaviour Types
+		{PASS, `type function fn() runs on self return template int`},
+		{PASS, `type altstep  as() runs on self return int`},
+		{PASS, `type testcase tc() runs on C system TSI`},
+	}
+	testParse(t, types, func(p *parser) { p.parseType() })
+}
+
 func TestStmts(t *testing.T) {
 	stmts := []Test{
+		// Structural Statements
 		{PASS, `repeat;`},
 		{PASS, `break;`},
 		{PASS, `continue;`},
@@ -203,12 +260,16 @@ func TestStmts(t *testing.T) {
 		{PASS, `interleave {}`},
 		{PASS, `alt {}`},
 		{PASS, `alt { [] receive; [23<foo()] p.timeout { var i x:=23; } [else] {}}`},
+
+		// Value Declaration Statements
+		{PASS, `var comp C := C.create;`},
+		{PASS, `var comp C := C.create("han solo") alive;`},
+
+		// Expr Statements
 		{PASS, `send() to 80;`},
 		{PASS, `send() to v_dst;`},
 		{PASS, `receive from ip.address:?;`},
 		{PASS, `receive from ip.address:? -> @index x;`},
-		{PASS, `var comp C := C.create;`},
-		{PASS, `var comp C := C.create("han solo") alive;`},
 		{PASS, `testcase.stop;`},
 		{PASS, `stop;`},
 		{PASS, `map (system:p1, c:p);`},
