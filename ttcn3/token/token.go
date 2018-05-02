@@ -81,63 +81,92 @@ const (
 	XOR4B // xor4b
 	NOT4B // not4b
 
+	ALIVE
 	ALL
 	ALT
 	ALTSTEP
 	BREAK
 	CASE
+	COMPONENT
 	CONST
 	CONTINUE
 	DISPLAY
 	DO
 	ELSE
 	ENCODE
+	ENUMERATION
+	ERROR
 	EXCEPT
+	EXCEPTION
+	EXTENDS
 	EXTENSION
+	EXTERNAL
+	FAIL
+	FALSE
 	FOR
+	FRIEND
 	FROM
 	FUNCTION
 	GOTO
 	GROUP
 	IF
+	IFPRESENT
 	IMPORT
 	IN
+	INCONC
 	INOUT
 	INTERLEAVE
 	LABEL
 	LANGUAGE
+	LENGTH
+	MAP
+	MESSAGE
+	MIXED
 	MODIFIES
 	MODULE
 	MODULEPAR
 	MTC
+	NAN
+	NOBLOCK
+	NONE
+	NULL
+	OF
 	OMIT
 	ON
 	OPTIONAL
 	OUT
 	OVERRIDE
+	PARAM
+	PASS
 	PORT
 	PRESENT
+	PRIVATE
+	PROCEDURE
+	PUBLIC
+	RECORD
+	REDIRECT
 	REPEAT
 	RETURN
 	RUNS
 	SELECT
+	SENDER
+	SET
 	SIGNATURE
 	STEPSIZE
 	SYSTEM
 	TEMPLATE
 	TESTCASE
 	TIMER
+	TIMESTAMP
+	TO
+	TRUE
 	TYPE
 	UNION
+	UNMAP
 	VALUE
 	VAR
 	VARIANT
 	WHILE
-	PARAM
-	REDIRECT
-	SENDER
-	TIMESTAMP
-	TO
 	keyword_end
 )
 
@@ -203,63 +232,92 @@ var tokens = [...]string{
 	XOR4B: "xor4b",
 	NOT4B: "not4b",
 
-	ALL:        "all",
-	ALT:        "alt",
-	ALTSTEP:    "altstep",
-	BREAK:      "break",
-	CASE:       "case",
-	CONST:      "const",
-	CONTINUE:   "continue",
-	DISPLAY:    "display",
-	DO:         "do",
-	ELSE:       "else",
-	ENCODE:     "encode",
-	EXCEPT:     "except",
-	EXTENSION:  "extension",
-	FOR:        "for",
-	FROM:       "from",
-	FUNCTION:   "function",
-	GOTO:       "goto",
-	GROUP:      "group",
-	IF:         "if",
-	IMPORT:     "import",
-	IN:         "in",
-	INOUT:      "inout",
-	INTERLEAVE: "interleave",
-	LABEL:      "label",
-	LANGUAGE:   "language",
-	MODIFIES:   "modifies",
-	MODULE:     "module",
-	MODULEPAR:  "modulepar",
-	MTC:        "mtc",
-	OMIT:       "omit",
-	ON:         "on",
-	OPTIONAL:   "optional",
-	OUT:        "out",
-	OVERRIDE:   "override",
-	PORT:       "port",
-	PRESENT:    "present",
-	REPEAT:     "repeat",
-	RETURN:     "return",
-	RUNS:       "runs",
-	SELECT:     "select",
-	SIGNATURE:  "signature",
-	STEPSIZE:   "stepsize",
-	SYSTEM:     "system",
-	TEMPLATE:   "template",
-	TESTCASE:   "testcase",
-	TIMER:      "timer",
-	TYPE:       "type",
-	UNION:      "union",
-	VALUE:      "value",
-	VAR:        "var",
-	VARIANT:    "variant",
-	WHILE:      "while",
-	PARAM:      "param",
-	REDIRECT:   "redirect",
-	SENDER:     "sender",
-	TIMESTAMP:  "timestamp",
-	TO:         "to",
+	ALIVE:       "alive",
+	ALL:         "all",
+	ALT:         "alt",
+	ALTSTEP:     "altstep",
+	BREAK:       "break",
+	CASE:        "case",
+	COMPONENT:   "component",
+	CONST:       "const",
+	CONTINUE:    "continue",
+	DISPLAY:     "display",
+	DO:          "do",
+	ELSE:        "else",
+	ENCODE:      "encode",
+	ENUMERATION: "enumeration",
+	ERROR:       "error",
+	EXCEPT:      "except",
+	EXCEPTION:   "exception",
+	EXTENDS:     "extends",
+	EXTENSION:   "extension",
+	EXTERNAL:    "external",
+	FAIL:        "fail",
+	FALSE:       "false",
+	FOR:         "for",
+	FRIEND:      "friend",
+	FROM:        "from",
+	FUNCTION:    "function",
+	GOTO:        "goto",
+	GROUP:       "group",
+	IF:          "if",
+	IFPRESENT:   "ifpresent",
+	IMPORT:      "import",
+	IN:          "in",
+	INCONC:      "inconc",
+	INOUT:       "inout",
+	INTERLEAVE:  "interleave",
+	LABEL:       "label",
+	LANGUAGE:    "language",
+	LENGTH:      "length",
+	MAP:         "map",
+	MESSAGE:     "message",
+	MIXED:       "mixed",
+	MODIFIES:    "modifies",
+	MODULE:      "module",
+	MODULEPAR:   "modulepar",
+	MTC:         "mtc",
+	NAN:         "not_a_number",
+	NOBLOCK:     "noblock",
+	NONE:        "none",
+	NULL:        "null",
+	OF:          "of",
+	OMIT:        "omit",
+	ON:          "on",
+	OPTIONAL:    "optional",
+	OUT:         "out",
+	OVERRIDE:    "override",
+	PARAM:       "param",
+	PASS:        "pass",
+	PORT:        "port",
+	PRESENT:     "present",
+	PRIVATE:     "private",
+	PROCEDURE:   "procedure",
+	PUBLIC:      "public",
+	RECORD:      "record",
+	REDIRECT:    "redirect",
+	REPEAT:      "repeat",
+	RETURN:      "return",
+	RUNS:        "runs",
+	SELECT:      "select",
+	SENDER:      "sender",
+	SET:         "set",
+	SIGNATURE:   "signature",
+	STEPSIZE:    "stepsize",
+	SYSTEM:      "system",
+	TEMPLATE:    "template",
+	TESTCASE:    "testcase",
+	TIMER:       "timer",
+	TIMESTAMP:   "timestamp",
+	TO:          "to",
+	TRUE:        "true",
+	TYPE:        "type",
+	UNION:       "union",
+	UNMAP:       "unmap",
+	VALUE:       "value",
+	VAR:         "var",
+	VARIANT:     "variant",
+	WHILE:       "while",
 }
 
 // String returns the string corresponding to the token tok.
