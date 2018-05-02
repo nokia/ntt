@@ -70,6 +70,9 @@ L:
 			x = p.parseIndexExpr(x)
 		case token.LPAREN:
 			x = p.parseCallExpr(x)
+		case token.COLON:
+			p.next()
+			p.parseExpr()
 		default:
 			break L
 		}
@@ -89,13 +92,15 @@ L:
 
 func (p *parser) parseOperand() ast.Expr {
 	switch p.tok {
-	case token.IDENT, token.TIMER, token.TESTCASE:
+	case token.IDENT, token.TIMER, token.TESTCASE, token.SYSTEM, token.MTC:
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		p.next()
 		return id
 	case token.LBRACE:
 		p.next()
-		p.parseExprList()
+		if p.tok != token.RBRACE {
+			p.parseExprList()
+		}
 		p.expect(token.RBRACE)
 		return nil
 	case token.LPAREN:
