@@ -246,6 +246,10 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 
 	// fraction
 	if s.ch == '.' {
+		// check for RANGE token (example: 0..23)
+		if s.rdOffset < len(s.src) && s.src[s.rdOffset] == '.' {
+			goto out
+		}
 		tok = token.FLOAT
 		s.next()
 		s.scanDigits()
@@ -271,6 +275,7 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 		s.error(offs, "malformed number")
 	}
 
+out:
 	return tok, string(s.src[offs:s.offset])
 }
 
