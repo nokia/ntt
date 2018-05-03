@@ -81,6 +81,7 @@ const (
 	XOR4B // xor4b
 	NOT4B // not4b
 
+	ADDRESS
 	ALIVE
 	ALL
 	ALT
@@ -94,7 +95,7 @@ const (
 	DO
 	ELSE
 	ENCODE
-	ENUMERATION
+	ENUMERATED
 	ERROR
 	EXCEPT
 	EXCEPTION
@@ -232,92 +233,93 @@ var tokens = [...]string{
 	XOR4B: "xor4b",
 	NOT4B: "not4b",
 
-	ALIVE:       "alive",
-	ALL:         "all",
-	ALT:         "alt",
-	ALTSTEP:     "altstep",
-	BREAK:       "break",
-	CASE:        "case",
-	COMPONENT:   "component",
-	CONST:       "const",
-	CONTINUE:    "continue",
-	DISPLAY:     "display",
-	DO:          "do",
-	ELSE:        "else",
-	ENCODE:      "encode",
-	ENUMERATION: "enumeration",
-	ERROR:       "error",
-	EXCEPT:      "except",
-	EXCEPTION:   "exception",
-	EXTENDS:     "extends",
-	EXTENSION:   "extension",
-	EXTERNAL:    "external",
-	FAIL:        "fail",
-	FALSE:       "false",
-	FOR:         "for",
-	FRIEND:      "friend",
-	FROM:        "from",
-	FUNCTION:    "function",
-	GOTO:        "goto",
-	GROUP:       "group",
-	IF:          "if",
-	IFPRESENT:   "ifpresent",
-	IMPORT:      "import",
-	IN:          "in",
-	INCONC:      "inconc",
-	INOUT:       "inout",
-	INTERLEAVE:  "interleave",
-	LABEL:       "label",
-	LANGUAGE:    "language",
-	LENGTH:      "length",
-	MAP:         "map",
-	MESSAGE:     "message",
-	MIXED:       "mixed",
-	MODIFIES:    "modifies",
-	MODULE:      "module",
-	MODULEPAR:   "modulepar",
-	MTC:         "mtc",
-	NAN:         "not_a_number",
-	NOBLOCK:     "noblock",
-	NONE:        "none",
-	NULL:        "null",
-	OF:          "of",
-	OMIT:        "omit",
-	ON:          "on",
-	OPTIONAL:    "optional",
-	OUT:         "out",
-	OVERRIDE:    "override",
-	PARAM:       "param",
-	PASS:        "pass",
-	PORT:        "port",
-	PRESENT:     "present",
-	PRIVATE:     "private",
-	PROCEDURE:   "procedure",
-	PUBLIC:      "public",
-	RECORD:      "record",
-	REDIRECT:    "redirect",
-	REPEAT:      "repeat",
-	RETURN:      "return",
-	RUNS:        "runs",
-	SELECT:      "select",
-	SENDER:      "sender",
-	SET:         "set",
-	SIGNATURE:   "signature",
-	STEPSIZE:    "stepsize",
-	SYSTEM:      "system",
-	TEMPLATE:    "template",
-	TESTCASE:    "testcase",
-	TIMER:       "timer",
-	TIMESTAMP:   "timestamp",
-	TO:          "to",
-	TRUE:        "true",
-	TYPE:        "type",
-	UNION:       "union",
-	UNMAP:       "unmap",
-	VALUE:       "value",
-	VAR:         "var",
-	VARIANT:     "variant",
-	WHILE:       "while",
+	ADDRESS:    "address",
+	ALIVE:      "alive",
+	ALL:        "all",
+	ALT:        "alt",
+	ALTSTEP:    "altstep",
+	BREAK:      "break",
+	CASE:       "case",
+	COMPONENT:  "component",
+	CONST:      "const",
+	CONTINUE:   "continue",
+	DISPLAY:    "display",
+	DO:         "do",
+	ELSE:       "else",
+	ENCODE:     "encode",
+	ENUMERATED: "enumerated",
+	ERROR:      "error",
+	EXCEPT:     "except",
+	EXCEPTION:  "exception",
+	EXTENDS:    "extends",
+	EXTENSION:  "extension",
+	EXTERNAL:   "external",
+	FAIL:       "fail",
+	FALSE:      "false",
+	FOR:        "for",
+	FRIEND:     "friend",
+	FROM:       "from",
+	FUNCTION:   "function",
+	GOTO:       "goto",
+	GROUP:      "group",
+	IF:         "if",
+	IFPRESENT:  "ifpresent",
+	IMPORT:     "import",
+	IN:         "in",
+	INCONC:     "inconc",
+	INOUT:      "inout",
+	INTERLEAVE: "interleave",
+	LABEL:      "label",
+	LANGUAGE:   "language",
+	LENGTH:     "length",
+	MAP:        "map",
+	MESSAGE:    "message",
+	MIXED:      "mixed",
+	MODIFIES:   "modifies",
+	MODULE:     "module",
+	MODULEPAR:  "modulepar",
+	MTC:        "mtc",
+	NAN:        "not_a_number",
+	NOBLOCK:    "noblock",
+	NONE:       "none",
+	NULL:       "null",
+	OF:         "of",
+	OMIT:       "omit",
+	ON:         "on",
+	OPTIONAL:   "optional",
+	OUT:        "out",
+	OVERRIDE:   "override",
+	PARAM:      "param",
+	PASS:       "pass",
+	PORT:       "port",
+	PRESENT:    "present",
+	PRIVATE:    "private",
+	PROCEDURE:  "procedure",
+	PUBLIC:     "public",
+	RECORD:     "record",
+	REDIRECT:   "redirect",
+	REPEAT:     "repeat",
+	RETURN:     "return",
+	RUNS:       "runs",
+	SELECT:     "select",
+	SENDER:     "sender",
+	SET:        "set",
+	SIGNATURE:  "signature",
+	STEPSIZE:   "stepsize",
+	SYSTEM:     "system",
+	TEMPLATE:   "template",
+	TESTCASE:   "testcase",
+	TIMER:      "timer",
+	TIMESTAMP:  "timestamp",
+	TO:         "to",
+	TRUE:       "true",
+	TYPE:       "type",
+	UNION:      "union",
+	UNMAP:      "unmap",
+	VALUE:      "value",
+	VAR:        "var",
+	VARIANT:    "variant",
+	WHILE:      "while",
 }
 
 // String returns the string corresponding to the token tok.
@@ -357,34 +359,36 @@ func (tok Token) Precedence() int {
 	switch tok {
 	case ASSIGN:
 		return 1
-	case EXCL:
+	case RANGE:
 		return 2
-	case OR:
+	case EXCL:
 		return 3
-	case XOR:
+	case OR:
 		return 4
-	case AND:
+	case XOR:
 		return 5
-	case NOT:
+	case AND:
 		return 6
-	case EQ, NE:
+	case NOT:
 		return 7
-	case LT, LE, GT, GE:
+	case EQ, NE:
 		return 8
-	case SHR, SHL, ROR, ROL:
+	case LT, LE, GT, GE:
 		return 9
-	case OR4B:
+	case SHR, SHL, ROR, ROL:
 		return 10
-	case XOR4B:
+	case OR4B:
 		return 11
-	case AND4B:
+	case XOR4B:
 		return 12
-	case NOT4B:
+	case AND4B:
 		return 13
-	case ADD, SUB, CONCAT:
+	case NOT4B:
 		return 14
-	case MUL, DIV, REM, MOD:
+	case ADD, SUB, CONCAT:
 		return 15
+	case MUL, DIV, REM, MOD:
+		return 16
 	}
 	return LowestPrec
 }

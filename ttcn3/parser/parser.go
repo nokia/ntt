@@ -465,7 +465,7 @@ func (p *parser) expect(tok token.Token) token.Pos {
 
 func (p *parser) expectSemi() {
 	// semicolon is optional before a closing '}'
-	if !p.seenBrace && p.tok != token.RBRACE {
+	if !p.seenBrace && p.tok != token.RBRACE && p.tok != token.EOF {
 		switch p.tok {
 		case token.SEMICOLON:
 			p.next()
