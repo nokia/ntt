@@ -25,6 +25,11 @@ func (p *parser) parseExpr() ast.Expr {
 		p.next()
 		p.parseExpr()
 	}
+
+	if p.tok == token.ALIVE {
+		p.next()
+	}
+
 	return x
 }
 
@@ -92,7 +97,20 @@ L:
 
 func (p *parser) parseOperand() ast.Expr {
 	switch p.tok {
-	case token.IDENT, token.TIMER, token.TESTCASE, token.SYSTEM, token.MTC:
+	case token.ANYKW, token.ALL:
+		p.next()
+		switch p.tok {
+		case token.COMPONENT, token.PORT, token.TIMER:
+			p.next()
+			return nil
+		case token.FROM:
+			p.next()
+			p.parsePrimaryExpr()
+			return nil
+		}
+		p.errorExpected(p.pos, "'component', 'port', 'timer' or 'from'")
+
+	case token.IDENT, token.TIMER, token.TESTCASE, token.SYSTEM, token.MTC, token.ADDRESS:
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		p.next()
 		return id
@@ -114,9 +132,10 @@ func (p *parser) parseOperand() ast.Expr {
 		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
 		p.next()
 		return lit
+	default:
+		p.errorExpected(p.pos, "operand")
 	}
 
-	p.errorExpected(p.pos, "operand")
 	return nil
 }
 

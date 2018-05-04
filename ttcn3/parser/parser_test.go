@@ -69,7 +69,7 @@ func TestExprs(t *testing.T) {
 		{PASS, `t ifpresent`},
 		{PASS, `system:p`},
 		{FAIL, `modifies t:=23`},
-		{FAIL, `complement(all from t)`},
+		{PASS, `complement(all from t)`},
 		{PASS, `b := any from c.running -> @index value i`},
 		{PASS, `p := decmatch M: {f1:= 10, f2 := '1001'B}`},
 		{PASS, `p := decmatch ("UTF-8") M: {f1:= 10, f2 := '1001'B}`},

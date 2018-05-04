@@ -86,6 +86,7 @@ const (
 	ALL
 	ALT
 	ALTSTEP
+	ANYKW
 	BREAK
 	CASE
 	COMPONENT
@@ -238,6 +239,7 @@ var tokens = [...]string{
 	ALL:        "all",
 	ALT:        "alt",
 	ALTSTEP:    "altstep",
+	ANYKW:      "any",
 	BREAK:      "break",
 	CASE:       "case",
 	COMPONENT:  "component",
