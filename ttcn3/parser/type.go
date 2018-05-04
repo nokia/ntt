@@ -31,6 +31,8 @@ func (p *parser) parseType() ast.Decl {
 		p.parseComponentType()
 	case token.FUNCTION, token.ALTSTEP, token.TESTCASE:
 		p.parseBehaviourType()
+	default:
+		p.errorExpected(p.pos, "type definition")
 	}
 	p.expectSemi()
 	return nil
@@ -40,7 +42,39 @@ func (p *parser) parseNestedType() {
 	if p.trace {
 		defer un(trace(p, "NestedType"))
 	}
-	p.next()
+	switch p.tok {
+	case token.IDENT:
+		p.parseTypeRef()
+	case token.UNION:
+		p.next()
+		p.parseNestedStructType()
+	case token.SET, token.RECORD:
+		p.next()
+		if p.tok == token.LBRACE {
+			p.parseNestedStructType()
+			break
+		}
+		p.parseNestedListType()
+	case token.ENUMERATED:
+		p.parseNestedEnumType()
+	default:
+		p.errorExpected(p.pos, "type definition")
+	}
+}
+
+func (p *parser) parseNestedStructType() {
+	if p.trace {
+		defer un(trace(p, "NestedStructType"))
+	}
+	p.expect(token.LBRACE)
+	for p.tok != token.RBRACE {
+		p.parseStructField()
+		if p.tok != token.COMMA {
+			break
+		}
+		p.next()
+	}
+	p.expect(token.RBRACE)
 }
 
 func (p *parser) parseStructType() {
@@ -67,33 +101,49 @@ func (p *parser) parseStructField() {
 		p.next() // @default
 	}
 	p.parseNestedType()
-	p.parseIdent()
+	p.parsePrimaryExpr()
+	p.parseConstraint()
+
 	if p.tok == token.OPTIONAL {
 		p.next()
 	}
+}
+
+func (p *parser) parseNestedListType() {
+	if p.trace {
+		defer un(trace(p, "NestedListType"))
+	}
+	p.parseLength()
+	p.expect(token.OF)
+	p.parseNestedType()
 }
 
 func (p *parser) parseListType() {
 	if p.trace {
 		defer un(trace(p, "ListType"))
 	}
-	if p.tok == token.LENGTH {
-		p.next()
-		p.expect(token.LPAREN)
-		p.parseExpr()
-		p.expect(token.RPAREN)
-	}
+	p.parseLength()
 
 	p.expect(token.OF)
 	p.parseNestedType()
-	p.parseIdent()
+	p.parsePrimaryExpr()
+	p.parseConstraint()
+}
 
-	if p.tok == token.LENGTH {
-		p.next()
-		p.expect(token.LPAREN)
-		p.parseExpr()
-		p.expect(token.RPAREN)
+func (p *parser) parseNestedEnumType() {
+	if p.trace {
+		defer un(trace(p, "NestedEnumType"))
 	}
+	p.next()
+	p.expect(token.LBRACE)
+	for p.tok != token.RBRACE {
+		p.parseExpr()
+		if p.tok != token.COMMA {
+			break
+		}
+		p.next()
+	}
+	p.expect(token.RBRACE)
 }
 
 func (p *parser) parseEnumType() {
@@ -101,6 +151,16 @@ func (p *parser) parseEnumType() {
 		defer un(trace(p, "EnumType"))
 	}
 	p.next()
+	p.parseIdent()
+	p.expect(token.LBRACE)
+	for p.tok != token.RBRACE {
+		p.parseExpr()
+		if p.tok != token.COMMA {
+			break
+		}
+		p.next()
+	}
+	p.expect(token.RBRACE)
 }
 
 func (p *parser) parsePortType() {
@@ -182,22 +242,32 @@ func (p *parser) parseSubType() *ast.SubType {
 		defer un(trace(p, "SubType"))
 	}
 
-	p.parseTypeRef()
-	p.parseIdent()
+	p.parseNestedType()
+	p.parsePrimaryExpr()
+	p.parseConstraint()
+
+	return nil
+}
+
+func (p *parser) parseConstraint() {
+	// TODO(mef) fix constraints consumed by previous PrimaryExpr
+
 	if p.tok == token.LPAREN {
 		p.next()
 		p.parseExprList()
 		p.expect(token.RPAREN)
 	}
 
+	p.parseLength()
+}
+
+func (p *parser) parseLength() {
 	if p.tok == token.LENGTH {
 		p.next()
 		p.expect(token.LPAREN)
 		p.parseExpr()
 		p.expect(token.RPAREN)
 	}
-
-	return nil
 }
 
 func (p *parser) parseTypeRef() ast.Expr {

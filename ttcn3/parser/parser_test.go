@@ -197,7 +197,7 @@ func TestFormalPars(t *testing.T) {
 func TestTypes(t *testing.T) {
 	types := []Test{
 		// Subtypes
-		{PASS, `type integer t`},
+		{PASS, `type integer t;`},
 		{PASS, `type int t (0..255)`},
 		{PASS, `type int t length(2)`},
 		{PASS, `type a[0] t (0,1) length(2)`},
@@ -213,9 +213,9 @@ func TestTypes(t *testing.T) {
 		// Struct Types
 		{PASS, `type set s {}`},
 		{PASS, `type set s {int a optional }`},
-		{PASS, `type set s {set length(1) of set length(2) of int() f1[-][-] length(3) optional`},
+		{PASS, `type set s {set length(1) of set length(2) of int() f1[-][-] length(3) optional}`},
 		{PASS, `type union s {@default set of int f1 optional}`},
-		{PASS, `type enumerated a[1][2] {e, e[3], e[-](1)`},
+		{PASS, `type enumerated a {e, e(1), e(1)}`},
 
 		// Port Types
 		{PASS, `type port p message {address a.b[-]}`},
@@ -292,7 +292,7 @@ func TestStmts(t *testing.T) {
 
 func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 	for _, tt := range tests {
-		err := anyParse(tt.input, f)
+		err := anyParse(tt.input, f, testing.Verbose())
 		if tt.expect == PASS && err != nil {
 			t.Errorf("Parse(%#q):\n\t%v\n\n", tt.input, err)
 		}
@@ -302,9 +302,14 @@ func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 	}
 }
 
-func anyParse(input string, f func(p *parser)) error {
+func anyParse(input string, f func(p *parser), trace bool) error {
+	mode := Mode(Trace)
+	if !trace {
+		mode = 0
+	}
+
 	var p parser
-	p.init(token.NewFileSet(), "", []byte(input), 0)
+	p.init(token.NewFileSet(), "", []byte(input), mode)
 	f(&p)
 	p.errors.Sort()
 	return p.errors.Err()
