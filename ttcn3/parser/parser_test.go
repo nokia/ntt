@@ -309,7 +309,7 @@ func anyParse(input string, f func(p *parser), trace bool) error {
 	}
 
 	var p parser
-	p.init(token.NewFileSet(), "", []byte(input), mode)
+	p.init(token.NewFileSet(), "", []byte(input), mode, nil)
 	f(&p)
 	p.errors.Sort()
 	return p.errors.Err()

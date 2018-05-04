@@ -70,7 +70,7 @@ const (
 // representing the fragments of erroneous source code). Multiple errors
 // are returned via a scanner.ErrorList which is sorted by file position.
 //
-func ParseModule(fset *token.FileSet, filename string, src interface{}, mode Mode) (f *ast.Module, err error) {
+func ParseModule(fset *token.FileSet, filename string, src interface{}, mode Mode, eh scanner.ErrorHandler) (f *ast.Module, err error) {
 	if fset == nil {
 		panic("parser.ParseModule: no token.FileSet provided (fset == nil)")
 	}
@@ -106,7 +106,7 @@ func ParseModule(fset *token.FileSet, filename string, src interface{}, mode Mod
 	}()
 
 	// parse source
-	p.init(fset, filename, text, mode)
+	p.init(fset, filename, text, mode, eh)
 	f = p.parseModule()
 
 	return
@@ -159,14 +159,20 @@ type parser struct {
 	targetStack [][]*ast.Ident // stack of unresolved labels
 }
 
-func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mode) {
+func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mode, eh scanner.ErrorHandler) {
 	p.file = fset.AddFile(filename, -1, len(src))
 	var m scanner.Mode
 	if mode&ParseComments != 0 {
 		m = scanner.ScanComments
 	}
-	eh := func(pos token.Position, msg string) { p.errors.Add(pos, msg) }
-	p.scanner.Init(p.file, src, eh, m)
+
+	eh2 := func(pos token.Position, msg string) {
+		if eh != nil {
+			eh(pos, msg)
+		}
+		p.errors.Add(pos, msg)
+	}
+	p.scanner.Init(p.file, src, eh2, m)
 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)

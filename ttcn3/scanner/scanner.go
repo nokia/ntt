@@ -24,7 +24,7 @@ type Scanner struct {
 	file *token.File  // source file handle
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
-	err  ErrorHandler // error reporting; or nil
+	Err  ErrorHandler // error reporting; or nil
 	mode Mode         // scanning mode
 
 	// scanning state
@@ -90,12 +90,12 @@ const (
 // line information which is already present is ignored. Init causes a
 // panic if the file size does not match the src size.
 //
-// Calls to Scan will invoke the error handler err if they encounter a
-// syntax error and err is not nil. Also, for each error encountered,
+// Calls to Scan will invoke the error handler Err if they encounter a
+// syntax error and Err is not nil. Also, for each error encountered,
 // the Scanner field ErrorCount is incremented by one. The mode parameter
 // determines how comments are handled.
 //
-// Note that Init may call err if there is an error in the first character
+// Note that Init may call Err if there is an error in the first character
 // of the file.
 //
 func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
@@ -106,7 +106,7 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	s.file = file
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
-	s.err = err
+	s.Err = err
 	s.mode = mode
 
 	s.ch = ' '
@@ -122,8 +122,8 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 }
 
 func (s *Scanner) error(offs int, msg string) {
-	if s.err != nil {
-		s.err(s.file.Position(s.file.Pos(offs)), msg)
+	if s.Err != nil {
+		s.Err(s.file.Position(s.file.Pos(offs)), msg)
 	}
 	s.ErrorCount++
 }
