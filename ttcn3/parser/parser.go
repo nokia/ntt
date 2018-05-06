@@ -898,7 +898,7 @@ func (p *parser) parseImport() ast.Decl {
 
 func (p *parser) parseImportSpec() {
 	p.expect(token.LBRACE)
-	for p.tok != token.EOF && p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseImportStmt()
 	}
 	p.expect(token.RBRACE)
@@ -943,7 +943,7 @@ func (p *parser) parseImportStmt() {
 func (p *parser) parseExceptSpec() {
 	p.next()
 	p.expect(token.LBRACE)
-	for p.tok != token.EOF && p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseExceptStmt()
 	}
 	p.expect(token.RBRACE)
@@ -1155,7 +1155,7 @@ func (p *parser) parseNestedStructType() {
 		defer un(trace(p, "NestedStructType"))
 	}
 	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseStructField()
 		if p.tok != token.COMMA {
 			break
@@ -1171,7 +1171,7 @@ func (p *parser) parseStructType() {
 	}
 	p.parseIdent()
 	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseStructField()
 		if p.tok != token.COMMA {
 			break
@@ -1237,7 +1237,7 @@ func (p *parser) parseNestedEnumType() {
 	}
 	p.next()
 	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseExpr()
 		if p.tok != token.COMMA {
 			break
@@ -1254,7 +1254,7 @@ func (p *parser) parseEnumType() {
 	p.next()
 	p.parseIdent()
 	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseExpr()
 		if p.tok != token.COMMA {
 			break
@@ -1284,7 +1284,7 @@ func (p *parser) parsePortType() {
 	}
 
 	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parsePortAttribute()
 		p.expectSemi()
 	}
@@ -1714,7 +1714,7 @@ func (p *parser) parseBlockStmt() *ast.BlockStmt {
 
 	x := &ast.BlockStmt{LBrace: p.pos}
 	p.expect(token.LBRACE)
-	for p.tok != token.EOF && p.tok != token.RBRACE {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Stmts = append(x.Stmts, p.parseStmt())
 	}
 	p.expect(token.RBRACE)
