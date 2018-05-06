@@ -27,6 +27,12 @@ func (p *parser) parseSimpleStmt() ast.Stmt {
 	}
 
 	p.parseExpr()
+
+	// for call-statement, note conflict in alt-context.
+	if p.tok == token.LBRACE {
+		p.parseBlockStmt()
+	}
+
 	return nil
 }
 
