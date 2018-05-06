@@ -108,7 +108,7 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `signature f() noblock exception (integer, a.b[0]);`},
 	}
 
-	testParse(t, funcDecls, func(p *parser) { p.parseFuncDecl() })
+	testParse(t, funcDecls, func(p *parser) { p.parseDecl() })
 }
 
 func TestModuleDefs(t *testing.T) {
@@ -212,7 +212,7 @@ func TestTypes(t *testing.T) {
 		{PASS, `type set of int s`},
 		{PASS, `type set length(2) of int s`},
 		{PASS, `type set length(2) of int s length(2)`},
-		//{PASS, `type set length(2) of int s (0,1,2) length(2)`},
+		{PASS, `type set length(2) of int s (0,1,2) length(2)`},
 		{PASS, `type set of set of int s`},
 		{PASS, `type set length(1) of set length(2) of int() s length(3)`},
 

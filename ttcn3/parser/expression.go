@@ -56,6 +56,13 @@ func (p *parser) parseUnaryExpr() ast.Expr {
 			return nil
 		}
 		return &ast.UnaryExpr{Op: op, OpPos: pos, X: p.parseUnaryExpr()}
+
+	case token.MODIFIES:
+		p.next()
+		p.parsePrimaryExpr()
+		p.expect(token.ASSIGN)
+		p.parseExpr()
+		return nil
 	}
 	return p.parsePrimaryExpr()
 }
@@ -160,6 +167,28 @@ func (p *parser) parseOperand() ast.Expr {
 		}
 		p.expect(token.RBRACE)
 		return nil
+	case token.LPAREN:
+		p.next()
+		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
+		set := &ast.SetExpr{List: p.parseExprList()}
+		p.expect(token.RPAREN)
+		return set
+	case token.INT, token.FLOAT, token.STRING, token.BSTRING,
+		token.ANY, token.MUL,
+		token.TRUE, token.FALSE,
+		token.PASS, token.FAIL, token.NONE, token.INCONC, token.ERROR,
+		token.NAN:
+		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
+		p.next()
+		return lit
+	case token.REGEXP:
+		p.next()
+		if p.tok == token.MODIF {
+			p.next()
+		}
+		p.expect(token.LPAREN)
+		p.parseExprList()
+		p.expect(token.RPAREN)
 	case token.PATTERN:
 		p.next()
 		if p.tok == token.MODIF {
@@ -182,20 +211,6 @@ func (p *parser) parseOperand() ast.Expr {
 			p.expect(token.RPAREN)
 		}
 		p.parseExpr()
-	case token.LPAREN:
-		p.next()
-		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
-		set := &ast.SetExpr{List: p.parseExprList()}
-		p.expect(token.RPAREN)
-		return set
-	case token.INT, token.FLOAT, token.STRING, token.BSTRING,
-		token.ANY, token.MUL,
-		token.TRUE, token.FALSE,
-		token.PASS, token.FAIL, token.NONE, token.INCONC, token.ERROR,
-		token.NAN:
-		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
-		p.next()
-		return lit
 	default:
 		p.errorExpected(p.pos, "operand")
 	}

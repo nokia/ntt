@@ -15,6 +15,9 @@ func (p *parser) parseDecl() ast.Decl {
 		return p.parseValueDecl()
 	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
 		return p.parseFuncDecl()
+	case token.EXTERNAL:
+		p.next()
+		return p.parseExtFuncDecl()
 	case token.SIGNATURE:
 		return p.parseSignatureDecl()
 	default:
@@ -162,6 +165,40 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		x.Body = p.parseBlockStmt()
 	}
 
+	p.parseWith()
+	return x
+}
+
+func (p *parser) parseExtFuncDecl() *ast.FuncDecl {
+	if p.trace {
+		defer un(trace(p, "ExtFuncDecl"))
+	}
+
+	x := &ast.FuncDecl{FuncPos: p.pos, Kind: p.tok}
+	p.next()
+	x.Name = p.parseIdent()
+
+	if p.tok == token.MODIF {
+		p.next()
+	}
+
+	x.Params = p.parseParameters()
+	if p.tok == token.RUNS {
+		p.next()
+		p.expect(token.ON)
+		x.RunsOn = p.parseTypeRef()
+	}
+	if p.tok == token.MTC {
+		p.next()
+		x.Mtc = p.parseTypeRef()
+	}
+	if p.tok == token.SYSTEM {
+		p.next()
+		x.System = p.parseTypeRef()
+	}
+	if p.tok == token.RETURN {
+		x.Return = p.parseReturn()
+	}
 	p.parseWith()
 	return x
 }

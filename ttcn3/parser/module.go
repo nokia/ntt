@@ -50,8 +50,15 @@ func (p *parser) parseLanguageSpec() {
 
 func (p *parser) parseModuleDef() ast.Decl {
 	switch p.tok {
-	case token.PRIVATE, token.PUBLIC, token.FRIEND:
+	case token.PRIVATE, token.PUBLIC:
 		p.next()
+	case token.FRIEND:
+		p.next()
+		if p.tok == token.MODULE {
+			p.parseFriend()
+			p.expectSemi()
+			return nil
+		}
 	}
 
 	switch p.tok {
@@ -59,6 +66,9 @@ func (p *parser) parseModuleDef() ast.Decl {
 		p.parseImport()
 	case token.GROUP:
 		p.parseGroup()
+	case token.FRIEND:
+		p.next()
+		p.parseFriend()
 	case token.TYPE:
 		p.parseType()
 	case token.TEMPLATE:
@@ -74,6 +84,16 @@ func (p *parser) parseModuleDef() ast.Decl {
 	case token.CONTROL:
 		p.next()
 		p.parseBlockStmt()
+	case token.EXTERNAL:
+		p.next()
+		switch p.tok {
+		case token.FUNCTION:
+			p.parseExtFuncDecl()
+		case token.CONST:
+			p.parseValueDecl()
+		default:
+			p.errorExpected(p.pos, "'function'")
+		}
 	default:
 		p.errorExpected(p.pos, "module definition")
 		p.next()
@@ -206,5 +226,11 @@ func (p *parser) parseGroup() {
 		decls = append(decls, p.parseModuleDef())
 	}
 	p.expect(token.RBRACE)
+	p.parseWith()
+}
+
+func (p *parser) parseFriend() {
+	p.expect(token.MODULE)
+	p.parseIdent()
 	p.parseWith()
 }

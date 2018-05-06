@@ -151,6 +151,7 @@ const (
 	PROCEDURE
 	PUBLIC
 	RECORD
+	REGEXP
 	REPEAT
 	RETURN
 	RUNS
@@ -310,6 +311,7 @@ var tokens = [...]string{
 	PROCEDURE:  "procedure",
 	PUBLIC:     "public",
 	RECORD:     "record",
+	REGEXP:     "regexp",
 	REPEAT:     "repeat",
 	RETURN:     "return",
 	RUNS:       "runs",

@@ -144,7 +144,7 @@ func (p *parser) parseCaseStmt() {
 		p.next()
 	} else {
 		p.expect(token.LPAREN)
-		p.parseExpr()
+		p.parseExprList()
 		p.expect(token.RPAREN)
 	}
 	p.parseBlockStmt()
