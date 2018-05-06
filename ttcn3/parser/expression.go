@@ -233,12 +233,28 @@ func (p *parser) parseIndexExpr(x ast.Expr) ast.Expr {
 func (p *parser) parseCallExpr(x ast.Expr) ast.Expr {
 	p.next()
 
-	var list []ast.Expr
-	if p.tok != token.RPAREN {
-		list = p.parseExprList()
+	switch p.tok {
+	case token.FROM, token.TO:
+		p.next()
+		p.parseExpr()
+		if p.tok == token.REDIR {
+			p.parseRedirect()
+		}
+		p.expect(token.RPAREN)
+		return nil
+	case token.REDIR:
+		p.parseRedirect()
+		p.expect(token.RPAREN)
+		return nil
+	default:
+		var list []ast.Expr
+		if p.tok != token.RPAREN {
+			list = p.parseExprList()
+		}
+		p.expect(token.RPAREN)
+		return &ast.CallExpr{Fun: x, Args: list}
 	}
-	p.expect(token.RPAREN)
-	return &ast.CallExpr{Fun: x, Args: list}
+
 }
 
 func (p *parser) parseRedirect() ast.Expr {
