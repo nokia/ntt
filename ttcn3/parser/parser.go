@@ -72,7 +72,7 @@ func ParseModule(fset *token.FileSet, filename string, src interface{}, mode Mod
 			// ParseModule API and return a valid (but) empty
 			// *ast.Module
 			f = &ast.Module{
-				Name:  new(ast.Ident),
+				Name: new(ast.Ident),
 			}
 		}
 
@@ -430,7 +430,6 @@ var stmtStart = map[token.Token]bool{
 	token.TESTCASE:  true,
 	token.ALTSTEP:   true,
 }
-
 
 /*************************************************************************
  * Expressions
@@ -854,7 +853,6 @@ func (p *parser) parseModuleDef() ast.Decl {
 	return nil
 }
 
-
 /*************************************************************************
  * Import Definition
  *************************************************************************/
@@ -973,7 +971,6 @@ func (p *parser) parseExceptStmt() {
 	p.expectSemi()
 }
 
-
 /*************************************************************************
  * Group Definition
  *************************************************************************/
@@ -996,7 +993,6 @@ func (p *parser) parseFriend() {
 	p.parseIdent()
 	p.parseWith()
 }
-
 
 /*************************************************************************
  * With Attributes
@@ -1084,7 +1080,6 @@ func (p *parser) parseWithQualifier() {
 	}
 }
 
-
 /*************************************************************************
  * Type Definitions
  *************************************************************************/
@@ -1145,7 +1140,6 @@ func (p *parser) parseNestedType() {
 	}
 }
 
-
 /*************************************************************************
  * Struct Types
  *************************************************************************/
@@ -1198,7 +1192,6 @@ func (p *parser) parseStructField() {
 	}
 }
 
-
 /*************************************************************************
  * List Type
  *************************************************************************/
@@ -1224,8 +1217,6 @@ func (p *parser) parseListType() {
 	p.parseConstraint()
 	p.parseWith()
 }
-
-
 
 /*************************************************************************
  * Enumeration Type
@@ -1264,7 +1255,6 @@ func (p *parser) parseEnumType() {
 	p.expect(token.RBRACE)
 	p.parseWith()
 }
-
 
 /*************************************************************************
  * Port Type
@@ -1310,7 +1300,6 @@ func (p *parser) parsePortAttribute() {
 	}
 }
 
-
 /*************************************************************************
  * Component Type
  *************************************************************************/
@@ -1328,7 +1317,6 @@ func (p *parser) parseComponentType() {
 	p.parseBlockStmt()
 	p.parseWith()
 }
-
 
 /*************************************************************************
  * Behaviour Types
@@ -1356,7 +1344,6 @@ func (p *parser) parseBehaviourType() {
 	p.parseWith()
 
 }
-
 
 /*************************************************************************
  * Subtype
@@ -1396,7 +1383,6 @@ func (p *parser) parseLength() {
 	}
 }
 
-
 /*************************************************************************
  * Declarations
  *************************************************************************/
@@ -1421,7 +1407,6 @@ func (p *parser) parseDecl() ast.Decl {
 	}
 	return nil
 }
-
 
 /*************************************************************************
  * Template Declaration
@@ -1461,7 +1446,6 @@ func (p *parser) parseTemplateDecl() *ast.ValueDecl {
 	return x
 }
 
-
 /*************************************************************************
  * Module Parameter
  *************************************************************************/
@@ -1492,7 +1476,6 @@ func (p *parser) parseModulePar() *ast.ValueDecl {
 	p.parseWith()
 	return x
 }
-
 
 /*************************************************************************
  * Value Declaration
@@ -1542,7 +1525,6 @@ func (p *parser) parseRestrictionSpec() *ast.RestrictionSpec {
 	return nil
 }
 
-
 /*************************************************************************
  * Behaviour Declaration
  *************************************************************************/
@@ -1585,7 +1567,6 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	return x
 }
 
-
 /*************************************************************************
  * External Function Declaration
  *************************************************************************/
@@ -1623,7 +1604,6 @@ func (p *parser) parseExtFuncDecl() *ast.FuncDecl {
 	p.parseWith()
 	return x
 }
-
 
 /*************************************************************************
  * Signature Declaration
@@ -1702,7 +1682,6 @@ func (p *parser) parseParameter() *ast.Field {
 	return x
 }
 
-
 /*************************************************************************
  * Statements
  *************************************************************************/
@@ -1758,7 +1737,17 @@ func (p *parser) parseStmt() ast.Stmt {
 	case token.IF:
 		p.parseIfStmt()
 	default:
+		if p.tok == token.LBRACE {
+			p.parseBlockStmt()
+			break
+		}
+
 		p.parseSimpleStmt()
+
+		// call-statement block
+		if p.tok == token.LBRACE {
+			p.parseBlockStmt()
+		}
 	}
 	p.expectSemi()
 	return nil
@@ -1866,11 +1855,6 @@ func (p *parser) parseSimpleStmt() ast.Stmt {
 	}
 
 	p.parseExpr()
-
-	// for call-statement, note conflict in alt-context.
-	if p.tok == token.LBRACE {
-		p.parseBlockStmt()
-	}
 
 	return nil
 }
