@@ -11,7 +11,7 @@ func (p *parser) parseType() ast.Decl {
 	}
 	p.next()
 	switch p.tok {
-	case token.IDENT:
+	case token.IDENT, token.UNIVERSAL, token.CHARSTRING, token.ADDRESS:
 		p.parseSubType()
 	case token.UNION:
 		p.next()
@@ -34,7 +34,6 @@ func (p *parser) parseType() ast.Decl {
 	default:
 		p.errorExpected(p.pos, "type definition")
 	}
-	p.expectSemi()
 	return nil
 }
 
@@ -43,7 +42,7 @@ func (p *parser) parseNestedType() {
 		defer un(trace(p, "NestedType"))
 	}
 	switch p.tok {
-	case token.IDENT:
+	case token.IDENT, token.ADDRESS, token.NULL, token.CHARSTRING, token.UNIVERSAL:
 		p.parseTypeRef()
 	case token.UNION:
 		p.next()
@@ -91,6 +90,7 @@ func (p *parser) parseStructType() {
 		p.next()
 	}
 	p.expect(token.RBRACE)
+	p.parseWith()
 }
 
 func (p *parser) parseStructField() {
@@ -128,6 +128,7 @@ func (p *parser) parseListType() {
 	p.parseNestedType()
 	p.parsePrimaryExpr()
 	p.parseConstraint()
+	p.parseWith()
 }
 
 func (p *parser) parseNestedEnumType() {
@@ -161,6 +162,7 @@ func (p *parser) parseEnumType() {
 		p.next()
 	}
 	p.expect(token.RBRACE)
+	p.parseWith()
 }
 
 func (p *parser) parsePortType() {
@@ -182,6 +184,7 @@ func (p *parser) parsePortType() {
 		p.expectSemi()
 	}
 	p.expect(token.RBRACE)
+	p.parseWith()
 }
 
 func (p *parser) parsePortAttribute() {
@@ -213,6 +216,7 @@ func (p *parser) parseComponentType() {
 		p.parseRefList()
 	}
 	p.parseBlockStmt()
+	p.parseWith()
 }
 
 func (p *parser) parseBehaviourType() {
@@ -234,6 +238,7 @@ func (p *parser) parseBehaviourType() {
 	if p.tok == token.RETURN {
 		p.parseReturn()
 	}
+	p.parseWith()
 
 }
 
@@ -246,6 +251,7 @@ func (p *parser) parseSubType() *ast.SubType {
 	p.parsePrimaryExpr()
 	p.parseConstraint()
 
+	p.parseWith()
 	return nil
 }
 

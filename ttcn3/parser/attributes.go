@@ -5,6 +5,20 @@ import (
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
+func (p *parser) parseWith() ast.Node {
+	if p.tok != token.WITH {
+		return nil
+	}
+
+	p.expect(token.WITH)
+	p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
+		p.parseWithStmt()
+	}
+	p.expect(token.RBRACE)
+	return nil
+}
+
 func (p *parser) parseWithStmt() ast.Node {
 	if p.trace {
 		defer un(trace(p, "WithStmt"))

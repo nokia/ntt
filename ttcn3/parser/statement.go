@@ -36,7 +36,7 @@ func (p *parser) parseStmt() ast.Stmt {
 	}
 
 	switch p.tok {
-	case token.VAR, token.CONST:
+	case token.TEMPLATE, token.VAR, token.CONST, token.TIMER, token.PORT:
 		p.parseDecl()
 	case token.REPEAT, token.BREAK, token.CONTINUE:
 		p.next()

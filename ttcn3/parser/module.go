@@ -50,21 +50,36 @@ func (p *parser) parseLanguageSpec() {
 
 func (p *parser) parseModuleDef() ast.Decl {
 	switch p.tok {
+	case token.PRIVATE, token.PUBLIC, token.FRIEND:
+		p.next()
+	}
+
+	switch p.tok {
 	case token.IMPORT:
-		return p.parseImport()
+		p.parseImport()
+	case token.GROUP:
+		p.parseGroup()
 	case token.TYPE:
-		return p.parseType()
+		p.parseType()
 	case token.TEMPLATE:
-		return p.parseTemplateDecl()
-	case token.VAR, token.CONST, token.MODULEPAR:
-		return p.parseValueDecl()
+		p.parseTemplateDecl()
+	case token.MODULEPAR:
+		p.parseModulePar()
+	case token.VAR, token.CONST:
+		p.parseValueDecl()
+	case token.SIGNATURE:
+		p.parseSignatureDecl()
 	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
-		return p.parseFuncDecl()
+		p.parseFuncDecl()
+	case token.CONTROL:
+		p.next()
+		p.parseBlockStmt()
 	default:
 		p.errorExpected(p.pos, "module definition")
 		p.next()
-		return nil
 	}
+	p.expectSemi()
+	return nil
 }
 
 func (p *parser) parseImport() ast.Decl {
@@ -95,7 +110,7 @@ func (p *parser) parseImport() ast.Decl {
 		p.errorExpected(p.pos, "'all' or import spec")
 	}
 
-	p.expectSemi()
+	p.parseWith()
 
 	return &ast.ImportDecl{
 		ImportPos:   pos,
@@ -179,4 +194,17 @@ func (p *parser) parseExceptStmt() {
 		}
 	}
 	p.expectSemi()
+}
+
+func (p *parser) parseGroup() {
+	p.next()
+	p.parseIdent()
+	p.expect(token.LBRACE)
+
+	var decls []ast.Decl
+	for p.tok != token.RBRACE && p.tok != token.EOF {
+		decls = append(decls, p.parseModuleDef())
+	}
+	p.expect(token.RBRACE)
+	p.parseWith()
 }

@@ -41,6 +41,7 @@ const (
 	CONCAT // &
 
 	REDIR  // ->
+	DECODE // =>
 	ANY    // ?
 	EXCL   // !
 	RANGE  // ..
@@ -89,9 +90,12 @@ const (
 	ANYKW
 	BREAK
 	CASE
+	CHARSTRING
 	COMPONENT
 	CONST
 	CONTINUE
+	CONTROL
+	DECMATCH
 	DISPLAY
 	DO
 	ELSE
@@ -140,13 +144,13 @@ const (
 	OVERRIDE
 	PARAM
 	PASS
+	PATTERN
 	PORT
 	PRESENT
 	PRIVATE
 	PROCEDURE
 	PUBLIC
 	RECORD
-	REDIRECT
 	REPEAT
 	RETURN
 	RUNS
@@ -164,11 +168,13 @@ const (
 	TRUE
 	TYPE
 	UNION
+	UNIVERSAL
 	UNMAP
 	VALUE
 	VAR
 	VARIANT
 	WHILE
+	WITH
 	keyword_end
 )
 
@@ -197,10 +203,11 @@ var tokens = [...]string{
 	ROR:    "@>",
 	CONCAT: "&",
 
-	REDIR: "->",
-	ANY:   "?",
-	EXCL:  "!",
-	RANGE: "..",
+	REDIR:  "->",
+	DECODE: "=>",
+	ANY:    "?",
+	EXCL:   "!",
+	RANGE:  "..",
 
 	ASSIGN: ":=",
 	EQ:     "==",
@@ -242,9 +249,12 @@ var tokens = [...]string{
 	ANYKW:      "any",
 	BREAK:      "break",
 	CASE:       "case",
+	CHARSTRING: "charstring",
 	COMPONENT:  "component",
 	CONST:      "const",
 	CONTINUE:   "continue",
+	CONTROL:    "control",
+	DECMATCH:   "decmatch",
 	DISPLAY:    "display",
 	DO:         "do",
 	ELSE:       "else",
@@ -293,13 +303,13 @@ var tokens = [...]string{
 	OVERRIDE:   "override",
 	PARAM:      "param",
 	PASS:       "pass",
+	PATTERN:    "pattern",
 	PORT:       "port",
 	PRESENT:    "present",
 	PRIVATE:    "private",
 	PROCEDURE:  "procedure",
 	PUBLIC:     "public",
 	RECORD:     "record",
-	REDIRECT:   "redirect",
 	REPEAT:     "repeat",
 	RETURN:     "return",
 	RUNS:       "runs",
@@ -317,11 +327,13 @@ var tokens = [...]string{
 	TRUE:       "true",
 	TYPE:       "type",
 	UNION:      "union",
+	UNIVERSAL:  "universal",
 	UNMAP:      "unmap",
 	VALUE:      "value",
 	VAR:        "var",
 	VARIANT:    "variant",
 	WHILE:      "while",
+	WITH:       "with",
 }
 
 // String returns the string corresponding to the token tok.
@@ -361,36 +373,38 @@ func (tok Token) Precedence() int {
 	switch tok {
 	case ASSIGN:
 		return 1
-	case RANGE:
+	case DECODE:
 		return 2
-	case EXCL:
+	case RANGE:
 		return 3
-	case OR:
+	case EXCL:
 		return 4
-	case XOR:
+	case OR:
 		return 5
-	case AND:
+	case XOR:
 		return 6
-	case NOT:
+	case AND:
 		return 7
-	case EQ, NE:
+	case NOT:
 		return 8
-	case LT, LE, GT, GE:
+	case EQ, NE:
 		return 9
-	case SHR, SHL, ROR, ROL:
+	case LT, LE, GT, GE:
 		return 10
-	case OR4B:
+	case SHR, SHL, ROR, ROL:
 		return 11
-	case XOR4B:
+	case OR4B:
 		return 12
-	case AND4B:
+	case XOR4B:
 		return 13
-	case NOT4B:
+	case AND4B:
 		return 14
-	case ADD, SUB, CONCAT:
+	case NOT4B:
 		return 15
-	case MUL, DIV, REM, MOD:
+	case ADD, SUB, CONCAT:
 		return 16
+	case MUL, DIV, REM, MOD:
+		return 17
 	}
 	return LowestPrec
 }

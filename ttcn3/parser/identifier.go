@@ -9,7 +9,11 @@ func (p *parser) parseIdent() *ast.Ident {
 	pos := p.pos
 	name := "_"
 	switch p.tok {
-	case token.IDENT, token.ADDRESS:
+	case token.UNIVERSAL:
+		p.next()
+		p.expect(token.CHARSTRING)
+		name = p.lit
+	case token.IDENT, token.ADDRESS, token.ALIVE, token.CHARSTRING:
 		name = p.lit
 		p.next()
 	default:

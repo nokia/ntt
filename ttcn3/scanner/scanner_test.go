@@ -37,6 +37,7 @@ var tokens = [...]elt{
 	{token.STRING, `""`},
 	{token.STRING, `"\""`},
 	{token.STRING, `"\\"`},
+	{token.STRING, `""""`},
 
 	{token.BSTRING, `'1101'b`},
 	{token.BSTRING, `'11?*1'x`},

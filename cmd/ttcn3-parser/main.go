@@ -35,6 +35,7 @@ func parse(file string) error {
 
 	_, err := parser.ParseModule(token.NewFileSet(), file, nil, mode, func(pos token.Position, msg string) {
 		fmt.Fprintf(os.Stderr, "%s: error: %s\n", pos, msg)
+        os.Exit(1)
 	})
 
 	return err

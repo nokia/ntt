@@ -26,10 +26,6 @@ func (p *parser) parseExpr() ast.Expr {
 		p.parseExpr()
 	}
 
-	if p.tok == token.ALIVE {
-		p.next()
-	}
-
 	return x
 }
 
@@ -56,7 +52,7 @@ func (p *parser) parseUnaryExpr() ast.Expr {
 		op, pos := p.tok, p.pos
 		p.next()
 		// handle unused expr '-'
-		if op == token.SUB && (p.tok == token.COMMA || p.tok == token.SEMICOLON || p.tok == token.RBRACE || p.tok == token.RBRACK || p.tok == token.EOF) {
+		if op == token.SUB && (p.tok == token.COMMA || p.tok == token.SEMICOLON || p.tok == token.RBRACE || p.tok == token.RBRACK || p.tok == token.RPAREN || p.tok == token.EOF) {
 			return nil
 		}
 		return &ast.UnaryExpr{Op: op, OpPos: pos, X: p.parseUnaryExpr()}
@@ -83,13 +79,40 @@ L:
 		}
 	}
 
+	if p.tok == token.LENGTH {
+		p.next()
+		p.expect(token.LPAREN)
+		p.parseExpr()
+		p.expect(token.RPAREN)
+	}
+
+	if p.tok == token.IFPRESENT {
+		p.next()
+	}
+
 	if p.tok == token.TO || p.tok == token.FROM {
 		p.next()
 		p.parseExpr()
 	}
 
-	if p.tok == token.REDIRECT {
+	if p.tok == token.REDIR {
 		p.parseRedirect()
+	}
+
+	if p.tok == token.VALUE {
+		p.next()
+		p.parseExpr()
+	}
+
+	if p.tok == token.PARAM {
+		p.next()
+		p.expect(token.LPAREN)
+		p.parseExprList()
+		p.expect(token.RPAREN)
+	}
+
+	if p.tok == token.ALIVE {
+		p.next()
 	}
 
 	return x
@@ -98,6 +121,7 @@ L:
 func (p *parser) parseOperand() ast.Expr {
 	switch p.tok {
 	case token.ANYKW, token.ALL:
+		k := p.tok
 		p.next()
 		switch p.tok {
 		case token.COMPONENT, token.PORT, token.TIMER:
@@ -108,12 +132,27 @@ func (p *parser) parseOperand() ast.Expr {
 			p.parsePrimaryExpr()
 			return nil
 		}
+
+		// Workaround for deprecated port-attribute 'all'
+		if k == token.ALL {
+			return nil
+		}
+
 		p.errorExpected(p.pos, "'component', 'port', 'timer' or 'from'")
 
-	case token.IDENT, token.TIMER, token.TESTCASE, token.SYSTEM, token.MTC, token.ADDRESS:
+	case token.UNIVERSAL:
+		p.next()
+		p.expect(token.CHARSTRING)
+		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
+		return id
+	case token.IDENT, token.TIMER, token.TESTCASE, token.SYSTEM, token.MTC, token.ADDRESS, token.NULL, token.OMIT,
+		token.CHARSTRING,
+		token.MAP, token.UNMAP:
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		p.next()
 		return id
+	case token.LBRACK:
+		p.parseIndexExpr(nil)
 	case token.LBRACE:
 		p.next()
 		if p.tok != token.RBRACE {
@@ -121,6 +160,28 @@ func (p *parser) parseOperand() ast.Expr {
 		}
 		p.expect(token.RBRACE)
 		return nil
+	case token.PATTERN:
+		p.next()
+		if p.tok == token.MODIF {
+			p.next()
+		}
+		p.expect(token.STRING)
+	case token.DECMATCH:
+		p.next()
+		if p.tok == token.LPAREN {
+			p.next()
+			p.parseExprList()
+			p.expect(token.RPAREN)
+		}
+		p.parseExpr()
+	case token.MODIF: // @decoded
+		p.next()
+		if p.tok == token.LPAREN {
+			p.next()
+			p.parseExprList()
+			p.expect(token.RPAREN)
+		}
+		p.parseExpr()
 	case token.LPAREN:
 		p.next()
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
@@ -128,7 +189,10 @@ func (p *parser) parseOperand() ast.Expr {
 		p.expect(token.RPAREN)
 		return set
 	case token.INT, token.FLOAT, token.STRING, token.BSTRING,
-		token.ANY, token.MUL:
+		token.ANY, token.MUL,
+		token.TRUE, token.FALSE,
+		token.PASS, token.FAIL, token.NONE, token.INCONC, token.ERROR,
+		token.NAN:
 		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
 		p.next()
 		return lit

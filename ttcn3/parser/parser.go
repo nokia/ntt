@@ -441,6 +441,9 @@ func (p *parser) error(pos token.Pos, msg string) {
 		}
 	}
 
+	if p.scanner.Err != nil {
+		p.scanner.Err(epos, msg)
+	}
 	p.errors.Add(epos, msg)
 }
 
@@ -470,12 +473,13 @@ func (p *parser) expect(tok token.Token) token.Pos {
 }
 
 func (p *parser) expectSemi() {
-	// semicolon is optional before a closing '}'
-	if !p.seenBrace && p.tok != token.RBRACE && p.tok != token.EOF {
-		switch p.tok {
-		case token.SEMICOLON:
-			p.next()
-		default:
+	switch p.tok {
+	case token.SEMICOLON:
+		p.next()
+	case token.RBRACE, token.EOF:
+		// semicolon is optional before a closing '}'
+	default:
+		if !p.seenBrace {
 			p.errorExpected(p.pos, "';'")
 			p.advance(stmtStart)
 		}

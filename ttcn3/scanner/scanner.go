@@ -316,7 +316,11 @@ func (s *Scanner) scanString() string {
 		}
 		s.next()
 		if ch == '"' {
-			break
+			if s.ch == '"' {
+				s.next()
+			} else {
+				break
+			}
 		}
 		if ch == '\\' {
 			s.next()
@@ -485,10 +489,18 @@ scanAgain:
 			}
 
 		case '=':
-			tok = s.switch2('=', token.EQ, token.ILLEGAL)
-			if tok == token.ILLEGAL {
+			switch s.ch {
+			case '=':
+				tok = token.EQ
+				s.next()
+			case '>':
+				tok = token.DECODE
+				s.next()
+			default:
+				tok = token.ILLEGAL
 				lit = "="
 				s.error(s.offset, fmt.Sprintf("stray %q", "="))
+
 			}
 		case '!':
 			tok = s.switch2('=', token.NE, token.EXCL)

@@ -61,6 +61,8 @@ func TestExprs(t *testing.T) {
 		{PASS, `-1 * x`},
 		{PASS, `-x * y`},
 		{PASS, `{x := (1+2)*3, y:=a.f()}`},
+		{PASS, `{[0] := 1, [1] := 2 }`},
+		{PASS, `x[i][j] := 1, y[k] := 2 }`},
 		{PASS, `{(1+2)*3, a.f()}`},
 		{PASS, `{-,-}`},
 		{PASS, `(1,*,?,-,2)`},
@@ -68,13 +70,15 @@ func TestExprs(t *testing.T) {
 		{PASS, `t length(5..23) ifpresent`},
 		{PASS, `t ifpresent`},
 		{PASS, `system:p`},
-		{FAIL, `modifies t:=23`},
+		{PASS, `modifies t:=23`},
 		{PASS, `complement(all from t)`},
 		{PASS, `b := any from c.running -> @index value i`},
 		{PASS, `p := decmatch M: {f1:= 10, f2 := '1001'B}`},
 		{PASS, `p := decmatch ("UTF-8") M: {f1:= 10, f2 := '1001'B}`},
-		{FAIL, `p := @decoded payload`},
+		{PASS, `p := @decoded payload`},
 		{PASS, `regexp @nocase(x,charstring:"?+(text)?+",0)`},
+		{PASS, `match(ptc.alive, false)`},
+		{PASS, `x.universal charstring := "FF80"`},
 	}
 
 	testParse(t, exprs, func(p *parser) { p.parseExprList() })
@@ -95,7 +99,7 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `function f() mtc C {}`},
 		{PASS, `function f() runs on C mtc C system C {}`},
 		{PASS, `altstep as() { var roi[-] a[4][4]; [] receive; [else] {}}`},
-		{FAIL, `external function f();`},
+		{PASS, `external function f();`},
 		{PASS, `signature f();`},
 		{PASS, `signature f() exception (integer);`},
 		{PASS, `signature f() return int;`},
@@ -137,9 +141,10 @@ func TestModuleDefs(t *testing.T) {
 		{PASS, `import from m {
                         group x except { group all }, y }`},
 
-		{FAIL, `friend module m;`},
-		{FAIL, `public modulepar integer x;`},
-		{FAIL, `private function fn() {}`},
+		{PASS, `friend module m;`},
+		{PASS, `public modulepar integer x;`},
+		{PASS, `private function fn() {}`},
+		{PASS, `group foo { group bar { import from m all; } }`},
 	}
 	testParse(t, moduleDefs, func(p *parser) { p.parseModuleDef() })
 }
@@ -152,6 +157,7 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `const int x[len] := 1, y := 2;`},
 		{PASS, `const a[-] x := 1;`},
 		{PASS, `const a[1] x[2][3] := x[4];`},
+		{PASS, `var int x := {1,2};`},
 		{PASS, `var int x, y := 2, z;`},
 		{PASS, `var template          int x;`},
 		{PASS, `var template(omit)    int x;`},
@@ -219,6 +225,7 @@ func TestTypes(t *testing.T) {
 
 		// Port Types
 		{PASS, `type port p message {address a.b[-]}`},
+		{PASS, `type port p message {inout all}`},
 		{PASS, `type port p message {inout float, a.b[-]}`},
 		{PASS, `type port p message {map param (out int i:=1)}`},
 		{PASS, `type port p message {unmap param (out int i:=1)}`},
@@ -271,21 +278,27 @@ func TestStmts(t *testing.T) {
 		{PASS, `receive from ip.address:? -> @index x;`},
 		{PASS, `testcase.stop;`},
 		{PASS, `stop;`},
-		{FAIL, `map (system:p1, c:p);`},
-		{FAIL, `map (p1, p2) param ("localhost", 80);`},
-		{FAIL, `unmap;`},
-		{FAIL, `unmap (true);`},
-		{FAIL, `unmap (true) param (-,-);`},
-		{PASS, `p.call(foo) to 80;`},
-		{PASS, `p[i].call(S:{});`},
+		{PASS, `map (system:p1, c:p);`},
+		{PASS, `map (p1, p2) param ("localhost", 80);`},
+		{PASS, `unmap;`},
+		{PASS, `unmap (true);`},
+		{PASS, `unmap (true) param (-,-);`},
+		{PASS, `p.getreply(23);`},
+		{PASS, `p.reply(23 value x);`},
+		{PASS, `x.universal charstring := "FF80";`},
+
+		// Check Statement
 		{PASS, `any port.check;`},
 		{PASS, `p.check(receive);`},
-		{FAIL, `p.check(from x -> timestamp bar);`},
-		{FAIL, `p.check(-> @index value i);`},
-		{FAIL, `p.check(receive from x -> value ("foo"));`},
-		{FAIL, `p.check(getreply(23 value x) from x -> sender(foo));`},
-		{PASS, `p.getreply(23);`},
-		{FAIL, `p.reply(23 value x);`},
+		{PASS, `p.check(from x -> timestamp bar);`},
+		{PASS, `p.check(-> @index value i);`},
+		{PASS, `p.check(receive from x -> value ("foo"));`},
+		{PASS, `p.check(getreply(23 value x) from x -> sender(foo));`},
+
+		// Call Statement
+		{PASS, `p.call(foo) to 80;`},
+		{PASS, `p[i].call(S:{});`},
+		{PASS, `p.call(S:{}) {[] receive; [else] {}}`},
 	}
 	testParse(t, stmts, func(p *parser) { p.parseStmt() })
 }

@@ -9,11 +9,14 @@ func (p *parser) parseDecl() ast.Decl {
 	switch p.tok {
 	case token.TEMPLATE:
 		return p.parseTemplateDecl()
-	case token.VAR, token.CONST, token.MODULEPAR,
-		token.TIMER, token.PORT:
+	case token.MODULEPAR:
+		return p.parseModulePar()
+	case token.VAR, token.CONST, token.TIMER, token.PORT:
 		return p.parseValueDecl()
 	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
 		return p.parseFuncDecl()
+	case token.SIGNATURE:
+		return p.parseSignatureDecl()
 	default:
 		p.errorExpected(p.pos, "declaration")
 	}
@@ -50,6 +53,34 @@ func (p *parser) parseTemplateDecl() *ast.ValueDecl {
 	p.expect(token.ASSIGN)
 	p.parseExpr()
 
+	p.parseWith()
+	return x
+}
+
+func (p *parser) parseModulePar() *ast.ValueDecl {
+	if p.trace {
+		defer un(trace(p, "ModulePar"))
+	}
+
+	x := &ast.ValueDecl{DeclPos: p.pos, Kind: p.tok}
+	p.next()
+
+	if p.tok == token.LBRACE {
+		p.next()
+		for p.tok != token.RBRACE && p.tok != token.EOF {
+			p.parseRestrictionSpec()
+			p.parseTypeRef()
+			p.parseExprList()
+			p.expectSemi()
+		}
+		p.expect(token.RBRACE)
+	} else {
+		p.parseRestrictionSpec()
+		p.parseTypeRef()
+		p.parseExprList()
+	}
+
+	p.parseWith()
 	return x
 }
 
@@ -70,6 +101,7 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 		x.Type = p.parseTypeRef()
 	}
 	x.Decls = p.parseExprList()
+	p.parseWith()
 	return x
 }
 
@@ -130,7 +162,36 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		x.Body = p.parseBlockStmt()
 	}
 
+	p.parseWith()
 	return x
+}
+
+func (p *parser) parseSignatureDecl() ast.Decl {
+	if p.trace {
+		defer un(trace(p, "SignatureDecl"))
+	}
+
+	p.next()
+	p.parseIdent()
+
+	p.parseParameters()
+
+	if p.tok == token.NOBLOCK {
+		p.next()
+	}
+
+	if p.tok == token.RETURN {
+		p.parseReturn()
+	}
+
+	if p.tok == token.EXCEPTION {
+		p.next()
+		p.expect(token.LPAREN)
+		p.parseRefList()
+		p.expect(token.RPAREN)
+	}
+	p.parseWith()
+	return nil
 }
 
 func (p *parser) parseReturn() ast.Expr {
