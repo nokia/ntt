@@ -24,7 +24,7 @@ type Scanner struct {
 	file *token.File  // source file handle
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
-	err  ErrorHandler // error reporting; or nil
+	Err  ErrorHandler // error reporting; or nil
 	mode Mode         // scanning mode
 
 	// scanning state
@@ -90,12 +90,12 @@ const (
 // line information which is already present is ignored. Init causes a
 // panic if the file size does not match the src size.
 //
-// Calls to Scan will invoke the error handler err if they encounter a
-// syntax error and err is not nil. Also, for each error encountered,
+// Calls to Scan will invoke the error handler Err if they encounter a
+// syntax error and Err is not nil. Also, for each error encountered,
 // the Scanner field ErrorCount is incremented by one. The mode parameter
 // determines how comments are handled.
 //
-// Note that Init may call err if there is an error in the first character
+// Note that Init may call Err if there is an error in the first character
 // of the file.
 //
 func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
@@ -106,7 +106,7 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	s.file = file
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
-	s.err = err
+	s.Err = err
 	s.mode = mode
 
 	s.ch = ' '
@@ -122,8 +122,8 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 }
 
 func (s *Scanner) error(offs int, msg string) {
-	if s.err != nil {
-		s.err(s.file.Position(s.file.Pos(offs)), msg)
+	if s.Err != nil {
+		s.Err(s.file.Position(s.file.Pos(offs)), msg)
 	}
 	s.ErrorCount++
 }
@@ -246,6 +246,10 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 
 	// fraction
 	if s.ch == '.' {
+		// check for RANGE token (example: 0..23)
+		if s.rdOffset < len(s.src) && s.src[s.rdOffset] == '.' {
+			goto out
+		}
 		tok = token.FLOAT
 		s.next()
 		s.scanDigits()
@@ -271,6 +275,7 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 		s.error(offs, "malformed number")
 	}
 
+out:
 	return tok, string(s.src[offs:s.offset])
 }
 
@@ -311,7 +316,11 @@ func (s *Scanner) scanString() string {
 		}
 		s.next()
 		if ch == '"' {
-			break
+			if s.ch == '"' {
+				s.next()
+			} else {
+				break
+			}
 		}
 		if ch == '\\' {
 			s.next()
@@ -406,7 +415,7 @@ scanAgain:
 		case '@':
 			if s.ch == '>' {
 				tok = token.ROR
-                s.next()
+				s.next()
 			} else {
 				tok = token.MODIF
 				lit = s.scanModifier()
@@ -480,10 +489,18 @@ scanAgain:
 			}
 
 		case '=':
-			tok = s.switch2('=', token.EQ, token.ILLEGAL)
-			if tok == token.ILLEGAL {
+			switch s.ch {
+			case '=':
+				tok = token.EQ
+				s.next()
+			case '>':
+				tok = token.DECODE
+				s.next()
+			default:
+				tok = token.ILLEGAL
 				lit = "="
 				s.error(s.offset, fmt.Sprintf("stray %q", "="))
+
 			}
 		case '!':
 			tok = s.switch2('=', token.NE, token.EXCL)

@@ -41,6 +41,7 @@ const (
 	CONCAT // &
 
 	REDIR  // ->
+	DECODE // =>
 	ANY    // ?
 	EXCL   // !
 	RANGE  // ..
@@ -76,10 +77,105 @@ const (
 	XOR // xor
 	NOT // not
 
-	AND4B  // and4b
-	OR4B   // or4b
-	XOR4B  // xor4b
-	NOT4B  // not4b
+	AND4B // and4b
+	OR4B  // or4b
+	XOR4B // xor4b
+	NOT4B // not4b
+
+	ADDRESS
+	ALIVE
+	ALL
+	ALT
+	ALTSTEP
+	ANYKW
+	BREAK
+	CASE
+	CHARSTRING
+	COMPONENT
+	CONST
+	CONTINUE
+	CONTROL
+	DECMATCH
+	DISPLAY
+	DO
+	ELSE
+	ENCODE
+	ENUMERATED
+	ERROR
+	EXCEPT
+	EXCEPTION
+	EXTENDS
+	EXTENSION
+	EXTERNAL
+	FAIL
+	FALSE
+	FOR
+	FRIEND
+	FROM
+	FUNCTION
+	GOTO
+	GROUP
+	IF
+	IFPRESENT
+	IMPORT
+	IN
+	INCONC
+	INOUT
+	INTERLEAVE
+	LABEL
+	LANGUAGE
+	LENGTH
+	MAP
+	MESSAGE
+	MIXED
+	MODIFIES
+	MODULE
+	MODULEPAR
+	MTC
+	NAN
+	NOBLOCK
+	NONE
+	NULL
+	OF
+	OMIT
+	ON
+	OPTIONAL
+	OUT
+	OVERRIDE
+	PARAM
+	PASS
+	PATTERN
+	PORT
+	PRESENT
+	PRIVATE
+	PROCEDURE
+	PUBLIC
+	RECORD
+	REGEXP
+	REPEAT
+	RETURN
+	RUNS
+	SELECT
+	SENDER
+	SET
+	SIGNATURE
+	STEPSIZE
+	SYSTEM
+	TEMPLATE
+	TESTCASE
+	TIMER
+	TIMESTAMP
+	TO
+	TRUE
+	TYPE
+	UNION
+	UNIVERSAL
+	UNMAP
+	VALUE
+	VAR
+	VARIANT
+	WHILE
+	WITH
 	keyword_end
 )
 
@@ -108,10 +204,11 @@ var tokens = [...]string{
 	ROR:    "@>",
 	CONCAT: "&",
 
-	REDIR: "->",
-	ANY:   "?",
-	EXCL:  "!",
-	RANGE: "..",
+	REDIR:  "->",
+	DECODE: "=>",
+	ANY:    "?",
+	EXCL:   "!",
+	RANGE:  "..",
 
 	ASSIGN: ":=",
 	EQ:     "==",
@@ -140,10 +237,105 @@ var tokens = [...]string{
 	XOR: "xor",
 	NOT: "not",
 
-	AND4B:  "and4b",
-	OR4B:   "or4b",
-	XOR4B:  "xor4b",
-	NOT4B:  "not4b",
+	AND4B: "and4b",
+	OR4B:  "or4b",
+	XOR4B: "xor4b",
+	NOT4B: "not4b",
+
+	ADDRESS:    "address",
+	ALIVE:      "alive",
+	ALL:        "all",
+	ALT:        "alt",
+	ALTSTEP:    "altstep",
+	ANYKW:      "any",
+	BREAK:      "break",
+	CASE:       "case",
+	CHARSTRING: "charstring",
+	COMPONENT:  "component",
+	CONST:      "const",
+	CONTINUE:   "continue",
+	CONTROL:    "control",
+	DECMATCH:   "decmatch",
+	DISPLAY:    "display",
+	DO:         "do",
+	ELSE:       "else",
+	ENCODE:     "encode",
+	ENUMERATED: "enumerated",
+	ERROR:      "error",
+	EXCEPT:     "except",
+	EXCEPTION:  "exception",
+	EXTENDS:    "extends",
+	EXTENSION:  "extension",
+	EXTERNAL:   "external",
+	FAIL:       "fail",
+	FALSE:      "false",
+	FOR:        "for",
+	FRIEND:     "friend",
+	FROM:       "from",
+	FUNCTION:   "function",
+	GOTO:       "goto",
+	GROUP:      "group",
+	IF:         "if",
+	IFPRESENT:  "ifpresent",
+	IMPORT:     "import",
+	IN:         "in",
+	INCONC:     "inconc",
+	INOUT:      "inout",
+	INTERLEAVE: "interleave",
+	LABEL:      "label",
+	LANGUAGE:   "language",
+	LENGTH:     "length",
+	MAP:        "map",
+	MESSAGE:    "message",
+	MIXED:      "mixed",
+	MODIFIES:   "modifies",
+	MODULE:     "module",
+	MODULEPAR:  "modulepar",
+	MTC:        "mtc",
+	NAN:        "not_a_number",
+	NOBLOCK:    "noblock",
+	NONE:       "none",
+	NULL:       "null",
+	OF:         "of",
+	OMIT:       "omit",
+	ON:         "on",
+	OPTIONAL:   "optional",
+	OUT:        "out",
+	OVERRIDE:   "override",
+	PARAM:      "param",
+	PASS:       "pass",
+	PATTERN:    "pattern",
+	PORT:       "port",
+	PRESENT:    "present",
+	PRIVATE:    "private",
+	PROCEDURE:  "procedure",
+	PUBLIC:     "public",
+	RECORD:     "record",
+	REGEXP:     "regexp",
+	REPEAT:     "repeat",
+	RETURN:     "return",
+	RUNS:       "runs",
+	SELECT:     "select",
+	SENDER:     "sender",
+	SET:        "set",
+	SIGNATURE:  "signature",
+	STEPSIZE:   "stepsize",
+	SYSTEM:     "system",
+	TEMPLATE:   "template",
+	TESTCASE:   "testcase",
+	TIMER:      "timer",
+	TIMESTAMP:  "timestamp",
+	TO:         "to",
+	TRUE:       "true",
+	TYPE:       "type",
+	UNION:      "union",
+	UNIVERSAL:  "universal",
+	UNMAP:      "unmap",
+	VALUE:      "value",
+	VAR:        "var",
+	VARIANT:    "variant",
+	WHILE:      "while",
+	WITH:       "with",
 }
 
 // String returns the string corresponding to the token tok.
@@ -183,34 +375,38 @@ func (tok Token) Precedence() int {
 	switch tok {
 	case ASSIGN:
 		return 1
-	case EXCL:
+	case DECODE:
 		return 2
-	case OR:
+	case RANGE:
 		return 3
-	case XOR:
+	case EXCL:
 		return 4
-	case AND:
+	case OR:
 		return 5
-	case NOT:
+	case XOR:
 		return 6
-	case EQ, NE:
+	case AND:
 		return 7
-	case LT, LE, GT, GE:
+	case NOT:
 		return 8
-	case SHR, SHL, ROR, ROL:
+	case EQ, NE:
 		return 9
-	case OR4B:
+	case LT, LE, GT, GE:
 		return 10
-	case XOR4B:
+	case SHR, SHL, ROR, ROL:
 		return 11
-	case AND4B:
+	case OR4B:
 		return 12
-	case NOT4B:
+	case XOR4B:
 		return 13
-	case ADD, SUB, CONCAT:
+	case AND4B:
 		return 14
-	case MUL, DIV, REM, MOD:
+	case NOT4B:
 		return 15
+	case ADD, SUB, CONCAT:
+		return 16
+	case MUL, DIV, REM, MOD:
+		return 17
 	}
 	return LowestPrec
 }
