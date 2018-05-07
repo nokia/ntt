@@ -99,7 +99,6 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `function f() mtc C {}`},
 		{PASS, `function f() runs on C mtc C system C {}`},
 		{PASS, `altstep as() { var roi[-] a[4][4]; [] receive; [else] {}}`},
-		{PASS, `external function f();`},
 		{PASS, `signature f();`},
 		{PASS, `signature f() exception (integer);`},
 		{PASS, `signature f() return int;`},
@@ -108,7 +107,7 @@ func TestFuncDecls(t *testing.T) {
 		{PASS, `signature f() noblock exception (integer, a.b[0]);`},
 	}
 
-	testParse(t, funcDecls, func(p *parser) { p.parseDecl() })
+	testParse(t, funcDecls, func(p *parser) { p.parseFuncDecl() })
 }
 
 func TestModuleDefs(t *testing.T) {
@@ -168,6 +167,16 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `var present int x;`},
 		{PASS, `var value @lazy int x;`},
 		{PASS, `var value @lazy int x, y := ?;`},
+		{PASS, `timer x, y := 1.0, y;`},
+		{PASS, `port P x[len], y := 1, z := 2 ;`},
+		{PASS, `modulepar RoI[-] x, y:=23, z;`},
+	}
+
+	testParse(t, valueDecls, func(p *parser) { p.parseValueDecl() })
+}
+
+func TestTemplateDecls(t *testing.T) {
+	templateDecls := []Test{
 		{PASS, `template int x := ?;`},
 		{PASS, `template int x modifies y := ?;`},
 		{PASS, `template int x(int i) := i;`},
@@ -178,12 +187,9 @@ func TestValueDecls(t *testing.T) {
 		{PASS, `template(omit)    int x := ?;`},
 		{PASS, `template(value)   int x := ?;`},
 		{PASS, `template(present) int x := ?;`},
-		{PASS, `timer x, y := 1.0, y;`},
-		{PASS, `port P x[len], y := 1, z := 2 ;`},
-		{PASS, `modulepar RoI[-] x, y:=23, z;`},
 	}
 
-	testParse(t, valueDecls, func(p *parser) { p.parseDecl() })
+	testParse(t, templateDecls, func(p *parser) { p.parseTemplateDecl() })
 }
 
 func TestFormalPars(t *testing.T) {

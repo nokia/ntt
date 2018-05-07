@@ -141,21 +141,6 @@ type parser struct {
 	// loops across multiple parser functions during error recovery)
 	syncPos token.Pos // last synchronization position
 	syncCnt int       // number of parser.advance calls without progress
-
-	// Non-syntactic parser control
-	exprLev int  // < 0: in control clause, >= 0: in expression
-	inRhs   bool // if set, the parser is parsing a rhs expression
-
-	// Ordinary identifier scopes
-	modScope   *ast.Scope   // modScope.Outer == nil
-	topScope   *ast.Scope   // top-most scope; may be modScope
-	unresolved []*ast.Ident // unresolved identifiers
-	//imports    []*ast.ImportSpec // list of imports
-
-	// Label scopes
-	// (maintained by open/close LabelScope)
-	labelScope  *ast.Scope     // label scope for current function
-	targetStack [][]*ast.Ident // stack of unresolved labels
 }
 
 func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode Mode, eh scanner.ErrorHandler) {
@@ -478,7 +463,11 @@ func (p *parser) parseBinaryExpr(prec1 int) ast.Expr {
 
 func (p *parser) parseUnaryExpr() ast.Expr {
 	switch p.tok {
-	case token.SUB, token.ADD, token.NOT, token.NOT4B, token.EXCL:
+	case token.ADD,
+		token.EXCL,
+		token.NOT,
+		token.NOT4B,
+		token.SUB:
 		op, pos := p.tok, p.pos
 		p.next()
 		// handle unused expr '-'
@@ -517,10 +506,7 @@ L:
 	}
 
 	if p.tok == token.LENGTH {
-		p.next()
-		p.expect(token.LPAREN)
-		p.parseExpr()
-		p.expect(token.RPAREN)
+		p.parseLength()
 	}
 
 	if p.tok == token.IFPRESENT {
@@ -543,9 +529,7 @@ L:
 
 	if p.tok == token.PARAM {
 		p.next()
-		p.expect(token.LPAREN)
-		p.parseExprList()
-		p.expect(token.RPAREN)
+		p.parseSetExpr()
 	}
 
 	if p.tok == token.ALIVE {
@@ -578,69 +562,64 @@ func (p *parser) parseOperand() ast.Expr {
 		p.errorExpected(p.pos, "'component', 'port', 'timer' or 'from'")
 
 	case token.UNIVERSAL:
-		p.next()
-		p.expect(token.CHARSTRING)
+		p.parseUniversalCharstring()
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		return id
-	case token.IDENT, token.TIMER, token.TESTCASE, token.SYSTEM, token.MTC, token.ADDRESS, token.NULL, token.OMIT,
+	case token.IDENT,
+		token.ADDRESS,
 		token.CHARSTRING,
-		token.MAP, token.UNMAP:
+		token.MAP,
+		token.MTC,
+		token.NULL,
+		token.OMIT,
+		token.SYSTEM,
+		token.TESTCASE,
+		token.TIMER,
+		token.UNMAP:
 		id := &ast.Ident{NamePos: p.pos, Name: p.lit}
 		p.next()
 		return id
-	case token.LBRACK:
-		p.parseIndexExpr(nil)
-	case token.LBRACE:
-		p.next()
-		if p.tok != token.RBRACE {
-			p.parseExprList()
-		}
-		p.expect(token.RBRACE)
-		return nil
-	case token.LPAREN:
-		p.next()
-		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
-		set := &ast.SetExpr{List: p.parseExprList()}
-		p.expect(token.RPAREN)
-		return set
-	case token.INT, token.FLOAT, token.STRING, token.BSTRING,
-		token.ANY, token.MUL,
-		token.TRUE, token.FALSE,
-		token.PASS, token.FAIL, token.NONE, token.INCONC, token.ERROR,
-		token.NAN:
+
+	case token.INT,
+		token.ANY,
+		token.BSTRING,
+		token.ERROR,
+		token.FAIL,
+		token.FALSE,
+		token.FLOAT,
+		token.INCONC,
+		token.MUL,
+		token.NAN,
+		token.NONE,
+		token.PASS,
+		token.STRING,
+		token.TRUE:
 		lit := &ast.ValueLiteral{Kind: p.tok, ValuePos: p.pos, Value: p.lit}
 		p.next()
 		return lit
+
+	case token.LPAREN:
+		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
+		p.parseSetExpr()
+
+	case token.LBRACK:
+		p.parseIndexExpr(nil)
+
+	case token.LBRACE:
+		p.parseCompositeLiteral()
+
 	case token.REGEXP:
-		p.next()
-		if p.tok == token.MODIF {
-			p.next()
-		}
-		p.expect(token.LPAREN)
-		p.parseExprList()
-		p.expect(token.RPAREN)
+		p.parseCallRegexp()
+
 	case token.PATTERN:
-		p.next()
-		if p.tok == token.MODIF {
-			p.next()
-		}
-		p.expect(token.STRING)
+		p.parseCallPattern()
+
 	case token.DECMATCH:
-		p.next()
-		if p.tok == token.LPAREN {
-			p.next()
-			p.parseExprList()
-			p.expect(token.RPAREN)
-		}
-		p.parseExpr()
-	case token.MODIF: // @decoded
-		p.next()
-		if p.tok == token.LPAREN {
-			p.next()
-			p.parseExprList()
-			p.expect(token.RPAREN)
-		}
-		p.parseExpr()
+		p.parseCallDecMatch()
+
+	case token.MODIF:
+		p.parseCallDecoded()
+
 	default:
 		p.errorExpected(p.pos, "operand")
 	}
@@ -648,13 +627,64 @@ func (p *parser) parseOperand() ast.Expr {
 	return nil
 }
 
+func (p *parser) parseSetExpr() {
+	p.expect(token.LPAREN)
+	p.parseExprList()
+	p.expect(token.RPAREN)
+}
+
+func (p *parser) parseUniversalCharstring() {
+	p.expect(token.UNIVERSAL)
+	p.expect(token.CHARSTRING)
+}
+
+func (p *parser) parseCompositeLiteral() {
+	p.expect(token.LBRACE)
+	if p.tok != token.RBRACE {
+		p.parseExprList()
+	}
+	p.expect(token.RBRACE)
+}
+
+func (p *parser) parseCallRegexp() {
+	p.expect(token.REGEXP)
+	if p.tok == token.MODIF {
+		p.next()
+	}
+	p.parseSetExpr()
+}
+
+func (p *parser) parseCallPattern() {
+	p.expect(token.PATTERN)
+	if p.tok == token.MODIF {
+		p.next()
+	}
+	p.expect(token.STRING)
+}
+
+func (p *parser) parseCallDecMatch() {
+	p.expect(token.DECMATCH)
+	if p.tok == token.LPAREN {
+		p.parseSetExpr()
+	}
+	p.parseExpr()
+}
+
+func (p *parser) parseCallDecoded() {
+	p.expect(token.MODIF) // @decoded
+	if p.tok == token.LPAREN {
+		p.parseSetExpr()
+	}
+	p.parseExpr()
+}
+
 func (p *parser) parseSelectorExpr(x ast.Expr) ast.Expr {
-	p.next()
+	p.expect(token.DOT)
 	return &ast.SelectorExpr{X: x, Sel: p.parseIdent()}
 }
 
 func (p *parser) parseIndexExpr(x ast.Expr) ast.Expr {
-	p.next()
+	p.expect(token.LBRACK)
 	x = &ast.IndexExpr{X: x, Index: p.parseExpr()}
 	p.expect(token.RBRACK)
 	return x
@@ -684,7 +714,27 @@ func (p *parser) parseCallExpr(x ast.Expr) ast.Expr {
 		p.expect(token.RPAREN)
 		return &ast.CallExpr{Fun: x, Args: list}
 	}
+}
 
+func (p *parser) parseRunsOn() {
+	p.expect(token.RUNS)
+	p.expect(token.ON)
+	p.parseTypeRef()
+}
+
+func (p *parser) parseSystem() {
+	p.expect(token.SYSTEM)
+	p.parseTypeRef()
+}
+
+func (p *parser) parseMtc() {
+	p.expect(token.MTC)
+	p.parseTypeRef()
+}
+
+func (p *parser) parseLength() {
+	p.expect(token.LENGTH)
+	p.parseSetExpr()
 }
 
 func (p *parser) parseRedirect() ast.Expr {
@@ -706,9 +756,10 @@ func (p *parser) parseRedirect() ast.Expr {
 	}
 
 	if p.tok == token.MODIF {
-		p.next()
+		p.next() // @index
+
 		if p.tok == token.VALUE {
-			p.next()
+			p.next() // optional
 		}
 		p.parsePrimaryExpr()
 	}
@@ -726,9 +777,7 @@ func (p *parser) parseIdent() *ast.Ident {
 	name := "_"
 	switch p.tok {
 	case token.UNIVERSAL:
-		p.next()
-		p.expect(token.CHARSTRING)
-		name = p.lit
+		p.parseUniversalCharstring()
 	case token.IDENT, token.ADDRESS, token.ALIVE, token.CHARSTRING:
 		name = p.lit
 		p.next()
@@ -1090,7 +1139,7 @@ func (p *parser) parseType() ast.Decl {
 	}
 	p.next()
 	switch p.tok {
-	case token.IDENT, token.UNIVERSAL, token.CHARSTRING, token.ADDRESS:
+	case token.ADDRESS, token.CHARSTRING, token.IDENT, token.NULL, token.UNIVERSAL:
 		p.parseSubType()
 	case token.UNION:
 		p.next()
@@ -1121,20 +1170,20 @@ func (p *parser) parseNestedType() {
 		defer un(trace(p, "NestedType"))
 	}
 	switch p.tok {
-	case token.IDENT, token.ADDRESS, token.NULL, token.CHARSTRING, token.UNIVERSAL:
+	case token.ADDRESS, token.CHARSTRING, token.IDENT, token.NULL, token.UNIVERSAL:
 		p.parseTypeRef()
 	case token.UNION:
 		p.next()
-		p.parseNestedStructType()
+		p.parseStructBody()
 	case token.SET, token.RECORD:
 		p.next()
 		if p.tok == token.LBRACE {
-			p.parseNestedStructType()
+			p.parseStructBody()
 			break
 		}
-		p.parseNestedListType()
+		p.parseListBody()
 	case token.ENUMERATED:
-		p.parseNestedEnumType()
+		p.parseEnumBody()
 	default:
 		p.errorExpected(p.pos, "type definition")
 	}
@@ -1144,26 +1193,19 @@ func (p *parser) parseNestedType() {
  * Struct Types
  *************************************************************************/
 
-func (p *parser) parseNestedStructType() {
-	if p.trace {
-		defer un(trace(p, "NestedStructType"))
-	}
-	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE && p.tok != token.EOF {
-		p.parseStructField()
-		if p.tok != token.COMMA {
-			break
-		}
-		p.next()
-	}
-	p.expect(token.RBRACE)
-}
-
 func (p *parser) parseStructType() {
 	if p.trace {
 		defer un(trace(p, "StructType"))
 	}
 	p.parseIdent()
+	p.parseStructBody()
+	p.parseWith()
+}
+
+func (p *parser) parseStructBody() {
+	if p.trace {
+		defer un(trace(p, "StructBody"))
+	}
 	p.expect(token.LBRACE)
 	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseStructField()
@@ -1173,7 +1215,6 @@ func (p *parser) parseStructType() {
 		p.next()
 	}
 	p.expect(token.RBRACE)
-	p.parseWith()
 }
 
 func (p *parser) parseStructField() {
@@ -1185,7 +1226,13 @@ func (p *parser) parseStructField() {
 	}
 	p.parseNestedType()
 	p.parsePrimaryExpr()
-	p.parseConstraint()
+
+	if p.tok == token.LPAREN {
+		p.parseSetExpr()
+	}
+	if p.tok == token.LENGTH {
+		p.parseLength()
+	}
 
 	if p.tok == token.OPTIONAL {
 		p.next()
@@ -1196,47 +1243,40 @@ func (p *parser) parseStructField() {
  * List Type
  *************************************************************************/
 
-func (p *parser) parseNestedListType() {
-	if p.trace {
-		defer un(trace(p, "NestedListType"))
-	}
-	p.parseLength()
-	p.expect(token.OF)
-	p.parseNestedType()
-}
-
 func (p *parser) parseListType() {
 	if p.trace {
 		defer un(trace(p, "ListType"))
 	}
-	p.parseLength()
+	p.parseListBody()
+	p.parsePrimaryExpr()
+
+	if p.tok == token.LPAREN {
+		p.parseSetExpr()
+	}
+
+	if p.tok == token.LENGTH {
+		p.parseLength()
+	}
+
+	p.parseWith()
+}
+
+func (p *parser) parseListBody() {
+	if p.trace {
+		defer un(trace(p, "ListBody"))
+	}
+
+	if p.tok == token.LENGTH {
+		p.parseLength()
+	}
 
 	p.expect(token.OF)
 	p.parseNestedType()
-	p.parsePrimaryExpr()
-	p.parseConstraint()
-	p.parseWith()
 }
 
 /*************************************************************************
  * Enumeration Type
  *************************************************************************/
-
-func (p *parser) parseNestedEnumType() {
-	if p.trace {
-		defer un(trace(p, "NestedEnumType"))
-	}
-	p.next()
-	p.expect(token.LBRACE)
-	for p.tok != token.RBRACE && p.tok != token.EOF {
-		p.parseExpr()
-		if p.tok != token.COMMA {
-			break
-		}
-		p.next()
-	}
-	p.expect(token.RBRACE)
-}
 
 func (p *parser) parseEnumType() {
 	if p.trace {
@@ -1244,6 +1284,14 @@ func (p *parser) parseEnumType() {
 	}
 	p.next()
 	p.parseIdent()
+	p.parseEnumBody()
+	p.parseWith()
+}
+
+func (p *parser) parseEnumBody() {
+	if p.trace {
+		defer un(trace(p, "EnumBody"))
+	}
 	p.expect(token.LBRACE)
 	for p.tok != token.RBRACE && p.tok != token.EOF {
 		p.parseExpr()
@@ -1253,7 +1301,6 @@ func (p *parser) parseEnumType() {
 		p.next()
 	}
 	p.expect(token.RBRACE)
-	p.parseWith()
 }
 
 /*************************************************************************
@@ -1329,15 +1376,15 @@ func (p *parser) parseBehaviourType() {
 	p.next()
 	p.next()
 	p.parseParameters()
+
 	if p.tok == token.RUNS {
-		p.next()
-		p.expect(token.ON)
-		p.parseTypeRef()
+		p.parseRunsOn()
 	}
+
 	if p.tok == token.SYSTEM {
-		p.next()
-		p.parseTypeRef()
+		p.parseSystem()
 	}
+
 	if p.tok == token.RETURN {
 		p.parseReturn()
 	}
@@ -1356,55 +1403,16 @@ func (p *parser) parseSubType() *ast.SubType {
 
 	p.parseNestedType()
 	p.parsePrimaryExpr()
-	p.parseConstraint()
-
-	p.parseWith()
-	return nil
-}
-
-func (p *parser) parseConstraint() {
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
 	if p.tok == token.LPAREN {
-		p.next()
-		p.parseExprList()
-		p.expect(token.RPAREN)
+		p.parseSetExpr()
 	}
-
-	p.parseLength()
-}
-
-func (p *parser) parseLength() {
 	if p.tok == token.LENGTH {
-		p.next()
-		p.expect(token.LPAREN)
-		p.parseExpr()
-		p.expect(token.RPAREN)
+		p.parseLength()
 	}
-}
 
-/*************************************************************************
- * Declarations
- *************************************************************************/
-
-func (p *parser) parseDecl() ast.Decl {
-	switch p.tok {
-	case token.TEMPLATE:
-		return p.parseTemplateDecl()
-	case token.MODULEPAR:
-		return p.parseModulePar()
-	case token.VAR, token.CONST, token.TIMER, token.PORT:
-		return p.parseValueDecl()
-	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
-		return p.parseFuncDecl()
-	case token.EXTERNAL:
-		p.next()
-		return p.parseExtFuncDecl()
-	case token.SIGNATURE:
-		return p.parseSignatureDecl()
-	default:
-		p.errorExpected(p.pos, "declaration")
-	}
+	p.parseWith()
 	return nil
 }
 
@@ -1543,22 +1551,23 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	}
 
 	x.Params = p.parseParameters()
+
 	if p.tok == token.RUNS {
-		p.next()
-		p.expect(token.ON)
-		x.RunsOn = p.parseTypeRef()
+		p.parseRunsOn()
 	}
+
 	if p.tok == token.MTC {
-		p.next()
-		x.Mtc = p.parseTypeRef()
+		p.parseMtc()
 	}
+
 	if p.tok == token.SYSTEM {
-		p.next()
-		x.System = p.parseTypeRef()
+		p.parseSystem()
 	}
+
 	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
+
 	if p.tok == token.LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
@@ -1585,19 +1594,19 @@ func (p *parser) parseExtFuncDecl() *ast.FuncDecl {
 	}
 
 	x.Params = p.parseParameters()
+
 	if p.tok == token.RUNS {
-		p.next()
-		p.expect(token.ON)
-		x.RunsOn = p.parseTypeRef()
+		p.parseRunsOn()
 	}
+
 	if p.tok == token.MTC {
-		p.next()
-		x.Mtc = p.parseTypeRef()
+		p.parseMtc()
 	}
+
 	if p.tok == token.SYSTEM {
-		p.next()
-		x.System = p.parseTypeRef()
+		p.parseSystem()
 	}
+
 	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
@@ -1629,9 +1638,7 @@ func (p *parser) parseSignatureDecl() ast.Decl {
 
 	if p.tok == token.EXCEPTION {
 		p.next()
-		p.expect(token.LPAREN)
-		p.parseRefList()
-		p.expect(token.RPAREN)
+		p.parseSetExpr()
 	}
 	p.parseWith()
 	return nil
@@ -1706,8 +1713,10 @@ func (p *parser) parseStmt() ast.Stmt {
 	}
 
 	switch p.tok {
-	case token.TEMPLATE, token.VAR, token.CONST, token.TIMER, token.PORT:
-		p.parseDecl()
+	case token.TEMPLATE:
+		p.parseTemplateDecl()
+	case token.VAR, token.CONST, token.TIMER, token.PORT:
+		p.parseValueDecl()
 	case token.REPEAT, token.BREAK, token.CONTINUE:
 		p.next()
 	case token.LABEL:
@@ -1771,9 +1780,7 @@ func (p *parser) parseForLoop() {
 
 func (p *parser) parseWhileLoop() {
 	p.next()
-	p.expect(token.LPAREN)
-	p.parseExpr()
-	p.expect(token.RPAREN)
+	p.parseSetExpr()
 	p.parseBlockStmt()
 }
 
@@ -1781,16 +1788,12 @@ func (p *parser) parseDoWhileLoop() {
 	p.next()
 	p.parseBlockStmt()
 	p.expect(token.WHILE)
-	p.expect(token.LPAREN)
-	p.parseExpr()
-	p.expect(token.RPAREN)
+	p.parseSetExpr()
 }
 
 func (p *parser) parseIfStmt() {
 	p.next()
-	p.expect(token.LPAREN)
-	p.parseExpr()
-	p.expect(token.RPAREN)
+	p.parseSetExpr()
 	p.parseBlockStmt()
 	if p.tok == token.ELSE {
 		p.next()
@@ -1803,14 +1806,11 @@ func (p *parser) parseIfStmt() {
 }
 
 func (p *parser) parseSelect() {
-	p.next()
+	p.expect(token.SELECT)
 	if p.tok == token.UNION {
 		p.next()
 	}
-
-	p.expect(token.LPAREN)
-	p.parseExpr()
-	p.expect(token.RPAREN)
+	p.parseSetExpr()
 	p.expect(token.LBRACE)
 	for p.tok == token.CASE {
 		p.parseCaseStmt()
@@ -1823,9 +1823,7 @@ func (p *parser) parseCaseStmt() {
 	if p.tok == token.ELSE {
 		p.next()
 	} else {
-		p.expect(token.LPAREN)
-		p.parseExprList()
-		p.expect(token.RPAREN)
+		p.parseSetExpr()
 	}
 	p.parseBlockStmt()
 }
