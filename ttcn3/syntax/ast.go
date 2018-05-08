@@ -1,9 +1,7 @@
-package ast
+package syntax
 
 import (
 	"strings"
-
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // ----------------------------------------------------------------------------
@@ -25,8 +23,8 @@ import (
 
 // All node types implement the Node interface.
 type Node interface {
-	Pos() token.Pos // position of first character belonging to the node
-	End() token.Pos // position of first character immediately after the node
+	Pos() Pos // position of first character belonging to the node
+	End() Pos // position of first character immediately after the node
 }
 
 // All expression nodes implement the Expr interface.
@@ -52,12 +50,12 @@ type Decl interface {
 
 // A Comment node represents a single //-style or /*-style comment.
 type Comment struct {
-	Slash token.Pos // position of "/" starting the comment
-	Text  string    // comment text (excluding '\n' for //-style comments)
+	Slash Pos    // position of "/" starting the comment
+	Text  string // comment text (excluding '\n' for //-style comments)
 }
 
-func (c *Comment) Pos() token.Pos { return c.Slash }
-func (c *Comment) End() token.Pos { return token.Pos(int(c.Slash) + len(c.Text)) }
+func (c *Comment) Pos() Pos { return c.Slash }
+func (c *Comment) End() Pos { return Pos(int(c.Slash) + len(c.Text)) }
 
 // A CommentGroup represents a sequence of comments
 // with no other tokens and no empty lines between.
@@ -66,8 +64,8 @@ type CommentGroup struct {
 	List []*Comment // len(List) > 0
 }
 
-func (g *CommentGroup) Pos() token.Pos { return g.List[0].Pos() }
-func (g *CommentGroup) End() token.Pos { return g.List[len(g.List)-1].End() }
+func (g *CommentGroup) Pos() Pos { return g.List[0].Pos() }
+func (g *CommentGroup) End() Pos { return g.List[len(g.List)-1].End() }
 
 func isWhitespace(ch byte) bool { return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' }
 
@@ -143,11 +141,11 @@ func (g *CommentGroup) Text() string {
 // Miscellaneous and types
 
 type (
-    // A RestrictionSpec represents template restrictions
-    RestrictionSpec struct {
-        Kind        token.Token
-        KindPos     token.Pos
-    }
+	// A RestrictionSpec represents template restrictions
+	RestrictionSpec struct {
+		Kind    Token
+		KindPos Pos
+	}
 )
 
 // ----------------------------------------------------------------------------
@@ -162,32 +160,31 @@ type (
 	// created.
 	//
 	BadExpr struct {
-		From, To token.Pos // position range of bad expression
+		From, To Pos // position range of bad expression
 	}
 
 	// An Ident node represents an identifier.
 	Ident struct {
-		NamePos token.Pos // identifier position
-		Name    string    // identifier name
-		Obj     *Object   // denoted object; or nil
+		NamePos Pos    // identifier position
+		Name    string // identifier name
 	}
 
 	ValueLiteral struct {
-		Kind     token.Token
-		ValuePos token.Pos
+		Kind     Token
+		ValuePos Pos
 		Value    string
 	}
 
 	UnaryExpr struct {
-		Op    token.Token
-		OpPos token.Pos
+		Op    Token
+		OpPos Pos
 		X     Expr
 	}
 
 	BinaryExpr struct {
 		X     Expr
-		Op    token.Token
-		OpPos token.Pos
+		Op    Token
+		OpPos Pos
 		Y     Expr
 	}
 
@@ -213,25 +210,25 @@ type (
 
 // Pos and End implementations for expression/type nodes.
 
-func (x *BadExpr) Pos() token.Pos      { return x.From }
-func (x *Ident) Pos() token.Pos        { return x.NamePos }
-func (x *ValueLiteral) Pos() token.Pos { return x.ValuePos }
-func (x *UnaryExpr) Pos() token.Pos    { return x.X.Pos() }
-func (x *BinaryExpr) Pos() token.Pos   { return x.X.Pos() }
-func (x *SetExpr) Pos() token.Pos      { return x.List[0].Pos() }
-func (x *SelectorExpr) Pos() token.Pos { return x.X.Pos() }
-func (x *IndexExpr) Pos() token.Pos    { return x.X.Pos() }
-func (x *CallExpr) Pos() token.Pos     { return x.Fun.Pos() }
+func (x *BadExpr) Pos() Pos      { return x.From }
+func (x *Ident) Pos() Pos        { return x.NamePos }
+func (x *ValueLiteral) Pos() Pos { return x.ValuePos }
+func (x *UnaryExpr) Pos() Pos    { return x.X.Pos() }
+func (x *BinaryExpr) Pos() Pos   { return x.X.Pos() }
+func (x *SetExpr) Pos() Pos      { return x.List[0].Pos() }
+func (x *SelectorExpr) Pos() Pos { return x.X.Pos() }
+func (x *IndexExpr) Pos() Pos    { return x.X.Pos() }
+func (x *CallExpr) Pos() Pos     { return x.Fun.Pos() }
 
-func (x *BadExpr) End() token.Pos      { return x.To }
-func (x *Ident) End() token.Pos        { return token.Pos(int(x.NamePos) + len(x.Name)) }
-func (x *ValueLiteral) End() token.Pos { return x.ValuePos }
-func (x *UnaryExpr) End() token.Pos    { return x.X.End() }
-func (x *BinaryExpr) End() token.Pos   { return x.X.End() }
-func (x *SetExpr) End() token.Pos      { return x.List[0].End() }
-func (x *SelectorExpr) End() token.Pos { return x.X.End() }
-func (x *IndexExpr) End() token.Pos    { return x.X.End() }
-func (x *CallExpr) End() token.Pos     { return x.Fun.End() }
+func (x *BadExpr) End() Pos      { return x.To }
+func (x *Ident) End() Pos        { return Pos(int(x.NamePos) + len(x.Name)) }
+func (x *ValueLiteral) End() Pos { return x.ValuePos }
+func (x *UnaryExpr) End() Pos    { return x.X.End() }
+func (x *BinaryExpr) End() Pos   { return x.X.End() }
+func (x *SetExpr) End() Pos      { return x.List[0].End() }
+func (x *SelectorExpr) End() Pos { return x.X.End() }
+func (x *IndexExpr) End() Pos    { return x.X.End() }
+func (x *CallExpr) End() Pos     { return x.Fun.End() }
 
 // exprNode() ensures that only expression/type nodes can be
 // assigned to an Expr.
@@ -250,9 +247,9 @@ func (x *CallExpr) exprNode()     {}
 // Convenience functions for Idents
 
 // NewIdent creates a new Ident without position.
-// Useful for ASTs generated by code other than the Go parser.
+// Useful for ASTs generated by code other than the Go
 //
-func NewIdent(name string) *Ident { return &Ident{token.NoPos, name, nil} }
+func NewIdent(name string) *Ident { return &Ident{NoPos, name} }
 
 func (id *Ident) String() string {
 	if id != nil {
@@ -273,26 +270,25 @@ type Field struct {
 }
 
 type FieldList struct {
-	From   token.Pos
+	From   Pos
 	Fields []*Field
 }
 
-func (x *Field) Pos() token.Pos     { return x.Type.Pos() }
-func (x *FieldList) Pos() token.Pos { return x.From }
+func (x *Field) Pos() Pos     { return x.Type.Pos() }
+func (x *FieldList) Pos() Pos { return x.From }
 
-func (x *Field) End() token.Pos     { return x.Type.End() }
-func (x *FieldList) End() token.Pos { return x.Fields[len(x.Fields)-1].End() }
+func (x *Field) End() Pos     { return x.Type.End() }
+func (x *FieldList) End() Pos { return x.Fields[len(x.Fields)-1].End() }
 
 func (x *Field) exprNode()     {}
 func (x *FieldList) exprNode() {}
-
 
 // ----------------------------------------------------------------------------
 // Declarations
 
 type (
 	ImportDecl struct {
-		ImportPos   token.Pos
+		ImportPos   Pos
 		Module      *Ident
 		ImportSpecs []ImportSpec
 	}
@@ -301,15 +297,15 @@ type (
 	}
 
 	ValueDecl struct {
-		DeclPos token.Pos
-		Kind    token.Token // VAR, CONST, MODULEPAT, TIMER, ...
+		DeclPos Pos
+		Kind    Token // VAR, CONST, MODULEPAT, TIMER, ...
 		Type    Expr
 		Decls   []Expr
 	}
 
 	FuncDecl struct {
-		FuncPos token.Pos
-		Kind    token.Token
+		FuncPos Pos
+		Kind    Token
 		Name    *Ident
 		Params  *FieldList
 		Return  Expr
@@ -321,21 +317,21 @@ type (
 	}
 
 	SubType struct {
-		TypePos token.Pos
+		TypePos Pos
 		Name    *Ident
 		Type    Expr
 	}
 )
 
-func (x *ImportDecl) Pos() token.Pos { return x.ImportPos }
-func (x *ValueDecl) Pos() token.Pos  { return x.DeclPos }
-func (x *FuncDecl) Pos() token.Pos   { return x.FuncPos }
-func (x *SubType) Pos() token.Pos    { return x.TypePos }
+func (x *ImportDecl) Pos() Pos { return x.ImportPos }
+func (x *ValueDecl) Pos() Pos  { return x.DeclPos }
+func (x *FuncDecl) Pos() Pos   { return x.FuncPos }
+func (x *SubType) Pos() Pos    { return x.TypePos }
 
-func (x *ImportDecl) End() token.Pos { return x.Module.End() }
-func (x *ValueDecl) End() token.Pos  { return x.Decls[len(x.Decls)-1].End() }
-func (x *FuncDecl) End() token.Pos   { return x.Body.End() }
-func (x *SubType) End() token.Pos    { return x.Name.End() }
+func (x *ImportDecl) End() Pos { return x.Module.End() }
+func (x *ValueDecl) End() Pos  { return x.Decls[len(x.Decls)-1].End() }
+func (x *FuncDecl) End() Pos   { return x.Body.End() }
+func (x *SubType) End() Pos    { return x.Name.End() }
 
 func (x *ImportDecl) declNode() {}
 func (x *ValueDecl) declNode()  {}
@@ -347,9 +343,9 @@ func (x *SubType) declNode()    {}
 
 type (
 	BlockStmt struct {
-		LBrace token.Pos
+		LBrace Pos
 		Stmts  []Stmt
-		RBrace token.Pos
+		RBrace Pos
 	}
 
 	DeclStmt struct {
@@ -361,13 +357,13 @@ type (
 	}
 )
 
-func (x *BlockStmt) Pos() token.Pos { return x.LBrace }
-func (x *DeclStmt) Pos() token.Pos  { return x.Decl.Pos() }
-func (x *ExprStmt) Pos() token.Pos  { return x.Expr.Pos() }
+func (x *BlockStmt) Pos() Pos { return x.LBrace }
+func (x *DeclStmt) Pos() Pos  { return x.Decl.Pos() }
+func (x *ExprStmt) Pos() Pos  { return x.Expr.Pos() }
 
-func (x *BlockStmt) End() token.Pos { return x.RBrace }
-func (x *DeclStmt) End() token.Pos  { return x.Decl.End() }
-func (x *ExprStmt) End() token.Pos  { return x.Expr.End() }
+func (x *BlockStmt) End() Pos { return x.RBrace }
+func (x *DeclStmt) End() Pos  { return x.Decl.End() }
+func (x *ExprStmt) End() Pos  { return x.Expr.End() }
 
 func (x *BlockStmt) stmtNode() {}
 func (x *DeclStmt) stmtNode()  {}
@@ -377,18 +373,15 @@ func (x *ExprStmt) stmtNode()  {}
 // Modules
 
 type Module struct {
-	Doc    *CommentGroup // associated documentation; or nil
-	Module token.Pos     // position of "module" keyword
-	Name   *Ident        // module name
-	Decls  []Decl        // top-level declarations; or nil
-	Scope  *Scope        // module scope
-	//Imports    []*ImportSpec   // imports in this file
-	Unresolved []*Ident        // unresolved identifiers in this file
-	Comments   []*CommentGroup // list of all comments in the source file
+	Doc      *CommentGroup   // associated documentation; or nil
+	Module   Pos             // position of "module" keyword
+	Name     *Ident          // module name
+	Decls    []Decl          // top-level declarations; or nil
+	Comments []*CommentGroup // list of all comments in the source file
 }
 
-func (f *Module) Pos() token.Pos { return f.Module }
-func (f *Module) End() token.Pos {
+func (f *Module) Pos() Pos { return f.Module }
+func (f *Module) End() Pos {
 	if n := len(f.Decls); n > 0 {
 		return f.Decls[n-1].End()
 	}

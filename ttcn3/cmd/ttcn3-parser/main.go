@@ -3,8 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nokia/ntt/ttcn3/parser"
-	"github.com/nokia/ntt/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"os"
 )
 
@@ -28,12 +27,12 @@ func main() {
 }
 
 func parse(file string) error {
-	mode := parser.Mode(parser.Trace)
+	mode := syntax.Mode(syntax.Trace)
 	if !*trace {
 		mode = 0
 	}
 
-	_, err := parser.ParseModule(token.NewFileSet(), file, nil, mode, func(pos token.Position, msg string) {
+	_, err := syntax.ParseModule(syntax.NewFileSet(), file, nil, mode, func(pos syntax.Position, msg string) {
 		fmt.Fprintf(os.Stderr, "%s: error: %s\n", pos, msg)
 	})
 

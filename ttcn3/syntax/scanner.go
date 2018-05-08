@@ -1,19 +1,17 @@
-package scanner
+package syntax
 
 import (
 	"fmt"
 	"path/filepath"
 	"unicode/utf8"
-
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // An ErrorHandler may be provided to Scanner.Init. If a syntax error is
 // encountered and a handler was installed, the handler is called with a
 // position and an error message. The position points to the beginning of
-// the offending token.
+// the offending
 //
-type ErrorHandler func(pos token.Position, msg string)
+type ErrorHandler func(pos Position, msg string)
 
 // A Scanner holds the scanner's internal state while processing
 // a given text. It can be allocated as part of another data
@@ -21,11 +19,10 @@ type ErrorHandler func(pos token.Position, msg string)
 //
 type Scanner struct {
 	// immutable state
-	file *token.File  // source file handle
+	file *File        // source file handle
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
 	Err  ErrorHandler // error reporting; or nil
-	mode Mode         // scanning mode
 
 	// scanning state
 	ch         rune // current character
@@ -74,13 +71,13 @@ func (s *Scanner) next() {
 	}
 }
 
-// A Mode value is a set of flags (or 0).
+// A SMode value is a set of flags (or 0).
 // They control scanner behavior.
 //
-type Mode uint
+type SMode uint
 
 const (
-	ScanComments Mode = 1 << iota // return comments as COMMENT tokens
+	ScanComments SMode = 1 << iota // return comments as COMMENT tokens
 )
 
 // Init prepares the scanner s to tokenize the text src by setting the
@@ -92,13 +89,12 @@ const (
 //
 // Calls to Scan will invoke the error handler Err if they encounter a
 // syntax error and Err is not nil. Also, for each error encountered,
-// the Scanner field ErrorCount is incremented by one. The mode parameter
-// determines how comments are handled.
+// the Scanner field ErrorCount is incremented by one.
 //
 // Note that Init may call Err if there is an error in the first character
 // of the file.
 //
-func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode) {
+func (s *Scanner) Init(file *File, src []byte, err ErrorHandler) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {
 		panic(fmt.Sprintf("file size (%d) does not match src len (%d)", file.Size(), len(src)))
@@ -107,7 +103,6 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
 	s.Err = err
-	s.mode = mode
 
 	s.ch = ' '
 	s.offset = 0
@@ -234,9 +229,9 @@ func (s *Scanner) scanDigits() {
 	}
 }
 
-func (s *Scanner) scanNumber() (tok token.Token, lit string) {
+func (s *Scanner) scanNumber() (tok Token, lit string) {
 	offs := s.offset
-	tok = token.INT
+	tok = INT
 
 	if s.ch == '0' {
 		s.next()
@@ -250,14 +245,14 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 		if s.rdOffset < len(s.src) && s.src[s.rdOffset] == '.' {
 			goto out
 		}
-		tok = token.FLOAT
+		tok = FLOAT
 		s.next()
 		s.scanDigits()
 	}
 
 	// exponent
 	if s.ch == 'e' || s.ch == 'E' {
-		tok = token.FLOAT
+		tok = FLOAT
 		s.next()
 		if s.ch == '-' || s.ch == '+' {
 			s.next()
@@ -268,7 +263,7 @@ func (s *Scanner) scanNumber() (tok token.Token, lit string) {
 	// FIXME: In standard TTCN-3:2014 some identifiers start with a number.
 	//        For instance predefined function 291oolea.
 	if isAlpha(s.ch) {
-		tok = token.ILLEGAL
+		tok = ILLEGAL
 		for isAlpha(s.ch) || isDigit(s.ch) {
 			s.next()
 		}
@@ -348,7 +343,7 @@ func (s *Scanner) skipWhitespace() {
 	}
 }
 
-func (s *Scanner) switch2(ch rune, tok1, tok2 token.Token) token.Token {
+func (s *Scanner) switch2(ch rune, tok1, tok2 Token) Token {
 	if s.ch == ch {
 		s.next()
 		return tok1
@@ -358,15 +353,15 @@ func (s *Scanner) switch2(ch rune, tok1, tok2 token.Token) token.Token {
 
 // Scan scans the next token and returns the token position, the token,
 // and its literal string if applicable. The source end is indicated by
-// token.EOF.
+// EOF.
 //
-// If the returned token is a literal (token.IDENT, token.INT, token.FLOAT,
-// token.IMAG, token.CHAR, token.STRING) or token.COMMENT, the literal string
+// If the returned token is a literal (IDENT, INT, FLOAT,
+// IMAG, CHAR, STRING) or COMMENT, the literal string
 // has the corresponding value.
 //
 // If the returned token is a keyword, the literal string is the keyword.
 //
-// If the returned token is token.ILLEGAL, the literal string is the
+// If the returned token is ILLEGAL, the literal string is the
 // offending character.
 //
 // In all other cases, Scan returns an empty literal string.
@@ -382,8 +377,7 @@ func (s *Scanner) switch2(ch rune, tok1, tok2 token.Token) token.Token {
 // set with Init. Token positions are relative to that file
 // and thus relative to the file set.
 //
-func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
-scanAgain:
+func (s *Scanner) Scan() (pos Pos, tok Token, lit string) {
 	s.skipWhitespace()
 
 	// current token start
@@ -395,9 +389,9 @@ scanAgain:
 		lit = s.scanIdentifier()
 		if len(lit) > 1 {
 			// keywords are longer than one letter - avoid lookup otherwise
-			tok = token.Lookup(lit)
+			tok = Lookup(lit)
 		} else {
-			tok = token.IDENT
+			tok = IDENT
 		}
 	case isDigit(ch):
 		tok, lit = s.scanNumber()
@@ -405,116 +399,112 @@ scanAgain:
 		s.next() // always make progress
 		switch ch {
 		case -1:
-			tok = token.EOF
+			tok = EOF
 		case '"':
-			tok = token.STRING
+			tok = STRING
 			lit = s.scanString()
 		case '\'':
-			tok = token.BSTRING
+			tok = BSTRING
 			lit = s.scanBString()
 		case '@':
 			if s.ch == '>' {
-				tok = token.ROR
+				tok = ROR
 				s.next()
 			} else {
-				tok = token.MODIF
+				tok = MODIF
 				lit = s.scanModifier()
 			}
 		case '#':
-			tok = token.PREPROC
+			tok = PREPROC
 			lit = s.scanPreproc()
 		case ':':
-			tok = s.switch2('=', token.ASSIGN, token.COLON)
+			tok = s.switch2('=', ASSIGN, COLON)
 		case '.':
-			tok = s.switch2('.', token.RANGE, token.DOT)
+			tok = s.switch2('.', RANGE, DOT)
 		case ',':
-			tok = token.COMMA
+			tok = COMMA
 		case ';':
-			tok = token.SEMICOLON
+			tok = SEMICOLON
 		case '(':
-			tok = token.LPAREN
+			tok = LPAREN
 		case ')':
-			tok = token.RPAREN
+			tok = RPAREN
 		case '[':
-			tok = token.LBRACK
+			tok = LBRACK
 		case ']':
-			tok = token.RBRACK
+			tok = RBRACK
 		case '{':
-			tok = token.LBRACE
+			tok = LBRACE
 		case '}':
-			tok = token.RBRACE
+			tok = RBRACE
 		case '+':
-			tok = token.ADD
+			tok = ADD
 		case '-':
-			tok = s.switch2('>', token.REDIR, token.SUB)
+			tok = s.switch2('>', REDIR, SUB)
 		case '*':
-			tok = token.MUL
+			tok = MUL
 		case '/':
 			if s.ch == '/' || s.ch == '*' {
 				comment := s.scanComment()
-				if s.mode&ScanComments == 0 {
-					// skip comment
-					goto scanAgain
-				}
-				tok = token.COMMENT
+				tok = COMMENT
 				lit = comment
 			} else {
-				tok = token.DIV
+				tok = DIV
 			}
 		case '>':
 			switch s.ch {
 			case '>':
-				tok = token.SHR
+				tok = SHR
 				s.next()
 			case '=':
-				tok = token.GE
+				tok = GE
 				s.next()
 			default:
-				tok = token.GT
+				tok = GT
 			}
 
 		case '<':
 			switch s.ch {
 			case '<':
-				tok = token.SHL
+				tok = SHL
 				s.next()
 			case '@':
-				tok = token.ROL
+				tok = ROL
 				s.next()
 			case '=':
-				tok = token.LE
+				tok = LE
 				s.next()
 			default:
-				tok = token.LT
+				tok = LT
 			}
 
 		case '=':
 			switch s.ch {
 			case '=':
-				tok = token.EQ
+				tok = EQ
 				s.next()
 			case '>':
-				tok = token.DECODE
+				tok = DECODE
 				s.next()
 			default:
-				tok = token.ILLEGAL
+				tok = ILLEGAL
 				lit = "="
 				s.error(s.offset, fmt.Sprintf("stray %q", "="))
 
 			}
 		case '!':
-			tok = s.switch2('=', token.NE, token.EXCL)
+			tok = s.switch2('=', NE, EXCL)
 		case '&':
-			tok = token.CONCAT
+			tok = CONCAT
 		case '?':
-			tok = token.ANY
+			tok = ANY
 
 		default:
 			// next reports unexpected BOMs - don't repeat
 			if ch != bom {
 				s.error(s.file.Offset(pos), fmt.Sprintf("illegal character %#U", ch))
 			}
-			tok = token.ILLEGAL
+			tok = ILLEGAL
 			lit = string(ch)
 		}
 	}
