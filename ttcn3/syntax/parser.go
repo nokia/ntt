@@ -1190,6 +1190,9 @@ func (p *parser) parseStructType() {
 		defer un(trace(p, "StructType"))
 	}
 	p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 	p.parseStructBody()
 	p.parseWith()
 }
@@ -1241,6 +1244,9 @@ func (p *parser) parseListType() {
 	}
 	p.parseListBody()
 	p.parsePrimaryExpr()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 
 	if p.tok == LPAREN {
 		p.parseSetExpr()
@@ -1276,6 +1282,9 @@ func (p *parser) parseEnumType() {
 	}
 	p.next()
 	p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 	p.parseEnumBody()
 	p.parseWith()
 }
@@ -1305,6 +1314,10 @@ func (p *parser) parsePortType() {
 	}
 	p.next()
 	p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
+
 	switch p.tok {
 	case MIXED, MESSAGE, PROCEDURE:
 		p.next()
@@ -1349,6 +1362,9 @@ func (p *parser) parseComponentType() {
 	}
 	p.next()
 	p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 	if p.tok == EXTENDS {
 		p.next()
 		p.parseRefList()
@@ -1395,6 +1411,9 @@ func (p *parser) parseSubType() *SubType {
 
 	p.parseNestedType()
 	p.parsePrimaryExpr()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
 	if p.tok == LPAREN {
@@ -1432,6 +1451,9 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 
 	x.Type = p.parseTypeRef()
 	p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 	if p.tok == LPAREN {
 		p.parseParameters()
 	}
@@ -1537,6 +1559,9 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	x := &FuncDecl{FuncPos: p.pos, Kind: p.tok}
 	p.next()
 	x.Name = p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 
 	if p.tok == MODIF {
 		p.next()
@@ -1617,6 +1642,9 @@ func (p *parser) parseSignatureDecl() Decl {
 
 	p.next()
 	p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeParameters()
+	}
 
 	p.parseParameters()
 
@@ -1646,6 +1674,9 @@ func (p *parser) parseReturn() Expr {
 }
 
 func (p *parser) parseParameters() *FieldList {
+	if p.trace {
+		defer un(trace(p, "Parameters"))
+	}
 	x := &FieldList{From: p.pos}
 	p.expect(LPAREN)
 	for p.tok != RPAREN {
@@ -1660,6 +1691,9 @@ func (p *parser) parseParameters() *FieldList {
 }
 
 func (p *parser) parseParameter() *Field {
+	if p.trace {
+		defer un(trace(p, "Parameter"))
+	}
 	x := &Field{}
 
 	switch p.tok {
@@ -1679,6 +1713,40 @@ func (p *parser) parseParameter() *Field {
 	x.Name = p.parseExpr()
 
 	return x
+}
+
+func (p *parser) parseTypeParameters() {
+	if p.trace {
+		defer un(trace(p, "TypeParameters"))
+	}
+	p.expect(LT)
+	for p.tok != GT {
+		p.parseTypeParameter()
+		if p.tok != COMMA {
+			break
+		}
+		p.next()
+	}
+	p.expect(GT)
+}
+
+func (p *parser) parseTypeParameter() {
+	if p.trace {
+		defer un(trace(p, "TypeParameter"))
+	}
+	if p.tok == IN {
+		p.next()
+	}
+
+	switch p.tok {
+	case TYPE:
+		p.next()
+	case SIGNATURE:
+		p.next()
+	default:
+		p.parseTypeRef()
+	}
+	p.parseExpr()
 }
 
 /*************************************************************************

@@ -311,17 +311,20 @@ func TestStmts(t *testing.T) {
 func TestTypeParametrization(t *testing.T) {
 	tests := []Test{
 		// Formal Type Parameters
-		{fail, `type T x<type T>`},
-		{fail, `type T x<in type T>`},
-		{fail, `type T x<in type T := integer>`},
-		{fail, `type T x<in signature T>`},
-		{fail, `type C x<in Comp C>`},
-		{fail, `type C x<in Comp C := a[-]>`},
-		{fail, `type C x<in Comp C := a<integer,boolean>[-]>`},
+		{fail, `type set x<type T> {}`},
+		{fail, `type set x<in type T> {}`},
+		{fail, `type set x<in type T := integer> {}`},
+		{fail, `type set x<in signature T> {}`},
+		{fail, `type set x<in Comp C> {}`},
+		{fail, `type set x<in Comp C := a[-]> {}`},
+		{fail, `type set x<in Comp C := a<integer,boolean>[-]> {}`},
+		{fail, `type component C<in type T> {}`},
+		{fail, `type component D<in type T> extends C<T> {}`},
 
 		// Actual Type Parameters
-		{fail, `const int x := a(b<x, y>(1+2))`},
-		{fail, `const int x := a(b<x, y> 1+2)`},
+		{pass, `const int x := a(b<x, y>(1+2));`},
+		{pass, `const int x := a(b<x, y> 1+2);`},
+		{fail, `const int x := a<b<c,d>>;`},
 	}
 	testParse(t, tests, func(p *parser) { p.parseModuleDef() })
 }
