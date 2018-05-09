@@ -308,6 +308,24 @@ func TestStmts(t *testing.T) {
 	testParse(t, stmts, func(p *parser) { p.parseStmt() })
 }
 
+func TestTypeParametrization(t *testing.T) {
+	tests := []Test{
+		// Formal Type Parameters
+		{fail, `type T x<type T>`},
+		{fail, `type T x<in type T>`},
+		{fail, `type T x<in type T := integer>`},
+		{fail, `type T x<in signature T>`},
+		{fail, `type C x<in Comp C>`},
+		{fail, `type C x<in Comp C := a[-]>`},
+		{fail, `type C x<in Comp C := a<integer,boolean>[-]>`},
+
+		// Actual Type Parameters
+		{fail, `const int x := a(b<x, y>(1+2))`},
+		{fail, `const int x := a(b<x, y> 1+2)`},
+	}
+	testParse(t, tests, func(p *parser) { p.parseModuleDef() })
+}
+
 func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 	for _, tt := range tests {
 		err := anyParse(tt.input, f, testing.Verbose())
