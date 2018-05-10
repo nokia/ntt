@@ -1713,7 +1713,11 @@ func (p *parser) parseTypeParameter() {
 	default:
 		p.parseTypeRef()
 	}
-	p.parseExpr()
+	p.expect(IDENT)
+	if p.tok(1) == ASSIGN {
+		p.next()
+		p.parseTypeRef()
+	}
 }
 
 /*************************************************************************

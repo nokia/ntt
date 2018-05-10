@@ -311,14 +311,14 @@ func TestStmts(t *testing.T) {
 func TestTypeParametrization(t *testing.T) {
 	tests := []Test{
 		// Formal Type Parameters
-		{fail, `type set x<type T> {}`},
-		{fail, `type set x<in type T> {}`},
-		{fail, `type set x<in type T := integer> {}`},
-		{fail, `type set x<in signature T> {}`},
-		{fail, `type set x<in Comp C> {}`},
-		{fail, `type set x<in Comp C := a[-]> {}`},
+		{pass, `type set x<type T> {}`},
+		{pass, `type set x<in type T> {}`},
+		{pass, `type set x<in type T := integer> {}`},
+		{pass, `type set x<in signature T> {}`},
+		{pass, `type set x<in Comp C> {}`},
+		{pass, `type set x<in Comp C := a[-]> {}`},
 		{fail, `type set x<in Comp C := a<integer,boolean>[-]> {}`},
-		{fail, `type component C<in type T> {}`},
+		{pass, `type component C<in type T> {}`},
 		{fail, `type component D<in type T> extends C<T> {}`},
 
 		// Actual Type Parameters
