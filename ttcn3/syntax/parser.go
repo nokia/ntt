@@ -124,13 +124,10 @@ type parser struct {
 	trace  bool // == (mode & Trace != 0)
 	indent int  // indentation used for tracing output
 
-	// Comments
-	comments    []*CommentGroup
-	leadComment *CommentGroup // last lead comment
-	lineComment *CommentGroup // last line comment
-
-	// Next token
-	curr token
+	// Tokens/Backtracking
+	cursor  int
+	tokens  []token
+	markers []int
 
 	// Semicolon helper
 	seenBrace bool
@@ -141,19 +138,6 @@ type parser struct {
 	// loops across multiple parser functions during error recovery)
 	syncPos Pos // last synchronization position
 	syncCnt int // number of advance calls without progress
-}
-
-func (p *parser) tok(i int) Token {
-	return p.curr.Tok
-}
-
-func (p *parser) pos(i int) Pos {
-	return p.curr.Pos
-}
-
-func (p *parser) lit(i int) string {
-	return p.curr.Lit
-
 }
 
 func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh ErrorHandler) {
@@ -170,11 +154,103 @@ func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
 
-	p.next()
+	p.tokens = make([]token, 0, 200)
+	p.markers = make([]int, 0, 200)
+}
+
+// Usage pattern: defer un(trace(p, "..."))
+func un(p *parser) {
+	p.indent--
+	p.printTrace(")")
+}
+
+// Read the next token from input-stream
+func (p *parser) readToken() token {
+redo:
+	pos, tok, lit := p.scanner.Scan()
+	if tok == COMMENT || tok == PREPROC {
+		goto redo
+	}
+	return token{pos, tok, lit}
+}
+
+// Advance to the next token
+func (p *parser) next() {
+
+	if p.trace {
+		tok := p.tokens[p.cursor].Tok
+		lit := p.tokens[p.cursor].Lit
+		s := tok.String()
+		switch {
+		case tok.IsLiteral():
+			p.printTrace(s, lit)
+		case tok.IsOperator(), tok.IsKeyword():
+			p.printTrace("\"" + s + "\"")
+		default:
+			p.printTrace(s)
+		}
+	}
+
+	// Track curly braces for TTCN-3 semicolon rules
+	p.seenBrace = false
+	if p.tok(1) == RBRACE {
+		p.seenBrace = true
+	}
+
+	p.cursor++
+	if p.cursor == len(p.tokens) && !p.speculating() {
+		p.cursor = 0
+		p.tokens = p.tokens[:0]
+	}
+
+	p.grow(1)
+}
+
+func (p *parser) grow(i int) {
+	idx := p.cursor + i - 1
+	last := len(p.tokens) - 1
+	if idx > last {
+		n := idx - last
+		for i := 0; i < n; i++ {
+			p.tokens = append(p.tokens, p.readToken())
+		}
+	}
+}
+
+func (p *parser) peek(i int) token {
+	p.grow(i)
+	return p.tokens[p.cursor+i-1]
+}
+
+func (p *parser) tok(i int) Token {
+	return p.peek(i).Tok
+}
+
+func (p *parser) pos(i int) Pos {
+	return p.peek(i).Pos
+}
+
+func (p *parser) lit(i int) string {
+	return p.peek(i).Lit
+}
+
+func (p *parser) mark() {
+	p.markers = append(p.markers, p.cursor)
+}
+
+func (p *parser) release() {
+	last := len(p.markers) - 1
+	marker := p.markers[last]
+	p.markers = p.markers[0:last]
+	p.cursor = marker
+}
+
+func (p *parser) speculating() bool {
+	return len(p.markers) > 0
 }
 
 // ----------------------------------------------------------------------------
-// Parsing support
+// Tracing support
 
 func (p *parser) printTrace(a ...interface{}) {
 	const dots = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . "
@@ -195,131 +271,6 @@ func trace(p *parser, msg string) *parser {
 	p.printTrace(msg, "(")
 	p.indent++
 	return p
-}
-
-// Usage pattern: defer un(trace(p, "..."))
-func un(p *parser) {
-	p.indent--
-	p.printTrace(")")
-}
-
-// Advance to the next
-func (p *parser) next0() {
-	// Because of one-token look-ahead, print the previous token
-	// when tracing as it provides a more readable output. The
-	// very first token (!p.pos(1).IsValid()) is not initialized
-	// (it is ILLEGAL), so don't print it .
-	if p.trace && p.pos(1).IsValid() {
-		s := p.tok(1).String()
-		switch {
-		case p.tok(1).IsLiteral():
-			p.printTrace(s, p.lit(1))
-		case p.tok(1).IsOperator(), p.tok(1).IsKeyword():
-			p.printTrace("\"" + s + "\"")
-		default:
-			p.printTrace(s)
-		}
-	}
-
-	p.curr.Pos, p.curr.Tok, p.curr.Lit = p.scanner.Scan()
-}
-
-// Consume a comment and return it and the line on which it ends.
-func (p *parser) consumeComment() (comment *Comment, endline int) {
-	// /*-style comments may end on a different line than where they start.
-	// Scan the comment for '\n' chars and adjust endline accordingly.
-	endline = p.file.Line(p.pos(1))
-	if p.lit(1)[1] == '*' {
-		// don't use range here - no need to decode Unicode code points
-		for i := 0; i < len(p.lit(1)); i++ {
-			if p.lit(1)[i] == '\n' {
-				endline++
-			}
-		}
-	}
-
-	comment = &Comment{Slash: p.pos(1), Text: p.lit(1)}
-	p.next0()
-
-	return
-}
-
-// Consume a group of adjacent comments, add it to the parser's
-// comments list, and return it together with the line at which
-// the last comment in the group ends. A non-comment token or n
-// empty lines terminate a comment group.
-//
-func (p *parser) consumeCommentGroup(n int) (comments *CommentGroup, endline int) {
-	var list []*Comment
-	endline = p.file.Line(p.pos(1))
-	for p.tok(1) == COMMENT && p.file.Line(p.pos(1)) <= endline+n {
-		var comment *Comment
-		comment, endline = p.consumeComment()
-		list = append(list, comment)
-	}
-
-	// add comment group to the comments list
-	comments = &CommentGroup{List: list}
-	p.comments = append(p.comments, comments)
-
-	return
-}
-
-// Advance to the next non-comment  In the process, collect
-// any comment groups encountered, and remember the last lead and
-// and line comments.
-//
-// A lead comment is a comment group that starts and ends in a
-// line without any other tokens and that is followed by a non-comment
-// token on the line immediately after the comment group.
-//
-// A line comment is a comment group that follows a non-comment
-// token on the same line, and that has no tokens after it on the line
-// where it ends.
-//
-// Lead and line comments may be considered documentation that is
-// stored in the AST.
-//
-func (p *parser) next() {
-	p.leadComment = nil
-	p.lineComment = nil
-	p.seenBrace = false
-
-	prev := p.pos(1)
-
-	if p.tok(1) == RBRACE {
-		p.seenBrace = true
-	}
-
-	p.next0()
-
-	if p.tok(1) == COMMENT {
-		var comment *CommentGroup
-		var endline int
-
-		if p.file.Line(p.pos(1)) == p.file.Line(prev) {
-			// The comment is on same line as the previous token; it
-			// cannot be a lead comment but may be a line comment.
-			comment, endline = p.consumeCommentGroup(0)
-			if p.file.Line(p.pos(1)) != endline || p.tok(1) == EOF {
-				// The next token is on a different line, thus
-				// the last comment group is a line comment.
-				p.lineComment = comment
-			}
-		}
-
-		// consume successor comments, if any
-		endline = -1
-		for p.tok(1) == COMMENT {
-			comment, endline = p.consumeCommentGroup(1)
-		}
-
-		if endline+1 == p.file.Line(p.pos(1)) {
-			// The next token is following on the line immediately after the
-			// comment group, thus the last comment group is a lead comment.
-			p.leadComment = comment
-		}
-	}
 }
 
 // A bailout panic is raised to indicate early termination.
@@ -839,10 +790,9 @@ func (p *parser) parseModule() *Module {
 	p.expect(RBRACE)
 
 	return &Module{
-		Module:   pos,
-		Name:     name,
-		Decls:    decls,
-		Comments: p.comments,
+		Module: pos,
+		Name:   name,
+		Decls:  decls,
 	}
 }
 
