@@ -637,8 +637,7 @@ func (p *parser) parseOperand() Expr {
 }
 
 func (p *parser) parseRef() Expr {
-	id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
-	p.next()
+	id := p.parseIdent()
 
 	if p.tok(1) == LT {
 		p.mark()
