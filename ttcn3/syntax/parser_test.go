@@ -178,6 +178,7 @@ func TestTemplateDecls(t *testing.T) {
 	templateDecls := []Test{
 		{pass, `template int x := ?;`},
 		{pass, `template int x modifies y := ?;`},
+		{pass, `template int x modifies y.z := ?;`},
 		{pass, `template int x(int i) := i;`},
 		{pass, `template @lazy int x := ?;`},
 		{pass, `template @lazy int x(int i) := i;`},
@@ -225,7 +226,9 @@ func TestTypes(t *testing.T) {
 		{pass, `type set s {}`},
 		{pass, `type set s {int a optional }`},
 		{pass, `type set s {set length(1) of set length(2) of int() f1[-][-] length(3) optional}`},
+		{pass, `type set s {function fn() runs on self return template int callback`},
 		{pass, `type union s {@default set of int f1 optional}`},
+		{pass, `type union s {enumerated { e(1) } foo`},
 		{pass, `type enumerated a {e, e(1), e(1)}`},
 
 		// Port Types
