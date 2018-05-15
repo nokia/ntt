@@ -238,6 +238,11 @@ func (p *parser) mark() {
 	p.markers = append(p.markers, p.cursor)
 }
 
+func (p *parser) commit() {
+	last := len(p.markers) - 1
+	p.markers = p.markers[0:last]
+}
+
 func (p *parser) release() {
 	last := len(p.markers) - 1
 	marker := p.markers[last]
@@ -380,6 +385,7 @@ var stmtStart = map[Token]bool{
  * Expressions
  *************************************************************************/
 
+// ExprList ::= Expr { "," Expr }
 func (p *parser) parseExprList() (list []Expr) {
 	list = append(list, p.parseExpr())
 	for p.tok(1) == COMMA {
@@ -389,6 +395,7 @@ func (p *parser) parseExprList() (list []Expr) {
 	return list
 }
 
+// Expr ::= BinaryExpr [ ":=" Expr ]
 func (p *parser) parseExpr() Expr {
 	if p.trace {
 		defer un(trace(p, "Expr"))
@@ -404,6 +411,9 @@ func (p *parser) parseExpr() Expr {
 	return x
 }
 
+// BinaryExpr ::= UnaryExpr
+//              | BinaryExpr OP BinaryExpr
+//
 func (p *parser) parseBinaryExpr(prec1 int) Expr {
 	x := p.parseUnaryExpr()
 	for {
@@ -421,6 +431,11 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 	}
 }
 
+// UnaryExpr ::= "-"
+//             | ("-"|"+"|"!"|"not"|"not4b") UnaryExpr
+//             | "modifies" PrimaryExpr ":=" Expr
+//             | PrimaryExpr
+//
 func (p *parser) parseUnaryExpr() Expr {
 	switch p.tok(1) {
 	case ADD,
@@ -446,6 +461,21 @@ func (p *parser) parseUnaryExpr() Expr {
 	return p.parsePrimaryExpr()
 }
 
+// PrimaryExpr ::= Operand [{ExtFieldRef}]
+//                         ["length" "(" ExprList ")"] ["ifpresent"]
+//                         [("to"|"from") Expr]        ["->" Redirect]
+//
+// ExtFieldRef ::= "." ID
+//               | "[" Expr "]"
+//               | "(" ExprList ")"
+//               | ":" Expr
+//
+// Redirect    ::= ["value"            ExprList]
+//                 ["param"            ExprList"]
+//                 ["sender"           PrimaryExpr]
+//                 ["@index" ["value"] PrimaryExpr]
+//                 ["timestamp"        PrimaryExpr]
+//
 func (p *parser) parsePrimaryExpr() Expr {
 	x := p.parseOperand()
 L:
@@ -499,6 +529,22 @@ L:
 	return x
 }
 
+// Operand ::= ("any"|"all") ("component"|"port"|"timer"|"from" PrimaryExpr)
+//           | Literal
+//           | Reference
+//
+// Literal ::= INT | STRING | BSTRING | FLOAT
+//           | "?" | "*"
+//           | "none" | "inconc" | "pass" | "fail" | "error"
+//           | "true" | "false"
+//           | "not_a_number"
+//
+// Reference ::= ID
+//             | "address" | ["unviersal"] "charstring" | "timer"
+//             | "null" | "omit"
+//             | "mtc" | "system" | "testcase"
+//             | "map" | "unmap"
+//
 func (p *parser) parseOperand() Expr {
 	switch p.tok(1) {
 	case ANYKW, ALL:
@@ -525,8 +571,8 @@ func (p *parser) parseOperand() Expr {
 		p.parseUniversalCharstring()
 		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
 		return id
-	case IDENT,
-		ADDRESS,
+
+	case ADDRESS,
 		CHARSTRING,
 		MAP,
 		MTC,
@@ -539,6 +585,20 @@ func (p *parser) parseOperand() Expr {
 		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
 		p.next()
 		return id
+
+	case IDENT:
+		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
+		p.next()
+
+		if p.tok(1) == LT {
+			p.mark()
+			if x := p.tryTypeParameters(); x != nil {
+				p.commit()
+				return id
+			}
+			p.release()
+			return id
+		}
 
 	case INT,
 		ANY,
@@ -763,6 +823,77 @@ func (p *parser) parseTypeRef() Expr {
 	}
 	x := p.parsePrimaryExpr()
 	return x
+}
+
+func (p *parser) tryTypeParameters() Expr {
+	if p.trace {
+		defer un(trace(p, "tryTypeParameters"))
+	}
+	x := &Ident{Name: "dummy"}
+	p.next() // consume '<'
+	for p.tok(1) != GT {
+		y := p.tryTypeParameter()
+		if y == nil {
+			return nil
+		}
+		if p.tok(1) != COMMA {
+			break
+		}
+		p.next()
+	}
+
+	if p.tok(1) != GT {
+		return nil
+	}
+	p.next()
+	return x
+}
+
+func (p *parser) tryTypeParameter() Expr {
+	if p.trace {
+		defer un(trace(p, "tryTypeParameter"))
+	}
+	x := p.tryTypeIdent()
+L:
+	for {
+		switch p.tok(1) {
+		case DOT:
+			p.next() // consume '.'
+			p.tryTypeIdent()
+		case LBRACK:
+			p.next() // consume '['
+
+			if p.tok(1) != SUB {
+				return nil
+			}
+			p.next() // consume '-'
+
+			if p.tok(1) != RBRACK {
+				return nil
+			}
+			p.next() // consume ']'
+
+		default:
+			break L
+		}
+	}
+	return x
+}
+
+func (p *parser) tryTypeIdent() Expr {
+	if p.trace {
+		defer un(trace(p, "tryTypeIdent"))
+	}
+	if p.tok(1) != IDENT {
+		return nil
+	}
+	p.next()
+	if p.tok(1) == LT {
+		if x := p.tryTypeParameters(); x == nil {
+			return nil
+		}
+	}
+	return &Ident{Name: "todo"}
 }
 
 /*************************************************************************

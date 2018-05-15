@@ -317,14 +317,20 @@ func TestTypeParametrization(t *testing.T) {
 		{pass, `type set x<in signature T> {}`},
 		{pass, `type set x<in Comp C> {}`},
 		{pass, `type set x<in Comp C := a[-]> {}`},
-		{fail, `type set x<in Comp C := a<integer,boolean>[-]> {}`},
+		{pass, `type set x<in Comp C := a<integer,boolean>[-]> {}`},
 		{pass, `type component C<in type T> {}`},
-		{fail, `type component D<in type T> extends C<T> {}`},
+		{pass, `type component D<in type T> extends C<T> {}`},
 
 		// Actual Type Parameters
 		{pass, `const int x := a(b<x, y>(1+2));`},
-		{pass, `const int x := a(b<x, y> 1+2);`},
-		{fail, `const int x := a<b<c,d>>;`},
+		{fail, `const int x := a(b<x, y> 1+2);`},
+		{pass, `const int x := a<b<c,d> >;`},
+		{pass, `const int x := a<>;`},
+		{pass, `const int x := a<>[-];`},
+		{pass, `const int x := a<a[-]>;`},
+		{pass, `const int x := a<a.b[-], c>;`},
+		{pass, `const int x := a<a.b[-], c<d> >;`},
+		{fail, `const int x := f(a<b, c<d>3);`},
 	}
 	testParse(t, tests, func(p *parser) { p.parseModuleDef() })
 }
