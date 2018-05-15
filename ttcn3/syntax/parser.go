@@ -238,6 +238,11 @@ func (p *parser) mark() {
 	p.markers = append(p.markers, p.cursor)
 }
 
+func (p *parser) commit() {
+	last := len(p.markers) - 1
+	p.markers = p.markers[0:last]
+}
+
 func (p *parser) release() {
 	last := len(p.markers) - 1
 	marker := p.markers[last]
@@ -380,6 +385,7 @@ var stmtStart = map[Token]bool{
  * Expressions
  *************************************************************************/
 
+// ExprList ::= Expr { "," Expr }
 func (p *parser) parseExprList() (list []Expr) {
 	list = append(list, p.parseExpr())
 	for p.tok(1) == COMMA {
@@ -389,6 +395,7 @@ func (p *parser) parseExprList() (list []Expr) {
 	return list
 }
 
+// Expr ::= BinaryExpr [ ":=" Expr ]
 func (p *parser) parseExpr() Expr {
 	if p.trace {
 		defer un(trace(p, "Expr"))
@@ -404,6 +411,9 @@ func (p *parser) parseExpr() Expr {
 	return x
 }
 
+// BinaryExpr ::= UnaryExpr
+//              | BinaryExpr OP BinaryExpr
+//
 func (p *parser) parseBinaryExpr(prec1 int) Expr {
 	x := p.parseUnaryExpr()
 	for {
@@ -421,6 +431,11 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 	}
 }
 
+// UnaryExpr ::= "-"
+//             | ("-"|"+"|"!"|"not"|"not4b") UnaryExpr
+//             | "modifies" PrimaryExpr ":=" Expr
+//             | PrimaryExpr
+//
 func (p *parser) parseUnaryExpr() Expr {
 	switch p.tok(1) {
 	case ADD,
@@ -446,6 +461,21 @@ func (p *parser) parseUnaryExpr() Expr {
 	return p.parsePrimaryExpr()
 }
 
+// PrimaryExpr ::= Operand [{ExtFieldRef}]
+//                         ["length" "(" ExprList ")"] ["ifpresent"]
+//                         [("to"|"from") Expr]        ["->" Redirect]
+//
+// ExtFieldRef ::= "." ID
+//               | "[" Expr "]"
+//               | "(" ExprList ")"
+//               | ":" Expr
+//
+// Redirect    ::= ["value"            ExprList]
+//                 ["param"            ExprList"]
+//                 ["sender"           PrimaryExpr]
+//                 ["@index" ["value"] PrimaryExpr]
+//                 ["timestamp"        PrimaryExpr]
+//
 func (p *parser) parsePrimaryExpr() Expr {
 	x := p.parseOperand()
 L:
@@ -499,6 +529,22 @@ L:
 	return x
 }
 
+// Operand ::= ("any"|"all") ("component"|"port"|"timer"|"from" PrimaryExpr)
+//           | Literal
+//           | Reference
+//
+// Literal ::= INT | STRING | BSTRING | FLOAT
+//           | "?" | "*"
+//           | "none" | "inconc" | "pass" | "fail" | "error"
+//           | "true" | "false"
+//           | "not_a_number"
+//
+// Reference ::= ID
+//             | "address" | ["unviersal"] "charstring" | "timer"
+//             | "null" | "omit"
+//             | "mtc" | "system" | "testcase"
+//             | "map" | "unmap"
+//
 func (p *parser) parseOperand() Expr {
 	switch p.tok(1) {
 	case ANYKW, ALL:
@@ -525,8 +571,8 @@ func (p *parser) parseOperand() Expr {
 		p.parseUniversalCharstring()
 		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
 		return id
-	case IDENT,
-		ADDRESS,
+
+	case ADDRESS,
 		CHARSTRING,
 		MAP,
 		MTC,
@@ -539,6 +585,9 @@ func (p *parser) parseOperand() Expr {
 		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
 		p.next()
 		return id
+
+	case IDENT:
+		return p.parseRef()
 
 	case INT,
 		ANY,
@@ -585,6 +634,57 @@ func (p *parser) parseOperand() Expr {
 	}
 
 	return nil
+}
+
+func isOperand(tok Token) bool {
+	switch tok {
+	case ADDRESS,
+		ALL,
+		ANY,
+		ANYKW,
+		BSTRING,
+		CHARSTRING,
+		ERROR,
+		FAIL,
+		FALSE,
+		FLOAT,
+		IDENT,
+		INCONC,
+		INT,
+		MAP,
+		MTC,
+		MUL,
+		NAN,
+		NONE,
+		NULL,
+		OMIT,
+		PASS,
+		STRING,
+		SYSTEM,
+		TESTCASE,
+		TIMER,
+		TRUE,
+		UNIVERSAL,
+		UNMAP:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *parser) parseRef() Expr {
+	id := p.parseIdent()
+	if p.tok(1) != LT {
+		return id
+	}
+
+	p.mark()
+	if x := p.tryTypeParameters(); x != nil && !isOperand(p.tok(1)) {
+		p.commit()
+		return id
+	}
+	p.release()
+	return id
 }
 
 func (p *parser) parseSetExpr() {
@@ -640,7 +740,7 @@ func (p *parser) parseCallDecoded() {
 
 func (p *parser) parseSelectorExpr(x Expr) Expr {
 	p.expect(DOT)
-	return &SelectorExpr{X: x, Sel: p.parseIdent()}
+	return &SelectorExpr{X: x, Sel: p.parseRef()}
 }
 
 func (p *parser) parseIndexExpr(x Expr) Expr {
@@ -763,6 +863,82 @@ func (p *parser) parseTypeRef() Expr {
 	}
 	x := p.parsePrimaryExpr()
 	return x
+}
+
+func (p *parser) tryTypeParameters() Expr {
+	if p.trace {
+		defer un(trace(p, "tryTypeParameters"))
+	}
+	x := &Ident{Name: "dummy"}
+	p.next() // consume '<'
+	for p.tok(1) != GT {
+		y := p.tryTypeParameter()
+		if y == nil {
+			return nil
+		}
+		if p.tok(1) != COMMA {
+			break
+		}
+		p.next()
+	}
+
+	if p.tok(1) != GT {
+		return nil
+	}
+	p.next()
+	return x
+}
+
+func (p *parser) tryTypeParameter() Expr {
+	if p.trace {
+		defer un(trace(p, "tryTypeParameter"))
+	}
+	x := p.tryTypeIdent()
+L:
+	for {
+		switch p.tok(1) {
+		case DOT:
+			p.next() // consume '.'
+			p.tryTypeIdent()
+		case LBRACK:
+			p.next() // consume '['
+
+			if p.tok(1) != SUB {
+				return nil
+			}
+			p.next() // consume '-'
+
+			if p.tok(1) != RBRACK {
+				return nil
+			}
+			p.next() // consume ']'
+
+		default:
+			break L
+		}
+	}
+	return x
+}
+
+func (p *parser) tryTypeIdent() Expr {
+	if p.trace {
+		defer un(trace(p, "tryTypeIdent"))
+	}
+	switch p.tok(1) {
+	case UNIVERSAL:
+		p.next()
+		fallthrough
+	case IDENT, CHARSTRING:
+		p.next()
+	default:
+		return nil
+	}
+	if p.tok(1) == LT {
+		if x := p.tryTypeParameters(); x == nil {
+			return nil
+		}
+	}
+	return &Ident{Name: "todo"}
 }
 
 /*************************************************************************
@@ -1157,6 +1333,9 @@ func (p *parser) parseStructType() {
 		defer un(trace(p, "StructType"))
 	}
 	p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	p.parseStructBody()
 	p.parseWith()
 }
@@ -1208,6 +1387,9 @@ func (p *parser) parseListType() {
 	}
 	p.parseListBody()
 	p.parsePrimaryExpr()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 
 	if p.tok(1) == LPAREN {
 		p.parseSetExpr()
@@ -1243,6 +1425,9 @@ func (p *parser) parseEnumType() {
 	}
 	p.next()
 	p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	p.parseEnumBody()
 	p.parseWith()
 }
@@ -1272,11 +1457,19 @@ func (p *parser) parsePortType() {
 	}
 	p.next()
 	p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
+
 	switch p.tok(1) {
 	case MIXED, MESSAGE, PROCEDURE:
 		p.next()
 	default:
 		p.errorExpected(p.pos(1), "'message' or 'procedure'")
+	}
+
+	if p.tok(1) == REALTIME {
+		p.next()
 	}
 
 	p.expect(LBRACE)
@@ -1316,6 +1509,9 @@ func (p *parser) parseComponentType() {
 	}
 	p.next()
 	p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	if p.tok(1) == EXTENDS {
 		p.next()
 		p.parseRefList()
@@ -1334,6 +1530,9 @@ func (p *parser) parseBehaviourType() {
 	}
 	p.next()
 	p.next()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	p.parseParameters()
 
 	if p.tok(1) == RUNS {
@@ -1362,6 +1561,9 @@ func (p *parser) parseSubType() *SubType {
 
 	p.parseNestedType()
 	p.parsePrimaryExpr()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
 	if p.tok(1) == LPAREN {
@@ -1399,6 +1601,9 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 
 	x.Type = p.parseTypeRef()
 	p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	if p.tok(1) == LPAREN {
 		p.parseParameters()
 	}
@@ -1504,6 +1709,9 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	x := &FuncDecl{FuncPos: p.pos(1), Kind: p.tok(1)}
 	p.next()
 	x.Name = p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 
 	if p.tok(1) == MODIF {
 		p.next()
@@ -1584,6 +1792,9 @@ func (p *parser) parseSignatureDecl() Decl {
 
 	p.next()
 	p.parseIdent()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 
 	p.parseParameters()
 
@@ -1613,6 +1824,9 @@ func (p *parser) parseReturn() Expr {
 }
 
 func (p *parser) parseParameters() *FieldList {
+	if p.trace {
+		defer un(trace(p, "Parameters"))
+	}
 	x := &FieldList{From: p.pos(1)}
 	p.expect(LPAREN)
 	for p.tok(1) != RPAREN {
@@ -1627,6 +1841,9 @@ func (p *parser) parseParameters() *FieldList {
 }
 
 func (p *parser) parseParameter() *Field {
+	if p.trace {
+		defer un(trace(p, "Parameter"))
+	}
 	x := &Field{}
 
 	switch p.tok(1) {
@@ -1646,6 +1863,44 @@ func (p *parser) parseParameter() *Field {
 	x.Name = p.parseExpr()
 
 	return x
+}
+
+func (p *parser) parseTypeParameters() {
+	if p.trace {
+		defer un(trace(p, "TypeParameters"))
+	}
+	p.expect(LT)
+	for p.tok(1) != GT {
+		p.parseTypeParameter()
+		if p.tok(1) != COMMA {
+			break
+		}
+		p.next()
+	}
+	p.expect(GT)
+}
+
+func (p *parser) parseTypeParameter() {
+	if p.trace {
+		defer un(trace(p, "TypeParameter"))
+	}
+	if p.tok(1) == IN {
+		p.next()
+	}
+
+	switch p.tok(1) {
+	case TYPE:
+		p.next()
+	case SIGNATURE:
+		p.next()
+	default:
+		p.parseTypeRef()
+	}
+	p.expect(IDENT)
+	if p.tok(1) == ASSIGN {
+		p.next()
+		p.parseTypeRef()
+	}
 }
 
 /*************************************************************************

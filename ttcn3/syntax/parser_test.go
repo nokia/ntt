@@ -311,6 +311,35 @@ func TestStmts(t *testing.T) {
 	testParse(t, stmts, func(p *parser) { p.parseStmt() })
 }
 
+func TestTypeParametrization(t *testing.T) {
+	tests := []Test{
+		// Formal Type Parameters
+		{pass, `type set x<type T> {}`},
+		{pass, `type set x<in type T> {}`},
+		{pass, `type set x<in type T := integer> {}`},
+		{pass, `type set x<in signature T> {}`},
+		{pass, `type set x<in Comp C> {}`},
+		{pass, `type set x<in Comp C := a[-]> {}`},
+		{pass, `type set x<in Comp C := a<integer,boolean>[-]> {}`},
+		{pass, `type component C<in type T> {}`},
+		{pass, `type component D<in type T> extends C<T> {}`},
+		{pass, `type function f<type T> ()`},
+
+		// Actual Type Parameters
+		{pass, `const int x := a(b<x, y>(1+2));`},
+		{pass, `const int x := a(b<x, y> 1+2);`},
+		{pass, `const int x := a<b<c,d> >;`},
+		{pass, `const int x := a<>;`},
+		{pass, `const int x := a<>[-];`},
+		{pass, `const int x := a<a[-]>;`},
+		{pass, `const int x := a<a.b[-], c>;`},
+		{pass, `const int x := a<a.b[-], c<d> >;`},
+		{pass, `const int x := f(a<b, c<d>3);`},
+		{pass, `const int x := a.b<>();`},
+	}
+	testParse(t, tests, func(p *parser) { p.parseModuleDef() })
+}
+
 func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 	for _, tt := range tests {
 		err := anyParse(tt.input, f, testing.Verbose())

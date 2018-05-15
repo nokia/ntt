@@ -194,7 +194,7 @@ type (
 
 	SelectorExpr struct {
 		X   Expr
-		Sel *Ident
+		Sel Expr
 	}
 
 	IndexExpr struct {
