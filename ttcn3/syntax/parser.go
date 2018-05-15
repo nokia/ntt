@@ -587,18 +587,7 @@ func (p *parser) parseOperand() Expr {
 		return id
 
 	case IDENT:
-		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
-		p.next()
-
-		if p.tok(1) == LT {
-			p.mark()
-			if x := p.tryTypeParameters(); x != nil {
-				p.commit()
-				return id
-			}
-			p.release()
-			return id
-		}
+		return p.parseRef()
 
 	case INT,
 		ANY,
@@ -645,6 +634,21 @@ func (p *parser) parseOperand() Expr {
 	}
 
 	return nil
+}
+
+func (p *parser) parseRef() Expr {
+	id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
+	p.next()
+
+	if p.tok(1) == LT {
+		p.mark()
+		if x := p.tryTypeParameters(); x != nil {
+			p.commit()
+			return id
+		}
+		p.release()
+	}
+	return id
 }
 
 func (p *parser) parseSetExpr() {
@@ -700,7 +704,7 @@ func (p *parser) parseCallDecoded() {
 
 func (p *parser) parseSelectorExpr(x Expr) Expr {
 	p.expect(DOT)
-	return &SelectorExpr{X: x, Sel: p.parseIdent()}
+	return &SelectorExpr{X: x, Sel: p.parseRef()}
 }
 
 func (p *parser) parseIndexExpr(x Expr) Expr {
@@ -884,10 +888,15 @@ func (p *parser) tryTypeIdent() Expr {
 	if p.trace {
 		defer un(trace(p, "tryTypeIdent"))
 	}
-	if p.tok(1) != IDENT {
+	switch p.tok(1) {
+	case UNIVERSAL:
+		p.next()
+		fallthrough
+	case IDENT, CHARSTRING:
+		p.next()
+	default:
 		return nil
 	}
-	p.next()
 	if p.tok(1) == LT {
 		if x := p.tryTypeParameters(); x == nil {
 			return nil
@@ -1423,6 +1432,10 @@ func (p *parser) parsePortType() {
 		p.errorExpected(p.pos(1), "'message' or 'procedure'")
 	}
 
+	if p.tok(1) == REALTIME {
+		p.next()
+	}
+
 	p.expect(LBRACE)
 	for p.tok(1) != RBRACE && p.tok(1) != EOF {
 		p.parsePortAttribute()
@@ -1481,6 +1494,9 @@ func (p *parser) parseBehaviourType() {
 	}
 	p.next()
 	p.next()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
 	p.parseParameters()
 
 	if p.tok(1) == RUNS {

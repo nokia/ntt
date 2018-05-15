@@ -150,6 +150,7 @@ const (
 	PRIVATE
 	PROCEDURE
 	PUBLIC
+	REALTIME
 	RECORD
 	REGEXP
 	REPEAT
@@ -310,6 +311,7 @@ var tokens = [...]string{
 	PRIVATE:    "private",
 	PROCEDURE:  "procedure",
 	PUBLIC:     "public",
+	REALTIME:   "realtime",
 	RECORD:     "record",
 	REGEXP:     "regexp",
 	REPEAT:     "repeat",
