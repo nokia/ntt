@@ -636,17 +636,54 @@ func (p *parser) parseOperand() Expr {
 	return nil
 }
 
+func isOperand(tok Token) bool {
+	switch tok {
+	case ADDRESS,
+		ALL,
+		ANY,
+		ANYKW,
+		BSTRING,
+		CHARSTRING,
+		ERROR,
+		FAIL,
+		FALSE,
+		FLOAT,
+		IDENT,
+		INCONC,
+		INT,
+		MAP,
+		MTC,
+		MUL,
+		NAN,
+		NONE,
+		NULL,
+		OMIT,
+		PASS,
+		STRING,
+		SYSTEM,
+		TESTCASE,
+		TIMER,
+		TRUE,
+		UNIVERSAL,
+		UNMAP:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *parser) parseRef() Expr {
 	id := p.parseIdent()
-
-	if p.tok(1) == LT {
-		p.mark()
-		if x := p.tryTypeParameters(); x != nil {
-			p.commit()
-			return id
-		}
-		p.release()
+	if p.tok(1) != LT {
+		return id
 	}
+
+	p.mark()
+	if x := p.tryTypeParameters(); x != nil && !isOperand(p.tok(1)) {
+		p.commit()
+		return id
+	}
+	p.release()
 	return id
 }
 

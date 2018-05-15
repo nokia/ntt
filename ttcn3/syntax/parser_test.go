@@ -324,14 +324,14 @@ func TestTypeParametrization(t *testing.T) {
 
 		// Actual Type Parameters
 		{pass, `const int x := a(b<x, y>(1+2));`},
-		{fail, `const int x := a(b<x, y> 1+2);`},
+		{pass, `const int x := a(b<x, y> 1+2);`},
 		{pass, `const int x := a<b<c,d> >;`},
 		{pass, `const int x := a<>;`},
 		{pass, `const int x := a<>[-];`},
 		{pass, `const int x := a<a[-]>;`},
 		{pass, `const int x := a<a.b[-], c>;`},
 		{pass, `const int x := a<a.b[-], c<d> >;`},
-		{fail, `const int x := f(a<b, c<d>3);`},
+		{pass, `const int x := f(a<b, c<d>3);`},
 		{pass, `const int x := a.b<>();`},
 	}
 	testParse(t, tests, func(p *parser) { p.parseModuleDef() })
