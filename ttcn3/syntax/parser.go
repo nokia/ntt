@@ -1609,7 +1609,7 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 	}
 	if p.tok(1) == MODIFIES {
 		p.next()
-		p.parseIdent()
+		p.parsePrimaryExpr()
 	}
 	p.expect(ASSIGN)
 	p.parseExpr()
