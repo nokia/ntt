@@ -1320,6 +1320,10 @@ func (p *parser) parseNestedType() {
 	case ENUMERATED:
 		p.next()
 		p.parseEnumBody()
+
+	case FUNCTION, ALTSTEP, TESTCASE:
+		p.next()
+		p.parseBehaviourTypeBody()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
 	}
@@ -1525,14 +1529,9 @@ func (p *parser) parseComponentType() {
  * Behaviour Types
  *************************************************************************/
 
-func (p *parser) parseBehaviourType() {
+func (p *parser) parseBehaviourTypeBody() {
 	if p.trace {
-		defer un(trace(p, "BehaviourType"))
-	}
-	p.next()
-	p.next()
-	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		defer un(trace(p, "BehaviourTypeBody"))
 	}
 	p.parseParameters()
 
@@ -1547,6 +1546,18 @@ func (p *parser) parseBehaviourType() {
 	if p.tok(1) == RETURN {
 		p.parseReturn()
 	}
+}
+
+func (p *parser) parseBehaviourType() {
+	if p.trace {
+		defer un(trace(p, "BehaviourType"))
+	}
+	p.next()
+	p.next()
+	if p.tok(1) == LT {
+		p.parseTypeParameters()
+	}
+	p.parseBehaviourTypeBody()
 	p.parseWith()
 
 }
