@@ -1318,6 +1318,7 @@ func (p *parser) parseNestedType() {
 		}
 		p.parseListBody()
 	case ENUMERATED:
+		p.next()
 		p.parseEnumBody()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
