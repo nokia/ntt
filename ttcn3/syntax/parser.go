@@ -519,7 +519,7 @@ L:
 
 	if p.tok(1) == PARAM {
 		p.next()
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 
 	if p.tok(1) == ALIVE {
@@ -609,7 +609,7 @@ func (p *parser) parseOperand() Expr {
 
 	case LPAREN:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
-		p.parseSetExpr()
+		p.parseParenExpr()
 
 	case LBRACK:
 		p.parseIndexExpr(nil)
@@ -687,7 +687,7 @@ func (p *parser) parseRef() Expr {
 	return id
 }
 
-func (p *parser) parseSetExpr() {
+func (p *parser) parseParenExpr() {
 	p.expect(LPAREN)
 	p.parseExprList()
 	p.expect(RPAREN)
@@ -711,7 +711,7 @@ func (p *parser) parseCallRegexp() {
 	if p.tok(1) == MODIF {
 		p.next()
 	}
-	p.parseSetExpr()
+	p.parseParenExpr()
 }
 
 func (p *parser) parseCallPattern() {
@@ -725,7 +725,7 @@ func (p *parser) parseCallPattern() {
 func (p *parser) parseCallDecMatch() {
 	p.expect(DECMATCH)
 	if p.tok(1) == LPAREN {
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 	p.parseExpr()
 }
@@ -733,7 +733,7 @@ func (p *parser) parseCallDecMatch() {
 func (p *parser) parseCallDecoded() {
 	p.expect(MODIF) // @decoded
 	if p.tok(1) == LPAREN {
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 	p.parseExpr()
 }
@@ -794,7 +794,7 @@ func (p *parser) parseMtc() {
 
 func (p *parser) parseLength() {
 	p.expect(LENGTH)
-	p.parseSetExpr()
+	p.parseParenExpr()
 }
 
 func (p *parser) parseRedirect() Expr {
@@ -1371,7 +1371,7 @@ func (p *parser) parseStructField() {
 	p.parsePrimaryExpr()
 
 	if p.tok(1) == LPAREN {
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 	if p.tok(1) == LENGTH {
 		p.parseLength()
@@ -1397,7 +1397,7 @@ func (p *parser) parseListType() {
 	}
 
 	if p.tok(1) == LPAREN {
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 
 	if p.tok(1) == LENGTH {
@@ -1579,7 +1579,7 @@ func (p *parser) parseSubType() *SubType {
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
 	if p.tok(1) == LPAREN {
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 	if p.tok(1) == LENGTH {
 		p.parseLength()
@@ -1820,7 +1820,7 @@ func (p *parser) parseSignatureDecl() Decl {
 
 	if p.tok(1) == EXCEPTION {
 		p.next()
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 	p.parseWith()
 	return nil
@@ -2006,7 +2006,7 @@ func (p *parser) parseForLoop() {
 
 func (p *parser) parseWhileLoop() {
 	p.next()
-	p.parseSetExpr()
+	p.parseParenExpr()
 	p.parseBlockStmt()
 }
 
@@ -2014,12 +2014,12 @@ func (p *parser) parseDoWhileLoop() {
 	p.next()
 	p.parseBlockStmt()
 	p.expect(WHILE)
-	p.parseSetExpr()
+	p.parseParenExpr()
 }
 
 func (p *parser) parseIfStmt() {
 	p.next()
-	p.parseSetExpr()
+	p.parseParenExpr()
 	p.parseBlockStmt()
 	if p.tok(1) == ELSE {
 		p.next()
@@ -2036,7 +2036,7 @@ func (p *parser) parseSelect() {
 	if p.tok(1) == UNION {
 		p.next()
 	}
-	p.parseSetExpr()
+	p.parseParenExpr()
 	p.expect(LBRACE)
 	for p.tok(1) == CASE {
 		p.parseCaseStmt()
@@ -2049,7 +2049,7 @@ func (p *parser) parseCaseStmt() {
 	if p.tok(1) == ELSE {
 		p.next()
 	} else {
-		p.parseSetExpr()
+		p.parseParenExpr()
 	}
 	p.parseBlockStmt()
 }
