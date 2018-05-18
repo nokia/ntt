@@ -776,22 +776,6 @@ func (p *parser) parseCallExpr(x Expr) Expr {
 	}
 }
 
-func (p *parser) parseRunsOn() {
-	p.expect(RUNS)
-	p.expect(ON)
-	p.parseTypeRef()
-}
-
-func (p *parser) parseSystem() {
-	p.expect(SYSTEM)
-	p.parseTypeRef()
-}
-
-func (p *parser) parseMtc() {
-	p.expect(MTC)
-	p.parseTypeRef()
-}
-
 func (p *parser) parseLength() {
 	p.expect(LENGTH)
 	p.parseParenExpr()
@@ -1824,6 +1808,22 @@ func (p *parser) parseSignatureDecl() Decl {
 	}
 	p.parseWith()
 	return nil
+}
+
+func (p *parser) parseRunsOn() {
+	p.expect(RUNS)
+	p.expect(ON)
+	p.parseTypeRef()
+}
+
+func (p *parser) parseSystem() {
+	p.expect(SYSTEM)
+	p.parseTypeRef()
+}
+
+func (p *parser) parseMtc() {
+	p.expect(MTC)
+	p.parseTypeRef()
 }
 
 func (p *parser) parseReturn() Expr {
