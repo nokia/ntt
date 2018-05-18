@@ -627,7 +627,7 @@ func (p *parser) parseOperand() Expr {
 		p.parseCallDecMatch()
 
 	case MODIF:
-		p.parseCallDecoded()
+		p.parseDecodedModifier()
 
 	default:
 		p.errorExpected(p.pos(1), "operand")
@@ -730,12 +730,12 @@ func (p *parser) parseCallDecMatch() {
 	p.parseExpr()
 }
 
-func (p *parser) parseCallDecoded() {
+func (p *parser) parseDecodedModifier() {
 	p.expect(MODIF) // @decoded
 	if p.tok(1) == LPAREN {
 		p.parseParenExpr()
 	}
-	p.parseExpr()
+	p.parsePrimaryExpr()
 }
 
 func (p *parser) parseSelectorExpr(x Expr) Expr {
