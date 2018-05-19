@@ -679,7 +679,7 @@ func (p *parser) parseRef() Expr {
 	}
 
 	p.mark()
-	if x := p.tryTypeParameters(); x != nil && !isOperand(p.tok(1)) {
+	if x := p.tryTypeFormalPars(); x != nil && !isOperand(p.tok(1)) {
 		p.commit()
 		return id
 	}
@@ -849,14 +849,14 @@ func (p *parser) parseTypeRef() Expr {
 	return x
 }
 
-func (p *parser) tryTypeParameters() Expr {
+func (p *parser) tryTypeFormalPars() Expr {
 	if p.trace {
-		defer un(trace(p, "tryTypeParameters"))
+		defer un(trace(p, "tryTypeFormalPars"))
 	}
 	x := &Ident{Name: "dummy"}
 	p.next() // consume '<'
 	for p.tok(1) != GT {
-		y := p.tryTypeParameter()
+		y := p.tryTypeFormalPar()
 		if y == nil {
 			return nil
 		}
@@ -873,9 +873,9 @@ func (p *parser) tryTypeParameters() Expr {
 	return x
 }
 
-func (p *parser) tryTypeParameter() Expr {
+func (p *parser) tryTypeFormalPar() Expr {
 	if p.trace {
-		defer un(trace(p, "tryTypeParameter"))
+		defer un(trace(p, "tryTypeFormalPar"))
 	}
 	x := p.tryTypeIdent()
 L:
@@ -918,7 +918,7 @@ func (p *parser) tryTypeIdent() Expr {
 		return nil
 	}
 	if p.tok(1) == LT {
-		if x := p.tryTypeParameters(); x == nil {
+		if x := p.tryTypeFormalPars(); x == nil {
 			return nil
 		}
 	}
@@ -1323,7 +1323,7 @@ func (p *parser) parseStructType() {
 	}
 	p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 	p.parseStructBody()
 	p.parseWith()
@@ -1377,7 +1377,7 @@ func (p *parser) parseListType() {
 	p.parseListBody()
 	p.parsePrimaryExpr()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 
 	if p.tok(1) == LPAREN {
@@ -1415,7 +1415,7 @@ func (p *parser) parseEnumType() {
 	p.next()
 	p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 	p.parseEnumBody()
 	p.parseWith()
@@ -1447,7 +1447,7 @@ func (p *parser) parsePortType() {
 	p.next()
 	p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 
 	switch p.tok(1) {
@@ -1484,7 +1484,7 @@ func (p *parser) parsePortAttribute() {
 	case MAP, UNMAP:
 		p.next()
 		p.expect(PARAM)
-		p.parseParameters()
+		p.parseFormalPars()
 	}
 }
 
@@ -1499,7 +1499,7 @@ func (p *parser) parseComponentType() {
 	p.next()
 	p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 	if p.tok(1) == EXTENDS {
 		p.next()
@@ -1517,7 +1517,7 @@ func (p *parser) parseBehaviourTypeBody() {
 	if p.trace {
 		defer un(trace(p, "BehaviourTypeBody"))
 	}
-	p.parseParameters()
+	p.parseFormalPars()
 
 	if p.tok(1) == RUNS {
 		p.parseRunsOn()
@@ -1539,7 +1539,7 @@ func (p *parser) parseBehaviourType() {
 	p.next()
 	p.next()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 	p.parseBehaviourTypeBody()
 	p.parseWith()
@@ -1558,7 +1558,7 @@ func (p *parser) parseSubType() *SubType {
 	p.parseType()
 	p.parsePrimaryExpr()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
@@ -1598,10 +1598,10 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 	x.Type = p.parseTypeRef()
 	p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 	if p.tok(1) == LPAREN {
-		p.parseParameters()
+		p.parseFormalPars()
 	}
 	if p.tok(1) == MODIFIES {
 		p.next()
@@ -1615,7 +1615,7 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 }
 
 /*************************************************************************
- * Module Parameter
+ * Module FormalPar
  *************************************************************************/
 
 func (p *parser) parseModulePar() *ValueDecl {
@@ -1706,14 +1706,14 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	p.next()
 	x.Name = p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 
 	if p.tok(1) == MODIF {
 		p.next()
 	}
 
-	x.Params = p.parseParameters()
+	x.Params = p.parseFormalPars()
 
 	if p.tok(1) == RUNS {
 		p.parseRunsOn()
@@ -1756,7 +1756,7 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 		p.next()
 	}
 
-	x.Params = p.parseParameters()
+	x.Params = p.parseFormalPars()
 
 	if p.tok(1) == RUNS {
 		p.parseRunsOn()
@@ -1789,10 +1789,10 @@ func (p *parser) parseSignatureDecl() Decl {
 	p.next()
 	p.parseIdent()
 	if p.tok(1) == LT {
-		p.parseTypeParameters()
+		p.parseTypeFormalPars()
 	}
 
-	p.parseParameters()
+	p.parseFormalPars()
 
 	if p.tok(1) == NOBLOCK {
 		p.next()
@@ -1835,14 +1835,14 @@ func (p *parser) parseReturn() Expr {
 	return p.parseTypeRef()
 }
 
-func (p *parser) parseParameters() *FieldList {
+func (p *parser) parseFormalPars() *FieldList {
 	if p.trace {
-		defer un(trace(p, "Parameters"))
+		defer un(trace(p, "FormalPars"))
 	}
 	x := &FieldList{From: p.pos(1)}
 	p.expect(LPAREN)
 	for p.tok(1) != RPAREN {
-		x.Fields = append(x.Fields, p.parseParameter())
+		x.Fields = append(x.Fields, p.parseFormalPar())
 		if p.tok(1) != COMMA {
 			break
 		}
@@ -1852,9 +1852,9 @@ func (p *parser) parseParameters() *FieldList {
 	return x
 }
 
-func (p *parser) parseParameter() *Field {
+func (p *parser) parseFormalPar() *Field {
 	if p.trace {
-		defer un(trace(p, "Parameter"))
+		defer un(trace(p, "FormalPar"))
 	}
 	x := &Field{}
 
@@ -1877,13 +1877,13 @@ func (p *parser) parseParameter() *Field {
 	return x
 }
 
-func (p *parser) parseTypeParameters() {
+func (p *parser) parseTypeFormalPars() {
 	if p.trace {
-		defer un(trace(p, "TypeParameters"))
+		defer un(trace(p, "TypeFormalPars"))
 	}
 	p.expect(LT)
 	for p.tok(1) != GT {
-		p.parseTypeParameter()
+		p.parseTypeFormalPar()
 		if p.tok(1) != COMMA {
 			break
 		}
@@ -1892,9 +1892,9 @@ func (p *parser) parseTypeParameters() {
 	p.expect(GT)
 }
 
-func (p *parser) parseTypeParameter() {
+func (p *parser) parseTypeFormalPar() {
 	if p.trace {
-		defer un(trace(p, "TypeParameter"))
+		defer un(trace(p, "TypeFormalPar"))
 	}
 	if p.tok(1) == IN {
 		p.next()

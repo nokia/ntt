@@ -215,7 +215,7 @@ func (x *Ident) Pos() Pos        { return x.NamePos }
 func (x *ValueLiteral) Pos() Pos { return x.ValuePos }
 func (x *UnaryExpr) Pos() Pos    { return x.X.Pos() }
 func (x *BinaryExpr) Pos() Pos   { return x.X.Pos() }
-func (x *ParenExpr) Pos() Pos      { return x.List[0].Pos() }
+func (x *ParenExpr) Pos() Pos    { return x.List[0].Pos() }
 func (x *SelectorExpr) Pos() Pos { return x.X.Pos() }
 func (x *IndexExpr) Pos() Pos    { return x.X.Pos() }
 func (x *CallExpr) Pos() Pos     { return x.Fun.Pos() }
@@ -225,7 +225,7 @@ func (x *Ident) End() Pos        { return Pos(int(x.NamePos) + len(x.Name)) }
 func (x *ValueLiteral) End() Pos { return x.ValuePos }
 func (x *UnaryExpr) End() Pos    { return x.X.End() }
 func (x *BinaryExpr) End() Pos   { return x.X.End() }
-func (x *ParenExpr) End() Pos      { return x.List[0].End() }
+func (x *ParenExpr) End() Pos    { return x.List[0].End() }
 func (x *SelectorExpr) End() Pos { return x.X.End() }
 func (x *IndexExpr) End() Pos    { return x.X.End() }
 func (x *CallExpr) End() Pos     { return x.Fun.End() }
@@ -238,7 +238,7 @@ func (*Ident) exprNode()          {}
 func (x *ValueLiteral) exprNode() {}
 func (x *UnaryExpr) exprNode()    {}
 func (x *BinaryExpr) exprNode()   {}
-func (x *ParenExpr) exprNode()      {}
+func (x *ParenExpr) exprNode()    {}
 func (x *SelectorExpr) exprNode() {}
 func (x *IndexExpr) exprNode()    {}
 func (x *CallExpr) exprNode()     {}

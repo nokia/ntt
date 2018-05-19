@@ -203,7 +203,7 @@ func TestFormalPars(t *testing.T) {
 		{pass, `(out timer y := -, in value @fuzzy timer x := 1)`},
 		{pass, `(out timer y := -, in value timer x := (1,2,3))`},
 	}
-	testParse(t, formalPars, func(p *parser) { p.parseParameters() })
+	testParse(t, formalPars, func(p *parser) { p.parseFormalPars() })
 }
 
 func TestTypes(t *testing.T) {
