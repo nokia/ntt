@@ -43,7 +43,7 @@ type (
 	}
 
 	ValueLiteral struct {
-		Kind     Token
+		Kind     Kind
 		ValuePos Pos
 		Value    string
 	}
@@ -52,14 +52,14 @@ type (
 	}
 
 	UnaryExpr struct {
-		Op    Token
+		Op    Kind
 		OpPos Pos
 		X     Expr
 	}
 
 	BinaryExpr struct {
 		X     Expr
-		Op    Token
+		Op    Kind
 		OpPos Pos
 		Y     Expr
 	}
@@ -166,14 +166,14 @@ type (
 type (
 	ValueDecl struct {
 		DeclPos Pos
-		Kind    Token // VAR, CONST, MODULEPAT, TIMER, ...
+		Kind    Kind // VAR, CONST, MODULEPAT, TIMER, ...
 		Type    Expr
 		Decls   []Expr
 	}
 
 	FuncDecl struct {
 		FuncPos Pos
-		Kind    Token
+		Kind    Kind
 		Name    *Ident
 		Params  Expr
 		Return  Expr
@@ -269,7 +269,7 @@ type (
 	}
 
 	RestrictionSpec struct {
-		Kind    Token
+		Kind    Kind
 		KindPos Pos
 	}
 

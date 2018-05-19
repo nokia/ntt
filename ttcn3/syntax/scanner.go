@@ -229,7 +229,7 @@ func (s *Scanner) scanDigits() {
 	}
 }
 
-func (s *Scanner) scanNumber() (tok Token, lit string) {
+func (s *Scanner) scanNumber() (tok Kind, lit string) {
 	offs := s.offset
 	tok = INT
 
@@ -343,7 +343,7 @@ func (s *Scanner) skipWhitespace() {
 	}
 }
 
-func (s *Scanner) switch2(ch rune, tok1, tok2 Token) Token {
+func (s *Scanner) switch2(ch rune, tok1, tok2 Kind) Kind {
 	if s.ch == ch {
 		s.next()
 		return tok1
@@ -374,10 +374,10 @@ func (s *Scanner) switch2(ch rune, tok1, tok2 Token) Token {
 // of the error handler, if there was one installed.
 //
 // Scan adds line information to the file added to the file
-// set with Init. Token positions are relative to that file
+// set with Init. Kind positions are relative to that file
 // and thus relative to the file set.
 //
-func (s *Scanner) Scan() (pos Pos, tok Token, lit string) {
+func (s *Scanner) Scan() (pos Pos, tok Kind, lit string) {
 	s.skipWhitespace()
 
 	// current token start

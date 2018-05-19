@@ -5,13 +5,13 @@ package syntax
 
 import "strconv"
 
-// Token is the set of lexical tokens of the Go programming language.
-type Token int
+// Kind is the set of lexical tokens of the Go programming language.
+type Kind int
 
 // The list of tokens.
 const (
 	// Special tokens
-	ILLEGAL Token = iota
+	ILLEGAL Kind = iota
 	EOF
 	COMMENT
 	PREPROC
@@ -346,9 +346,9 @@ var tokens = [...]string{
 // "+"). For all other tokens the string corresponds to the token
 // constant name (e.g. for the token IDENT, the string is "IDENT").
 //
-func (tok Token) String() string {
+func (tok Kind) String() string {
 	s := ""
-	if 0 <= tok && tok < Token(len(tokens)) {
+	if 0 <= tok && tok < Kind(len(tokens)) {
 		s = tokens[tok]
 	}
 	if s == "" {
@@ -373,7 +373,7 @@ const (
 // operator op. If op is not a binary operator, the result
 // is LowestPrecedence.
 //
-func (tok Token) Precedence() int {
+func (tok Kind) Precedence() int {
 	switch tok {
 	case ASSIGN:
 		return 1
@@ -415,10 +415,10 @@ func (tok Token) Precedence() int {
 	return LowestPrec
 }
 
-var keywords map[string]Token
+var keywords map[string]Kind
 
 func init() {
-	keywords = make(map[string]Token)
+	keywords = make(map[string]Kind)
 	for i := keyword_beg + 1; i < keyword_end; i++ {
 		keywords[tokens[i]] = i
 	}
@@ -426,7 +426,7 @@ func init() {
 
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
 //
-func Lookup(ident string) Token {
+func Lookup(ident string) Kind {
 	if tok, isKeyword := keywords[ident]; isKeyword {
 		return tok
 	}
@@ -438,14 +438,14 @@ func Lookup(ident string) Token {
 // IsLiteral returns true for tokens corresponding to identifiers
 // and basic type literals; it returns false otherwise.
 //
-func (tok Token) IsLiteral() bool { return literal_beg < tok && tok < literal_end }
+func (tok Kind) IsLiteral() bool { return literal_beg < tok && tok < literal_end }
 
 // IsOperator returns true for tokens corresponding to operators and
 // delimiters; it returns false otherwise.
 //
-func (tok Token) IsOperator() bool { return operator_beg < tok && tok < operator_end }
+func (tok Kind) IsOperator() bool { return operator_beg < tok && tok < operator_end }
 
 // IsKeyword returns true for tokens corresponding to keywords;
 // it returns false otherwise.
 //
-func (tok Token) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }
+func (tok Kind) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }

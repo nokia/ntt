@@ -21,7 +21,7 @@ const (
 
 type token struct {
 	Pos Pos
-	Tok Token
+	Tok Kind
 	Lit string
 }
 
@@ -77,7 +77,7 @@ func un(p *parser) {
 }
 
 // Read the next token from input-stream
-func (p *parser) readToken() token {
+func (p *parser) readKind() token {
 redo:
 	pos, tok, lit := p.scanner.Scan()
 	if tok == COMMENT || tok == PREPROC {
@@ -124,7 +124,7 @@ func (p *parser) grow(i int) {
 	if idx > last {
 		n := idx - last
 		for i := 0; i < n; i++ {
-			p.tokens = append(p.tokens, p.readToken())
+			p.tokens = append(p.tokens, p.readKind())
 		}
 	}
 }
@@ -134,7 +134,7 @@ func (p *parser) peek(i int) token {
 	return p.tokens[p.cursor+i-1]
 }
 
-func (p *parser) tok(i int) Token {
+func (p *parser) tok(i int) Kind {
 	return p.peek(i).Tok
 }
 
@@ -231,7 +231,7 @@ func (p *parser) errorExpected(pos Pos, msg string) {
 	p.error(pos, msg)
 }
 
-func (p *parser) expect(tok Token) Pos {
+func (p *parser) expect(tok Kind) Pos {
 	pos := p.pos(1)
 	if p.tok(1) != tok {
 		p.errorExpected(pos, "'"+tok.String()+"'")
@@ -256,7 +256,7 @@ func (p *parser) expectSemi() {
 
 // advance consumes tokens until the current token p.tok(1)
 // is in the 'to' set, or EOF. For error recovery.
-func (p *parser) advance(to map[Token]bool) {
+func (p *parser) advance(to map[Kind]bool) {
 	for ; p.tok(1) != EOF; p.next() {
 		if to[p.tok(1)] {
 			// Return only if parser made some progress since last
@@ -284,7 +284,7 @@ func (p *parser) advance(to map[Token]bool) {
 	}
 }
 
-var stmtStart = map[Token]bool{
+var stmtStart = map[Kind]bool{
 	CONST:     true,
 	VAR:       true,
 	MODULEPAR: true,
@@ -545,7 +545,7 @@ func (p *parser) parseOperand() Expr {
 	return nil
 }
 
-func isOperand(tok Token) bool {
+func isOperand(tok Kind) bool {
 	switch tok {
 	case ADDRESS,
 		ALL,
