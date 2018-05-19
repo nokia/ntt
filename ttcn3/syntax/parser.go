@@ -438,16 +438,15 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 //
 func (p *parser) parseUnaryExpr() Expr {
 	switch p.tok(1) {
-	case ADD,
-		EXCL,
-		NOT,
-		NOT4B,
-		SUB:
+	case ADD, EXCL, NOT, NOT4B, SUB:
 		op, pos := p.tok(1), p.pos(1)
 		p.next()
 		// handle unused expr '-'
-		if op == SUB && (p.tok(1) == COMMA || p.tok(1) == SEMICOLON || p.tok(1) == RBRACE || p.tok(1) == RBRACK || p.tok(1) == RPAREN || p.tok(1) == EOF) {
-			return nil
+		if op == SUB {
+			switch p.tok(1) {
+			case COMMA, SEMICOLON, RBRACE, RBRACK, RPAREN, EOF:
+				return nil
+			}
 		}
 		return &UnaryExpr{Op: op, OpPos: pos, X: p.parseUnaryExpr()}
 
