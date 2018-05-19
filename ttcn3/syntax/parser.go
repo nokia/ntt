@@ -479,9 +479,6 @@ L:
 			x = p.parseIndexExpr(x)
 		case LPAREN:
 			x = p.parseCallExpr(x)
-		case COLON:
-			p.next()
-			p.parseExpr()
 		default:
 			break L
 		}

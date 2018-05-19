@@ -377,38 +377,40 @@ func (tok Token) Precedence() int {
 	switch tok {
 	case ASSIGN:
 		return 1
-	case DECODE:
+	case COLON:
 		return 2
-	case RANGE:
+	case DECODE:
 		return 3
-	case EXCL:
+	case RANGE:
 		return 4
-	case OR:
+	case EXCL:
 		return 5
-	case XOR:
+	case OR:
 		return 6
-	case AND:
+	case XOR:
 		return 7
-	case NOT:
+	case AND:
 		return 8
-	case EQ, NE:
+	case NOT:
 		return 9
-	case LT, LE, GT, GE:
+	case EQ, NE:
 		return 10
-	case SHR, SHL, ROR, ROL:
+	case LT, LE, GT, GE:
 		return 11
-	case OR4B:
+	case SHR, SHL, ROR, ROL:
 		return 12
-	case XOR4B:
+	case OR4B:
 		return 13
-	case AND4B:
+	case XOR4B:
 		return 14
-	case NOT4B:
+	case AND4B:
 		return 15
-	case ADD, SUB, CONCAT:
+	case NOT4B:
 		return 16
-	case MUL, DIV, REM, MOD:
+	case ADD, SUB, CONCAT:
 		return 17
+	case MUL, DIV, REM, MOD:
+		return 18
 	}
 	return LowestPrec
 }
