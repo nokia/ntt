@@ -438,18 +438,12 @@ func (p *parser) parseUnaryExpr() Expr {
 		if op == SUB {
 			switch p.tok(1) {
 			case COMMA, SEMICOLON, RBRACE, RBRACK, RPAREN, EOF:
-				return nil
+				return &ValueLiteral{Kind: op, ValuePos: pos, Value: "-"}
 			}
 		}
 		return &UnaryExpr{Op: op, OpPos: pos, X: p.parseUnaryExpr()}
-
-	case MODIFIES:
-		p.next()
-		p.parsePrimaryExpr()
-		p.expect(ASSIGN)
-		p.parseExpr()
-		return nil
 	}
+
 	return p.parsePrimaryExpr()
 }
 
@@ -488,34 +482,41 @@ L:
 	}
 
 	if p.tok(1) == LENGTH {
-		p.parseLength()
+		x = p.parseLength(x)
 	}
 
 	if p.tok(1) == IFPRESENT {
+		op, pos := p.tok(1), p.pos(1)
 		p.next()
+		x = &UnaryExpr{Op: op, OpPos: pos, X: x}
 	}
 
 	if p.tok(1) == TO || p.tok(1) == FROM {
+		op, pos := p.tok(1), p.pos(1)
 		p.next()
-		p.parseExpr()
+		x = &BinaryExpr{X: x, Op: op, OpPos: pos, Y: p.parseExpr()}
 	}
 
 	if p.tok(1) == REDIR {
-		p.parseRedirect()
+		x = p.parseRedirect(x)
 	}
 
 	if p.tok(1) == VALUE {
+		//TODO(5nord) maybe merge with redirect
 		p.next()
 		p.parseExpr()
 	}
 
 	if p.tok(1) == PARAM {
+		//TODO(5nord) maybe merge with redirect
 		p.next()
 		p.parseParenExpr()
 	}
 
 	if p.tok(1) == ALIVE {
+		op, pos := p.tok(1), p.pos(1)
 		p.next()
+		x = &UnaryExpr{Op: op, OpPos: pos, X: x}
 	}
 
 	return x
@@ -609,6 +610,13 @@ func (p *parser) parseOperand() Expr {
 	case LBRACE:
 		p.parseCompositeLiteral()
 
+	case MODIFIES:
+		p.next()
+		p.parsePrimaryExpr()
+		p.expect(ASSIGN)
+		p.parseExpr()
+		return nil
+
 	case REGEXP:
 		p.parseCallRegexp()
 
@@ -679,10 +687,11 @@ func (p *parser) parseRef() Expr {
 	return id
 }
 
-func (p *parser) parseParenExpr() {
+func (p *parser) parseParenExpr() Expr {
 	p.expect(LPAREN)
 	p.parseExprList()
 	p.expect(RPAREN)
+	return nil
 }
 
 func (p *parser) parseUniversalCharstring() {
@@ -750,12 +759,12 @@ func (p *parser) parseCallExpr(x Expr) Expr {
 		p.next()
 		p.parseExpr()
 		if p.tok(1) == REDIR {
-			p.parseRedirect()
+			p.parseRedirect(nil)
 		}
 		p.expect(RPAREN)
 		return nil
 	case REDIR:
-		p.parseRedirect()
+		p.parseRedirect(nil)
 		p.expect(RPAREN)
 		return nil
 	default:
@@ -768,44 +777,57 @@ func (p *parser) parseCallExpr(x Expr) Expr {
 	}
 }
 
-func (p *parser) parseLength() {
-	p.expect(LENGTH)
-	p.parseParenExpr()
+func (p *parser) parseLength(x Expr) *LengthExpr {
+	return &LengthExpr{
+		Pos: p.expect(LENGTH),
+		X:   x,
+		Len: p.parseParenExpr(),
+	}
 }
 
-func (p *parser) parseRedirect() Expr {
-	p.next()
+func (p *parser) parseRedirect(x Expr) *RedirectExpr {
+
+	r := &RedirectExpr{
+		X:   x,
+		Pos: p.expect(REDIR),
+	}
 
 	if p.tok(1) == VALUE {
-		p.next()
-		p.parseExprList()
+		r.ValuePos = p.expect(VALUE)
+		r.Value = p.parseExprList()
 	}
 
 	if p.tok(1) == PARAM {
-		p.next()
-		p.parseExprList()
+		r.ParamPos = p.expect(PARAM)
+		r.Param = p.parseExprList()
 	}
 
 	if p.tok(1) == SENDER {
-		p.next()
-		p.parsePrimaryExpr()
+		r.SenderPos = p.expect(SENDER)
+		r.Sender = p.parsePrimaryExpr()
 	}
 
 	if p.tok(1) == MODIF {
-		p.next() // @index
-
-		if p.tok(1) == VALUE {
-			p.next() // optional
+		if p.lit(1) != "@index" {
+			p.errorExpected(p.pos(1), "@index")
 		}
-		p.parsePrimaryExpr()
+
+		pos := p.pos(1)
+		p.next()
+		if p.tok(1) == VALUE {
+			// just silently discard optional 'value' token
+			p.next()
+		}
+		r.IndexPos = pos
+		r.Index = p.parsePrimaryExpr()
 	}
 
 	if p.tok(1) == TIMESTAMP {
-		p.next()
-		p.parsePrimaryExpr()
+		r.TimestampPos = p.expect(TIMESTAMP)
+		r.Timestamp = p.parsePrimaryExpr()
 	}
 
-	return nil
+	return r
 }
 
 func (p *parser) parseIdent() *Ident {
@@ -1350,7 +1372,7 @@ func (p *parser) parseStructField() {
 		p.parseParenExpr()
 	}
 	if p.tok(1) == LENGTH {
-		p.parseLength()
+		p.parseLength(nil)
 	}
 
 	if p.tok(1) == OPTIONAL {
@@ -1377,7 +1399,7 @@ func (p *parser) parseListType() {
 	}
 
 	if p.tok(1) == LENGTH {
-		p.parseLength()
+		p.parseLength(nil)
 	}
 
 	p.parseWith()
@@ -1389,7 +1411,7 @@ func (p *parser) parseListBody() {
 	}
 
 	if p.tok(1) == LENGTH {
-		p.parseLength()
+		p.parseLength(nil)
 	}
 
 	p.expect(OF)
@@ -1558,7 +1580,7 @@ func (p *parser) parseSubType() *SubType {
 		p.parseParenExpr()
 	}
 	if p.tok(1) == LENGTH {
-		p.parseLength()
+		p.parseLength(nil)
 	}
 
 	p.parseWith()
@@ -1827,14 +1849,14 @@ func (p *parser) parseReturn() Expr {
 	return p.parseTypeRef()
 }
 
-func (p *parser) parseFormalPars() *FieldList {
+func (p *parser) parseFormalPars() *FormalPars {
 	if p.trace {
 		defer un(trace(p, "FormalPars"))
 	}
-	x := &FieldList{From: p.pos(1)}
+	x := &FormalPars{}
 	p.expect(LPAREN)
 	for p.tok(1) != RPAREN {
-		x.Fields = append(x.Fields, p.parseFormalPar())
+		x.List = append(x.List, p.parseFormalPar())
 		if p.tok(1) != COMMA {
 			break
 		}
@@ -1844,11 +1866,11 @@ func (p *parser) parseFormalPars() *FieldList {
 	return x
 }
 
-func (p *parser) parseFormalPar() *Field {
+func (p *parser) parseFormalPar() *FormalPar {
 	if p.trace {
 		defer un(trace(p, "FormalPar"))
 	}
-	x := &Field{}
+	x := &FormalPar{}
 
 	switch p.tok(1) {
 	case IN:
