@@ -401,14 +401,7 @@ func (p *parser) parseExpr() Expr {
 		defer un(trace(p, "Expr"))
 	}
 
-	x := p.parseBinaryExpr(LowestPrec + 1)
-
-	if p.tok(1) == ASSIGN {
-		p.next()
-		p.parseExpr()
-	}
-
-	return x
+	return p.parseBinaryExpr(LowestPrec + 1)
 }
 
 // BinaryExpr ::= UnaryExpr
