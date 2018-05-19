@@ -249,7 +249,7 @@ func TestTypes(t *testing.T) {
 		{pass, `type altstep  as() runs on self return int`},
 		{pass, `type testcase tc() runs on C system TSI`},
 	}
-	testParse(t, types, func(p *parser) { p.parseType() })
+	testParse(t, types, func(p *parser) { p.parseTypeDecl() })
 }
 
 func TestStmts(t *testing.T) {

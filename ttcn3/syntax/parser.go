@@ -989,7 +989,7 @@ func (p *parser) parseModuleDef() Decl {
 		p.next()
 		p.parseFriend()
 	case TYPE:
-		p.parseType()
+		p.parseTypeDecl()
 	case TEMPLATE:
 		p.parseTemplateDecl()
 	case MODULEPAR:
@@ -1252,7 +1252,7 @@ func (p *parser) parseWithQualifier() {
  * Type Definitions
  *************************************************************************/
 
-func (p *parser) parseType() Decl {
+func (p *parser) parseTypeDecl() Decl {
 	if p.trace {
 		defer un(trace(p, "Type"))
 	}
@@ -1284,7 +1284,7 @@ func (p *parser) parseType() Decl {
 	return nil
 }
 
-func (p *parser) parseNestedType() {
+func (p *parser) parseType() {
 	if p.trace {
 		defer un(trace(p, "NestedType"))
 	}
@@ -1351,7 +1351,7 @@ func (p *parser) parseStructField() {
 	if p.tok(1) == MODIF {
 		p.next() // @default
 	}
-	p.parseNestedType()
+	p.parseType()
 	p.parsePrimaryExpr()
 
 	if p.tok(1) == LPAREN {
@@ -1401,7 +1401,7 @@ func (p *parser) parseListBody() {
 	}
 
 	p.expect(OF)
-	p.parseNestedType()
+	p.parseType()
 }
 
 /*************************************************************************
@@ -1555,7 +1555,7 @@ func (p *parser) parseSubType() *SubType {
 		defer un(trace(p, "SubType"))
 	}
 
-	p.parseNestedType()
+	p.parseType()
 	p.parsePrimaryExpr()
 	if p.tok(1) == LT {
 		p.parseTypeParameters()
