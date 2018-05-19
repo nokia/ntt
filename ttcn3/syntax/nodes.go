@@ -55,6 +55,9 @@ type (
 	}
 
 	CompositeLiteral struct {
+		LBrace Token
+		List   []Expr
+		RBrace Token
 	}
 
 	UnaryExpr struct {
@@ -69,11 +72,14 @@ type (
 	}
 
 	ParenExpr struct {
-		List []Expr
+		LParen Token
+		List   []Expr
+		RParen Token
 	}
 
 	SelectorExpr struct {
 		X   Expr
+		Dot Token
 		Sel Expr
 	}
 
@@ -85,9 +91,6 @@ type (
 	CallExpr struct {
 		Fun  Expr
 		Args []Expr
-	}
-
-	ModifiesExpr struct {
 	}
 
 	LengthExpr struct {
@@ -111,16 +114,55 @@ type (
 		Timestamp    Expr
 	}
 
+	// Required for Signatures
+	ValueExpr struct {
+		X   Expr
+		Tok Token
+		Y   Expr
+	}
+
+	// Required for map param, unmap param
+	ParamExpr struct {
+		X   Expr
+		Tok Token
+		Y   Expr
+	}
+
+	// ("any"|"all") "from" Expr
+	FromExpr struct {
+		Kind Token
+		X    Expr
+	}
+
+	ModifiesExpr struct {
+		Tok    Token
+		X      Expr
+		Assign Token
+		Y      Expr
+	}
+
 	RegexpExpr struct {
+		Tok    Token
+		NoCase Token
+		X      Expr
 	}
 
 	PatternExpr struct {
+		Tok    Token
+		NoCase Token
+		X      Expr
 	}
 
 	DecmatchExpr struct {
+		Tok    Token
+		Params Expr
+		X      Expr
 	}
 
 	DecodedExpr struct {
+		Tok    Token
+		Params Expr
+		X      Expr
 	}
 )
 

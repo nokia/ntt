@@ -401,20 +401,15 @@ L:
 	}
 
 	if p.tok == VALUE {
-		//TODO(5nord) maybe merge with redirect
-		p.consume()
-		p.parseExpr()
+		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
 	}
 
 	if p.tok == PARAM {
-		//TODO(5nord) maybe merge with redirect
-		p.consume()
-		p.parseParenExpr()
+		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
 	}
 
 	if p.tok == ALIVE {
-		op := p.consume()
-		x = &UnaryExpr{Op: op, X: x}
+		x = &UnaryExpr{Op: p.consume(), X: x}
 	}
 
 	return x
@@ -439,21 +434,20 @@ L:
 func (p *parser) parseOperand() Expr {
 	switch p.tok {
 	case ANYKW, ALL:
-		k := p.tok
-		p.consume()
+		tok := p.consume()
 		switch p.tok {
 		case COMPONENT, PORT, TIMER:
+			// TODO(5nord): make this expression identifier?
 			p.consume()
 			return nil
 		case FROM:
-			p.consume()
-			p.parsePrimaryExpr()
-			return nil
+			p.consume() // TODO(5nord) move 'from' into AST
+			return &FromExpr{Kind: tok, X: p.parsePrimaryExpr()}
 		}
 
 		// Workaround for deprecated port-attribute 'all'
-		if k == ALL {
-			return nil
+		if tok.Kind == ALL {
+			return &Ident{Tok: tok}
 		}
 
 		p.errorExpected(p.pos(1), "'component', 'port', 'timer' or 'from'")
@@ -494,32 +488,33 @@ func (p *parser) parseOperand() Expr {
 
 	case LPAREN:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
-		p.parseParenExpr()
+		return p.parseParenExpr()
 
 	case LBRACK:
-		p.parseIndexExpr(nil)
+		return p.parseIndexExpr(nil)
 
 	case LBRACE:
-		p.parseCompositeLiteral()
+		return p.parseCompositeLiteral()
 
 	case MODIFIES:
-		p.consume()
-		p.parsePrimaryExpr()
-		p.expect(ASSIGN)
-		p.parseExpr()
-		return nil
+		return &ModifiesExpr{
+			Tok:    p.consume(),
+			X:      p.parsePrimaryExpr(),
+			Assign: p.expect(ASSIGN),
+			Y:      p.parseExpr(),
+		}
 
 	case REGEXP:
-		p.parseCallRegexp()
+		return p.parseCallRegexp()
 
 	case PATTERN:
-		p.parseCallPattern()
+		return p.parseCallPattern()
 
 	case DECMATCH:
-		p.parseCallDecMatch()
+		return p.parseCallDecmatch()
 
 	case MODIF:
-		p.parseDecodedModifier()
+		return p.parseDecodedModifier()
 
 	default:
 		p.errorExpected(p.pos(1), "operand")
@@ -571,19 +566,20 @@ func (p *parser) parseRef() Expr {
 	}
 
 	p.mark()
-	if x := p.tryTypeFormalPars(); x != nil && !isOperand(p.tok) {
+	if x := p.tryTypeParameters(); x != nil && !isOperand(p.tok) {
 		p.commit()
-		return id
+		return &ParametrizedIdent{Ident: id, Params: x}
 	}
 	p.reset()
 	return id
 }
 
 func (p *parser) parseParenExpr() Expr {
-	p.expect(LPAREN)
-	p.parseExprList()
-	p.expect(RPAREN)
-	return nil
+	return &ParenExpr{
+		LParen: p.expect(LPAREN),
+		List:   p.parseExprList(),
+		RParen: p.expect(RPAREN),
+	}
 }
 
 func (p *parser) parseUniversalCharstring() *Ident {
@@ -592,59 +588,68 @@ func (p *parser) parseUniversalCharstring() *Ident {
 	return id
 }
 
-func (p *parser) parseCompositeLiteral() {
-	p.expect(LBRACE)
+func (p *parser) parseCompositeLiteral() *CompositeLiteral {
+	c := new(CompositeLiteral)
+	c.LBrace = p.expect(LBRACE)
 	if p.tok != RBRACE {
-		p.parseExprList()
+		c.List = p.parseExprList()
 	}
-	p.expect(RBRACE)
+	c.RBrace = p.expect(RBRACE)
+	return c
 }
 
-func (p *parser) parseCallRegexp() {
-	p.expect(REGEXP)
+func (p *parser) parseCallRegexp() *RegexpExpr {
+	c := new(RegexpExpr)
+	c.Tok = p.expect(REGEXP)
 	if p.tok == MODIF {
-		p.consume()
+		c.NoCase = p.consume()
 	}
-	p.parseParenExpr()
+	c.X = p.parseParenExpr()
+	return c
 }
 
-func (p *parser) parseCallPattern() {
-	p.expect(PATTERN)
+func (p *parser) parseCallPattern() *PatternExpr {
+	c := new(PatternExpr)
+	c.Tok = p.expect(PATTERN)
 	if p.tok == MODIF {
-		p.consume()
+		c.NoCase = p.consume()
 	}
-	p.expect(STRING)
+	c.X = p.expect(STRING)
+	return c
 }
 
-func (p *parser) parseCallDecMatch() {
-	p.expect(DECMATCH)
+func (p *parser) parseCallDecmatch() *DecmatchExpr {
+	c := new(DecmatchExpr)
+	c.Tok = p.expect(DECMATCH)
 	if p.tok == LPAREN {
-		p.parseParenExpr()
+		c.Params = p.parseParenExpr()
 	}
-	p.parseExpr()
+	c.X = p.parseExpr()
+	return c
 }
 
-func (p *parser) parseDecodedModifier() {
-	p.expect(MODIF) // @decoded
+func (p *parser) parseDecodedModifier() *DecodedExpr {
+	d := new(DecodedExpr)
+	d.Tok = p.expect(MODIF) // @decoded
 	if p.tok == LPAREN {
-		p.parseParenExpr()
+		d.Params = p.parseParenExpr()
 	}
-	p.parsePrimaryExpr()
+	d.X = p.parsePrimaryExpr()
+	return d
 }
 
-func (p *parser) parseSelectorExpr(x Expr) Expr {
-	p.expect(DOT)
-	return &SelectorExpr{X: x, Sel: p.parseRef()}
+func (p *parser) parseSelectorExpr(x Expr) *SelectorExpr {
+	return &SelectorExpr{X: x, Dot: p.consume(), Sel: p.parseRef()}
 }
 
-func (p *parser) parseIndexExpr(x Expr) Expr {
+func (p *parser) parseIndexExpr(x Expr) *IndexExpr {
 	p.expect(LBRACK)
-	x = &IndexExpr{X: x, Index: p.parseExpr()}
+	idx := &IndexExpr{X: x, Index: p.parseExpr()}
 	p.expect(RBRACK)
-	return x
+	return idx
 }
 
-func (p *parser) parseCallExpr(x Expr) Expr {
+func (p *parser) parseCallExpr(x Expr) *CallExpr {
 	p.consume()
 
 	switch p.tok {
@@ -734,51 +739,54 @@ func (p *parser) parseIdent() *Ident {
 	}
 }
 
-func (p *parser) parseRefList() {
+func (p *parser) parseRefList() []Expr {
+	l := make([]Expr, 1)
 	for {
-		p.parseTypeRef()
+		l = append(l, p.parseTypeRef())
 		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
+	return l
 }
 
 func (p *parser) parseTypeRef() Expr {
 	if p.trace {
 		defer un(trace(p, "TypeRef"))
 	}
-	x := p.parsePrimaryExpr()
-	return x
+	return p.parsePrimaryExpr()
 }
 
-func (p *parser) tryTypeFormalPars() Expr {
+func (p *parser) tryTypeParameters() Expr {
 	if p.trace {
-		defer un(trace(p, "tryTypeFormalPars"))
+		defer un(trace(p, "tryTypeParameters"))
 	}
-	x := &ParenExpr{}
-	p.consume() // consume '<'
+	x := &ParenExpr{
+		LParen: p.consume(),
+	}
 	for p.tok != GT {
-		y := p.tryTypeFormalPar()
+		y := p.tryTypeParameter()
 		if y == nil {
 			return nil
 		}
+		x.List = append(x.List, y)
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consume() // consume ','
 	}
 
 	if p.tok != GT {
 		return nil
 	}
-	p.consume()
+	x.RParen = p.consume()
 	return x
 }
 
-func (p *parser) tryTypeFormalPar() Expr {
+func (p *parser) tryTypeParameter() Expr {
 	if p.trace {
-		defer un(trace(p, "tryTypeFormalPar"))
+		defer un(trace(p, "tryTypeParameter"))
 	}
 	x := p.tryTypeIdent()
 L:
@@ -819,7 +827,7 @@ func (p *parser) tryTypeIdent() Expr {
 	x := &Ident{Tok: p.consume()}
 
 	if p.tok == LT {
-		if y := p.tryTypeFormalPars(); y == nil {
+		if y := p.tryTypeParameters(); y == nil {
 			return &ParametrizedIdent{
 				Ident:  x,
 				Params: y,
