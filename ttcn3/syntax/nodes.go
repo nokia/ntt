@@ -28,13 +28,21 @@ type Type interface {
 	Node
 }
 
-// ----------------------------------------------------------------------------
+// Tokens
+// ------------------------------------------------------------------------
+
+type Token struct {
+	Pos  Pos
+	Kind Kind
+	Lit  string
+}
+
+// ------------------------------------------------------------------------
 // Expressions
 //
 type (
 	Ident struct {
-		NamePos Pos
-		Name    string
+		Tok Token
 	}
 
 	ParametrizedIdent struct {
@@ -43,25 +51,21 @@ type (
 	}
 
 	ValueLiteral struct {
-		Kind     Token
-		ValuePos Pos
-		Value    string
+		Tok Token
 	}
 
 	CompositeLiteral struct {
 	}
 
 	UnaryExpr struct {
-		Op    Token
-		OpPos Pos
-		X     Expr
+		Op Token
+		X  Expr
 	}
 
 	BinaryExpr struct {
-		X     Expr
-		Op    Token
-		OpPos Pos
-		Y     Expr
+		X  Expr
+		Op Token
+		Y  Expr
 	}
 
 	ParenExpr struct {
@@ -87,23 +91,23 @@ type (
 	}
 
 	LengthExpr struct {
-		Pos Pos
-		X   Expr
-		Len Expr
+		X    Expr
+		Len  Token
+		Size Expr
 	}
 
 	RedirectExpr struct {
 		X            Expr
-		Pos          Pos
-		ValuePos     Pos
+		Tok          Token
+		ValueTok     Token
 		Value        Expr
-		ParamPos     Pos
+		ParamTok     Token
 		Param        Expr
-		SenderPos    Pos
+		SenderTok    Token
 		Sender       Expr
-		IndexPos     Pos
+		IndexTok     Token
 		Index        Expr
-		TimestampPos Pos
+		TimestampTok Token
 		Timestamp    Expr
 	}
 
@@ -120,14 +124,14 @@ type (
 	}
 )
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Statements
 
 type (
 	BlockStmt struct {
-		LBrace Pos
+		LBrace Token
 		Stmts  []Stmt
-		RBrace Pos
+		RBrace Token
 	}
 
 	DeclStmt struct {
@@ -160,35 +164,33 @@ type (
 	}
 )
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Declarations
 
 type (
 	ValueDecl struct {
-		DeclPos Pos
-		Kind    Token // VAR, CONST, MODULEPAT, TIMER, ...
-		Type    Expr
-		Decls   []Expr
+		Kind  Token
+		Type  Expr
+		Decls []Expr
 	}
 
 	FuncDecl struct {
-		FuncPos Pos
-		Kind    Token
-		Name    *Ident
-		Params  Expr
-		Return  Expr
-		RunsOn  Expr
-		Mtc     Expr
-		System  Expr
-		Extern  bool
-		Body    *BlockStmt
+		Kind   Token
+		Name   *Ident
+		Params Expr
+		Return Expr
+		RunsOn Expr
+		Mtc    Expr
+		System Expr
+		Extern bool
+		Body   *BlockStmt
 	}
 
 	SignatureDecl struct {
 	}
 )
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Types
 
 type (
@@ -223,14 +225,14 @@ type (
 	}
 )
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Modules and Module Definitions
 
 type (
 	Module struct {
-		Module Pos
-		Name   *Ident
-		Decls  []Decl
+		Tok   Token
+		Name  *Ident
+		Decls []Decl
 	}
 
 	ModuleDef struct {
@@ -243,7 +245,7 @@ type (
 	}
 
 	ImportDecl struct {
-		ImportPos   Pos
+		Tok         Token
 		Module      *Ident
 		ImportSpecs []ImportSpec
 	}
@@ -261,7 +263,7 @@ type (
 	}
 )
 
-// ----------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 // Miscellaneous
 
 type (
@@ -269,8 +271,7 @@ type (
 	}
 
 	RestrictionSpec struct {
-		Kind    Token
-		KindPos Pos
+		Tok Token
 	}
 
 	RunsOnSpec struct {

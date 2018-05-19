@@ -19,12 +19,6 @@ const (
 	AllErrors         = SpuriousErrors // report all errors (not just the first 10 on different lines)
 )
 
-type token struct {
-	Pos Pos
-	Tok Token
-	Lit string
-}
-
 // The parser structure holds the parser's internal state.
 type parser struct {
 	file    *File
@@ -38,8 +32,9 @@ type parser struct {
 
 	// Tokens/Backtracking
 	cursor  int
-	tokens  []token
+	tokens  []Token
 	markers []int
+	tok     Kind // for convenience (p.tok is used frequently)
 
 	// Semicolon helper
 	seenBrace bool
@@ -66,8 +61,12 @@ func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
 
-	p.tokens = make([]token, 0, 200)
+	p.tokens = make([]Token, 0, 200)
 	p.markers = make([]int, 0, 200)
+
+	// fetch first token
+	p.peek(1)
+	p.tok = p.tokens[p.cursor].Kind
 }
 
 // Usage pattern: defer un(trace(p, "..."))
@@ -77,26 +76,24 @@ func un(p *parser) {
 }
 
 // Read the next token from input-stream
-func (p *parser) readToken() token {
+func (p *parser) readKind() Token {
 redo:
 	pos, tok, lit := p.scanner.Scan()
 	if tok == COMMENT || tok == PREPROC {
 		goto redo
 	}
-	return token{pos, tok, lit}
+	return Token{pos, tok, lit}
 }
 
 // Advance to the next token
-func (p *parser) next() {
-
+func (p *parser) consume() Token {
+	tok := p.tokens[p.cursor]
 	if p.trace {
-		tok := p.tokens[p.cursor].Tok
-		lit := p.tokens[p.cursor].Lit
-		s := tok.String()
+		s := tok.Kind.String()
 		switch {
-		case tok.IsLiteral():
-			p.printTrace(s, lit)
-		case tok.IsOperator(), tok.IsKeyword():
+		case tok.Kind.IsLiteral():
+			p.printTrace(s, tok.Lit)
+		case tok.Kind.IsOperator(), tok.Kind.IsKeyword():
 			p.printTrace("\"" + s + "\"")
 		default:
 			p.printTrace(s)
@@ -105,7 +102,7 @@ func (p *parser) next() {
 
 	// Track curly braces for TTCN-3 semicolon rules
 	p.seenBrace = false
-	if p.tok(1) == RBRACE {
+	if p.tok == RBRACE {
 		p.seenBrace = true
 	}
 
@@ -116,6 +113,8 @@ func (p *parser) next() {
 	}
 
 	p.grow(1)
+	p.tok = p.tokens[p.cursor].Kind
+	return tok
 }
 
 func (p *parser) grow(i int) {
@@ -124,18 +123,14 @@ func (p *parser) grow(i int) {
 	if idx > last {
 		n := idx - last
 		for i := 0; i < n; i++ {
-			p.tokens = append(p.tokens, p.readToken())
+			p.tokens = append(p.tokens, p.readKind())
 		}
 	}
 }
 
-func (p *parser) peek(i int) token {
+func (p *parser) peek(i int) Token {
 	p.grow(i)
 	return p.tokens[p.cursor+i-1]
-}
-
-func (p *parser) tok(i int) Token {
-	return p.peek(i).Tok
 }
 
 func (p *parser) pos(i int) Pos {
@@ -155,11 +150,12 @@ func (p *parser) commit() {
 	p.markers = p.markers[0:last]
 }
 
-func (p *parser) release() {
+func (p *parser) reset() {
 	last := len(p.markers) - 1
 	marker := p.markers[last]
 	p.markers = p.markers[0:last]
 	p.cursor = marker
+	p.tok = p.tokens[p.cursor].Kind
 }
 
 func (p *parser) speculating() bool {
@@ -221,29 +217,28 @@ func (p *parser) errorExpected(pos Pos, msg string) {
 		// the error happened at the current position;
 		// make the error message more specific
 		switch {
-		case p.tok(1).IsLiteral():
+		case p.tok.IsLiteral():
 			// print 123 rather than 'INT', etc.
 			msg += ", found " + p.lit(1)
 		default:
-			msg += ", found '" + p.tok(1).String() + "'"
+			msg += ", found '" + p.tok.String() + "'"
 		}
 	}
 	p.error(pos, msg)
 }
 
-func (p *parser) expect(tok Token) Pos {
-	pos := p.pos(1)
-	if p.tok(1) != tok {
-		p.errorExpected(pos, "'"+tok.String()+"'")
+func (p *parser) expect(k Kind) Token {
+	if p.tok != k {
+		pos := p.peek(1).Pos
+		p.errorExpected(pos, "'"+k.String()+"'")
 	}
-	p.next() // make progress
-	return pos
+	return p.consume() // make progress
 }
 
 func (p *parser) expectSemi() {
-	switch p.tok(1) {
+	switch p.tok {
 	case SEMICOLON:
-		p.next()
+		p.consume()
 	case RBRACE, EOF:
 		// semicolon is optional before a closing '}'
 	default:
@@ -254,11 +249,11 @@ func (p *parser) expectSemi() {
 	}
 }
 
-// advance consumes tokens until the current token p.tok(1)
+// advance consumes tokens until the current token p.tok
 // is in the 'to' set, or EOF. For error recovery.
-func (p *parser) advance(to map[Token]bool) {
-	for ; p.tok(1) != EOF; p.next() {
-		if to[p.tok(1)] {
+func (p *parser) advance(to map[Kind]bool) {
+	for ; p.tok != EOF; p.consume() {
+		if to[p.tok] {
 			// Return only if parser made some progress since last
 			// sync or if it has not reached 10 advance calls without
 			// progress. Otherwise consume at least one token to
@@ -284,7 +279,7 @@ func (p *parser) advance(to map[Token]bool) {
 	}
 }
 
-var stmtStart = map[Token]bool{
+var stmtStart = map[Kind]bool{
 	CONST:     true,
 	VAR:       true,
 	MODULEPAR: true,
@@ -300,8 +295,8 @@ var stmtStart = map[Token]bool{
 // ExprList ::= Expr { "," Expr }
 func (p *parser) parseExprList() (list []Expr) {
 	list = append(list, p.parseExpr())
-	for p.tok(1) == COMMA {
-		p.next()
+	for p.tok == COMMA {
+		p.consume()
 		list = append(list, p.parseExpr())
 	}
 	return list
@@ -322,17 +317,15 @@ func (p *parser) parseExpr() Expr {
 func (p *parser) parseBinaryExpr(prec1 int) Expr {
 	x := p.parseUnaryExpr()
 	for {
-		prec := p.tok(1).Precedence()
+		prec := p.tok.Precedence()
 		if prec < prec1 {
 			return x
 		}
-		pos := p.pos(1)
-		op := p.tok(1)
-		p.next()
+		op := p.consume()
 
 		y := p.parseBinaryExpr(prec + 1)
 
-		x = &BinaryExpr{X: x, Op: op, OpPos: pos, Y: y}
+		x = &BinaryExpr{X: x, Op: op, Y: y}
 	}
 }
 
@@ -342,18 +335,17 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 //             | PrimaryExpr
 //
 func (p *parser) parseUnaryExpr() Expr {
-	switch p.tok(1) {
+	switch p.tok {
 	case ADD, EXCL, NOT, NOT4B, SUB:
-		op, pos := p.tok(1), p.pos(1)
-		p.next()
+		tok := p.consume()
 		// handle unused expr '-'
-		if op == SUB {
-			switch p.tok(1) {
+		if tok.Kind == SUB {
+			switch p.tok {
 			case COMMA, SEMICOLON, RBRACE, RBRACK, RPAREN, EOF:
-				return &ValueLiteral{Kind: op, ValuePos: pos, Value: "-"}
+				return &ValueLiteral{Tok: tok}
 			}
 		}
-		return &UnaryExpr{Op: op, OpPos: pos, X: p.parseUnaryExpr()}
+		return &UnaryExpr{Op: tok, X: p.parseUnaryExpr()}
 	}
 
 	return p.parsePrimaryExpr()
@@ -378,7 +370,7 @@ func (p *parser) parsePrimaryExpr() Expr {
 	x := p.parseOperand()
 L:
 	for {
-		switch p.tok(1) {
+		switch p.tok {
 		case DOT:
 			x = p.parseSelectorExpr(x)
 		case LBRACK:
@@ -390,42 +382,39 @@ L:
 		}
 	}
 
-	if p.tok(1) == LENGTH {
+	if p.tok == LENGTH {
 		x = p.parseLength(x)
 	}
 
-	if p.tok(1) == IFPRESENT {
-		op, pos := p.tok(1), p.pos(1)
-		p.next()
-		x = &UnaryExpr{Op: op, OpPos: pos, X: x}
+	if p.tok == IFPRESENT {
+		op := p.consume()
+		x = &UnaryExpr{Op: op, X: x}
 	}
 
-	if p.tok(1) == TO || p.tok(1) == FROM {
-		op, pos := p.tok(1), p.pos(1)
-		p.next()
-		x = &BinaryExpr{X: x, Op: op, OpPos: pos, Y: p.parseExpr()}
+	if p.tok == TO || p.tok == FROM {
+		op := p.consume()
+		x = &BinaryExpr{X: x, Op: op, Y: p.parseExpr()}
 	}
 
-	if p.tok(1) == REDIR {
+	if p.tok == REDIR {
 		x = p.parseRedirect(x)
 	}
 
-	if p.tok(1) == VALUE {
+	if p.tok == VALUE {
 		//TODO(5nord) maybe merge with redirect
-		p.next()
+		p.consume()
 		p.parseExpr()
 	}
 
-	if p.tok(1) == PARAM {
+	if p.tok == PARAM {
 		//TODO(5nord) maybe merge with redirect
-		p.next()
+		p.consume()
 		p.parseParenExpr()
 	}
 
-	if p.tok(1) == ALIVE {
-		op, pos := p.tok(1), p.pos(1)
-		p.next()
-		x = &UnaryExpr{Op: op, OpPos: pos, X: x}
+	if p.tok == ALIVE {
+		op := p.consume()
+		x = &UnaryExpr{Op: op, X: x}
 	}
 
 	return x
@@ -448,16 +437,16 @@ L:
 //             | "map" | "unmap"
 //
 func (p *parser) parseOperand() Expr {
-	switch p.tok(1) {
+	switch p.tok {
 	case ANYKW, ALL:
-		k := p.tok(1)
-		p.next()
-		switch p.tok(1) {
+		k := p.tok
+		p.consume()
+		switch p.tok {
 		case COMPONENT, PORT, TIMER:
-			p.next()
+			p.consume()
 			return nil
 		case FROM:
-			p.next()
+			p.consume()
 			p.parsePrimaryExpr()
 			return nil
 		}
@@ -470,9 +459,7 @@ func (p *parser) parseOperand() Expr {
 		p.errorExpected(p.pos(1), "'component', 'port', 'timer' or 'from'")
 
 	case UNIVERSAL:
-		p.parseUniversalCharstring()
-		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
-		return id
+		return p.parseUniversalCharstring()
 
 	case ADDRESS,
 		CHARSTRING,
@@ -484,9 +471,7 @@ func (p *parser) parseOperand() Expr {
 		TESTCASE,
 		TIMER,
 		UNMAP:
-		id := &Ident{NamePos: p.pos(1), Name: p.lit(1)}
-		p.next()
-		return id
+		return &Ident{Tok: p.consume()}
 
 	case IDENT:
 		return p.parseRef()
@@ -505,9 +490,7 @@ func (p *parser) parseOperand() Expr {
 		PASS,
 		STRING,
 		TRUE:
-		lit := &ValueLiteral{Kind: p.tok(1), ValuePos: p.pos(1), Value: p.lit(1)}
-		p.next()
-		return lit
+		return &ValueLiteral{Tok: p.consume()}
 
 	case LPAREN:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
@@ -520,7 +503,7 @@ func (p *parser) parseOperand() Expr {
 		p.parseCompositeLiteral()
 
 	case MODIFIES:
-		p.next()
+		p.consume()
 		p.parsePrimaryExpr()
 		p.expect(ASSIGN)
 		p.parseExpr()
@@ -545,7 +528,7 @@ func (p *parser) parseOperand() Expr {
 	return nil
 }
 
-func isOperand(tok Token) bool {
+func isOperand(tok Kind) bool {
 	switch tok {
 	case ADDRESS,
 		ALL,
@@ -583,16 +566,16 @@ func isOperand(tok Token) bool {
 
 func (p *parser) parseRef() Expr {
 	id := p.parseIdent()
-	if p.tok(1) != LT {
+	if p.tok != LT {
 		return id
 	}
 
 	p.mark()
-	if x := p.tryTypeFormalPars(); x != nil && !isOperand(p.tok(1)) {
+	if x := p.tryTypeFormalPars(); x != nil && !isOperand(p.tok) {
 		p.commit()
 		return id
 	}
-	p.release()
+	p.reset()
 	return id
 }
 
@@ -603,14 +586,15 @@ func (p *parser) parseParenExpr() Expr {
 	return nil
 }
 
-func (p *parser) parseUniversalCharstring() {
-	p.expect(UNIVERSAL)
-	p.expect(CHARSTRING)
+func (p *parser) parseUniversalCharstring() *Ident {
+	id := &Ident{Tok: p.expect(UNIVERSAL)}
+	p.expect(CHARSTRING) // TODO(5nord) add this token to AST
+	return id
 }
 
 func (p *parser) parseCompositeLiteral() {
 	p.expect(LBRACE)
-	if p.tok(1) != RBRACE {
+	if p.tok != RBRACE {
 		p.parseExprList()
 	}
 	p.expect(RBRACE)
@@ -618,23 +602,23 @@ func (p *parser) parseCompositeLiteral() {
 
 func (p *parser) parseCallRegexp() {
 	p.expect(REGEXP)
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 	p.parseParenExpr()
 }
 
 func (p *parser) parseCallPattern() {
 	p.expect(PATTERN)
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 	p.expect(STRING)
 }
 
 func (p *parser) parseCallDecMatch() {
 	p.expect(DECMATCH)
-	if p.tok(1) == LPAREN {
+	if p.tok == LPAREN {
 		p.parseParenExpr()
 	}
 	p.parseExpr()
@@ -642,7 +626,7 @@ func (p *parser) parseCallDecMatch() {
 
 func (p *parser) parseDecodedModifier() {
 	p.expect(MODIF) // @decoded
-	if p.tok(1) == LPAREN {
+	if p.tok == LPAREN {
 		p.parseParenExpr()
 	}
 	p.parsePrimaryExpr()
@@ -661,13 +645,13 @@ func (p *parser) parseIndexExpr(x Expr) Expr {
 }
 
 func (p *parser) parseCallExpr(x Expr) Expr {
-	p.next()
+	p.consume()
 
-	switch p.tok(1) {
+	switch p.tok {
 	case FROM, TO:
-		p.next()
+		p.consume()
 		p.parseExpr()
-		if p.tok(1) == REDIR {
+		if p.tok == REDIR {
 			p.parseRedirect(nil)
 		}
 		p.expect(RPAREN)
@@ -678,7 +662,7 @@ func (p *parser) parseCallExpr(x Expr) Expr {
 		return nil
 	default:
 		var list []Expr
-		if p.tok(1) != RPAREN {
+		if p.tok != RPAREN {
 			list = p.parseExprList()
 		}
 		p.expect(RPAREN)
@@ -688,9 +672,9 @@ func (p *parser) parseCallExpr(x Expr) Expr {
 
 func (p *parser) parseLength(x Expr) *LengthExpr {
 	return &LengthExpr{
-		Pos: p.expect(LENGTH),
-		X:   x,
-		Len: p.parseParenExpr(),
+		X:    x,
+		Len:  p.expect(LENGTH),
+		Size: p.parseParenExpr(),
 	}
 }
 
@@ -698,41 +682,40 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 
 	r := &RedirectExpr{
 		X:   x,
-		Pos: p.expect(REDIR),
+		Tok: p.expect(REDIR),
 	}
 
-	if p.tok(1) == VALUE {
-		r.ValuePos = p.expect(VALUE)
+	if p.tok == VALUE {
+		r.ValueTok = p.expect(VALUE)
 		r.Value = p.parseExprList()
 	}
 
-	if p.tok(1) == PARAM {
-		r.ParamPos = p.expect(PARAM)
+	if p.tok == PARAM {
+		r.ParamTok = p.expect(PARAM)
 		r.Param = p.parseExprList()
 	}
 
-	if p.tok(1) == SENDER {
-		r.SenderPos = p.expect(SENDER)
+	if p.tok == SENDER {
+		r.SenderTok = p.expect(SENDER)
 		r.Sender = p.parsePrimaryExpr()
 	}
 
-	if p.tok(1) == MODIF {
+	if p.tok == MODIF {
 		if p.lit(1) != "@index" {
 			p.errorExpected(p.pos(1), "@index")
 		}
 
-		pos := p.pos(1)
-		p.next()
-		if p.tok(1) == VALUE {
+		tok := p.consume()
+		if p.tok == VALUE {
 			// just silently discard optional 'value' token
-			p.next()
+			p.consume()
 		}
-		r.IndexPos = pos
+		r.IndexTok = tok
 		r.Index = p.parsePrimaryExpr()
 	}
 
-	if p.tok(1) == TIMESTAMP {
-		r.TimestampPos = p.expect(TIMESTAMP)
+	if p.tok == TIMESTAMP {
+		r.TimestampTok = p.expect(TIMESTAMP)
 		r.Timestamp = p.parsePrimaryExpr()
 	}
 
@@ -740,27 +723,24 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 }
 
 func (p *parser) parseIdent() *Ident {
-	pos := p.pos(1)
-	name := "_"
-	switch p.tok(1) {
+	switch p.tok {
 	case UNIVERSAL:
-		p.parseUniversalCharstring()
+		return p.parseUniversalCharstring()
 	case IDENT, ADDRESS, ALIVE, CHARSTRING:
-		name = p.lit(1)
-		p.next()
+		return &Ident{Tok: p.consume()}
 	default:
 		p.expect(IDENT) // use expect() error handling
+		return nil
 	}
-	return &Ident{NamePos: pos, Name: name}
 }
 
 func (p *parser) parseRefList() {
 	for {
 		p.parseTypeRef()
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 }
 
@@ -776,23 +756,23 @@ func (p *parser) tryTypeFormalPars() Expr {
 	if p.trace {
 		defer un(trace(p, "tryTypeFormalPars"))
 	}
-	x := &Ident{Name: "dummy"}
-	p.next() // consume '<'
-	for p.tok(1) != GT {
+	x := &ParenExpr{}
+	p.consume() // consume '<'
+	for p.tok != GT {
 		y := p.tryTypeFormalPar()
 		if y == nil {
 			return nil
 		}
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 
-	if p.tok(1) != GT {
+	if p.tok != GT {
 		return nil
 	}
-	p.next()
+	p.consume()
 	return x
 }
 
@@ -803,22 +783,22 @@ func (p *parser) tryTypeFormalPar() Expr {
 	x := p.tryTypeIdent()
 L:
 	for {
-		switch p.tok(1) {
+		switch p.tok {
 		case DOT:
-			p.next() // consume '.'
+			p.consume() // consume '.'
 			p.tryTypeIdent()
 		case LBRACK:
-			p.next() // consume '['
+			p.consume() // consume '['
 
-			if p.tok(1) != SUB {
+			if p.tok != SUB {
 				return nil
 			}
-			p.next() // consume '-'
+			p.consume() // consume '-'
 
-			if p.tok(1) != RBRACK {
+			if p.tok != RBRACK {
 				return nil
 			}
-			p.next() // consume ']'
+			p.consume() // consume ']'
 
 		default:
 			break L
@@ -831,21 +811,22 @@ func (p *parser) tryTypeIdent() Expr {
 	if p.trace {
 		defer un(trace(p, "tryTypeIdent"))
 	}
-	switch p.tok(1) {
-	case UNIVERSAL:
-		p.next()
-		fallthrough
-	case IDENT, CHARSTRING:
-		p.next()
-	default:
+
+	if p.tok != IDENT && p.tok != ADDRESS {
 		return nil
 	}
-	if p.tok(1) == LT {
-		if x := p.tryTypeFormalPars(); x == nil {
-			return nil
+
+	x := &Ident{Tok: p.consume()}
+
+	if p.tok == LT {
+		if y := p.tryTypeFormalPars(); y == nil {
+			return &ParametrizedIdent{
+				Ident:  x,
+				Params: y,
+			}
 		}
 	}
-	return &Ident{Name: "todo"}
+	return x
 }
 
 /*************************************************************************
@@ -857,59 +838,59 @@ func (p *parser) parseModule() *Module {
 		defer un(trace(p, "Module"))
 	}
 
-	pos := p.expect(MODULE)
+	mod := p.expect(MODULE)
 	name := p.parseIdent()
 
-	if p.tok(1) == LANGUAGE {
+	if p.tok == LANGUAGE {
 		p.parseLanguageSpec()
 	}
 
 	p.expect(LBRACE)
 
 	var decls []Decl
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		decls = append(decls, p.parseModuleDef())
 	}
 	p.expect(RBRACE)
 
 	return &Module{
-		Module: pos,
-		Name:   name,
-		Decls:  decls,
+		Tok:   mod,
+		Name:  name,
+		Decls: decls,
 	}
 }
 
 func (p *parser) parseLanguageSpec() {
-	p.next()
+	p.consume()
 	for {
 		p.expect(STRING)
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 }
 
 func (p *parser) parseModuleDef() Decl {
-	switch p.tok(1) {
+	switch p.tok {
 	case PRIVATE, PUBLIC:
-		p.next()
+		p.consume()
 	case FRIEND:
-		p.next()
-		if p.tok(1) == MODULE {
+		p.consume()
+		if p.tok == MODULE {
 			p.parseFriend()
 			p.expectSemi()
 			return nil
 		}
 	}
 
-	switch p.tok(1) {
+	switch p.tok {
 	case IMPORT:
 		p.parseImport()
 	case GROUP:
 		p.parseGroup()
 	case FRIEND:
-		p.next()
+		p.consume()
 		p.parseFriend()
 	case TYPE:
 		p.parseTypeDecl()
@@ -924,11 +905,11 @@ func (p *parser) parseModuleDef() Decl {
 	case FUNCTION, TESTCASE, ALTSTEP:
 		p.parseFuncDecl()
 	case CONTROL:
-		p.next()
+		p.consume()
 		p.parseBlockStmt()
 	case EXTERNAL:
-		p.next()
-		switch p.tok(1) {
+		p.consume()
+		switch p.tok {
 		case FUNCTION:
 			p.parseExtFuncDecl()
 		case CONST:
@@ -938,7 +919,7 @@ func (p *parser) parseModuleDef() Decl {
 		}
 	default:
 		p.errorExpected(p.pos(1), "module definition")
-		p.next()
+		p.consume()
 	}
 	p.expectSemi()
 	return nil
@@ -953,21 +934,20 @@ func (p *parser) parseImport() Decl {
 		defer un(trace(p, "Import"))
 	}
 
-	pos := p.pos(1)
-	p.next()
+	tok := p.consume()
 	p.expect(FROM)
 
 	name := p.parseIdent()
 
-	if p.tok(1) == LANGUAGE {
+	if p.tok == LANGUAGE {
 		p.parseLanguageSpec()
 	}
 
 	var specs []ImportSpec
-	switch p.tok(1) {
+	switch p.tok {
 	case ALL:
-		p.next()
-		if p.tok(1) == EXCEPT {
+		p.consume()
+		if p.tok == EXCEPT {
 			p.parseExceptSpec()
 		}
 	case LBRACE:
@@ -979,7 +959,7 @@ func (p *parser) parseImport() Decl {
 	p.parseWith()
 
 	return &ImportDecl{
-		ImportPos:   pos,
+		Tok:         tok,
 		Module:      name,
 		ImportSpecs: specs,
 	}
@@ -987,40 +967,40 @@ func (p *parser) parseImport() Decl {
 
 func (p *parser) parseImportSpec() {
 	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		p.parseImportStmt()
 	}
 	p.expect(RBRACE)
 }
 
 func (p *parser) parseImportStmt() {
-	switch p.tok(1) {
+	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
 		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
-		p.next()
-		if p.tok(1) == ALL {
-			p.next()
-			if p.tok(1) == EXCEPT {
-				p.next()
+		p.consume()
+		if p.tok == ALL {
+			p.consume()
+			if p.tok == EXCEPT {
+				p.consume()
 				p.parseRefList()
 			}
 		} else {
 			p.parseRefList()
 		}
 	case GROUP:
-		p.next()
+		p.consume()
 		for {
 			p.parseTypeRef()
-			if p.tok(1) == EXCEPT {
+			if p.tok == EXCEPT {
 				p.parseExceptSpec()
 			}
-			if p.tok(1) != COMMA {
+			if p.tok != COMMA {
 				break
 			}
-			p.next()
+			p.consume()
 		}
 	case IMPORT:
-		p.next()
+		p.consume()
 		p.expect(ALL)
 	default:
 		p.errorExpected(p.pos(1), "definition qualifier")
@@ -1030,33 +1010,33 @@ func (p *parser) parseImportStmt() {
 }
 
 func (p *parser) parseExceptSpec() {
-	p.next()
+	p.consume()
 	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		p.parseExceptStmt()
 	}
 	p.expect(RBRACE)
 }
 
 func (p *parser) parseExceptStmt() {
-	switch p.tok(1) {
+	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, GROUP,
 		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
 		TESTCASE, TYPE:
-		p.next()
+		p.consume()
 	default:
 		p.errorExpected(p.pos(1), "definition qualifier")
 	}
 
-	if p.tok(1) == ALL {
-		p.next()
+	if p.tok == ALL {
+		p.consume()
 	} else {
 		for {
 			p.parseTypeRef()
-			if p.tok(1) != COMMA {
+			if p.tok != COMMA {
 				break
 			}
-			p.next()
+			p.consume()
 		}
 	}
 	p.expectSemi()
@@ -1067,12 +1047,12 @@ func (p *parser) parseExceptStmt() {
  *************************************************************************/
 
 func (p *parser) parseGroup() {
-	p.next()
+	p.consume()
 	p.parseIdent()
 	p.expect(LBRACE)
 
 	var decls []Decl
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		decls = append(decls, p.parseModuleDef())
 	}
 	p.expect(RBRACE)
@@ -1090,13 +1070,13 @@ func (p *parser) parseFriend() {
  *************************************************************************/
 
 func (p *parser) parseWith() Node {
-	if p.tok(1) != WITH {
+	if p.tok != WITH {
 		return nil
 	}
 
 	p.expect(WITH)
 	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		p.parseWithStmt()
 	}
 	p.expect(RBRACE)
@@ -1107,7 +1087,7 @@ func (p *parser) parseWithStmt() Node {
 	if p.trace {
 		defer un(trace(p, "WithStmt"))
 	}
-	switch p.tok(1) {
+	switch p.tok {
 	case ENCODE,
 		VARIANT,
 		DISPLAY,
@@ -1115,35 +1095,35 @@ func (p *parser) parseWithStmt() Node {
 		OPTIONAL,
 		STEPSIZE,
 		OVERRIDE:
-		p.next()
+		p.consume()
 	default:
 		p.errorExpected(p.pos(1), "with-attribute")
-		p.next()
+		p.consume()
 	}
 
-	switch p.tok(1) {
+	switch p.tok {
 	case OVERRIDE:
-		p.next()
+		p.consume()
 	case MODIF:
-		p.next() // consume '@local'
+		p.consume() // consume '@local'
 	}
 
-	if p.tok(1) == LPAREN {
-		p.next()
+	if p.tok == LPAREN {
+		p.consume()
 		for {
 			p.parseWithQualifier()
-			if p.tok(1) != COMMA {
+			if p.tok != COMMA {
 				break
 			}
-			p.next()
+			p.consume()
 		}
 		p.expect(RPAREN)
 	}
 
 	p.expect(STRING)
 
-	if p.tok(1) == DOT {
-		p.next()
+	if p.tok == DOT {
+		p.consume()
 		p.expect(STRING)
 	}
 
@@ -1152,16 +1132,16 @@ func (p *parser) parseWithStmt() Node {
 }
 
 func (p *parser) parseWithQualifier() {
-	switch p.tok(1) {
+	switch p.tok {
 	case IDENT:
 		p.parseTypeRef()
 	case LBRACK:
 		p.parseIndexExpr(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
-		p.next()
+		p.consume()
 		p.expect(ALL)
-		if p.tok(1) == EXCEPT {
-			p.next()
+		if p.tok == EXCEPT {
+			p.consume()
 			p.expect(LBRACE)
 			p.parseRefList()
 			p.expect(RBRACE)
@@ -1179,16 +1159,16 @@ func (p *parser) parseTypeDecl() Decl {
 	if p.trace {
 		defer un(trace(p, "Type"))
 	}
-	p.next()
-	switch p.tok(1) {
+	p.consume()
+	switch p.tok {
 	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
 		p.parseSubType()
 	case UNION:
-		p.next()
+		p.consume()
 		p.parseStructType()
 	case SET, RECORD:
-		p.next()
-		if p.tok(1) == IDENT {
+		p.consume()
+		if p.tok == IDENT {
 			p.parseStructType()
 			break
 		}
@@ -1211,25 +1191,25 @@ func (p *parser) parseType() {
 	if p.trace {
 		defer un(trace(p, "NestedType"))
 	}
-	switch p.tok(1) {
+	switch p.tok {
 	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
 		p.parseTypeRef()
 	case UNION:
-		p.next()
+		p.consume()
 		p.parseStructBody()
 	case SET, RECORD:
-		p.next()
-		if p.tok(1) == LBRACE {
+		p.consume()
+		if p.tok == LBRACE {
 			p.parseStructBody()
 			break
 		}
 		p.parseListBody()
 	case ENUMERATED:
-		p.next()
+		p.consume()
 		p.parseEnumBody()
 
 	case FUNCTION, ALTSTEP, TESTCASE:
-		p.next()
+		p.consume()
 		p.parseBehaviourTypeBody()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
@@ -1245,7 +1225,7 @@ func (p *parser) parseStructType() {
 		defer un(trace(p, "StructType"))
 	}
 	p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 	p.parseStructBody()
@@ -1257,12 +1237,12 @@ func (p *parser) parseStructBody() {
 		defer un(trace(p, "StructBody"))
 	}
 	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		p.parseStructField()
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 	p.expect(RBRACE)
 }
@@ -1271,21 +1251,21 @@ func (p *parser) parseStructField() {
 	if p.trace {
 		defer un(trace(p, "StructField"))
 	}
-	if p.tok(1) == MODIF {
-		p.next() // @default
+	if p.tok == MODIF {
+		p.consume() // @default
 	}
 	p.parseType()
 	p.parsePrimaryExpr()
 
-	if p.tok(1) == LPAREN {
+	if p.tok == LPAREN {
 		p.parseParenExpr()
 	}
-	if p.tok(1) == LENGTH {
+	if p.tok == LENGTH {
 		p.parseLength(nil)
 	}
 
-	if p.tok(1) == OPTIONAL {
-		p.next()
+	if p.tok == OPTIONAL {
+		p.consume()
 	}
 }
 
@@ -1299,15 +1279,15 @@ func (p *parser) parseListType() {
 	}
 	p.parseListBody()
 	p.parsePrimaryExpr()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
-	if p.tok(1) == LPAREN {
+	if p.tok == LPAREN {
 		p.parseParenExpr()
 	}
 
-	if p.tok(1) == LENGTH {
+	if p.tok == LENGTH {
 		p.parseLength(nil)
 	}
 
@@ -1319,7 +1299,7 @@ func (p *parser) parseListBody() {
 		defer un(trace(p, "ListBody"))
 	}
 
-	if p.tok(1) == LENGTH {
+	if p.tok == LENGTH {
 		p.parseLength(nil)
 	}
 
@@ -1335,9 +1315,9 @@ func (p *parser) parseEnumType() {
 	if p.trace {
 		defer un(trace(p, "EnumType"))
 	}
-	p.next()
+	p.consume()
 	p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 	p.parseEnumBody()
@@ -1349,12 +1329,12 @@ func (p *parser) parseEnumBody() {
 		defer un(trace(p, "EnumBody"))
 	}
 	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		p.parseExpr()
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 	p.expect(RBRACE)
 }
@@ -1367,25 +1347,25 @@ func (p *parser) parsePortType() {
 	if p.trace {
 		defer un(trace(p, "PortType"))
 	}
-	p.next()
+	p.consume()
 	p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
-	switch p.tok(1) {
+	switch p.tok {
 	case MIXED, MESSAGE, PROCEDURE:
-		p.next()
+		p.consume()
 	default:
 		p.errorExpected(p.pos(1), "'message' or 'procedure'")
 	}
 
-	if p.tok(1) == REALTIME {
-		p.next()
+	if p.tok == REALTIME {
+		p.consume()
 	}
 
 	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		p.parsePortAttribute()
 		p.expectSemi()
 	}
@@ -1397,15 +1377,15 @@ func (p *parser) parsePortAttribute() {
 	if p.trace {
 		defer un(trace(p, "PortAttribute"))
 	}
-	switch p.tok(1) {
+	switch p.tok {
 	case IN, OUT, INOUT:
-		p.next()
+		p.consume()
 		p.parseRefList()
 	case ADDRESS:
-		p.next()
+		p.consume()
 		p.parseRefList()
 	case MAP, UNMAP:
-		p.next()
+		p.consume()
 		p.expect(PARAM)
 		p.parseFormalPars()
 	}
@@ -1419,13 +1399,13 @@ func (p *parser) parseComponentType() {
 	if p.trace {
 		defer un(trace(p, "ComponentType"))
 	}
-	p.next()
+	p.consume()
 	p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
-	if p.tok(1) == EXTENDS {
-		p.next()
+	if p.tok == EXTENDS {
+		p.consume()
 		p.parseRefList()
 	}
 	p.parseBlockStmt()
@@ -1442,15 +1422,15 @@ func (p *parser) parseBehaviourTypeBody() {
 	}
 	p.parseFormalPars()
 
-	if p.tok(1) == RUNS {
+	if p.tok == RUNS {
 		p.parseRunsOn()
 	}
 
-	if p.tok(1) == SYSTEM {
+	if p.tok == SYSTEM {
 		p.parseSystem()
 	}
 
-	if p.tok(1) == RETURN {
+	if p.tok == RETURN {
 		p.parseReturn()
 	}
 }
@@ -1459,9 +1439,9 @@ func (p *parser) parseBehaviourType() {
 	if p.trace {
 		defer un(trace(p, "BehaviourType"))
 	}
-	p.next()
-	p.next()
-	if p.tok(1) == LT {
+	p.consume()
+	p.consume()
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 	p.parseBehaviourTypeBody()
@@ -1480,15 +1460,15 @@ func (p *parser) parseSubType() *SubType {
 
 	p.parseType()
 	p.parsePrimaryExpr()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
-	if p.tok(1) == LPAREN {
+	if p.tok == LPAREN {
 		p.parseParenExpr()
 	}
-	if p.tok(1) == LENGTH {
+	if p.tok == LENGTH {
 		p.parseLength(nil)
 	}
 
@@ -1505,29 +1485,28 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 		defer un(trace(p, "TemplateDecl"))
 	}
 
-	x := &ValueDecl{DeclPos: p.pos(1), Kind: p.tok(1)}
-	p.next()
+	x := &ValueDecl{Kind: p.consume()}
 
-	if p.tok(1) == LPAREN {
-		p.next() // consume '('
-		p.next() // consume omit/value/...
+	if p.tok == LPAREN {
+		p.consume() // consume '('
+		p.consume() // consume omit/value/...
 		p.expect(RPAREN)
 	}
 
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 
 	x.Type = p.parseTypeRef()
 	p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
-	if p.tok(1) == LPAREN {
+	if p.tok == LPAREN {
 		p.parseFormalPars()
 	}
-	if p.tok(1) == MODIFIES {
-		p.next()
+	if p.tok == MODIFIES {
+		p.consume()
 		p.parsePrimaryExpr()
 	}
 	p.expect(ASSIGN)
@@ -1546,12 +1525,11 @@ func (p *parser) parseModulePar() *ValueDecl {
 		defer un(trace(p, "ModulePar"))
 	}
 
-	x := &ValueDecl{DeclPos: p.pos(1), Kind: p.tok(1)}
-	p.next()
+	x := &ValueDecl{Kind: p.consume()}
 
-	if p.tok(1) == LBRACE {
-		p.next()
-		for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	if p.tok == LBRACE {
+		p.consume()
+		for p.tok != RBRACE && p.tok != EOF {
 			p.parseRestrictionSpec()
 			p.parseTypeRef()
 			p.parseExprList()
@@ -1577,15 +1555,14 @@ func (p *parser) parseValueDecl() *ValueDecl {
 		defer un(trace(p, "ValueDecl"))
 	}
 
-	x := &ValueDecl{DeclPos: p.pos(1), Kind: p.tok(1)}
-	p.next()
+	x := &ValueDecl{Kind: p.consume()}
 	p.parseRestrictionSpec()
 
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 
-	if x.Kind != TIMER {
+	if x.Kind.Kind != TIMER {
 		x.Type = p.parseTypeRef()
 	}
 	x.Decls = p.parseExprList()
@@ -1594,23 +1571,19 @@ func (p *parser) parseValueDecl() *ValueDecl {
 }
 
 func (p *parser) parseRestrictionSpec() *RestrictionSpec {
-	switch p.tok(1) {
+	switch p.tok {
 	case TEMPLATE:
-		x := &RestrictionSpec{Kind: p.tok(1), KindPos: p.pos(1)}
-		p.next()
-		if p.tok(1) != LPAREN {
+		x := &RestrictionSpec{Tok: p.consume()}
+		if p.tok != LPAREN {
 			return x
 		}
 
-		p.next()
-		x.Kind = p.tok(1)
-		x.KindPos = p.pos(1)
-		p.next()
+		p.consume()
+		x.Tok = p.consume()
 		p.expect(RPAREN)
 
 	case OMIT, VALUE, PRESENT:
-		x := &RestrictionSpec{Kind: p.tok(1), KindPos: p.pos(1)}
-		p.next()
+		x := &RestrictionSpec{Tok: p.consume()}
 		return x
 	}
 	return nil
@@ -1625,36 +1598,35 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 		defer un(trace(p, "FuncDecl"))
 	}
 
-	x := &FuncDecl{FuncPos: p.pos(1), Kind: p.tok(1)}
-	p.next()
+	x := &FuncDecl{Kind: p.consume()}
 	x.Name = p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok(1) == RUNS {
+	if p.tok == RUNS {
 		p.parseRunsOn()
 	}
 
-	if p.tok(1) == MTC {
+	if p.tok == MTC {
 		p.parseMtc()
 	}
 
-	if p.tok(1) == SYSTEM {
+	if p.tok == SYSTEM {
 		p.parseSystem()
 	}
 
-	if p.tok(1) == RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 
-	if p.tok(1) == LBRACE {
+	if p.tok == LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
 
@@ -1671,29 +1643,28 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 		defer un(trace(p, "ExtFuncDecl"))
 	}
 
-	x := &FuncDecl{FuncPos: p.pos(1), Kind: p.tok(1)}
-	p.next()
+	x := &FuncDecl{Kind: p.consume()}
 	x.Name = p.parseIdent()
 
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok(1) == RUNS {
+	if p.tok == RUNS {
 		p.parseRunsOn()
 	}
 
-	if p.tok(1) == MTC {
+	if p.tok == MTC {
 		p.parseMtc()
 	}
 
-	if p.tok(1) == SYSTEM {
+	if p.tok == SYSTEM {
 		p.parseSystem()
 	}
 
-	if p.tok(1) == RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 	p.parseWith()
@@ -1709,24 +1680,24 @@ func (p *parser) parseSignatureDecl() Decl {
 		defer un(trace(p, "SignatureDecl"))
 	}
 
-	p.next()
+	p.consume()
 	p.parseIdent()
-	if p.tok(1) == LT {
+	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
 	p.parseFormalPars()
 
-	if p.tok(1) == NOBLOCK {
-		p.next()
+	if p.tok == NOBLOCK {
+		p.consume()
 	}
 
-	if p.tok(1) == RETURN {
+	if p.tok == RETURN {
 		p.parseReturn()
 	}
 
-	if p.tok(1) == EXCEPTION {
-		p.next()
+	if p.tok == EXCEPTION {
+		p.consume()
 		p.parseParenExpr()
 	}
 	p.parseWith()
@@ -1750,10 +1721,10 @@ func (p *parser) parseMtc() {
 }
 
 func (p *parser) parseReturn() Expr {
-	p.next()
+	p.consume()
 	p.parseRestrictionSpec()
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 	return p.parseTypeRef()
 }
@@ -1764,12 +1735,12 @@ func (p *parser) parseFormalPars() *FormalPars {
 	}
 	x := &FormalPars{}
 	p.expect(LPAREN)
-	for p.tok(1) != RPAREN {
+	for p.tok != RPAREN {
 		x.List = append(x.List, p.parseFormalPar())
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 	p.expect(RPAREN)
 	return x
@@ -1781,18 +1752,18 @@ func (p *parser) parseFormalPar() *FormalPar {
 	}
 	x := &FormalPar{}
 
-	switch p.tok(1) {
+	switch p.tok {
 	case IN:
-		p.next()
+		p.consume()
 	case OUT:
-		p.next()
+		p.consume()
 	case INOUT:
-		p.next()
+		p.consume()
 	}
 
 	p.parseRestrictionSpec()
-	if p.tok(1) == MODIF {
-		p.next()
+	if p.tok == MODIF {
+		p.consume()
 	}
 	x.Type = p.parseTypeRef()
 	x.Name = p.parseExpr()
@@ -1805,12 +1776,12 @@ func (p *parser) parseTypeFormalPars() {
 		defer un(trace(p, "TypeFormalPars"))
 	}
 	p.expect(LT)
-	for p.tok(1) != GT {
+	for p.tok != GT {
 		p.parseTypeFormalPar()
-		if p.tok(1) != COMMA {
+		if p.tok != COMMA {
 			break
 		}
-		p.next()
+		p.consume()
 	}
 	p.expect(GT)
 }
@@ -1819,21 +1790,21 @@ func (p *parser) parseTypeFormalPar() {
 	if p.trace {
 		defer un(trace(p, "TypeFormalPar"))
 	}
-	if p.tok(1) == IN {
-		p.next()
+	if p.tok == IN {
+		p.consume()
 	}
 
-	switch p.tok(1) {
+	switch p.tok {
 	case TYPE:
-		p.next()
+		p.consume()
 	case SIGNATURE:
-		p.next()
+		p.consume()
 	default:
 		p.parseTypeRef()
 	}
 	p.expect(IDENT)
-	if p.tok(1) == ASSIGN {
-		p.next()
+	if p.tok == ASSIGN {
+		p.consume()
 		p.parseTypeRef()
 	}
 }
@@ -1847,9 +1818,8 @@ func (p *parser) parseBlockStmt() *BlockStmt {
 		defer un(trace(p, "BlockStmt"))
 	}
 
-	x := &BlockStmt{LBrace: p.pos(1)}
-	p.expect(LBRACE)
-	for p.tok(1) != RBRACE && p.tok(1) != EOF {
+	x := &BlockStmt{LBrace: p.expect(LBRACE)}
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Stmts = append(x.Stmts, p.parseStmt())
 	}
 	p.expect(RBRACE)
@@ -1861,28 +1831,28 @@ func (p *parser) parseStmt() Stmt {
 		defer un(trace(p, "Stmt"))
 	}
 
-	switch p.tok(1) {
+	switch p.tok {
 	case TEMPLATE:
 		p.parseTemplateDecl()
 	case VAR, CONST, TIMER, PORT:
 		p.parseValueDecl()
 	case REPEAT, BREAK, CONTINUE:
-		p.next()
+		p.consume()
 	case LABEL:
-		p.next()
+		p.consume()
 		p.expect(IDENT)
 	case GOTO:
-		p.next()
+		p.consume()
 		p.expect(IDENT)
 	case RETURN:
-		p.next()
-		if p.tok(1) != SEMICOLON && p.tok(1) != RBRACE {
+		p.consume()
+		if p.tok != SEMICOLON && p.tok != RBRACE {
 			p.parseExpr()
 		}
 	case SELECT:
 		p.parseSelect()
 	case ALT, INTERLEAVE:
-		p.next()
+		p.consume()
 		p.parseBlockStmt()
 	case LBRACK:
 		p.parseAltGuard()
@@ -1895,7 +1865,7 @@ func (p *parser) parseStmt() Stmt {
 	case IF:
 		p.parseIfStmt()
 	default:
-		if p.tok(1) == LBRACE {
+		if p.tok == LBRACE {
 			p.parseBlockStmt()
 			break
 		}
@@ -1903,7 +1873,7 @@ func (p *parser) parseStmt() Stmt {
 		p.parseSimpleStmt()
 
 		// call-statement block
-		if p.tok(1) == LBRACE {
+		if p.tok == LBRACE {
 			p.parseBlockStmt()
 		}
 	}
@@ -1912,9 +1882,9 @@ func (p *parser) parseStmt() Stmt {
 }
 
 func (p *parser) parseForLoop() {
-	p.next()
+	p.consume()
 	p.expect(LPAREN)
-	if p.tok(1) == VAR {
+	if p.tok == VAR {
 		p.parseValueDecl()
 	} else {
 		p.parseExpr()
@@ -1928,25 +1898,25 @@ func (p *parser) parseForLoop() {
 }
 
 func (p *parser) parseWhileLoop() {
-	p.next()
+	p.consume()
 	p.parseParenExpr()
 	p.parseBlockStmt()
 }
 
 func (p *parser) parseDoWhileLoop() {
-	p.next()
+	p.consume()
 	p.parseBlockStmt()
 	p.expect(WHILE)
 	p.parseParenExpr()
 }
 
 func (p *parser) parseIfStmt() {
-	p.next()
+	p.consume()
 	p.parseParenExpr()
 	p.parseBlockStmt()
-	if p.tok(1) == ELSE {
-		p.next()
-		if p.tok(1) == IF {
+	if p.tok == ELSE {
+		p.consume()
+		if p.tok == IF {
 			p.parseIfStmt()
 		} else {
 			p.parseBlockStmt()
@@ -1956,12 +1926,12 @@ func (p *parser) parseIfStmt() {
 
 func (p *parser) parseSelect() {
 	p.expect(SELECT)
-	if p.tok(1) == UNION {
-		p.next()
+	if p.tok == UNION {
+		p.consume()
 	}
 	p.parseParenExpr()
 	p.expect(LBRACE)
-	for p.tok(1) == CASE {
+	for p.tok == CASE {
 		p.parseCaseStmt()
 	}
 	p.expect(RBRACE)
@@ -1969,8 +1939,8 @@ func (p *parser) parseSelect() {
 
 func (p *parser) parseCaseStmt() {
 	p.expect(CASE)
-	if p.tok(1) == ELSE {
-		p.next()
+	if p.tok == ELSE {
+		p.consume()
 	} else {
 		p.parseParenExpr()
 	}
@@ -1978,20 +1948,20 @@ func (p *parser) parseCaseStmt() {
 }
 
 func (p *parser) parseAltGuard() {
-	p.next()
-	if p.tok(1) == ELSE {
-		p.next()
+	p.consume()
+	if p.tok == ELSE {
+		p.consume()
 		p.expect(RBRACK)
 		p.parseBlockStmt()
 		return
 	}
 
-	if p.tok(1) != RBRACK {
+	if p.tok != RBRACK {
 		p.parseExpr()
 	}
 	p.expect(RBRACK)
 	p.parseSimpleStmt()
-	if p.tok(1) == LBRACE {
+	if p.tok == LBRACE {
 		p.parseBlockStmt()
 	}
 }

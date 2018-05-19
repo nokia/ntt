@@ -5,12 +5,12 @@ import (
 )
 
 type tt struct {
-	tok Token
+	tok Kind
 	lit string
 }
 
 type elt struct {
-	tok Token
+	tok Kind
 	lit string
 }
 
