@@ -19,12 +19,6 @@ const (
 	AllErrors         = SpuriousErrors // report all errors (not just the first 10 on different lines)
 )
 
-type token struct {
-	Pos Pos
-	Tok Kind
-	Lit string
-}
-
 // The parser structure holds the parser's internal state.
 type parser struct {
 	file    *File
@@ -38,7 +32,7 @@ type parser struct {
 
 	// Tokens/Backtracking
 	cursor  int
-	tokens  []token
+	tokens  []Token
 	markers []int
 
 	// Semicolon helper
@@ -66,7 +60,7 @@ func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
 
-	p.tokens = make([]token, 0, 200)
+	p.tokens = make([]Token, 0, 200)
 	p.markers = make([]int, 0, 200)
 }
 
@@ -77,20 +71,20 @@ func un(p *parser) {
 }
 
 // Read the next token from input-stream
-func (p *parser) readKind() token {
+func (p *parser) readKind() Token {
 redo:
 	pos, tok, lit := p.scanner.Scan()
 	if tok == COMMENT || tok == PREPROC {
 		goto redo
 	}
-	return token{pos, tok, lit}
+	return Token{pos, tok, lit}
 }
 
 // Advance to the next token
 func (p *parser) next() {
 
 	if p.trace {
-		tok := p.tokens[p.cursor].Tok
+		tok := p.tokens[p.cursor].Kind
 		lit := p.tokens[p.cursor].Lit
 		s := tok.String()
 		switch {
@@ -129,13 +123,13 @@ func (p *parser) grow(i int) {
 	}
 }
 
-func (p *parser) peek(i int) token {
+func (p *parser) peek(i int) Token {
 	p.grow(i)
 	return p.tokens[p.cursor+i-1]
 }
 
 func (p *parser) tok(i int) Kind {
-	return p.peek(i).Tok
+	return p.peek(i).Kind
 }
 
 func (p *parser) pos(i int) Pos {
