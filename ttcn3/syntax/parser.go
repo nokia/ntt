@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"fmt"
+	"strings"
 )
 
 // A Mode value is a set of flags (or 0).
@@ -41,6 +42,12 @@ type parser struct {
 	// Semicolon helper
 	seenBrace bool
 
+	// Pre-processor Handling
+	ppLvl  int
+	ppCnt  int
+	ppSkip bool
+	ppDefs map[string]bool
+
 	// Error recovery
 	// (used to limit the number of calls to advance
 	// w/o making scanning progress - avoids potential endless
@@ -66,6 +73,9 @@ func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh 
 
 	p.tokens = make([]Token, 0, 200)
 	p.markers = make([]int, 0, 200)
+	p.ppDefs = make(map[string]bool)
+	p.ppDefs["0"] = false
+	p.ppDefs["1"] = true
 
 	// fetch first token
 	p.peek(1)
@@ -78,13 +88,58 @@ func un(p *parser) {
 	p.printTrace(")")
 }
 
+func (p *parser) handlePreproc(s string) {
+	f := strings.Fields(s)
+	switch b := false; f[0] {
+	case "#ifndef":
+		b = true
+		fallthrough
+	case "#ifdef", "#if":
+		if len(f) < 2 {
+			p.error(p.pos(1), "missing condition in preprocessor directive")
+			break
+		}
+		if p.ppSkip == false && p.ppLvl == p.ppCnt {
+			p.ppLvl++
+			p.ppSkip = (p.ppDefs[f[1]] == b)
+		}
+		p.ppCnt++
+	case "#else":
+		if p.ppLvl == p.ppCnt {
+			p.ppSkip = !p.ppSkip
+		}
+	case "#endif":
+		if p.ppLvl == p.ppCnt {
+			p.ppLvl--
+			p.ppSkip = false
+		}
+		p.ppCnt--
+
+	case "#define":
+		p.error(p.pos(1), "'#define' is not supported")
+	default:
+		p.error(p.pos(1), "unknown preprocessor directive")
+	}
+}
+
 // Read the next token from input-stream
 func (p *parser) readKind() Token {
 redo:
 	pos, tok, lit := p.scanner.Scan()
-	if tok == COMMENT || tok == PREPROC {
+
+	if tok == COMMENT {
 		goto redo
 	}
+
+	if tok == PREPROC {
+		p.handlePreproc(lit)
+		goto redo
+	}
+
+	if p.ppSkip && tok != EOF {
+		goto redo
+	}
+
 	return Token{pos, tok, lit}
 }
 
