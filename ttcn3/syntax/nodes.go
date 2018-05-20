@@ -325,24 +325,32 @@ type (
 
 type (
 	Module struct {
-		Tok   Token
-		Name  *Ident
-		Decls []Decl
+		Tok      Token
+		Name     *Ident
+		Language *LanguageSpec
+		LBrace   Token
+		Decls    []*ModuleDef
+		RBrace   Token
+		With     *WithSpec
 	}
 
 	ModuleDef struct {
+		Visibility Token
+		Def        Node
 	}
 
-	GroupDecl struct {
-	}
-
-	FriendDecl struct {
+	ControlPart struct {
+		Tok  Token
+		Body *BlockStmt
 	}
 
 	ImportDecl struct {
-		Tok         Token
+		ImportTok   Token
+		FromTok     Token
 		Module      *Ident
+		Language    *LanguageSpec
 		ImportSpecs []ImportSpec
+		With        *WithSpec
 	}
 
 	ImportSpec struct {
@@ -356,6 +364,22 @@ type (
 
 	ExceptStmt struct {
 	}
+
+	GroupDecl struct {
+		Tok    Token
+		Name   *Ident
+		LBrace Token
+		Defs   []*ModuleDef
+		RBrace Token
+		With   *WithSpec
+	}
+
+	FriendDecl struct {
+		FriendTok Token
+		ModuleTok Token
+		Module    *Ident
+		With      *WithSpec
+	}
 )
 
 // ------------------------------------------------------------------------
@@ -363,6 +387,8 @@ type (
 
 type (
 	LanguageSpec struct {
+		Tok  Token
+		List []Token
 	}
 
 	RestrictionSpec struct {
@@ -391,8 +417,18 @@ type (
 	}
 
 	WithSpec struct {
+		Tok    Token
+		LBrace Token
+		List   []*WithStmt
+		RBrace Token
 	}
 
 	WithStmt struct {
+		Kind     Token
+		Override Token
+		LParen   Token
+		List     []Node
+		RParen   Token
+		Value    Expr
 	}
 )

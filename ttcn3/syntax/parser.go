@@ -945,111 +945,108 @@ func (p *parser) parseModule() *Module {
 		defer un(trace(p, "Module"))
 	}
 
-	mod := p.expect(MODULE)
-	name := p.parseIdent()
+	m := new(Module)
+	m.Tok = p.expect(MODULE)
+	m.Name = p.parseIdent()
 
 	if p.tok == LANGUAGE {
-		p.parseLanguageSpec()
+		m.Language = p.parseLanguageSpec()
 	}
 
-	p.expect(LBRACE)
+	m.LBrace = p.expect(LBRACE)
 
 	var decls []Decl
 	for p.tok != RBRACE && p.tok != EOF {
 		decls = append(decls, p.parseModuleDef())
 		p.expectSemi()
 	}
-	p.expect(RBRACE)
-
-	return &Module{
-		Tok:   mod,
-		Name:  name,
-		Decls: decls,
-	}
+	m.RBrace = p.expect(RBRACE)
+	m.With = p.parseWith()
+	return m
 }
 
-func (p *parser) parseLanguageSpec() {
-	p.consume()
+func (p *parser) parseLanguageSpec() *LanguageSpec {
+	l := new(LanguageSpec)
+	l.Tok = p.consume()
 	for {
-		p.expect(STRING)
+		l.List = append(l.List, p.expect(STRING))
 		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
+	return l
 }
 
-func (p *parser) parseModuleDef() Decl {
+func (p *parser) parseModuleDef() *ModuleDef {
+	m := new(ModuleDef)
 	switch p.tok {
 	case PRIVATE, PUBLIC:
-		p.consume()
+		m.Visibility = p.consume()
 	case FRIEND:
-		p.consume()
-		if p.tok == MODULE {
-			p.parseFriend()
-			return nil
+		if p.peek(2).Kind != MODULE {
+			m.Visibility = p.consume()
 		}
 	}
 
 	switch p.tok {
 	case IMPORT:
-		p.parseImport()
+		m.Def = p.parseImport()
 	case GROUP:
-		p.parseGroup()
+		m.Def = p.parseGroup()
 	case FRIEND:
-		p.consume()
-		p.parseFriend()
+		m.Def = p.parseFriend()
 	case TYPE:
-		p.parseTypeDecl()
+		m.Def = p.parseTypeDecl()
 	case TEMPLATE:
-		p.parseTemplateDecl()
+		m.Def = p.parseTemplateDecl()
 	case MODULEPAR:
-		p.parseModulePar()
+		m.Def = p.parseModulePar()
 	case VAR, CONST:
-		p.parseValueDecl()
+		m.Def = p.parseValueDecl()
 	case SIGNATURE:
-		p.parseSignatureDecl()
+		m.Def = p.parseSignatureDecl()
 	case FUNCTION, TESTCASE, ALTSTEP:
-		p.parseFuncDecl()
+		m.Def = p.parseFuncDecl()
 	case CONTROL:
-		p.consume()
-		p.parseBlockStmt()
+		m.Def = &ControlPart{Tok: p.consume(), Body: p.parseBlockStmt()}
 	case EXTERNAL:
-		p.consume()
-		switch p.tok {
+		switch p.peek(2).Kind {
 		case FUNCTION:
-			p.parseExtFuncDecl()
+			m.Def = p.parseExtFuncDecl()
 		case CONST:
-			p.parseValueDecl()
+			p.error(p.pos(1), "external constants not suppored")
+			p.consume()
+			m.Def = p.parseValueDecl()
 		default:
 			p.errorExpected(p.pos(1), "'function'")
+			p.advance(stmtStart)
 		}
 	default:
 		p.errorExpected(p.pos(1), "module definition")
-		p.consume()
+		p.advance(stmtStart)
 	}
-	return nil
+	return m
 }
 
 /*************************************************************************
  * Import Definition
  *************************************************************************/
 
-func (p *parser) parseImport() Decl {
+func (p *parser) parseImport() *ImportDecl {
 	if p.trace {
 		defer un(trace(p, "Import"))
 	}
 
-	tok := p.consume()
-	p.expect(FROM)
-
-	name := p.parseIdent()
+	x := new(ImportDecl)
+	x.ImportTok = p.consume()
+	x.FromTok = p.expect(FROM)
+	x.Module = p.parseIdent()
 
 	if p.tok == LANGUAGE {
-		p.parseLanguageSpec()
+		x.Language = p.parseLanguageSpec()
 	}
 
-	var specs []ImportSpec
 	switch p.tok {
 	case ALL:
 		p.consume()
@@ -1062,13 +1059,9 @@ func (p *parser) parseImport() Decl {
 		p.errorExpected(p.pos(1), "'all' or import spec")
 	}
 
-	p.parseWith()
+	x.With = p.parseWith()
 
-	return &ImportDecl{
-		Tok:         tok,
-		Module:      name,
-		ImportSpecs: specs,
-	}
+	return x
 }
 
 func (p *parser) parseImportSpec() {
@@ -1152,49 +1145,56 @@ func (p *parser) parseExceptStmt() {
  * Group Definition
  *************************************************************************/
 
-func (p *parser) parseGroup() {
-	p.consume()
-	p.parseIdent()
-	p.expect(LBRACE)
+func (p *parser) parseGroup() *GroupDecl {
+	x := new(GroupDecl)
+	x.Tok = p.consume()
+	x.Name = p.parseIdent()
+	x.LBrace = p.expect(LBRACE)
 
-	var decls []Decl
 	for p.tok != RBRACE && p.tok != EOF {
-		decls = append(decls, p.parseModuleDef())
+		x.Defs = append(x.Defs, p.parseModuleDef())
 		p.expectSemi()
 	}
-	p.expect(RBRACE)
-	p.parseWith()
+	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
 }
 
-func (p *parser) parseFriend() {
-	p.expect(MODULE)
-	p.parseIdent()
-	p.parseWith()
+func (p *parser) parseFriend() *FriendDecl {
+	return &FriendDecl{
+		FriendTok: p.expect(FRIEND),
+		ModuleTok: p.expect(MODULE),
+		Module:    p.parseIdent(),
+		With:      p.parseWith(),
+	}
 }
 
 /*************************************************************************
  * With Attributes
  *************************************************************************/
 
-func (p *parser) parseWith() Node {
+func (p *parser) parseWith() *WithSpec {
 	if p.tok != WITH {
 		return nil
 	}
-
-	p.expect(WITH)
-	p.expect(LBRACE)
+	x := new(WithSpec)
+	x.Tok = p.consume()
+	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
-		p.parseWithStmt()
+		x.List = append(x.List, p.parseWithStmt())
 		p.expectSemi()
 	}
-	p.expect(RBRACE)
-	return nil
+	x.RBrace = p.expect(RBRACE)
+	return x
 }
 
-func (p *parser) parseWithStmt() Node {
+func (p *parser) parseWithStmt() *WithStmt {
 	if p.trace {
 		defer un(trace(p, "WithStmt"))
 	}
+
+	x := new(WithStmt)
+
 	switch p.tok {
 	case ENCODE,
 		VARIANT,
@@ -1203,42 +1203,48 @@ func (p *parser) parseWithStmt() Node {
 		OPTIONAL,
 		STEPSIZE,
 		OVERRIDE:
-		p.consume()
+		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "with-attribute")
-		p.consume()
+		p.advance(stmtStart)
 	}
 
 	switch p.tok {
 	case OVERRIDE:
-		p.consume()
+		x.Override = p.consume()
 	case MODIF:
-		p.consume() // consume '@local'
+		if p.lit(1) != "@local" {
+			p.errorExpected(p.pos(1), "@local")
+		}
+		x.Override = p.consume()
 	}
 
 	if p.tok == LPAREN {
-		p.consume()
+		x.LParen = p.consume()
 		for {
-			p.parseWithQualifier()
+			x.List = append(x.List, p.parseWithQualifier())
 			if p.tok != COMMA {
 				break
 			}
 			p.consume()
 		}
-		p.expect(RPAREN)
+		x.RParen = p.expect(RPAREN)
 	}
 
-	p.expect(STRING)
-
+	var v Expr = &ValueLiteral{Tok: p.expect(STRING)}
 	if p.tok == DOT {
-		p.consume()
-		p.expect(STRING)
+		v = &SelectorExpr{
+			X:   v,
+			Dot: p.consume(),
+			Sel: &ValueLiteral{Tok: p.expect(STRING)},
+		}
 	}
+	x.Value = v
 
-	return nil
+	return x
 }
 
-func (p *parser) parseWithQualifier() {
+func (p *parser) parseWithQualifier() Node {
 	switch p.tok {
 	case IDENT:
 		p.parseTypeRef()
@@ -1256,6 +1262,7 @@ func (p *parser) parseWithQualifier() {
 	default:
 		p.errorExpected(p.pos(1), "with-qualifier")
 	}
+	return nil
 }
 
 /*************************************************************************
@@ -1661,7 +1668,6 @@ func (p *parser) parseValueDecl() *ValueDecl {
 	if p.trace {
 		defer un(trace(p, "ValueDecl"))
 	}
-
 	x := &ValueDecl{Kind: p.consume()}
 	p.parseRestrictionSpec()
 
@@ -1749,7 +1755,7 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 	if p.trace {
 		defer un(trace(p, "ExtFuncDecl"))
 	}
-
+	p.consume() // consume 'external'
 	x := &FuncDecl{Kind: p.consume()}
 	x.Name = p.parseIdent()
 
