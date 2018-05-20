@@ -12,6 +12,7 @@ type Mode uint
 
 const (
 	ImportsOnly       = 1 << iota      // stop parsing after import declarations
+	PedanticSemicolon                  // expect semicolons pedantically
 	ParseComments                      // parse comments and add them to AST
 	Trace                              // print a trace of parsed productions
 	DeclarationErrors                  // report declaration errors
@@ -28,6 +29,7 @@ type parser struct {
 	// Tracing/debugging
 	mode   Mode // parsing mode
 	trace  bool // == (mode & Trace != 0)
+	semi   bool // == (mode & PedanticSemicolon != 0)
 	indent int  // indentation used for tracing output
 
 	// Tokens/Backtracking
@@ -60,6 +62,7 @@ func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh 
 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
+	p.semi = mode&PedanticSemicolon != 0
 
 	p.tokens = make([]Token, 0, 200)
 	p.markers = make([]int, 0, 200)
@@ -236,13 +239,15 @@ func (p *parser) expect(k Kind) Token {
 }
 
 func (p *parser) expectSemi() {
-	switch p.tok {
-	case SEMICOLON:
+	if p.tok == SEMICOLON {
 		p.consume()
-	case RBRACE, EOF:
+		return
+	}
+
+	// pedantic semicolon
+	if p.semi {
 		// semicolon is optional before a closing '}'
-	default:
-		if !p.seenBrace {
+		if !p.seenBrace && p.tok == RBRACE && p.tok != EOF {
 			p.errorExpected(p.pos(1), "';'")
 			p.advance(stmtStart)
 		}
@@ -279,14 +284,46 @@ func (p *parser) advance(to map[Kind]bool) {
 	}
 }
 
-// TODO(5nord) complete and use stmtStart in expectSemi()
 var stmtStart = map[Kind]bool{
-	CONST:     true,
-	VAR:       true,
-	MODULEPAR: true,
-	FUNCTION:  true,
-	TESTCASE:  true,
-	ALTSTEP:   true,
+	ALT:        true,
+	ALTSTEP:    true,
+	BREAK:      true,
+	CASE:       true,
+	CONST:      true,
+	CONTINUE:   true,
+	CONTROL:    true,
+	DISPLAY:    true,
+	DO:         true,
+	ELSE:       true,
+	ENCODE:     true,
+	EXTENSION:  true,
+	FOR:        true,
+	FRIEND:     true,
+	FUNCTION:   true,
+	GOTO:       true,
+	GROUP:      true,
+	IF:         true,
+	IMPORT:     true,
+	INTERLEAVE: true,
+	LABEL:      true,
+	MAP:        true,
+	MODULE:     true,
+	MODULEPAR:  true,
+	PORT:       true,
+	PRIVATE:    true,
+	PUBLIC:     true,
+	REPEAT:     true,
+	RETURN:     true,
+	SELECT:     true,
+	SIGNATURE:  true,
+	TEMPLATE:   true,
+	TESTCASE:   true,
+	TIMER:      true,
+	TYPE:       true,
+	UNMAP:      true,
+	VAR:        true,
+	VARIANT:    true,
+	WHILE:      true,
 }
 
 var operandStart = map[Kind]bool{
@@ -827,7 +864,7 @@ func (p *parser) tryTypeIdent() Expr {
 		defer un(trace(p, "tryTypeIdent"))
 	}
 
-	if p.tok != IDENT && p.tok != ADDRESS {
+	if p.tok != IDENT && p.tok != ADDRESS && p.tok != CHARSTRING && p.tok != UNIVERSAL {
 		return nil
 	}
 
@@ -865,6 +902,7 @@ func (p *parser) parseModule() *Module {
 	var decls []Decl
 	for p.tok != RBRACE && p.tok != EOF {
 		decls = append(decls, p.parseModuleDef())
+		p.expectSemi()
 	}
 	p.expect(RBRACE)
 
@@ -894,7 +932,6 @@ func (p *parser) parseModuleDef() Decl {
 		p.consume()
 		if p.tok == MODULE {
 			p.parseFriend()
-			p.expectSemi()
 			return nil
 		}
 	}
@@ -936,7 +973,6 @@ func (p *parser) parseModuleDef() Decl {
 		p.errorExpected(p.pos(1), "module definition")
 		p.consume()
 	}
-	p.expectSemi()
 	return nil
 }
 
@@ -984,6 +1020,7 @@ func (p *parser) parseImportSpec() {
 	p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		p.parseImportStmt()
+		p.expectSemi()
 	}
 	p.expect(RBRACE)
 }
@@ -1021,7 +1058,6 @@ func (p *parser) parseImportStmt() {
 		p.errorExpected(p.pos(1), "definition qualifier")
 	}
 
-	p.expectSemi()
 }
 
 func (p *parser) parseExceptSpec() {
@@ -1029,6 +1065,7 @@ func (p *parser) parseExceptSpec() {
 	p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		p.parseExceptStmt()
+		p.expectSemi()
 	}
 	p.expect(RBRACE)
 }
@@ -1054,7 +1091,6 @@ func (p *parser) parseExceptStmt() {
 			p.consume()
 		}
 	}
-	p.expectSemi()
 }
 
 /*************************************************************************
@@ -1069,6 +1105,7 @@ func (p *parser) parseGroup() {
 	var decls []Decl
 	for p.tok != RBRACE && p.tok != EOF {
 		decls = append(decls, p.parseModuleDef())
+		p.expectSemi()
 	}
 	p.expect(RBRACE)
 	p.parseWith()
@@ -1093,6 +1130,7 @@ func (p *parser) parseWith() Node {
 	p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		p.parseWithStmt()
+		p.expectSemi()
 	}
 	p.expect(RBRACE)
 	return nil
@@ -1142,7 +1180,6 @@ func (p *parser) parseWithStmt() Node {
 		p.expect(STRING)
 	}
 
-	p.expectSemi()
 	return nil
 }
 
@@ -1860,7 +1897,7 @@ func (p *parser) parseStmt() Stmt {
 		return &BranchStmt{Tok: p.consume(), Label: p.expect(IDENT)}
 	case RETURN:
 		x := &ReturnStmt{Tok: p.consume()}
-		if p.tok != SEMICOLON && p.tok != RBRACE {
+		if !stmtStart[p.tok] && p.tok != SEMICOLON && p.tok != RBRACE {
 			x.Result = p.parseExpr()
 		}
 		return x
