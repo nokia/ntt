@@ -279,6 +279,7 @@ func (p *parser) advance(to map[Kind]bool) {
 	}
 }
 
+// TODO(5nord) complete and use stmtStart in expectSemi()
 var stmtStart = map[Kind]bool{
 	CONST:     true,
 	VAR:       true,
@@ -294,6 +295,10 @@ var stmtStart = map[Kind]bool{
 
 // ExprList ::= Expr { "," Expr }
 func (p *parser) parseExprList() (list []Expr) {
+	if p.trace {
+		defer un(trace(p, "ExprList"))
+	}
+
 	list = append(list, p.parseExpr())
 	for p.tok == COMMA {
 		p.consume()
@@ -302,7 +307,7 @@ func (p *parser) parseExprList() (list []Expr) {
 	return list
 }
 
-// Expr ::= BinaryExpr [ ":=" Expr ]
+// Expr ::= BinaryExpr
 func (p *parser) parseExpr() Expr {
 	if p.trace {
 		defer un(trace(p, "Expr"))
@@ -322,16 +327,13 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 			return x
 		}
 		op := p.consume()
-
 		y := p.parseBinaryExpr(prec + 1)
-
 		x = &BinaryExpr{X: x, Op: op, Y: y}
 	}
 }
 
 // UnaryExpr ::= "-"
 //             | ("-"|"+"|"!"|"not"|"not4b") UnaryExpr
-//             | "modifies" PrimaryExpr ":=" Expr
 //             | PrimaryExpr
 //
 func (p *parser) parseUnaryExpr() Expr {
@@ -351,17 +353,19 @@ func (p *parser) parseUnaryExpr() Expr {
 	return p.parsePrimaryExpr()
 }
 
-// PrimaryExpr ::= Operand [{ExtFieldRef}]
-//                         ["length" "(" ExprList ")"] ["ifpresent"]
-//                         [("to"|"from") Expr]        ["->" Redirect]
+// PrimaryExpr ::= Operand [{ExtFieldRef}] [Stuff]
 //
 // ExtFieldRef ::= "." ID
 //               | "[" Expr "]"
 //               | "(" ExprList ")"
-//               | ":" Expr
 //
-// Redirect    ::= ["value"            ExprList]
-//                 ["param"            ExprList"]
+// Stuff       ::= ["length"      "(" ExprList ")"]
+//                 ["ifpresent"                   ]
+//                 [("to"|"from") Expr            ]
+//                 ["->"          Redirect        ]
+
+// Redirect    ::= ["value"            ExprList   ]
+//                 ["param"            ExprList   ]
 //                 ["sender"           PrimaryExpr]
 //                 ["@index" ["value"] PrimaryExpr]
 //                 ["timestamp"        PrimaryExpr]
@@ -387,13 +391,11 @@ L:
 	}
 
 	if p.tok == IFPRESENT {
-		op := p.consume()
-		x = &UnaryExpr{Op: op, X: x}
+		x = &UnaryExpr{Op: p.consume(), X: x}
 	}
 
 	if p.tok == TO || p.tok == FROM {
-		op := p.consume()
-		x = &BinaryExpr{X: x, Op: op, Y: p.parseExpr()}
+		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
 	}
 
 	if p.tok == REDIR {
@@ -523,6 +525,7 @@ func (p *parser) parseOperand() Expr {
 	return nil
 }
 
+// TODO(5nord) Use map
 func isOperand(tok Kind) bool {
 	switch tok {
 	case ADDRESS,
@@ -574,7 +577,7 @@ func (p *parser) parseRef() Expr {
 	return id
 }
 
-func (p *parser) parseParenExpr() Expr {
+func (p *parser) parseParenExpr() *ParenExpr {
 	return &ParenExpr{
 		LParen: p.expect(LPAREN),
 		List:   p.parseExprList(),
@@ -630,7 +633,7 @@ func (p *parser) parseCallDecmatch() *DecmatchExpr {
 
 func (p *parser) parseDecodedModifier() *DecodedExpr {
 	d := new(DecodedExpr)
-	d.Tok = p.expect(MODIF) // @decoded
+	d.Tok = p.expect(MODIF) // TODO(5nord) @decoded check
 	if p.tok == LPAREN {
 		d.Params = p.parseParenExpr()
 	}
@@ -643,12 +646,15 @@ func (p *parser) parseSelectorExpr(x Expr) *SelectorExpr {
 }
 
 func (p *parser) parseIndexExpr(x Expr) *IndexExpr {
-	p.expect(LBRACK)
-	idx := &IndexExpr{X: x, Index: p.parseExpr()}
-	p.expect(RBRACK)
-	return idx
+	return &IndexExpr{
+		X:      x,
+		LBrack: p.expect(LBRACK),
+		Index:  p.parseExpr(),
+		RBrack: p.expect(RBRACK),
+	}
 }
 
+//TODO(5nord) implement plz
 func (p *parser) parseCallExpr(x Expr) *CallExpr {
 	p.consume()
 
@@ -793,20 +799,27 @@ L:
 	for {
 		switch p.tok {
 		case DOT:
-			p.consume() // consume '.'
-			p.tryTypeIdent()
+			x = &SelectorExpr{
+				X:   x,
+				Dot: p.consume(),
+				Sel: p.tryTypeIdent(),
+			}
+			if x.(*SelectorExpr).Sel == nil {
+				return nil
+			}
 		case LBRACK:
-			p.consume() // consume '['
-
-			if p.tok != SUB {
+			lbrack := p.consume()
+			dash := p.consume()
+			rbrack := p.consume()
+			if dash.Kind != SUB || rbrack.Kind != RBRACK {
 				return nil
 			}
-			p.consume() // consume '-'
-
-			if p.tok != RBRACK {
-				return nil
+			x = &IndexExpr{
+				X:      x,
+				LBrack: lbrack,
+				Index:  dash,
+				RBrack: rbrack,
 			}
-			p.consume() // consume ']'
 
 		default:
 			break L
@@ -1829,8 +1842,9 @@ func (p *parser) parseBlockStmt() *BlockStmt {
 	x := &BlockStmt{LBrace: p.expect(LBRACE)}
 	for p.tok != RBRACE && p.tok != EOF {
 		x.Stmts = append(x.Stmts, p.parseStmt())
+		p.expectSemi()
 	}
-	p.expect(RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	return x
 }
 
@@ -1841,41 +1855,39 @@ func (p *parser) parseStmt() Stmt {
 
 	switch p.tok {
 	case TEMPLATE:
-		p.parseTemplateDecl()
+		return p.parseTemplateDecl()
 	case VAR, CONST, TIMER, PORT:
-		p.parseValueDecl()
+		return p.parseValueDecl()
 	case REPEAT, BREAK, CONTINUE:
-		p.consume()
+		return &BranchStmt{Tok: p.consume()}
 	case LABEL:
-		p.consume()
-		p.expect(IDENT)
+		return &BranchStmt{Tok: p.consume(), Label: p.expect(IDENT)}
 	case GOTO:
-		p.consume()
-		p.expect(IDENT)
+		return &BranchStmt{Tok: p.consume(), Label: p.expect(IDENT)}
 	case RETURN:
-		p.consume()
+		x := &ReturnStmt{Tok: p.consume()}
 		if p.tok != SEMICOLON && p.tok != RBRACE {
-			p.parseExpr()
+			x.Result = p.parseExpr()
 		}
+		return x
 	case SELECT:
-		p.parseSelect()
+		return p.parseSelect()
 	case ALT, INTERLEAVE:
-		p.consume()
-		p.parseBlockStmt()
+		return &AltStmt{Tok: p.consume(), Block: p.parseBlockStmt()}
 	case LBRACK:
-		p.parseAltGuard()
+		return p.parseAltGuard()
 	case FOR:
-		p.parseForLoop()
+		return p.parseForLoop()
 	case WHILE:
-		p.parseWhileLoop()
+		return p.parseWhileLoop()
 	case DO:
-		p.parseDoWhileLoop()
+		return p.parseDoWhileLoop()
 	case IF:
-		p.parseIfStmt()
+		return p.parseIfStmt()
 	default:
+		// nested blocks
 		if p.tok == LBRACE {
-			p.parseBlockStmt()
-			break
+			return p.parseBlockStmt()
 		}
 
 		p.parseSimpleStmt()
@@ -1885,93 +1897,107 @@ func (p *parser) parseStmt() Stmt {
 			p.parseBlockStmt()
 		}
 	}
-	p.expectSemi()
 	return nil
 }
 
-func (p *parser) parseForLoop() {
-	p.consume()
-	p.expect(LPAREN)
+func (p *parser) parseForLoop() *ForStmt {
+	x := new(ForStmt)
+	x.Tok = p.consume()
+	x.LParen = p.expect(LPAREN)
 	if p.tok == VAR {
-		p.parseValueDecl()
+		x.Init = &DeclStmt{Decl: p.parseValueDecl()}
 	} else {
-		p.parseExpr()
+		x.Init = &ExprStmt{Expr: p.parseExpr()}
 	}
-	p.expect(SEMICOLON)
-	p.parseExpr()
-	p.expect(SEMICOLON)
-	p.parseExpr()
-	p.expect(RPAREN)
-	p.parseBlockStmt()
+	x.InitSemi = p.expect(SEMICOLON)
+	x.Cond = p.parseExpr()
+	x.CondSemi = p.expect(SEMICOLON)
+	x.Post = p.parseExpr()
+	x.LParen = p.expect(RPAREN)
+	x.Body = p.parseBlockStmt()
+	return x
 }
 
-func (p *parser) parseWhileLoop() {
-	p.consume()
-	p.parseParenExpr()
-	p.parseBlockStmt()
+func (p *parser) parseWhileLoop() *WhileStmt {
+	return &WhileStmt{
+		Tok:  p.consume(),
+		Cond: p.parseParenExpr(),
+		Body: p.parseBlockStmt(),
+	}
 }
 
-func (p *parser) parseDoWhileLoop() {
-	p.consume()
-	p.parseBlockStmt()
-	p.expect(WHILE)
-	p.parseParenExpr()
+func (p *parser) parseDoWhileLoop() *DoWhileStmt {
+	return &DoWhileStmt{
+		DoTok:    p.consume(),
+		Body:     p.parseBlockStmt(),
+		WhileTok: p.expect(WHILE),
+		Cond:     p.parseParenExpr(),
+	}
 }
 
-func (p *parser) parseIfStmt() {
-	p.consume()
-	p.parseParenExpr()
-	p.parseBlockStmt()
+func (p *parser) parseIfStmt() *IfStmt {
+	x := &IfStmt{
+		Tok:  p.consume(),
+		Cond: p.parseParenExpr(),
+		Then: p.parseBlockStmt(),
+	}
 	if p.tok == ELSE {
-		p.consume()
+		x.ElseTok = p.consume()
 		if p.tok == IF {
-			p.parseIfStmt()
+			x.Else = p.parseIfStmt()
 		} else {
-			p.parseBlockStmt()
+			x.Else = p.parseBlockStmt()
 		}
 	}
+	return x
 }
 
-func (p *parser) parseSelect() {
-	p.expect(SELECT)
+func (p *parser) parseSelect() *SelectStmt {
+	x := new(SelectStmt)
+	x.Tok = p.expect(SELECT)
 	if p.tok == UNION {
-		p.consume()
+		x.Union = p.consume()
 	}
-	p.parseParenExpr()
-	p.expect(LBRACE)
+	x.Tag = p.parseParenExpr()
+	x.LBrace = p.expect(LBRACE)
 	for p.tok == CASE {
-		p.parseCaseStmt()
+		x.Body = append(x.Body, p.parseCaseStmt())
 	}
-	p.expect(RBRACE)
+	x.RBrace = p.expect(RBRACE)
+	return x
 }
 
-func (p *parser) parseCaseStmt() {
-	p.expect(CASE)
+func (p *parser) parseCaseStmt() *CaseClause {
+	x := new(CaseClause)
+	x.Tok = p.expect(CASE)
 	if p.tok == ELSE {
-		p.consume()
+		p.consume() //TODO(5nord) move token into AST
 	} else {
-		p.parseParenExpr()
+		x.Case = p.parseParenExpr()
 	}
-	p.parseBlockStmt()
+	x.Body = p.parseBlockStmt()
+	return x
 }
 
-func (p *parser) parseAltGuard() {
-	p.consume()
+func (p *parser) parseAltGuard() *CommClause {
+	x := new(CommClause)
+	x.LBrack = p.expect(LBRACK)
 	if p.tok == ELSE {
-		p.consume()
-		p.expect(RBRACK)
-		p.parseBlockStmt()
-		return
+		x.Else = p.consume()
+		x.RBrack = p.expect(RBRACK)
+		x.Body = p.parseBlockStmt()
+		return x
 	}
 
 	if p.tok != RBRACK {
-		p.parseExpr()
+		x.X = p.parseExpr()
 	}
-	p.expect(RBRACK)
-	p.parseSimpleStmt()
+	x.RBrack = p.expect(RBRACK)
+	x.Comm = p.parseSimpleStmt()
 	if p.tok == LBRACE {
-		p.parseBlockStmt()
+		x.Body = p.parseBlockStmt()
 	}
+	return x
 }
 
 func (p *parser) parseSimpleStmt() Stmt {
@@ -1979,7 +2005,5 @@ func (p *parser) parseSimpleStmt() Stmt {
 		defer un(trace(p, "SimpleStmt"))
 	}
 
-	p.parseExpr()
-
-	return nil
+	return &ExprStmt{Expr: p.parseExpr()}
 }

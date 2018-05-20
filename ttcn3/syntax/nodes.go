@@ -84,8 +84,10 @@ type (
 	}
 
 	IndexExpr struct {
-		X     Expr
-		Index Expr
+		X      Expr
+		LBrack Token
+		Index  Expr
+		RBrack Token
 	}
 
 	CallExpr struct {
@@ -184,25 +186,76 @@ type (
 		Expr Expr
 	}
 
-	ForStmt struct {
+	BranchStmt struct {
+		Tok   Token
+		Label Token
 	}
 
-	WhileStmt struct {
-	}
-
-	DoWhileStmt struct {
-	}
-
-	IfStmt struct {
-	}
-
-	SelectStmt struct {
-	}
-
-	CaseSpec struct {
+	ReturnStmt struct {
+		Tok    Token
+		Result Expr
 	}
 
 	AltStmt struct {
+		Tok   Token
+		Block *BlockStmt
+	}
+
+	ForStmt struct {
+		Tok      Token
+		LParen   Token
+		Init     Stmt
+		InitSemi Token
+		Cond     Expr
+		CondSemi Token
+		Post     Stmt
+		RParen   Token
+		Body     *BlockStmt
+	}
+
+	WhileStmt struct {
+		Tok  Token
+		Cond *ParenExpr
+		Body *BlockStmt
+	}
+
+	DoWhileStmt struct {
+		DoTok    Token
+		Body     *BlockStmt
+		WhileTok Token
+		Cond     *ParenExpr
+	}
+
+	IfStmt struct {
+		Tok     Token
+		Cond    Expr
+		Then    *BlockStmt
+		ElseTok Token
+		Else    Stmt
+	}
+
+	SelectStmt struct {
+		Tok    Token
+		Union  Token
+		Tag    *ParenExpr
+		LBrace Token
+		Body   []*CaseClause
+		RBrace Token
+	}
+
+	CaseClause struct {
+		Tok  Token
+		Case *ParenExpr // nil means else-case
+		Body *BlockStmt
+	}
+
+	CommClause struct {
+		LBrack Token
+		X      Expr
+		Else   Token
+		RBrack Token
+		Comm   Stmt
+		Body   *BlockStmt
 	}
 )
 
