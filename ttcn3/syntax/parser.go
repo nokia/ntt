@@ -1915,20 +1915,22 @@ func (p *parser) parseStmt() Stmt {
 		return p.parseDoWhileLoop()
 	case IF:
 		return p.parseIfStmt()
-	default:
-		// nested blocks
-		if p.tok == LBRACE {
-			return p.parseBlockStmt()
-		}
-
-		p.parseSimpleStmt()
+	case LBRACE:
+		return p.parseBlockStmt()
+	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
+		x := &ExprStmt{Expr: p.parseSimpleStmt()}
 
 		// call-statement block
 		if p.tok == LBRACE {
+			// TODO(5nord) check if x is call-expression
 			p.parseBlockStmt()
 		}
+		return x
+	default:
+		p.errorExpected(p.pos(1), "statement")
+		p.advance(stmtStart)
+		return nil
 	}
-	return nil
 }
 
 func (p *parser) parseForLoop() *ForStmt {
