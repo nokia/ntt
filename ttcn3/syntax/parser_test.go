@@ -336,6 +336,8 @@ func TestTypeParametrization(t *testing.T) {
 		{pass, `const int x := a<a.b[-], c<d> >;`},
 		{pass, `const int x := f(a<b, c<d>3);`},
 		{pass, `const int x := a.b<>();`},
+		{pass, `const int<t> x;`},
+		{fail, `const int x := a(b<x, y> X+2);`},
 	}
 	testParse(t, tests, func(p *parser) { p.parseModuleDef() })
 }

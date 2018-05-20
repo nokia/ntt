@@ -289,6 +289,37 @@ var stmtStart = map[Kind]bool{
 	ALTSTEP:   true,
 }
 
+var operandStart = map[Kind]bool{
+	ADDRESS:    true,
+	ALL:        true,
+	ANY:        true,
+	ANYKW:      true,
+	BSTRING:    true,
+	CHARSTRING: true,
+	ERROR:      true,
+	FAIL:       true,
+	FALSE:      true,
+	FLOAT:      true,
+	//IDENT: true, TODO(5nord) fix conflict, see failing parser tests
+	INCONC:    true,
+	INT:       true,
+	MAP:       true,
+	MTC:       true,
+	MUL:       true,
+	NAN:       true,
+	NONE:      true,
+	NULL:      true,
+	OMIT:      true,
+	PASS:      true,
+	STRING:    true,
+	SYSTEM:    true,
+	TESTCASE:  true,
+	TIMER:     true,
+	TRUE:      true,
+	UNIVERSAL: true,
+	UNMAP:     true,
+}
+
 /*************************************************************************
  * Expressions
  *************************************************************************/
@@ -525,43 +556,6 @@ func (p *parser) parseOperand() Expr {
 	return nil
 }
 
-// TODO(5nord) Use map
-func isOperand(tok Kind) bool {
-	switch tok {
-	case ADDRESS,
-		ALL,
-		ANY,
-		ANYKW,
-		BSTRING,
-		CHARSTRING,
-		ERROR,
-		FAIL,
-		FALSE,
-		FLOAT,
-		IDENT,
-		INCONC,
-		INT,
-		MAP,
-		MTC,
-		MUL,
-		NAN,
-		NONE,
-		NULL,
-		OMIT,
-		PASS,
-		STRING,
-		SYSTEM,
-		TESTCASE,
-		TIMER,
-		TRUE,
-		UNIVERSAL,
-		UNMAP:
-		return true
-	default:
-		return false
-	}
-}
-
 func (p *parser) parseRef() Expr {
 	id := p.parseIdent()
 	if p.tok != LT {
@@ -569,7 +563,7 @@ func (p *parser) parseRef() Expr {
 	}
 
 	p.mark()
-	if x := p.tryTypeParameters(); x != nil && !isOperand(p.tok) {
+	if x := p.tryTypeParameters(); x != nil && !operandStart[p.tok] {
 		p.commit()
 		return &ParametrizedIdent{Ident: id, Params: x}
 	}
