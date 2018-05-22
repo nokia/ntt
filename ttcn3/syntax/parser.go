@@ -1270,238 +1270,89 @@ func (p *parser) parseWithQualifier() Node {
  *************************************************************************/
 
 func (p *parser) parseTypeDecl() Decl {
-	if p.trace {
-		defer un(trace(p, "Type"))
-	}
-	p.consume()
-	switch p.tok {
-	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
-		p.parseSubType()
-	case UNION:
-		p.consume()
-		p.parseStructType()
-	case SET, RECORD:
-		p.consume()
-		if p.tok == IDENT {
-			p.parseStructType()
-			break
-		}
-		p.parseListType()
-	case ENUMERATED:
-		p.parseEnumType()
+	switch p.peek(2).Kind {
+	case IDENT, ADDRESS, CHARSTRING, NULL, UNIVERSAL:
+		return p.parseSubTypeDecl()
 	case PORT:
-		p.parsePortType()
+		return p.parsePortTypeDecl()
 	case COMPONENT:
-		p.parseComponentType()
-	case FUNCTION, ALTSTEP, TESTCASE:
-		p.parseBehaviourType()
-	default:
-		p.errorExpected(p.pos(1), "type definition")
-	}
-	return nil
-}
-
-func (p *parser) parseType() {
-	if p.trace {
-		defer un(trace(p, "NestedType"))
-	}
-	switch p.tok {
-	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
-		p.parseTypeRef()
+		return p.parseComponentTypeDecl()
 	case UNION:
-		p.consume()
-		p.parseStructBody()
+		return p.parseStructTypeDecl()
 	case SET, RECORD:
-		p.consume()
-		if p.tok == LBRACE {
-			p.parseStructBody()
-			break
+		if p.peek(3).Kind == IDENT {
+			return p.parseStructTypeDecl()
 		}
-		p.parseListBody()
+		// lists are also parsed by parseSubTypeDecl
+		return p.parseSubTypeDecl()
 	case ENUMERATED:
-		p.consume()
-		p.parseEnumBody()
-
+		return p.parseEnumTypeDecl()
 	case FUNCTION, ALTSTEP, TESTCASE:
-		p.consume()
-		p.parseBehaviourTypeBody()
+		return p.parseBehaviourTypeDecl()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
+		p.advance(stmtStart)
+		return nil
 	}
-}
-
-/*************************************************************************
- * Struct Types
- *************************************************************************/
-
-func (p *parser) parseStructType() {
-	if p.trace {
-		defer un(trace(p, "StructType"))
-	}
-	p.parseIdent()
-	if p.tok == LT {
-		p.parseTypeFormalPars()
-	}
-	p.parseStructBody()
-	p.parseWith()
-}
-
-func (p *parser) parseStructBody() {
-	if p.trace {
-		defer un(trace(p, "StructBody"))
-	}
-	p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
-		p.parseStructField()
-		if p.tok != COMMA {
-			break
-		}
-		p.consume()
-	}
-	p.expect(RBRACE)
-}
-
-func (p *parser) parseStructField() {
-	if p.trace {
-		defer un(trace(p, "StructField"))
-	}
-	if p.tok == MODIF {
-		p.consume() // @default
-	}
-	p.parseType()
-	p.parsePrimaryExpr()
-
-	if p.tok == LPAREN {
-		p.parseParenExpr()
-	}
-	if p.tok == LENGTH {
-		p.parseLength(nil)
-	}
-
-	if p.tok == OPTIONAL {
-		p.consume()
-	}
-}
-
-/*************************************************************************
- * List Type
- *************************************************************************/
-
-func (p *parser) parseListType() {
-	if p.trace {
-		defer un(trace(p, "ListType"))
-	}
-	p.parseListBody()
-	p.parsePrimaryExpr()
-	if p.tok == LT {
-		p.parseTypeFormalPars()
-	}
-
-	if p.tok == LPAREN {
-		p.parseParenExpr()
-	}
-
-	if p.tok == LENGTH {
-		p.parseLength(nil)
-	}
-
-	p.parseWith()
-}
-
-func (p *parser) parseListBody() {
-	if p.trace {
-		defer un(trace(p, "ListBody"))
-	}
-
-	if p.tok == LENGTH {
-		p.parseLength(nil)
-	}
-
-	p.expect(OF)
-	p.parseType()
-}
-
-/*************************************************************************
- * Enumeration Type
- *************************************************************************/
-
-func (p *parser) parseEnumType() {
-	if p.trace {
-		defer un(trace(p, "EnumType"))
-	}
-	p.consume()
-	p.parseIdent()
-	if p.tok == LT {
-		p.parseTypeFormalPars()
-	}
-	p.parseEnumBody()
-	p.parseWith()
-}
-
-func (p *parser) parseEnumBody() {
-	if p.trace {
-		defer un(trace(p, "EnumBody"))
-	}
-	p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
-		p.parseExpr()
-		if p.tok != COMMA {
-			break
-		}
-		p.consume()
-	}
-	p.expect(RBRACE)
 }
 
 /*************************************************************************
  * Port Type
  *************************************************************************/
 
-func (p *parser) parsePortType() {
+func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 	if p.trace {
-		defer un(trace(p, "PortType"))
+		defer un(trace(p, "PortTypeDecl"))
 	}
-	p.consume()
-	p.parseIdent()
+	x := new(PortTypeDecl)
+	x.TypeTok = p.consume()
+	x.PortTok = p.consume()
+	x.Name = p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
 	switch p.tok {
 	case MIXED, MESSAGE, PROCEDURE:
-		p.consume()
+		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "'message' or 'procedure'")
 	}
 
 	if p.tok == REALTIME {
-		p.consume()
+		x.Realtime = p.consume()
 	}
 
-	p.expect(LBRACE)
+	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
-		p.parsePortAttribute()
+		x.Attrs = append(x.Attrs, p.parsePortAttribute())
 		p.expectSemi()
 	}
-	p.expect(RBRACE)
-	p.parseWith()
+	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
 }
 
-func (p *parser) parsePortAttribute() {
+func (p *parser) parsePortAttribute() Node {
 	if p.trace {
 		defer un(trace(p, "PortAttribute"))
 	}
 	switch p.tok {
-	case IN, OUT, INOUT:
-		p.consume()
-		p.parseRefList()
-	case ADDRESS:
-		p.consume()
-		p.parseRefList()
+	case IN, OUT, INOUT, ADDRESS:
+		return &PortAttribute{
+			Kind:  p.consume(),
+			Types: p.parseRefList(),
+		}
 	case MAP, UNMAP:
-		p.consume()
-		p.expect(PARAM)
-		p.parseFormalPars()
+		return &PortMapAttribute{
+			MapTok:   p.consume(),
+			ParamTok: p.expect(PARAM),
+			Params:   p.parseFormalPars(),
+		}
+	default:
+		p.errorExpected(p.pos(1), "port attribute")
+		p.advance(stmtStart)
+		return nil
 	}
 }
 
@@ -1509,85 +1360,257 @@ func (p *parser) parsePortAttribute() {
  * Component Type
  *************************************************************************/
 
-func (p *parser) parseComponentType() {
+func (p *parser) parseComponentTypeDecl() *ComponentTypeDecl {
 	if p.trace {
-		defer un(trace(p, "ComponentType"))
+		defer un(trace(p, "ComponentTypeDecl"))
 	}
-	p.consume()
-	p.parseIdent()
+	x := new(ComponentTypeDecl)
+	x.TypeTok = p.consume()
+	x.CompTok = p.consume()
+	x.Name = p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 	if p.tok == EXTENDS {
-		p.consume()
-		p.parseRefList()
+		x.ExtendsTok = p.consume()
+		x.Extends = p.parseRefList()
 	}
-	p.parseBlockStmt()
-	p.parseWith()
+	x.Body = p.parseBlockStmt()
+	x.With = p.parseWith()
+	return x
 }
 
 /*************************************************************************
- * Behaviour Types
+ * Struct Type Declaration
  *************************************************************************/
 
-func (p *parser) parseBehaviourTypeBody() {
+func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 	if p.trace {
-		defer un(trace(p, "BehaviourTypeBody"))
+		defer un(trace(p, "StructTypeDecl"))
 	}
-	p.parseFormalPars()
-
-	if p.tok == RUNS {
-		p.parseRunsOn()
-	}
-
-	if p.tok == SYSTEM {
-		p.parseSystem()
-	}
-
-	if p.tok == RETURN {
-		p.parseReturn()
-	}
-}
-
-func (p *parser) parseBehaviourType() {
-	if p.trace {
-		defer un(trace(p, "BehaviourType"))
-	}
-	p.consume()
-	p.consume()
+	x := new(StructTypeDecl)
+	x.TypeTok = p.consume()
+	x.Kind = p.consume()
+	x.Name = p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
-	p.parseBehaviourTypeBody()
-	p.parseWith()
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
+		x.Fields = append(x.Fields, p.parseField())
+		if p.tok != COMMA {
+			break
+		}
+		p.consume()
+	}
+	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
+}
 
+/*************************************************************************
+ * Enumeration Type Declaration
+ *************************************************************************/
+
+func (p *parser) parseEnumTypeDecl() *EnumTypeDecl {
+	if p.trace {
+		defer un(trace(p, "EnumTypeDecl"))
+	}
+
+	x := new(EnumTypeDecl)
+	x.TypeTok = p.consume()
+	x.EnumTok = p.consume()
+	x.Name = p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeFormalPars()
+	}
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
+		x.Enums = append(x.Enums, p.parseExpr())
+		if p.tok != COMMA {
+			break
+		}
+		p.consume()
+	}
+	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
+}
+
+/*************************************************************************
+ * Behaviour Type Declaration
+ *************************************************************************/
+
+func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
+	if p.trace {
+		defer un(trace(p, "BehaviourTypeDecl"))
+	}
+	x := new(BehaviourTypeDecl)
+	x.TypeTok = p.consume()
+	x.Kind = p.consume()
+	x.Name = p.parseIdent()
+	if p.tok == LT {
+		p.parseTypeFormalPars()
+	}
+
+	x.Params = p.parseFormalPars()
+	if p.tok == RUNS {
+		x.RunsOn = p.parseRunsOn()
+	}
+
+	if p.tok == SYSTEM {
+		x.System = p.parseSystem()
+	}
+
+	if p.tok == RETURN {
+		x.Return = p.parseReturn()
+	}
+	x.With = p.parseWith()
+	return x
 }
 
 /*************************************************************************
  * Subtype
  *************************************************************************/
 
-func (p *parser) parseSubType() *SubType {
+func (p *parser) parseSubTypeDecl() *SubTypeDecl {
 	if p.trace {
-		defer un(trace(p, "SubType"))
+		defer un(trace(p, "SubTypeDecl"))
 	}
+	x := new(SubTypeDecl)
+	x.TypeTok = p.consume()
+	x.Field = p.parseField()
+	x.With = p.parseWith()
+	return x
+}
 
-	p.parseType()
-	p.parsePrimaryExpr()
+func (p *parser) parseField() *Field {
+	if p.trace {
+		defer un(trace(p, "Field"))
+	}
+	x := new(Field)
+
+	if p.tok == MODIF {
+		if p.lit(1) != "@default" {
+			p.errorExpected(p.pos(1), "@default")
+		}
+		x.DefaultTok = p.consume()
+	}
+	x.Type = p.parseTypeSpec()
+	x.Name = p.parsePrimaryExpr()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
-	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 
+	// TODO(mef) fix constraints consumed by previous PrimaryExpr
 	if p.tok == LPAREN {
-		p.parseParenExpr()
+		x.ValueConstraint = p.parseParenExpr()
 	}
 	if p.tok == LENGTH {
-		p.parseLength(nil)
+		x.LengthConstraint = p.parseLength(nil)
 	}
 
-	p.parseWith()
-	return nil
+	if p.tok == OPTIONAL {
+		x.Optional = p.consume()
+	}
+	return x
+}
+
+func (p *parser) parseTypeSpec() TypeSpec {
+	if p.trace {
+		defer un(trace(p, "TypeSpec"))
+	}
+	switch p.tok {
+	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
+		return &RefSpec{X: p.parseTypeRef()}
+	case UNION:
+		return p.parseStructSpec()
+	case SET, RECORD:
+		if p.peek(2).Kind == LBRACE {
+			return p.parseStructSpec()
+		}
+		return p.parseListSpec()
+	case ENUMERATED:
+		return p.parseEnumSpec()
+	case FUNCTION, ALTSTEP, TESTCASE:
+		return p.parseBehaviourSpec()
+	default:
+		p.errorExpected(p.pos(1), "type definition")
+		return nil
+	}
+}
+
+func (p *parser) parseStructSpec() *StructSpec {
+	if p.trace {
+		defer un(trace(p, "StructSpec"))
+	}
+	x := new(StructSpec)
+	x.Kind = p.consume()
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
+		x.Fields = append(x.Fields, p.parseField())
+		if p.tok != COMMA {
+			break
+		}
+		p.consume()
+	}
+	x.RBrace = p.expect(RBRACE)
+	return x
+}
+
+func (p *parser) parseEnumSpec() *EnumSpec {
+	if p.trace {
+		defer un(trace(p, "ListSpec"))
+	}
+	x := new(EnumSpec)
+	x.Tok = p.consume()
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
+		x.Enums = append(x.Enums, p.parseExpr())
+		if p.tok != COMMA {
+			break
+		}
+		p.consume()
+	}
+	x.RBrace = p.expect(RBRACE)
+	return x
+}
+
+func (p *parser) parseListSpec() *ListSpec {
+	if p.trace {
+		defer un(trace(p, "ListSpec"))
+	}
+	x := new(ListSpec)
+	x.Kind = p.consume()
+	if p.tok == LENGTH {
+		x.Length = p.parseLength(nil)
+	}
+	x.OfTok = p.expect(OF)
+	x.ElemType = p.parseTypeSpec()
+	return x
+}
+
+func (p *parser) parseBehaviourSpec() *BehaviourSpec {
+	if p.trace {
+		defer un(trace(p, "BehaviourSpec"))
+	}
+
+	x := new(BehaviourSpec)
+	x.Kind = p.consume()
+	x.Params = p.parseFormalPars()
+
+	if p.tok == RUNS {
+		x.RunsOn = p.parseRunsOn()
+	}
+
+	if p.tok == SYSTEM {
+		x.System = p.parseSystem()
+	}
+
+	if p.tok == RETURN {
+		x.Return = p.parseReturn()
+	}
+	return x
 }
 
 /*************************************************************************
@@ -1817,29 +1840,37 @@ func (p *parser) parseSignatureDecl() Decl {
 	return nil
 }
 
-func (p *parser) parseRunsOn() {
-	p.expect(RUNS)
-	p.expect(ON)
-	p.parseTypeRef()
-}
-
-func (p *parser) parseSystem() {
-	p.expect(SYSTEM)
-	p.parseTypeRef()
-}
-
-func (p *parser) parseMtc() {
-	p.expect(MTC)
-	p.parseTypeRef()
-}
-
-func (p *parser) parseReturn() Expr {
-	p.consume()
-	p.parseRestrictionSpec()
-	if p.tok == MODIF {
-		p.consume()
+func (p *parser) parseRunsOn() *RunsOnSpec {
+	return &RunsOnSpec{
+		RunsTok: p.expect(RUNS),
+		OnTok:   p.expect(ON),
+		Comp:    p.parseTypeRef(),
 	}
-	return p.parseTypeRef()
+}
+
+func (p *parser) parseSystem() *SystemSpec {
+	return &SystemSpec{
+		Tok:  p.expect(SYSTEM),
+		Comp: p.parseTypeRef(),
+	}
+}
+
+func (p *parser) parseMtc() *MtcSpec {
+	return &MtcSpec{
+		Tok:  p.expect(MTC),
+		Comp: p.parseTypeRef(),
+	}
+}
+
+func (p *parser) parseReturn() *ReturnSpec {
+	x := new(ReturnSpec)
+	x.Tok = p.consume()
+	x.Restriction = p.parseRestrictionSpec()
+	if p.tok == MODIF {
+		x.Modif = p.consume()
+	}
+	x.Type = p.parseTypeRef()
+	return x
 }
 
 func (p *parser) parseFormalPars() *FormalPars {

@@ -23,11 +23,6 @@ type Decl interface {
 	Node
 }
 
-// All node types implement the Node interface.
-type Type interface {
-	Node
-}
-
 // Tokens
 // ------------------------------------------------------------------------
 
@@ -260,13 +255,62 @@ type (
 )
 
 // ------------------------------------------------------------------------
-// Declarations
+// Declarations and Types
+
+type TypeSpec interface {
+	Node
+}
+
+type (
+	Field struct {
+		DefaultTok       Token
+		Type             TypeSpec
+		Name             Expr
+		ValueConstraint  *ParenExpr
+		LengthConstraint *LengthExpr
+		Optional         Token
+	}
+
+	RefSpec struct {
+		X Expr
+	}
+
+	StructSpec struct {
+		Kind   Token // RECORD, SET, UNION
+		LBrace Token
+		Fields []*Field
+		RBrace Token
+	}
+
+	ListSpec struct {
+		Kind     Token // RECORD, SET
+		Length   *LengthExpr
+		OfTok    Token
+		ElemType TypeSpec
+	}
+
+	EnumSpec struct {
+		Tok    Token
+		LBrace Token
+		Enums  []Expr
+		RBrace Token
+	}
+
+	BehaviourSpec struct {
+		Kind   Token
+		Params *FormalPars
+		RunsOn *RunsOnSpec
+		System *SystemSpec
+		Return *ReturnSpec
+	}
+)
 
 type (
 	ValueDecl struct {
 		Kind  Token
 		Type  Expr
 		Decls []Expr
+		With  *WithSpec
 	}
 
 	FuncDecl struct {
@@ -279,44 +323,80 @@ type (
 		System Expr
 		Extern bool
 		Body   *BlockStmt
+		With   *WithSpec
 	}
 
 	SignatureDecl struct {
 	}
-)
 
-// ------------------------------------------------------------------------
-// Types
-
-type (
-	TypeDecl struct {
+	SubTypeDecl struct {
+		TypeTok Token
+		Field   *Field
+		With    *WithSpec
 	}
 
-	SubType struct {
+	StructTypeDecl struct {
+		TypeTok Token
+		Kind    Token // RECORD, SET, UNION
+		Name    Expr
+		LBrace  Token
+		Fields  []*Field
+		RBrace  Token
+		With    *WithSpec
 	}
 
-	ListType struct {
+	EnumTypeDecl struct {
+		TypeTok Token
+		EnumTok Token
+		Name    Expr
+		LBrace  Token
+		Enums   []Expr
+		RBrace  Token
+		With    *WithSpec
 	}
 
-	StructType struct {
+	BehaviourTypeDecl struct {
+		TypeTok Token
+		Kind    Token
+		Name    Expr
+		Params  *FormalPars
+		RunsOn  *RunsOnSpec
+		System  *SystemSpec
+		Return  *ReturnSpec
+		With    *WithSpec
 	}
 
-	Field struct {
-	}
-
-	EnumType struct {
-	}
-
-	BehaviourType struct {
-	}
-
-	ComponentType struct {
+	PortTypeDecl struct {
+		TypeTok  Token
+		PortTok  Token
+		Name     Expr
+		Kind     Token // MIXED, MESSAGE, PROCEDURE
+		Realtime Token
+		LBrace   Token
+		Attrs    []Node
+		RBrace   Token
+		With     *WithSpec
 	}
 
 	PortAttribute struct {
+		Kind  Token // IN, OUT, INOUT, ADDRESS
+		Types []Expr
 	}
 
-	PortType struct {
+	PortMapAttribute struct {
+		MapTok   Token // MAP, UNMAP
+		ParamTok Token
+		Params   *FormalPars
+	}
+
+	ComponentTypeDecl struct {
+		TypeTok    Token
+		CompTok    Token
+		Name       Expr
+		ExtendsTok Token
+		Extends    []Expr
+		Body       *BlockStmt
+		With       *WithSpec
 	}
 )
 
@@ -396,15 +476,26 @@ type (
 	}
 
 	RunsOnSpec struct {
+		RunsTok Token
+		OnTok   Token
+		Comp    Expr
 	}
 
 	SystemSpec struct {
+		Tok  Token
+		Comp Expr
 	}
 
 	MtcSpec struct {
+		Tok  Token
+		Comp Expr
 	}
 
 	ReturnSpec struct {
+		Tok         Token
+		Restriction *RestrictionSpec
+		Modif       Token
+		Type        Expr
 	}
 
 	FormalPars struct {
