@@ -5,6 +5,7 @@ os:
  - linux
 
 go:
+    - 1.8
     - tip
 
 matrix:
