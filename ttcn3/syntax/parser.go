@@ -562,12 +562,16 @@ func (p *parser) parseOperand() Expr {
 		tok := p.consume()
 		switch p.tok {
 		case COMPONENT, PORT, TIMER:
-			// TODO(5nord): make this expression identifier?
-			p.consume()
-			return nil
+			return &Ident{
+				Tok:  tok,
+				Tok2: p.consume(),
+			}
 		case FROM:
-			p.consume() // TODO(5nord) move 'from' into AST
-			return &FromExpr{Kind: tok, X: p.parsePrimaryExpr()}
+			return &FromExpr{
+				Kind:    tok,
+				FromTok: p.consume(),
+				X:       p.parsePrimaryExpr(),
+			}
 		}
 
 		// Workaround for deprecated port-attribute 'all'
@@ -672,9 +676,10 @@ func (p *parser) parseParenExpr() *ParenExpr {
 }
 
 func (p *parser) parseUniversalCharstring() *Ident {
-	id := &Ident{Tok: p.expect(UNIVERSAL)}
-	p.expect(CHARSTRING) // TODO(5nord) add this token to AST
-	return id
+	return &Ident{
+		Tok:  p.expect(UNIVERSAL),
+		Tok2: p.expect(CHARSTRING),
+	}
 }
 
 func (p *parser) parseCompositeLiteral() *CompositeLiteral {
@@ -719,7 +724,11 @@ func (p *parser) parseCallDecmatch() *DecmatchExpr {
 
 func (p *parser) parseDecodedModifier() *DecodedExpr {
 	d := new(DecodedExpr)
-	d.Tok = p.expect(MODIF) // TODO(5nord) @decoded check
+	d.Tok = p.expect(MODIF)
+	if d.Tok.Lit != "@decoded" {
+		p.errorExpected(d.Tok.Pos, "@decoded")
+	}
+
 	if p.tok == LPAREN {
 		d.Params = p.parseParenExpr()
 	}
@@ -740,31 +749,28 @@ func (p *parser) parseIndexExpr(x Expr) *IndexExpr {
 	}
 }
 
-//TODO(5nord) implement plz
 func (p *parser) parseCallExpr(x Expr) *CallExpr {
-	p.consume()
-
-	switch p.tok {
-	case FROM, TO:
-		p.consume()
-		p.parseExpr()
-		if p.tok == REDIR {
-			p.parseRedirect(nil)
+	c := new(CallExpr)
+	c.Fun = x
+	c.Args = new(ParenExpr)
+	c.Args.LParen = p.expect(LPAREN)
+	if p.tok != RPAREN {
+		switch p.tok {
+		case TO, FROM, REDIR:
+			var x Expr
+			if p.tok == TO || p.tok == FROM {
+				x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
+			}
+			if p.tok == REDIR {
+				x = p.parseRedirect(x)
+			}
+			c.Args.List = []Expr{x}
+		default:
+			c.Args.List = append(c.Args.List, p.parseExprList())
 		}
-		p.expect(RPAREN)
-		return nil
-	case REDIR:
-		p.parseRedirect(nil)
-		p.expect(RPAREN)
-		return nil
-	default:
-		var list []Expr
-		if p.tok != RPAREN {
-			list = p.parseExprList()
-		}
-		p.expect(RPAREN)
-		return &CallExpr{Fun: x, Args: list}
 	}
+	c.Args.RParen = p.expect(RPAREN)
+	return c
 }
 
 func (p *parser) parseLength(x Expr) *LengthExpr {
@@ -802,12 +808,10 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 			p.errorExpected(p.pos(1), "@index")
 		}
 
-		tok := p.consume()
+		r.IndexTok = p.consume()
 		if p.tok == VALUE {
-			// just silently discard optional 'value' token
-			p.consume()
+			r.IndexValueTok = p.consume()
 		}
-		r.IndexTok = tok
 		r.Index = p.parsePrimaryExpr()
 	}
 
@@ -838,7 +842,7 @@ func (p *parser) parseRefList() []Expr {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consume() // consume ','
 	}
 	return l
 }
@@ -973,7 +977,7 @@ func (p *parser) parseLanguageSpec() *LanguageSpec {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consume() // consume ','
 	}
 	return l
 }
@@ -1054,7 +1058,12 @@ func (p *parser) parseImport() *ImportDecl {
 			p.parseExceptSpec()
 		}
 	case LBRACE:
-		p.parseImportSpec()
+		x.LBrace = p.expect(LBRACE)
+		for p.tok != RBRACE && p.tok != EOF {
+			x.List = append(x.List, p.parseImportStmt())
+			p.expectSemi()
+		}
+		x.RBrace = p.expect(RBRACE)
 	default:
 		p.errorExpected(p.pos(1), "'all' or import spec")
 	}
@@ -1064,31 +1073,24 @@ func (p *parser) parseImport() *ImportDecl {
 	return x
 }
 
-func (p *parser) parseImportSpec() {
-	p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
-		p.parseImportStmt()
-		p.expectSemi()
-	}
-	p.expect(RBRACE)
-}
-
-func (p *parser) parseImportStmt() {
+func (p *parser) parseImportStmt() *DefSelectorExpr {
+	x := new(DefSelectorExpr)
 	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
 		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
-		p.consume()
+		x.Kind = p.consume()
 		if p.tok == ALL {
-			p.consume()
+			x.Refs = []Expr{&Ident{Tok: p.consume()}}
 			if p.tok == EXCEPT {
-				p.consume()
-				p.parseRefList()
+				x.ExceptTok = p.consume()
+				x.Except = p.parseRefList()
 			}
 		} else {
-			p.parseRefList()
+			x.Refs = p.parseRefList()
 		}
 	case GROUP:
-		p.consume()
+		x.Kind = p.consume()
+		// TODO(5nord) implement ast for except spec
 		for {
 			p.parseTypeRef()
 			if p.tok == EXCEPT {
@@ -1097,15 +1099,16 @@ func (p *parser) parseImportStmt() {
 			if p.tok != COMMA {
 				break
 			}
-			p.consume()
+			p.consume() // consume ','
 		}
 	case IMPORT:
-		p.consume()
-		p.expect(ALL)
+		x.Kind = p.consume()
+		x.Refs = []Expr{&Ident{Tok: p.expect(ALL)}}
 	default:
-		p.errorExpected(p.pos(1), "definition qualifier")
+		p.errorExpected(p.pos(1), "import definition qualifier")
+		p.advance(stmtStart)
 	}
-
+	return x
 }
 
 func (p *parser) parseExceptSpec() {
@@ -1118,27 +1121,23 @@ func (p *parser) parseExceptSpec() {
 	p.expect(RBRACE)
 }
 
-func (p *parser) parseExceptStmt() {
+func (p *parser) parseExceptStmt() *DefSelectorExpr {
+	x := new(DefSelectorExpr)
 	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, GROUP,
 		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
 		TESTCASE, TYPE:
-		p.consume()
+		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "definition qualifier")
 	}
 
 	if p.tok == ALL {
-		p.consume()
+		x.Refs = []Expr{&Ident{Tok: p.consume()}}
 	} else {
-		for {
-			p.parseTypeRef()
-			if p.tok != COMMA {
-				break
-			}
-			p.consume()
-		}
+		x.Refs = p.parseRefList()
 	}
+	return x
 }
 
 /*************************************************************************
@@ -1244,25 +1243,28 @@ func (p *parser) parseWithStmt() *WithStmt {
 	return x
 }
 
-func (p *parser) parseWithQualifier() Node {
+func (p *parser) parseWithQualifier() Expr {
 	switch p.tok {
 	case IDENT:
-		p.parseTypeRef()
+		return p.parseTypeRef()
 	case LBRACK:
-		p.parseIndexExpr(nil)
+		return p.parseIndexExpr(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
-		p.consume()
-		p.expect(ALL)
+		x := new(DefSelectorExpr)
+		x.Kind = p.consume()
+		x.Refs = []Expr{&Ident{Tok: p.expect(ALL)}}
 		if p.tok == EXCEPT {
-			p.consume()
-			p.expect(LBRACE)
-			p.parseRefList()
-			p.expect(RBRACE)
+			x.ExceptTok = p.consume()
+			x.LBrace = p.expect(LBRACE)
+			x.Except = p.parseRefList()
+			x.RBRace = p.expect(RBRACE)
 		}
+		return x
 	default:
 		p.errorExpected(p.pos(1), "with-qualifier")
+		p.advance(stmtStart)
+		return nil
 	}
-	return nil
 }
 
 /*************************************************************************
@@ -1692,17 +1694,17 @@ func (p *parser) parseValueDecl() *ValueDecl {
 		defer un(trace(p, "ValueDecl"))
 	}
 	x := &ValueDecl{Kind: p.consume()}
-	p.parseRestrictionSpec()
+	x.TemplateRestriction = p.parseRestrictionSpec()
 
 	if p.tok == MODIF {
-		p.consume()
+		x.Modif = p.consume()
 	}
 
 	if x.Kind.Kind != TIMER {
 		x.Type = p.parseTypeRef()
 	}
 	x.Decls = p.parseExprList()
-	p.parseWith()
+	x.With = p.parseWith()
 	return x
 }
 
@@ -1734,28 +1736,29 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 		defer un(trace(p, "FuncDecl"))
 	}
 
-	x := &FuncDecl{Kind: p.consume()}
+	x := new(FuncDecl)
+	x.Kind = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
 	if p.tok == MODIF {
-		p.consume()
+		x.Modif = p.consume()
 	}
 
 	x.Params = p.parseFormalPars()
 
 	if p.tok == RUNS {
-		p.parseRunsOn()
+		x.RunsOn = p.parseRunsOn()
 	}
 
 	if p.tok == MTC {
-		p.parseMtc()
+		x.Mtc = p.parseMtc()
 	}
 
 	if p.tok == SYSTEM {
-		p.parseSystem()
+		x.System = p.parseSystem()
 	}
 
 	if p.tok == RETURN {
@@ -1766,7 +1769,7 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 		x.Body = p.parseBlockStmt()
 	}
 
-	p.parseWith()
+	x.With = p.parseWith()
 	return x
 }
 
@@ -1778,32 +1781,34 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 	if p.trace {
 		defer un(trace(p, "ExtFuncDecl"))
 	}
-	p.consume() // consume 'external'
-	x := &FuncDecl{Kind: p.consume()}
+
+	x := new(FuncDecl)
+	x.External = p.consume()
+	x.Kind = p.consume()
 	x.Name = p.parseIdent()
 
 	if p.tok == MODIF {
-		p.consume()
+		x.Modif = p.consume()
 	}
 
 	x.Params = p.parseFormalPars()
 
 	if p.tok == RUNS {
-		p.parseRunsOn()
+		x.RunsOn = p.parseRunsOn()
 	}
 
 	if p.tok == MTC {
-		p.parseMtc()
+		x.Mtc = p.parseMtc()
 	}
 
 	if p.tok == SYSTEM {
-		p.parseSystem()
+		x.System = p.parseSystem()
 	}
 
 	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
-	p.parseWith()
+	x.With = p.parseWith()
 	return x
 }
 
@@ -1811,33 +1816,34 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
  * Signature Declaration
  *************************************************************************/
 
-func (p *parser) parseSignatureDecl() Decl {
+func (p *parser) parseSignatureDecl() *SignatureDecl {
 	if p.trace {
 		defer un(trace(p, "SignatureDecl"))
 	}
 
-	p.consume()
-	p.parseIdent()
+	x := new(SignatureDecl)
+	x.Tok = p.consume()
+	x.Name = p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
 	}
 
-	p.parseFormalPars()
+	x.Params = p.parseFormalPars()
 
 	if p.tok == NOBLOCK {
-		p.consume()
+		x.NoBlock = p.consume()
 	}
 
 	if p.tok == RETURN {
-		p.parseReturn()
+		x.Return = p.parseReturn()
 	}
 
 	if p.tok == EXCEPTION {
-		p.consume()
-		p.parseParenExpr()
+		x.ExceptionTok = p.consume()
+		x.Exception = p.parseParenExpr()
 	}
-	p.parseWith()
-	return nil
+	x.With = p.parseWith()
+	return x
 }
 
 func (p *parser) parseRunsOn() *RunsOnSpec {
@@ -1877,8 +1883,8 @@ func (p *parser) parseFormalPars() *FormalPars {
 	if p.trace {
 		defer un(trace(p, "FormalPars"))
 	}
-	x := &FormalPars{}
-	p.expect(LPAREN)
+	x := new(FormalPars)
+	x.LParen = p.expect(LPAREN)
 	for p.tok != RPAREN {
 		x.List = append(x.List, p.parseFormalPar())
 		if p.tok != COMMA {
@@ -1886,7 +1892,7 @@ func (p *parser) parseFormalPars() *FormalPars {
 		}
 		p.consume()
 	}
-	p.expect(RPAREN)
+	x.RParen = p.expect(RPAREN)
 	return x
 }
 
@@ -1894,20 +1900,20 @@ func (p *parser) parseFormalPar() *FormalPar {
 	if p.trace {
 		defer un(trace(p, "FormalPar"))
 	}
-	x := &FormalPar{}
+	x := new(FormalPar)
 
 	switch p.tok {
 	case IN:
-		p.consume()
+		x.Direction = p.consume()
 	case OUT:
-		p.consume()
+		x.Direction = p.consume()
 	case INOUT:
-		p.consume()
+		x.Direction = p.consume()
 	}
 
-	p.parseRestrictionSpec()
+	x.TemplateRestriction = p.parseRestrictionSpec()
 	if p.tok == MODIF {
-		p.consume()
+		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
 	x.Name = p.parseExpr()
@@ -1915,42 +1921,52 @@ func (p *parser) parseFormalPar() *FormalPar {
 	return x
 }
 
-func (p *parser) parseTypeFormalPars() {
+func (p *parser) parseTypeFormalPars() *FormalPars {
 	if p.trace {
 		defer un(trace(p, "TypeFormalPars"))
 	}
-	p.expect(LT)
+	x := new(FormalPars)
+	x.LParen = p.expect(LT)
 	for p.tok != GT {
-		p.parseTypeFormalPar()
+		x.List = append(x.List, p.parseTypeFormalPar())
 		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	p.expect(GT)
+	x.RParen = p.expect(GT)
+	return x
 }
 
-func (p *parser) parseTypeFormalPar() {
+func (p *parser) parseTypeFormalPar() *FormalPar {
 	if p.trace {
 		defer un(trace(p, "TypeFormalPar"))
 	}
+
+	x := new(FormalPar)
+
 	if p.tok == IN {
-		p.consume()
+		x.Direction = p.consume()
 	}
 
 	switch p.tok {
 	case TYPE:
-		p.consume()
+		x.Type = &Ident{Tok: p.consume()}
 	case SIGNATURE:
-		p.consume()
+		x.Type = &Ident{Tok: p.consume()}
 	default:
-		p.parseTypeRef()
+		x.Type = p.parseTypeRef()
 	}
-	p.expect(IDENT)
+	x.Name = &Ident{Tok: p.expect(IDENT)}
 	if p.tok == ASSIGN {
-		p.consume()
-		p.parseTypeRef()
+		x.Name = &BinaryExpr{
+			X:  x.Name,
+			Op: p.consume(),
+			Y:  p.parseTypeRef(),
+		}
 	}
+
+	return x
 }
 
 /*************************************************************************

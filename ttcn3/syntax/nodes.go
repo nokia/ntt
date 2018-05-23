@@ -37,7 +37,8 @@ type Token struct {
 //
 type (
 	Ident struct {
-		Tok Token
+		Tok  Token
+		Tok2 Token
 	}
 
 	ParametrizedIdent struct {
@@ -87,7 +88,7 @@ type (
 
 	CallExpr struct {
 		Fun  Expr
-		Args []Expr
+		Args *ParenExpr
 	}
 
 	LengthExpr struct {
@@ -97,18 +98,19 @@ type (
 	}
 
 	RedirectExpr struct {
-		X            Expr
-		Tok          Token
-		ValueTok     Token
-		Value        Expr
-		ParamTok     Token
-		Param        Expr
-		SenderTok    Token
-		Sender       Expr
-		IndexTok     Token
-		Index        Expr
-		TimestampTok Token
-		Timestamp    Expr
+		X             Expr
+		Tok           Token
+		ValueTok      Token
+		Value         Expr
+		ParamTok      Token
+		Param         Expr
+		SenderTok     Token
+		Sender        Expr
+		IndexTok      Token
+		IndexValueTok Token
+		Index         Expr
+		TimestampTok  Token
+		Timestamp     Expr
 	}
 
 	// Required for Signatures
@@ -125,10 +127,10 @@ type (
 		Y   Expr
 	}
 
-	// ("any"|"all") "from" Expr
 	FromExpr struct {
-		Kind Token
-		X    Expr
+		Kind    Token
+		FromTok Token
+		X       Expr
 	}
 
 	ModifiesExpr struct {
@@ -160,6 +162,15 @@ type (
 		Tok    Token
 		Params Expr
 		X      Expr
+	}
+
+	DefSelectorExpr struct {
+		Kind      Token  // TYPE, TEMPLATE, CONST, ...
+		Refs      []Expr // ALL, ids
+		ExceptTok Token
+		LBrace    Token
+		Except    []Expr
+		RBRace    Token
 	}
 )
 
@@ -307,26 +318,37 @@ type (
 
 type (
 	ValueDecl struct {
-		Kind  Token
-		Type  Expr
-		Decls []Expr
-		With  *WithSpec
+		Kind                Token
+		TemplateRestriction *RestrictionSpec
+		Modif               Token
+		Type                Expr
+		Decls               []Expr
+		With                *WithSpec
 	}
 
 	FuncDecl struct {
-		Kind   Token
-		Name   *Ident
-		Params Expr
-		Return Expr
-		RunsOn Expr
-		Mtc    Expr
-		System Expr
-		Extern bool
-		Body   *BlockStmt
-		With   *WithSpec
+		External Token
+		Kind     Token
+		Name     *Ident
+		Modif    Token
+		Params   Expr
+		RunsOn   Expr
+		Mtc      Expr
+		System   Expr
+		Return   *ReturnSpec
+		Body     *BlockStmt
+		With     *WithSpec
 	}
 
 	SignatureDecl struct {
+		Tok          Token
+		Name         *Ident
+		Params       Expr
+		NoBlock      Token
+		Return       *ReturnSpec
+		ExceptionTok Token
+		Exception    *ParenExpr
+		With         *WithSpec
 	}
 
 	SubTypeDecl struct {
@@ -425,24 +447,17 @@ type (
 	}
 
 	ImportDecl struct {
-		ImportTok   Token
-		FromTok     Token
-		Module      *Ident
-		Language    *LanguageSpec
-		ImportSpecs []ImportSpec
-		With        *WithSpec
-	}
-
-	ImportSpec struct {
-	}
-
-	ImportStmt struct {
+		ImportTok Token
+		FromTok   Token
+		Module    *Ident
+		Language  *LanguageSpec
+		LBrace    Token
+		List      []*DefSelectorExpr
+		RBrace    Token
+		With      *WithSpec
 	}
 
 	ExceptSpec struct {
-	}
-
-	ExceptStmt struct {
 	}
 
 	GroupDecl struct {
@@ -499,12 +514,17 @@ type (
 	}
 
 	FormalPars struct {
-		List []*FormalPar
+		LParen Token
+		List   []*FormalPar
+		RParen Token
 	}
 
 	FormalPar struct {
-		Type Expr
-		Name Expr
+		Direction           Token
+		TemplateRestriction *RestrictionSpec
+		Modif               Token
+		Type                Expr
+		Name                Expr
 	}
 
 	WithSpec struct {
