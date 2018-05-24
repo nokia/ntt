@@ -5,22 +5,6 @@ import (
 	"strings"
 )
 
-// A Mode value is a set of flags (or 0).
-// They control the amount of source code parsed and other optional
-// parser functionality.
-//
-type Mode uint
-
-const (
-	ImportsOnly       = 1 << iota      // stop parsing after import declarations
-	PedanticSemicolon                  // expect semicolons pedantically
-	ParseComments                      // parse comments and add them to AST
-	Trace                              // print a trace of parsed productions
-	DeclarationErrors                  // report declaration errors
-	SpuriousErrors                     // same as AllErrors, for backward-compatibility
-	AllErrors         = SpuriousErrors // report all errors (not just the first 10 on different lines)
-)
-
 // The parser structure holds the parser's internal state.
 type parser struct {
 	file    *File
@@ -410,6 +394,45 @@ var operandStart = map[Kind]bool{
 	TRUE:      true,
 	UNIVERSAL: true,
 	UNMAP:     true,
+}
+
+// parse is a generic entry point
+func (p *parser) parse() []Node {
+	switch p.tok {
+	case MODULE:
+		list := p.parseModuleList()
+		nodes := make([]Node, len(list))
+		for i, d := range list {
+			nodes[i] = d
+		}
+		return nodes
+	case CONTROL,
+		EXTERNAL,
+		FRIEND,
+		FUNCTION,
+		GROUP,
+		IMPORT,
+		MODULEPAR,
+		SIGNATURE,
+		TEMPLATE,
+		TYPE,
+		VAR,
+		ALTSTEP,
+		CONST,
+		PRIVATE,
+		PUBLIC,
+		TESTCASE:
+		nodes := []Node{p.parseModuleDef()}
+		p.expect(EOF)
+		return nodes
+	default:
+		list := p.parseExprList()
+		nodes := make([]Node, len(list))
+		for i, d := range list {
+			nodes[i] = d
+		}
+		return nodes
+	}
 }
 
 /*************************************************************************
@@ -943,6 +966,17 @@ func (p *parser) tryTypeIdent() Expr {
 /*************************************************************************
  * Module
  *************************************************************************/
+
+func (p *parser) parseModuleList() []*Module {
+	var list []*Module
+	list = append(list, p.parseModule())
+	for p.tok == MODULE {
+		list = append(list, p.parseModule())
+		p.expectSemi()
+	}
+	p.expect(EOF)
+	return list
+}
 
 func (p *parser) parseModule() *Module {
 	if p.trace {
