@@ -7,10 +7,6 @@ import (
 	"os"
 )
 
-var (
-	trace = flag.Bool("t", false, "Trace parser")
-)
-
 func worker(id int, jobs <-chan string, results chan<- error) {
 	for j := range jobs {
 		results <- parse(j)
@@ -44,12 +40,7 @@ func main() {
 }
 
 func parse(file string) error {
-	mode := syntax.Mode(syntax.Trace)
-	if !*trace {
-		mode = 0
-	}
-
-	_, err := syntax.ParseModule(syntax.NewFileSet(), file, nil, mode, func(pos syntax.Position, msg string) {
+	_, err := syntax.ParseFile(file, func(pos syntax.Position, msg string) {
 		fmt.Fprintf(os.Stderr, "%s: error: %s\n", pos, msg)
 	})
 

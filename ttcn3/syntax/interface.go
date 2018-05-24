@@ -7,8 +7,26 @@ import (
 	"io/ioutil"
 )
 
-// ParseModule parses the source code of a single Go source file and returns
-// the corresponding Module node. The source code may be provided via
+// A Mode value is a set of flags (or 0).
+// They control the amount of source code parsed and other optional
+// parser functionality.
+//
+type Mode uint
+
+const (
+	PedanticSemicolon = 1 << iota // expect semicolons pedantically
+	ParseComments                 // parse comments and add them to AST
+	Trace                         // print a trace of parsed productions
+	AllErrors                     // report all errors (not just the first 10 on different lines)
+)
+
+// ParseFile behaves like Parse
+func ParseFile(filename string, eh func(pos Position, msg string)) ([]Node, error) {
+	return Parse(NewFileSet(), filename, nil, 0, eh)
+}
+
+// Parse parses the source code of a single source file and returns
+// the corresponding nodes. The source code may be provided via
 // the filename of the source file, or via the src parameter.
 //
 // If src != nil, ParseModule parses the source from src and the filename is
@@ -26,7 +44,7 @@ import (
 // representing the fragments of erroneous source code). Multiple errors
 // are returned via a ErrorList which is sorted by file position.
 //
-func ParseModule(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorHandler) (f *Module, err error) {
+func Parse(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorHandler) (root []Node, err error) {
 	if fset == nil {
 		panic("ParseModule: no FileSet provided (fset == nil)")
 	}
@@ -46,25 +64,13 @@ func ParseModule(fset *FileSet, filename string, src interface{}, mode Mode, eh 
 			}
 		}
 
-		// set result values
-		if f == nil {
-			// source is not a valid Go source file - satisfy
-			// ParseModule API and return a valid (but) empty
-			// *Module
-			f = &Module{
-				Name: new(Ident),
-			}
-		}
-
 		p.errors.Sort()
 		err = p.errors.Err()
 	}()
 
 	// parse source
 	p.init(fset, filename, text, mode, eh)
-	f = p.parseModule()
-
-	return
+	return p.parse(), nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
