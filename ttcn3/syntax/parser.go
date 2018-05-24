@@ -970,6 +970,7 @@ func (p *parser) tryTypeIdent() Expr {
 func (p *parser) parseModuleList() []*Module {
 	var list []*Module
 	list = append(list, p.parseModule())
+	p.expectSemi()
 	for p.tok == MODULE {
 		list = append(list, p.parseModule())
 		p.expectSemi()
