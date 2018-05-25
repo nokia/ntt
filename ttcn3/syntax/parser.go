@@ -994,9 +994,8 @@ func (p *parser) parseModule() *Module {
 
 	m.LBrace = p.expect(LBRACE)
 
-	var decls []Decl
 	for p.tok != RBRACE && p.tok != EOF {
-		decls = append(decls, p.parseModuleDef())
+		m.Decls = append(m.Decls, p.parseModuleDef())
 		p.expectSemi()
 	}
 	m.RBrace = p.expect(RBRACE)
