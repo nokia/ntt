@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/5nord/ntt/internal/cmd"
+	"github.com/nokia/ntt/internal/cmd"
 )
 
 func main() {
