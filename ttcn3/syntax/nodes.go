@@ -6,6 +6,8 @@ package syntax
 
 // All node types implement the Node interface.
 type Node interface {
+	Pos() Pos
+	//End() Pos
 }
 
 // All expression nodes implement the Expr interface.
@@ -27,10 +29,12 @@ type Decl interface {
 // ------------------------------------------------------------------------
 
 type Token struct {
-	Pos  Pos
+	pos  Pos
 	Kind Kind
 	Lit  string
 }
+
+func (x *Token) Pos() Pos { return x.pos }
 
 // ------------------------------------------------------------------------
 // Expressions
@@ -174,6 +178,28 @@ type (
 	}
 )
 
+func (x *Ident) Pos() Pos             { return x.Tok.Pos() }
+func (x *ParametrizedIdent) Pos() Pos { return x.Ident.Pos() }
+func (x *ValueLiteral) Pos() Pos      { return x.Tok.Pos() }
+func (x *CompositeLiteral) Pos() Pos  { return x.LBrace.Pos() }
+func (x *UnaryExpr) Pos() Pos         { return x.Op.Pos() }
+func (x *BinaryExpr) Pos() Pos        { return x.Pos() }
+func (x *ParenExpr) Pos() Pos         { return x.LParen.Pos() }
+func (x *SelectorExpr) Pos() Pos      { return x.Pos() }
+func (x *IndexExpr) Pos() Pos         { return x.Pos() }
+func (x *CallExpr) Pos() Pos          { return x.Fun.Pos() }
+func (x *LengthExpr) Pos() Pos        { return x.Pos() }
+func (x *RedirectExpr) Pos() Pos      { return x.Pos() }
+func (x *ValueExpr) Pos() Pos         { return x.Pos() }
+func (x *ParamExpr) Pos() Pos         { return x.Pos() }
+func (x *FromExpr) Pos() Pos          { return x.Kind.Pos() }
+func (x *ModifiesExpr) Pos() Pos      { return x.Tok.Pos() }
+func (x *RegexpExpr) Pos() Pos        { return x.Tok.Pos() }
+func (x *PatternExpr) Pos() Pos       { return x.Tok.Pos() }
+func (x *DecmatchExpr) Pos() Pos      { return x.Tok.Pos() }
+func (x *DecodedExpr) Pos() Pos       { return x.Tok.Pos() }
+func (x *DefSelectorExpr) Pos() Pos   { return x.Kind.Pos() }
+
 // ------------------------------------------------------------------------
 // Statements
 
@@ -264,6 +290,20 @@ type (
 		Body   *BlockStmt
 	}
 )
+
+func (x *BlockStmt) Pos() Pos   { return x.LBrace.Pos() }
+func (x *DeclStmt) Pos() Pos    { return x.Decl.Pos() }
+func (x *ExprStmt) Pos() Pos    { return x.Expr.Pos() }
+func (x *BranchStmt) Pos() Pos  { return x.Tok.Pos() }
+func (x *ReturnStmt) Pos() Pos  { return x.Tok.Pos() }
+func (x *AltStmt) Pos() Pos     { return x.Tok.Pos() }
+func (x *ForStmt) Pos() Pos     { return x.Tok.Pos() }
+func (x *WhileStmt) Pos() Pos   { return x.Tok.Pos() }
+func (x *DoWhileStmt) Pos() Pos { return x.DoTok.Pos() }
+func (x *IfStmt) Pos() Pos      { return x.Tok.Pos() }
+func (x *SelectStmt) Pos() Pos  { return x.Tok.Pos() }
+func (x *CaseClause) Pos() Pos  { return x.Tok.Pos() }
+func (x *CommClause) Pos() Pos  { return x.LBrack.Pos() }
 
 // ------------------------------------------------------------------------
 // Declarations and Types
@@ -422,6 +462,25 @@ type (
 	}
 )
 
+func (x *ValueDecl) Pos() Pos { return x.Kind.Pos() }
+
+func (x *FuncDecl) Pos() Pos {
+	if x.External.Kind == EXTERNAL {
+		return x.External.Pos()
+	}
+	return x.Kind.Pos()
+}
+
+func (x *SignatureDecl) Pos() Pos     { return x.Tok.Pos() }
+func (x *SubTypeDecl) Pos() Pos       { return x.TypeTok.Pos() }
+func (x *StructTypeDecl) Pos() Pos    { return x.TypeTok.Pos() }
+func (x *EnumTypeDecl) Pos() Pos      { return x.TypeTok.Pos() }
+func (x *BehaviourTypeDecl) Pos() Pos { return x.TypeTok.Pos() }
+func (x *PortTypeDecl) Pos() Pos      { return x.TypeTok.Pos() }
+func (x *PortAttribute) Pos() Pos     { return x.Kind.Pos() }
+func (x *PortMapAttribute) Pos() Pos  { return x.MapTok.Pos() }
+func (x *ComponentTypeDecl) Pos() Pos { return x.TypeTok.Pos() }
+
 // ------------------------------------------------------------------------
 // Modules and Module Definitions
 
@@ -476,6 +535,21 @@ type (
 		With      *WithSpec
 	}
 )
+
+func (x *Module) Pos() Pos { return x.Tok.Pos() }
+
+func (x *ModuleDef) Pos() Pos {
+	if x.Visibility.Pos() != NoPos {
+		return x.Visibility.Pos()
+	}
+	return x.Def.Pos()
+}
+
+func (x *ControlPart) Pos() Pos { return x.Tok.Pos() }
+func (x *ImportDecl) Pos() Pos  { return x.ImportTok.Pos() }
+func (x *ExceptSpec) Pos() Pos  { return NoPos }
+func (x *GroupDecl) Pos() Pos   { return x.Tok.Pos() }
+func (x *FriendDecl) Pos() Pos  { return x.FriendTok.Pos() }
 
 // ------------------------------------------------------------------------
 // Miscellaneous
@@ -543,3 +617,27 @@ type (
 		Value    Expr
 	}
 )
+
+func (x *LanguageSpec) Pos() Pos    { return x.Tok.Pos() }
+func (x *RestrictionSpec) Pos() Pos { return x.Tok.Pos() }
+func (x *RunsOnSpec) Pos() Pos      { return x.RunsTok.Pos() }
+func (x *SystemSpec) Pos() Pos      { return x.Tok.Pos() }
+func (x *MtcSpec) Pos() Pos         { return x.Tok.Pos() }
+func (x *ReturnSpec) Pos() Pos      { return x.Tok.Pos() }
+func (x *FormalPars) Pos() Pos      { return x.LParen.Pos() }
+
+func (x *FormalPar) Pos() Pos {
+	if x.Direction.Pos() != NoPos {
+		return x.Direction.Pos()
+	}
+	if x.TemplateRestriction.Pos() != NoPos {
+		return x.TemplateRestriction.Pos()
+	}
+	if x.Modif.Pos() != NoPos {
+		return x.Modif.Pos()
+	}
+	return x.Type.Pos()
+}
+
+func (x *WithSpec) Pos() Pos { return x.Tok.Pos() }
+func (x *WithStmt) Pos() Pos { return x.Kind.Pos() }

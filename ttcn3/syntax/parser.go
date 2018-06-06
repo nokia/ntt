@@ -176,7 +176,7 @@ func (p *parser) peek(i int) Token {
 }
 
 func (p *parser) pos(i int) Pos {
-	return p.peek(i).Pos
+	return p.peek(i).Pos()
 }
 
 func (p *parser) lit(i int) string {
@@ -749,7 +749,7 @@ func (p *parser) parseDecodedModifier() *DecodedExpr {
 	d := new(DecodedExpr)
 	d.Tok = p.expect(MODIF)
 	if d.Tok.Lit != "@decoded" {
-		p.errorExpected(d.Tok.Pos, "@decoded")
+		p.errorExpected(d.Tok.Pos(), "@decoded")
 	}
 
 	if p.tok == LPAREN {
