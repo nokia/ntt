@@ -732,7 +732,7 @@ func (p *parser) parseCallPattern() *PatternExpr {
 	if p.tok == MODIF {
 		c.NoCase = p.consume()
 	}
-	c.X = p.expect(STRING)
+	c.X = &ValueLiteral{p.expect(STRING)}
 	return c
 }
 
@@ -931,7 +931,7 @@ L:
 			x = &IndexExpr{
 				X:      x,
 				LBrack: lbrack,
-				Index:  dash,
+				Index:  &ValueLiteral{Tok: dash},
 				RBrack: rbrack,
 			}
 
@@ -2029,9 +2029,9 @@ func (p *parser) parseStmt() Stmt {
 
 	switch p.tok {
 	case TEMPLATE:
-		return p.parseTemplateDecl()
+		return &DeclStmt{p.parseTemplateDecl()}
 	case VAR, CONST, TIMER, PORT:
-		return p.parseValueDecl()
+		return &DeclStmt{p.parseValueDecl()}
 	case REPEAT, BREAK, CONTINUE:
 		return &BranchStmt{Tok: p.consume()}
 	case LABEL:
@@ -2061,7 +2061,7 @@ func (p *parser) parseStmt() Stmt {
 	case LBRACE:
 		return p.parseBlockStmt()
 	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
-		x := &ExprStmt{Expr: p.parseSimpleStmt()}
+		x := p.parseSimpleStmt()
 
 		// call-statement block
 		if p.tok == LBRACE {
@@ -2088,7 +2088,7 @@ func (p *parser) parseForLoop() *ForStmt {
 	x.InitSemi = p.expect(SEMICOLON)
 	x.Cond = p.parseExpr()
 	x.CondSemi = p.expect(SEMICOLON)
-	x.Post = p.parseExpr()
+	x.Post = p.parseSimpleStmt()
 	x.LParen = p.expect(RPAREN)
 	x.Body = p.parseBlockStmt()
 	return x
