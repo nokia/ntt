@@ -176,7 +176,8 @@ func (p *parser) peek(i int) Token {
 }
 
 func (p *parser) pos(i int) Pos {
-	return p.peek(i).Pos()
+	tok := p.peek(i)
+	return tok.Pos()
 }
 
 func (p *parser) lit(i int) string {
@@ -271,8 +272,8 @@ func (p *parser) errorExpected(pos Pos, msg string) {
 
 func (p *parser) expect(k Kind) Token {
 	if p.tok != k {
-		pos := p.peek(1).Pos
-		p.errorExpected(pos, "'"+k.String()+"'")
+		tok := p.peek(1)
+		p.errorExpected(tok.Pos(), "'"+k.String()+"'")
 	}
 	return p.consume() // make progress
 }
@@ -789,7 +790,7 @@ func (p *parser) parseCallExpr(x Expr) *CallExpr {
 			}
 			c.Args.List = []Expr{x}
 		default:
-			c.Args.List = append(c.Args.List, p.parseExprList())
+			c.Args.List = append(c.Args.List, p.parseExprList()...)
 		}
 	}
 	c.Args.RParen = p.expect(RPAREN)

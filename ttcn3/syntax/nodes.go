@@ -34,7 +34,7 @@ type Token struct {
 	Lit  string
 }
 
-func (x *Token) Pos() Pos { return x.pos }
+func (x Token) Pos() Pos { return x.pos }
 
 // ------------------------------------------------------------------------
 // Expressions
@@ -105,9 +105,9 @@ type (
 		X             Expr
 		Tok           Token
 		ValueTok      Token
-		Value         Expr
+		Value         []Expr
 		ParamTok      Token
-		Param         Expr
+		Param         []Expr
 		SenderTok     Token
 		Sender        Expr
 		IndexTok      Token
@@ -355,6 +355,19 @@ type (
 		Return *ReturnSpec
 	}
 )
+
+func (x *Field) Pos() Pos {
+	if x.DefaultTok.Pos() != NoPos {
+		return x.DefaultTok.Pos()
+	}
+	return x.Type.Pos()
+}
+
+func (x *RefSpec) Pos() Pos       { return x.X.Pos() }
+func (x *StructSpec) Pos() Pos    { return x.Kind.Pos() }
+func (x *ListSpec) Pos() Pos      { return x.Kind.Pos() }
+func (x *EnumSpec) Pos() Pos      { return x.Tok.Pos() }
+func (x *BehaviourSpec) Pos() Pos { return x.Kind.Pos() }
 
 type (
 	ValueDecl struct {
