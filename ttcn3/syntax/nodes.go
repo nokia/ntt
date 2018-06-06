@@ -13,16 +13,19 @@ type Node interface {
 // All expression nodes implement the Expr interface.
 type Expr interface {
 	Node
+	exprNode()
 }
 
 // All statement nodes implement the Stmt interface.
 type Stmt interface {
 	Node
+	stmtNode()
 }
 
 // All declaration nodes implement the Decl interface.
 type Decl interface {
 	Node
+	declNode()
 }
 
 // Tokens
@@ -200,6 +203,28 @@ func (x *DecmatchExpr) Pos() Pos      { return x.Tok.Pos() }
 func (x *DecodedExpr) Pos() Pos       { return x.Tok.Pos() }
 func (x *DefSelectorExpr) Pos() Pos   { return x.Kind.Pos() }
 
+func (x *Ident) exprNode()             {}
+func (x *ParametrizedIdent) exprNode() {}
+func (x *ValueLiteral) exprNode()      {}
+func (x *CompositeLiteral) exprNode()  {}
+func (x *UnaryExpr) exprNode()         {}
+func (x *BinaryExpr) exprNode()        {}
+func (x *ParenExpr) exprNode()         {}
+func (x *SelectorExpr) exprNode()      {}
+func (x *IndexExpr) exprNode()         {}
+func (x *CallExpr) exprNode()          {}
+func (x *LengthExpr) exprNode()        {}
+func (x *RedirectExpr) exprNode()      {}
+func (x *ValueExpr) exprNode()         {}
+func (x *ParamExpr) exprNode()         {}
+func (x *FromExpr) exprNode()          {}
+func (x *ModifiesExpr) exprNode()      {}
+func (x *RegexpExpr) exprNode()        {}
+func (x *PatternExpr) exprNode()       {}
+func (x *DecmatchExpr) exprNode()      {}
+func (x *DecodedExpr) exprNode()       {}
+func (x *DefSelectorExpr) exprNode()   {}
+
 // ------------------------------------------------------------------------
 // Statements
 
@@ -305,11 +330,26 @@ func (x *SelectStmt) Pos() Pos  { return x.Tok.Pos() }
 func (x *CaseClause) Pos() Pos  { return x.Tok.Pos() }
 func (x *CommClause) Pos() Pos  { return x.LBrack.Pos() }
 
+func (x *BlockStmt) stmtNode()   {}
+func (x *DeclStmt) stmtNode()    {}
+func (x *ExprStmt) stmtNode()    {}
+func (x *BranchStmt) stmtNode()  {}
+func (x *ReturnStmt) stmtNode()  {}
+func (x *AltStmt) stmtNode()     {}
+func (x *ForStmt) stmtNode()     {}
+func (x *WhileStmt) stmtNode()   {}
+func (x *DoWhileStmt) stmtNode() {}
+func (x *IfStmt) stmtNode()      {}
+func (x *SelectStmt) stmtNode()  {}
+func (x *CaseClause) stmtNode()  {}
+func (x *CommClause) stmtNode()  {}
+
 // ------------------------------------------------------------------------
 // Declarations and Types
 
 type TypeSpec interface {
 	Node
+	typeSpecNode()
 }
 
 type (
@@ -369,6 +409,13 @@ func (x *ListSpec) Pos() Pos      { return x.Kind.Pos() }
 func (x *EnumSpec) Pos() Pos      { return x.Tok.Pos() }
 func (x *BehaviourSpec) Pos() Pos { return x.Kind.Pos() }
 
+func (x *Field) typeSpecNode()         {}
+func (x *RefSpec) typeSpecNode()       {}
+func (x *StructSpec) typeSpecNode()    {}
+func (x *ListSpec) typeSpecNode()      {}
+func (x *EnumSpec) typeSpecNode()      {}
+func (x *BehaviourSpec) typeSpecNode() {}
+
 type (
 	ValueDecl struct {
 		Kind                Token
@@ -384,10 +431,10 @@ type (
 		Kind     Token
 		Name     *Ident
 		Modif    Token
-		Params   Expr
-		RunsOn   Expr
-		Mtc      Expr
-		System   Expr
+		Params   *FormalPars
+		RunsOn   *RunsOnSpec
+		Mtc      *MtcSpec
+		System   *SystemSpec
 		Return   *ReturnSpec
 		Body     *BlockStmt
 		With     *WithSpec
@@ -396,7 +443,7 @@ type (
 	SignatureDecl struct {
 		Tok          Token
 		Name         *Ident
-		Params       Expr
+		Params       *FormalPars
 		NoBlock      Token
 		Return       *ReturnSpec
 		ExceptionTok Token
@@ -493,6 +540,18 @@ func (x *PortTypeDecl) Pos() Pos      { return x.TypeTok.Pos() }
 func (x *PortAttribute) Pos() Pos     { return x.Kind.Pos() }
 func (x *PortMapAttribute) Pos() Pos  { return x.MapTok.Pos() }
 func (x *ComponentTypeDecl) Pos() Pos { return x.TypeTok.Pos() }
+
+func (x *ValueDecl) declNode()         {}
+func (x *FuncDecl) declNode()          {}
+func (x *SignatureDecl) declNode()     {}
+func (x *SubTypeDecl) declNode()       {}
+func (x *StructTypeDecl) declNode()    {}
+func (x *EnumTypeDecl) declNode()      {}
+func (x *BehaviourTypeDecl) declNode() {}
+func (x *PortTypeDecl) declNode()      {}
+func (x *PortAttribute) declNode()     {}
+func (x *PortMapAttribute) declNode()  {}
+func (x *ComponentTypeDecl) declNode() {}
 
 // ------------------------------------------------------------------------
 // Modules and Module Definitions
