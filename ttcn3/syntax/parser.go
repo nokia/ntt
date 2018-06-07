@@ -783,6 +783,7 @@ func (p *parser) parseCallExpr(x Expr) *CallExpr {
 		case TO, FROM, REDIR:
 			var x Expr
 			if p.tok == TO || p.tok == FROM {
+				// TODO: Shouldn't this be a FromExpr?
 				x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
 			}
 			if p.tok == REDIR {
@@ -1292,7 +1293,7 @@ func (p *parser) parseWithQualifier() Expr {
 			x.ExceptTok = p.consume()
 			x.LBrace = p.expect(LBRACE)
 			x.Except = p.parseRefList()
-			x.RBRace = p.expect(RBRACE)
+			x.RBrace = p.expect(RBRACE)
 		}
 		return x
 	default:
@@ -2047,7 +2048,7 @@ func (p *parser) parseStmt() Stmt {
 	case SELECT:
 		return p.parseSelect()
 	case ALT, INTERLEAVE:
-		return &AltStmt{Tok: p.consume(), Block: p.parseBlockStmt()}
+		return &AltStmt{Tok: p.consume(), Body: p.parseBlockStmt()}
 	case LBRACK:
 		return p.parseAltGuard()
 	case FOR:
