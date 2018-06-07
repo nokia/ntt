@@ -7,7 +7,7 @@ package syntax
 // All node types implement the Node interface.
 type Node interface {
 	Pos() Pos
-	//End() Pos
+	End() Pos
 }
 
 // All expression nodes implement the Expr interface.
@@ -38,6 +38,15 @@ type Token struct {
 }
 
 func (x Token) Pos() Pos { return x.pos }
+func (x Token) End() Pos {
+	if l := len(x.Lit); l != 0 {
+		return x.pos + Pos(l)
+	}
+	if l := len(x.Kind.String()); l != 0 {
+		return x.pos + Pos(l)
+	}
+	return NoPos
+}
 
 // ------------------------------------------------------------------------
 // Expressions
@@ -177,7 +186,7 @@ type (
 		ExceptTok Token
 		LBrace    Token
 		Except    []Expr
-		RBRace    Token
+		RBrace    Token
 	}
 )
 
@@ -202,6 +211,61 @@ func (x *PatternExpr) Pos() Pos       { return x.Tok.Pos() }
 func (x *DecmatchExpr) Pos() Pos      { return x.Tok.Pos() }
 func (x *DecodedExpr) Pos() Pos       { return x.Tok.Pos() }
 func (x *DefSelectorExpr) Pos() Pos   { return x.Kind.Pos() }
+
+func (x *Ident) End() Pos {
+	if x.Tok2.End() != NoPos {
+		return x.Tok2.End()
+	}
+	return x.Tok.End()
+}
+
+func (x *ParametrizedIdent) End() Pos { return x.Params.End() }
+func (x *ValueLiteral) End() Pos      { return x.Tok.End() }
+func (x *CompositeLiteral) End() Pos  { return x.RBrace.End() }
+func (x *UnaryExpr) End() Pos         { return x.X.End() }
+func (x *BinaryExpr) End() Pos        { return x.Y.End() }
+func (x *ParenExpr) End() Pos         { return x.RParen.End() }
+func (x *SelectorExpr) End() Pos      { return x.Sel.End() }
+func (x *IndexExpr) End() Pos         { return x.RBrack.End() }
+func (x *CallExpr) End() Pos          { return x.Args.End() }
+func (x *LengthExpr) End() Pos        { return x.Size.End() }
+func (x *RedirectExpr) End() Pos {
+	if x.Timestamp != nil {
+		return x.Timestamp.End()
+	}
+	if x.Index != nil {
+		return x.Index.End()
+	}
+	if x.Sender != nil {
+		return x.Sender.End()
+	}
+	if x.Param != nil {
+		return x.Param[len(x.Param)-1].End()
+	}
+	if x.Value != nil {
+		return x.Value[len(x.Value)-1].End()
+	}
+	return x.Tok.End()
+}
+
+func (x *ValueExpr) End() Pos    { return x.Y.End() }
+func (x *ParamExpr) End() Pos    { return x.Y.End() }
+func (x *FromExpr) End() Pos     { return x.X.End() }
+func (x *ModifiesExpr) End() Pos { return x.Y.End() }
+func (x *RegexpExpr) End() Pos   { return x.X.End() }
+func (x *PatternExpr) End() Pos  { return x.X.End() }
+func (x *DecmatchExpr) End() Pos { return x.X.End() }
+func (x *DecodedExpr) End() Pos  { return x.X.End() }
+
+func (x *DefSelectorExpr) End() Pos {
+	if x.RBrace.End() != NoPos {
+		return x.RBrace.End()
+	}
+	if x.Except != nil {
+		return x.Except[len(x.Except)-1].End()
+	}
+	return x.Refs[len(x.Refs)-1].End()
+}
 
 func (x *Ident) exprNode()             {}
 func (x *ParametrizedIdent) exprNode() {}
@@ -254,8 +318,8 @@ type (
 	}
 
 	AltStmt struct {
-		Tok   Token
-		Block *BlockStmt
+		Tok  Token
+		Body *BlockStmt
 	}
 
 	ForStmt struct {
@@ -329,6 +393,46 @@ func (x *IfStmt) Pos() Pos      { return x.Tok.Pos() }
 func (x *SelectStmt) Pos() Pos  { return x.Tok.Pos() }
 func (x *CaseClause) Pos() Pos  { return x.Tok.Pos() }
 func (x *CommClause) Pos() Pos  { return x.LBrack.Pos() }
+
+func (x *BlockStmt) End() Pos { return x.RBrace.End() }
+func (x *DeclStmt) End() Pos  { return x.Decl.End() }
+func (x *ExprStmt) End() Pos  { return x.Expr.End() }
+
+func (x *BranchStmt) End() Pos {
+	if x.Label.End() != NoPos {
+		return x.Label.End()
+	}
+	return x.Tok.End()
+}
+
+func (x *ReturnStmt) End() Pos {
+	if x.Result != nil {
+		return x.Result.End()
+	}
+	return x.Tok.End()
+}
+
+func (x *AltStmt) End() Pos     { return x.Body.End() }
+func (x *ForStmt) End() Pos     { return x.Body.End() }
+func (x *WhileStmt) End() Pos   { return x.Body.End() }
+func (x *DoWhileStmt) End() Pos { return x.Cond.End() }
+
+func (x *IfStmt) End() Pos {
+	if x.Else != nil {
+		return x.Else.End()
+	}
+	return x.Then.End()
+}
+
+func (x *SelectStmt) End() Pos { return x.RBrace.End() }
+func (x *CaseClause) End() Pos { return x.Body.End() }
+
+func (x *CommClause) End() Pos {
+	if x.Body != nil {
+		return x.Body.End()
+	}
+	return x.Comm.End()
+}
 
 func (x *BlockStmt) stmtNode()   {}
 func (x *DeclStmt) stmtNode()    {}
@@ -408,6 +512,40 @@ func (x *StructSpec) Pos() Pos    { return x.Kind.Pos() }
 func (x *ListSpec) Pos() Pos      { return x.Kind.Pos() }
 func (x *EnumSpec) Pos() Pos      { return x.Tok.Pos() }
 func (x *BehaviourSpec) Pos() Pos { return x.Kind.Pos() }
+
+func (x *Field) End() Pos {
+	if x.Optional.End() != NoPos {
+		return x.Optional.End()
+	}
+	if x.LengthConstraint != nil {
+		return x.LengthConstraint.End()
+	}
+	if x.ValueConstraint != nil {
+		return x.ValueConstraint.End()
+	}
+	return x.Name.End()
+}
+
+func (x *RefSpec) End() Pos    { return x.X.End() }
+func (x *StructSpec) End() Pos { return x.RBrace.End() }
+func (x *ListSpec) End() Pos   { return x.ElemType.End() }
+func (x *EnumSpec) End() Pos   { return x.RBrace.End() }
+
+func (x *BehaviourSpec) End() Pos {
+	if x.Return != nil {
+		return x.Return.End()
+	}
+	if x.System != nil {
+		return x.System.End()
+	}
+	if x.RunsOn != nil {
+		return x.RunsOn.End()
+	}
+	if x.Params != nil {
+		return x.Params.End()
+	}
+	return x.Kind.End()
+}
 
 func (x *Field) typeSpecNode()         {}
 func (x *RefSpec) typeSpecNode()       {}
@@ -541,6 +679,110 @@ func (x *PortAttribute) Pos() Pos     { return x.Kind.Pos() }
 func (x *PortMapAttribute) Pos() Pos  { return x.MapTok.Pos() }
 func (x *ComponentTypeDecl) Pos() Pos { return x.TypeTok.Pos() }
 
+func (x *ValueDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.Decls[len(x.Decls)-1].End()
+}
+
+func (x *FuncDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	if x.Body != nil {
+		return x.Body.End()
+	}
+	if x.Return != nil {
+		return x.Return.End()
+	}
+	if x.Params != nil {
+		return x.Params.End()
+	}
+	return NoPos
+}
+
+func (x *SignatureDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	if x.Exception != nil {
+		return x.Exception.End()
+	}
+	if x.Return != nil {
+		return x.Return.End()
+	}
+	if x.NoBlock.End() != NoPos {
+		return x.NoBlock.End()
+	}
+	if x.Params != nil {
+		return x.Params.End()
+	}
+	return x.Name.End()
+}
+
+func (x *SubTypeDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.Field.End()
+}
+
+func (x *StructTypeDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
+}
+
+func (x *EnumTypeDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
+}
+
+func (x *BehaviourTypeDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	if x.Return != nil {
+		return x.Return.End()
+	}
+	if x.System != nil {
+		return x.System.End()
+	}
+	if x.RunsOn != nil {
+		return x.RunsOn.End()
+	}
+	if x.Params != nil {
+		return x.Params.End()
+	}
+	return x.Name.End()
+}
+
+func (x *PortTypeDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
+}
+
+func (x *PortAttribute) End() Pos {
+	return x.Types[len(x.Types)-1].End()
+}
+
+func (x *PortMapAttribute) End() Pos {
+	return x.Params.End()
+}
+
+func (x *ComponentTypeDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.Body.End()
+}
+
 func (x *ValueDecl) declNode()         {}
 func (x *FuncDecl) declNode()          {}
 func (x *SignatureDecl) declNode()     {}
@@ -622,6 +864,46 @@ func (x *ImportDecl) Pos() Pos  { return x.ImportTok.Pos() }
 func (x *ExceptSpec) Pos() Pos  { return NoPos }
 func (x *GroupDecl) Pos() Pos   { return x.Tok.Pos() }
 func (x *FriendDecl) Pos() Pos  { return x.FriendTok.Pos() }
+
+func (x *Module) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
+}
+
+func (x *ModuleDef) End() Pos {
+	return x.Def.End()
+}
+
+func (x *ControlPart) End() Pos {
+	return x.Body.End()
+}
+
+func (x *ImportDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
+}
+
+func (x *ExceptSpec) End() Pos {
+	return NoPos //TODO
+}
+
+func (x *GroupDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
+}
+
+func (x *FriendDecl) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.Module.End()
+}
 
 // ------------------------------------------------------------------------
 // Miscellaneous
@@ -713,3 +995,14 @@ func (x *FormalPar) Pos() Pos {
 
 func (x *WithSpec) Pos() Pos { return x.Tok.Pos() }
 func (x *WithStmt) Pos() Pos { return x.Kind.Pos() }
+
+func (x *LanguageSpec) End() Pos    { return x.List[len(x.List)-1].End() }
+func (x *RestrictionSpec) End() Pos { return x.Tok.End() }
+func (x *RunsOnSpec) End() Pos      { return x.Comp.End() }
+func (x *SystemSpec) End() Pos      { return x.Comp.End() }
+func (x *MtcSpec) End() Pos         { return x.Comp.End() }
+func (x *ReturnSpec) End() Pos      { return x.Type.End() }
+func (x *FormalPars) End() Pos      { return x.RParen.End() }
+func (x *FormalPar) End() Pos       { return x.Name.End() }
+func (x *WithSpec) End() Pos        { return x.RBrace.End() }
+func (x *WithStmt) End() Pos        { return x.Value.End() }
