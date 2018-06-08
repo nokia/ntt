@@ -817,6 +817,7 @@ type (
 	ControlPart struct {
 		Tok  Token
 		Body *BlockStmt
+		With *WithSpec
 	}
 
 	ImportDecl struct {
@@ -877,6 +878,9 @@ func (x *ModuleDef) End() Pos {
 }
 
 func (x *ControlPart) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
 	return x.Body.End()
 }
 

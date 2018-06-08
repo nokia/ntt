@@ -1049,7 +1049,7 @@ func (p *parser) parseModuleDef() *ModuleDef {
 	case FUNCTION, TESTCASE, ALTSTEP:
 		m.Def = p.parseFuncDecl()
 	case CONTROL:
-		m.Def = &ControlPart{Tok: p.consume(), Body: p.parseBlockStmt()}
+		m.Def = &ControlPart{Tok: p.consume(), Body: p.parseBlockStmt(), With: p.parseWith()}
 	case EXTERNAL:
 		switch p.peek(2).Kind {
 		case FUNCTION:
