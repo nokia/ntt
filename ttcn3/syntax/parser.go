@@ -1695,29 +1695,35 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
  * Module FormalPar
  *************************************************************************/
 
-func (p *parser) parseModulePar() *ValueDecl {
+func (p *parser) parseModulePar() Decl {
 	if p.trace {
 		defer un(trace(p, "ModulePar"))
 	}
 
-	x := &ValueDecl{Kind: p.consume()}
+	tok := p.consume()
 
+	// parse deprecated module parameter group
 	if p.tok == LBRACE {
-		p.consume()
+		x := &ModuleParameterGroup{Tok: tok}
+		x.LBrace = p.consume()
 		for p.tok != RBRACE && p.tok != EOF {
-			p.parseRestrictionSpec()
-			p.parseTypeRef()
-			p.parseExprList()
+			d := new(ValueDecl)
+			d.TemplateRestriction = p.parseRestrictionSpec()
+			d.Type = p.parseTypeRef()
+			d.Decls = p.parseExprList()
 			p.expectSemi()
+			x.Decls = append(x.Decls, d)
 		}
-		p.expect(RBRACE)
-	} else {
-		p.parseRestrictionSpec()
-		p.parseTypeRef()
-		p.parseExprList()
+		x.RBrace = p.expect(RBRACE)
+		x.With = p.parseWith()
+		return x
 	}
 
-	p.parseWith()
+	x := &ValueDecl{Kind: tok}
+	x.TemplateRestriction = p.parseRestrictionSpec()
+	x.Type = p.parseTypeRef()
+	x.Decls = p.parseExprList()
+	x.With = p.parseWith()
 	return x
 }
 

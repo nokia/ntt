@@ -564,6 +564,14 @@ type (
 		With                *WithSpec
 	}
 
+	ModuleParameterGroup struct {
+		Tok    Token
+		LBrace Token
+		Decls  []*ValueDecl
+		RBrace Token
+		With   *WithSpec
+	}
+
 	FuncDecl struct {
 		External Token
 		Kind     Token
@@ -660,7 +668,16 @@ type (
 	}
 )
 
-func (x *ValueDecl) Pos() Pos { return x.Kind.Pos() }
+func (x *ValueDecl) Pos() Pos {
+	if x.Kind.Pos() != NoPos {
+		return x.Kind.Pos()
+	}
+	return x.Type.Pos()
+}
+
+func (x *ModuleParameterGroup) Pos() Pos {
+	return x.Tok.Pos()
+}
 
 func (x *FuncDecl) Pos() Pos {
 	if x.External.Kind == EXTERNAL {
@@ -684,6 +701,13 @@ func (x *ValueDecl) End() Pos {
 		return x.With.End()
 	}
 	return x.Decls[len(x.Decls)-1].End()
+}
+
+func (x *ModuleParameterGroup) End() Pos {
+	if x.With != nil {
+		return x.With.End()
+	}
+	return x.RBrace.End()
 }
 
 func (x *FuncDecl) End() Pos {
@@ -783,17 +807,18 @@ func (x *ComponentTypeDecl) End() Pos {
 	return x.Body.End()
 }
 
-func (x *ValueDecl) declNode()         {}
-func (x *FuncDecl) declNode()          {}
-func (x *SignatureDecl) declNode()     {}
-func (x *SubTypeDecl) declNode()       {}
-func (x *StructTypeDecl) declNode()    {}
-func (x *EnumTypeDecl) declNode()      {}
-func (x *BehaviourTypeDecl) declNode() {}
-func (x *PortTypeDecl) declNode()      {}
-func (x *PortAttribute) declNode()     {}
-func (x *PortMapAttribute) declNode()  {}
-func (x *ComponentTypeDecl) declNode() {}
+func (x *ValueDecl) declNode()            {}
+func (x *ModuleParameterGroup) declNode() {}
+func (x *FuncDecl) declNode()             {}
+func (x *SignatureDecl) declNode()        {}
+func (x *SubTypeDecl) declNode()          {}
+func (x *StructTypeDecl) declNode()       {}
+func (x *EnumTypeDecl) declNode()         {}
+func (x *BehaviourTypeDecl) declNode()    {}
+func (x *PortTypeDecl) declNode()         {}
+func (x *PortAttribute) declNode()        {}
+func (x *PortMapAttribute) declNode()     {}
+func (x *ComponentTypeDecl) declNode()    {}
 
 // ------------------------------------------------------------------------
 // Modules and Module Definitions
