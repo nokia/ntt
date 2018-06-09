@@ -280,7 +280,7 @@ func (s *Scanner) scanBString() string {
 
 	for {
 		ch := s.ch
-		if ch == '\n' || ch < 0 {
+		if ch < 0 {
 			s.error(offs, "string literal not terminated")
 			break
 		}
@@ -293,7 +293,9 @@ func (s *Scanner) scanBString() string {
 			s.error(s.offset-1, "missing string specifier (O, H or B)")
 			break
 		}
-
+		if ch == '\\' {
+			s.next()
+		}
 	}
 
 	return string(s.src[offs:s.offset])
@@ -305,7 +307,7 @@ func (s *Scanner) scanString() string {
 
 	for {
 		ch := s.ch
-		if ch == '\n' || ch < 0 {
+		if ch < 0 {
 			s.error(offs, "string literal not terminated")
 			break
 		}
