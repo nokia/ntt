@@ -2070,10 +2070,28 @@ func (p *parser) parseStmt() Stmt {
 	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
 		x := p.parseSimpleStmt()
 
-		// call-statement block
+		// try call-statement block
 		if p.tok == LBRACE {
-			// TODO(5nord) check if x is call-expression
-			p.parseBlockStmt()
+			c, ok := x.Expr.(*CallExpr)
+			if !ok {
+				return x
+			}
+			s, ok := c.Fun.(*SelectorExpr)
+			if !ok {
+				return x
+			}
+			id, ok := s.Sel.(*Ident)
+			if !ok {
+				return x
+			}
+			if id.Tok.Lit != "call" {
+				return x
+			}
+
+			call := new(CallStmt)
+			call.Stmt = x
+			call.Body = p.parseBlockStmt()
+			return call
 		}
 		return x
 	default:
@@ -2183,7 +2201,7 @@ func (p *parser) parseAltGuard() *CommClause {
 	return x
 }
 
-func (p *parser) parseSimpleStmt() Stmt {
+func (p *parser) parseSimpleStmt() *ExprStmt {
 	if p.trace {
 		defer un(trace(p, "SimpleStmt"))
 	}

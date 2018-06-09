@@ -322,6 +322,11 @@ type (
 		Body *BlockStmt
 	}
 
+	CallStmt struct {
+		Stmt Stmt
+		Body *BlockStmt
+	}
+
 	ForStmt struct {
 		Tok      Token
 		LParen   Token
@@ -385,6 +390,7 @@ func (x *DeclStmt) Pos() Pos    { return x.Decl.Pos() }
 func (x *ExprStmt) Pos() Pos    { return x.Expr.Pos() }
 func (x *BranchStmt) Pos() Pos  { return x.Tok.Pos() }
 func (x *ReturnStmt) Pos() Pos  { return x.Tok.Pos() }
+func (x *CallStmt) Pos() Pos    { return x.Stmt.Pos() }
 func (x *AltStmt) Pos() Pos     { return x.Tok.Pos() }
 func (x *ForStmt) Pos() Pos     { return x.Tok.Pos() }
 func (x *WhileStmt) Pos() Pos   { return x.Tok.Pos() }
@@ -412,6 +418,7 @@ func (x *ReturnStmt) End() Pos {
 	return x.Tok.End()
 }
 
+func (x *CallStmt) End() Pos    { return x.Body.End() }
 func (x *AltStmt) End() Pos     { return x.Body.End() }
 func (x *ForStmt) End() Pos     { return x.Body.End() }
 func (x *WhileStmt) End() Pos   { return x.Body.End() }
@@ -439,6 +446,7 @@ func (x *DeclStmt) stmtNode()    {}
 func (x *ExprStmt) stmtNode()    {}
 func (x *BranchStmt) stmtNode()  {}
 func (x *ReturnStmt) stmtNode()  {}
+func (x *CallStmt) stmtNode()    {}
 func (x *AltStmt) stmtNode()     {}
 func (x *ForStmt) stmtNode()     {}
 func (x *WhileStmt) stmtNode()   {}
