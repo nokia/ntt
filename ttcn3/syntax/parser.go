@@ -732,7 +732,7 @@ func (p *parser) parseCallPattern() *PatternExpr {
 	if p.tok == MODIF {
 		c.NoCase = p.consume()
 	}
-	c.X = &ValueLiteral{p.expect(STRING)}
+	c.X = p.parseExpr()
 	return c
 }
 

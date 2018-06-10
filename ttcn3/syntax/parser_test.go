@@ -75,6 +75,8 @@ func TestExprs(t *testing.T) {
 		{pass, `p := decmatch M: {f1:= 10, f2 := '1001'B}`},
 		{pass, `p := decmatch ("UTF-8") M: {f1:= 10, f2 := '1001'B}`},
 		{pass, `p := @decoded payload`},
+		{pass, `p := pattern ".*" & p & "$"`},
+		{pass, `p := pattern @nocase ".*" & p & "$"`},
 		{pass, `regexp @nocase(x,charstring:"?+(text)?+",0)`},
 		{pass, `match(ptc.alive, false)`},
 		{pass, `x.universal charstring := "FF80"`},
