@@ -1751,22 +1751,22 @@ func (p *parser) parseValueDecl() *ValueDecl {
 }
 
 func (p *parser) parseRestrictionSpec() *RestrictionSpec {
+	x := new(RestrictionSpec)
 	switch p.tok {
 	case TEMPLATE:
-		x := &RestrictionSpec{Tok: p.consume()}
+		x.TemplateTok = p.consume()
 		if p.tok != LPAREN {
-			return x
+			return nil
 		}
 
-		p.consume()
+		x.LParen = p.consume()
 		x.Tok = p.consume()
-		p.expect(RPAREN)
+		x.RParen = p.expect(RPAREN)
 
 	case OMIT, VALUE, PRESENT:
-		x := &RestrictionSpec{Tok: p.consume()}
-		return x
+		x.Tok = p.consume()
 	}
-	return nil
+	return x
 }
 
 /*************************************************************************

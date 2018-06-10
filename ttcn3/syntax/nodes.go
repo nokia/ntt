@@ -952,7 +952,10 @@ type (
 	}
 
 	RestrictionSpec struct {
-		Tok Token
+		TemplateTok Token
+		LParen      Token
+		Tok         Token
+		RParen      Token
 	}
 
 	RunsOnSpec struct {
@@ -1009,13 +1012,18 @@ type (
 	}
 )
 
-func (x *LanguageSpec) Pos() Pos    { return x.Tok.Pos() }
-func (x *RestrictionSpec) Pos() Pos { return x.Tok.Pos() }
-func (x *RunsOnSpec) Pos() Pos      { return x.RunsTok.Pos() }
-func (x *SystemSpec) Pos() Pos      { return x.Tok.Pos() }
-func (x *MtcSpec) Pos() Pos         { return x.Tok.Pos() }
-func (x *ReturnSpec) Pos() Pos      { return x.Tok.Pos() }
-func (x *FormalPars) Pos() Pos      { return x.LParen.Pos() }
+func (x *LanguageSpec) Pos() Pos { return x.Tok.Pos() }
+func (x *RestrictionSpec) Pos() Pos {
+	if x.TemplateTok.Pos() != NoPos {
+		return x.TemplateTok.Pos()
+	}
+	return x.Tok.Pos()
+}
+func (x *RunsOnSpec) Pos() Pos { return x.RunsTok.Pos() }
+func (x *SystemSpec) Pos() Pos { return x.Tok.Pos() }
+func (x *MtcSpec) Pos() Pos    { return x.Tok.Pos() }
+func (x *ReturnSpec) Pos() Pos { return x.Tok.Pos() }
+func (x *FormalPars) Pos() Pos { return x.LParen.Pos() }
 
 func (x *FormalPar) Pos() Pos {
 	if x.Direction.Pos() != NoPos {
@@ -1033,13 +1041,18 @@ func (x *FormalPar) Pos() Pos {
 func (x *WithSpec) Pos() Pos { return x.Tok.Pos() }
 func (x *WithStmt) Pos() Pos { return x.Kind.Pos() }
 
-func (x *LanguageSpec) End() Pos    { return x.List[len(x.List)-1].End() }
-func (x *RestrictionSpec) End() Pos { return x.Tok.End() }
-func (x *RunsOnSpec) End() Pos      { return x.Comp.End() }
-func (x *SystemSpec) End() Pos      { return x.Comp.End() }
-func (x *MtcSpec) End() Pos         { return x.Comp.End() }
-func (x *ReturnSpec) End() Pos      { return x.Type.End() }
-func (x *FormalPars) End() Pos      { return x.RParen.End() }
-func (x *FormalPar) End() Pos       { return x.Name.End() }
-func (x *WithSpec) End() Pos        { return x.RBrace.End() }
-func (x *WithStmt) End() Pos        { return x.Value.End() }
+func (x *LanguageSpec) End() Pos { return x.List[len(x.List)-1].End() }
+func (x *RestrictionSpec) End() Pos {
+	if x.RParen.End() != NoPos {
+		return x.RParen.End()
+	}
+	return x.Tok.End()
+}
+func (x *RunsOnSpec) End() Pos { return x.Comp.End() }
+func (x *SystemSpec) End() Pos { return x.Comp.End() }
+func (x *MtcSpec) End() Pos    { return x.Comp.End() }
+func (x *ReturnSpec) End() Pos { return x.Type.End() }
+func (x *FormalPars) End() Pos { return x.RParen.End() }
+func (x *FormalPar) End() Pos  { return x.Name.End() }
+func (x *WithSpec) End() Pos   { return x.RBrace.End() }
+func (x *WithStmt) End() Pos   { return x.Value.End() }
