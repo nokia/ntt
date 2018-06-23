@@ -248,9 +248,6 @@ func (p *parser) error(pos Pos, msg string) {
 		}
 	}
 
-	if p.scanner.Err != nil {
-		p.scanner.Err(epos, msg)
-	}
 	p.errors.Add(epos, msg)
 }
 

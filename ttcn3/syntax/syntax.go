@@ -21,8 +21,8 @@ const (
 )
 
 // ParseFile behaves like Parse
-func ParseFile(filename string, eh func(pos Position, msg string)) ([]Node, error) {
-	return Parse(NewFileSet(), filename, nil, 0, eh)
+func ParseFile(filename string, eh func(pos Position, msg string)) ([]*Module, error) {
+	return ParseModules(NewFileSet(), filename, nil, 0, eh)
 }
 
 // Parse parses the source code of a single source file and returns
@@ -46,7 +46,7 @@ func ParseFile(filename string, eh func(pos Position, msg string)) ([]Node, erro
 //
 func Parse(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorHandler) (root []Node, err error) {
 	if fset == nil {
-		panic("ParseModule: no FileSet provided (fset == nil)")
+		panic("Parse: no FileSet provided (fset == nil)")
 	}
 
 	// get source
@@ -71,6 +71,35 @@ func Parse(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorH
 	// parse source
 	p.init(fset, filename, text, mode, eh)
 	return p.parse(), nil
+}
+
+func ParseModules(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorHandler) (root []*Module, err error) {
+	if fset == nil {
+		panic("ParseModules: no FileSet provided (fset == nil)")
+	}
+
+	// get source
+	text, err := readSource(filename, src)
+	if err != nil {
+		return nil, err
+	}
+
+	var p parser
+	defer func() {
+		if e := recover(); e != nil {
+			// resume same panic if it's not a bailout
+			if _, ok := e.(bailout); !ok {
+				panic(e)
+			}
+		}
+
+		p.errors.Sort()
+		err = p.errors.Err()
+	}()
+
+	// parse source
+	p.init(fset, filename, text, mode, eh)
+	return p.parseModuleList(), nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
