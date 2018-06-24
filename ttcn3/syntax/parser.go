@@ -1315,7 +1315,7 @@ func (p *parser) parseTypeDecl() Decl {
 	case UNION:
 		return p.parseStructTypeDecl()
 	case SET, RECORD:
-		if p.peek(3).Kind == IDENT {
+		if p.peek(3).Kind == IDENT || p.peek(3).Kind == ADDRESS {
 			return p.parseStructTypeDecl()
 		}
 		// lists are also parsed by parseSubTypeDecl

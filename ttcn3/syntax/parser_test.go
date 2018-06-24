@@ -225,6 +225,7 @@ func TestTypes(t *testing.T) {
 		{pass, `type set length(1) of set length(2) of int() s length(3)`},
 
 		// Struct Types
+		{pass, `type set address {}`},
 		{pass, `type set s {}`},
 		{pass, `type set s {int a optional }`},
 		{pass, `type set s {set length(1) of set length(2) of int() f1[-][-] length(3) optional}`},
