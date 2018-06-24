@@ -42,7 +42,7 @@ var printers = map[string]func(string, *syntax.Module, syntax.Node){
 
 func printModules(file string, m *syntax.Module, n syntax.Node) {
 	if Verbose {
-		fmt.Print(file, ": ")
+		fmt.Fprint(w, file, ": ")
 	}
 	fmt.Fprintln(w, m.Name.Tok.Lit)
 }
