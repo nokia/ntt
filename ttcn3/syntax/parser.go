@@ -1777,13 +1777,13 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 
 	x := new(FuncDecl)
 	x.Kind = p.consume()
+	if p.tok == MODIF {
+		x.Modif = p.consume()
+	}
+
 	x.Name = p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
-	}
-
-	if p.tok == MODIF {
-		x.Modif = p.consume()
 	}
 
 	x.Params = p.parseFormalPars()
@@ -1824,11 +1824,11 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 	x := new(FuncDecl)
 	x.External = p.consume()
 	x.Kind = p.consume()
-	x.Name = p.parseIdent()
-
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
+
+	x.Name = p.parseIdent()
 
 	x.Params = p.parseFormalPars()
 

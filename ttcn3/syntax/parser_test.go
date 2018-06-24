@@ -95,7 +95,7 @@ func TestFuncDecls(t *testing.T) {
 		{pass, `function f() return template int {}`},
 		{pass, `function f() return template(value) int {}`},
 		{pass, `function f() return value int {}`},
-		{pass, `function f @deterministic () {}`},
+		{pass, `function @deterministic f() {}`},
 		{pass, `function f() runs on A[-] {}`},
 		{pass, `function f() mtc C {}`},
 		{pass, `function f() runs on C mtc C system C {}`},
