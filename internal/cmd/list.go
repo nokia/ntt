@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/nokia/ntt/ttcn3/loader"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
@@ -19,6 +21,8 @@ Default output shows the testcase names in current directory.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
+
+	w = bufio.NewWriter(os.Stdout)
 )
 
 var printers = map[string]func(string, *syntax.Module, syntax.Node){
@@ -40,7 +44,7 @@ func printModules(file string, m *syntax.Module, n syntax.Node) {
 	if Verbose {
 		fmt.Print(file, ": ")
 	}
-	fmt.Println(m.Name.Tok.Lit)
+	fmt.Fprintln(w, m.Name.Tok.Lit)
 }
 
 func printTests(file string, m *syntax.Module, n syntax.Node) {
@@ -52,9 +56,9 @@ func printTests(file string, m *syntax.Module, n syntax.Node) {
 				break
 			}
 			if Verbose {
-				fmt.Print(file, ": ")
+				fmt.Fprint(w, file, ": ")
 			}
-			fmt.Println(m.Name.Tok.Lit + "." + x.Name.Tok.Lit)
+			fmt.Fprintln(w, m.Name.Tok.Lit+"."+x.Name.Tok.Lit)
 		}
 	}
 }
@@ -65,9 +69,9 @@ func printImports(file string, m *syntax.Module, n syntax.Node) {
 		case *syntax.GroupDecl:
 		case *syntax.ImportDecl:
 			if Verbose {
-				fmt.Print(file, ": ")
+				fmt.Fprint(w, file, ": ")
 			}
-			fmt.Println(m.Name.Tok.Lit, "<-", x.Module.Tok.Lit)
+			fmt.Fprintln(w, m.Name.Tok.Lit, "<-", x.Module.Tok.Lit)
 		}
 	}
 }
@@ -100,6 +104,6 @@ func list(cmd *cobra.Command, args []string) error {
 		}
 		printer(file, m, m)
 	}
-
+	w.Flush()
 	return nil
 }
