@@ -51,6 +51,12 @@ func printTests(file string, m *syntax.Module, n syntax.Node) {
 	for _, def := range m.Decls {
 		switch x := def.Def.(type) {
 		case *syntax.GroupDecl:
+		case *syntax.ControlPart:
+			if Verbose {
+				fmt.Fprint(w, file, ": ")
+			}
+			fmt.Fprintln(w, m.Name.Tok.Lit+".control")
+
 		case *syntax.FuncDecl:
 			if x.Kind.Kind != syntax.TESTCASE {
 				break
