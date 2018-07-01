@@ -1,9 +1,5 @@
 package syntax
 
-// ----------------------------------------------------------------------------
-// Interfaces
-//
-
 // All node types implement the Node interface.
 type Node interface {
 	Pos() Pos
@@ -28,13 +24,11 @@ type Decl interface {
 	declNode()
 }
 
-// Tokens
-// ------------------------------------------------------------------------
-
+// A Token represents a TTCN-3 token and implements the Node interface. Tokens are leave-nodes.
 type Token struct {
 	pos  Pos
-	Kind Kind
-	Lit  string
+	Kind Kind   // Token kind like TESTCASE, SEMICOLON, COMMENT, ...
+	Lit  string // Token values for non-operator tokens
 }
 
 func (x Token) Pos() Pos { return x.pos }
@@ -48,145 +42,163 @@ func (x Token) End() Pos {
 	return NoPos
 }
 
-// ------------------------------------------------------------------------
-// Expressions
-//
 type (
+	// Ident represents an identifier.
 	Ident struct {
-		Tok  Token
-		Tok2 Token
+		Tok  Token // first identifier token
+		Tok2 Token // optional second identifier token, e.g. for "any port"
 	}
 
+	// ParametrizedIdent represents a paremetrized identifier, e.g. "f<charstring>".
 	ParametrizedIdent struct {
-		Ident  *Ident
-		Params Expr
+		Ident  *Ident     // Identifier
+		Params *ParenExpr // Parameter list
 	}
 
+	// A ValueLiteral represents simple literals, like integers, charstrings, ...
 	ValueLiteral struct {
 		Tok Token
 	}
 
+	// A CompositeLiteral represents composite literals, e.g. "{x:=23, y:=5}".
 	CompositeLiteral struct {
-		LBrace Token
-		List   []Expr
-		RBrace Token
+		LBrace Token  // Position of "{"
+		List   []Expr // Expression list
+		RBrace Token  // Position of "{"
 	}
 
+	// A UnaryExpr represents a unary expresions.
 	UnaryExpr struct {
-		Op Token
+		Op Token // Operator token, like "+", "-", "!", ...
 		X  Expr
 	}
 
+	// A BinaryExpr represents a binary expression.
+	// Possible operands are all tokens with a precedence value, TO and FROM.
 	BinaryExpr struct {
-		X  Expr
-		Op Token
-		Y  Expr
+		X  Expr  // First operand
+		Op Token // Operator token
+		Y  Expr  // Second operand
 	}
 
+	// A ParenExpr represents parenthized expression lists.
 	ParenExpr struct {
-		LParen Token
-		List   []Expr
-		RParen Token
+		LParen Token  // Position of "(", "<"
+		List   []Expr // Expression list
+		RParen Token  // Position of ")", ">"
 	}
 
+	// A SelectorExpr represents an expression followed by a selector.
 	SelectorExpr struct {
-		X   Expr
-		Dot Token
-		Sel Expr
+		X   Expr  // Preceding expression (might be nil)
+		Dot Token // Position of "."
+		Sel Expr  // Literal, identifier or reference.
 	}
 
+	// A IndexExpr represents an expression followed by an index.
 	IndexExpr struct {
-		X      Expr
-		LBrack Token
-		Index  Expr
-		RBrack Token
+		X      Expr  // Preceding expression (might be nil)
+		LBrack Token // Position of "["
+		Index  Expr  // Actuall index expression (might be "-")
+		RBrack Token // Position of "]"
 	}
 
+	// A CallExpr represents a regular function call.
 	CallExpr struct {
-		Fun  Expr
-		Args *ParenExpr
+		Fun  Expr       // Function expression
+		Args *ParenExpr // Function arguments
 	}
 
+	// A LengthExpr represents a length expression.
 	LengthExpr struct {
-		X    Expr
-		Len  Token
-		Size Expr
+		X    Expr       // Preceding expression
+		Len  Token      // Position of "length" keyword
+		Size *ParenExpr // Size expression
 	}
 
+	// A RedirectExpr represents various redirect expressions
 	RedirectExpr struct {
-		X             Expr
-		Tok           Token
-		ValueTok      Token
-		Value         []Expr
-		ParamTok      Token
-		Param         []Expr
-		SenderTok     Token
-		Sender        Expr
-		IndexTok      Token
-		IndexValueTok Token
-		Index         Expr
-		TimestampTok  Token
-		Timestamp     Expr
+		X             Expr   // Preceding redirected expression
+		Tok           Token  // Position of "->"
+		ValueTok      Token  // Position of "value" or nil
+		Value         []Expr // Value expression
+		ParamTok      Token  // Position of "param" or nil
+		Param         []Expr // Param expression
+		SenderTok     Token  // Position of "sender" or nil
+		Sender        Expr   // Sender expression
+		IndexTok      Token  // Position of "@index" or nil
+		IndexValueTok Token  // Position of "value" or nil
+		Index         Expr   // Index expression
+		TimestampTok  Token  // Position of "timestamp" or nil
+		Timestamp     Expr   // Timestamp expression
 	}
 
-	// Required for Signatures
+	// A ValueExpr represents the return value used by signature based communication.
 	ValueExpr struct {
-		X   Expr
-		Tok Token
-		Y   Expr
+		X   Expr  // Preceding template expression
+		Tok Token // Position of "value"
+		Y   Expr  // Value expression
 	}
 
-	// Required for map param, unmap param
+	// A ParamExpr represents parametrized map and unmap statements.
 	ParamExpr struct {
-		X   Expr
-		Tok Token
-		Y   Expr
+		X   Expr  // map or unmap statement
+		Tok Token // Position "param"
+		Y   Expr  // Additional arguments for map/unmap
 	}
 
+	// A FromExpr represents a "from" expression, like "any from a".
 	FromExpr struct {
-		Kind    Token
-		FromTok Token
-		X       Expr
+		Kind    Token // ANY or ALL
+		FromTok Token // Position of "from"
+		X       Expr  // Expression
 	}
 
+	// A ModifiesExpr represents a "modifies" expression.
 	ModifiesExpr struct {
-		Tok    Token
-		X      Expr
-		Assign Token
-		Y      Expr
+		Tok    Token // Position of "modifies"
+		X      Expr  // Base template expression
+		Assign Token // Position of ":="
+		Y      Expr  // Modifying expression
 	}
 
+	// A RegexExpr represents a "regexp" expression.
 	RegexpExpr struct {
-		Tok    Token
-		NoCase Token
-		X      Expr
+		Tok    Token // Position of "regexp"
+		NoCase Token // Position of "@nocase" or nil
+		X      Expr  // Regex expression
 	}
 
+	// A PatternExpr represents a "pattern" expression.
 	PatternExpr struct {
-		Tok    Token
-		NoCase Token
-		X      Expr
+		Tok    Token // Position of "pattern"
+		NoCase Token // Position of "@nocase" of nil
+		X      Expr  // Pattern expression
 	}
 
+	// A DecmatchExpr represents a "decmatch" expression.
 	DecmatchExpr struct {
-		Tok    Token
-		Params Expr
-		X      Expr
+		Tok    Token // Position of "decmatch"
+		Params Expr  // Parameter list or nil
+		X      Expr  // Template expression
 	}
 
+	// A DecodedExpr represents a "@decoded" expression.
 	DecodedExpr struct {
-		Tok    Token
-		Params Expr
-		X      Expr
+		Tok    Token // Position of "decoded"
+		Params Expr  // Parameter list or nil
+		X      Expr  // Template expression
 	}
 
+	// A DefSelectorExpr represents a definition type selector expression,
+	// used by imports and with attributes, like "all types except a, b"
 	DefSelectorExpr struct {
 		Kind      Token  // TYPE, TEMPLATE, CONST, ...
 		Refs      []Expr // ALL, ids
-		ExceptTok Token
-		LBrace    Token
-		Except    []Expr
-		RBrace    Token
+		ExceptTok Token  // Position of "except" or nil
+		LBrace    Token  // Position of "{" or nil
+		Except    []Expr // Expression list
+		RBrace    Token  // Position of "}" or nil
 	}
 )
 
@@ -289,99 +301,112 @@ func (x *DecmatchExpr) exprNode()      {}
 func (x *DecodedExpr) exprNode()       {}
 func (x *DefSelectorExpr) exprNode()   {}
 
-// ------------------------------------------------------------------------
-// Statements
-
 type (
+	// A BlockStmt represents a curly braces enclosed list of statements.
 	BlockStmt struct {
-		LBrace Token
-		Stmts  []Stmt
-		RBrace Token
+		LBrace Token  // Position of "{"
+		Stmts  []Stmt // List of statements
+		RBrace Token  // Position of "}"
 	}
 
+	// A DeclStmt represents a value declaration used as statement, lika a
+	// local variable declaration.
 	DeclStmt struct {
 		Decl Decl
 	}
 
+	// An ExprStmt represents a expression used as statement, like an
+	// assignment or function call.
 	ExprStmt struct {
 		Expr Expr
 	}
 
+	// A BranchStmt represents a branch statement.
 	BranchStmt struct {
-		Tok   Token
-		Label Token
+		Tok   Token // REPEAT, BREAK, CONTINUE, LABEL, GOTO
+		Label Token // Label literal or nil
 	}
 
+	// A ReturnStmt represents a return statement.
 	ReturnStmt struct {
-		Tok    Token
-		Result Expr
+		Tok    Token // Position of "return"
+		Result Expr  // Resulting expression of nil
 	}
 
+	// A AltStmt represents an alternative statement.
 	AltStmt struct {
-		Tok  Token
-		Body *BlockStmt
+		Tok  Token      // ALT or INTERLEAVE
+		Body *BlockStmt // Block statement with alternations
 	}
 
+	// A CallStmt represents a "call" statement with communication-block.
 	CallStmt struct {
-		Stmt Stmt
-		Body *BlockStmt
+		Stmt Stmt       // "call" statement
+		Body *BlockStmt // Block statement with alternations
 	}
 
+	// A ForStmt represents a "for" statement.
 	ForStmt struct {
-		Tok      Token
-		LParen   Token
-		Init     Stmt
-		InitSemi Token
-		Cond     Expr
-		CondSemi Token
-		Post     Stmt
-		RParen   Token
-		Body     *BlockStmt
+		Tok      Token      // Position of "for"
+		LParen   Token      // Position of "("
+		Init     Stmt       // Initialization statement
+		InitSemi Token      // Position of ";"
+		Cond     Expr       // Conditional expression
+		CondSemi Token      // Position of ";"
+		Post     Stmt       // Post iteration statement
+		RParen   Token      // Position of ")"
+		Body     *BlockStmt // Loop-Body
 	}
 
+	// A WhilStmt represents a "while" statement.
 	WhileStmt struct {
-		Tok  Token
-		Cond *ParenExpr
-		Body *BlockStmt
+		Tok  Token      // Position of "while"
+		Cond *ParenExpr // Conditional expression
+		Body *BlockStmt // Loop-body
 	}
 
+	// A DoWhileStmt represents a do-while statement.
 	DoWhileStmt struct {
-		DoTok    Token
-		Body     *BlockStmt
-		WhileTok Token
-		Cond     *ParenExpr
+		DoTok    Token      // Position of "do"
+		Body     *BlockStmt // Loop-Body
+		WhileTok Token      // Position of "while"
+		Cond     *ParenExpr // Conditional expression
 	}
 
+	// A IfStmt represents a conditional statement.
 	IfStmt struct {
-		Tok     Token
-		Cond    Expr
-		Then    *BlockStmt
-		ElseTok Token
-		Else    Stmt
+		Tok     Token      // Position of "if"
+		Cond    Expr       // Conditional expression
+		Then    *BlockStmt // True branch
+		ElseTok Token      // Position of "else" or nil
+		Else    Stmt       // Else branch
 	}
 
+	// A SelectStmt represents a select statements.
 	SelectStmt struct {
-		Tok    Token
-		Union  Token
-		Tag    *ParenExpr
-		LBrace Token
-		Body   []*CaseClause
-		RBrace Token
+		Tok    Token         // Position of "select"
+		Union  Token         // Position of "union" or nil
+		Tag    *ParenExpr    // Tag expression
+		LBrace Token         // Position of "{"
+		Body   []*CaseClause // List of case clauses
+		RBrace Token         // Position of "}"
 	}
 
+	// A CaseClause represents a case clause.
 	CaseClause struct {
-		Tok  Token
+		Tok  Token      // Position of "case"
 		Case *ParenExpr // nil means else-case
-		Body *BlockStmt
+		Body *BlockStmt // Case body
 	}
 
+	// A CommClause represents communication clauses used by alt, interleave or check.
 	CommClause struct {
-		LBrack Token
-		X      Expr
-		Else   Token
-		RBrack Token
-		Comm   Stmt
-		Body   *BlockStmt
+		LBrack Token      // Position of '['
+		X      Expr       // Conditional guard expression or nil
+		Else   Token      // Else-clause of nil
+		RBrack Token      // Position of ']'
+		Comm   Stmt       // Communication statement
+		Body   *BlockStmt // Body of nil
 	}
 )
 
@@ -456,55 +481,59 @@ func (x *SelectStmt) stmtNode()  {}
 func (x *CaseClause) stmtNode()  {}
 func (x *CommClause) stmtNode()  {}
 
-// ------------------------------------------------------------------------
-// Declarations and Types
-
+// All nested types implement TypeSpec interface.
 type TypeSpec interface {
 	Node
 	typeSpecNode()
 }
 
 type (
+	// A Field represents a named struct member or sub type definition
 	Field struct {
-		DefaultTok       Token
-		Type             TypeSpec
-		Name             Expr
-		ValueConstraint  *ParenExpr
-		LengthConstraint *LengthExpr
-		Optional         Token
+		DefaultTok       Token       // Position of "@default" or nil
+		Type             TypeSpec    // Type
+		Name             Expr        // Name
+		ValueConstraint  *ParenExpr  // Value constraint or nil
+		LengthConstraint *LengthExpr // Length constraint or nil
+		Optional         Token       // Position of "optional" or nil
 	}
 
+	// A RefSpec represents a type reference.
 	RefSpec struct {
 		X Expr
 	}
 
+	// A StructSpec represents a struct type specification.
 	StructSpec struct {
-		Kind   Token // RECORD, SET, UNION
-		LBrace Token
-		Fields []*Field
-		RBrace Token
+		Kind   Token    // RECORD, SET, UNION
+		LBrace Token    // Position of "{"
+		Fields []*Field // Member list
+		RBrace Token    // Position of "}"
 	}
 
+	// A ListSpec represents a list type specification.
 	ListSpec struct {
-		Kind     Token // RECORD, SET
-		Length   *LengthExpr
-		OfTok    Token
-		ElemType TypeSpec
+		Kind     Token       // RECORD, SET
+		Length   *LengthExpr // Length constraint or nil
+		OfTok    Token       // Position of "of"
+		ElemType TypeSpec    // Element type specification
 	}
 
+	// A EnumSpec represents a enumeration type specification.
 	EnumSpec struct {
-		Tok    Token
-		LBrace Token
-		Enums  []Expr
-		RBrace Token
+		Tok    Token  // Position of "enumerated"
+		LBrace Token  // Position of "{"
+		Enums  []Expr // Enum list
+		RBrace Token  // Position of "}"
 	}
 
+	// A BehaviourSpec represents a behaviour type specification.
 	BehaviourSpec struct {
-		Kind   Token
-		Params *FormalPars
-		RunsOn *RunsOnSpec
-		System *SystemSpec
-		Return *ReturnSpec
+		Kind   Token       // TESTCASE, FUNCTION, ALTSTEP
+		Params *FormalPars // Parameter list or nil
+		RunsOn *RunsOnSpec // runs on spec or nil
+		System *SystemSpec // system spec or nil
+		Return *ReturnSpec // return value spec or nil
 	}
 )
 
@@ -563,82 +592,90 @@ func (x *EnumSpec) typeSpecNode()      {}
 func (x *BehaviourSpec) typeSpecNode() {}
 
 type (
+	// A ValueDecl represents a value declaration.
 	ValueDecl struct {
-		Kind                Token
+		Kind                Token // VAR, CONST, TIMER, PORT, TEMPLATE, MODULEPAR
 		TemplateRestriction *RestrictionSpec
-		Modif               Token
+		Modif               Token // "@lazy", "@fuzzy" or nil
 		Type                Expr
 		Decls               []Expr
 		With                *WithSpec
 	}
 
+	// A ModuleParameterGroup represents a deprecated module parameter list
 	ModuleParameterGroup struct {
-		Tok    Token
-		LBrace Token
-		Decls  []*ValueDecl
-		RBrace Token
+		Tok    Token        // Position of "modulepar"
+		LBrace Token        // Position of "{"
+		Decls  []*ValueDecl // Module parameter list
+		RBrace Token        // Position of "}"
 		With   *WithSpec
 	}
 
+	// A FuncDecl represents a behaviour definition.
 	FuncDecl struct {
-		External Token
-		Kind     Token
+		External Token // Position of "external" or nil
+		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
 		Name     *Ident
-		Modif    Token
-		Params   *FormalPars
-		RunsOn   *RunsOnSpec
-		Mtc      *MtcSpec
-		System   *SystemSpec
-		Return   *ReturnSpec
-		Body     *BlockStmt
+		Modif    Token       // Position of "@deterministic" or nil
+		Params   *FormalPars // Formal parameter list or nil
+		RunsOn   *RunsOnSpec // Optional runs-on-spec
+		Mtc      *MtcSpec    // Optional mtc-spec
+		System   *SystemSpec // Optional system-spec
+		Return   *ReturnSpec // Optional return-spec
+		Body     *BlockStmt  // Body or nil
 		With     *WithSpec
 	}
 
+	// A SignatureDecl represents a signature type for procedure based communication.
 	SignatureDecl struct {
-		Tok          Token
+		Tok          Token // Position of "signature"
 		Name         *Ident
 		Params       *FormalPars
-		NoBlock      Token
-		Return       *ReturnSpec
-		ExceptionTok Token
-		Exception    *ParenExpr
+		NoBlock      Token       // Optional "noblock"
+		Return       *ReturnSpec // Optional return-spec
+		ExceptionTok Token       // Position of "exeception" or nil
+		Exception    *ParenExpr  // Exception list
 		With         *WithSpec
 	}
 
+	// A SubTypeDecl represents a named sub type declaration
 	SubTypeDecl struct {
-		TypeTok Token
-		Field   *Field
+		TypeTok Token  // Position of "type"
+		Field   *Field // Field spec
 		With    *WithSpec
 	}
 
+	// A StructTypeDecl represents a name struct type.
 	StructTypeDecl struct {
-		TypeTok Token
-		Kind    Token // RECORD, SET, UNION
-		Name    Expr
-		LBrace  Token
-		Fields  []*Field
-		RBrace  Token
+		TypeTok Token    // Position of "type"
+		Kind    Token    // RECORD, SET, UNION
+		Name    Expr     // Name
+		LBrace  Token    // Position of "{"
+		Fields  []*Field // Member list
+		RBrace  Token    // Position of }"
 		With    *WithSpec
 	}
 
+	// A EnumTypeDecl represents a named enum type.
 	EnumTypeDecl struct {
-		TypeTok Token
-		EnumTok Token
+		TypeTok Token // Position of "type"
+		EnumTok Token // Position of "ENUMERATED"
 		Name    Expr
-		LBrace  Token
-		Enums   []Expr
-		RBrace  Token
+		LBrace  Token  // Position of "{"
+		Enums   []Expr // Enum list
+		RBrace  Token  // Position of "}"
 		With    *WithSpec
 	}
 
+	// A BehaviourTypeDecl represents a named behaviour type.
 	BehaviourTypeDecl struct {
-		TypeTok Token
-		Kind    Token
+		TypeTok Token // Position of "type"
+		Kind    Token // TESTCASE, ALTSTEP, FUNCTION
 		Name    Expr
-		Params  *FormalPars
-		RunsOn  *RunsOnSpec
-		System  *SystemSpec
-		Return  *ReturnSpec
+		Params  *FormalPars // Formal parameter list
+		RunsOn  *RunsOnSpec // Optional runs-on spec
+		System  *SystemSpec // Optional system spec
+		Return  *ReturnSpec // Optional return spec
 		With    *WithSpec
 	}
 

@@ -1,3 +1,15 @@
+// Package syntax implements a tolerant TTCN-3 parser library.
+//
+// It implements most of TTCN-3 core language specification 4.10 (2018) and various extensions:
+// * Advanced Parametrisation
+// * Behaviour Types
+// * Performance and Realtime testing
+// * Simplistic preprocessor support
+// * Multi-line string literals for Titan TestPorts
+// * Optional semicolon for backward compatibility
+//
+// Please note this is a very early release. Its interface and functionality will change and
+// be adapted over time.
 package syntax
 
 import (

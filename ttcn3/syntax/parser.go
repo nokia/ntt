@@ -1659,6 +1659,7 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 
 	x := &ValueDecl{Kind: p.consume()}
 
+	// TODO(5nord) Add nodes
 	if p.tok == LPAREN {
 		p.consume() // consume '('
 		p.consume() // consume omit/value/...
