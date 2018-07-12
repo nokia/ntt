@@ -537,6 +537,9 @@ L:
 			x = p.parseIndexExpr(x)
 		case LPAREN:
 			x = p.parseCallExpr(x)
+			// Not supporting chained function calls like 'get().x'
+			// eleminates conflicts with alt-guards.
+			break
 		default:
 			break L
 		}
