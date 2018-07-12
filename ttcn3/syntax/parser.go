@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -100,7 +101,18 @@ func (p *parser) handlePreproc(s string) {
 		p.ppCnt--
 
 	case "#define":
-		p.error(p.pos(1), "'#define' is not supported")
+		switch len(f) {
+		case 2:
+			p.ppDefs[f[1]] = true
+		case 3:
+			if v, err := strconv.ParseBool(f[2]); err != nil {
+				p.ppDefs[f[1]] = v
+				break
+			}
+			p.error(p.pos(1), "not a boolean expression")
+		default:
+			p.error(p.pos(1), "malformed 'define' directive")
+		}
 	default:
 		p.error(p.pos(1), "unknown preprocessor directive")
 	}
