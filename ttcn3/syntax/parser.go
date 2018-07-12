@@ -876,7 +876,7 @@ func (p *parser) parseTypeRef() Expr {
 	return p.parsePrimaryExpr()
 }
 
-func (p *parser) tryTypeParameters() Expr {
+func (p *parser) tryTypeParameters() *ParenExpr {
 	if p.trace {
 		defer un(trace(p, "tryTypeParameters"))
 	}
