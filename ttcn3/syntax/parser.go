@@ -960,11 +960,15 @@ func (p *parser) tryTypeIdent() Expr {
 		defer un(trace(p, "tryTypeIdent"))
 	}
 
-	if p.tok != IDENT && p.tok != ADDRESS && p.tok != CHARSTRING && p.tok != UNIVERSAL {
+	var x *Ident
+	switch p.tok {
+	case IDENT, ADDRESS, CHARSTRING:
+		x = &Ident{Tok: p.consume()}
+	case UNIVERSAL:
+		x = p.parseUniversalCharstring()
+	default:
 		return nil
 	}
-
-	x := &Ident{Tok: p.consume()}
 
 	if p.tok == LT {
 		if y := p.tryTypeParameters(); y == nil {
