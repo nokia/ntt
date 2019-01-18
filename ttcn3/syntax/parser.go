@@ -1359,7 +1359,7 @@ func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 	x.PortTok = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	switch p.tok {
@@ -1419,7 +1419,7 @@ func (p *parser) parseComponentTypeDecl() *ComponentTypeDecl {
 	x.CompTok = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 	if p.tok == EXTENDS {
 		x.ExtendsTok = p.consume()
@@ -1443,7 +1443,7 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 	x.Kind = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
@@ -1472,7 +1472,7 @@ func (p *parser) parseEnumTypeDecl() *EnumTypeDecl {
 	x.EnumTok = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
@@ -1500,7 +1500,7 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
 	x.Kind = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
@@ -1549,7 +1549,7 @@ func (p *parser) parseField() *Field {
 	x.Type = p.parseTypeSpec()
 	x.Name = p.parsePrimaryExpr()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	// TODO(mef) fix constraints consumed by previous PrimaryExpr
@@ -1686,6 +1686,7 @@ func (p *parser) parseTemplateDecl() *ValueDecl {
 	}
 
 	x.Type = p.parseTypeRef()
+	// TODO(5nord)
 	p.parseIdent()
 	if p.tok == LT {
 		p.parseTypeFormalPars()
@@ -1799,7 +1800,7 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
@@ -1880,7 +1881,7 @@ func (p *parser) parseSignatureDecl() *SignatureDecl {
 	x.Tok = p.consume()
 	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
