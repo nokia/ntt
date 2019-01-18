@@ -490,9 +490,10 @@ type TypeSpec interface {
 type (
 	// A Field represents a named struct member or sub type definition
 	Field struct {
-		DefaultTok       Token       // Position of "@default" or nil
-		Type             TypeSpec    // Type
-		Name             Expr        // Name
+		DefaultTok       Token    // Position of "@default" or nil
+		Type             TypeSpec // Type
+		Name             Expr     // Name
+		TypePars         *FormalPars
 		ValueConstraint  *ParenExpr  // Value constraint or nil
 		LengthConstraint *LengthExpr // Length constraint or nil
 		Optional         Token       // Position of "optional" or nil
@@ -616,7 +617,8 @@ type (
 		External Token // Position of "external" or nil
 		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
 		Name     *Ident
-		Modif    Token       // Position of "@deterministic" or nil
+		Modif    Token // Position of "@deterministic" or nil
+		TypePars *FormalPars
 		Params   *FormalPars // Formal parameter list or nil
 		RunsOn   *RunsOnSpec // Optional runs-on-spec
 		Mtc      *MtcSpec    // Optional mtc-spec
@@ -630,6 +632,7 @@ type (
 	SignatureDecl struct {
 		Tok          Token // Position of "signature"
 		Name         *Ident
+		TypePars     *FormalPars
 		Params       *FormalPars
 		NoBlock      Token       // Optional "noblock"
 		Return       *ReturnSpec // Optional return-spec
@@ -647,42 +650,46 @@ type (
 
 	// A StructTypeDecl represents a name struct type.
 	StructTypeDecl struct {
-		TypeTok Token    // Position of "type"
-		Kind    Token    // RECORD, SET, UNION
-		Name    Expr     // Name
-		LBrace  Token    // Position of "{"
-		Fields  []*Field // Member list
-		RBrace  Token    // Position of }"
-		With    *WithSpec
+		TypeTok  Token // Position of "type"
+		Kind     Token // RECORD, SET, UNION
+		Name     Expr  // Name
+		TypePars *FormalPars
+		LBrace   Token    // Position of "{"
+		Fields   []*Field // Member list
+		RBrace   Token    // Position of }"
+		With     *WithSpec
 	}
 
 	// A EnumTypeDecl represents a named enum type.
 	EnumTypeDecl struct {
-		TypeTok Token // Position of "type"
-		EnumTok Token // Position of "ENUMERATED"
-		Name    Expr
-		LBrace  Token  // Position of "{"
-		Enums   []Expr // Enum list
-		RBrace  Token  // Position of "}"
-		With    *WithSpec
+		TypeTok  Token // Position of "type"
+		EnumTok  Token // Position of "ENUMERATED"
+		Name     Expr
+		TypePars *FormalPars
+		LBrace   Token  // Position of "{"
+		Enums    []Expr // Enum list
+		RBrace   Token  // Position of "}"
+		With     *WithSpec
 	}
 
 	// A BehaviourTypeDecl represents a named behaviour type.
 	BehaviourTypeDecl struct {
-		TypeTok Token // Position of "type"
-		Kind    Token // TESTCASE, ALTSTEP, FUNCTION
-		Name    Expr
-		Params  *FormalPars // Formal parameter list
-		RunsOn  *RunsOnSpec // Optional runs-on spec
-		System  *SystemSpec // Optional system spec
-		Return  *ReturnSpec // Optional return spec
-		With    *WithSpec
+		TypeTok  Token // Position of "type"
+		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
+		Name     Expr
+		TypePars *FormalPars
+		Params   *FormalPars // Formal parameter list
+		RunsOn   *RunsOnSpec // Optional runs-on spec
+		System   *SystemSpec // Optional system spec
+		Return   *ReturnSpec // Optional return spec
+		With     *WithSpec
 	}
 
 	PortTypeDecl struct {
 		TypeTok  Token
 		PortTok  Token
 		Name     Expr
+		TypePars *FormalPars
 		Kind     Token // MIXED, MESSAGE, PROCEDURE
 		Realtime Token
 		LBrace   Token
@@ -706,6 +713,7 @@ type (
 		TypeTok    Token
 		CompTok    Token
 		Name       Expr
+		TypePars   *FormalPars
 		ExtendsTok Token
 		Extends    []Expr
 		Body       *BlockStmt
