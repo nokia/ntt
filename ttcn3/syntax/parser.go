@@ -166,12 +166,12 @@ func (p *parser) consume() Token {
 		p.tokens = p.tokens[:0]
 	}
 
-	p.grow(1)
+	p.peek(1)
 	p.tok = p.tokens[p.cursor].Kind
 	return tok
 }
 
-func (p *parser) grow(i int) {
+func (p *parser) peek(i int) Token {
 	idx := p.cursor + i - 1
 	last := len(p.tokens) - 1
 	if idx > last {
@@ -180,11 +180,7 @@ func (p *parser) grow(i int) {
 			p.tokens = append(p.tokens, p.readKind())
 		}
 	}
-}
-
-func (p *parser) peek(i int) Token {
-	p.grow(i)
-	return p.tokens[p.cursor+i-1]
+	return p.tokens[idx]
 }
 
 func (p *parser) pos(i int) Pos {
