@@ -120,27 +120,35 @@ func (p *parser) handlePreproc(s string) {
 
 // Read the next token from input-stream
 func (p *parser) scanToken() Token {
-redo:
 	pos, tok, lit := p.scanner.Scan()
-
-	if tok == COMMENT {
-		goto redo
-	}
-
-	if tok == PREPROC {
-		p.handlePreproc(lit)
-		goto redo
-	}
-
-	if p.ppSkip && tok != EOF {
-		goto redo
-	}
-
-	return Token{pos, tok, lit}
+	return Token{token{pos, tok, lit}, nil, nil}
 }
 
 func (p *parser) scan() {
-	p.tokens = append(p.tokens, p.scanToken())
+	tok := p.scanToken()
+
+	for p.isTrivia(tok) {
+		if tok.Kind == PREPROC {
+			p.handlePreproc(tok.Lit)
+		}
+		tok = p.scanToken()
+	}
+
+	p.tokens = append(p.tokens, tok)
+}
+
+func (p *parser) isTrivia(tok Token) bool {
+	switch {
+	case tok.Kind == COMMENT:
+		return true
+	case tok.Kind == PREPROC:
+		return true
+	default:
+		if p.ppSkip && tok.Kind != EOF {
+			return true
+		}
+		return false
+	}
 }
 
 // Advance to the next token
