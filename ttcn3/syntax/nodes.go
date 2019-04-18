@@ -33,13 +33,10 @@ type Token struct {
 
 func (x Token) Pos() Pos { return x.pos }
 func (x Token) End() Pos {
-	if l := len(x.Lit); l != 0 {
-		return x.pos + Pos(l)
+	if x.Kind.IsLiteral() {
+		return Pos(int(x.pos) + len(x.Lit))
 	}
-	if l := len(x.Kind.String()); l != 0 {
-		return x.pos + Pos(l)
-	}
-	return NoPos
+	return Pos(int(x.pos) + len(x.Kind.String()))
 }
 
 type (
