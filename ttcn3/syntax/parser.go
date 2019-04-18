@@ -139,6 +139,10 @@ redo:
 	return Token{pos, tok, lit}
 }
 
+func (p *parser) scan() {
+	p.tokens = append(p.tokens, p.scanToken())
+}
+
 // Advance to the next token
 func (p *parser) consume() Token {
 	tok := p.tokens[p.cursor]
@@ -177,7 +181,7 @@ func (p *parser) peek(i int) Token {
 	if idx > last {
 		n := idx - last
 		for i := 0; i < n; i++ {
-			p.tokens = append(p.tokens, p.scanToken())
+			p.scan()
 		}
 	}
 	return p.tokens[idx]
