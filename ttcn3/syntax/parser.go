@@ -119,7 +119,7 @@ func (p *parser) handlePreproc(s string) {
 }
 
 // Read the next token from input-stream
-func (p *parser) readKind() Token {
+func (p *parser) scanToken() Token {
 redo:
 	pos, tok, lit := p.scanner.Scan()
 
@@ -177,7 +177,7 @@ func (p *parser) peek(i int) Token {
 	if idx > last {
 		n := idx - last
 		for i := 0; i < n; i++ {
-			p.tokens = append(p.tokens, p.readKind())
+			p.tokens = append(p.tokens, p.scanToken())
 		}
 	}
 	return p.tokens[idx]
