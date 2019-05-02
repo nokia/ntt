@@ -21,8 +21,14 @@ type parser struct {
 	// Tokens/Backtracking
 	cursor  int
 	tokens  []Token
+	trivia  []Trivia
 	markers []int
 	tok     Kind // for convenience (p.tok is used frequently)
+
+	// Required for unscanning Token
+	lastKind Kind
+	lastPos  Pos
+	lastLit  string
 
 	// Semicolon helper
 	seenBrace bool
@@ -120,21 +126,67 @@ func (p *parser) handlePreproc(s string) {
 
 // Read the next token from input-stream
 func (p *parser) scanToken() Token {
-	pos, tok, lit := p.scanner.Scan()
+	tok := p.lastKind
+	pos := p.lastPos
+	lit := p.lastLit
+
+	if p.lastKind == Kind(0) {
+		pos, tok, lit = p.scanner.Scan()
+	}
+	p.lastKind = Kind(0)
+
 	return Token{token{pos, tok, lit}, nil, nil}
 }
 
-func (p *parser) scan() {
+// Unread the token
+func (p *parser) unscanToken(tok Token) {
+	p.lastKind = tok.token.Kind
+	p.lastPos = tok.Pos()
+	p.lastLit = tok.Lit
+}
+
+func makeTrivia(tok Token) Trivia {
+	return Trivia{token{tok.pos, tok.Kind, tok.Lit}}
+}
+
+func (p *parser) scan() Token {
 	tok := p.scanToken()
 
-	for p.isTrivia(tok) {
+	for ; p.isTrivia(tok); tok = p.scanToken() {
 		if tok.Kind == PREPROC {
 			p.handlePreproc(tok.Lit)
 		}
-		tok = p.scanToken()
+		p.trivia = append(p.trivia, makeTrivia(tok))
 	}
 
-	p.tokens = append(p.tokens, tok)
+	if tok.Kind == EOF {
+		return tok
+	}
+
+	if len(p.trivia) != 0 {
+		tok.LeadingTriv = p.trivia
+		p.trivia = nil
+	}
+
+	// Try consume trailing trivia
+	line := p.file.Line(tok.End())
+	for {
+		trail := p.scanToken()
+
+		if !p.isTrivia(trail) {
+			p.unscanToken(trail)
+			break
+		}
+
+		if line != p.file.Line(trail.Pos()) {
+			p.trivia = append(p.trivia, makeTrivia(trail))
+			break
+		}
+
+		tok.TrailingTriv = append(tok.TrailingTriv, makeTrivia(trail))
+	}
+
+	return tok
 }
 
 func (p *parser) isTrivia(tok Token) bool {
@@ -183,13 +235,29 @@ func (p *parser) consume() Token {
 	return tok
 }
 
+// Append current token to trailing trivia and advance to next token.
+func (p *parser) consumeTrivia(tok *Token) {
+	triv := p.consume()
+
+	// TODO(5nord) Remove when parser is ready
+	if tok == nil {
+		return
+	}
+
+	var trivs []Trivia
+	copy(trivs, triv.LeadingTriv)
+	trivs = append(trivs, makeTrivia(triv))
+	trivs = append(trivs, triv.TrailingTriv...)
+	tok.TrailingTriv = append(tok.TrailingTriv, trivs...)
+}
+
 func (p *parser) peek(i int) Token {
 	idx := p.cursor + i - 1
 	last := len(p.tokens) - 1
 	if idx > last {
 		n := idx - last
 		for i := 0; i < n; i++ {
-			p.scan()
+			p.tokens = append(p.tokens, p.scan())
 		}
 	}
 	return p.tokens[idx]
@@ -295,9 +363,9 @@ func (p *parser) expect(k Kind) Token {
 	return p.consume() // make progress
 }
 
-func (p *parser) expectSemi() {
+func (p *parser) expectSemi(tok *Token) {
 	if p.tok == SEMICOLON {
-		p.consume()
+		p.consumeTrivia(tok)
 		return
 	}
 
@@ -465,7 +533,7 @@ func (p *parser) parseExprList() (list []Expr) {
 
 	list = append(list, p.parseExpr())
 	for p.tok == COMMA {
-		p.consume()
+		p.consumeTrivia(list[len(list)-1].lastTok())
 		list = append(list, p.parseExpr())
 	}
 	return list
@@ -887,7 +955,7 @@ func (p *parser) parseRefList() []Expr {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume() // consume ','
+		p.consumeTrivia(l[len(l)-1].lastTok()) // consume ','
 	}
 	return l
 }
@@ -915,7 +983,7 @@ func (p *parser) tryTypeParameters() *ParenExpr {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume() // consume ','
+		p.consumeTrivia(x.List[len(x.List)-1].lastTok()) // consume ','
 	}
 
 	if p.tok != GT {
@@ -996,10 +1064,10 @@ func (p *parser) tryTypeIdent() Expr {
 func (p *parser) parseModuleList() []*Module {
 	var list []*Module
 	list = append(list, p.parseModule())
-	p.expectSemi()
+	p.expectSemi(list[len(list)-1].lastTok())
 	for p.tok == MODULE {
 		list = append(list, p.parseModule())
-		p.expectSemi()
+		p.expectSemi(list[len(list)-1].lastTok())
 	}
 	p.expect(EOF)
 	return list
@@ -1022,7 +1090,7 @@ func (p *parser) parseModule() *Module {
 
 	for p.tok != RBRACE && p.tok != EOF {
 		m.Decls = append(m.Decls, p.parseModuleDef())
-		p.expectSemi()
+		p.expectSemi(m.Decls[len(m.Decls)-1].lastTok())
 	}
 	m.RBrace = p.expect(RBRACE)
 	m.With = p.parseWith()
@@ -1037,7 +1105,7 @@ func (p *parser) parseLanguageSpec() *LanguageSpec {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume() // consume ','
+		p.consumeTrivia(l.List[len(l.List)-1].lastTok()) // consume ','
 	}
 	return l
 }
@@ -1080,7 +1148,7 @@ func (p *parser) parseModuleDef() *ModuleDef {
 			m.Def = p.parseExtFuncDecl()
 		case CONST:
 			p.error(p.pos(1), "external constants not suppored")
-			p.consume()
+			p.consumeTrivia(nil)
 			m.Def = p.parseValueDecl()
 		default:
 			p.errorExpected(p.pos(1), "'function'")
@@ -1121,7 +1189,7 @@ func (p *parser) parseImport() *ImportDecl {
 		x.LBrace = p.expect(LBRACE)
 		for p.tok != RBRACE && p.tok != EOF {
 			x.List = append(x.List, p.parseImportStmt())
-			p.expectSemi()
+			p.expectSemi(x.List[len(x.List)-1].lastTok())
 		}
 		x.RBrace = p.expect(RBRACE)
 	default:
@@ -1159,7 +1227,7 @@ func (p *parser) parseImportStmt() *DefSelectorExpr {
 			if p.tok != COMMA {
 				break
 			}
-			p.consume() // consume ','
+			p.consumeTrivia(nil) // consume ','
 		}
 	case IMPORT:
 		x.Kind = p.consume()
@@ -1176,7 +1244,7 @@ func (p *parser) parseExceptSpec() {
 	p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		p.parseExceptStmt()
-		p.expectSemi()
+		p.expectSemi(nil)
 	}
 	p.expect(RBRACE)
 }
@@ -1212,7 +1280,7 @@ func (p *parser) parseGroup() *GroupDecl {
 
 	for p.tok != RBRACE && p.tok != EOF {
 		x.Defs = append(x.Defs, p.parseModuleDef())
-		p.expectSemi()
+		p.expectSemi(x.Defs[len(x.Defs)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
@@ -1241,7 +1309,7 @@ func (p *parser) parseWith() *WithSpec {
 	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		x.List = append(x.List, p.parseWithStmt())
-		p.expectSemi()
+		p.expectSemi(x.List[len(x.List)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	return x
@@ -1285,7 +1353,7 @@ func (p *parser) parseWithStmt() *WithStmt {
 			if p.tok != COMMA {
 				break
 			}
-			p.consume()
+			p.consumeTrivia(x.List[len(x.List)-1].lastTok())
 		}
 		x.RParen = p.expect(RPAREN)
 	}
@@ -1388,7 +1456,7 @@ func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		x.Attrs = append(x.Attrs, p.parsePortAttribute())
-		p.expectSemi()
+		p.expectSemi(x.Attrs[len(x.Attrs)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
@@ -1463,7 +1531,7 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consumeTrivia(x.Fields[len(x.Fields)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
@@ -1492,7 +1560,7 @@ func (p *parser) parseEnumTypeDecl() *EnumTypeDecl {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consumeTrivia(x.Enums[len(x.Enums)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
@@ -1564,7 +1632,7 @@ func (p *parser) parseField() *Field {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
-	// TODO(mef) fix constraints consumed by previous PrimaryExpr
+	// TODO(5nord) fix constraints consumed by previous PrimaryExpr
 	if p.tok == LPAREN {
 		x.ValueConstraint = p.parseParenExpr()
 	}
@@ -1614,7 +1682,7 @@ func (p *parser) parseStructSpec() *StructSpec {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consumeTrivia(x.Fields[len(x.Fields)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	return x
@@ -1632,7 +1700,7 @@ func (p *parser) parseEnumSpec() *EnumSpec {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consumeTrivia(x.Enums[len(x.Enums)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	return x
@@ -1737,7 +1805,7 @@ func (p *parser) parseModulePar() Decl {
 			d.TemplateRestriction = p.parseRestrictionSpec()
 			d.Type = p.parseTypeRef()
 			d.Decls = p.parseExprList()
-			p.expectSemi()
+			p.expectSemi(d.Decls[len(d.Decls)-1].lastTok())
 			x.Decls = append(x.Decls, d)
 		}
 		x.RBrace = p.expect(RBRACE)
@@ -1958,7 +2026,7 @@ func (p *parser) parseFormalPars() *FormalPars {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consumeTrivia(x.List[len(x.List)-1].lastTok())
 	}
 	x.RParen = p.expect(RPAREN)
 	return x
@@ -2000,7 +2068,7 @@ func (p *parser) parseTypeFormalPars() *FormalPars {
 		if p.tok != COMMA {
 			break
 		}
-		p.consume()
+		p.consumeTrivia(x.List[len(x.List)-1].lastTok())
 	}
 	x.RParen = p.expect(GT)
 	return x
@@ -2049,7 +2117,7 @@ func (p *parser) parseBlockStmt() *BlockStmt {
 	x := &BlockStmt{LBrace: p.expect(LBRACE)}
 	for p.tok != RBRACE && p.tok != EOF {
 		x.Stmts = append(x.Stmts, p.parseStmt())
-		p.expectSemi()
+		p.expectSemi(x.Stmts[len(x.Stmts)-1].lastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	return x
