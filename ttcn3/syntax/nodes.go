@@ -668,6 +668,20 @@ type (
 		With                *WithSpec
 	}
 
+	TemplateDecl struct {
+		RestrictionSpec
+		Modif       Token // "@lazy", "@fuzzy" or nil
+		Type        Expr
+		Name        *Ident
+		TypePars    *FormalPars
+		Params      *FormalPars
+		ModifiesTok Token
+		Base        Expr
+		AssignTok   Token
+		Value       Expr
+		With        *WithSpec
+	}
+
 	// A ModuleParameterGroup represents a deprecated module parameter list
 	ModuleParameterGroup struct {
 		Tok    Token        // Position of "modulepar"
@@ -791,6 +805,13 @@ func (x *ValueDecl) lastTok() *Token {
 		return x.With.lastTok()
 	}
 	return x.Decls[len(x.Decls)-1].lastTok()
+}
+
+func (x *TemplateDecl) lastTok() *Token {
+	if x.With != nil {
+		return x.With.lastTok()
+	}
+	return x.Value.lastTok()
 }
 
 func (x *ModuleParameterGroup) lastTok() *Token {
@@ -926,6 +947,7 @@ func (x *PortMapAttribute) Pos() Pos  { return x.MapTok.Pos() }
 func (x *ComponentTypeDecl) Pos() Pos { return x.TypeTok.Pos() }
 
 func (x *ValueDecl) End() Pos            { return x.lastTok().End() }
+func (x *TemplateDecl) End() Pos         { return x.lastTok().End() }
 func (x *ModuleParameterGroup) End() Pos { return x.lastTok().End() }
 func (x *FuncDecl) End() Pos             { return x.lastTok().End() }
 func (x *SignatureDecl) End() Pos        { return x.lastTok().End() }
@@ -939,6 +961,7 @@ func (x *PortMapAttribute) End() Pos     { return x.lastTok().End() }
 func (x *ComponentTypeDecl) End() Pos    { return x.lastTok().End() }
 
 func (x *ValueDecl) declNode()            {}
+func (x *TemplateDecl) declNode()         {}
 func (x *ModuleParameterGroup) declNode() {}
 func (x *FuncDecl) declNode()             {}
 func (x *SignatureDecl) declNode()        {}
