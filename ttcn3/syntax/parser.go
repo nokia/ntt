@@ -1747,41 +1747,40 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
  * Template Declaration
  *************************************************************************/
 
-func (p *parser) parseTemplateDecl() *ValueDecl {
+func (p *parser) parseTemplateDecl() *TemplateDecl {
 	if p.trace {
 		defer un(trace(p, "TemplateDecl"))
 	}
 
-	x := &ValueDecl{Kind: p.consume()}
+	x := new(TemplateDecl)
+	x.TemplateTok = p.consume()
 
-	// TODO(5nord) Add nodes
 	if p.tok == LPAREN {
-		p.consume() // consume '('
-		p.consume() // consume omit/value/...
-		p.expect(RPAREN)
+		x.LParen = p.consume() // consume '('
+		x.Tok = p.consume()    // consume omit/value/...
+		x.RParen = p.expect(RPAREN)
 	}
 
 	if p.tok == MODIF {
-		p.consume()
+		x.Modif = p.consume()
 	}
 
 	x.Type = p.parseTypeRef()
-	// TODO(5nord)
-	p.parseIdent()
+	x.Name = p.parseIdent()
 	if p.tok == LT {
-		p.parseTypeFormalPars()
+		x.TypePars = p.parseTypeFormalPars()
 	}
 	if p.tok == LPAREN {
-		p.parseFormalPars()
+		x.Params = p.parseFormalPars()
 	}
 	if p.tok == MODIFIES {
-		p.consume()
-		p.parsePrimaryExpr()
+		x.ModifiesTok = p.consume()
+		x.Base = p.parsePrimaryExpr()
 	}
-	p.expect(ASSIGN)
-	p.parseExpr()
+	x.AssignTok = p.expect(ASSIGN)
+	x.Value = p.parseExpr()
+	x.With = p.parseWith()
 
-	p.parseWith()
 	return x
 }
 
