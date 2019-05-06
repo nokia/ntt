@@ -209,14 +209,20 @@ type (
 		X      Expr  // Template expression
 	}
 
-	// A DefSelectorExpr represents a definition type selector expression,
-	// used by imports and with attributes, like "all types except a, b"
-	DefSelectorExpr struct {
-		Kind      Token  // TYPE, TEMPLATE, CONST, ...
-		Refs      []Expr // ALL, ids
-		ExceptTok Token  // Position of "except" or nil
+	// A DefKindExpr represents a definition kind expression, used by imports
+	// and with-attributes.
+	DefKindExpr struct {
+		Kind Token  // Definition kind, "type", "group", ...
+		List []Expr // List of identifiers or except-expressions
+	}
+
+	// A ExceptExpr is used by DefKindExpr to express exlusion of specific
+	// defintions.
+	ExceptExpr struct {
+		X         Expr   // (Qualified) identifier or "all"
+		ExceptTok Token  // Position of "except"
 		LBrace    Token  // Position of "{" or nil
-		Except    []Expr // Expression list
+		List      []Expr // List of identifiers or DefKindExprs to exclude
 		RBrace    Token  // Position of "}" or nil
 	}
 )
@@ -266,16 +272,15 @@ func (x *PatternExpr) lastTok() *Token  { return x.X.lastTok() }
 func (x *DecmatchExpr) lastTok() *Token { return x.X.lastTok() }
 func (x *DecodedExpr) lastTok() *Token  { return x.X.lastTok() }
 
-func (x *DefSelectorExpr) lastTok() *Token {
+func (x *DefKindExpr) lastTok() *Token {
+	return x.List[len(x.List)-1].lastTok()
+}
+
+func (x *ExceptExpr) lastTok() *Token {
 	if x.RBrace.lastTok().IsValid() {
 		return x.RBrace.lastTok()
 	}
-	if x.Except != nil {
-		return x.Except[len(x.Except)-1].lastTok()
-	}
-	// TODO(5nord) should be removed when DefSelectorExpr is parsed
-	return nil
-	return x.Refs[len(x.Refs)-1].lastTok()
+	return x.List[len(x.List)-1].lastTok()
 }
 
 func (x *Ident) Pos() Pos             { return x.Tok.Pos() }
@@ -298,7 +303,8 @@ func (x *RegexpExpr) Pos() Pos        { return x.Tok.Pos() }
 func (x *PatternExpr) Pos() Pos       { return x.Tok.Pos() }
 func (x *DecmatchExpr) Pos() Pos      { return x.Tok.Pos() }
 func (x *DecodedExpr) Pos() Pos       { return x.Tok.Pos() }
-func (x *DefSelectorExpr) Pos() Pos   { return x.Kind.Pos() }
+func (x *DefKindExpr) Pos() Pos       { return x.Kind.Pos() }
+func (x *ExceptExpr) Pos() Pos        { return x.X.Pos() }
 
 func (x *Ident) End() Pos             { return x.lastTok().End() }
 func (x *ParametrizedIdent) End() Pos { return x.lastTok().End() }
@@ -320,7 +326,8 @@ func (x *RegexpExpr) End() Pos        { return x.lastTok().End() }
 func (x *PatternExpr) End() Pos       { return x.lastTok().End() }
 func (x *DecmatchExpr) End() Pos      { return x.lastTok().End() }
 func (x *DecodedExpr) End() Pos       { return x.lastTok().End() }
-func (x *DefSelectorExpr) End() Pos   { return x.lastTok().End() }
+func (x *DefKindExpr) End() Pos       { return x.lastTok().End() }
+func (x *ExceptExpr) End() Pos        { return x.lastTok().End() }
 
 func (x *Ident) exprNode()             {}
 func (x *ParametrizedIdent) exprNode() {}
@@ -342,7 +349,8 @@ func (x *RegexpExpr) exprNode()        {}
 func (x *PatternExpr) exprNode()       {}
 func (x *DecmatchExpr) exprNode()      {}
 func (x *DecodedExpr) exprNode()       {}
-func (x *DefSelectorExpr) exprNode()   {}
+func (x *DefKindExpr) exprNode()       {}
+func (x *ExceptExpr) exprNode()        {}
 
 type (
 	// A BlockStmt represents a curly braces enclosed list of statements.
@@ -1005,12 +1013,9 @@ type (
 		Module    *Ident
 		Language  *LanguageSpec
 		LBrace    Token
-		List      []*DefSelectorExpr
+		List      []*DefKindExpr
 		RBrace    Token
 		With      *WithSpec
-	}
-
-	ExceptSpec struct {
 	}
 
 	GroupDecl struct {
@@ -1055,10 +1060,6 @@ func (x *ImportDecl) lastTok() *Token {
 	return x.RBrace.lastTok()
 }
 
-func (x *ExceptSpec) lastTok() *Token {
-	return nil //TODO
-}
-
 func (x *GroupDecl) lastTok() *Token {
 	if x.With != nil {
 		return x.With.lastTok()
@@ -1084,7 +1085,6 @@ func (x *ModuleDef) Pos() Pos {
 
 func (x *ControlPart) Pos() Pos { return x.Tok.Pos() }
 func (x *ImportDecl) Pos() Pos  { return x.ImportTok.Pos() }
-func (x *ExceptSpec) Pos() Pos  { return NoPos }
 func (x *GroupDecl) Pos() Pos   { return x.Tok.Pos() }
 func (x *FriendDecl) Pos() Pos  { return x.FriendTok.Pos() }
 
@@ -1092,7 +1092,6 @@ func (x *Module) End() Pos      { return x.lastTok().End() }
 func (x *ModuleDef) End() Pos   { return x.lastTok().End() }
 func (x *ControlPart) End() Pos { return x.lastTok().End() }
 func (x *ImportDecl) End() Pos  { return x.lastTok().End() }
-func (x *ExceptSpec) End() Pos  { return x.lastTok().End() }
 func (x *GroupDecl) End() Pos   { return x.lastTok().End() }
 func (x *FriendDecl) End() Pos  { return x.lastTok().End() }
 

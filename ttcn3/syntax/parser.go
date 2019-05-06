@@ -688,7 +688,7 @@ func (p *parser) parseOperand() Expr {
 
 		// Workaround for deprecated port-attribute 'all'
 		if tok.Kind == ALL {
-			return &Ident{Tok: tok}
+			return make_ident(tok)
 		}
 
 		p.errorExpected(p.pos(1), "'component', 'port', 'timer' or 'from'")
@@ -706,7 +706,7 @@ func (p *parser) parseOperand() Expr {
 		TESTCASE,
 		TIMER,
 		UNMAP:
-		return &Ident{Tok: p.consume()}
+		return make_ident(p.consume())
 
 	case IDENT:
 		return p.parseRef()
@@ -1161,6 +1161,10 @@ func (p *parser) parseModuleDef() *ModuleDef {
  * Import Definition
  *************************************************************************/
 
+func make_ident(tok Token) Expr {
+	return &Ident{Tok: tok}
+}
+
 func (p *parser) parseImport() *ImportDecl {
 	if p.trace {
 		defer un(trace(p, "Import"))
@@ -1177,10 +1181,19 @@ func (p *parser) parseImport() *ImportDecl {
 
 	switch p.tok {
 	case ALL:
-		p.consume()
+		y := &DefKindExpr{}
+		z := make_ident(p.consume())
 		if p.tok == EXCEPT {
-			p.parseExceptSpec()
+			z = &ExceptExpr{
+				X:         z,
+				ExceptTok: p.consume(),
+				LBrace:    p.expect(LBRACE),
+				List:      p.parseExceptStmts(),
+				RBrace:    p.expect(RBRACE),
+			}
 		}
+		y.List = []Expr{z}
+		x.List = append(x.List, y)
 	case LBRACE:
 		x.LBrace = p.expect(LBRACE)
 		for p.tok != RBRACE && p.tok != EOF {
@@ -1197,37 +1210,47 @@ func (p *parser) parseImport() *ImportDecl {
 	return x
 }
 
-func (p *parser) parseImportStmt() *DefSelectorExpr {
-	x := new(DefSelectorExpr)
+func (p *parser) parseImportStmt() *DefKindExpr {
+	x := new(DefKindExpr)
 	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
 		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
 		x.Kind = p.consume()
 		if p.tok == ALL {
-			x.Refs = []Expr{&Ident{Tok: p.consume()}}
+			y := make_ident(p.consume())
 			if p.tok == EXCEPT {
-				x.ExceptTok = p.consume()
-				x.Except = p.parseRefList()
+				y = &ExceptExpr{
+					X:         y,
+					ExceptTok: p.consume(),
+					List:      p.parseRefList(),
+				}
 			}
+			x.List = []Expr{y}
 		} else {
-			x.Refs = p.parseRefList()
+			x.List = p.parseRefList()
 		}
 	case GROUP:
 		x.Kind = p.consume()
-		// TODO(5nord) implement ast for except spec
 		for {
-			p.parseTypeRef()
+			y := p.parseTypeRef()
 			if p.tok == EXCEPT {
-				p.parseExceptSpec()
+				y = &ExceptExpr{
+					X:         y,
+					ExceptTok: p.consume(),
+					LBrace:    p.expect(LBRACE),
+					List:      p.parseExceptStmts(),
+					RBrace:    p.expect(RBRACE),
+				}
 			}
 			if p.tok != COMMA {
 				break
 			}
-			p.consumeTrivia(nil) // consume ','
+			p.consumeTrivia(y.lastTok()) // consume ','
+			x.List = append(x.List, y)
 		}
 	case IMPORT:
 		x.Kind = p.consume()
-		x.Refs = []Expr{&Ident{Tok: p.expect(ALL)}}
+		x.List = []Expr{make_ident(p.expect(ALL))}
 	default:
 		p.errorExpected(p.pos(1), "import definition qualifier")
 		p.advance(stmtStart)
@@ -1235,18 +1258,18 @@ func (p *parser) parseImportStmt() *DefSelectorExpr {
 	return x
 }
 
-func (p *parser) parseExceptSpec() {
-	p.consume()
-	p.expect(LBRACE)
+func (p *parser) parseExceptStmts() []Expr {
+	var list []Expr
 	for p.tok != RBRACE && p.tok != EOF {
-		p.parseExceptStmt()
-		p.expectSemi(nil)
+		x := p.parseExceptStmt()
+		p.expectSemi(x.lastTok())
+		list = append(list, x)
 	}
-	p.expect(RBRACE)
+	return list
 }
 
-func (p *parser) parseExceptStmt() *DefSelectorExpr {
-	x := new(DefSelectorExpr)
+func (p *parser) parseExceptStmt() *DefKindExpr {
+	x := new(DefKindExpr)
 	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, GROUP,
 		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
@@ -1257,9 +1280,9 @@ func (p *parser) parseExceptStmt() *DefSelectorExpr {
 	}
 
 	if p.tok == ALL {
-		x.Refs = []Expr{&Ident{Tok: p.consume()}}
+		x.List = []Expr{make_ident(p.consume())}
 	} else {
-		x.Refs = p.parseRefList()
+		x.List = p.parseRefList()
 	}
 	return x
 }
@@ -1374,15 +1397,19 @@ func (p *parser) parseWithQualifier() Expr {
 	case LBRACK:
 		return p.parseIndexExpr(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
-		x := new(DefSelectorExpr)
+		x := new(DefKindExpr)
 		x.Kind = p.consume()
-		x.Refs = []Expr{&Ident{Tok: p.expect(ALL)}}
+		y := make_ident(p.expect(ALL))
 		if p.tok == EXCEPT {
-			x.ExceptTok = p.consume()
-			x.LBrace = p.expect(LBRACE)
-			x.Except = p.parseRefList()
-			x.RBrace = p.expect(RBRACE)
+			y = &ExceptExpr{
+				X:         y,
+				ExceptTok: p.consume(),
+				LBrace:    p.expect(LBRACE),
+				List:      p.parseRefList(),
+				RBrace:    p.expect(RBRACE),
+			}
 		}
+		x.List = []Expr{y}
 		return x
 	default:
 		p.errorExpected(p.pos(1), "with-qualifier")
@@ -2082,13 +2109,13 @@ func (p *parser) parseTypeFormalPar() *FormalPar {
 
 	switch p.tok {
 	case TYPE:
-		x.Type = &Ident{Tok: p.consume()}
+		x.Type = make_ident(p.consume())
 	case SIGNATURE:
-		x.Type = &Ident{Tok: p.consume()}
+		x.Type = make_ident(p.consume())
 	default:
 		x.Type = p.parseTypeRef()
 	}
-	x.Name = &Ident{Tok: p.expect(IDENT)}
+	x.Name = make_ident(p.expect(IDENT))
 	if p.tok == ASSIGN {
 		x.Name = &BinaryExpr{
 			X:  x.Name,
