@@ -19,13 +19,13 @@ and developers not to reinvent the TTCN-3 wheel.
 
 Please note, NTT is still much work in progress. First task is to provide a
 TTCN-3 parser, which supports core language specification as well as behaviour
-types and advanced parametrization. Only after that task is finished, we can
+types and advanced parametrization. When that task is finished, we can
 start with fancy tools, like:
 
+  * Formatting and refactoring tools
+  * Code generators (go, erlang, llvm, titan, ...)
   * Wide range IDE support, using [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
   * Analytics and visualization (cyclomatic complexity, coverage, ...)
-  * Formatting and refactoring tools
-  * Code generators for other backends (go, erlang, llvm, titan, ...)
   * Support for other IDLs (ASN.1, Protobuf, IDL, ...)
   * Frontends for configuration-management, monitoring, ...
 
@@ -42,6 +42,6 @@ which already has a lot of features and a huge set of adapters to choose from.
 I am currently developing the TTCN-3 parser library, so there isn't much to see,
 yet. Assuming you have Go installed you can install ntt using `go get` method:
 
-        go get -u github.com/nokia/ntt
+        go get -u github.com/nokia/ntt/cmd/...
 
 
