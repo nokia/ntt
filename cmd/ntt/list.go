@@ -1,12 +1,14 @@
-package cmd
+package main
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/nokia/ntt/ttcn3/loader"
-	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/spf13/cobra"
 	"os"
+
+	"ntt/internal/loader"
+	"ntt/internal/ttcn3/syntax"
+
+	"github.com/spf13/cobra"
 )
 
 var (

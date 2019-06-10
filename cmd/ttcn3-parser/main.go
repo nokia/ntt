@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nokia/ntt/ttcn3/syntax"
+	"ntt/internal/ttcn3/syntax"
 	"os"
 )
 

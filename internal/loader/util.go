@@ -1,7 +1,7 @@
 package loader
 
 import (
-	"github.com/nokia/ntt/ttcn3/syntax"
+	"ntt/internal/ttcn3/syntax"
 	"runtime"
 	"sync"
 )

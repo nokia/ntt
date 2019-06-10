@@ -2,7 +2,7 @@ package loader
 
 import (
 	"fmt"
-	"github.com/nokia/ntt/ttcn3/syntax"
+	"ntt/internal/ttcn3/syntax"
 	"os"
 	"path/filepath"
 	"strings"
