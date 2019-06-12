@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"ntt/internal/ttcn3/syntax"
+	"github.com/nokia/ntt/internal/ttcn3/syntax"
 
 	"github.com/spf13/cobra"
 )

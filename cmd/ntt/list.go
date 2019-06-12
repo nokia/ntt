@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"ntt/internal/loader"
-	"ntt/internal/ttcn3/syntax"
+	"github.com/nokia/ntt/internal/loader"
+	"github.com/nokia/ntt/internal/ttcn3/syntax"
 
 	"github.com/spf13/cobra"
 )
