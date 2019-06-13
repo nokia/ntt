@@ -1,0 +1,4 @@
+sources:
+    - a.ttcn3
+imports:
+    - ../b
