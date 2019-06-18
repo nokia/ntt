@@ -36,14 +36,14 @@ keys are supported:
 
         timeout              Default timeout for tests in seconds.
 
-        test_hook            Path to test_hook script. Default is `$NTT_NAME.control`.
+        test_hook            Path to test_hook script. Default is `$K3_NAME.control`.
 
-        parameters_file      Path to module parameters file. Default is `$NTT_NAME.parameters`
+        parameters_file      Path to module parameters file. Default is `$K3_NAME.parameters`
 
 
 All keys can be overwritten by environment variables. For instance, to overwrite
-`test_hook` just set environment variable `NTT_TEST_HOOK`.  Is it not
-recommended to overwrite list values like `NTT_SOURCES` and `NTT_IMPORTS`,
+`test_hook` just set environment variable `K3_TEST_HOOK`.  Is it not
+recommended to overwrite list values like `K3_SOURCES` and `K3_IMPORTS`,
 because you might run into quoting issue with white-spaces.
 
 */
@@ -90,27 +90,27 @@ func (conf *Config) loadConfig() error {
 // loadEnv assigns environment variables to Config fields.
 func (conf *Config) loadEnv() {
 
-	if env := os.Getenv("NTT_NAME"); env != "" {
+	if env := os.Getenv("K3_NAME"); env != "" {
 		conf.Name = env
 	}
 
-	if env := os.Getenv("NTT_PARAMETERS_FILE"); env != "" {
+	if env := os.Getenv("K3_PARAMETERS_FILE"); env != "" {
 		conf.ParametersFile = env
 	}
 
-	if env := os.Getenv("NTT_TEST_HOOK"); env != "" {
+	if env := os.Getenv("K3_TEST_HOOK"); env != "" {
 		conf.TestHook = env
 	}
 
-	if env := os.Getenv("NTT_TIMEOUT"); env != "" {
+	if env := os.Getenv("K3_TIMEOUT"); env != "" {
 		conf.Timeout, _ = strconv.ParseFloat(env, 64)
 	}
 
-	if env := os.Getenv("NTT_SOURCES"); env != "" {
+	if env := os.Getenv("K3_SOURCES"); env != "" {
 		conf.Sources = strings.Fields(env)
 	}
 
-	if env := os.Getenv("NTT_IMPORTS"); env != "" {
+	if env := os.Getenv("K3_IMPORTS"); env != "" {
 		conf.Imports = strings.Fields(env)
 	}
 
