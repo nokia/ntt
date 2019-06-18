@@ -10,8 +10,8 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "ntt",
-		Short: "ntt is a tool for managing TTCN-3 source code and tests",
+		Use:   "k3",
+		Short: "k3 is a tool for managing TTCN-3 source code and tests",
 		Long:  "",
 	}
 
