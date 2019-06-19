@@ -62,7 +62,7 @@ import (
 
 // A Config describes how to build and configure a test suite.
 type Config struct {
-	dir     string   // Absolute directory of suite
+	Dir     string   // Absolute directory of suite
 	Name    string   // Name of suite
 	Sources []string // Source files of suite
 	Imports []string // Requires libraries, adapters, ... of suite
@@ -74,7 +74,7 @@ type Config struct {
 
 // Load configuration from `package.yml`, if available.
 func (conf *Config) loadConfig() error {
-	file := filepath.Join(conf.dir, "package.yml")
+	file := filepath.Join(conf.Dir, "package.yml")
 	if _, err := os.Stat(file); err != nil {
 		return nil
 	}
@@ -120,18 +120,18 @@ func (conf *Config) loadEnv() {
 func (conf *Config) loadDefaults() {
 
 	if conf.Name == "" {
-		conf.Name = filepath.Base(conf.dir)
+		conf.Name = filepath.Base(conf.Dir)
 	}
 
 	if conf.ParametersFile == "" {
-		parameters_file := filepath.Join(conf.dir, conf.Name, ".parameters")
+		parameters_file := filepath.Join(conf.Dir, conf.Name, ".parameters")
 		if b, _ := isRegular(parameters_file); b {
 			conf.ParametersFile = parameters_file
 		}
 	}
 
 	if conf.TestHook == "" {
-		test_hook := filepath.Join(conf.dir, conf.Name, ".control")
+		test_hook := filepath.Join(conf.Dir, conf.Name, ".control")
 		if b, _ := isRegular(test_hook); b {
 			conf.TestHook = test_hook
 		}
@@ -159,7 +159,7 @@ func (conf *Config) expandPath(path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
-	return filepath.Join(conf.dir, path)
+	return filepath.Join(conf.Dir, path)
 }
 
 // FromArgs returns a Config struct based on command line arguments. It expects
@@ -192,13 +192,13 @@ func FromArgs(args []string) (*Config, error) {
 
 // fromDirectory returns a Config struct.
 func fromDirectory(dir string) (*Config, error) {
-	conf := &Config{dir: dir}
+	conf := &Config{Dir: dir}
 
 	if err := conf.loadConfig(); err != nil {
 		return nil, err
 	}
 	if conf.Sources == nil {
-		files, err := findTTCN3Files(conf.dir)
+		files, err := FindTTCN3Files(conf.Dir)
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +213,7 @@ func fromDirectory(dir string) (*Config, error) {
 // fromFiles returns a ad-hoc Config struct with files as sources.
 func fromFiles(files []string) (*Config, error) {
 	conf := &Config{
-		dir:     ".",
+		Dir:     ".",
 		Sources: files,
 	}
 
@@ -223,7 +223,8 @@ func fromFiles(files []string) (*Config, error) {
 	return conf, nil
 }
 
-func findTTCN3Files(dir string) ([]string, error) {
+// FindTTCN3Files returns a .ttcn3 (or .ttcn) source files from directory dir.
+func FindTTCN3Files(dir string) ([]string, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err

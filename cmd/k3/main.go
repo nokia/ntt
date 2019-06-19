@@ -20,7 +20,7 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(listCmd, showCmd)
 }
 
 func main() {
