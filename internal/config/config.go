@@ -125,14 +125,14 @@ func (conf *Config) loadDefaults() {
 	}
 
 	if conf.ParametersFile == "" {
-		parameters_file := filepath.Join(conf.Dir, conf.Name, ".parameters")
+		parameters_file := filepath.Join(conf.Dir, conf.Name+".parameters")
 		if b, _ := isRegular(parameters_file); b {
 			conf.ParametersFile = parameters_file
 		}
 	}
 
 	if conf.TestHook == "" {
-		test_hook := filepath.Join(conf.Dir, conf.Name, ".control")
+		test_hook := filepath.Join(conf.Dir, conf.Name+".control")
 		if b, _ := isRegular(test_hook); b {
 			conf.TestHook = test_hook
 		}
