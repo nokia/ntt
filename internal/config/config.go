@@ -127,26 +127,27 @@ func (conf *Config) loadDefaults() {
 	if conf.ParametersFile == "" {
 		parameters_file := filepath.Join(conf.Dir, conf.Name+".parameters")
 		if b, _ := isRegular(parameters_file); b {
-			conf.ParametersFile = parameters_file
+			conf.ParametersFile = conf.Name + ".parameters"
 		}
 	}
 
 	if conf.TestHook == "" {
 		test_hook := filepath.Join(conf.Dir, conf.Name+".control")
 		if b, _ := isRegular(test_hook); b {
-			conf.TestHook = test_hook
+			conf.TestHook = conf.Name + ".control"
 		}
 	}
 }
 
-func (conf *Config) expandPaths() {
+// fixPath converts paths, which are relativ source, into paths relativ to CWD.
+// environment variable are substitute before-hand.
+func (conf *Config) fixPath() {
 	for i, _ := range conf.Sources {
 		conf.Sources[i] = conf.expandPath(conf.Sources[i])
 	}
 	for i, _ := range conf.Imports {
 		conf.Imports[i] = conf.expandPath(conf.Imports[i])
 	}
-
 	if conf.ParametersFile != "" {
 		conf.ParametersFile = conf.expandPath(conf.ParametersFile)
 	}
@@ -207,7 +208,7 @@ func fromDirectory(dir string) (*Config, error) {
 	}
 	conf.loadEnv("K3_")
 	conf.loadDefaults()
-	conf.expandPaths()
+	conf.fixPath()
 	return conf, nil
 }
 
@@ -220,7 +221,7 @@ func fromFiles(files []string) (*Config, error) {
 
 	conf.loadEnv("K3_")
 	conf.loadDefaults()
-	conf.expandPaths()
+	conf.fixPath()
 	return conf, nil
 }
 
