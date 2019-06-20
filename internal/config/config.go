@@ -57,6 +57,8 @@ import (
 	"strconv"
 	"strings"
 
+	homedir "github.com/mitchellh/go-homedir"
+	toml "github.com/pelletier/go-toml"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -90,6 +92,14 @@ func (conf *Config) loadConfig() error {
 // loadEnv assigns environment variables to Config fields.
 func (conf *Config) loadEnv(prefix string) {
 
+	for _, f := range []string{
+		filepath.Join(home(), "."+prefix+".conf"),
+		filepath.Join(home(), "."+prefix, "environment"),
+		prefix + ".conf",
+	} {
+		loadEnvFromFile(f)
+	}
+
 	if env := os.Getenv(prefix + "NAME"); env != "" {
 		conf.Name = env
 	}
@@ -114,6 +124,25 @@ func (conf *Config) loadEnv(prefix string) {
 		conf.Imports = strings.Fields(env)
 	}
 
+}
+
+func home() string {
+	h, _ := homedir.Dir()
+	return h
+}
+
+func loadEnvFromFile(file string) error {
+	t, err := toml.LoadFile(file)
+	if err != nil {
+		return err
+	}
+
+	for _, k := range t.Keys() {
+		if err := os.Setenv(k, fmt.Sprint(t.Get(k))); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // loadDefaults assigns default values to empty Config fields.
@@ -207,7 +236,7 @@ func fromDirectory(dir string) (*Config, error) {
 		}
 		conf.Sources = files
 	}
-	conf.loadEnv("K3_")
+	conf.loadEnv("k3")
 	conf.loadDefaults()
 	conf.fixPath()
 	return conf, nil
@@ -220,7 +249,7 @@ func fromFiles(files []string) (*Config, error) {
 		Sources: files,
 	}
 
-	conf.loadEnv("K3_")
+	conf.loadEnv("k3")
 	conf.loadDefaults()
 	conf.fixPath()
 	return conf, nil

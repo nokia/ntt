@@ -48,6 +48,7 @@ func show(cmd *cobra.Command, args []string) error {
 		vars["parameters_file"] = conf.ParametersFile
 		vars["test_hook"] = conf.TestHook
 		vars["timeout"] = strconv.FormatFloat(conf.Timeout, 'f', -1, 64)
+
 		ttcn3_files := findTTCN3Files(conf.Sources...)
 		if conf.Imports != nil {
 			ttcn3_files = append(ttcn3_files, findTTCN3Files(conf.Imports...)...)
