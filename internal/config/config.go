@@ -173,6 +173,7 @@ func FromArgs(args []string) (*Config, error) {
 	// Directory arguments
 	switch len(args) {
 	case 0:
+		// TODO(5nord) Add support for default source dir K3_SOURCE_DIR
 		return fromDirectory(".")
 	case 1:
 		if isDir, _ := isDirectory(args[0]); isDir {
