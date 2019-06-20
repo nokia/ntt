@@ -79,6 +79,7 @@ func splitArgs(args []string, pos int) ([]string, []string) {
 func findTTCN3Files(dirs ...string) []string {
 	ret := make([]string, len(dirs))
 	for _, d := range dirs {
+		// TODO(5nord) make paths valid (relativ to config.Dir)
 		if files, err := config.FindTTCN3Files(d); err == nil {
 			ret = append(ret, files...)
 		}
