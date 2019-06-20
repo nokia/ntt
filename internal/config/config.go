@@ -88,29 +88,29 @@ func (conf *Config) loadConfig() error {
 }
 
 // loadEnv assigns environment variables to Config fields.
-func (conf *Config) loadEnv() {
+func (conf *Config) loadEnv(prefix string) {
 
-	if env := os.Getenv("K3_NAME"); env != "" {
+	if env := os.Getenv(prefix + "NAME"); env != "" {
 		conf.Name = env
 	}
 
-	if env := os.Getenv("K3_PARAMETERS_FILE"); env != "" {
+	if env := os.Getenv(prefix + "PARAMETERS_FILE"); env != "" {
 		conf.ParametersFile = env
 	}
 
-	if env := os.Getenv("K3_TEST_HOOK"); env != "" {
+	if env := os.Getenv(prefix + "TEST_HOOK"); env != "" {
 		conf.TestHook = env
 	}
 
-	if env := os.Getenv("K3_TIMEOUT"); env != "" {
+	if env := os.Getenv(prefix + "TIMEOUT"); env != "" {
 		conf.Timeout, _ = strconv.ParseFloat(env, 64)
 	}
 
-	if env := os.Getenv("K3_SOURCES"); env != "" {
+	if env := os.Getenv(prefix + "SOURCES"); env != "" {
 		conf.Sources = strings.Fields(env)
 	}
 
-	if env := os.Getenv("K3_IMPORTS"); env != "" {
+	if env := os.Getenv(prefix + "IMPORTS"); env != "" {
 		conf.Imports = strings.Fields(env)
 	}
 
@@ -205,7 +205,7 @@ func fromDirectory(dir string) (*Config, error) {
 		}
 		conf.Sources = files
 	}
-	conf.loadEnv()
+	conf.loadEnv("K3_")
 	conf.loadDefaults()
 	conf.expandPaths()
 	return conf, nil
@@ -218,7 +218,7 @@ func fromFiles(files []string) (*Config, error) {
 		Sources: files,
 	}
 
-	conf.loadEnv()
+	conf.loadEnv("K3_")
 	conf.loadDefaults()
 	conf.expandPaths()
 	return conf, nil
