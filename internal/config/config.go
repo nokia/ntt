@@ -120,7 +120,8 @@ func (conf *Config) loadEnv() {
 func (conf *Config) loadDefaults() {
 
 	if conf.Name == "" {
-		conf.Name = filepath.Base(conf.Dir)
+		n, _ := filepath.Abs(conf.Dir)
+		conf.Name = filepath.Base(n)
 	}
 
 	if conf.ParametersFile == "" {
