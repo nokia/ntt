@@ -16,7 +16,7 @@ import (
 	toml "github.com/pelletier/go-toml"
 )
 
-var e = New("ntt")
+var DefaultEnv = New("ntt")
 
 type Env struct {
 	prefix string
@@ -27,50 +27,51 @@ type Env struct {
 
 // New returns a new and empty instance of Env
 func New(prefix string) *Env {
-	e := &Env{
+	DefaultEnv := &Env{
 		prefix: prefix,
 		data:   make(map[string]string, 0),
 	}
-	return e
+	return DefaultEnv
 }
 
 // SetPrefix sets a new prefix. Note, previouly synced variables are not
 // removed.
-func (e *Env) SetPrefix(prefix string) {
-	e.prefix = prefix
+func (env *Env) SetPrefix(prefix string) {
+	env.prefix = prefix
 }
 
 // Reset clears all variables. Note, environment variables won't be unset.
-func (e *Env) Reset() {
-	e.data = make(map[string]string, 0)
-	e.used = nil
+func (env *Env) Reset() {
+	env.data = make(map[string]string, 0)
+	env.used = nil
 }
 
 // Set adds a value with key.
-func (e *Env) Set(key string, value string) {
-	e.data[strings.ToLower(key)] = value
+func (env *Env) Set(key string, value string) {
+	env.data[strings.ToLower(key)] = value
 }
 
 // Get returns the value of a given key; or "" if key does not exist.
-// Variable references (e.g. ${SOMETHING}) are expanded, if that reference
+// Variable references (env.g. ${SOMETHING}) are expanded, if that reference
 // exists.
-func (e *Env) Get(key string) string {
-	return e.expand(e.get(key))
+func (env *Env) Get(key string) string {
+	return env.Expand(env.get(key))
 }
 
-func (e *Env) get(key string) string {
-	if v := os.Getenv(e.varToEnv(key)); v != "" {
+func (env *Env) get(key string) string {
+	if v := os.Getenv(env.varToEnv(key)); v != "" {
 		return v
 	}
 
-	if v, ok := e.data[strings.ToLower(key)]; ok {
+	if v, ok := env.data[strings.ToLower(key)]; ok {
 		return v
 	}
 
 	return ""
 }
 
-func (e *Env) expand(s string) string {
+// Expand expands s using first getenv and then Env.
+func (env *Env) Expand(s string) string {
 	mapper := func(name string) string {
 		// Always expand regular environment variables (PATH, CFLAGS, ...)
 		if v := os.Getenv(name); v != "" {
@@ -78,7 +79,7 @@ func (e *Env) expand(s string) string {
 		}
 
 		// Try expanding unexported variables
-		if v := e.get(e.envToVar(name)); v != "" {
+		if v := env.get(env.envToVar(name)); v != "" {
 			return v
 		}
 
@@ -90,10 +91,10 @@ func (e *Env) expand(s string) string {
 }
 
 // Keys returns a sorted list of keys, including those from environment.
-func (e *Env) Keys() []string {
-	e.Sync()
-	keys := make([]string, 0, len(e.data))
-	for k, _ := range e.data {
+func (env *Env) Keys() []string {
+	env.Sync()
+	keys := make([]string, 0, len(env.data))
+	for k, _ := range env.data {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -101,12 +102,12 @@ func (e *Env) Keys() []string {
 }
 
 // Sync copies all environment variables starting with prefix into Env.
-func (e *Env) Sync() {
+func (env *Env) Sync() {
 	for _, v := range os.Environ() {
-		if e.hasPrefix(v) {
+		if env.hasPrefix(v) {
 			f := strings.Split(v, "=")
-			if v := e.envToVar(f[0]); v != "" {
-				e.Set(v, strings.Join(f[1:], "="))
+			if v := env.envToVar(f[0]); v != "" {
+				env.Set(v, strings.Join(f[1:], "="))
 			}
 		}
 	}
@@ -114,103 +115,106 @@ func (e *Env) Sync() {
 
 // ToMap exports all data from Env as string-map, including environment.
 // variables starting with prefix.
-func (e *Env) ToMap() map[string]string {
-	m := make(map[string]string, len(e.data))
-	for _, k := range e.Keys() {
-		m[k] = e.Get(k)
+func (env *Env) ToMap() map[string]string {
+	m := make(map[string]string, len(env.data))
+	for _, k := range env.Keys() {
+		m[k] = env.Get(k)
 	}
 	return m
 }
 
 // AddConfigPath adds a path to search for configuration files in.
-func (e *Env) AddPath(path string) {
-	e.dirs = append(e.dirs, path)
+func (env *Env) AddPath(path string) {
+	env.dirs = append(env.dirs, path)
 }
 
 // Will read a configuration file from a io.Reader adding existing variables.
-func (e *Env) ReadEnv(r io.Reader) error {
+func (env *Env) ReadEnv(r io.Reader) error {
 	tree, err := toml.LoadReader(r)
 	if err != nil {
 		return err
 	}
 
 	for k, v := range tree.ToMap() {
-		e.Set(k, fmt.Sprint(v))
+		os.Setenv(k, env.Expand(fmt.Sprint(v)))
 	}
 
 	return nil
 }
 
 // ReadEnvFiles discovers and reads environment variables
-func (e *Env) ReadEnvFiles() error {
-	for _, d := range e.dirs {
-		path := filepath.Join(d, e.prefix+".env")
+func (env *Env) ReadEnvFiles() error {
+	for _, d := range env.dirs {
+		path := filepath.Join(env.Expand(d), env.prefix+".env")
 		if file, err := os.Open(path); err == nil {
-			if err := e.ReadEnv(file); err != nil {
+			if err := env.ReadEnv(file); err != nil {
 				return err
 			}
-			e.used = append(e.used, path)
+			env.used = append(env.used, path)
 		}
 	}
 	return nil
 }
 
 // EnvFileUsed returns a slice with files used to fill Env
-func (e *Env) EnvFilesUsed() []string {
-	return e.used
+func (env *Env) EnvFilesUsed() []string {
+	return env.used
 }
 
 // varToEnv converts a variable name into a environment variable name.
 // Example: "foo" becomes "K3_FOO" .
-func (e *Env) varToEnv(s string) string {
-	return strings.ToUpper(e.prefix + "_" + s)
+func (env *Env) varToEnv(s string) string {
+	return strings.ToUpper(env.prefix + "_" + s)
 }
 
 // envToVar converts a environment variable name into variable name.
 // Example: "K3_FOO" becomes "foo"
-func (e *Env) envToVar(s string) string {
-	return strings.TrimPrefix(strings.ToLower(s), strings.ToLower(e.prefix+"_"))
+func (env *Env) envToVar(s string) string {
+	return strings.TrimPrefix(strings.ToLower(s), strings.ToLower(env.prefix+"_"))
 }
 
 // hasPrefix returns true is string s begins with upper-case prefix and
 // underscore.
-func (e *Env) hasPrefix(s string) bool {
-	return strings.HasPrefix(s, strings.ToUpper(e.prefix+"_"))
+func (env *Env) hasPrefix(s string) bool {
+	return strings.HasPrefix(s, strings.ToUpper(env.prefix+"_"))
 }
 
 // SetPrefix sets a new prefix. Note, previouly synced variables are not
 // removed.
-func SetPrefix(prefix string) { e.SetPrefix(prefix) }
+func SetPrefix(prefix string) { DefaultEnv.SetPrefix(prefix) }
 
 // Reset clears all variables. Note, environment variables won't be unset.
-func Reset() { e.Reset() }
+func Reset() { DefaultEnv.Reset() }
 
 // Set adds a value with key.
-func Set(key string, value string) { e.Set(key, value) }
+func Set(key string, value string) { DefaultEnv.Set(key, value) }
 
 // Get returns the value of a given key; or "" if key does not exist.
-// Variable references (e.g. ${SOMETHING}) are expanded, if that reference
+// Variable references (DefaultEnv.g. ${SOMETHING}) are expanded, if that reference
 // exists.
-func Get(key string) string { return e.Get(key) }
+func Get(key string) string { return DefaultEnv.Get(key) }
+
+// Expand expands s using first getenv and then Env.
+func Expand(s string) string { return DefaultEnv.Expand(s) }
 
 // Keys returns a sorted list of keys, including those from environment.
-func Keys() []string { return e.Keys() }
+func Keys() []string { return DefaultEnv.Keys() }
 
 // Sync copies all environment variables starting with prefix into Env.
-func Sync() { e.Sync() }
+func Sync() { DefaultEnv.Sync() }
 
 // ToMap exports all data from Env as string-map, including environment.
 // variables starting with prefix.
-func ToMap() map[string]string { return e.ToMap() }
+func ToMap() map[string]string { return DefaultEnv.ToMap() }
 
 // AddConfigPath adds a path to search for configuration files in.
-func AddPath(path string) { e.AddPath(path) }
+func AddPath(path string) { DefaultEnv.AddPath(path) }
 
 // Will read a configuration file from a io.Reader adding existing variables.
-func ReadEnv(r io.Reader) error { return e.ReadEnv(r) }
+func ReadEnv(r io.Reader) error { return DefaultEnv.ReadEnv(r) }
 
 // ReadEnvFiles discovers and reads environment variables
-func ReadEnvFiles() error { return e.ReadEnvFiles() }
+func ReadEnvFiles() error { return DefaultEnv.ReadEnvFiles() }
 
 // EnvFileUsed returns a slice with files used to fill Env
-func EnvFilesUsed() []string { return e.EnvFilesUsed() }
+func EnvFilesUsed() []string { return DefaultEnv.EnvFilesUsed() }

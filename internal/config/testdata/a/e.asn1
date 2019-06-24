@@ -1,8 +1,0 @@
-MyShopPurchaseOrders DEFINITIONS AUTOMATIC TAGS ::= BEGIN
-
-PurchaseOrder ::= SEQUENCE {
-    dateOfOrder>DATE,
-}
-
-END
-
