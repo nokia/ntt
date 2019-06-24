@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
-	"github.com/nokia/ntt/internal/config"
+	"github.com/nokia/ntt/internal/cli"
+	"github.com/nokia/ntt/internal/env"
+	"github.com/nokia/ntt/internal/suite"
 	"github.com/spf13/cobra"
 )
 
@@ -16,74 +17,31 @@ var (
 		Short: "show configuration variables used by k3",
 		RunE:  show,
 	}
-
-	vars    = map[string]string{}
-	allKeys = []string{
-		"name",
-		"source_dir",
-		"sources",
-		"imports",
-		"ttcn3_files",
-		"parameters_file",
-		"test_hook",
-		"timeout",
-	}
 )
 
 func show(cmd *cobra.Command, args []string) error {
 
-	keys, files := splitArgs(args, cmd.ArgsLenAtDash())
+	keys, source := cli.SplitArgs(args, cmd.ArgsLenAtDash())
 
-	conf, err := config.FromArgs(files)
+	s, err := suite.NewFromArgs(source)
 	if err != nil {
-		fmt.Fprint(os.Stderr, err.Error(), '\n')
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	s.SetEnv()
+
+	if len(keys) == 0 {
+		for _, k := range env.Keys() {
+			fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(k), env.Get(k))
+		}
 		return nil
 	}
 
-	if conf != nil {
-		vars["name"] = conf.Name
-		vars["source_dir"] = conf.Dir
-		vars["sources"] = strings.Join(conf.Sources, " ")
-		vars["imports"] = strings.Join(conf.Imports, " ")
-		vars["parameters_file"] = conf.ParametersFile
-		vars["test_hook"] = conf.TestHook
-		vars["timeout"] = strconv.FormatFloat(conf.Timeout, 'f', -1, 64)
-
-		ttcn3_files := findTTCN3Files(conf.Sources...)
-		if conf.Imports != nil {
-			ttcn3_files = append(ttcn3_files, findTTCN3Files(conf.Imports...)...)
-		}
-		vars["ttcn3_files"] = strings.Join(ttcn3_files, " ")
-	}
-
-	// TODO(5nord) find better default for keys if conf is nil
-	if len(keys) == 0 {
-		keys = allKeys
-	}
-
 	for _, k := range keys {
-		if v, ok := vars[k]; ok {
-			// TODO(5nord) only print variable name is default keys are used
-			fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(k), v)
+		if v := env.Get(k); v != "" {
+			fmt.Println(v)
 		}
 	}
 	return nil
-}
-
-func splitArgs(args []string, pos int) ([]string, []string) {
-	if pos < 0 {
-		return args, []string{}
-	}
-	return args[:pos], args[pos:]
-}
-
-func findTTCN3Files(dirs ...string) []string {
-	ret := make([]string, len(dirs))
-	for _, d := range dirs {
-		// TODO(5nord) make paths valid (relativ to config.Dir)
-		if files, err := config.FindTTCN3Files(d); err == nil {
-			ret = append(ret, files...)
-		}
-	}
-	return ret
 }

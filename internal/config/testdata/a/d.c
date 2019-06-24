@@ -1,1 +1,0 @@
-void d_func() {}
