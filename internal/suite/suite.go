@@ -11,7 +11,7 @@ concept of packages similar to Go:
 A package is a directory containing TTCN-3, ASN.1 or C/C++ source files. A test
 suite is a special package with a configuration file (`package.yml`). This
 configuration file specifies dependencies to other packages, as well as runtime
-specific specific configurations like test_hooks, timeout, module parameters,
+specific configuration like test_hooks, timeout, module parameters,
 ... . The name of the package is the base-name of the directory. So choose the
 name carefully. Everything which belongs together should be put together.
 Package names should describe their purpose, they should be short and easy to
