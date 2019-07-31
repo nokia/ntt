@@ -991,7 +991,7 @@ type (
 		Name     *Ident
 		Language *LanguageSpec
 		LBrace   Token
-		Decls    []*ModuleDef
+		Defs     []*ModuleDef
 		RBrace   Token
 		With     *WithSpec
 	}

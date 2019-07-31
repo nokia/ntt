@@ -1089,8 +1089,8 @@ func (p *parser) parseModule() *Module {
 	m.LBrace = p.expect(LBRACE)
 
 	for p.tok != RBRACE && p.tok != EOF {
-		m.Decls = append(m.Decls, p.parseModuleDef())
-		p.expectSemi(m.Decls[len(m.Decls)-1].lastTok())
+		m.Defs = append(m.Defs, p.parseModuleDef())
+		p.expectSemi(m.Defs[len(m.Defs)-1].lastTok())
 	}
 	m.RBrace = p.expect(RBRACE)
 	m.With = p.parseWith()

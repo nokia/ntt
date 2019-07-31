@@ -1,117 +1,77 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"ntt/internal/loader"
 	"os"
-
-	"github.com/nokia/ntt/internal/loader"
-	"github.com/nokia/ntt/internal/ttcn3/syntax"
 
 	"github.com/spf13/cobra"
 )
 
 var (
 	listCmd = &cobra.Command{
-		Use:   "list [tests|modules|imports] [files]",
+		Use:   "list [tests|modules|imports] [files...]",
 		Short: "List various types of objects",
 		Long: `List various types of objects.
 
 Default output shows the testcase names in current directory.`,
 
-		RunE:          list,
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		RunE:      list,
+		ValidArgs: []string{"tests", "imports", "modules"},
+		ArgAliases: []string{
+			"test", "tc", "tcs", "testcase", "testcases",
+			"import", "dep", "deps", "dependency", "dependencies",
+			"mod", "mods", "module",
+		},
 	}
-
-	w = bufio.NewWriter(os.Stdout)
 )
 
-var printers = map[string]func(string, *syntax.Module, syntax.Node){
-	"tc":        printTests,
-	"tcs":       printTests,
-	"test":      printTests,
-	"tests":     printTests,
-	"testcase":  printTests,
-	"testcases": printTests,
-	"mod":       printModules,
-	"mods":      printModules,
-	"module":    printModules,
-	"modules":   printModules,
-	"import":    printImports,
-	"imports":   printImports,
-}
+var nouns = map[string]string{
+	"tests":   "tests",
+	"imports": "imports",
+	"modules": "imports",
 
-func printModules(file string, m *syntax.Module, n syntax.Node) {
-	if Verbose {
-		fmt.Fprint(w, file, ": ")
-	}
-	fmt.Fprintln(w, m.Name.Tok.Lit)
-}
+	"test":      "tests",
+	"tc":        "tests",
+	"tcs":       "tests",
+	"testcase":  "tests",
+	"testcases": "tests",
 
-func printTests(file string, m *syntax.Module, n syntax.Node) {
-	for _, def := range m.Decls {
-		switch x := def.Def.(type) {
-		case *syntax.GroupDecl:
-		case *syntax.ControlPart:
-			if Verbose {
-				fmt.Fprint(w, file, ": ")
-			}
-			fmt.Fprintln(w, m.Name.Tok.Lit+".control")
+	"import":       "imports",
+	"dep":          "imports",
+	"deps":         "imports",
+	"dependency":   "imports",
+	"dependencies": "imports",
 
-		case *syntax.FuncDecl:
-			if x.Kind.Kind != syntax.TESTCASE {
-				break
-			}
-			if Verbose {
-				fmt.Fprint(w, file, ": ")
-			}
-			fmt.Fprintln(w, m.Name.Tok.Lit+"."+x.Name.Tok.Lit)
-		}
-	}
-}
-
-func printImports(file string, m *syntax.Module, n syntax.Node) {
-	for _, def := range m.Decls {
-		switch x := def.Def.(type) {
-		case *syntax.GroupDecl:
-		case *syntax.ImportDecl:
-			if Verbose {
-				fmt.Fprint(w, file, ": ")
-			}
-			fmt.Fprintln(w, m.Name.Tok.Lit, "<-", x.Module.Tok.Lit)
-		}
-	}
+	"mod":    "modules",
+	"mods":   "modules",
+	"module": "modules",
 }
 
 func list(cmd *cobra.Command, args []string) error {
-	printer := printTests
+	noun := "tests"
 
 	if len(args) > 0 {
-		if f, ok := printers[args[0]]; ok {
-			printer = f
+		if n, ok := nouns[args[0]]; ok {
+			noun = n
 			args = args[1:]
 		}
 	}
 
-	var conf loader.Config
-	err := conf.FromArgs(args)
+	suite, err := loader.NewFromArgs(args)
 	if err != nil {
-		return err
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
 
-	pkg, err := conf.Load()
-	if err != nil {
-		return err
+	if err := suite.Load(); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
 
-	for _, m := range pkg.Modules {
-		var file string
-		if Verbose {
-			file = pkg.Fset.File(m.Tok.Pos()).Name()
-		}
-		printer(file, m, m)
+	fmt.Println(noun)
+	for _, m := range suite.Modules {
+		fmt.Println(m)
 	}
-	w.Flush()
 	return nil
 }

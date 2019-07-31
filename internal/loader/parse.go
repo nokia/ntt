@@ -1,9 +1,10 @@
 package loader
 
 import (
-	"github.com/nokia/ntt/internal/ttcn3/syntax"
 	"runtime"
 	"sync"
+
+	"github.com/nokia/ntt/internal/ttcn3/syntax"
 )
 
 var ioLimit = make(chan bool, runtime.NumCPU()*50)
