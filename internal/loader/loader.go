@@ -1,6 +1,8 @@
 package loader
 
 import (
+	"sort"
+
 	st "github.com/nokia/ntt/internal/suite"
 	"github.com/nokia/ntt/internal/ttcn3/syntax"
 )
@@ -20,6 +22,7 @@ func NewFromArgs(args []string) (*Suite, error) {
 		return nil, err
 	}
 	suite.SetEnv()
+	sort.Strings(suite.Sources)
 	return suite, nil
 }
 
