@@ -161,7 +161,8 @@ func NewFromDirectory(dir string) (*Suite, error) {
 		suite.Sources = files
 	}
 
-	return suite, nil
+	err := suite.expandSources()
+	return suite, err
 }
 
 // New creates a new Suite with default values.
@@ -266,5 +267,28 @@ func (suite *Suite) readEnv() error {
 	suite.SetDir(suite.env.Expand(suite.Dir()))
 	suite.SetName(suite.env.Expand(suite.Name))
 
+	return nil
+}
+
+func (suite *Suite) expandSources() error {
+	sources := make([]string, 0)
+	for _, src := range suite.Sources {
+		switch {
+		case fs.IsDirectory(src):
+			files, err := fs.TTCN3Files(src)
+			if err != nil {
+				return err
+			}
+			if len(files) == 0 {
+				return fmt.Errorf("No ttcn3 source files in %q.", src)
+			}
+			sources = append(sources, files...)
+		case fs.IsRegular(src) && fs.IsTTCN3File(src):
+			sources = append(sources, src)
+		default:
+			return fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", src)
+		}
+	}
+	suite.Sources = sources
 	return nil
 }
