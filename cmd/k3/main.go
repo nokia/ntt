@@ -61,6 +61,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err := rootCmd.Execute(); err != nil {
+		switch err := err.(type) {
+		case *exec.ExitError:
+			os.Exit(err.ExitCode())
+		}
 		syntax.PrintError(os.Stderr, err)
 		os.Exit(1)
 	}
