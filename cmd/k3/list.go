@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"ntt/internal/loader"
 	"os"
+
+	"github.com/nokia/ntt/internal/loader"
+	"github.com/nokia/ntt/internal/ttcn3/syntax"
 
 	"github.com/spf13/cobra"
 )
@@ -24,36 +27,37 @@ Default output shows the testcase names in current directory.`,
 			"mod", "mods", "module",
 		},
 	}
+
+	w = bufio.NewWriter(os.Stdout)
+
+	printers = map[string]func(string, *syntax.Module, syntax.Node){
+		"tests":     printTests,
+		"test":      printTests,
+		"tc":        printTests,
+		"tcs":       printTests,
+		"testcase":  printTests,
+		"testcases": printTests,
+
+		"imports":      printImports,
+		"import":       printImports,
+		"dep":          printImports,
+		"deps":         printImports,
+		"dependency":   printImports,
+		"dependencies": printImports,
+
+		"modules": printModules,
+		"module":  printModules,
+		"mod":     printModules,
+		"mods":    printModules,
+	}
 )
 
-var nouns = map[string]string{
-	"tests":   "tests",
-	"imports": "imports",
-	"modules": "imports",
-
-	"test":      "tests",
-	"tc":        "tests",
-	"tcs":       "tests",
-	"testcase":  "tests",
-	"testcases": "tests",
-
-	"import":       "imports",
-	"dep":          "imports",
-	"deps":         "imports",
-	"dependency":   "imports",
-	"dependencies": "imports",
-
-	"mod":    "modules",
-	"mods":   "modules",
-	"module": "modules",
-}
-
 func list(cmd *cobra.Command, args []string) error {
-	noun := "tests"
+	printer := printTests
 
 	if len(args) > 0 {
-		if n, ok := nouns[args[0]]; ok {
-			noun = n
+		if n, ok := printers[args[0]]; ok {
+			printer = n
 			args = args[1:]
 		}
 	}
@@ -69,9 +73,56 @@ func list(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	fmt.Println(noun)
-	for _, m := range suite.Modules {
-		fmt.Println(m)
+	for _, mod := range suite.Modules {
+		var file string
+		if Verbose {
+			file = suite.Fset.File(mod.Pos()).Name()
+		}
+		printer(file, mod, mod)
 	}
+	w.Flush()
+
 	return nil
+}
+
+func printModules(file string, m *syntax.Module, n syntax.Node) {
+	if Verbose {
+		fmt.Fprint(w, file, " ")
+	}
+	fmt.Fprintln(w, m.Name.Tok.Lit)
+}
+
+func printTests(file string, m *syntax.Module, n syntax.Node) {
+	for _, def := range m.Defs {
+		switch x := def.Def.(type) {
+		case *syntax.GroupDecl:
+		case *syntax.ControlPart:
+			if Verbose {
+				fmt.Fprint(w, file, " ")
+			}
+			fmt.Fprintln(w, m.Name.Tok.Lit+".control")
+
+		case *syntax.FuncDecl:
+			if x.Kind.Kind != syntax.TESTCASE {
+				break
+			}
+			if Verbose {
+				fmt.Fprint(w, file, ": ")
+			}
+			fmt.Fprintln(w, m.Name.Tok.Lit+"."+x.Name.Tok.Lit)
+		}
+	}
+}
+
+func printImports(file string, m *syntax.Module, n syntax.Node) {
+	for _, def := range m.Defs {
+		switch x := def.Def.(type) {
+		case *syntax.GroupDecl:
+		case *syntax.ImportDecl:
+			if Verbose {
+				fmt.Fprint(w, file, " ")
+			}
+			fmt.Fprintln(w, m.Name.Tok.Lit, "<-", x.Module.Tok.Lit)
+		}
+	}
 }
