@@ -60,6 +60,14 @@ func main() {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
+
+	// Bash Workaround: If a custom command is a shell script, array variables
+	// like K3_IMPORTS cannot be exported. Such scripts export _K3_SOURCES, ...
+	// instead.
+	copyEnv("_K3_SOURCES", "K3_SOURCES")
+	copyEnv("_K3_IMPORTS", "K3_IMPORTS")
+	copyEnv("_K3_TTCN3_FILES", "K3_TTCN3_FILES")
+
 	if err := rootCmd.Execute(); err != nil {
 		switch err := err.(type) {
 		case *exec.ExitError:
@@ -67,5 +75,11 @@ func main() {
 		}
 		syntax.PrintError(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+func copyEnv(from, to string) {
+	if s := os.Getenv(from); s != "" {
+		os.Setenv(to, s)
 	}
 }
