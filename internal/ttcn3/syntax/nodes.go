@@ -808,6 +808,10 @@ type (
 	}
 )
 
+func (x *FuncDecl) IsTest() bool {
+	return x.Kind.Kind == TESTCASE
+}
+
 func (x *ValueDecl) lastTok() *Token {
 	if x.With != nil {
 		return x.With.lastTok()
