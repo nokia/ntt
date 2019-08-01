@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/ttcn3/syntax"
@@ -71,7 +72,8 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		switch err := err.(type) {
 		case *exec.ExitError:
-			os.Exit(err.ExitCode())
+			waitStatus := err.Sys().(syscall.WaitStatus)
+			os.Exit(waitStatus.ExitStatus())
 		}
 		syntax.PrintError(os.Stderr, err)
 		os.Exit(1)

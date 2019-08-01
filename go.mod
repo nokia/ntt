@@ -1,6 +1,6 @@
 module github.com/nokia/ntt
 
-go 1.12
+go 1.11
 
 require (
 	github.com/gofrs/flock v0.7.1
