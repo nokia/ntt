@@ -137,6 +137,7 @@ func (s *Scanner) scanComment() string {
 			}
 			s.next()
 		}
+		s.next()
 		goto exit
 	}
 

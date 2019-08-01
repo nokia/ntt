@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/loader"
+	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/nokia/ntt/internal/ttcn3/syntax"
 
 	"github.com/spf13/cobra"
@@ -50,7 +51,14 @@ Default output shows the testcase names in current directory.`,
 		"mod":     printModules,
 		"mods":    printModules,
 	}
+
+	Tags = false
 )
+
+func init() {
+	listCmd.Flags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
+	rootCmd.AddCommand(listCmd)
+}
 
 func list(cmd *cobra.Command, args []string) error {
 	printer := printTests
@@ -85,33 +93,50 @@ func list(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func printModules(file string, m *syntax.Module, n syntax.Node) {
-	if Verbose {
-		fmt.Fprint(w, file, " ")
-	}
-	fmt.Fprintln(w, m.Name.Tok.Lit)
-}
-
 func printTests(file string, m *syntax.Module, n syntax.Node) {
 	for _, def := range m.Defs {
 		switch x := def.Def.(type) {
 		case *syntax.GroupDecl:
-		case *syntax.ControlPart:
-			if Verbose {
-				fmt.Fprint(w, file, " ")
-			}
-			fmt.Fprintln(w, m.Name.Tok.Lit+".control")
-
 		case *syntax.FuncDecl:
-			if x.Kind.Kind != syntax.TESTCASE {
+			if !x.IsTest() {
 				break
 			}
-			if Verbose {
-				fmt.Fprint(w, file, ": ")
+
+			if Tags {
+				if comments := x.Kind.Comments(); comments != "" {
+					tags := doc.FindAllTags(comments)
+					if len(tags) > 0 {
+						for _, tag := range tags {
+
+							if Verbose {
+								fmt.Fprint(w, file, "\t")
+							}
+
+							fmt.Fprintf(w, "%s.%s\t%s\t%s\n",
+								m.Name.Tok.Lit,
+								x.Name.Tok.Lit,
+								tag[0],
+								tag[1])
+						}
+						break
+					}
+				}
 			}
+
+			if Verbose {
+				fmt.Fprint(w, file, "\t")
+			}
+
 			fmt.Fprintln(w, m.Name.Tok.Lit+"."+x.Name.Tok.Lit)
 		}
 	}
+}
+
+func printModules(file string, m *syntax.Module, n syntax.Node) {
+	if Verbose {
+		fmt.Fprint(w, file, "\t")
+	}
+	fmt.Fprintln(w, m.Name.Tok.Lit)
 }
 
 func printImports(file string, m *syntax.Module, n syntax.Node) {
@@ -120,7 +145,7 @@ func printImports(file string, m *syntax.Module, n syntax.Node) {
 		case *syntax.GroupDecl:
 		case *syntax.ImportDecl:
 			if Verbose {
-				fmt.Fprint(w, file, " ")
+				fmt.Fprint(w, file, "\t")
 			}
 			fmt.Fprintln(w, m.Name.Tok.Lit, "<-", x.Module.Tok.Lit)
 		}

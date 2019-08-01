@@ -1,5 +1,10 @@
 package syntax
 
+import (
+	"fmt"
+	"strings"
+)
+
 // All node types implement the Node interface.
 type Node interface {
 	Pos() Pos
@@ -50,6 +55,20 @@ type Token struct {
 	token
 	LeadingTriv  []Trivia
 	TrailingTriv []Trivia
+}
+
+// Comments concatenates all leading comments into one single string.
+func (t *Token) Comments() string {
+	var b strings.Builder
+	b.Grow(1024)
+
+	for _, triv := range t.LeadingTriv {
+		if triv.Kind == COMMENT {
+			fmt.Fprint(&b, triv.Lit)
+		}
+	}
+
+	return b.String()
 }
 
 func (t *Token) lastTok() *Token { return t }

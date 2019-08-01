@@ -53,7 +53,7 @@ func init() {
 	env.AddPath("${HOME}/.k3/config")
 
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.AddCommand(listCmd, showCmd)
+	rootCmd.AddCommand(showCmd)
 }
 
 func main() {
