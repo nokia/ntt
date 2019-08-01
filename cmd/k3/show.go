@@ -21,7 +21,7 @@ var (
 
 func show(cmd *cobra.Command, args []string) error {
 
-	keys, source := cli.SplitArgs(args, cmd.ArgsLenAtDash())
+	source, keys := cli.SplitArgs(args, cmd.ArgsLenAtDash())
 
 	s, err := suite.NewFromArgs(source)
 	if err != nil {
