@@ -33,7 +33,7 @@ func show(cmd *cobra.Command, args []string) error {
 
 	if len(keys) == 0 {
 		for _, k := range env.Keys() {
-			fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(k), env.Get(k))
+			fmt.Printf("K3_%s=%s\n", strings.ToUpper(k), env.Get(k))
 		}
 		return nil
 	}
