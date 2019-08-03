@@ -3,15 +3,16 @@ package loader
 import (
 	"sort"
 
+	"github.com/nokia/ntt/internal/loc"
 	st "github.com/nokia/ntt/internal/suite"
-	"github.com/nokia/ntt/internal/ttcn3/syntax"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
 type Suite struct {
 	*st.Suite
 	ParseOnly bool
-	Fset      *syntax.FileSet
-	Modules   []*syntax.Module
+	Fset      *loc.FileSet
+	Modules   []*ast.Module
 }
 
 func NewFromArgs(args []string) (*Suite, error) {
@@ -27,7 +28,7 @@ func NewFromArgs(args []string) (*Suite, error) {
 }
 
 func (suite *Suite) Load() error {
-	suite.Fset = syntax.NewFileSet()
+	suite.Fset = loc.NewFileSet()
 	m, err := parseFiles(suite.Fset, suite.Sources)
 	if err != nil {
 		return err

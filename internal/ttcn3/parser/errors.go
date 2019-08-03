@@ -1,9 +1,11 @@
-package syntax
+package parser
 
 import (
 	"fmt"
 	"io"
 	"sort"
+
+	"github.com/nokia/ntt/internal/loc"
 )
 
 // In an ErrorList, an error is represented by an *Error.
@@ -12,7 +14,7 @@ import (
 // by Msg.
 //
 type Error struct {
-	Pos Position
+	Pos loc.Position
 	Msg string
 }
 
@@ -32,7 +34,7 @@ func (e Error) Error() string {
 type ErrorList []*Error
 
 // Add adds an Error with given position and error message to an ErrorList.
-func (p *ErrorList) Add(pos Position, msg string) {
+func (p *ErrorList) Add(pos loc.Position, msg string) {
 	*p = append(*p, &Error{pos, msg})
 }
 
@@ -71,7 +73,7 @@ func (p ErrorList) Sort() {
 // RemoveMultiples sorts an ErrorList and removes all but the first error per line.
 func (p *ErrorList) RemoveMultiples() {
 	sort.Sort(p)
-	var last Position // initial last.Line is != any legal error line
+	var last loc.Position // initial last.Line is != any legal error line
 	i := 0
 	for _, e := range *p {
 		if e.Pos.Filename != last.Filename || e.Pos.Line != last.Line {

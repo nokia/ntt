@@ -1,4 +1,4 @@
-package syntax
+package loc
 
 type serializedFile struct {
 	// fields correspond 1:1 to fields with same (lower-case) name in File

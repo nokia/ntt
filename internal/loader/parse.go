@@ -4,15 +4,17 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/nokia/ntt/internal/ttcn3/syntax"
+	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/parser"
 )
 
 var ioLimit = make(chan bool, runtime.NumCPU()*50)
 
-func parseFiles(fset *syntax.FileSet, files []string) ([]*syntax.Module, error) {
+func parseFiles(fset *loc.FileSet, files []string) ([]*ast.Module, error) {
 	var wg sync.WaitGroup
 	n := len(files)
-	mods := make([][]*syntax.Module, n)
+	mods := make([][]*ast.Module, n)
 	errors := make([]error, n)
 	for i, file := range files {
 		wg.Add(1)
@@ -22,7 +24,7 @@ func parseFiles(fset *syntax.FileSet, files []string) ([]*syntax.Module, error) 
 				wg.Done()
 				<-ioLimit // signal
 			}()
-			mods[i], errors[i] = syntax.ParseModules(fset, file, nil, 0, nil)
+			mods[i], errors[i] = parser.ParseModules(fset, file, nil, 0, nil)
 		}(i, file)
 	}
 	wg.Wait()
@@ -33,7 +35,7 @@ func parseFiles(fset *syntax.FileSet, files []string) ([]*syntax.Module, error) 
 		}
 	}
 
-	var list []*syntax.Module
+	var list []*ast.Module
 	for _, m := range mods {
 		list = append(list, m...)
 	}

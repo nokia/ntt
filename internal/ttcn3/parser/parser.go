@@ -1,16 +1,21 @@
-package syntax
+package parser
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/scanner"
+	"github.com/nokia/ntt/internal/ttcn3/token"
 )
 
 // The parser structure holds the parser's internal state.
 type parser struct {
-	file    *File
+	file    *loc.File
 	errors  ErrorList
-	scanner Scanner
+	scanner scanner.Scanner
 
 	// Tracing/debugging
 	mode   Mode // parsing mode
@@ -20,14 +25,14 @@ type parser struct {
 
 	// Tokens/Backtracking
 	cursor  int
-	tokens  []Token
-	trivia  []Trivia
+	tokens  []ast.Token
+	trivia  []ast.Trivia
 	markers []int
-	tok     Kind // for convenience (p.tok is used frequently)
+	tok     token.Kind // for convenience (p.tok is used frequently)
 
-	// Required for unscanning Token
-	lastKind Kind
-	lastPos  Pos
+	// Required for unscanning ast.Token
+	lastKind token.Kind
+	lastPos  loc.Pos
 	lastLit  string
 
 	// Semicolon helper
@@ -43,14 +48,14 @@ type parser struct {
 	// (used to limit the number of calls to advance
 	// w/o making scanning progress - avoids potential endless
 	// loops across multiple parser functions during error recovery)
-	syncPos Pos // last synchronization position
-	syncCnt int // number of advance calls without progress
+	syncPos loc.Pos // last synchronization position
+	syncCnt int     // number of advance calls without progress
 }
 
-func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh ErrorHandler) {
+func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode, eh scanner.ErrorHandler) {
 	p.file = fset.AddFile(filename, -1, len(src))
 
-	eh2 := func(pos Position, msg string) {
+	eh2 := func(pos loc.Position, msg string) {
 		if eh != nil {
 			eh(pos, msg)
 		}
@@ -62,7 +67,7 @@ func (p *parser) init(fset *FileSet, filename string, src []byte, mode Mode, eh 
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
 	p.semi = mode&PedanticSemicolon != 0
 
-	p.tokens = make([]Token, 0, 200)
+	p.tokens = make([]ast.Token, 0, 200)
 	p.markers = make([]int, 0, 200)
 	p.ppDefs = make(map[string]bool)
 	p.ppDefs["0"] = false
@@ -125,41 +130,41 @@ func (p *parser) handlePreproc(s string) {
 }
 
 // Read the next token from input-stream
-func (p *parser) scanToken() Token {
+func (p *parser) scanToken() ast.Token {
 	tok := p.lastKind
 	pos := p.lastPos
 	lit := p.lastLit
 
-	if p.lastKind == Kind(0) {
+	if p.lastKind == token.Kind(0) {
 		pos, tok, lit = p.scanner.Scan()
 	}
-	p.lastKind = Kind(0)
+	p.lastKind = token.Kind(0)
 
-	return Token{token{pos, tok, lit}, nil, nil}
+	return ast.NewToken(pos, tok, lit)
 }
 
 // Unread the token
-func (p *parser) unscanToken(tok Token) {
-	p.lastKind = tok.token.Kind
+func (p *parser) unscanToken(tok ast.Token) {
+	p.lastKind = tok.Kind
 	p.lastPos = tok.Pos()
 	p.lastLit = tok.Lit
 }
 
-func makeTrivia(tok Token) Trivia {
-	return Trivia{token{tok.pos, tok.Kind, tok.Lit}}
+func asTrivia(tok ast.Token) ast.Trivia {
+	return ast.NewTrivia(tok.Pos(), tok.Kind, tok.Lit)
 }
 
-func (p *parser) scan() Token {
+func (p *parser) scan() ast.Token {
 	tok := p.scanToken()
 
 	for ; p.isTrivia(tok); tok = p.scanToken() {
-		if tok.Kind == PREPROC {
+		if tok.Kind == token.PREPROC {
 			p.handlePreproc(tok.Lit)
 		}
-		p.trivia = append(p.trivia, makeTrivia(tok))
+		p.trivia = append(p.trivia, asTrivia(tok))
 	}
 
-	if tok.Kind == EOF {
+	if tok.Kind == token.EOF {
 		return tok
 	}
 
@@ -179,24 +184,24 @@ func (p *parser) scan() Token {
 		}
 
 		if line != p.file.Line(trail.Pos()) {
-			p.trivia = append(p.trivia, makeTrivia(trail))
+			p.trivia = append(p.trivia, asTrivia(trail))
 			break
 		}
 
-		tok.TrailingTriv = append(tok.TrailingTriv, makeTrivia(trail))
+		tok.TrailingTriv = append(tok.TrailingTriv, asTrivia(trail))
 	}
 
 	return tok
 }
 
-func (p *parser) isTrivia(tok Token) bool {
+func (p *parser) isTrivia(tok ast.Token) bool {
 	switch {
-	case tok.Kind == COMMENT:
+	case tok.Kind == token.COMMENT:
 		return true
-	case tok.Kind == PREPROC:
+	case tok.Kind == token.PREPROC:
 		return true
 	default:
-		if p.ppSkip && tok.Kind != EOF {
+		if p.ppSkip && tok.Kind != token.EOF {
 			return true
 		}
 		return false
@@ -204,7 +209,7 @@ func (p *parser) isTrivia(tok Token) bool {
 }
 
 // Advance to the next token
-func (p *parser) consume() Token {
+func (p *parser) consume() ast.Token {
 	tok := p.tokens[p.cursor]
 	if p.trace {
 		s := tok.Kind.String()
@@ -220,7 +225,7 @@ func (p *parser) consume() Token {
 
 	// Track curly braces for TTCN-3 semicolon rules
 	p.seenBrace = false
-	if p.tok == RBRACE {
+	if p.tok == token.RBRACE {
 		p.seenBrace = true
 	}
 
@@ -236,7 +241,7 @@ func (p *parser) consume() Token {
 }
 
 // Append current token to trailing trivia and advance to next token.
-func (p *parser) consumeTrivia(tok *Token) {
+func (p *parser) consumeTrivia(tok *ast.Token) {
 	triv := p.consume()
 
 	// TODO(5nord) Remove when parser is ready
@@ -244,14 +249,14 @@ func (p *parser) consumeTrivia(tok *Token) {
 		return
 	}
 
-	var trivs []Trivia
+	var trivs []ast.Trivia
 	copy(trivs, triv.LeadingTriv)
-	trivs = append(trivs, makeTrivia(triv))
+	trivs = append(trivs, asTrivia(triv))
 	trivs = append(trivs, triv.TrailingTriv...)
 	tok.TrailingTriv = append(tok.TrailingTriv, trivs...)
 }
 
-func (p *parser) peek(i int) Token {
+func (p *parser) peek(i int) ast.Token {
 	idx := p.cursor + i - 1
 	last := len(p.tokens) - 1
 	if idx > last {
@@ -263,7 +268,7 @@ func (p *parser) peek(i int) Token {
 	return p.tokens[idx]
 }
 
-func (p *parser) pos(i int) Pos {
+func (p *parser) pos(i int) loc.Pos {
 	tok := p.peek(i)
 	return tok.Pos()
 }
@@ -320,7 +325,7 @@ func trace(p *parser, msg string) *parser {
 // A bailout panic is raised to indicate early termination.
 type bailout struct{}
 
-func (p *parser) error(pos Pos, msg string) {
+func (p *parser) error(pos loc.Pos, msg string) {
 	epos := p.file.Position(pos)
 
 	// If AllErrors is not set, discard errors reported on the same line
@@ -339,7 +344,7 @@ func (p *parser) error(pos Pos, msg string) {
 	p.errors.Add(epos, msg)
 }
 
-func (p *parser) errorExpected(pos Pos, msg string) {
+func (p *parser) errorExpected(pos loc.Pos, msg string) {
 	msg = "expected " + msg
 	if pos == p.pos(1) {
 		// the error happened at the current position;
@@ -355,7 +360,7 @@ func (p *parser) errorExpected(pos Pos, msg string) {
 	p.error(pos, msg)
 }
 
-func (p *parser) expect(k Kind) Token {
+func (p *parser) expect(k token.Kind) ast.Token {
 	if p.tok != k {
 		tok := p.peek(1)
 		p.errorExpected(tok.Pos(), "'"+k.String()+"'")
@@ -363,8 +368,8 @@ func (p *parser) expect(k Kind) Token {
 	return p.consume() // make progress
 }
 
-func (p *parser) expectSemi(tok *Token) {
-	if p.tok == SEMICOLON {
+func (p *parser) expectSemi(tok *ast.Token) {
+	if p.tok == token.SEMICOLON {
 		p.consumeTrivia(tok)
 		return
 	}
@@ -372,7 +377,7 @@ func (p *parser) expectSemi(tok *Token) {
 	// pedantic semicolon
 	if p.semi {
 		// semicolon is optional before a closing '}'
-		if !p.seenBrace && p.tok == RBRACE && p.tok != EOF {
+		if !p.seenBrace && p.tok == token.RBRACE && p.tok != token.EOF {
 			p.errorExpected(p.pos(1), "';'")
 			p.advance(stmtStart)
 		}
@@ -381,8 +386,8 @@ func (p *parser) expectSemi(tok *Token) {
 
 // advance consumes tokens until the current token p.tok
 // is in the 'to' set, or EOF. For error recovery.
-func (p *parser) advance(to map[Kind]bool) {
-	for ; p.tok != EOF; p.consume() {
+func (p *parser) advance(to map[token.Kind]bool) {
+	for ; p.tok != token.EOF; p.consume() {
 		if to[p.tok] {
 			// Return only if parser made some progress since last
 			// sync or if it has not reached 10 advance calls without
@@ -409,111 +414,111 @@ func (p *parser) advance(to map[Kind]bool) {
 	}
 }
 
-var stmtStart = map[Kind]bool{
-	ALT:        true,
-	ALTSTEP:    true,
-	BREAK:      true,
-	CASE:       true,
-	CONST:      true,
-	CONTINUE:   true,
-	CONTROL:    true,
-	DISPLAY:    true,
-	DO:         true,
-	ELSE:       true,
-	ENCODE:     true,
-	EXTENSION:  true,
-	FOR:        true,
-	FRIEND:     true,
-	FUNCTION:   true,
-	GOTO:       true,
-	GROUP:      true,
-	IF:         true,
-	IMPORT:     true,
-	INTERLEAVE: true,
-	LABEL:      true,
-	MAP:        true,
-	MODULE:     true,
-	MODULEPAR:  true,
-	PORT:       true,
-	PRIVATE:    true,
-	PUBLIC:     true,
-	REPEAT:     true,
-	RETURN:     true,
-	SELECT:     true,
-	SIGNATURE:  true,
-	TEMPLATE:   true,
-	TESTCASE:   true,
-	TIMER:      true,
-	TYPE:       true,
-	UNMAP:      true,
-	VAR:        true,
-	VARIANT:    true,
-	WHILE:      true,
+var stmtStart = map[token.Kind]bool{
+	token.ALT:        true,
+	token.ALTSTEP:    true,
+	token.BREAK:      true,
+	token.CASE:       true,
+	token.CONST:      true,
+	token.CONTINUE:   true,
+	token.CONTROL:    true,
+	token.DISPLAY:    true,
+	token.DO:         true,
+	token.ELSE:       true,
+	token.ENCODE:     true,
+	token.EXTENSION:  true,
+	token.FOR:        true,
+	token.FRIEND:     true,
+	token.FUNCTION:   true,
+	token.GOTO:       true,
+	token.GROUP:      true,
+	token.IF:         true,
+	token.IMPORT:     true,
+	token.INTERLEAVE: true,
+	token.LABEL:      true,
+	token.MAP:        true,
+	token.MODULE:     true,
+	token.MODULEPAR:  true,
+	token.PORT:       true,
+	token.PRIVATE:    true,
+	token.PUBLIC:     true,
+	token.REPEAT:     true,
+	token.RETURN:     true,
+	token.SELECT:     true,
+	token.SIGNATURE:  true,
+	token.TEMPLATE:   true,
+	token.TESTCASE:   true,
+	token.TIMER:      true,
+	token.TYPE:       true,
+	token.UNMAP:      true,
+	token.VAR:        true,
+	token.VARIANT:    true,
+	token.WHILE:      true,
 }
 
-var operandStart = map[Kind]bool{
-	ADDRESS:    true,
-	ALL:        true,
-	ANY:        true,
-	ANYKW:      true,
-	BSTRING:    true,
-	CHARSTRING: true,
-	ERROR:      true,
-	FAIL:       true,
-	FALSE:      true,
-	FLOAT:      true,
-	//IDENT: true, TODO(5nord) fix conflict, see failing parser tests
-	INCONC:    true,
-	INT:       true,
-	MAP:       true,
-	MTC:       true,
-	MUL:       true,
-	NAN:       true,
-	NONE:      true,
-	NULL:      true,
-	OMIT:      true,
-	PASS:      true,
-	STRING:    true,
-	SYSTEM:    true,
-	TESTCASE:  true,
-	TIMER:     true,
-	TRUE:      true,
-	UNIVERSAL: true,
-	UNMAP:     true,
+var operandStart = map[token.Kind]bool{
+	token.ADDRESS:    true,
+	token.ALL:        true,
+	token.ANY:        true,
+	token.ANYKW:      true,
+	token.BSTRING:    true,
+	token.CHARSTRING: true,
+	token.ERROR:      true,
+	token.FAIL:       true,
+	token.FALSE:      true,
+	token.FLOAT:      true,
+	//token.IDENT: true, TODO(5nord) fix conflict, see failing parser tests
+	token.INCONC:    true,
+	token.INT:       true,
+	token.MAP:       true,
+	token.MTC:       true,
+	token.MUL:       true,
+	token.NAN:       true,
+	token.NONE:      true,
+	token.NULL:      true,
+	token.OMIT:      true,
+	token.PASS:      true,
+	token.STRING:    true,
+	token.SYSTEM:    true,
+	token.TESTCASE:  true,
+	token.TIMER:     true,
+	token.TRUE:      true,
+	token.UNIVERSAL: true,
+	token.UNMAP:     true,
 }
 
 // parse is a generic entry point
-func (p *parser) parse() []Node {
+func (p *parser) parse() []ast.Node {
 	switch p.tok {
-	case MODULE:
+	case token.MODULE:
 		list := p.parseModuleList()
-		nodes := make([]Node, len(list))
+		nodes := make([]ast.Node, len(list))
 		for i, d := range list {
 			nodes[i] = d
 		}
 		return nodes
-	case CONTROL,
-		EXTERNAL,
-		FRIEND,
-		FUNCTION,
-		GROUP,
-		IMPORT,
-		MODULEPAR,
-		SIGNATURE,
-		TEMPLATE,
-		TYPE,
-		VAR,
-		ALTSTEP,
-		CONST,
-		PRIVATE,
-		PUBLIC,
-		TESTCASE:
-		nodes := []Node{p.parseModuleDef()}
-		p.expect(EOF)
+	case token.CONTROL,
+		token.EXTERNAL,
+		token.FRIEND,
+		token.FUNCTION,
+		token.GROUP,
+		token.IMPORT,
+		token.MODULEPAR,
+		token.SIGNATURE,
+		token.TEMPLATE,
+		token.TYPE,
+		token.VAR,
+		token.ALTSTEP,
+		token.CONST,
+		token.PRIVATE,
+		token.PUBLIC,
+		token.TESTCASE:
+		nodes := []ast.Node{p.parseModuleDef()}
+		p.expect(token.EOF)
 		return nodes
 	default:
 		list := p.parseExprList()
-		nodes := make([]Node, len(list))
+		nodes := make([]ast.Node, len(list))
 		for i, d := range list {
 			nodes[i] = d
 		}
@@ -525,33 +530,33 @@ func (p *parser) parse() []Node {
  * Expressions
  *************************************************************************/
 
-// ExprList ::= Expr { "," Expr }
-func (p *parser) parseExprList() (list []Expr) {
+// ExprList ::= ast.Expr { "," ast.Expr }
+func (p *parser) parseExprList() (list []ast.Expr) {
 	if p.trace {
 		defer un(trace(p, "ExprList"))
 	}
 
 	list = append(list, p.parseExpr())
-	for p.tok == COMMA {
-		p.consumeTrivia(list[len(list)-1].lastTok())
+	for p.tok == token.COMMA {
+		p.consumeTrivia(list[len(list)-1].LastTok())
 		list = append(list, p.parseExpr())
 	}
 	return list
 }
 
-// Expr ::= BinaryExpr
-func (p *parser) parseExpr() Expr {
+// ast.Expr ::= BinaryExpr
+func (p *parser) parseExpr() ast.Expr {
 	if p.trace {
-		defer un(trace(p, "Expr"))
+		defer un(trace(p, "ast.Expr"))
 	}
 
-	return p.parseBinaryExpr(LowestPrec + 1)
+	return p.parseBinaryExpr(token.LowestPrec + 1)
 }
 
 // BinaryExpr ::= UnaryExpr
 //              | BinaryExpr OP BinaryExpr
 //
-func (p *parser) parseBinaryExpr(prec1 int) Expr {
+func (p *parser) parseBinaryExpr(prec1 int) ast.Expr {
 	x := p.parseUnaryExpr()
 	for {
 		prec := p.tok.Precedence()
@@ -560,7 +565,7 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 		}
 		op := p.consume()
 		y := p.parseBinaryExpr(prec + 1)
-		x = &BinaryExpr{X: x, Op: op, Y: y}
+		x = &ast.BinaryExpr{X: x, Op: op, Y: y}
 	}
 }
 
@@ -568,18 +573,18 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 //             | ("-"|"+"|"!"|"not"|"not4b") UnaryExpr
 //             | PrimaryExpr
 //
-func (p *parser) parseUnaryExpr() Expr {
+func (p *parser) parseUnaryExpr() ast.Expr {
 	switch p.tok {
-	case ADD, EXCL, NOT, NOT4B, SUB:
+	case token.ADD, token.EXCL, token.NOT, token.NOT4B, token.SUB:
 		tok := p.consume()
 		// handle unused expr '-'
-		if tok.Kind == SUB {
+		if tok.Kind == token.SUB {
 			switch p.tok {
-			case COMMA, SEMICOLON, RBRACE, RBRACK, RPAREN, EOF:
-				return &ValueLiteral{Tok: tok}
+			case token.COMMA, token.SEMICOLON, token.RBRACE, token.RBRACK, token.RPAREN, token.EOF:
+				return &ast.ValueLiteral{Tok: tok}
 			}
 		}
-		return &UnaryExpr{Op: tok, X: p.parseUnaryExpr()}
+		return &ast.UnaryExpr{Op: tok, X: p.parseUnaryExpr()}
 	}
 
 	return p.parsePrimaryExpr()
@@ -588,12 +593,12 @@ func (p *parser) parseUnaryExpr() Expr {
 // PrimaryExpr ::= Operand [{ExtFieldRef}] [Stuff]
 //
 // ExtFieldRef ::= "." ID
-//               | "[" Expr "]"
+//               | "[" ast.Expr "]"
 //               | "(" ExprList ")"
 //
 // Stuff       ::= ["length"      "(" ExprList ")"]
 //                 ["ifpresent"                   ]
-//                 [("to"|"from") Expr            ]
+//                 [("to"|"from") ast.Expr            ]
 //                 ["->"          Redirect        ]
 
 // Redirect    ::= ["value"            ExprList   ]
@@ -602,16 +607,16 @@ func (p *parser) parseUnaryExpr() Expr {
 //                 ["@index" ["value"] PrimaryExpr]
 //                 ["timestamp"        PrimaryExpr]
 //
-func (p *parser) parsePrimaryExpr() Expr {
+func (p *parser) parsePrimaryExpr() ast.Expr {
 	x := p.parseOperand()
 L:
 	for {
 		switch p.tok {
-		case DOT:
+		case token.DOT:
 			x = p.parseSelectorExpr(x)
-		case LBRACK:
+		case token.LBRACK:
 			x = p.parseIndexExpr(x)
-		case LPAREN:
+		case token.LPAREN:
 			x = p.parseCallExpr(x)
 			// Not supporting chained function calls like 'get().x'
 			// eleminates conflicts with alt-guards.
@@ -621,32 +626,32 @@ L:
 		}
 	}
 
-	if p.tok == LENGTH {
+	if p.tok == token.LENGTH {
 		x = p.parseLength(x)
 	}
 
-	if p.tok == IFPRESENT {
-		x = &UnaryExpr{Op: p.consume(), X: x}
+	if p.tok == token.IFPRESENT {
+		x = &ast.UnaryExpr{Op: p.consume(), X: x}
 	}
 
-	if p.tok == TO || p.tok == FROM {
-		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
+	if p.tok == token.TO || p.tok == token.FROM {
+		x = &ast.BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
 	}
 
-	if p.tok == REDIR {
+	if p.tok == token.REDIR {
 		x = p.parseRedirect(x)
 	}
 
-	if p.tok == VALUE {
-		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
+	if p.tok == token.VALUE {
+		x = &ast.ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
 	}
 
-	if p.tok == PARAM {
-		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
+	if p.tok == token.PARAM {
+		x = &ast.ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
 	}
 
-	if p.tok == ALIVE {
-		x = &UnaryExpr{Op: p.consume(), X: x}
+	if p.tok == token.ALIVE {
+		x = &ast.UnaryExpr{Op: p.consume(), X: x}
 	}
 
 	return x
@@ -668,18 +673,18 @@ L:
 //             | "mtc" | "system" | "testcase"
 //             | "map" | "unmap"
 //
-func (p *parser) parseOperand() Expr {
+func (p *parser) parseOperand() ast.Expr {
 	switch p.tok {
-	case ANYKW, ALL:
+	case token.ANYKW, token.ALL:
 		tok := p.consume()
 		switch p.tok {
-		case COMPONENT, PORT, TIMER:
-			return &Ident{
+		case token.COMPONENT, token.PORT, token.TIMER:
+			return &ast.Ident{
 				Tok:  tok,
 				Tok2: p.consume(),
 			}
-		case FROM:
-			return &FromExpr{
+		case token.FROM:
+			return &ast.FromExpr{
 				Kind:    tok,
 				FromTok: p.consume(),
 				X:       p.parsePrimaryExpr(),
@@ -687,74 +692,74 @@ func (p *parser) parseOperand() Expr {
 		}
 
 		// Workaround for deprecated port-attribute 'all'
-		if tok.Kind == ALL {
+		if tok.Kind == token.ALL {
 			return make_ident(tok)
 		}
 
 		p.errorExpected(p.pos(1), "'component', 'port', 'timer' or 'from'")
 
-	case UNIVERSAL:
+	case token.UNIVERSAL:
 		return p.parseUniversalCharstring()
 
-	case ADDRESS,
-		CHARSTRING,
-		MAP,
-		MTC,
-		NULL,
-		OMIT,
-		SYSTEM,
-		TESTCASE,
-		TIMER,
-		UNMAP:
+	case token.ADDRESS,
+		token.CHARSTRING,
+		token.MAP,
+		token.MTC,
+		token.NULL,
+		token.OMIT,
+		token.SYSTEM,
+		token.TESTCASE,
+		token.TIMER,
+		token.UNMAP:
 		return make_ident(p.consume())
 
-	case IDENT:
+	case token.IDENT:
 		return p.parseRef()
 
-	case INT,
-		ANY,
-		BSTRING,
-		ERROR,
-		FAIL,
-		FALSE,
-		FLOAT,
-		INCONC,
-		MUL,
-		NAN,
-		NONE,
-		PASS,
-		STRING,
-		TRUE:
-		return &ValueLiteral{Tok: p.consume()}
+	case token.INT,
+		token.ANY,
+		token.BSTRING,
+		token.ERROR,
+		token.FAIL,
+		token.FALSE,
+		token.FLOAT,
+		token.INCONC,
+		token.MUL,
+		token.NAN,
+		token.NONE,
+		token.PASS,
+		token.STRING,
+		token.TRUE:
+		return &ast.ValueLiteral{Tok: p.consume()}
 
-	case LPAREN:
+	case token.LPAREN:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
 		return p.parseParenExpr()
 
-	case LBRACK:
+	case token.LBRACK:
 		return p.parseIndexExpr(nil)
 
-	case LBRACE:
+	case token.LBRACE:
 		return p.parseCompositeLiteral()
 
-	case MODIFIES:
-		return &ModifiesExpr{
+	case token.MODIFIES:
+		return &ast.ModifiesExpr{
 			Tok:    p.consume(),
 			X:      p.parsePrimaryExpr(),
-			Assign: p.expect(ASSIGN),
+			Assign: p.expect(token.ASSIGN),
 			Y:      p.parseExpr(),
 		}
 
-	case REGEXP:
+	case token.REGEXP:
 		return p.parseCallRegexp()
 
-	case PATTERN:
+	case token.PATTERN:
 		return p.parseCallPattern()
 
-	case DECMATCH:
+	case token.DECMATCH:
 		return p.parseCallDecmatch()
 
-	case MODIF:
+	case token.MODIF:
 		return p.parseDecodedModifier()
 
 	default:
@@ -764,236 +769,236 @@ func (p *parser) parseOperand() Expr {
 	return nil
 }
 
-func (p *parser) parseRef() Expr {
+func (p *parser) parseRef() ast.Expr {
 	id := p.parseIdent()
-	if p.tok != LT {
+	if p.tok != token.LT {
 		return id
 	}
 
 	p.mark()
 	if x := p.tryTypeParameters(); x != nil && !operandStart[p.tok] {
 		p.commit()
-		return &ParametrizedIdent{Ident: id, Params: x}
+		return &ast.ParametrizedIdent{Ident: id, Params: x}
 	}
 	p.reset()
 	return id
 }
 
-func (p *parser) parseParenExpr() *ParenExpr {
-	return &ParenExpr{
-		LParen: p.expect(LPAREN),
+func (p *parser) parseParenExpr() *ast.ParenExpr {
+	return &ast.ParenExpr{
+		LParen: p.expect(token.LPAREN),
 		List:   p.parseExprList(),
-		RParen: p.expect(RPAREN),
+		RParen: p.expect(token.RPAREN),
 	}
 }
 
-func (p *parser) parseUniversalCharstring() *Ident {
-	return &Ident{
-		Tok:  p.expect(UNIVERSAL),
-		Tok2: p.expect(CHARSTRING),
+func (p *parser) parseUniversalCharstring() *ast.Ident {
+	return &ast.Ident{
+		Tok:  p.expect(token.UNIVERSAL),
+		Tok2: p.expect(token.CHARSTRING),
 	}
 }
 
-func (p *parser) parseCompositeLiteral() *CompositeLiteral {
-	c := new(CompositeLiteral)
-	c.LBrace = p.expect(LBRACE)
-	if p.tok != RBRACE {
+func (p *parser) parseCompositeLiteral() *ast.CompositeLiteral {
+	c := new(ast.CompositeLiteral)
+	c.LBrace = p.expect(token.LBRACE)
+	if p.tok != token.RBRACE {
 		c.List = p.parseExprList()
 	}
-	c.RBrace = p.expect(RBRACE)
+	c.RBrace = p.expect(token.RBRACE)
 	return c
 }
 
-func (p *parser) parseCallRegexp() *RegexpExpr {
-	c := new(RegexpExpr)
-	c.Tok = p.expect(REGEXP)
-	if p.tok == MODIF {
+func (p *parser) parseCallRegexp() *ast.RegexpExpr {
+	c := new(ast.RegexpExpr)
+	c.Tok = p.expect(token.REGEXP)
+	if p.tok == token.MODIF {
 		c.NoCase = p.consume()
 	}
 	c.X = p.parseParenExpr()
 	return c
 }
 
-func (p *parser) parseCallPattern() *PatternExpr {
-	c := new(PatternExpr)
-	c.Tok = p.expect(PATTERN)
-	if p.tok == MODIF {
+func (p *parser) parseCallPattern() *ast.PatternExpr {
+	c := new(ast.PatternExpr)
+	c.Tok = p.expect(token.PATTERN)
+	if p.tok == token.MODIF {
 		c.NoCase = p.consume()
 	}
 	c.X = p.parseExpr()
 	return c
 }
 
-func (p *parser) parseCallDecmatch() *DecmatchExpr {
-	c := new(DecmatchExpr)
-	c.Tok = p.expect(DECMATCH)
-	if p.tok == LPAREN {
+func (p *parser) parseCallDecmatch() *ast.DecmatchExpr {
+	c := new(ast.DecmatchExpr)
+	c.Tok = p.expect(token.DECMATCH)
+	if p.tok == token.LPAREN {
 		c.Params = p.parseParenExpr()
 	}
 	c.X = p.parseExpr()
 	return c
 }
 
-func (p *parser) parseDecodedModifier() *DecodedExpr {
-	d := new(DecodedExpr)
-	d.Tok = p.expect(MODIF)
+func (p *parser) parseDecodedModifier() *ast.DecodedExpr {
+	d := new(ast.DecodedExpr)
+	d.Tok = p.expect(token.MODIF)
 	if d.Tok.Lit != "@decoded" {
 		p.errorExpected(d.Tok.Pos(), "@decoded")
 	}
 
-	if p.tok == LPAREN {
+	if p.tok == token.LPAREN {
 		d.Params = p.parseParenExpr()
 	}
 	d.X = p.parsePrimaryExpr()
 	return d
 }
 
-func (p *parser) parseSelectorExpr(x Expr) *SelectorExpr {
-	return &SelectorExpr{X: x, Dot: p.consume(), Sel: p.parseRef()}
+func (p *parser) parseSelectorExpr(x ast.Expr) *ast.SelectorExpr {
+	return &ast.SelectorExpr{X: x, Dot: p.consume(), Sel: p.parseRef()}
 }
 
-func (p *parser) parseIndexExpr(x Expr) *IndexExpr {
-	return &IndexExpr{
+func (p *parser) parseIndexExpr(x ast.Expr) *ast.IndexExpr {
+	return &ast.IndexExpr{
 		X:      x,
-		LBrack: p.expect(LBRACK),
+		LBrack: p.expect(token.LBRACK),
 		Index:  p.parseExpr(),
-		RBrack: p.expect(RBRACK),
+		RBrack: p.expect(token.RBRACK),
 	}
 }
 
-func (p *parser) parseCallExpr(x Expr) *CallExpr {
-	c := new(CallExpr)
+func (p *parser) parseCallExpr(x ast.Expr) *ast.CallExpr {
+	c := new(ast.CallExpr)
 	c.Fun = x
-	c.Args = new(ParenExpr)
-	c.Args.LParen = p.expect(LPAREN)
-	if p.tok != RPAREN {
+	c.Args = new(ast.ParenExpr)
+	c.Args.LParen = p.expect(token.LPAREN)
+	if p.tok != token.RPAREN {
 		switch p.tok {
-		case TO, FROM, REDIR:
-			var x Expr
-			if p.tok == TO || p.tok == FROM {
+		case token.TO, token.FROM, token.REDIR:
+			var x ast.Expr
+			if p.tok == token.TO || p.tok == token.FROM {
 				// TODO: Shouldn't this be a FromExpr?
-				x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
+				x = &ast.BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
 			}
-			if p.tok == REDIR {
+			if p.tok == token.REDIR {
 				x = p.parseRedirect(x)
 			}
-			c.Args.List = []Expr{x}
+			c.Args.List = []ast.Expr{x}
 		default:
 			c.Args.List = append(c.Args.List, p.parseExprList()...)
 		}
 	}
-	c.Args.RParen = p.expect(RPAREN)
+	c.Args.RParen = p.expect(token.RPAREN)
 	return c
 }
 
-func (p *parser) parseLength(x Expr) *LengthExpr {
-	return &LengthExpr{
+func (p *parser) parseLength(x ast.Expr) *ast.LengthExpr {
+	return &ast.LengthExpr{
 		X:    x,
-		Len:  p.expect(LENGTH),
+		Len:  p.expect(token.LENGTH),
 		Size: p.parseParenExpr(),
 	}
 }
 
-func (p *parser) parseRedirect(x Expr) *RedirectExpr {
+func (p *parser) parseRedirect(x ast.Expr) *ast.RedirectExpr {
 
-	r := &RedirectExpr{
+	r := &ast.RedirectExpr{
 		X:   x,
-		Tok: p.expect(REDIR),
+		Tok: p.expect(token.REDIR),
 	}
 
-	if p.tok == VALUE {
-		r.ValueTok = p.expect(VALUE)
+	if p.tok == token.VALUE {
+		r.ValueTok = p.expect(token.VALUE)
 		r.Value = p.parseExprList()
 	}
 
-	if p.tok == PARAM {
-		r.ParamTok = p.expect(PARAM)
+	if p.tok == token.PARAM {
+		r.ParamTok = p.expect(token.PARAM)
 		r.Param = p.parseExprList()
 	}
 
-	if p.tok == SENDER {
-		r.SenderTok = p.expect(SENDER)
+	if p.tok == token.SENDER {
+		r.SenderTok = p.expect(token.SENDER)
 		r.Sender = p.parsePrimaryExpr()
 	}
 
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		if p.lit(1) != "@index" {
 			p.errorExpected(p.pos(1), "@index")
 		}
 
 		r.IndexTok = p.consume()
-		if p.tok == VALUE {
+		if p.tok == token.VALUE {
 			r.IndexValueTok = p.consume()
 		}
 		r.Index = p.parsePrimaryExpr()
 	}
 
-	if p.tok == TIMESTAMP {
-		r.TimestampTok = p.expect(TIMESTAMP)
+	if p.tok == token.TIMESTAMP {
+		r.TimestampTok = p.expect(token.TIMESTAMP)
 		r.Timestamp = p.parsePrimaryExpr()
 	}
 
 	return r
 }
 
-func (p *parser) parseIdent() *Ident {
+func (p *parser) parseIdent() *ast.Ident {
 	switch p.tok {
-	case UNIVERSAL:
+	case token.UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case IDENT, ADDRESS, ALIVE, CHARSTRING:
-		return &Ident{Tok: p.consume()}
+	case token.IDENT, token.ADDRESS, token.ALIVE, token.CHARSTRING:
+		return &ast.Ident{Tok: p.consume()}
 	default:
-		p.expect(IDENT) // use expect() error handling
+		p.expect(token.IDENT) // use expect() error handling
 		return nil
 	}
 }
 
-func (p *parser) parseRefList() []Expr {
-	l := make([]Expr, 1)
+func (p *parser) parseRefList() []ast.Expr {
+	l := make([]ast.Expr, 1)
 	for {
 		l = append(l, p.parseTypeRef())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(l[len(l)-1].lastTok()) // consume ','
+		p.consumeTrivia(l[len(l)-1].LastTok()) // consume ','
 	}
 	return l
 }
 
-func (p *parser) parseTypeRef() Expr {
+func (p *parser) parseTypeRef() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "TypeRef"))
 	}
 	return p.parsePrimaryExpr()
 }
 
-func (p *parser) tryTypeParameters() *ParenExpr {
+func (p *parser) tryTypeParameters() *ast.ParenExpr {
 	if p.trace {
 		defer un(trace(p, "tryTypeParameters"))
 	}
-	x := &ParenExpr{
+	x := &ast.ParenExpr{
 		LParen: p.consume(),
 	}
-	for p.tok != GT {
+	for p.tok != token.GT {
 		y := p.tryTypeParameter()
 		if y == nil {
 			return nil
 		}
 		x.List = append(x.List, y)
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.List[len(x.List)-1].lastTok()) // consume ','
+		p.consumeTrivia(x.List[len(x.List)-1].LastTok()) // consume ','
 	}
 
-	if p.tok != GT {
+	if p.tok != token.GT {
 		return nil
 	}
 	x.RParen = p.consume()
 	return x
 }
 
-func (p *parser) tryTypeParameter() Expr {
+func (p *parser) tryTypeParameter() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "tryTypeParameter"))
 	}
@@ -1001,26 +1006,26 @@ func (p *parser) tryTypeParameter() Expr {
 L:
 	for {
 		switch p.tok {
-		case DOT:
-			x = &SelectorExpr{
+		case token.DOT:
+			x = &ast.SelectorExpr{
 				X:   x,
 				Dot: p.consume(),
 				Sel: p.tryTypeIdent(),
 			}
-			if x.(*SelectorExpr).Sel == nil {
+			if x.(*ast.SelectorExpr).Sel == nil {
 				return nil
 			}
-		case LBRACK:
+		case token.LBRACK:
 			lbrack := p.consume()
 			dash := p.consume()
 			rbrack := p.consume()
-			if dash.Kind != SUB || rbrack.Kind != RBRACK {
+			if dash.Kind != token.SUB || rbrack.Kind != token.RBRACK {
 				return nil
 			}
-			x = &IndexExpr{
+			x = &ast.IndexExpr{
 				X:      x,
 				LBrack: lbrack,
-				Index:  &ValueLiteral{Tok: dash},
+				Index:  &ast.ValueLiteral{Tok: dash},
 				RBrack: rbrack,
 			}
 
@@ -1031,24 +1036,24 @@ L:
 	return x
 }
 
-func (p *parser) tryTypeIdent() Expr {
+func (p *parser) tryTypeIdent() ast.Expr {
 	if p.trace {
 		defer un(trace(p, "tryTypeIdent"))
 	}
 
-	var x *Ident
+	var x *ast.Ident
 	switch p.tok {
-	case IDENT, ADDRESS, CHARSTRING:
-		x = &Ident{Tok: p.consume()}
-	case UNIVERSAL:
+	case token.IDENT, token.ADDRESS, token.CHARSTRING:
+		x = &ast.Ident{Tok: p.consume()}
+	case token.UNIVERSAL:
 		x = p.parseUniversalCharstring()
 	default:
 		return nil
 	}
 
-	if p.tok == LT {
+	if p.tok == token.LT {
 		if y := p.tryTypeParameters(); y == nil {
-			return &ParametrizedIdent{
+			return &ast.ParametrizedIdent{
 				Ident:  x,
 				Params: y,
 			}
@@ -1058,95 +1063,95 @@ func (p *parser) tryTypeIdent() Expr {
 }
 
 /*************************************************************************
- * Module
+ * ast.Module
  *************************************************************************/
 
-func (p *parser) parseModuleList() []*Module {
-	var list []*Module
+func (p *parser) parseModuleList() []*ast.Module {
+	var list []*ast.Module
 	list = append(list, p.parseModule())
-	p.expectSemi(list[len(list)-1].lastTok())
-	for p.tok == MODULE {
+	p.expectSemi(list[len(list)-1].LastTok())
+	for p.tok == token.MODULE {
 		list = append(list, p.parseModule())
-		p.expectSemi(list[len(list)-1].lastTok())
+		p.expectSemi(list[len(list)-1].LastTok())
 	}
-	p.expect(EOF)
+	p.expect(token.EOF)
 	return list
 }
 
-func (p *parser) parseModule() *Module {
+func (p *parser) parseModule() *ast.Module {
 	if p.trace {
-		defer un(trace(p, "Module"))
+		defer un(trace(p, "ast.Module"))
 	}
 
-	m := new(Module)
-	m.Tok = p.expect(MODULE)
+	m := new(ast.Module)
+	m.Tok = p.expect(token.MODULE)
 	m.Name = p.parseIdent()
 
-	if p.tok == LANGUAGE {
+	if p.tok == token.LANGUAGE {
 		m.Language = p.parseLanguageSpec()
 	}
 
-	m.LBrace = p.expect(LBRACE)
+	m.LBrace = p.expect(token.LBRACE)
 
-	for p.tok != RBRACE && p.tok != EOF {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		m.Defs = append(m.Defs, p.parseModuleDef())
-		p.expectSemi(m.Defs[len(m.Defs)-1].lastTok())
+		p.expectSemi(m.Defs[len(m.Defs)-1].LastTok())
 	}
-	m.RBrace = p.expect(RBRACE)
+	m.RBrace = p.expect(token.RBRACE)
 	m.With = p.parseWith()
 	return m
 }
 
-func (p *parser) parseLanguageSpec() *LanguageSpec {
-	l := new(LanguageSpec)
+func (p *parser) parseLanguageSpec() *ast.LanguageSpec {
+	l := new(ast.LanguageSpec)
 	l.Tok = p.consume()
 	for {
-		l.List = append(l.List, p.expect(STRING))
-		if p.tok != COMMA {
+		l.List = append(l.List, p.expect(token.STRING))
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(l.List[len(l.List)-1].lastTok()) // consume ','
+		p.consumeTrivia(l.List[len(l.List)-1].LastTok()) // consume ','
 	}
 	return l
 }
 
-func (p *parser) parseModuleDef() *ModuleDef {
-	m := new(ModuleDef)
+func (p *parser) parseModuleDef() *ast.ModuleDef {
+	m := new(ast.ModuleDef)
 	switch p.tok {
-	case PRIVATE, PUBLIC:
+	case token.PRIVATE, token.PUBLIC:
 		m.Visibility = p.consume()
-	case FRIEND:
-		if p.peek(2).Kind != MODULE {
+	case token.FRIEND:
+		if p.peek(2).Kind != token.MODULE {
 			m.Visibility = p.consume()
 		}
 	}
 
 	switch p.tok {
-	case IMPORT:
+	case token.IMPORT:
 		m.Def = p.parseImport()
-	case GROUP:
+	case token.GROUP:
 		m.Def = p.parseGroup()
-	case FRIEND:
+	case token.FRIEND:
 		m.Def = p.parseFriend()
-	case TYPE:
+	case token.TYPE:
 		m.Def = p.parseTypeDecl()
-	case TEMPLATE:
+	case token.TEMPLATE:
 		m.Def = p.parseTemplateDecl()
-	case MODULEPAR:
+	case token.MODULEPAR:
 		m.Def = p.parseModulePar()
-	case VAR, CONST:
+	case token.VAR, token.CONST:
 		m.Def = p.parseValueDecl()
-	case SIGNATURE:
+	case token.SIGNATURE:
 		m.Def = p.parseSignatureDecl()
-	case FUNCTION, TESTCASE, ALTSTEP:
+	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
 		m.Def = p.parseFuncDecl()
-	case CONTROL:
-		m.Def = &ControlPart{Tok: p.consume(), Body: p.parseBlockStmt(), With: p.parseWith()}
-	case EXTERNAL:
+	case token.CONTROL:
+		m.Def = &ast.ControlPart{Tok: p.consume(), Body: p.parseBlockStmt(), With: p.parseWith()}
+	case token.EXTERNAL:
 		switch p.peek(2).Kind {
-		case FUNCTION:
+		case token.FUNCTION:
 			m.Def = p.parseExtFuncDecl()
-		case CONST:
+		case token.CONST:
 			p.error(p.pos(1), "external constants not suppored")
 			p.consumeTrivia(nil)
 			m.Def = p.parseValueDecl()
@@ -1165,46 +1170,46 @@ func (p *parser) parseModuleDef() *ModuleDef {
  * Import Definition
  *************************************************************************/
 
-func make_ident(tok Token) Expr {
-	return &Ident{Tok: tok}
+func make_ident(tok ast.Token) ast.Expr {
+	return &ast.Ident{Tok: tok}
 }
 
-func (p *parser) parseImport() *ImportDecl {
+func (p *parser) parseImport() *ast.ImportDecl {
 	if p.trace {
 		defer un(trace(p, "Import"))
 	}
 
-	x := new(ImportDecl)
+	x := new(ast.ImportDecl)
 	x.ImportTok = p.consume()
-	x.FromTok = p.expect(FROM)
+	x.FromTok = p.expect(token.FROM)
 	x.Module = p.parseIdent()
 
-	if p.tok == LANGUAGE {
+	if p.tok == token.LANGUAGE {
 		x.Language = p.parseLanguageSpec()
 	}
 
 	switch p.tok {
-	case ALL:
-		y := &DefKindExpr{}
+	case token.ALL:
+		y := &ast.DefKindExpr{}
 		z := make_ident(p.consume())
-		if p.tok == EXCEPT {
-			z = &ExceptExpr{
+		if p.tok == token.EXCEPT {
+			z = &ast.ExceptExpr{
 				X:         z,
 				ExceptTok: p.consume(),
-				LBrace:    p.expect(LBRACE),
+				LBrace:    p.expect(token.LBRACE),
 				List:      p.parseExceptStmts(),
-				RBrace:    p.expect(RBRACE),
+				RBrace:    p.expect(token.RBRACE),
 			}
 		}
-		y.List = []Expr{z}
+		y.List = []ast.Expr{z}
 		x.List = append(x.List, y)
-	case LBRACE:
-		x.LBrace = p.expect(LBRACE)
-		for p.tok != RBRACE && p.tok != EOF {
+	case token.LBRACE:
+		x.LBrace = p.expect(token.LBRACE)
+		for p.tok != token.RBRACE && p.tok != token.EOF {
 			x.List = append(x.List, p.parseImportStmt())
-			p.expectSemi(x.List[len(x.List)-1].lastTok())
+			p.expectSemi(x.List[len(x.List)-1].LastTok())
 		}
-		x.RBrace = p.expect(RBRACE)
+		x.RBrace = p.expect(token.RBRACE)
 	default:
 		p.errorExpected(p.pos(1), "'all' or import spec")
 	}
@@ -1214,47 +1219,47 @@ func (p *parser) parseImport() *ImportDecl {
 	return x
 }
 
-func (p *parser) parseImportStmt() *DefKindExpr {
-	x := new(DefKindExpr)
+func (p *parser) parseImportStmt() *ast.DefKindExpr {
+	x := new(ast.DefKindExpr)
 	switch p.tok {
-	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
-		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
+	case token.ALTSTEP, token.CONST, token.FUNCTION, token.MODULEPAR,
+		token.SIGNATURE, token.TEMPLATE, token.TESTCASE, token.TYPE:
 		x.Kind = p.consume()
-		if p.tok == ALL {
+		if p.tok == token.ALL {
 			y := make_ident(p.consume())
-			if p.tok == EXCEPT {
-				y = &ExceptExpr{
+			if p.tok == token.EXCEPT {
+				y = &ast.ExceptExpr{
 					X:         y,
 					ExceptTok: p.consume(),
 					List:      p.parseRefList(),
 				}
 			}
-			x.List = []Expr{y}
+			x.List = []ast.Expr{y}
 		} else {
 			x.List = p.parseRefList()
 		}
-	case GROUP:
+	case token.GROUP:
 		x.Kind = p.consume()
 		for {
 			y := p.parseTypeRef()
-			if p.tok == EXCEPT {
-				y = &ExceptExpr{
+			if p.tok == token.EXCEPT {
+				y = &ast.ExceptExpr{
 					X:         y,
 					ExceptTok: p.consume(),
-					LBrace:    p.expect(LBRACE),
+					LBrace:    p.expect(token.LBRACE),
 					List:      p.parseExceptStmts(),
-					RBrace:    p.expect(RBRACE),
+					RBrace:    p.expect(token.RBRACE),
 				}
 			}
-			if p.tok != COMMA {
+			if p.tok != token.COMMA {
 				break
 			}
-			p.consumeTrivia(y.lastTok()) // consume ','
+			p.consumeTrivia(y.LastTok()) // consume ','
 			x.List = append(x.List, y)
 		}
-	case IMPORT:
+	case token.IMPORT:
 		x.Kind = p.consume()
-		x.List = []Expr{make_ident(p.expect(ALL))}
+		x.List = []ast.Expr{make_ident(p.expect(token.ALL))}
 	default:
 		p.errorExpected(p.pos(1), "import definition qualifier")
 		p.advance(stmtStart)
@@ -1262,29 +1267,29 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 	return x
 }
 
-func (p *parser) parseExceptStmts() []Expr {
-	var list []Expr
-	for p.tok != RBRACE && p.tok != EOF {
+func (p *parser) parseExceptStmts() []ast.Expr {
+	var list []ast.Expr
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x := p.parseExceptStmt()
-		p.expectSemi(x.lastTok())
+		p.expectSemi(x.LastTok())
 		list = append(list, x)
 	}
 	return list
 }
 
-func (p *parser) parseExceptStmt() *DefKindExpr {
-	x := new(DefKindExpr)
+func (p *parser) parseExceptStmt() *ast.DefKindExpr {
+	x := new(ast.DefKindExpr)
 	switch p.tok {
-	case ALTSTEP, CONST, FUNCTION, GROUP,
-		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
-		TESTCASE, TYPE:
+	case token.ALTSTEP, token.CONST, token.FUNCTION, token.GROUP,
+		token.IMPORT, token.MODULEPAR, token.SIGNATURE, token.TEMPLATE,
+		token.TESTCASE, token.TYPE:
 		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "definition qualifier")
 	}
 
-	if p.tok == ALL {
-		x.List = []Expr{make_ident(p.consume())}
+	if p.tok == token.ALL {
+		x.List = []ast.Expr{make_ident(p.consume())}
 	} else {
 		x.List = p.parseRefList()
 	}
@@ -1295,25 +1300,25 @@ func (p *parser) parseExceptStmt() *DefKindExpr {
  * Group Definition
  *************************************************************************/
 
-func (p *parser) parseGroup() *GroupDecl {
-	x := new(GroupDecl)
+func (p *parser) parseGroup() *ast.GroupDecl {
+	x := new(ast.GroupDecl)
 	x.Tok = p.consume()
 	x.Name = p.parseIdent()
-	x.LBrace = p.expect(LBRACE)
+	x.LBrace = p.expect(token.LBRACE)
 
-	for p.tok != RBRACE && p.tok != EOF {
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Defs = append(x.Defs, p.parseModuleDef())
-		p.expectSemi(x.Defs[len(x.Defs)-1].lastTok())
+		p.expectSemi(x.Defs[len(x.Defs)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	x.With = p.parseWith()
 	return x
 }
 
-func (p *parser) parseFriend() *FriendDecl {
-	return &FriendDecl{
-		FriendTok: p.expect(FRIEND),
-		ModuleTok: p.expect(MODULE),
+func (p *parser) parseFriend() *ast.FriendDecl {
+	return &ast.FriendDecl{
+		FriendTok: p.expect(token.FRIEND),
+		ModuleTok: p.expect(token.MODULE),
 		Module:    p.parseIdent(),
 		With:      p.parseWith(),
 	}
@@ -1323,36 +1328,36 @@ func (p *parser) parseFriend() *FriendDecl {
  * With Attributes
  *************************************************************************/
 
-func (p *parser) parseWith() *WithSpec {
-	if p.tok != WITH {
+func (p *parser) parseWith() *ast.WithSpec {
+	if p.tok != token.WITH {
 		return nil
 	}
-	x := new(WithSpec)
+	x := new(ast.WithSpec)
 	x.Tok = p.consume()
-	x.LBrace = p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.List = append(x.List, p.parseWithStmt())
-		p.expectSemi(x.List[len(x.List)-1].lastTok())
+		p.expectSemi(x.List[len(x.List)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	return x
 }
 
-func (p *parser) parseWithStmt() *WithStmt {
+func (p *parser) parseWithStmt() *ast.WithStmt {
 	if p.trace {
 		defer un(trace(p, "WithStmt"))
 	}
 
-	x := new(WithStmt)
+	x := new(ast.WithStmt)
 
 	switch p.tok {
-	case ENCODE,
-		VARIANT,
-		DISPLAY,
-		EXTENSION,
-		OPTIONAL,
-		STEPSIZE,
-		OVERRIDE:
+	case token.ENCODE,
+		token.VARIANT,
+		token.DISPLAY,
+		token.EXTENSION,
+		token.OPTIONAL,
+		token.STEPSIZE,
+		token.OVERRIDE:
 		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "with-attribute")
@@ -1360,33 +1365,33 @@ func (p *parser) parseWithStmt() *WithStmt {
 	}
 
 	switch p.tok {
-	case OVERRIDE:
+	case token.OVERRIDE:
 		x.Override = p.consume()
-	case MODIF:
+	case token.MODIF:
 		if p.lit(1) != "@local" {
 			p.errorExpected(p.pos(1), "@local")
 		}
 		x.Override = p.consume()
 	}
 
-	if p.tok == LPAREN {
+	if p.tok == token.LPAREN {
 		x.LParen = p.consume()
 		for {
 			x.List = append(x.List, p.parseWithQualifier())
-			if p.tok != COMMA {
+			if p.tok != token.COMMA {
 				break
 			}
-			p.consumeTrivia(x.List[len(x.List)-1].lastTok())
+			p.consumeTrivia(x.List[len(x.List)-1].LastTok())
 		}
-		x.RParen = p.expect(RPAREN)
+		x.RParen = p.expect(token.RPAREN)
 	}
 
-	var v Expr = &ValueLiteral{Tok: p.expect(STRING)}
-	if p.tok == DOT {
-		v = &SelectorExpr{
+	var v ast.Expr = &ast.ValueLiteral{Tok: p.expect(token.STRING)}
+	if p.tok == token.DOT {
+		v = &ast.SelectorExpr{
 			X:   v,
 			Dot: p.consume(),
-			Sel: &ValueLiteral{Tok: p.expect(STRING)},
+			Sel: &ast.ValueLiteral{Tok: p.expect(token.STRING)},
 		}
 	}
 	x.Value = v
@@ -1394,26 +1399,26 @@ func (p *parser) parseWithStmt() *WithStmt {
 	return x
 }
 
-func (p *parser) parseWithQualifier() Expr {
+func (p *parser) parseWithQualifier() ast.Expr {
 	switch p.tok {
-	case IDENT:
+	case token.IDENT:
 		return p.parseTypeRef()
-	case LBRACK:
+	case token.LBRACK:
 		return p.parseIndexExpr(nil)
-	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
-		x := new(DefKindExpr)
+	case token.TYPE, token.TEMPLATE, token.CONST, token.ALTSTEP, token.TESTCASE, token.FUNCTION, token.SIGNATURE, token.MODULEPAR, token.GROUP:
+		x := new(ast.DefKindExpr)
 		x.Kind = p.consume()
-		y := make_ident(p.expect(ALL))
-		if p.tok == EXCEPT {
-			y = &ExceptExpr{
+		y := make_ident(p.expect(token.ALL))
+		if p.tok == token.EXCEPT {
+			y = &ast.ExceptExpr{
 				X:         y,
 				ExceptTok: p.consume(),
-				LBrace:    p.expect(LBRACE),
+				LBrace:    p.expect(token.LBRACE),
 				List:      p.parseRefList(),
-				RBrace:    p.expect(RBRACE),
+				RBrace:    p.expect(token.RBRACE),
 			}
 		}
-		x.List = []Expr{y}
+		x.List = []ast.Expr{y}
 		return x
 	default:
 		p.errorExpected(p.pos(1), "with-qualifier")
@@ -1426,25 +1431,25 @@ func (p *parser) parseWithQualifier() Expr {
  * Type Definitions
  *************************************************************************/
 
-func (p *parser) parseTypeDecl() Decl {
+func (p *parser) parseTypeDecl() ast.Decl {
 	switch p.peek(2).Kind {
-	case IDENT, ADDRESS, CHARSTRING, NULL, UNIVERSAL:
+	case token.IDENT, token.ADDRESS, token.CHARSTRING, token.NULL, token.UNIVERSAL:
 		return p.parseSubTypeDecl()
-	case PORT:
+	case token.PORT:
 		return p.parsePortTypeDecl()
-	case COMPONENT:
+	case token.COMPONENT:
 		return p.parseComponentTypeDecl()
-	case UNION:
+	case token.UNION:
 		return p.parseStructTypeDecl()
-	case SET, RECORD:
-		if p.peek(3).Kind == IDENT || p.peek(3).Kind == ADDRESS {
+	case token.SET, token.RECORD:
+		if p.peek(3).Kind == token.IDENT || p.peek(3).Kind == token.ADDRESS {
 			return p.parseStructTypeDecl()
 		}
 		// lists are also parsed by parseSubTypeDecl
 		return p.parseSubTypeDecl()
-	case ENUMERATED:
+	case token.ENUMERATED:
 		return p.parseEnumTypeDecl()
-	case FUNCTION, ALTSTEP, TESTCASE:
+	case token.FUNCTION, token.ALTSTEP, token.TESTCASE:
 		return p.parseBehaviourTypeDecl()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
@@ -1457,53 +1462,53 @@ func (p *parser) parseTypeDecl() Decl {
  * Port Type
  *************************************************************************/
 
-func (p *parser) parsePortTypeDecl() *PortTypeDecl {
+func (p *parser) parsePortTypeDecl() *ast.PortTypeDecl {
 	if p.trace {
-		defer un(trace(p, "PortTypeDecl"))
+		defer un(trace(p, "ast.PortTypeDecl"))
 	}
-	x := new(PortTypeDecl)
+	x := new(ast.PortTypeDecl)
 	x.TypeTok = p.consume()
 	x.PortTok = p.consume()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	switch p.tok {
-	case MIXED, MESSAGE, PROCEDURE:
+	case token.MIXED, token.MESSAGE, token.PROCEDURE:
 		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "'message' or 'procedure'")
 	}
 
-	if p.tok == REALTIME {
+	if p.tok == token.REALTIME {
 		x.Realtime = p.consume()
 	}
 
-	x.LBrace = p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Attrs = append(x.Attrs, p.parsePortAttribute())
-		p.expectSemi(x.Attrs[len(x.Attrs)-1].lastTok())
+		p.expectSemi(x.Attrs[len(x.Attrs)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	x.With = p.parseWith()
 	return x
 }
 
-func (p *parser) parsePortAttribute() Node {
+func (p *parser) parsePortAttribute() ast.Node {
 	if p.trace {
-		defer un(trace(p, "PortAttribute"))
+		defer un(trace(p, "ast.PortAttribute"))
 	}
 	switch p.tok {
-	case IN, OUT, INOUT, ADDRESS:
-		return &PortAttribute{
+	case token.IN, token.OUT, token.INOUT, token.ADDRESS:
+		return &ast.PortAttribute{
 			Kind:  p.consume(),
 			Types: p.parseRefList(),
 		}
-	case MAP, UNMAP:
-		return &PortMapAttribute{
+	case token.MAP, token.UNMAP:
+		return &ast.PortMapAttribute{
 			MapTok:   p.consume(),
-			ParamTok: p.expect(PARAM),
+			ParamTok: p.expect(token.PARAM),
 			Params:   p.parseFormalPars(),
 		}
 	default:
@@ -1517,18 +1522,18 @@ func (p *parser) parsePortAttribute() Node {
  * Component Type
  *************************************************************************/
 
-func (p *parser) parseComponentTypeDecl() *ComponentTypeDecl {
+func (p *parser) parseComponentTypeDecl() *ast.ComponentTypeDecl {
 	if p.trace {
-		defer un(trace(p, "ComponentTypeDecl"))
+		defer un(trace(p, "ast.ComponentTypeDecl"))
 	}
-	x := new(ComponentTypeDecl)
+	x := new(ast.ComponentTypeDecl)
 	x.TypeTok = p.consume()
 	x.CompTok = p.consume()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	if p.tok == EXTENDS {
+	if p.tok == token.EXTENDS {
 		x.ExtendsTok = p.consume()
 		x.Extends = p.parseRefList()
 	}
@@ -1541,26 +1546,26 @@ func (p *parser) parseComponentTypeDecl() *ComponentTypeDecl {
  * Struct Type Declaration
  *************************************************************************/
 
-func (p *parser) parseStructTypeDecl() *StructTypeDecl {
+func (p *parser) parseStructTypeDecl() *ast.StructTypeDecl {
 	if p.trace {
-		defer un(trace(p, "StructTypeDecl"))
+		defer un(trace(p, "ast.StructTypeDecl"))
 	}
-	x := new(StructTypeDecl)
+	x := new(ast.StructTypeDecl)
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	x.LBrace = p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Fields = append(x.Fields, p.parseField())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.Fields[len(x.Fields)-1].lastTok())
+		p.consumeTrivia(x.Fields[len(x.Fields)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	x.With = p.parseWith()
 	return x
 }
@@ -1569,27 +1574,27 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
  * Enumeration Type Declaration
  *************************************************************************/
 
-func (p *parser) parseEnumTypeDecl() *EnumTypeDecl {
+func (p *parser) parseEnumTypeDecl() *ast.EnumTypeDecl {
 	if p.trace {
-		defer un(trace(p, "EnumTypeDecl"))
+		defer un(trace(p, "ast.EnumTypeDecl"))
 	}
 
-	x := new(EnumTypeDecl)
+	x := new(ast.EnumTypeDecl)
 	x.TypeTok = p.consume()
 	x.EnumTok = p.consume()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	x.LBrace = p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Enums = append(x.Enums, p.parseExpr())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.Enums[len(x.Enums)-1].lastTok())
+		p.consumeTrivia(x.Enums[len(x.Enums)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	x.With = p.parseWith()
 	return x
 }
@@ -1598,28 +1603,28 @@ func (p *parser) parseEnumTypeDecl() *EnumTypeDecl {
  * Behaviour Type Declaration
  *************************************************************************/
 
-func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
+func (p *parser) parseBehaviourTypeDecl() *ast.BehaviourTypeDecl {
 	if p.trace {
-		defer un(trace(p, "BehaviourTypeDecl"))
+		defer un(trace(p, "ast.BehaviourTypeDecl"))
 	}
-	x := new(BehaviourTypeDecl)
+	x := new(ast.BehaviourTypeDecl)
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
-	if p.tok == RUNS {
+	if p.tok == token.RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == SYSTEM {
+	if p.tok == token.SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == RETURN {
+	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
 	x.With = p.parseWith()
@@ -1630,24 +1635,24 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
  * Subtype
  *************************************************************************/
 
-func (p *parser) parseSubTypeDecl() *SubTypeDecl {
+func (p *parser) parseSubTypeDecl() *ast.SubTypeDecl {
 	if p.trace {
-		defer un(trace(p, "SubTypeDecl"))
+		defer un(trace(p, "ast.SubTypeDecl"))
 	}
-	x := new(SubTypeDecl)
+	x := new(ast.SubTypeDecl)
 	x.TypeTok = p.consume()
 	x.Field = p.parseField()
 	x.With = p.parseWith()
 	return x
 }
 
-func (p *parser) parseField() *Field {
+func (p *parser) parseField() *ast.Field {
 	if p.trace {
 		defer un(trace(p, "Field"))
 	}
-	x := new(Field)
+	x := new(ast.Field)
 
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		if p.lit(1) != "@default" {
 			p.errorExpected(p.pos(1), "@default")
 		}
@@ -1655,41 +1660,41 @@ func (p *parser) parseField() *Field {
 	}
 	x.Type = p.parseTypeSpec()
 	x.Name = p.parsePrimaryExpr()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	// TODO(5nord) fix constraints consumed by previous PrimaryExpr
-	if p.tok == LPAREN {
+	if p.tok == token.LPAREN {
 		x.ValueConstraint = p.parseParenExpr()
 	}
-	if p.tok == LENGTH {
+	if p.tok == token.LENGTH {
 		x.LengthConstraint = p.parseLength(nil)
 	}
 
-	if p.tok == OPTIONAL {
+	if p.tok == token.OPTIONAL {
 		x.Optional = p.consume()
 	}
 	return x
 }
 
-func (p *parser) parseTypeSpec() TypeSpec {
+func (p *parser) parseTypeSpec() ast.TypeSpec {
 	if p.trace {
 		defer un(trace(p, "TypeSpec"))
 	}
 	switch p.tok {
-	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
-		return &RefSpec{X: p.parseTypeRef()}
-	case UNION:
+	case token.ADDRESS, token.CHARSTRING, token.IDENT, token.NULL, token.UNIVERSAL:
+		return &ast.RefSpec{X: p.parseTypeRef()}
+	case token.UNION:
 		return p.parseStructSpec()
-	case SET, RECORD:
-		if p.peek(2).Kind == LBRACE {
+	case token.SET, token.RECORD:
+		if p.peek(2).Kind == token.LBRACE {
 			return p.parseStructSpec()
 		}
 		return p.parseListSpec()
-	case ENUMERATED:
+	case token.ENUMERATED:
 		return p.parseEnumSpec()
-	case FUNCTION, ALTSTEP, TESTCASE:
+	case token.FUNCTION, token.ALTSTEP, token.TESTCASE:
 		return p.parseBehaviourSpec()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
@@ -1697,74 +1702,74 @@ func (p *parser) parseTypeSpec() TypeSpec {
 	}
 }
 
-func (p *parser) parseStructSpec() *StructSpec {
+func (p *parser) parseStructSpec() *ast.StructSpec {
 	if p.trace {
 		defer un(trace(p, "StructSpec"))
 	}
-	x := new(StructSpec)
+	x := new(ast.StructSpec)
 	x.Kind = p.consume()
-	x.LBrace = p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Fields = append(x.Fields, p.parseField())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.Fields[len(x.Fields)-1].lastTok())
+		p.consumeTrivia(x.Fields[len(x.Fields)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	return x
 }
 
-func (p *parser) parseEnumSpec() *EnumSpec {
+func (p *parser) parseEnumSpec() *ast.EnumSpec {
 	if p.trace {
 		defer un(trace(p, "ListSpec"))
 	}
-	x := new(EnumSpec)
+	x := new(ast.EnumSpec)
 	x.Tok = p.consume()
-	x.LBrace = p.expect(LBRACE)
-	for p.tok != RBRACE && p.tok != EOF {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Enums = append(x.Enums, p.parseExpr())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.Enums[len(x.Enums)-1].lastTok())
+		p.consumeTrivia(x.Enums[len(x.Enums)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	return x
 }
 
-func (p *parser) parseListSpec() *ListSpec {
+func (p *parser) parseListSpec() *ast.ListSpec {
 	if p.trace {
 		defer un(trace(p, "ListSpec"))
 	}
-	x := new(ListSpec)
+	x := new(ast.ListSpec)
 	x.Kind = p.consume()
-	if p.tok == LENGTH {
+	if p.tok == token.LENGTH {
 		x.Length = p.parseLength(nil)
 	}
-	x.OfTok = p.expect(OF)
+	x.OfTok = p.expect(token.OF)
 	x.ElemType = p.parseTypeSpec()
 	return x
 }
 
-func (p *parser) parseBehaviourSpec() *BehaviourSpec {
+func (p *parser) parseBehaviourSpec() *ast.BehaviourSpec {
 	if p.trace {
 		defer un(trace(p, "BehaviourSpec"))
 	}
 
-	x := new(BehaviourSpec)
+	x := new(ast.BehaviourSpec)
 	x.Kind = p.consume()
 	x.Params = p.parseFormalPars()
 
-	if p.tok == RUNS {
+	if p.tok == token.RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == SYSTEM {
+	if p.tok == token.SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == RETURN {
+	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
 	return x
@@ -1774,37 +1779,37 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
  * Template Declaration
  *************************************************************************/
 
-func (p *parser) parseTemplateDecl() *TemplateDecl {
+func (p *parser) parseTemplateDecl() *ast.TemplateDecl {
 	if p.trace {
 		defer un(trace(p, "TemplateDecl"))
 	}
 
-	x := new(TemplateDecl)
+	x := new(ast.TemplateDecl)
 	x.TemplateTok = p.consume()
 
-	if p.tok == LPAREN {
+	if p.tok == token.LPAREN {
 		x.LParen = p.consume() // consume '('
 		x.Tok = p.consume()    // consume omit/value/...
-		x.RParen = p.expect(RPAREN)
+		x.RParen = p.expect(token.RPAREN)
 	}
 
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		x.Modif = p.consume()
 	}
 
 	x.Type = p.parseTypeRef()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	if p.tok == LPAREN {
+	if p.tok == token.LPAREN {
 		x.Params = p.parseFormalPars()
 	}
-	if p.tok == MODIFIES {
+	if p.tok == token.MODIFIES {
 		x.ModifiesTok = p.consume()
 		x.Base = p.parsePrimaryExpr()
 	}
-	x.AssignTok = p.expect(ASSIGN)
+	x.AssignTok = p.expect(token.ASSIGN)
 	x.Value = p.parseExpr()
 	x.With = p.parseWith()
 
@@ -1812,10 +1817,10 @@ func (p *parser) parseTemplateDecl() *TemplateDecl {
 }
 
 /*************************************************************************
- * Module FormalPar
+ * ast.Module ast.FormalPar
  *************************************************************************/
 
-func (p *parser) parseModulePar() Decl {
+func (p *parser) parseModulePar() ast.Decl {
 	if p.trace {
 		defer un(trace(p, "ModulePar"))
 	}
@@ -1823,23 +1828,23 @@ func (p *parser) parseModulePar() Decl {
 	tok := p.consume()
 
 	// parse deprecated module parameter group
-	if p.tok == LBRACE {
-		x := &ModuleParameterGroup{Tok: tok}
+	if p.tok == token.LBRACE {
+		x := &ast.ModuleParameterGroup{Tok: tok}
 		x.LBrace = p.consume()
-		for p.tok != RBRACE && p.tok != EOF {
-			d := new(ValueDecl)
+		for p.tok != token.RBRACE && p.tok != token.EOF {
+			d := new(ast.ValueDecl)
 			d.TemplateRestriction = p.parseRestrictionSpec()
 			d.Type = p.parseTypeRef()
 			d.Decls = p.parseExprList()
-			p.expectSemi(d.Decls[len(d.Decls)-1].lastTok())
+			p.expectSemi(d.Decls[len(d.Decls)-1].LastTok())
 			x.Decls = append(x.Decls, d)
 		}
-		x.RBrace = p.expect(RBRACE)
+		x.RBrace = p.expect(token.RBRACE)
 		x.With = p.parseWith()
 		return x
 	}
 
-	x := &ValueDecl{Kind: tok}
+	x := &ast.ValueDecl{Kind: tok}
 	x.TemplateRestriction = p.parseRestrictionSpec()
 	x.Type = p.parseTypeRef()
 	x.Decls = p.parseExprList()
@@ -1851,18 +1856,18 @@ func (p *parser) parseModulePar() Decl {
  * Value Declaration
  *************************************************************************/
 
-func (p *parser) parseValueDecl() *ValueDecl {
+func (p *parser) parseValueDecl() *ast.ValueDecl {
 	if p.trace {
 		defer un(trace(p, "ValueDecl"))
 	}
-	x := &ValueDecl{Kind: p.consume()}
+	x := &ast.ValueDecl{Kind: p.consume()}
 	x.TemplateRestriction = p.parseRestrictionSpec()
 
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		x.Modif = p.consume()
 	}
 
-	if x.Kind.Kind != TIMER {
+	if x.Kind.Kind != token.TIMER {
 		x.Type = p.parseTypeRef()
 	}
 	x.Decls = p.parseExprList()
@@ -1870,20 +1875,20 @@ func (p *parser) parseValueDecl() *ValueDecl {
 	return x
 }
 
-func (p *parser) parseRestrictionSpec() *RestrictionSpec {
-	x := new(RestrictionSpec)
+func (p *parser) parseRestrictionSpec() *ast.RestrictionSpec {
+	x := new(ast.RestrictionSpec)
 	switch p.tok {
-	case TEMPLATE:
+	case token.TEMPLATE:
 		x.TemplateTok = p.consume()
-		if p.tok != LPAREN {
+		if p.tok != token.LPAREN {
 			return nil
 		}
 
 		x.LParen = p.consume()
 		x.Tok = p.consume()
-		x.RParen = p.expect(RPAREN)
+		x.RParen = p.expect(token.RPAREN)
 
-	case OMIT, VALUE, PRESENT:
+	case token.OMIT, token.VALUE, token.PRESENT:
 		x.Tok = p.consume()
 	}
 	return x
@@ -1893,41 +1898,41 @@ func (p *parser) parseRestrictionSpec() *RestrictionSpec {
  * Behaviour Declaration
  *************************************************************************/
 
-func (p *parser) parseFuncDecl() *FuncDecl {
+func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	if p.trace {
 		defer un(trace(p, "FuncDecl"))
 	}
 
-	x := new(FuncDecl)
+	x := new(ast.FuncDecl)
 	x.Kind = p.consume()
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		x.Modif = p.consume()
 	}
 
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok == RUNS {
+	if p.tok == token.RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == MTC {
+	if p.tok == token.MTC {
 		x.Mtc = p.parseMtc()
 	}
 
-	if p.tok == SYSTEM {
+	if p.tok == token.SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == RETURN {
+	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
 
-	if p.tok == LBRACE {
+	if p.tok == token.LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
 
@@ -1939,15 +1944,15 @@ func (p *parser) parseFuncDecl() *FuncDecl {
  * External Function Declaration
  *************************************************************************/
 
-func (p *parser) parseExtFuncDecl() *FuncDecl {
+func (p *parser) parseExtFuncDecl() *ast.FuncDecl {
 	if p.trace {
 		defer un(trace(p, "ExtFuncDecl"))
 	}
 
-	x := new(FuncDecl)
+	x := new(ast.FuncDecl)
 	x.External = p.consume()
 	x.Kind = p.consume()
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		x.Modif = p.consume()
 	}
 
@@ -1955,19 +1960,19 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok == RUNS {
+	if p.tok == token.RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == MTC {
+	if p.tok == token.MTC {
 		x.Mtc = p.parseMtc()
 	}
 
-	if p.tok == SYSTEM {
+	if p.tok == token.SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == RETURN {
+	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
 	x.With = p.parseWith()
@@ -1978,29 +1983,29 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
  * Signature Declaration
  *************************************************************************/
 
-func (p *parser) parseSignatureDecl() *SignatureDecl {
+func (p *parser) parseSignatureDecl() *ast.SignatureDecl {
 	if p.trace {
 		defer un(trace(p, "SignatureDecl"))
 	}
 
-	x := new(SignatureDecl)
+	x := new(ast.SignatureDecl)
 	x.Tok = p.consume()
 	x.Name = p.parseIdent()
-	if p.tok == LT {
+	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok == NOBLOCK {
+	if p.tok == token.NOBLOCK {
 		x.NoBlock = p.consume()
 	}
 
-	if p.tok == RETURN {
+	if p.tok == token.RETURN {
 		x.Return = p.parseReturn()
 	}
 
-	if p.tok == EXCEPTION {
+	if p.tok == token.EXCEPTION {
 		x.ExceptionTok = p.consume()
 		x.Exception = p.parseParenExpr()
 	}
@@ -2008,73 +2013,73 @@ func (p *parser) parseSignatureDecl() *SignatureDecl {
 	return x
 }
 
-func (p *parser) parseRunsOn() *RunsOnSpec {
-	return &RunsOnSpec{
-		RunsTok: p.expect(RUNS),
-		OnTok:   p.expect(ON),
+func (p *parser) parseRunsOn() *ast.RunsOnSpec {
+	return &ast.RunsOnSpec{
+		RunsTok: p.expect(token.RUNS),
+		OnTok:   p.expect(token.ON),
 		Comp:    p.parseTypeRef(),
 	}
 }
 
-func (p *parser) parseSystem() *SystemSpec {
-	return &SystemSpec{
-		Tok:  p.expect(SYSTEM),
+func (p *parser) parseSystem() *ast.SystemSpec {
+	return &ast.SystemSpec{
+		Tok:  p.expect(token.SYSTEM),
 		Comp: p.parseTypeRef(),
 	}
 }
 
-func (p *parser) parseMtc() *MtcSpec {
-	return &MtcSpec{
-		Tok:  p.expect(MTC),
+func (p *parser) parseMtc() *ast.MtcSpec {
+	return &ast.MtcSpec{
+		Tok:  p.expect(token.MTC),
 		Comp: p.parseTypeRef(),
 	}
 }
 
-func (p *parser) parseReturn() *ReturnSpec {
-	x := new(ReturnSpec)
+func (p *parser) parseReturn() *ast.ReturnSpec {
+	x := new(ast.ReturnSpec)
 	x.Tok = p.consume()
 	x.Restriction = p.parseRestrictionSpec()
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
 	return x
 }
 
-func (p *parser) parseFormalPars() *FormalPars {
+func (p *parser) parseFormalPars() *ast.FormalPars {
 	if p.trace {
 		defer un(trace(p, "FormalPars"))
 	}
-	x := new(FormalPars)
-	x.LParen = p.expect(LPAREN)
-	for p.tok != RPAREN {
+	x := new(ast.FormalPars)
+	x.LParen = p.expect(token.LPAREN)
+	for p.tok != token.RPAREN {
 		x.List = append(x.List, p.parseFormalPar())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.List[len(x.List)-1].lastTok())
+		p.consumeTrivia(x.List[len(x.List)-1].LastTok())
 	}
-	x.RParen = p.expect(RPAREN)
+	x.RParen = p.expect(token.RPAREN)
 	return x
 }
 
-func (p *parser) parseFormalPar() *FormalPar {
+func (p *parser) parseFormalPar() *ast.FormalPar {
 	if p.trace {
-		defer un(trace(p, "FormalPar"))
+		defer un(trace(p, "ast.FormalPar"))
 	}
-	x := new(FormalPar)
+	x := new(ast.FormalPar)
 
 	switch p.tok {
-	case IN:
+	case token.IN:
 		x.Direction = p.consume()
-	case OUT:
+	case token.OUT:
 		x.Direction = p.consume()
-	case INOUT:
+	case token.INOUT:
 		x.Direction = p.consume()
 	}
 
 	x.TemplateRestriction = p.parseRestrictionSpec()
-	if p.tok == MODIF {
+	if p.tok == token.MODIF {
 		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
@@ -2083,45 +2088,45 @@ func (p *parser) parseFormalPar() *FormalPar {
 	return x
 }
 
-func (p *parser) parseTypeFormalPars() *FormalPars {
+func (p *parser) parseTypeFormalPars() *ast.FormalPars {
 	if p.trace {
 		defer un(trace(p, "TypeFormalPars"))
 	}
-	x := new(FormalPars)
-	x.LParen = p.expect(LT)
-	for p.tok != GT {
+	x := new(ast.FormalPars)
+	x.LParen = p.expect(token.LT)
+	for p.tok != token.GT {
 		x.List = append(x.List, p.parseTypeFormalPar())
-		if p.tok != COMMA {
+		if p.tok != token.COMMA {
 			break
 		}
-		p.consumeTrivia(x.List[len(x.List)-1].lastTok())
+		p.consumeTrivia(x.List[len(x.List)-1].LastTok())
 	}
-	x.RParen = p.expect(GT)
+	x.RParen = p.expect(token.GT)
 	return x
 }
 
-func (p *parser) parseTypeFormalPar() *FormalPar {
+func (p *parser) parseTypeFormalPar() *ast.FormalPar {
 	if p.trace {
 		defer un(trace(p, "TypeFormalPar"))
 	}
 
-	x := new(FormalPar)
+	x := new(ast.FormalPar)
 
-	if p.tok == IN {
+	if p.tok == token.IN {
 		x.Direction = p.consume()
 	}
 
 	switch p.tok {
-	case TYPE:
+	case token.TYPE:
 		x.Type = make_ident(p.consume())
-	case SIGNATURE:
+	case token.SIGNATURE:
 		x.Type = make_ident(p.consume())
 	default:
 		x.Type = p.parseTypeRef()
 	}
-	x.Name = make_ident(p.expect(IDENT))
-	if p.tok == ASSIGN {
-		x.Name = &BinaryExpr{
+	x.Name = make_ident(p.expect(token.IDENT))
+	if p.tok == token.ASSIGN {
+		x.Name = &ast.BinaryExpr{
 			X:  x.Name,
 			Op: p.consume(),
 			Y:  p.parseTypeRef(),
@@ -2135,72 +2140,72 @@ func (p *parser) parseTypeFormalPar() *FormalPar {
  * Statements
  *************************************************************************/
 
-func (p *parser) parseBlockStmt() *BlockStmt {
+func (p *parser) parseBlockStmt() *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "BlockStmt"))
 	}
 
-	x := &BlockStmt{LBrace: p.expect(LBRACE)}
-	for p.tok != RBRACE && p.tok != EOF {
+	x := &ast.BlockStmt{LBrace: p.expect(token.LBRACE)}
+	for p.tok != token.RBRACE && p.tok != token.EOF {
 		x.Stmts = append(x.Stmts, p.parseStmt())
-		p.expectSemi(x.Stmts[len(x.Stmts)-1].lastTok())
+		p.expectSemi(x.Stmts[len(x.Stmts)-1].LastTok())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	return x
 }
 
-func (p *parser) parseStmt() Stmt {
+func (p *parser) parseStmt() ast.Stmt {
 	if p.trace {
-		defer un(trace(p, "Stmt"))
+		defer un(trace(p, "ast.Stmt"))
 	}
 
 	switch p.tok {
-	case TEMPLATE:
-		return &DeclStmt{p.parseTemplateDecl()}
-	case VAR, CONST, TIMER, PORT:
-		return &DeclStmt{p.parseValueDecl()}
-	case REPEAT, BREAK, CONTINUE:
-		return &BranchStmt{Tok: p.consume()}
-	case LABEL:
-		return &BranchStmt{Tok: p.consume(), Label: p.expect(IDENT)}
-	case GOTO:
-		return &BranchStmt{Tok: p.consume(), Label: p.expect(IDENT)}
-	case RETURN:
-		x := &ReturnStmt{Tok: p.consume()}
-		if !stmtStart[p.tok] && p.tok != SEMICOLON && p.tok != RBRACE {
+	case token.TEMPLATE:
+		return &ast.DeclStmt{p.parseTemplateDecl()}
+	case token.VAR, token.CONST, token.TIMER, token.PORT:
+		return &ast.DeclStmt{p.parseValueDecl()}
+	case token.REPEAT, token.BREAK, token.CONTINUE:
+		return &ast.BranchStmt{Tok: p.consume()}
+	case token.LABEL:
+		return &ast.BranchStmt{Tok: p.consume(), Label: p.expect(token.IDENT)}
+	case token.GOTO:
+		return &ast.BranchStmt{Tok: p.consume(), Label: p.expect(token.IDENT)}
+	case token.RETURN:
+		x := &ast.ReturnStmt{Tok: p.consume()}
+		if !stmtStart[p.tok] && p.tok != token.SEMICOLON && p.tok != token.RBRACE {
 			x.Result = p.parseExpr()
 		}
 		return x
-	case SELECT:
+	case token.SELECT:
 		return p.parseSelect()
-	case ALT, INTERLEAVE:
-		return &AltStmt{Tok: p.consume(), Body: p.parseBlockStmt()}
-	case LBRACK:
+	case token.ALT, token.INTERLEAVE:
+		return &ast.AltStmt{Tok: p.consume(), Body: p.parseBlockStmt()}
+	case token.LBRACK:
 		return p.parseAltGuard()
-	case FOR:
+	case token.FOR:
 		return p.parseForLoop()
-	case WHILE:
+	case token.WHILE:
 		return p.parseWhileLoop()
-	case DO:
+	case token.DO:
 		return p.parseDoWhileLoop()
-	case IF:
+	case token.IF:
 		return p.parseIfStmt()
-	case LBRACE:
+	case token.LBRACE:
 		return p.parseBlockStmt()
-	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
+	case token.IDENT, token.TESTCASE, token.ANYKW, token.ALL, token.MAP, token.UNMAP, token.MTC:
 		x := p.parseSimpleStmt()
 
 		// try call-statement block
-		if p.tok == LBRACE {
-			c, ok := x.Expr.(*CallExpr)
+		if p.tok == token.LBRACE {
+			c, ok := x.Expr.(*ast.CallExpr)
 			if !ok {
 				return x
 			}
-			s, ok := c.Fun.(*SelectorExpr)
+			s, ok := c.Fun.(*ast.SelectorExpr)
 			if !ok {
 				return x
 			}
-			id, ok := s.Sel.(*Ident)
+			id, ok := s.Sel.(*ast.Ident)
 			if !ok {
 				return x
 			}
@@ -2208,7 +2213,7 @@ func (p *parser) parseStmt() Stmt {
 				return x
 			}
 
-			call := new(CallStmt)
+			call := new(ast.CallStmt)
 			call.Stmt = x
 			call.Body = p.parseBlockStmt()
 			return call
@@ -2221,50 +2226,50 @@ func (p *parser) parseStmt() Stmt {
 	}
 }
 
-func (p *parser) parseForLoop() *ForStmt {
-	x := new(ForStmt)
+func (p *parser) parseForLoop() *ast.ForStmt {
+	x := new(ast.ForStmt)
 	x.Tok = p.consume()
-	x.LParen = p.expect(LPAREN)
-	if p.tok == VAR {
-		x.Init = &DeclStmt{Decl: p.parseValueDecl()}
+	x.LParen = p.expect(token.LPAREN)
+	if p.tok == token.VAR {
+		x.Init = &ast.DeclStmt{Decl: p.parseValueDecl()}
 	} else {
-		x.Init = &ExprStmt{Expr: p.parseExpr()}
+		x.Init = &ast.ExprStmt{Expr: p.parseExpr()}
 	}
-	x.InitSemi = p.expect(SEMICOLON)
+	x.InitSemi = p.expect(token.SEMICOLON)
 	x.Cond = p.parseExpr()
-	x.CondSemi = p.expect(SEMICOLON)
+	x.CondSemi = p.expect(token.SEMICOLON)
 	x.Post = p.parseSimpleStmt()
-	x.LParen = p.expect(RPAREN)
+	x.LParen = p.expect(token.RPAREN)
 	x.Body = p.parseBlockStmt()
 	return x
 }
 
-func (p *parser) parseWhileLoop() *WhileStmt {
-	return &WhileStmt{
+func (p *parser) parseWhileLoop() *ast.WhileStmt {
+	return &ast.WhileStmt{
 		Tok:  p.consume(),
 		Cond: p.parseParenExpr(),
 		Body: p.parseBlockStmt(),
 	}
 }
 
-func (p *parser) parseDoWhileLoop() *DoWhileStmt {
-	return &DoWhileStmt{
+func (p *parser) parseDoWhileLoop() *ast.DoWhileStmt {
+	return &ast.DoWhileStmt{
 		DoTok:    p.consume(),
 		Body:     p.parseBlockStmt(),
-		WhileTok: p.expect(WHILE),
+		WhileTok: p.expect(token.WHILE),
 		Cond:     p.parseParenExpr(),
 	}
 }
 
-func (p *parser) parseIfStmt() *IfStmt {
-	x := &IfStmt{
+func (p *parser) parseIfStmt() *ast.IfStmt {
+	x := &ast.IfStmt{
 		Tok:  p.consume(),
 		Cond: p.parseParenExpr(),
 		Then: p.parseBlockStmt(),
 	}
-	if p.tok == ELSE {
+	if p.tok == token.ELSE {
 		x.ElseTok = p.consume()
-		if p.tok == IF {
+		if p.tok == token.IF {
 			x.Else = p.parseIfStmt()
 		} else {
 			x.Else = p.parseBlockStmt()
@@ -2273,26 +2278,26 @@ func (p *parser) parseIfStmt() *IfStmt {
 	return x
 }
 
-func (p *parser) parseSelect() *SelectStmt {
-	x := new(SelectStmt)
-	x.Tok = p.expect(SELECT)
-	if p.tok == UNION {
+func (p *parser) parseSelect() *ast.SelectStmt {
+	x := new(ast.SelectStmt)
+	x.Tok = p.expect(token.SELECT)
+	if p.tok == token.UNION {
 		x.Union = p.consume()
 	}
 	x.Tag = p.parseParenExpr()
-	x.LBrace = p.expect(LBRACE)
-	for p.tok == CASE {
+	x.LBrace = p.expect(token.LBRACE)
+	for p.tok == token.CASE {
 		x.Body = append(x.Body, p.parseCaseStmt())
 	}
-	x.RBrace = p.expect(RBRACE)
+	x.RBrace = p.expect(token.RBRACE)
 	return x
 }
 
-func (p *parser) parseCaseStmt() *CaseClause {
-	x := new(CaseClause)
-	x.Tok = p.expect(CASE)
-	if p.tok == ELSE {
-		p.consume() //TODO(5nord) move token into AST
+func (p *parser) parseCaseStmt() *ast.CaseClause {
+	x := new(ast.CaseClause)
+	x.Tok = p.expect(token.CASE)
+	if p.tok == token.ELSE {
+		p.consume() // TODO(5nord) move token into AST
 	} else {
 		x.Case = p.parseParenExpr()
 	}
@@ -2300,31 +2305,31 @@ func (p *parser) parseCaseStmt() *CaseClause {
 	return x
 }
 
-func (p *parser) parseAltGuard() *CommClause {
-	x := new(CommClause)
-	x.LBrack = p.expect(LBRACK)
-	if p.tok == ELSE {
+func (p *parser) parseAltGuard() *ast.CommClause {
+	x := new(ast.CommClause)
+	x.LBrack = p.expect(token.LBRACK)
+	if p.tok == token.ELSE {
 		x.Else = p.consume()
-		x.RBrack = p.expect(RBRACK)
+		x.RBrack = p.expect(token.RBRACK)
 		x.Body = p.parseBlockStmt()
 		return x
 	}
 
-	if p.tok != RBRACK {
+	if p.tok != token.RBRACK {
 		x.X = p.parseExpr()
 	}
-	x.RBrack = p.expect(RBRACK)
+	x.RBrack = p.expect(token.RBRACK)
 	x.Comm = p.parseSimpleStmt()
-	if p.tok == LBRACE {
+	if p.tok == token.LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
 	return x
 }
 
-func (p *parser) parseSimpleStmt() *ExprStmt {
+func (p *parser) parseSimpleStmt() *ast.ExprStmt {
 	if p.trace {
 		defer un(trace(p, "SimpleStmt"))
 	}
 
-	return &ExprStmt{Expr: p.parseExpr()}
+	return &ast.ExprStmt{Expr: p.parseExpr()}
 }

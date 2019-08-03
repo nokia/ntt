@@ -1,4 +1,4 @@
-// Package syntax implements a tolerant TTCN-3 parser library.
+// Package parser implements a tolerant TTCN-3 parser library.
 //
 // It implements most of TTCN-3 core language specification 4.10 (2018) and various extensions:
 // * Advanced Parametrisation
@@ -10,13 +10,17 @@
 //
 // Please note this is a very early release. Its interface and functionality will change and
 // be adapted over time.
-package syntax
+package parser
 
 import (
 	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
+
+	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/scanner"
 )
 
 // A Mode value is a set of flags (or 0).
@@ -33,8 +37,8 @@ const (
 )
 
 // ParseFile behaves like Parse
-func ParseFile(filename string, eh func(pos Position, msg string)) ([]*Module, error) {
-	return ParseModules(NewFileSet(), filename, nil, 0, eh)
+func ParseFile(filename string, eh func(pos loc.Position, msg string)) ([]*ast.Module, error) {
+	return ParseModules(loc.NewFileSet(), filename, nil, 0, eh)
 }
 
 // Parse parses the source code of a single source file and returns
@@ -56,7 +60,7 @@ func ParseFile(filename string, eh func(pos Position, msg string)) ([]*Module, e
 // representing the fragments of erroneous source code). Multiple errors
 // are returned via a ErrorList which is sorted by file position.
 //
-func Parse(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorHandler) (root []Node, err error) {
+func Parse(fset *loc.FileSet, filename string, src interface{}, mode Mode, eh scanner.ErrorHandler) (root []ast.Node, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
 	}
@@ -85,7 +89,7 @@ func Parse(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorH
 	return p.parse(), nil
 }
 
-func ParseModules(fset *FileSet, filename string, src interface{}, mode Mode, eh ErrorHandler) (root []*Module, err error) {
+func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode, eh scanner.ErrorHandler) (root []*ast.Module, err error) {
 	if fset == nil {
 		panic("ParseModules: no FileSet provided (fset == nil)")
 	}

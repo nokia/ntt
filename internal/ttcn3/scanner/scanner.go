@@ -1,9 +1,13 @@
-package syntax
+// Package scanner provides a TTCN-3 scanner
+package scanner
 
 import (
 	"fmt"
 	"path/filepath"
 	"unicode/utf8"
+
+	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ttcn3/token"
 )
 
 // An ErrorHandler may be provided to Scanner.Init. If a syntax error is
@@ -11,7 +15,7 @@ import (
 // position and an error message. The position points to the beginning of
 // the offending
 //
-type ErrorHandler func(pos Position, msg string)
+type ErrorHandler func(pos loc.Position, msg string)
 
 // A Scanner holds the scanner's internal state while processing
 // a given text. It can be allocated as part of another data
@@ -19,7 +23,7 @@ type ErrorHandler func(pos Position, msg string)
 //
 type Scanner struct {
 	// immutable state
-	file *File        // source file handle
+	file *loc.File    // source file handle
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
 	Err  ErrorHandler // error reporting; or nil
@@ -94,7 +98,7 @@ const (
 // Note that Init may call Err if there is an error in the first character
 // of the file.
 //
-func (s *Scanner) Init(file *File, src []byte, err ErrorHandler) {
+func (s *Scanner) Init(file *loc.File, src []byte, err ErrorHandler) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {
 		panic(fmt.Sprintf("file size (%d) does not match src len (%d)", file.Size(), len(src)))
@@ -230,9 +234,9 @@ func (s *Scanner) scanDigits() {
 	}
 }
 
-func (s *Scanner) scanNumber() (tok Kind, lit string) {
+func (s *Scanner) scanNumber() (tok token.Kind, lit string) {
 	offs := s.offset
-	tok = INT
+	tok = token.INT
 
 	if s.ch == '0' {
 		s.next()
@@ -246,14 +250,14 @@ func (s *Scanner) scanNumber() (tok Kind, lit string) {
 		if s.rdOffset < len(s.src) && s.src[s.rdOffset] == '.' {
 			goto out
 		}
-		tok = FLOAT
+		tok = token.FLOAT
 		s.next()
 		s.scanDigits()
 	}
 
 	// exponent
 	if s.ch == 'e' || s.ch == 'E' {
-		tok = FLOAT
+		tok = token.FLOAT
 		s.next()
 		if s.ch == '-' || s.ch == '+' {
 			s.next()
@@ -264,7 +268,7 @@ func (s *Scanner) scanNumber() (tok Kind, lit string) {
 	// FIXME: In standard TTCN-3:2014 some identifiers start with a number.
 	//        For instance predefined function 291oolea.
 	if isAlpha(s.ch) {
-		tok = ILLEGAL
+		tok = token.ILLEGAL
 		for isAlpha(s.ch) || isDigit(s.ch) {
 			s.next()
 		}
@@ -346,7 +350,7 @@ func (s *Scanner) skipWhitespace() {
 	}
 }
 
-func (s *Scanner) switch2(ch rune, tok1, tok2 Kind) Kind {
+func (s *Scanner) switch2(ch rune, tok1, tok2 token.Kind) token.Kind {
 	if s.ch == ch {
 		s.next()
 		return tok1
@@ -380,7 +384,7 @@ func (s *Scanner) switch2(ch rune, tok1, tok2 Kind) Kind {
 // set with Init. Kind positions are relative to that file
 // and thus relative to the file set.
 //
-func (s *Scanner) Scan() (pos Pos, tok Kind, lit string) {
+func (s *Scanner) Scan() (pos loc.Pos, tok token.Kind, lit string) {
 	s.skipWhitespace()
 
 	// current token start
@@ -392,9 +396,9 @@ func (s *Scanner) Scan() (pos Pos, tok Kind, lit string) {
 		lit = s.scanIdentifier()
 		if len(lit) > 1 {
 			// keywords are longer than one letter - avoid lookup otherwise
-			tok = Lookup(lit)
+			tok = token.Lookup(lit)
 		} else {
-			tok = IDENT
+			tok = token.IDENT
 		}
 	case isDigit(ch):
 		tok, lit = s.scanNumber()
@@ -402,112 +406,112 @@ func (s *Scanner) Scan() (pos Pos, tok Kind, lit string) {
 		s.next() // always make progress
 		switch ch {
 		case -1:
-			tok = EOF
+			tok = token.EOF
 		case '"':
-			tok = STRING
+			tok = token.STRING
 			lit = s.scanString()
 		case '\'':
-			tok = BSTRING
+			tok = token.BSTRING
 			lit = s.scanBString()
 		case '@':
 			if s.ch == '>' {
-				tok = ROR
+				tok = token.ROR
 				s.next()
 			} else {
-				tok = MODIF
+				tok = token.MODIF
 				lit = s.scanModifier()
 			}
 		case '#':
-			tok = PREPROC
+			tok = token.PREPROC
 			lit = s.scanPreproc()
 		case ':':
-			tok = s.switch2('=', ASSIGN, COLON)
+			tok = s.switch2('=', token.ASSIGN, token.COLON)
 		case '.':
-			tok = s.switch2('.', RANGE, DOT)
+			tok = s.switch2('.', token.RANGE, token.DOT)
 		case ',':
-			tok = COMMA
+			tok = token.COMMA
 		case ';':
-			tok = SEMICOLON
+			tok = token.SEMICOLON
 		case '(':
-			tok = LPAREN
+			tok = token.LPAREN
 		case ')':
-			tok = RPAREN
+			tok = token.RPAREN
 		case '[':
-			tok = LBRACK
+			tok = token.LBRACK
 		case ']':
-			tok = RBRACK
+			tok = token.RBRACK
 		case '{':
-			tok = LBRACE
+			tok = token.LBRACE
 		case '}':
-			tok = RBRACE
+			tok = token.RBRACE
 		case '+':
-			tok = ADD
+			tok = token.ADD
 		case '-':
-			tok = s.switch2('>', REDIR, SUB)
+			tok = s.switch2('>', token.REDIR, token.SUB)
 		case '*':
-			tok = MUL
+			tok = token.MUL
 		case '/':
 			if s.ch == '/' || s.ch == '*' {
 				comment := s.scanComment()
-				tok = COMMENT
+				tok = token.COMMENT
 				lit = comment
 			} else {
-				tok = DIV
+				tok = token.DIV
 			}
 		case '>':
 			switch s.ch {
 			case '>':
-				tok = SHR
+				tok = token.SHR
 				s.next()
 			case '=':
-				tok = GE
+				tok = token.GE
 				s.next()
 			default:
-				tok = GT
+				tok = token.GT
 			}
 
 		case '<':
 			switch s.ch {
 			case '<':
-				tok = SHL
+				tok = token.SHL
 				s.next()
 			case '@':
-				tok = ROL
+				tok = token.ROL
 				s.next()
 			case '=':
-				tok = LE
+				tok = token.LE
 				s.next()
 			default:
-				tok = LT
+				tok = token.LT
 			}
 
 		case '=':
 			switch s.ch {
 			case '=':
-				tok = EQ
+				tok = token.EQ
 				s.next()
 			case '>':
-				tok = DECODE
+				tok = token.DECODE
 				s.next()
 			default:
-				tok = ILLEGAL
+				tok = token.ILLEGAL
 				lit = "="
 				s.error(s.offset, fmt.Sprintf("stray %q", "="))
 
 			}
 		case '!':
-			tok = s.switch2('=', NE, EXCL)
+			tok = s.switch2('=', token.NE, token.EXCL)
 		case '&':
-			tok = CONCAT
+			tok = token.CONCAT
 		case '?':
-			tok = ANY
+			tok = token.ANY
 
 		default:
 			// next reports unexpected BOMs - don't repeat
 			if ch != bom {
 				s.error(s.file.Offset(pos), fmt.Sprintf("illegal character %#U", ch))
 			}
-			tok = ILLEGAL
+			tok = token.ILLEGAL
 			lit = string(ch)
 		}
 	}

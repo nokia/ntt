@@ -8,7 +8,7 @@ import (
 	"syscall"
 
 	"github.com/nokia/ntt/internal/env"
-	"github.com/nokia/ntt/internal/ttcn3/syntax"
+	"github.com/nokia/ntt/internal/ttcn3/parser"
 	"github.com/spf13/cobra"
 )
 
@@ -75,7 +75,7 @@ func main() {
 			waitStatus := err.Sys().(syscall.WaitStatus)
 			os.Exit(waitStatus.ExitStatus())
 		}
-		syntax.PrintError(os.Stderr, err)
+		parser.PrintError(os.Stderr, err)
 		os.Exit(1)
 	}
 }

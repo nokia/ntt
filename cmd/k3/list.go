@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/loader"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
-	"github.com/nokia/ntt/internal/ttcn3/syntax"
 
 	"github.com/spf13/cobra"
 )
@@ -31,7 +31,7 @@ Default output shows the testcase names in current directory.`,
 
 	w = bufio.NewWriter(os.Stdout)
 
-	printers = map[string]func(string, *syntax.Module, syntax.Node){
+	printers = map[string]func(string, *ast.Module, ast.Node){
 		"tests":     printTests,
 		"test":      printTests,
 		"tc":        printTests,
@@ -93,11 +93,11 @@ func list(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func printTests(file string, m *syntax.Module, n syntax.Node) {
+func printTests(file string, m *ast.Module, n ast.Node) {
 	for _, def := range m.Defs {
 		switch x := def.Def.(type) {
-		case *syntax.GroupDecl:
-		case *syntax.FuncDecl:
+		case *ast.GroupDecl:
+		case *ast.FuncDecl:
 			if !x.IsTest() {
 				break
 			}
@@ -132,18 +132,18 @@ func printTests(file string, m *syntax.Module, n syntax.Node) {
 	}
 }
 
-func printModules(file string, m *syntax.Module, n syntax.Node) {
+func printModules(file string, m *ast.Module, n ast.Node) {
 	if Verbose {
 		fmt.Fprint(w, file, "\t")
 	}
 	fmt.Fprintln(w, m.Name.Tok.Lit)
 }
 
-func printImports(file string, m *syntax.Module, n syntax.Node) {
+func printImports(file string, m *ast.Module, n ast.Node) {
 	for _, def := range m.Defs {
 		switch x := def.Def.(type) {
-		case *syntax.GroupDecl:
-		case *syntax.ImportDecl:
+		case *ast.GroupDecl:
+		case *ast.ImportDecl:
 			if Verbose {
 				fmt.Fprint(w, file, "\t")
 			}

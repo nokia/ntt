@@ -1,7 +1,9 @@
-package syntax
+package parser
 
 import (
 	"testing"
+
+	"github.com/nokia/ntt/internal/loc"
 )
 
 type Expect int
@@ -367,7 +369,7 @@ func anyParse(input string, f func(p *parser), trace bool) error {
 	}
 
 	var p parser
-	p.init(NewFileSet(), "", []byte(input), mode, nil)
+	p.init(loc.NewFileSet(), "", []byte(input), mode, nil)
 	f(&p)
 	p.errors.Sort()
 	return p.errors.Err()

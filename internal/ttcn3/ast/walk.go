@@ -1,4 +1,4 @@
-package syntax
+package ast
 
 func WalkModuleDefs(fun func(def Node) bool, nodes ...Node) {
 	for _, n := range nodes {

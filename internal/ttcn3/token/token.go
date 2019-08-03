@@ -1,7 +1,7 @@
-// Package token defines constants representing the lexical tokens of the Go
+// Package token defines constants representing the lexical tokens of the TTCN-3
 // programming language and basic operations on tokens (printing, predicates).
 //
-package syntax
+package token
 
 import "strconv"
 
