@@ -43,11 +43,14 @@ type Terminal struct {
 
 func (x Terminal) Pos() loc.Pos { return x.pos }
 func (x Terminal) End() loc.Pos {
-	if x.Kind.IsLiteral() {
-		return loc.Pos(int(x.pos) + len(x.Lit))
-	}
+	return loc.Pos(int(x.pos) + len(x.String()))
+}
 
-	return loc.Pos(int(x.pos) + len(x.Kind.String()))
+func (x *Terminal) String() string {
+	if x.Kind.IsLiteral() {
+		return x.Lit
+	}
+	return x.Kind.String()
 }
 
 func (t *Terminal) IsValid() bool {
