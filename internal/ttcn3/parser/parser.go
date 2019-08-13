@@ -1251,11 +1251,11 @@ func (p *parser) parseImportStmt() *ast.DefKindExpr {
 					RBrace:    p.expect(token.RBRACE),
 				}
 			}
+			x.List = append(x.List, y)
 			if p.tok != token.COMMA {
 				break
 			}
 			p.consumeTrivia(y.LastTok()) // consume ','
-			x.List = append(x.List, y)
 		}
 	case token.IMPORT:
 		x.Kind = p.consume()
