@@ -70,18 +70,22 @@ func list(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	suite, err := loader.NewFromArgs(args)
+	conf := loader.Config{
+		IgnoreImports: true,
+	}
+
+	if _, err := conf.FromArgs(args); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+
+	suite, err := conf.Load()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 
-	if err := suite.Load(); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-
-	for _, mod := range suite.Modules {
+	for _, mod := range suite.Syntax {
 		var file string
 		if Verbose {
 			file = suite.Fset.File(mod.Pos()).Name()
