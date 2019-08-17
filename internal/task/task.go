@@ -1,5 +1,8 @@
 /*
-Package task provides simplistic interface for executing make-like targets.
+Package task provides a simplistic interface for executing make-like targets.
+
+Note, this package was implemented to provide a smooth migration from Nokia
+internal test tool (k3-build) to ntt and maybe replaced in the future.
 */
 package task
 

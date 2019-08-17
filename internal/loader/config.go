@@ -8,9 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/runtime"
 	st "github.com/nokia/ntt/internal/suite"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
 // A Config specifies how a test suite should be loaded.
@@ -25,27 +24,31 @@ type Config struct {
 	// If IgnoreComments is set, comments will be ignored by the parser.
 	IgnoreComments bool
 
-	// Fset is the location mapping to use. If nil, it may be initialized
-	// lazily when required.
-	Fset *loc.FileSet
-
 	// Logf is the logger for the config.
 	// If the user provides a logger, debug logging is enabled.
 	// If if the K3_DEBUG environment variable is set, but the logger is
 	// nil, default to log.Printf.
 	Logf func(format string, arg ...interface{})
 
-	*st.Suite
-}
+	// Sources is the initial list of source files to load a test suite from.
+	Sources []string
 
-type Suite struct {
-	Fset   *loc.FileSet
-	Syntax []*ast.Module
+	// ImportPackages is the list of ttcn3 packages (codecs, adapters,
+	// libraries), the suite if dependening from.
+	ImportPackages []string
+
+	// Dir is the source directory of the test suite.
+	Dir string
+
+	// Name of the test suite.
+	Name string
 }
 
 // FromArgs interprets args an initial suite directory or list of ttcn3 source
-// files to load from and updates the configuration. It returns the list of
-// unconsumed arguments.
+// files to load from and updates the configuration with Source, Imports, ...
+//
+// It returns the list of unconsumed arguments. An error is returned if files
+// could not be read or if config files had syntax errors.
 func (conf *Config) FromArgs(args []string) ([]string, error) {
 	var rest []string
 	for i, arg := range args {
@@ -66,21 +69,14 @@ func (conf *Config) FromArgs(args []string) ([]string, error) {
 	}
 	suite.SetEnv()
 	sort.Strings(suite.Sources)
-	conf.Suite = suite
+	conf.Name = suite.Name
+	conf.Dir = suite.Dir()
+	conf.Sources = suite.Sources
+	conf.ImportPackages = suite.Imports
 	return rest, nil
 }
 
-func (conf *Config) Load() (*Suite, error) {
-	suite := &Suite{}
-	suite.Fset = loc.NewFileSet()
-	if conf.Fset != nil {
-		suite.Fset = conf.Fset
-	}
-	root, err := parseFiles(suite.Fset, conf.Sources)
-	if err != nil {
-		return nil, err
-	}
-
-	suite.Syntax = root
-	return suite, nil
+// Load loads a suite.
+func (conf Config) Load() (runtime.Suite, error) {
+	return NewSuite(conf).load()
 }

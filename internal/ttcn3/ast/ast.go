@@ -1,4 +1,5 @@
-// Package ast provides TTCN-3 syntax tree nodes and helper functions.
+// Package ast provides TTCN-3 syntax tree nodes and functions for tree
+// traversal.
 package ast
 
 import (
@@ -260,6 +261,13 @@ type (
 		RBrace    Token  // Position of "}" or nil
 	}
 )
+
+func (x *Ident) String() string {
+	if x.Tok2.IsValid() {
+		return x.Tok.String() + " " + x.Tok2.String()
+	}
+	return x.Tok.String()
+}
 
 func (x *Ident) LastTok() *Token {
 	if x.Tok2.LastTok().IsValid() {

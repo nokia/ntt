@@ -10,7 +10,7 @@ import (
 	"github.com/gofrs/flock"
 )
 
-// storage represents a directory which maybe shared between different
+// storage represents a directory which is shared between different
 // processes.
 type storage struct {
 	dir          string
@@ -19,8 +19,11 @@ type storage struct {
 	lock *flock.Flock
 }
 
-// New returns a new storage.
+// New returns a new storage. The backing path is evaulated lazily and may
+// contain active sessions, if path does not exist it will be created.
 func New(path string) *storage {
+
+	// TODO(5nord) session directory should be created.
 	return &storage{
 		dir:          path,
 		sessionsFile: filepath.Join(path, "sessions"),
@@ -28,6 +31,7 @@ func New(path string) *storage {
 	}
 }
 
+// Acquire returns the smallest unused integer from storage.
 func (s *storage) Acquire() (int, error) {
 	sessions, err := s.Sessions()
 	if err != nil {
@@ -45,6 +49,7 @@ func (s *storage) Acquire() (int, error) {
 	return next, nil
 }
 
+// Release returns a session back to the storage.
 func (s *storage) Release(num int) {
 	sessions, err := s.Sessions()
 	if err != nil {
@@ -59,7 +64,8 @@ func (s *storage) Release(num int) {
 	}
 }
 
-// Sessions returns a slice of sessions.
+// Sessions returns a sorted slice of active sessions from storage. If storage
+// could not be read a error is returned.
 func (s *storage) Sessions() ([]session, error) {
 	sessions := make([]session, 0)
 

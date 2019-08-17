@@ -1,7 +1,33 @@
 /*
-Package env provides high-level access to environment variables.
-  * Expansion
-  * Config files
+Package env is a poor man's Go configuration library and provides simplistic
+access to environment variables and configuration files.
+
+This package provides map-like access to environment variables, shell-like
+variable expansion and loading from TOML configuration files. Example:
+
+
+	// Set prefix for environment variables and config files.
+	env.SetPrefix("foo")
+
+	// Add search directories. Values in $HOME override values in /etc
+	env.AddPath("$HOME")
+	env.AddPath("/etc")
+
+	// Slurp in
+	env.ReadEnvFiles()
+
+	os.Setenv("FOO_VAR1", "original")
+	env.Set("Var1", "value1")
+	env.Set("vaR2", "value2")
+
+	fmt.Println(env.Get("var1")) // Prints "original"
+	fmt.Println(env.Get("VAR2")) // Prints "value2"
+
+	// Note, all names are case-insensitive.
+
+This packages was written to smooth migration from Nokia's internal tools to
+ntt. It is not intended to be used by third-parties and may be removed in the
+future.
 */
 package env
 
@@ -16,7 +42,9 @@ import (
 	toml "github.com/pelletier/go-toml"
 )
 
-var DefaultEnv = New("ntt")
+const DefaultPrefix = "ntt"
+
+var DefaultEnv = New(DefaultPrefix)
 
 type Env struct {
 	prefix string

@@ -6,9 +6,7 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/loader"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/doc"
-
+	"github.com/nokia/ntt/internal/runtime"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +29,7 @@ Default output shows the testcase names in current directory.`,
 
 	w = bufio.NewWriter(os.Stdout)
 
-	printers = map[string]func(string, *ast.Module, ast.Node){
+	printers = map[string]func(runtime.Suite){
 		"tests":     printTests,
 		"test":      printTests,
 		"tc":        printTests,
@@ -85,73 +83,43 @@ func list(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	for _, mod := range suite.Syntax {
-		var file string
-		if Verbose {
-			file = suite.Fset.File(mod.Pos()).Name()
-		}
-		printer(file, mod, mod)
-	}
+	printer(suite)
 	w.Flush()
 
 	return nil
 }
 
-func printTests(file string, m *ast.Module, n ast.Node) {
-	for _, def := range m.Defs {
-		switch x := def.Def.(type) {
-		case *ast.GroupDecl:
-		case *ast.FuncDecl:
-			if !x.IsTest() {
-				break
-			}
+func printModules(suite runtime.Suite) {
+	for _, mod := range suite.Modules() {
+		printItem(mod.File(), mod.Name(), mod.Tags())
+	}
+}
 
-			if Tags {
-				if comments := x.Kind.Comments(); comments != "" {
-					tags := doc.FindAllTags(comments)
-					if len(tags) > 0 {
-						for _, tag := range tags {
+func printTests(suite runtime.Suite) {
+	for _, test := range suite.Tests() {
+		printItem(test.Module().File(), test.FullName(), test.Tags())
+	}
+}
 
-							if Verbose {
-								fmt.Fprint(w, file, "\t")
-							}
-
-							fmt.Fprintf(w, "%s.%s\t%s\t%s\n",
-								m.Name.Tok.Lit,
-								x.Name.Tok.Lit,
-								tag[0],
-								tag[1])
-						}
-						break
-					}
-				}
-			}
-
-			if Verbose {
-				fmt.Fprint(w, file, "\t")
-			}
-
-			fmt.Fprintln(w, m.Name.Tok.Lit+"."+x.Name.Tok.Lit)
+func printImports(suite runtime.Suite) {
+	for _, mod := range suite.Modules() {
+		for _, imp := range mod.Imports {
+			printItem(imp.Module().File(), mod.Name()+"\t"+imp.ImportedModule(), nil)
 		}
 	}
 }
 
-func printModules(file string, m *ast.Module, n ast.Node) {
-	if Verbose {
-		fmt.Fprint(w, file, "\t")
+func printItem(file string, item string, tags [][]string) {
+	file = file + "\t"
+	if !Verbose {
+		file = ""
 	}
-	fmt.Fprintln(w, m.Name.Tok.Lit)
-}
 
-func printImports(file string, m *ast.Module, n ast.Node) {
-	for _, def := range m.Defs {
-		switch x := def.Def.(type) {
-		case *ast.GroupDecl:
-		case *ast.ImportDecl:
-			if Verbose {
-				fmt.Fprint(w, file, "\t")
-			}
-			fmt.Fprintln(w, m.Name.Tok.Lit, "<-", x.Module.Tok.Lit)
+	if Tags && len(tags) != 0 {
+		for _, tag := range tags {
+			fmt.Fprintf(w, "%s%s\t%s\t%s\n", file, item, tag[0], tag[1])
 		}
 	}
+
+	fmt.Fprintf(w, "%s%s\n", file, item)
 }

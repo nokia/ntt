@@ -1,5 +1,5 @@
-// Package fs provide some simple filesytem  procedures to internal ntt/k3
-// libraries.
+// Package fs provides simplified filesystem routines and helper for common
+// TTCN-3 build tasks.
 package fs
 
 import (

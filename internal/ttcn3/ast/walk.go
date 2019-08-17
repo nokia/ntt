@@ -1,5 +1,6 @@
 package ast
 
+// WalkModuleDefs calls fun for every module definition.
 func WalkModuleDefs(fun func(def Node) bool, nodes ...Node) {
 	for _, n := range nodes {
 		switch x := n.(type) {
@@ -7,21 +8,12 @@ func WalkModuleDefs(fun func(def Node) bool, nodes ...Node) {
 			walkModuleDefs(fun, x.Defs...)
 		case *GroupDecl:
 			walkModuleDefs(fun, x.Defs...)
-		case *ImportDecl,
-			*FriendDecl,
-			*SubTypeDecl,
-			*PortTypeDecl,
-			*ComponentTypeDecl,
-			*StructTypeDecl,
-			*EnumTypeDecl,
-			*BehaviourTypeDecl,
-			*TemplateDecl,
-			*ModuleParameterGroup,
-			*ValueDecl,
-			*SignatureDecl,
-			*FuncDecl,
-			*ControlPart:
-			if !fun(x) {
+		case *ModuleDef:
+			if g, ok := x.Def.(*GroupDecl); ok {
+				WalkModuleDefs(fun, g)
+				return
+			}
+			if !fun(x.Def) {
 				return
 			}
 		}

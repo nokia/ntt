@@ -52,16 +52,13 @@ type parser struct {
 	syncCnt int     // number of advance calls without progress
 }
 
-func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode, eh scanner.ErrorHandler) {
+func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode) {
 	p.file = fset.AddFile(filename, -1, len(src))
 
-	eh2 := func(pos loc.Position, msg string) {
-		if eh != nil {
-			eh(pos, msg)
-		}
+	eh := func(pos loc.Position, msg string) {
 		p.errors.Add(pos, msg)
 	}
-	p.scanner.Init(p.file, src, eh2)
+	p.scanner.Init(p.file, src, eh)
 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
