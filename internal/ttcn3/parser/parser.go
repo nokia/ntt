@@ -18,10 +18,11 @@ type parser struct {
 	scanner scanner.Scanner
 
 	// Tracing/debugging
-	mode   Mode // parsing mode
-	trace  bool // == (mode & Trace != 0)
-	semi   bool // == (mode & PedanticSemicolon != 0)
-	indent int  // indentation used for tracing output
+	mode           Mode // parsing mode
+	ignoreComments bool
+	trace          bool // == (mode & Trace != 0)
+	semi           bool // == (mode & PedanticSemicolon != 0)
+	indent         int  // indentation used for tracing output
 
 	// Tokens/Backtracking
 	cursor  int
@@ -62,6 +63,7 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
+	p.ignoreComments = mode&IgnoreComments != 0
 	p.semi = mode&PedanticSemicolon != 0
 
 	p.tokens = make([]ast.Token, 0, 200)
@@ -133,7 +135,11 @@ func (p *parser) scanToken() ast.Token {
 	lit := p.lastLit
 
 	if p.lastKind == token.Kind(0) {
+	redo:
 		pos, tok, lit = p.scanner.Scan()
+		if tok == token.COMMENT && p.ignoreComments {
+			goto redo
+		}
 	}
 	p.lastKind = token.Kind(0)
 

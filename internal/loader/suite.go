@@ -40,6 +40,11 @@ func NewSuite(conf Config) *ttcn3Suite {
 }
 
 func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
+
+	if suite.IgnoreComments {
+		suite.mode = parser.IgnoreComments
+	}
+
 	var wg sync.WaitGroup
 
 	paths := make(chan string)
@@ -67,7 +72,7 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 					mod := runtime.NewModule(
 						modSyn.Name.String(),
 						path,
-						doc.FindAllTags(modSyn.Tok.Comments()),
+						suite.findTags(modSyn.Tok),
 					)
 					defs <- definition{mod, modSyn}
 
@@ -80,15 +85,18 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 							test := runtime.NewTest(
 								mod,
 								d.Name.String(),
-								doc.FindAllTags(d.Kind.Comments()),
+								suite.findTags(d.Kind),
 							)
 							defs <- definition{test, d}
 
 						case *ast.ImportDecl:
+							if suite.IgnoreImports {
+								break
+							}
 							imp := runtime.NewImport(
 								mod,
 								d.Module.String(),
-								doc.FindAllTags(d.ImportTok.Comments()),
+								suite.findTags(d.ImportTok),
 							)
 							mod.AddImport(imp)
 						}
@@ -118,6 +126,13 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 	}
 
 	return suite, nil
+}
+
+func (suite *ttcn3Suite) findTags(tok ast.Token) [][]string {
+	if suite.IgnoreTags {
+		return nil
+	}
+	return doc.FindAllTags(tok.Comments())
 }
 
 func (suite *ttcn3Suite) Modules() []*runtime.Module { return suite.mods }

@@ -26,7 +26,7 @@ type Mode uint
 
 const (
 	PedanticSemicolon = 1 << iota // expect semicolons pedantically
-	ParseComments                 // parse comments and add them to AST
+	IgnoreComments                // ignore comments
 	Trace                         // print a trace of parsed productions
 	AllErrors                     // report all errors (not just the first 10 on different lines)
 )

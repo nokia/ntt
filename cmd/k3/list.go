@@ -12,66 +12,85 @@ import (
 
 var (
 	listCmd = &cobra.Command{
-		Use:   "list [tests|modules|imports] [files...]",
+		Use:   "list",
 		Short: "List various types of objects",
 		Long: `List various types of objects.
 
 Default output shows the testcase names in current directory.`,
 
-		RunE:      list,
-		ValidArgs: []string{"tests", "imports", "modules"},
-		ArgAliases: []string{
-			"test", "tc", "tcs", "testcase", "testcases",
-			"import", "dep", "deps", "dependency", "dependencies",
-			"mod", "mods", "module",
-		},
+		Run: listTests,
+	}
+
+	listTestsCmd = &cobra.Command{
+		Use:     `tests`,
+		Aliases: []string{"test", "tc", "tcs", "testcase", "testcases"},
+		Run:     listTests,
+	}
+
+	listModulesCmd = &cobra.Command{
+		Use:     `modules`,
+		Aliases: []string{"module", "mod", "mods"},
+		Run:     listModules,
+	}
+
+	listImportsCmd = &cobra.Command{
+		Use:     `imports`,
+		Aliases: []string{"import", "dep", "deps", "dependency", "dependencies"},
+		Run:     listImports,
 	}
 
 	w = bufio.NewWriter(os.Stdout)
-
-	printers = map[string]func(runtime.Suite){
-		"tests":     printTests,
-		"test":      printTests,
-		"tc":        printTests,
-		"tcs":       printTests,
-		"testcase":  printTests,
-		"testcases": printTests,
-
-		"imports":      printImports,
-		"import":       printImports,
-		"dep":          printImports,
-		"deps":         printImports,
-		"dependency":   printImports,
-		"dependencies": printImports,
-
-		"modules": printModules,
-		"module":  printModules,
-		"mod":     printModules,
-		"mods":    printModules,
-	}
 
 	Tags = false
 )
 
 func init() {
-	listCmd.Flags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
+	listCmd.PersistentFlags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
+	listCmd.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
 	rootCmd.AddCommand(listCmd)
 }
 
-func list(cmd *cobra.Command, args []string) error {
-	printer := printTests
+func listTests(cmd *cobra.Command, args []string) {
+	suite := loadSuite(args, loader.Config{
+		IgnoreImports:  true,
+		IgnoreTags:     !Tags,
+		IgnoreComments: !Tags,
+	})
 
-	if len(args) > 0 {
-		if n, ok := printers[args[0]]; ok {
-			printer = n
-			args = args[1:]
+	for _, test := range suite.Tests() {
+		printItem(test.Module().File(), test.FullName(), test.Tags())
+	}
+	w.Flush()
+}
+
+func listModules(cmd *cobra.Command, args []string) {
+	suite := loadSuite(args, loader.Config{
+		IgnoreImports:  true,
+		IgnoreTags:     !Tags,
+		IgnoreComments: !Tags,
+	})
+
+	for _, mod := range suite.Modules() {
+		printItem(mod.File(), mod.Name(), mod.Tags())
+	}
+	w.Flush()
+}
+
+func listImports(cmd *cobra.Command, args []string) {
+	suite := loadSuite(args, loader.Config{
+		IgnoreTags:     true,
+		IgnoreComments: true,
+	})
+
+	for _, mod := range suite.Modules() {
+		for _, imp := range mod.Imports {
+			printItem(imp.Module().File(), mod.Name()+"\t"+imp.ImportedModule(), nil)
 		}
 	}
+	w.Flush()
+}
 
-	conf := loader.Config{
-		IgnoreImports: true,
-	}
-
+func loadSuite(args []string, conf loader.Config) runtime.Suite {
 	if _, err := conf.FromArgs(args); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
@@ -83,30 +102,7 @@ func list(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	printer(suite)
-	w.Flush()
-
-	return nil
-}
-
-func printModules(suite runtime.Suite) {
-	for _, mod := range suite.Modules() {
-		printItem(mod.File(), mod.Name(), mod.Tags())
-	}
-}
-
-func printTests(suite runtime.Suite) {
-	for _, test := range suite.Tests() {
-		printItem(test.Module().File(), test.FullName(), test.Tags())
-	}
-}
-
-func printImports(suite runtime.Suite) {
-	for _, mod := range suite.Modules() {
-		for _, imp := range mod.Imports {
-			printItem(imp.Module().File(), mod.Name()+"\t"+imp.ImportedModule(), nil)
-		}
-	}
+	return suite
 }
 
 func printItem(file string, item string, tags [][]string) {
@@ -115,7 +111,7 @@ func printItem(file string, item string, tags [][]string) {
 		file = ""
 	}
 
-	if Tags && len(tags) != 0 {
+	if len(tags) != 0 {
 		for _, tag := range tags {
 			fmt.Fprintf(w, "%s%s\t%s\t%s\n", file, item, tag[0], tag[1])
 		}
