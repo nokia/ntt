@@ -111,6 +111,7 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 		switch x := d.obj.(type) {
 		case *runtime.Module:
 			suite.mods = append(suite.mods, x)
+			suite.syntax = append(suite.syntax, d.syntax.(*ast.Module))
 		case *runtime.Test:
 			suite.tests = append(suite.tests, x)
 		}
