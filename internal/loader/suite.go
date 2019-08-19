@@ -59,6 +59,7 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 	wg.Add(suite.numWorkers)
 	for i := 0; i < suite.numWorkers; i++ {
 		go func() {
+			defer wg.Done()
 			for path := range paths {
 				mods, err := parser.ParseModules(suite.fset, path, nil, suite.mode)
 
@@ -104,7 +105,6 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 					}, modSyn)
 				}
 			}
-			wg.Done()
 		}()
 	}
 
