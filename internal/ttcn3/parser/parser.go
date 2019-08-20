@@ -677,6 +677,7 @@ L:
 //             | "map" | "unmap"
 //
 func (p *parser) parseOperand() ast.Expr {
+	etok := p.peek(1)
 	switch p.tok {
 	case token.ANYKW, token.ALL:
 		tok := p.consume()
@@ -769,7 +770,7 @@ func (p *parser) parseOperand() ast.Expr {
 		p.errorExpected(p.pos(1), "operand")
 	}
 
-	return nil
+	return &ast.ErrorNode{From: etok, To: p.peek(1)}
 }
 
 func (p *parser) parseRef() ast.Expr {
@@ -1071,11 +1072,15 @@ func (p *parser) tryTypeIdent() ast.Expr {
 
 func (p *parser) parseModuleList() []*ast.Module {
 	var list []*ast.Module
-	list = append(list, p.parseModule())
-	p.expectSemi(list[len(list)-1].LastTok())
+	if m := p.parseModule(); m != nil {
+		list = append(list, m)
+		p.expectSemi(m.LastTok())
+	}
 	for p.tok == token.MODULE {
-		list = append(list, p.parseModule())
-		p.expectSemi(list[len(list)-1].LastTok())
+		if m := p.parseModule(); m != nil {
+			list = append(list, m)
+			p.expectSemi(m.LastTok())
+		}
 	}
 	p.expect(token.EOF)
 	return list
@@ -1129,6 +1134,7 @@ func (p *parser) parseModuleDef() *ast.ModuleDef {
 		}
 	}
 
+	etok := p.peek(1)
 	switch p.tok {
 	case token.IMPORT:
 		m.Def = p.parseImport()
@@ -1161,10 +1167,12 @@ func (p *parser) parseModuleDef() *ast.ModuleDef {
 		default:
 			p.errorExpected(p.pos(1), "'function'")
 			p.advance(stmtStart)
+			m.Def = &ast.ErrorNode{From: etok, To: p.peek(1)}
 		}
 	default:
 		p.errorExpected(p.pos(1), "module definition")
 		p.advance(stmtStart)
+		m.Def = &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 	return m
 }
@@ -1403,6 +1411,7 @@ func (p *parser) parseWithStmt() *ast.WithStmt {
 }
 
 func (p *parser) parseWithQualifier() ast.Expr {
+	etok := p.peek(1)
 	switch p.tok {
 	case token.IDENT:
 		return p.parseTypeRef()
@@ -1426,7 +1435,7 @@ func (p *parser) parseWithQualifier() ast.Expr {
 	default:
 		p.errorExpected(p.pos(1), "with-qualifier")
 		p.advance(stmtStart)
-		return nil
+		return &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 }
 
@@ -1435,6 +1444,7 @@ func (p *parser) parseWithQualifier() ast.Expr {
  *************************************************************************/
 
 func (p *parser) parseTypeDecl() ast.Decl {
+	etok := p.peek(1)
 	switch p.peek(2).Kind {
 	case token.IDENT, token.ADDRESS, token.CHARSTRING, token.NULL, token.UNIVERSAL:
 		return p.parseSubTypeDecl()
@@ -1457,7 +1467,7 @@ func (p *parser) parseTypeDecl() ast.Decl {
 	default:
 		p.errorExpected(p.pos(1), "type definition")
 		p.advance(stmtStart)
-		return nil
+		return &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 }
 
@@ -1502,6 +1512,7 @@ func (p *parser) parsePortAttribute() ast.Node {
 	if p.trace {
 		defer un(trace(p, "ast.PortAttribute"))
 	}
+	etok := p.peek(1)
 	switch p.tok {
 	case token.IN, token.OUT, token.INOUT, token.ADDRESS:
 		return &ast.PortAttribute{
@@ -1517,7 +1528,7 @@ func (p *parser) parsePortAttribute() ast.Node {
 	default:
 		p.errorExpected(p.pos(1), "port attribute")
 		p.advance(stmtStart)
-		return nil
+		return &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 }
 
@@ -1685,6 +1696,7 @@ func (p *parser) parseTypeSpec() ast.TypeSpec {
 	if p.trace {
 		defer un(trace(p, "TypeSpec"))
 	}
+	etok := p.peek(1)
 	switch p.tok {
 	case token.ADDRESS, token.CHARSTRING, token.IDENT, token.NULL, token.UNIVERSAL:
 		return &ast.RefSpec{X: p.parseTypeRef()}
@@ -1701,7 +1713,7 @@ func (p *parser) parseTypeSpec() ast.TypeSpec {
 		return p.parseBehaviourSpec()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
-		return nil
+		return &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 }
 
@@ -2162,6 +2174,7 @@ func (p *parser) parseStmt() ast.Stmt {
 		defer un(trace(p, "ast.Stmt"))
 	}
 
+	etok := p.peek(1)
 	switch p.tok {
 	case token.TEMPLATE:
 		return &ast.DeclStmt{p.parseTemplateDecl()}
@@ -2225,7 +2238,7 @@ func (p *parser) parseStmt() ast.Stmt {
 	default:
 		p.errorExpected(p.pos(1), "statement")
 		p.advance(stmtStart)
-		return nil
+		return &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 }
 

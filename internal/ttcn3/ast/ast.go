@@ -35,6 +35,18 @@ type Decl interface {
 	declNode()
 }
 
+type ErrorNode struct {
+	From, To Token
+}
+
+func (x ErrorNode) Pos() loc.Pos    { return x.From.Pos() }
+func (x ErrorNode) End() loc.Pos    { return x.To.End() }
+func (x ErrorNode) LastTok() *Token { return x.To.LastTok() }
+func (x ErrorNode) exprNode()       {}
+func (x ErrorNode) stmtNode()       {}
+func (x ErrorNode) declNode()       {}
+func (x ErrorNode) typeSpecNode()   {}
+
 // token functionality shared by Token and Trivia
 type Terminal struct {
 	pos  loc.Pos
@@ -1085,7 +1097,21 @@ func (x *Module) LastTok() *Token {
 	if x.With != nil {
 		return x.With.LastTok()
 	}
-	return x.RBrace.LastTok()
+	if x.RBrace.IsValid() {
+		return x.RBrace.LastTok()
+	}
+	if l := len(x.Defs); l > 0 {
+		return x.Defs[l-1].LastTok()
+	}
+	if x.Language != nil {
+		return x.Language.LastTok()
+	}
+
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+
+	return x.Tok.LastTok()
 }
 
 func (x *ModuleDef) LastTok() *Token {
