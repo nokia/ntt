@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -52,8 +53,21 @@ func init() {
 	env.AddPath("${HOME}/.config/k3")
 	env.AddPath("${HOME}/.k3/config")
 
+	if s := os.Getenv("K3_DATADIR"); s == "" {
+		os.Setenv("K3_DATADIR", filepath.Join(k3rootdir(), "share/k3"))
+	}
+
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.AddCommand(showCmd)
+}
+
+func k3rootdir() string {
+	if s := os.Getenv("K3ROOT"); s != "" {
+		return s
+	}
+	exe, _ := os.Executable()
+	dir, _ := filepath.Abs(filepath.Join(filepath.Dir(exe), ".."))
+	return dir
 }
 
 func main() {
