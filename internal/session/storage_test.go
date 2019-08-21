@@ -13,13 +13,14 @@ func tempStorage() (*storage, func()) {
 	if err != nil {
 		panic(err.Error())
 	}
-	return New(dir), func() {
+	s, _ := New(dir)
+	return s, func() {
 		os.RemoveAll(dir)
 	}
 }
 
 func TestEmptyStorage(t *testing.T) {
-	s := New(".")
+	s, _ := New(".")
 	list, err := s.Sessions()
 	assert.Equal(t, 0, len(list))
 	assert.Nil(t, err)
@@ -27,15 +28,13 @@ func TestEmptyStorage(t *testing.T) {
 }
 
 func TestDeepStorage(t *testing.T) {
-	s := New("/tmp/ntt/sessions/does-not-exist")
+	s, _ := New("/tmp/ntt/sessions/does-not-exist")
 	list, err := s.Sessions()
 	assert.Equal(t, 0, len(list))
 	assert.Nil(t, err)
 }
 
 func TestInvalidStorage(t *testing.T) {
-	s := New("storage_test.go")
-	list, err := s.Sessions()
-	assert.Nil(t, list)
+	_, err := New("storage_test.go")
 	assert.NotNil(t, err)
 }

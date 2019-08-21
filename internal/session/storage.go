@@ -21,14 +21,17 @@ type storage struct {
 
 // New returns a new storage. The backing path is evaulated lazily and may
 // contain active sessions, if path does not exist it will be created.
-func New(path string) *storage {
+func New(path string) (*storage, error) {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return nil, err
+	}
 
 	// TODO(5nord) session directory should be created.
 	return &storage{
 		dir:          path,
 		sessionsFile: filepath.Join(path, "sessions"),
 		lock:         flock.New(filepath.Join(path, "sessions.lock")),
-	}
+	}, nil
 }
 
 // Acquire returns the smallest unused integer from storage.
@@ -108,7 +111,7 @@ func (s *storage) SetSessions(sessions []session) error {
 	defer file.Close()
 
 	for _, s := range sessions {
-		if _, err := file.WriteString(s.String()); err != nil {
+		if _, err := file.WriteString(s.String() + "\n"); err != nil {
 			return err
 		}
 	}

@@ -11,6 +11,25 @@ package session
 
 var SharedDir = "/var/run/ntt"
 
+// Get returns the next free unqiue seesion id. If an error occures, Get returns
+// -1 and the error.
+func Get() (int, error) {
+	storage, err := New(SharedDir)
+	if err != nil {
+		return -1, err
+	}
+
+	if err := storage.Lock(); err != nil {
+		return -1, err
+	}
+	defer storage.Unlock()
+	s, err := storage.Acquire()
+	if err != nil {
+		return -1, err
+	}
+	return s, nil
+}
+
 // Clean returns a slice of alive sessions
 func Clean(sessions []session) []session {
 	list := make([]session, 0)
