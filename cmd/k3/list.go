@@ -93,15 +93,13 @@ func listImports(cmd *cobra.Command, args []string) {
 func loadSuite(args []string, conf loader.Config) runtime.Suite {
 	// Update configuration with TTCN-3 source files from args
 	if _, err := conf.FromArgs(args); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		fatal(err)
 	}
 
 	// Load suite
 	suite, err := conf.Load()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		fatal(err)
 	}
 
 	return suite

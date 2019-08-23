@@ -1,7 +1,6 @@
 package loader
 
 import (
-	"fmt"
 	gort "runtime"
 	"sync"
 
@@ -63,10 +62,9 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 			for path := range paths {
 				mods, err := parser.ParseModules(suite.fset, path, nil, suite.mode)
 
-				// TODO(5nord) implement proper error propagation
 				if err != nil {
-					fmt.Println(err.Error())
-					return
+					defs <- definition{err, nil}
+					continue
 				}
 
 				for _, modSyn := range mods {
@@ -122,6 +120,8 @@ func (suite *ttcn3Suite) load() (*ttcn3Suite, error) {
 			suite.syntax = append(suite.syntax, d.syntax.(*ast.Module))
 		case *runtime.Test:
 			suite.tests = append(suite.tests, x)
+		case error:
+			return suite, x
 		}
 	}
 
