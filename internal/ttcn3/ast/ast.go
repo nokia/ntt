@@ -3,9 +3,6 @@
 package ast
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
 )
@@ -83,16 +80,7 @@ func NewToken(pos loc.Pos, kind token.Kind, val string) Token {
 
 // Comments concatenates all leading comments into one single string.
 func (t *Token) Comments() string {
-	var b strings.Builder
-	b.Grow(1024)
-
-	for _, triv := range t.LeadingTriv {
-		if triv.Kind == token.COMMENT {
-			fmt.Fprint(&b, triv.Lit)
-		}
-	}
-
-	return b.String()
+	return joinComments(t.LeadingTriv)
 }
 
 func (t *Token) LastTok() *Token { return t }
