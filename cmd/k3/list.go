@@ -115,6 +115,7 @@ func printItem(file string, item string, tags [][]string) {
 		for _, tag := range tags {
 			fmt.Fprintf(w, "%s%s\t%s\t%s\n", file, item, tag[0], tag[1])
 		}
+		return
 	}
 
 	fmt.Fprintf(w, "%s%s\n", file, item)
