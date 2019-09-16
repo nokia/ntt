@@ -13,7 +13,7 @@ import (
 
 var (
 	showCmd = &cobra.Command{
-		Use:   "show [var...] [-- <file>...]",
+		Use:   "show [ <file>...] [-- var...]",
 		Short: "show configuration variables used by k3",
 		RunE:  show,
 	}
