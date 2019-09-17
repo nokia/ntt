@@ -47,7 +47,7 @@ because you might run into quoting issues with white-spaces.
 
 Ad-hoc Packages
 
-It's is possible to create a suite just from a directory without any
+It is possible to create a suite just from a directory without any
 `package.yml`. The Config.Sources will contain the paths of all .ttcn3 sources
 files in that directory. Alternatively you may specify a list of .ttcn3 files
 directory. The associated will then be the current working directory.
@@ -61,6 +61,7 @@ package suite
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -123,12 +124,12 @@ func NewFromFiles(files []string) (*Suite, error) {
 		}
 	}
 
-	suite := New(".")
-	if err := suite.readEnv(); err != nil {
+	s := New(".")
+	if err := s.readEnv(); err != nil {
 		return nil, err
 	}
-	suite.Sources = files
-	return suite, nil
+	s.Sources = files
+	return s, nil
 }
 
 // NewFromDirectory creates a suite from directory dir. If the directory
@@ -173,6 +174,7 @@ func New(dir string) *Suite {
 	suite.configFile = fs.FindFile(suite.dir, "package.yml")
 	suite.TestHook = fs.FindFile(suite.dir, suite.Name+".control")
 	suite.ParametersFile = fs.FindFile(suite.dir, suite.Name+".parameters")
+	suite.Timeout = math.NaN()
 	return suite
 }
 
@@ -183,7 +185,9 @@ func (suite *Suite) SetEnv() {
 	suite.env.Set("imports", strings.Join(suite.Imports, " "))
 	suite.env.Set("test_hook", suite.TestHook)
 	suite.env.Set("parameters_file", suite.ParametersFile)
-	suite.env.Set("timeout", strconv.FormatFloat(suite.Timeout, 'G', -1, 64))
+	if !math.IsNaN(suite.Timeout) {
+		suite.env.Set("timeout", strconv.FormatFloat(suite.Timeout, 'G', -1, 64))
+	}
 
 	if abs, err := filepath.Abs(suite.Dir()); err == nil {
 		suite.env.Set("source_dir", abs)
