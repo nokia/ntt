@@ -48,8 +48,8 @@ var DefaultEnv = New(DefaultPrefix)
 
 type Env struct {
 	prefix string
-	dirs   []string
-	used   []string
+	dirs   []string           // search directory for env files
+	used   []string           // list of found env files
 	data   map[string]string
 }
 
