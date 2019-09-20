@@ -24,8 +24,8 @@ var (
 )
 
 func main() {
-	rootCmd.PersistentFlags().BoolVarP(&Debug, "debug", "d", false, "verbose debug output")
-	rootCmd.PersistentFlags().BoolVarP(&Legacy, "legacy", "", false, "legacy output with stripped line numbers")
+	rootCmd.PersistentFlags().BoolVarP(&Debug, "all", "a", false, "verbose debug output")
+	rootCmd.PersistentFlags().BoolVarP(&Legacy, "diff", "d", false, "legacy output with stripped line numbers")
 	if err := rootCmd.Execute(); err != nil {
 		fatal(err)
 	}
