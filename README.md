@@ -1,5 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/nokia/ntt?style=flat-square)](https://goreportcard.com/report/github.com/nokia/ntt)
-[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/nokia/ntt/ttcn3/syntax)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/nokia/ntt/)
 [![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/nokia/ntt/releases/latest)
 
 # A tool for managing TTCN-3 source code and tests
@@ -36,7 +36,7 @@ be provided soon.
 If you want to dive into TTCN-3 right now, have a look at [Titan](https://github.com/eclipse/titan.core/),
 which already has a lot of features and a huge set of adapters to choose from.
 
-I am currently developing the CLI (k3), so there isn't that much to see, yet.
+We are currently developing the CLI (k3), so there isn't that much to see, yet.
 Assuming you have Go installed you can install k3 using `go get` method:
 
         go get -u github.com/nokia/ntt/cmd/...
