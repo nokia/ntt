@@ -44,25 +44,17 @@ func ReadFile(path string) (*File, error) {
 	}
 	defer f.Close()
 
-	size := 0
-	if fi, err := f.Stat(); err == nil {
-		// Check if size fits in int
-		if fi.Size() <= int64(int(^uint(0)>>1)) {
-			size = int(fi.Size())
-		}
-	}
-
-	return read(f, size)
+	return read(f)
 }
 
-func read(r io.Reader, size int) (*File, error) {
+func read(r io.Reader) (*File, error) {
 
 	// If r does not implement Peek(), wrap it into a bufio.Reader
 	if _, ok := r.(peeker); !ok {
 		r = bufio.NewReader(r)
 	}
 
-	er := binaryReader{r: r, size: size}
+	er := binaryReader{r: r}
 
 	switch {
 	case isT3XF(r.(peeker)):
@@ -231,9 +223,8 @@ func isTASM(r peeker) bool {
 // binaryReader uses a neat technique to avoid repetitive error handling code.
 // For details have a look at: https://blog.golang.org/errors-are-values
 type binaryReader struct {
-	r    io.Reader
-	size int
-	err  error
+	r   io.Reader
+	err error
 }
 
 func (er *binaryReader) read(data interface{}) {

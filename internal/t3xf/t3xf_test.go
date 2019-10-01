@@ -11,7 +11,7 @@ import (
 func TestRead(t *testing.T) {
 
 	t.Run("empty file", func(t *testing.T) {
-		f, err := read(bytes.NewReader([]byte{}), 0)
+		f, err := read(bytes.NewReader([]byte{}))
 		assert.Nil(t, f)
 		assert.Equal(t, ErrUnknownFormat, err)
 	})
@@ -22,7 +22,7 @@ func TestRead(t *testing.T) {
 			0x43, 0x01, 0x00, 0x00, // NATLONG
 			0x02, 0x00, 0x00, 0x00, // 2
 			0x33, 0x00, 0x00, 0x00, // VERSION
-		}), 0)
+		}))
 		assert.NotNil(t, f)
 		assert.Nil(t, err)
 	})
@@ -30,7 +30,7 @@ func TestRead(t *testing.T) {
 	t.Run("tasm magic", func(t *testing.T) {
 		f, err := read(bytes.NewReader([]byte{
 			0x54, 0x33, 0x58, 0x46, 0x41, 0x53, 0x4d, 0x00, // T3XFASM\0
-		}), 0)
+		}))
 		assert.Nil(t, f)
 		assert.Equal(t, io.EOF, err)
 	})
@@ -39,7 +39,7 @@ func TestRead(t *testing.T) {
 		f, err := read(bytes.NewReader([]byte{
 			0x54, 0x33, 0x58, 0x46, 0x41, 0x53, 0x4d, 0x00, // T3XFASM\0
 			0x00, 0x00, 0x00,
-		}), 0)
+		}))
 		assert.Nil(t, f)
 		assert.Equal(t, io.ErrUnexpectedEOF, err)
 	})
@@ -80,7 +80,7 @@ func TestRead(t *testing.T) {
 
 			// Random trailing data is permitted.
 			0x01, 0x02, 0x03,
-		}), 0)
+		}))
 		assert.NotNil(t, f)
 		assert.Nil(t, err)
 	})
