@@ -44,7 +44,7 @@ func (p *printer) Info() {
 
 func (p *printer) Print() error {
 	if p.file.IsTASM() {
-		fmt.Fprintf(p.w, "%s: Warning: limiting output for TASM files.\n", p.name)
+		fmt.Fprintf(p.w, "%s: Warning: Output for TASM files is limited. Printing only T3XF section.\n", p.name)
 	}
 
 	s := t3xf.NewScanner(p.file.Sections.T3XF)
