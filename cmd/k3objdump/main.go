@@ -24,8 +24,8 @@ var (
 )
 
 func main() {
-	rootCmd.PersistentFlags().BoolVarP(&Debug, "all", "a", false, "verbose debug output")
-	rootCmd.PersistentFlags().BoolVarP(&Legacy, "diff", "d", false, "legacy output with stripped line numbers")
+	rootCmd.PersistentFlags().BoolVarP(&Debug, "all", "a", false, "Verbose debug output.")
+	rootCmd.PersistentFlags().BoolVarP(&Legacy, "legacy", "", false, "Output format of old t3xf2text tool: T3xf offsets and instruction dumps are disabled. References are replaced with instruction line numbers.")
 	if err := rootCmd.Execute(); err != nil {
 		fatal(err)
 	}
