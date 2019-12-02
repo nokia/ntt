@@ -6,7 +6,7 @@ package span_test
 
 import (
 	"fmt"
-	"go/token"
+	"github.com/nokia/ntt/internal/loc"
 	"path"
 	"testing"
 
@@ -39,8 +39,8 @@ var tokenTests = []span.Span{
 }
 
 func TestToken(t *testing.T) {
-	fset := token.NewFileSet()
-	files := map[span.URI]*token.File{}
+	fset := loc.NewFileSet()
+	files := map[span.URI]*loc.File{}
 	for _, f := range testdata {
 		file := fset.AddFile(f.uri, -1, len(f.content))
 		file.SetLinesForContent(f.content)
