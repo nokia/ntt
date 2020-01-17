@@ -3,14 +3,30 @@ package lsp
 import (
 	"context"
 	"os"
+	"path"
+	"sync"
 
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
+type serverState int
+
+const (
+	serverCreated      = serverState(iota)
+	serverInitializing // set once the server has received "initialize" request
+	serverInitialized  // set once the server has received "initialized" request
+	serverShutDown
+)
+
 type Server struct {
 	Conn   *jsonrpc2.Conn
 	client protocol.Client
+
+	stateMu sync.Mutex
+	state   serverState
+
+	pendingFolders []protocol.WorkspaceFolder
 }
 
 func NewServer(ctx context.Context, stream jsonrpc2.Stream) (context.Context, *Server) {
@@ -23,37 +39,100 @@ func (s *Server) Run(ctx context.Context) error {
 	return s.Conn.Run(ctx)
 }
 
+func (s *Server) Info(ctx context.Context, msg string) {
+	s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
+		Type:    protocol.Info,
+		Message: msg,
+	})
+}
+
+func (s *Server) Log(ctx context.Context, msg string) {
+	s.client.LogMessage(ctx, &protocol.LogMessageParams{
+		Type:    protocol.Log,
+		Message: msg,
+	})
+}
+
 // General
 
 func (s *Server) Initialize(ctx context.Context, params *protocol.ParamInitia) (*protocol.InitializeResult, error) {
-	return &protocol.InitializeResult{}, nil
+	s.stateMu.Lock()
+	state := s.state
+	s.stateMu.Unlock()
+	if state >= serverInitializing {
+		return nil, jsonrpc2.NewErrorf(jsonrpc2.CodeInvalidRequest, "server already initialized")
+	}
+	s.stateMu.Lock()
+	s.state = serverInitializing
+	s.stateMu.Unlock()
+
+	s.pendingFolders = params.WorkspaceFolders
+	if len(s.pendingFolders) == 0 {
+		if params.RootURI != "" {
+			s.pendingFolders = []protocol.WorkspaceFolder{{
+				URI:  params.RootURI,
+				Name: path.Base(params.RootURI),
+			}}
+		} else {
+			// No folders and no root--we are in single file mode.
+		}
+	}
+
+	return &protocol.InitializeResult{
+		Capabilities: protocol.ServerCapabilities{
+			DefinitionProvider: true,
+			TextDocumentSync: &protocol.TextDocumentSyncOptions{
+				Change:    protocol.Incremental,
+				OpenClose: true,
+				Save: &protocol.SaveOptions{
+					IncludeText: false,
+				},
+			},
+			Workspace: &struct {
+				WorkspaceFolders *struct {
+					Supported           bool   "json:\"supported,omitempty\""
+					ChangeNotifications string "json:\"changeNotifications,omitempty\""
+				} "json:\"workspaceFolders,omitempty\""
+			}{
+				WorkspaceFolders: &struct {
+					Supported           bool   "json:\"supported,omitempty\""
+					ChangeNotifications string "json:\"changeNotifications,omitempty\""
+				}{
+					Supported:           true,
+					ChangeNotifications: "workspace/didChangeWorkspaceFolders",
+				},
+			},
+		},
+	}, nil
+
 }
 
-// The initialized notification is sent from the client to the server after the
-// client received the result of the initialize request but before the client is
-// sending any other request or notification to the server. The server can use
-// the initialized notification for example to dynamically register
-// capabilities. The initialized notification may only be sent once.
 func (s *Server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
-	s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
-		Type:    protocol.Info,
-		Message: "this is my info (ttcn3)",
-	})
+	s.stateMu.Lock()
+	s.state = serverInitialized
+	s.stateMu.Unlock()
+
+	s.Log(ctx, "K3 language server initialized")
 	return nil
 }
 
-// The shutdown request is sent from the client to the server. It asks the
-// server to shut down, but to not exit (otherwise the response might not be
-// delivered correctly to the client). There is a separate exit notification
-// that asks the server to exit. Clients must not send any notifications other
-// than exit or requests to a server to which they have sent a shutdown
-// requests. If a server receives requests after a shutdown request those
-// requests should be errored with InvalidRequest.
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.stateMu.Lock()
+	defer s.stateMu.Unlock()
+	if s.state < serverInitialized {
+		return jsonrpc2.NewErrorf(jsonrpc2.CodeInvalidRequest, "server not initialized")
+	}
+	// drop all the active views
+	s.state = serverShutDown
 	return nil
 }
 
 func (s *Server) Exit(ctx context.Context) error {
+	s.stateMu.Lock()
+	defer s.stateMu.Unlock()
+	if s.state != serverShutDown {
+		os.Exit(1)
+	}
 	os.Exit(0)
 	return nil
 }
