@@ -3,7 +3,6 @@ package lsp
 import (
 	"context"
 	"os"
-	"path"
 	"sync"
 
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
@@ -26,7 +25,7 @@ type Server struct {
 	stateMu sync.Mutex
 	state   serverState
 
-	pendingFolders []protocol.WorkspaceFolder
+	rootURI string
 }
 
 func NewServer(ctx context.Context, stream jsonrpc2.Stream) (context.Context, *Server) {
@@ -66,17 +65,7 @@ func (s *Server) Initialize(ctx context.Context, params *protocol.ParamInitia) (
 	s.state = serverInitializing
 	s.stateMu.Unlock()
 
-	s.pendingFolders = params.WorkspaceFolders
-	if len(s.pendingFolders) == 0 {
-		if params.RootURI != "" {
-			s.pendingFolders = []protocol.WorkspaceFolder{{
-				URI:  params.RootURI,
-				Name: path.Base(params.RootURI),
-			}}
-		} else {
-			// No folders and no root--we are in single file mode.
-		}
-	}
+	s.rootURI = params.RootURI
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
@@ -98,8 +87,7 @@ func (s *Server) Initialize(ctx context.Context, params *protocol.ParamInitia) (
 					Supported           bool   "json:\"supported,omitempty\""
 					ChangeNotifications string "json:\"changeNotifications,omitempty\""
 				}{
-					Supported:           true,
-					ChangeNotifications: "workspace/didChangeWorkspaceFolders",
+					Supported: false,
 				},
 			},
 		},
@@ -166,11 +154,11 @@ func (s *Server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCom
 // Text Synchronization
 
 func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	return notImplemented("DidOpen")
+	return nil
 }
 
 func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	return notImplemented("DidChange")
+	return nil
 }
 
 func (s *Server) WillSave(ctx context.Context, params *protocol.WillSaveTextDocumentParams) error {
@@ -182,11 +170,11 @@ func (s *Server) WillSaveWaitUntil(ctx context.Context, params *protocol.WillSav
 }
 
 func (s *Server) DidSave(ctx context.Context, params *protocol.DidSaveTextDocumentParams) error {
-	return notImplemented("DidSave")
+	return nil
 }
 
 func (s *Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
-	return notImplemented("DidClose")
+	return nil
 }
 
 // Language Features
