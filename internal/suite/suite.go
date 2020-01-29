@@ -176,6 +176,10 @@ func New(dir string) *Suite {
 		suite.SetName(n)
 	}
 
+	if d := suite.env.Get("source_dir"); d != "" {
+		suite.SetDir(d)
+	}
+
 	suite.configFile = fs.FindFile(suite.dir, "package.yml")
 	suite.TestHook = fs.FindFile(suite.dir, suite.Name+".control")
 	suite.ParametersFile = fs.FindFile(suite.dir, suite.Name+".parameters")
