@@ -1,13 +1,13 @@
 language: go
-sudo: false
-
-os:
- - linux
-
-go:
-    - 1.10
-    - tip
 
 matrix:
-    allow_failures:
-        - go: tip
+  include:
+  - go: "1.10.x"
+    script:  go test -v ./...
+  - go: "tip"
+    script: go test -v -mod=vendor ./...
+
+env:
+  - GO111MODULE=on
+
+install: true
