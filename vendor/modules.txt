@@ -1,7 +1,5 @@
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/gofrs/flock v0.7.1
-github.com/gofrs/flock
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/pelletier/go-toml v1.4.0
@@ -17,5 +15,7 @@ github.com/stretchr/testify/assert
 # golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
+# gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
+gopkg.in/check.v1
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
