@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/gofrs/flock"
+	"github.com/nokia/ntt/internal/session/flock"
 )
 
 // storage represents a directory which is shared between different

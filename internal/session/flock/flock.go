@@ -116,7 +116,7 @@ func tryCtx(ctx context.Context, fn func() (bool, error), retryDelay time.Durati
 func (f *Flock) setFh() error {
 	// open a new os.File instance
 	// create it if it doesn't exist, and open the file read-only.
-	fh, err := os.OpenFile(f.path, os.O_CREATE|os.O_RDONLY, os.FileMode(0600))
+	fh, err := os.OpenFile(f.path, os.O_CREATE|os.O_RDONLY, os.FileMode(0666))
 	if err != nil {
 		return err
 	}
