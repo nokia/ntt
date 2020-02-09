@@ -6,30 +6,30 @@ package span
 
 import (
 	"fmt"
-	"go/token"
+	"github.com/nokia/ntt/internal/loc"
 )
 
-// Range represents a source code range in token.Pos form.
+// Range represents a source code range in loc.Pos form.
 // It also carries the FileSet that produced the positions, so that it is
 // self contained.
 type Range struct {
-	FileSet   *token.FileSet
-	Start     token.Pos
-	End       token.Pos
+	FileSet   *loc.FileSet
+	Start     loc.Pos
+	End       loc.Pos
 	Converter Converter
 }
 
-// TokenConverter is a Converter backed by a token file set and file.
+// TokenConverter is a Converter backed by a loc file set and file.
 // It uses the file set methods to work out the conversions, which
 // makes it fast and does not require the file contents.
 type TokenConverter struct {
-	fset *token.FileSet
-	file *token.File
+	fset *loc.FileSet
+	file *loc.File
 }
 
 // NewRange creates a new Range from a FileSet and two positions.
 // To represent a point pass a 0 as the end pos.
-func NewRange(fset *token.FileSet, start, end token.Pos) Range {
+func NewRange(fset *loc.FileSet, start, end loc.Pos) Range {
 	return Range{
 		FileSet: fset,
 		Start:   start,
@@ -38,15 +38,15 @@ func NewRange(fset *token.FileSet, start, end token.Pos) Range {
 }
 
 // NewTokenConverter returns an implementation of Converter backed by a
-// token.File.
-func NewTokenConverter(fset *token.FileSet, f *token.File) *TokenConverter {
+// loc.File.
+func NewTokenConverter(fset *loc.FileSet, f *loc.File) *TokenConverter {
 	return &TokenConverter{fset: fset, file: f}
 }
 
 // NewContentConverter returns an implementation of Converter for the
 // given file content.
 func NewContentConverter(filename string, content []byte) *TokenConverter {
-	fset := token.NewFileSet()
+	fset := loc.NewFileSet()
 	f := fset.AddFile(filename, -1, len(content))
 	f.SetLinesForContent(content)
 	return &TokenConverter{fset: fset, file: f}
@@ -100,7 +100,7 @@ func (r Range) Span() (Span, error) {
 	return s.WithOffset(NewTokenConverter(r.FileSet, f))
 }
 
-func position(f *token.File, pos token.Pos) (string, int, int, error) {
+func position(f *loc.File, pos loc.Pos) (string, int, int, error) {
 	off, err := offset(f, pos)
 	if err != nil {
 		return "", 0, 0, err
@@ -108,7 +108,7 @@ func position(f *token.File, pos token.Pos) (string, int, int, error) {
 	return positionFromOffset(f, off)
 }
 
-func positionFromOffset(f *token.File, offset int) (string, int, int, error) {
+func positionFromOffset(f *loc.File, offset int) (string, int, int, error) {
 	if offset > f.Size() {
 		return "", 0, 0, fmt.Errorf("offset %v is past the end of the file %v", offset, f.Size())
 	}
@@ -120,9 +120,9 @@ func positionFromOffset(f *token.File, offset int) (string, int, int, error) {
 	return p.Filename, p.Line, p.Column, nil
 }
 
-// offset is a copy of the Offset function in go/token, but with the adjustment
+// offset is a copy of the Offset function in github.com/nokia/ntt/internal/loc, but with the adjustment
 // that it does not panic on invalid positions.
-func offset(f *token.File, pos token.Pos) (int, error) {
+func offset(f *loc.File, pos loc.Pos) (int, error) {
 	if int(pos) < f.Base() || int(pos) > f.Base()+f.Size() {
 		return 0, fmt.Errorf("invalid pos")
 	}
@@ -136,7 +136,7 @@ func (s Span) Range(converter *TokenConverter) (Range, error) {
 	if err != nil {
 		return Range{}, err
 	}
-	// go/token will panic if the offset is larger than the file's size,
+	// github.com/nokia/ntt/internal/loc will panic if the offset is larger than the file's size,
 	// so check here to avoid panicking.
 	if s.Start().Offset() > converter.file.Size() {
 		return Range{}, fmt.Errorf("start offset %v is past the end of the file %v", s.Start(), converter.file.Size())
@@ -177,6 +177,6 @@ func (l *TokenConverter) ToOffset(line, col int) (int, error) {
 	}
 	// we assume that column is in bytes here, and that the first byte of a
 	// line is at column 1
-	pos += token.Pos(col - 1)
+	pos += loc.Pos(col - 1)
 	return offset(l.file, pos)
 }
