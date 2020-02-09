@@ -8,7 +8,7 @@ package tag
 import (
 	"context"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
+	"github.com/nokia/ntt/internal/telemetry"
 )
 
 // Key represents the key for a context tag.

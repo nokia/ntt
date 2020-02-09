@@ -9,7 +9,7 @@ package protocol
 import (
 	"fmt"
 
-	"github.com/nokia/ntt/internal/lsp/span"
+	"github.com/nokia/ntt/internal/span"
 	errors "golang.org/x/xerrors"
 )
 

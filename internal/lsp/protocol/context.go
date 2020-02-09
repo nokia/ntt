@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
-	"github.com/nokia/ntt/internal/lsp/telemetry/export"
-	"github.com/nokia/ntt/internal/lsp/xcontext"
+	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/telemetry/export"
+	"github.com/nokia/ntt/internal/xcontext"
 )
 
 func init() {

@@ -9,9 +9,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
-	"github.com/nokia/ntt/internal/lsp/telemetry/export"
-	"github.com/nokia/ntt/internal/lsp/telemetry/tag"
+	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/telemetry/export"
+	"github.com/nokia/ntt/internal/telemetry/tag"
 )
 
 func StartSpan(ctx context.Context, name string, tags ...telemetry.Tag) (context.Context, func()) {

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nokia/ntt/internal/lsp/span"
+	"github.com/nokia/ntt/internal/span"
 )
 
 // TestURI tests the conversion between URIs and filenames. The test cases

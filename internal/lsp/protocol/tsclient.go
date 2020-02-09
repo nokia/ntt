@@ -6,9 +6,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
-	"github.com/nokia/ntt/internal/lsp/telemetry/log"
-	"github.com/nokia/ntt/internal/lsp/xcontext"
+	"github.com/nokia/ntt/internal/jsonrpc2"
+	"github.com/nokia/ntt/internal/telemetry/log"
+	"github.com/nokia/ntt/internal/xcontext"
 )
 
 type Client interface {

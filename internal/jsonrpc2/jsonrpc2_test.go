@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
+	"github.com/nokia/ntt/internal/jsonrpc2"
 )
 
 var logRPC = flag.Bool("logrpc", false, "Enable jsonrpc2 communication logging")

@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
-	"github.com/nokia/ntt/internal/lsp/telemetry/export/ocagent/wire"
-	"github.com/nokia/ntt/internal/lsp/telemetry/metric"
+	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/telemetry/export/ocagent/wire"
+	"github.com/nokia/ntt/internal/telemetry/metric"
 )
 
 // dataToMetricDescriptor return a *wire.MetricDescriptor based on data.

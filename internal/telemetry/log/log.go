@@ -10,9 +10,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
-	"github.com/nokia/ntt/internal/lsp/telemetry/export"
-	"github.com/nokia/ntt/internal/lsp/telemetry/tag"
+	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/telemetry/export"
+	"github.com/nokia/ntt/internal/telemetry/tag"
 )
 
 type Event telemetry.Event

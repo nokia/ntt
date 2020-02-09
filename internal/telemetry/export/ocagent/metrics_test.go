@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
-	"github.com/nokia/ntt/internal/lsp/telemetry/export/ocagent"
-	"github.com/nokia/ntt/internal/lsp/telemetry/metric"
+	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/telemetry/export/ocagent"
+	"github.com/nokia/ntt/internal/telemetry/metric"
 )
 
 func TestEncodeMetric(t *testing.T) {

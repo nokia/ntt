@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nokia/ntt/internal/lsp/span"
+	"github.com/nokia/ntt/internal/span"
 )
 
 var (

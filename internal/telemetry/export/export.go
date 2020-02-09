@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry"
+	"github.com/nokia/ntt/internal/telemetry"
 )
 
 type Exporter interface {
