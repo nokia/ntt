@@ -78,7 +78,7 @@ func Connect(config *Config) export.Exporter {
 		exporter.config.Rate = 2 * time.Second
 	}
 	go func() {
-		for _ = range time.Tick(exporter.config.Rate) {
+		for range time.Tick(exporter.config.Rate) {
 			exporter.Flush()
 		}
 	}()
@@ -149,20 +149,6 @@ func (cfg *Config) buildNode() *wire.Node {
 	}
 }
 
-func EncodeSpan(cfg Config, span *telemetry.Span) ([]byte, error) {
-	return json.Marshal(&wire.ExportTraceServiceRequest{
-		Node:  cfg.buildNode(),
-		Spans: []*wire.Span{convertSpan(span)},
-	})
-}
-
-func EncodeMetric(cfg Config, m telemetry.MetricData) ([]byte, error) {
-	return json.Marshal(&wire.ExportMetricsServiceRequest{
-		Node:    cfg.buildNode(),
-		Metrics: []*wire.Metric{convertMetric(m, cfg.Start)},
-	})
-}
-
 func (e *exporter) send(endpoint string, message interface{}) {
 	blob, err := json.Marshal(message)
 	if err != nil {
@@ -184,7 +170,6 @@ func (e *exporter) send(endpoint string, message interface{}) {
 	if res.Body != nil {
 		res.Body.Close()
 	}
-	return
 }
 
 func errorInExport(message string, args ...interface{}) {
@@ -205,10 +190,10 @@ func toTruncatableString(s string) *wire.TruncatableString {
 
 func convertSpan(span *telemetry.Span) *wire.Span {
 	result := &wire.Span{
-		TraceId:                 span.ID.TraceID[:],
-		SpanId:                  span.ID.SpanID[:],
+		TraceID:                 span.ID.TraceID[:],
+		SpanID:                  span.ID.SpanID[:],
 		TraceState:              nil, //TODO?
-		ParentSpanId:            span.ParentID[:],
+		ParentSpanID:            span.ParentID[:],
 		Name:                    toTruncatableString(span.Name),
 		Kind:                    wire.UnspecifiedSpanKind,
 		StartTime:               convertTimestamp(span.Start),
@@ -310,7 +295,7 @@ func convertAnnotation(event telemetry.Event) *wire.Annotation {
 	}
 	tags := event.Tags
 	if event.Error != nil {
-		tags = append(tags, tag.Of("Error", event.Error))
+		tags = append(tags, tag.Of("error", event.Error))
 	}
 	if description == "" && len(tags) == 0 {
 		return nil

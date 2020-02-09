@@ -64,10 +64,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nokia/ntt/internal/lsp/telemetry/export"
-	"github.com/nokia/ntt/internal/lsp/telemetry/export/ocagent"
-	"github.com/nokia/ntt/internal/lsp/telemetry/metric"
-	"github.com/nokia/ntt/internal/lsp/telemetry/stats"
+	"github.com/nokia/ntt/internal/telemetry/export"
+	"github.com/nokia/ntt/internal/telemetry/export/ocagent"
+	"github.com/nokia/ntt/internal/telemetry/metric"
+	"github.com/nokia/ntt/internal/telemetry/stats"
 )
 
 func main() {

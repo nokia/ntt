@@ -2,16 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build !go1.12
+
 package span
 
 import (
-	"github.com/nokia/ntt/internal/loc"
+	"go/token"
 )
 
-// lineStart is the pre-Go 1.12 version of (*loc.File).LineStart. For Go
+// lineStart is the pre-Go 1.12 version of (*token.File).LineStart. For Go
 // versions <= 1.11, we borrow logic from the analysisutil package.
 // TODO(rstambler): Delete this file when we no longer support Go 1.11.
-func lineStart(f *loc.File, line int) loc.Pos {
+func lineStart(f *token.File, line int) token.Pos {
 	// Use binary search to find the start offset of this line.
 
 	min := 0        // inclusive
@@ -21,11 +23,11 @@ func lineStart(f *loc.File, line int) loc.Pos {
 		pos := f.Pos(offset)
 		posn := f.Position(pos)
 		if posn.Line == line {
-			return pos - (loc.Pos(posn.Column) - 1)
+			return pos - (token.Pos(posn.Column) - 1)
 		}
 
 		if min+1 >= max {
-			return loc.NoPos
+			return token.NoPos
 		}
 
 		if posn.Line < line {
