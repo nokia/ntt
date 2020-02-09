@@ -1,6 +1,6 @@
 // Copyright 2019 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// license that can be found in the NOTICE file.
 
 // Package xcontext is a package to offer the extra functionality we need
 // from contexts that is not available from the standard context package.

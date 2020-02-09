@@ -1,6 +1,6 @@
 // Copyright 2019 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// license that can be found in the NOTICE file.
 
 // Package ocagent adds the ability to export all telemetry to an ocagent.
 // This keeps the compile time dependencies to zero and allows the agent to
