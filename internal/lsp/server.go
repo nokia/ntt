@@ -18,9 +18,7 @@ import (
 // messages on on the supplied stream.
 func NewServer(session source.Session, client protocol.Client) *Server {
 	return &Server{
-		delivered: make(map[span.URI]sentDiagnostics),
-		session:   session,
-		client:    client,
+		client: client,
 	}
 }
 
@@ -43,6 +41,20 @@ type Server struct {
 	// folders is only valid between initialize and initialized, and holds the
 	// set of folders to build views for when we are ready
 	pendingFolders []protocol.WorkspaceFolder
+}
+
+func (s *Server) Info(ctx context.Context, msg string) {
+	s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
+		Type:    protocol.Info,
+		Message: msg,
+	})
+}
+
+func (s *Server) Log(ctx context.Context, msg string) {
+	s.client.LogMessage(ctx, &protocol.LogMessageParams{
+		Type:    protocol.Log,
+		Message: msg,
+	})
 }
 
 func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParams) error {
