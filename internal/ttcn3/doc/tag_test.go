@@ -35,6 +35,8 @@ func TestFindAllTags(t *testing.T) {
 		{`@wip23`, ``},
 		{`@verdict`, `@foo:bar`},
 		{`@verdict`, `@foo:bar`},
+		{`@one`, ``},
+		{`@two`, ``},
 	}
 
 	actual := FindAllTags(`/*
@@ -44,7 +46,10 @@ func TestFindAllTags(t *testing.T) {
 		// *** @foo	@bar ***
 		// *** @wip23	***
 		** @verdict  @foo:bar
-		** @verdict:@foo:bar`)
+		** @verdict:@foo:bar
+		* @one
+		* @two
+		*/`)
 
 	assert.Equal(t, len(expect), len(actual))
 

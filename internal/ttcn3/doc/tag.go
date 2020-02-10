@@ -1,11 +1,13 @@
 package doc
 
 import (
+	"bufio"
 	"regexp"
+	"strings"
 )
 
 var (
-	tagRegex = regexp.MustCompile(`(?m)^[/*\s]*(@[A-Za-z0-9_]+)\s*:?\s*(.*?)[/*\s\r\n]*$`)
+	tagRegex = regexp.MustCompile(`^[/*\s]*(@[A-Za-z0-9_]+)\s*:?\s*(.*?)[/*\r\n\s]*$`)
 )
 
 // Finds first tag in s. A Return value of nil indicates not match.
@@ -20,10 +22,13 @@ func FindTag(s string) []string {
 // Finds all tags in s.
 func FindAllTags(s string) [][]string {
 	var res [][]string
-	for _, v := range tagRegex.FindAllStringSubmatch(s, -1) {
-		if len(v) == 3 {
-			res = append(res, v[1:])
+
+	scanner := bufio.NewScanner(strings.NewReader(s))
+	for scanner.Scan() {
+		if s := FindTag(scanner.Text()); s != nil {
+			res = append(res, s)
 		}
 	}
+
 	return res
 }
