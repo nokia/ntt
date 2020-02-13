@@ -137,6 +137,10 @@ func cover(typ string, tmpl ast.Expr) error {
 			return nil
 		}
 
+	// Handle enums
+	case *ast.Ident:
+		count[typ]++
+		return nil
 	}
 	return notImplemented(typ, tmpl)
 }
