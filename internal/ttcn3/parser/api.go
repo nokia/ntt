@@ -79,6 +79,35 @@ func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode
 	return p.parseModuleList(), nil
 }
 
+func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (ast.Expr, error) {
+	if fset == nil {
+		panic("ParseModules: no FileSet provided (fset == nil)")
+	}
+
+	// get source
+	text, err := readSource(filename, src)
+	if err != nil {
+		return nil, err
+	}
+
+	var p parser
+	defer func() {
+		if e := recover(); e != nil {
+			// resume same panic if it's not a bailout
+			if _, ok := e.(bailout); !ok {
+				panic(e)
+			}
+		}
+
+		p.errors.Sort()
+		err = p.errors.Err()
+	}()
+
+	// parse source
+	p.init(fset, filename, text, 0)
+	return p.parseExpr(), nil
+}
+
 // If src != nil, readSource converts src to a []byte if possible;
 // otherwise it returns an error. If src == nil, readSource returns
 // the result of reading the file specified by filename.
