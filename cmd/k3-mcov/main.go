@@ -100,12 +100,17 @@ func cover(typ string, tmpl ast.Expr) error {
 					return notImplemented(typ, x)
 				}
 				if id, ok := x.X.(*ast.Ident); ok {
-					return cover(fmt.Sprintf("%s.%s", typ, id.String()), x.Y)
+					if err := cover(fmt.Sprintf("%s.%s", typ, id.String()), x.Y); err != nil {
+						return err
+					}
+					continue
 				}
 				return notImplemented(typ, x.X)
 
 			default:
-				return cover(fmt.Sprintf("%s[%d]", typ, i), x)
+				if err := cover(fmt.Sprintf("%s[%d]", typ, i), x); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
