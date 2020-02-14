@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -57,10 +56,7 @@ func main() {
 		}
 
 		// Calculate coverage
-		if err := cover(typ, ast); err != nil {
-			log.Println(err)
-			continue
-		}
+		cover(typ, ast)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -78,7 +74,7 @@ func main() {
 	}
 }
 
-func cover(typ string, tmpl ast.Expr) error {
+func cover(typ string, tmpl ast.Expr) {
 
 	switch x := tmpl.(type) {
 
@@ -90,30 +86,28 @@ func cover(typ string, tmpl ast.Expr) error {
 		// An empty list means full coverage.
 		if len(x.List) == 0 {
 			count[typ]++
-			return nil
+			return
 		}
 
 		for i := range x.List {
 			switch x := x.List[i].(type) {
 			case *ast.BinaryExpr:
 				if x.Op.Kind != token.ASSIGN {
-					return notImplemented(typ, x)
-				}
-				if id, ok := x.X.(*ast.Ident); ok {
-					if err := cover(fmt.Sprintf("%s.%s", typ, id.String()), x.Y); err != nil {
-						return err
-					}
+					notImplemented(typ, x)
 					continue
 				}
-				return notImplemented(typ, x.X)
+
+				if id, ok := x.X.(*ast.Ident); ok {
+					cover(fmt.Sprintf("%s.%s", typ, id.String()), x.Y)
+				} else {
+					notImplemented(typ, x.X)
+				}
 
 			default:
-				if err := cover(fmt.Sprintf("%s[%d]", typ, i), x); err != nil {
-					return err
-				}
+				cover(fmt.Sprintf("%s[%d]", typ, i), x)
 			}
 		}
-		return nil
+		return
 
 	// Scalar types are easy to evaluate
 	case *ast.ValueLiteral:
@@ -122,7 +116,7 @@ func cover(typ string, tmpl ast.Expr) error {
 		// contribute to message coverage.
 		case token.ANY, token.MUL, token.OMIT:
 			count[typ] += 0
-			return nil
+
 		case token.SUB,
 			token.INT,
 			token.BSTRING,
@@ -138,22 +132,21 @@ func cover(typ string, tmpl ast.Expr) error {
 			token.TRUE,
 			token.NULL:
 			count[typ]++
-			return nil
 		}
 
 	// Handle enums
 	case *ast.Ident:
 		count[typ]++
-		return nil
 
 	// Handle permution/superset/...
 	case *ast.CallExpr:
 		count[typ]++
-		return nil
+
+	default:
+		notImplemented(typ, tmpl)
 	}
-	return notImplemented(typ, tmpl)
 }
 
-func notImplemented(typ string, n ast.Node) error {
-	return errors.New(fmt.Sprintf("%d: Type %T for field %s not implemented.", line, n, typ))
+func notImplemented(typ string, n ast.Node) {
+	fmt.Fprintf(os.Stderr, "line %d: Type %T for field %s not implemented.", line, n, typ)
 }
