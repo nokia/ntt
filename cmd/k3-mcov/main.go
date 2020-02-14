@@ -104,18 +104,24 @@ func cover(typ string, tmpl ast.Expr) {
 		for i := range x.List {
 			switch x := x.List[i].(type) {
 			case *ast.BinaryExpr:
+				// The only binary expressions we expect are assignments (field := value)
 				if x.Op.Kind != token.ASSIGN {
 					notImplemented(typ, x)
 					continue
 				}
 
-				if id, ok := x.X.(*ast.Ident); ok {
-					cover(fmt.Sprintf("%s.%s", typ, id.String()), x.Y)
-				} else {
+				// We expect the left hand side to be a plain identifier.
+				id, ok := x.X.(*ast.Ident)
+				if !ok {
 					notImplemented(typ, x.X)
+					continue
 				}
 
+				// Descend into right hand side.
+				cover(fmt.Sprintf("%s.%s", typ, id.String()), x.Y)
+
 			default:
+				// All other expressions are interpreted as list elements.
 				cover(fmt.Sprintf("%s[%d]", typ, i), x)
 			}
 		}
