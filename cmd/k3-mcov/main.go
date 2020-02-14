@@ -146,6 +146,11 @@ func cover(typ string, tmpl ast.Expr) error {
 	case *ast.Ident:
 		count[typ]++
 		return nil
+
+	// Handle permution/superset/...
+	case *ast.CallExpr:
+		count[typ]++
+		return nil
 	}
 	return notImplemented(typ, tmpl)
 }
