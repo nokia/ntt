@@ -118,9 +118,9 @@ func cover(typ string, tmpl ast.Expr) error {
 	// Scalar types are easy to evaluate
 	case *ast.ValueLiteral:
 		switch x.Tok.Kind {
-		// `?` and `*` do not increase counter, because they do not
+		// `omit`, `?` and `*` do not increase counter, because they do not
 		// contribute to message coverage.
-		case token.ANY, token.MUL:
+		case token.ANY, token.MUL, token.OMIT:
 			count[typ] += 0
 			return nil
 		case token.SUB,
@@ -136,7 +136,6 @@ func cover(typ string, tmpl ast.Expr) error {
 			token.PASS,
 			token.STRING,
 			token.TRUE,
-			token.OMIT,
 			token.NULL:
 			count[typ]++
 			return nil
