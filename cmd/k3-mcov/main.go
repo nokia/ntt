@@ -82,7 +82,7 @@ func main() {
 			continue
 		}
 
-		fmt.Println(k, count[k])
+		fmt.Printf("%s\t%d\n", k, count[k])
 	}
 }
 
