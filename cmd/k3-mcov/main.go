@@ -69,7 +69,19 @@ func main() {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	for _, k := range keys {
+	for i, k := range keys {
+
+		// Do not report matches of whole structs:
+		//
+		//      MessageA 0          <-- Do not display those lines
+		//      MessageA.Field1 23
+		//      MessageA.Field2 5
+		//      MessageA.Field3 0
+		//
+		if i+1 < len(keys) && strings.HasPrefix(keys[i+1], k+".") {
+			continue
+		}
+
 		fmt.Println(k, count[k])
 	}
 }
