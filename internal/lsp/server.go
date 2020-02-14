@@ -11,15 +11,23 @@ import (
 
 	"github.com/nokia/ntt/internal/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/span"
 )
 
-// NewServer creates an LSP server and binds it to handle incoming client
-// messages on on the supplied stream.
-func NewServer(session source.Session, client protocol.Client) *Server {
-	return &Server{
-		client: client,
-	}
+func NewServer(ctx context.Context, stream jsonrpc2.Stream) (context.Context, *Server) {
+	s := &Server{}
+	s.conn = jsonrpc2.NewConn(stream)
+	s.client = protocol.ClientDispatcher(s.conn)
+	s.conn.AddHandler(protocol.ServerHandler(s))
+	s.conn.AddHandler(protocol.Canceller{})
+	//if withTelemetry {
+	//	s.conn.AddHandler(telemetryHandler{})
+	//}
+
+	return ctx, s
+}
+
+func (s *Server) Run(ctx context.Context) error {
+	return s.conn.Run(protocol.WithClient(ctx, s.client))
 }
 
 type serverState int
@@ -33,6 +41,7 @@ const (
 
 // Server implements the protocol.Server interface.
 type Server struct {
+	conn   *jsonrpc2.Conn
 	client protocol.Client
 
 	stateMu sync.Mutex
@@ -66,33 +75,6 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 }
 
 func (s *Server) nonstandardRequest(ctx context.Context, method string, params interface{}) (interface{}, error) {
-	paramMap := params.(map[string]interface{})
-	if method == "gopls/diagnoseFiles" {
-		for _, file := range paramMap["files"].([]interface{}) {
-			uri := span.NewURI(file.(string))
-			view, err := s.session.ViewOf(uri)
-			if err != nil {
-				return nil, err
-			}
-			fileID, diagnostics, err := source.FileDiagnostics(ctx, view.Snapshot(), uri)
-			if err != nil {
-				return nil, err
-			}
-			if err := s.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-				URI:         protocol.NewURI(uri),
-				Diagnostics: toProtocolDiagnostics(diagnostics),
-				Version:     fileID.Version,
-			}); err != nil {
-				return nil, err
-			}
-		}
-		if err := s.client.PublishDiagnostics(ctx, &protocol.PublishDiagnosticsParams{
-			URI: "gopls://diagnostics-done",
-		}); err != nil {
-			return nil, err
-		}
-		return struct{}{}, nil
-	}
 	return nil, notImplemented(method)
 }
 
