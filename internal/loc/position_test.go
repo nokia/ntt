@@ -1,3 +1,7 @@
+// Copyright 2010 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the NOTICE file.
+
 package loc
 
 import (
@@ -43,9 +47,9 @@ var tests = []struct {
 	{"c", []byte("\n\n\n\n\n\n\n\n\n"), 9, []int{0, 1, 2, 3, 4, 5, 6, 7, 8}},
 	{"d", nil, 100, []int{0, 5, 10, 20, 30, 70, 71, 72, 80, 85, 90, 99}},
 	{"e", nil, 777, []int{0, 80, 100, 120, 130, 180, 267, 455, 500, 567, 620}},
-	{"f", []byte("module p\n\nimport from fmt all"), 29, []int{0, 9, 10}},
-	{"g", []byte("module p\n\nimport from fmt all\n"), 30, []int{0, 9, 10}},
-	{"h", []byte("module p\n\nimport from fmt all\n "), 31, []int{0, 9, 10, 30}},
+	{"f", []byte("package p\n\nimport \"fmt\""), 23, []int{0, 10, 11}},
+	{"g", []byte("package p\n\nimport \"fmt\"\n"), 24, []int{0, 10, 11}},
+	{"h", []byte("package p\n\nimport \"fmt\"\n "), 25, []int{0, 10, 11, 24}},
 }
 
 func linecol(lines []int, offs int) (int, int) {
@@ -318,5 +322,20 @@ done
 		}
 		checkPos(t, "3. PositionFor adjusted", got2, want)
 		checkPos(t, "3. Position", got3, want)
+	}
+}
+
+func TestLineStart(t *testing.T) {
+	const src = "one\ntwo\nthree\n"
+	fset := NewFileSet()
+	f := fset.AddFile("input", -1, len(src))
+	f.SetLinesForContent([]byte(src))
+
+	for line := 1; line <= 3; line++ {
+		pos := f.LineStart(line)
+		position := fset.Position(pos)
+		if position.Line != line || position.Column != 1 {
+			t.Errorf("LineStart(%d) returned wrong pos %d: %s", line, pos, position)
+		}
 	}
 }

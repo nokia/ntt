@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/nokia/ntt/internal/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp"
-	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +23,6 @@ func init() {
 }
 
 func langserver(cmd *cobra.Command, args []string) {
-	ctx, srv := lsp.NewServer(context.Background(), jsonrpc2.NewHeaderStream(os.Stdin, os.Stdout))
+	ctx, srv := lsp.NewServer(context.Background(), jsonrpc2.NewHeaderStream(os.Stdin, os.Stdout), false)
 	srv.Run(ctx)
 }
