@@ -23,6 +23,6 @@ func init() {
 }
 
 func langserver(cmd *cobra.Command, args []string) {
-	ctx, srv := lsp.NewServer(context.Background(), jsonrpc2.NewHeaderStream(os.Stdin, os.Stdout))
+	ctx, srv := lsp.NewServer(context.Background(), jsonrpc2.NewHeaderStream(os.Stdin, os.Stdout), false)
 	srv.Run(ctx)
 }

@@ -80,8 +80,8 @@ func (s *Server) ExecuteCommand(context.Context, *protocol.ExecuteCommandParams)
 	return nil, notImplemented("ExecuteCommand")
 }
 
-func (s *Server) Exit(context.Context) error {
-	return notImplemented("Exit")
+func (s *Server) Exit(ctx context.Context) error {
+	return s.exit(ctx)
 }
 
 func (s *Server) FoldingRange(context.Context, *protocol.FoldingRangeParams) ([]protocol.FoldingRange, error) {
@@ -104,12 +104,12 @@ func (s *Server) IncomingCalls(context.Context, *protocol.CallHierarchyIncomingC
 	return nil, notImplemented("IncomingCalls")
 }
 
-func (s *Server) Initialize(context.Context, *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
-	return nil, notImplemented("Initialize")
+func (s *Server) Initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
+	return s.initialize(ctx, params)
 }
 
-func (s *Server) Initialized(context.Context, *protocol.InitializedParams) error {
-	return notImplemented("Initialized")
+func (s *Server) Initialized(ctx context.Context, params *protocol.InitializedParams) error {
+	return s.initialized(ctx, params)
 }
 
 func (s *Server) LogTraceNotification(context.Context, *protocol.LogTraceParams) error {
@@ -184,8 +184,8 @@ func (s *Server) SetTraceNotification(context.Context, *protocol.SetTraceParams)
 	return notImplemented("SetTraceNotification")
 }
 
-func (s *Server) Shutdown(context.Context) error {
-	return notImplemented("Shutdown")
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.shutdown(ctx)
 }
 
 func (s *Server) SignatureHelp(context.Context, *protocol.SignatureHelpParams) (*protocol.SignatureHelp, error) {

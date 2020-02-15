@@ -13,15 +13,15 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
-func NewServer(ctx context.Context, stream jsonrpc2.Stream) (context.Context, *Server) {
+func NewServer(ctx context.Context, stream jsonrpc2.Stream, withTelemetry bool) (context.Context, *Server) {
 	s := &Server{}
 	s.conn = jsonrpc2.NewConn(stream)
 	s.client = protocol.ClientDispatcher(s.conn)
 	s.conn.AddHandler(protocol.ServerHandler(s))
 	s.conn.AddHandler(protocol.Canceller{})
-	//if withTelemetry {
-	//	s.conn.AddHandler(telemetryHandler{})
-	//}
+	if withTelemetry {
+		s.conn.AddHandler(telemetryHandler{})
+	}
 
 	return ctx, s
 }
