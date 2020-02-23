@@ -13,6 +13,9 @@ type Suite struct {
 	// File handling
 	filesMu sync.Mutex
 	files   map[span.URI]*File
+
+	// Manifest stuff
+	root *File
 }
 
 // Id returns the unique session id (aka K3_SESSION_ID). This ID is the smallest
@@ -49,6 +52,14 @@ func (s *Suite) File(path string) *File {
 	}
 	s.files[uri] = f
 	return f
+}
+
+// SetRoot set the root folder for Suite.
+//
+// The root folder is the main-package, which may contain a manifest file
+// (`package.yml`)
+func (s *Suite) SetRoot(folder string) {
+	s.root = s.File(folder)
 }
 
 func init() {
