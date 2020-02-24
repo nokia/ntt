@@ -15,7 +15,8 @@ type Suite struct {
 	files   map[span.URI]*File
 
 	// Manifest stuff
-	root *File
+	root    *File
+	sources []*File
 }
 
 // Id returns the unique session id (aka K3_SESSION_ID). This ID is the smallest
@@ -60,6 +61,7 @@ func (s *Suite) File(path string) *File {
 // (`package.yml`)
 func (s *Suite) SetRoot(folder string) {
 	s.root = s.File(folder)
+	s.sources = nil
 }
 
 func init() {
