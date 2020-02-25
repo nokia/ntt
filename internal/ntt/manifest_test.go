@@ -183,6 +183,10 @@ func TestName(t *testing.T) {
 	n, err = suite.Name()
 	assert.Nil(t, err)
 	assert.Equal(t, "haaraxwd", n)
+}
+
+func TestTestHook(t *testing.T) {
+	_ = &ntt.Suite{}
 
 }
 

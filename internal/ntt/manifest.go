@@ -202,6 +202,83 @@ func (s *Suite) SetName(name string) {
 	s.name = name
 }
 
+func (s *Suite) TestHook() (*File, error) {
+	if env := getenv("test_hook"); env != "" {
+		return s.File(env), nil
+	}
+
+	// If there's a parseable package.yml, try that one.
+	m, err := s.parseManifest()
+	if err != nil {
+		return nil, err
+	}
+	if m != nil && m.TestHook != "" {
+		path := expand(m.TestHook)
+		if !filepath.IsAbs(path) && path[0] != '$' {
+			path = filepath.Clean(filepath.Join(s.root.Path(), path))
+		}
+
+		return s.File(path), nil
+	}
+
+	// Construct default name
+	filename, err := s.Name()
+	if err != nil || filename == "" {
+		return nil, err
+	}
+	filename = filename + ".control"
+
+	// Look for hook in root folder
+	if s.root != nil {
+		hook := filepath.Join(s.root.Path(), filename)
+		ok, err := fileExists(hook)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			return s.File(hook), nil
+		}
+	}
+
+	// As last resort use directory of first source file
+	srcs, err := s.Sources()
+	if err != nil {
+		return nil, err
+	}
+	if len(srcs) > 0 {
+		hook := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
+		ok, err := fileExists(hook)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			return s.File(hook), nil
+		}
+
+	}
+
+	return nil, nil
+}
+
+func fileExists(path string) (bool, error) {
+
+	info, err := os.Stat(path)
+	if err != nil {
+		// It's okay if a file does not exist.
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		// But report any other bad errors.
+		return false, err
+	}
+
+	if !info.Mode().IsRegular() {
+		return false, fmt.Errorf("test-hook %q is not a regular file", path)
+	}
+
+	return true, nil
+}
+
 type manifest struct {
 	// Static configuration
 	Name    string
