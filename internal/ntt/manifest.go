@@ -156,6 +156,52 @@ func (s *Suite) AddImports(folders ...string) {
 	}
 }
 
+func (s *Suite) Name() (string, error) {
+	if env := getenv("name"); env != "" {
+		return env, nil
+	}
+
+	// TODO(5nord) Should have SetName a higher priority than package.yml?
+	if s.name != "" {
+		return s.name, nil
+	}
+
+	// If there's a parseable package.yml, try that one.
+	m, err := s.parseManifest()
+	if err != nil {
+		return "", err
+	}
+	if m != nil && m.Name != "" {
+		return expand(m.Name), nil
+	}
+
+	// If there's a root dir, use its name.
+	if s.root != nil {
+		return filepath.Base(s.root.URI().Filename()), nil
+	}
+
+	// As last resort, try to find a name in source files.
+	srcs, err := s.Sources()
+	if err != nil {
+		return "", err
+	}
+	if len(srcs) > 0 {
+		n, err := filepath.Abs(srcs[0].Path())
+		if err != nil {
+			return "", err
+		}
+		n = filepath.Base(n)
+		n = strings.TrimSuffix(n, filepath.Ext(n))
+		return n, nil
+	}
+
+	return "", fmt.Errorf("Could not determine a suite name")
+}
+
+func (s *Suite) SetName(name string) {
+	s.name = name
+}
+
 type manifest struct {
 	// Static configuration
 	Name    string

@@ -145,6 +145,47 @@ func TestImports(t *testing.T) {
 	assert.Equal(t, []string{"${SOMETHING_UNKNOWN}/dir1"}, strs(v))
 }
 
+func TestName(t *testing.T) {
+	suite := &ntt.Suite{}
+
+	// Initial call to name shall return an error.
+	n, err := suite.Name()
+	assert.NotNil(t, err)
+	assert.Equal(t, "", n)
+
+	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
+	n, err = suite.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "foo", n)
+
+	suite.SetRoot("testdata/suite2")
+	n, err = suite.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "suite2", n)
+
+	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
+	n, err = suite.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "suite2", n)
+
+	conf := suite.File("testdata/suite2/package.yml")
+	conf.SetBytes([]byte("name: fnord"))
+	n, err = suite.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "fnord", n)
+
+	conf.SetBytes([]byte(`name: [ 23.5, "See fnords, now!"]`))
+	n, err = suite.Name()
+	assert.NotNil(t, err)
+	assert.Equal(t, "", n)
+
+	suite.SetName("haaraxwd")
+	n, err = suite.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "haaraxwd", n)
+
+}
+
 func strs(files []*ntt.File) []string {
 	ret := make([]string, len(files))
 	for i := range files {

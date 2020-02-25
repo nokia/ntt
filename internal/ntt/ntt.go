@@ -15,6 +15,7 @@ type Suite struct {
 	files   map[span.URI]*File
 
 	// Manifest stuff
+	name    string
 	root    *File
 	sources []*File
 	imports []*File
