@@ -17,6 +17,7 @@ type Suite struct {
 	// Manifest stuff
 	root    *File
 	sources []*File
+	imports []*File
 }
 
 // Id returns the unique session id (aka K3_SESSION_ID). This ID is the smallest

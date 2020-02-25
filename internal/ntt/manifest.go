@@ -58,7 +58,7 @@ func (s *Suite) Sources() ([]*File, error) {
 			src := expand(m.Sources[i])
 
 			// Make paths which are relative to manifest, relative to CWD.
-			if !filepath.IsAbs(src) {
+			if !filepath.IsAbs(src) && src[0] != '$' {
 				src = filepath.Clean(filepath.Join(s.root.Path(), src))
 			}
 
@@ -108,9 +108,51 @@ func (s *Suite) Sources() ([]*File, error) {
 	return s.sources, nil
 }
 
+func (s *Suite) Imports() ([]*File, error) {
+	var ret []*File
+
+	// Environment variable overwrite everything.
+	if env := getenv("imports"); env != "" {
+		for _, x := range strings.Fields(env) {
+			ret = append(ret, s.File(x))
+		}
+		return ret, nil
+	}
+
+	// If there's a parseable package.yml, try that one.
+	m, err := s.parseManifest()
+	if err != nil {
+		return nil, err
+	}
+	if m != nil && len(m.Imports) > 0 && s.root != nil {
+		for i := range m.Imports {
+			// Substitute environment variables
+			path := expand(m.Imports[i])
+
+			// Make paths which are relative to manifest, relative to CWD.
+			if !filepath.IsAbs(path) && path[0] != '$' {
+				path = filepath.Clean(filepath.Join(s.root.Path(), path))
+			}
+
+			ret = append(ret, s.File(path))
+
+		}
+		return append(ret, s.sources...), nil
+	}
+
+	// Last resort is imports list, explicitly curated by AddImports-calls.
+	return s.imports, nil
+}
+
 func (s *Suite) AddSources(files ...string) {
 	for i := range files {
 		s.sources = append(s.sources, s.File(files[i]))
+	}
+}
+
+func (s *Suite) AddImports(folders ...string) {
+	for i := range folders {
+		s.imports = append(s.imports, s.File(folders[i]))
 	}
 }
 
