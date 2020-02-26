@@ -202,6 +202,9 @@ func (s *Suite) SetName(name string) {
 	s.name = name
 }
 
+// TestHook return the File object to the test hook. If not hook was found, it
+// will return nil. If an error occurred, like a parse error, then error is set
+// appropriately.
 func (s *Suite) TestHook() (*File, error) {
 	if env := getenv("test_hook"); env != "" {
 		return s.File(env), nil
@@ -260,6 +263,66 @@ func (s *Suite) TestHook() (*File, error) {
 	return nil, nil
 }
 
+// ParametersFile return the File object to the parameter file. If no file was found, it
+// will return nil. If an error occurred, like a parse error, then error is set
+// appropriately.
+func (s *Suite) ParametersFile() (*File, error) {
+	if env := getenv("parameters_file"); env != "" {
+		return s.File(env), nil
+	}
+
+	// If there's a parseable package.yml, try that one.
+	m, err := s.parseManifest()
+	if err != nil {
+		return nil, err
+	}
+	if m != nil && m.ParametersFile != "" {
+		path := expand(m.ParametersFile)
+		if !filepath.IsAbs(path) && path[0] != '$' {
+			path = filepath.Clean(filepath.Join(s.root.Path(), path))
+		}
+
+		return s.File(path), nil
+	}
+
+	// Construct default name
+	filename, err := s.Name()
+	if err != nil || filename == "" {
+		return nil, err
+	}
+	filename = filename + ".parameters"
+
+	// Look for hook in root folder
+	if s.root != nil {
+		path := filepath.Join(s.root.Path(), filename)
+		ok, err := fileExists(path)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			return s.File(path), nil
+		}
+	}
+
+	// As last resort use directory of first source file
+	srcs, err := s.Sources()
+	if err != nil {
+		return nil, err
+	}
+	if len(srcs) > 0 {
+		path := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
+		ok, err := fileExists(path)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			return s.File(path), nil
+		}
+
+	}
+
+	return nil, nil
+}
 func fileExists(path string) (bool, error) {
 
 	info, err := os.Stat(path)
@@ -273,7 +336,7 @@ func fileExists(path string) (bool, error) {
 	}
 
 	if !info.Mode().IsRegular() {
-		return false, fmt.Errorf("test-hook %q is not a regular file", path)
+		return false, fmt.Errorf("%q is not a regular file", path)
 	}
 
 	return true, nil

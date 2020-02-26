@@ -186,10 +186,19 @@ func TestName(t *testing.T) {
 }
 
 func TestTestHook(t *testing.T) {
-	_ = &ntt.Suite{}
-
+	suite := &ntt.Suite{}
+	h, err := suite.TestHook()
+	assert.NotNil(t, err)
+	assert.Nil(t, h)
 }
 
+func TestParametersFile(t *testing.T) {
+	suite := &ntt.Suite{}
+	h, err := suite.ParametersFile()
+	assert.NotNil(t, err)
+	assert.Nil(t, h)
+
+}
 func strs(files []*ntt.File) []string {
 	ret := make([]string, len(files))
 	for i := range files {
