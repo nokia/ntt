@@ -6,19 +6,29 @@ import (
 	"strings"
 )
 
-func getenv(s string) string {
-	if x := os.Getenv("NTT_" + strings.ToUpper(s)); x != "" {
-		return x
+// Getenv retrieves the value of the environment variable named by the key. It
+// returns the value, which will be empty if the variable is not present.
+//
+// If key starts with "NTT" and could not be found, Getenv will also try the key
+// with "K3" prefix. For example if key "NTT_IMPORTS" could not be found, Getenv
+// would also try key "K3_IMPORTS".
+func (s *Suite) Getenv(v string) string {
+	if env := os.Getenv(v); env != "" {
+		return env
 	}
-	if x := os.Getenv("K3_" + strings.ToUpper(s)); x != "" {
-		return x
+
+	// This extra lookup with "K3" prefix helps to migrate old bash-scripts to
+	// this ntt-package.
+	if len(v) >= 3 && v[:3] == "NTT" {
+		return s.Getenv("K3" + strings.TrimPrefix(v, "NTT"))
 	}
+
 	return ""
 }
 
-// expand expands s trying getenv. Unset environment variables wont get
+// expand expands string v trying getenv. Unset environment variables wont get
 // substituted.
-func expand(s string) string {
+func (s *Suite) expand(v string) string {
 	mapper := func(name string) string {
 		val, ok := os.LookupEnv(name)
 		if ok {
@@ -29,5 +39,5 @@ func expand(s string) string {
 		return fmt.Sprintf("${%s}", name)
 	}
 
-	return os.Expand(s, mapper)
+	return os.Expand(v, mapper)
 }

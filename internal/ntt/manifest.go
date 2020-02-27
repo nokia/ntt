@@ -16,7 +16,7 @@ import (
 // The error will be != nil if timeout could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (s *Suite) Timeout() (float64, error) {
-	if s := getenv("timeout"); s != "" {
+	if s := s.Getenv("NTT_TIMEOUT"); s != "" {
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return 0, err
@@ -40,7 +40,7 @@ func (s *Suite) Sources() ([]*File, error) {
 	var ret []*File
 
 	// Environment variable overwrite everything.
-	if env := getenv("sources"); env != "" {
+	if env := s.Getenv("NTT_SOURCES"); env != "" {
 		for _, x := range strings.Fields(env) {
 			ret = append(ret, s.File(x))
 		}
@@ -55,7 +55,7 @@ func (s *Suite) Sources() ([]*File, error) {
 	if m != nil && len(m.Sources) > 0 && s.root != nil {
 		for i := range m.Sources {
 			// Substitute environment variables
-			src := expand(m.Sources[i])
+			src := s.expand(m.Sources[i])
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(src) && src[0] != '$' {
@@ -112,7 +112,7 @@ func (s *Suite) Imports() ([]*File, error) {
 	var ret []*File
 
 	// Environment variable overwrite everything.
-	if env := getenv("imports"); env != "" {
+	if env := s.Getenv("NTT_IMPORTS"); env != "" {
 		for _, x := range strings.Fields(env) {
 			ret = append(ret, s.File(x))
 		}
@@ -127,7 +127,7 @@ func (s *Suite) Imports() ([]*File, error) {
 	if m != nil && len(m.Imports) > 0 && s.root != nil {
 		for i := range m.Imports {
 			// Substitute environment variables
-			path := expand(m.Imports[i])
+			path := s.expand(m.Imports[i])
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(path) && path[0] != '$' {
@@ -157,7 +157,7 @@ func (s *Suite) AddImports(folders ...string) {
 }
 
 func (s *Suite) Name() (string, error) {
-	if env := getenv("name"); env != "" {
+	if env := s.Getenv("NTT_NAME"); env != "" {
 		return env, nil
 	}
 
@@ -172,7 +172,7 @@ func (s *Suite) Name() (string, error) {
 		return "", err
 	}
 	if m != nil && m.Name != "" {
-		return expand(m.Name), nil
+		return s.expand(m.Name), nil
 	}
 
 	// If there's a root dir, use its name.
@@ -206,7 +206,7 @@ func (s *Suite) SetName(name string) {
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
 func (s *Suite) TestHook() (*File, error) {
-	if env := getenv("test_hook"); env != "" {
+	if env := s.Getenv("NTT_TEST_HOOK"); env != "" {
 		return s.File(env), nil
 	}
 
@@ -216,7 +216,7 @@ func (s *Suite) TestHook() (*File, error) {
 		return nil, err
 	}
 	if m != nil && m.TestHook != "" {
-		path := expand(m.TestHook)
+		path := s.expand(m.TestHook)
 		if !filepath.IsAbs(path) && path[0] != '$' {
 			path = filepath.Clean(filepath.Join(s.root.Path(), path))
 		}
@@ -267,7 +267,7 @@ func (s *Suite) TestHook() (*File, error) {
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
 func (s *Suite) ParametersFile() (*File, error) {
-	if env := getenv("parameters_file"); env != "" {
+	if env := s.Getenv("NTT_PARAMETERS_FILE"); env != "" {
 		return s.File(env), nil
 	}
 
@@ -277,7 +277,7 @@ func (s *Suite) ParametersFile() (*File, error) {
 		return nil, err
 	}
 	if m != nil && m.ParametersFile != "" {
-		path := expand(m.ParametersFile)
+		path := s.expand(m.ParametersFile)
 		if !filepath.IsAbs(path) && path[0] != '$' {
 			path = filepath.Clean(filepath.Join(s.root.Path(), path))
 		}

@@ -37,14 +37,14 @@ keys are supported:
 
         timeout              Default timeout for tests in seconds.
 
-        test_hook            Path to test_hook script. Default is `$K3_NAME.control`.
+        test_hook            Path to test_hook script. Default is `$NTT_NAME.control`.
 
-        parameters_file      Path to module parameters file. Default is `$K3_NAME.parameters`
+        parameters_file      Path to module parameters file. Default is `$NTT_NAME.parameters`
 
 
 All keys can be overwritten by environment variables. For instance, to overwrite
-`test_hook` just set environment variable `K3_TEST_HOOK`. Is it not
-recommended to overwrite list values like `K3_SOURCES` and `K3_IMPORTS`,
+`test_hook` just set environment variable `NTT_TEST_HOOK`. Is it not
+recommended to overwrite list values like `NTT_SOURCES` and `NTT_IMPORTS`,
 because you might run into quoting issues with white-spaces.
 
 
@@ -70,11 +70,14 @@ import (
 // one directory as argument or a list of regular .ttcn3 files.
 //
 // Calling NewFromArgs with an empty argument list will create a suite from
-// current working directory or, if set, from K3_SOURCE_DIR.
+// current working directory or, if set, from NTT_SOURCE_DIR.
 func NewFromArgs(args ...string) (*Suite, error) {
 	switch len(args) {
 	case 0:
-		if source_dir := getenv("source_dir"); source_dir != "" {
+		if source_dir := os.Getenv("NTT_SOURCE_DIR"); source_dir != "" {
+			return NewFromDirectory(source_dir)
+		}
+		if source_dir := os.Getenv("K3_SOURCE_DIR"); source_dir != "" {
 			return NewFromDirectory(source_dir)
 		}
 		return NewFromDirectory(".")
@@ -93,7 +96,7 @@ func NewFromArgs(args ...string) (*Suite, error) {
 // NewFromFiles creates a suite from a .ttcn3 files list. No root folder will be
 // associated with the suite and `package.yml` will be ignored.
 //
-// Except for `K3_SOURCES` You may use the usual environment variables to
+// Except for `NTT_SOURCES` You may use the usual environment variables to
 // overwrite default configuration.
 //
 // Allowing only ttcn3 files is a compromise between keeping k3 tool simple and
@@ -118,7 +121,7 @@ func NewFromFiles(files ...string) (*Suite, error) {
 //
 // NewFromDirectory returns an error if package.yml was not readable or hab
 // syntax errors or if environment variables have incompatible type (e.g.
-// float64 for K3_TIMEOUT)
+// float64 for NTT_TIMEOUT)
 func NewFromDirectory(dir string) (*Suite, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
