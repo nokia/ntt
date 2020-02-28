@@ -112,9 +112,7 @@ func (s *storage) SetSessions(sessions []session) error {
 
 	// Some users might have a restrictive umask setting. It is okay to make the
 	// sessions file world wide writable.
-	if err := os.Chmod(s.sessionsFile, 0666); err != nil {
-		return err
-	}
+	os.Chmod(s.sessionsFile, 0666)
 
 	for _, s := range sessions {
 		if _, err := file.WriteString(s.String() + "\n"); err != nil {

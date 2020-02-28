@@ -123,9 +123,7 @@ func (f *Flock) setFh() error {
 
 	// Some users might have a restrictive umask setting. It is okay to make the
 	// lock file world wide writable.
-	if err := os.Chmod(f.path, 0666); err != nil {
-		return err
-	}
+	os.Chmod(f.path, 0666)
 
 	// set the filehandle on the struct
 	f.fh = fh
