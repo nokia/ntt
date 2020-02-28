@@ -14,6 +14,9 @@ type Suite struct {
 	filesMu sync.Mutex
 	files   map[span.URI]*File
 
+	// Environent handling
+	envFiles []*File
+
 	// Manifest stuff
 	name     string
 	root     *File
