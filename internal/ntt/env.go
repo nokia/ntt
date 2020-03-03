@@ -9,26 +9,26 @@ import (
 )
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
-func (s *Suite) Environ() []string {
+func (suite *Suite) Environ() []string {
 	return nil
 }
 
-func (s *Suite) AddEnvFiles(files ...string) {
+func (suite *Suite) AddEnvFiles(files ...string) {
 	for i := range files {
-		s.envFiles = append(s.envFiles, s.File(files[i]))
+		suite.envFiles = append(suite.envFiles, suite.File(files[i]))
 	}
 }
 
 // Expand expands string v using Suite.Getenv
-func (s *Suite) Expand(v string) (string, error) {
-	return s.expand(v, make(map[string]bool))
+func (suite *Suite) Expand(v string) (string, error) {
+	return suite.expand(v, make(map[string]bool))
 }
 
 // Expand expands string v using Suite.Getenv
-func (s *Suite) expand(v string, visited map[string]bool) (string, error) {
+func (suite *Suite) expand(v string, visited map[string]bool) (string, error) {
 	var gerr error
 	mapper := func(name string) string {
-		v, err := s.getenv(name, visited)
+		v, err := suite.getenv(name, visited)
 		if err != nil && gerr == nil {
 			gerr = err
 		}
@@ -63,34 +63,34 @@ func (s *Suite) expand(v string, visited map[string]bool) (string, error) {
 //         suite.lookupEnvFile("$HOME/.config/ntt/k3.env", "K3_FOO") ...
 //
 //
-func (s *Suite) Getenv(key string) (string, error) {
-	return s.getenv(key, make(map[string]bool))
+func (suite *Suite) Getenv(key string) (string, error) {
+	return suite.getenv(key, make(map[string]bool))
 }
 
-func (s *Suite) getenv(key string, visited map[string]bool) (string, error) {
+func (suite *Suite) getenv(key string, visited map[string]bool) (string, error) {
 	if visited[key] {
 		return "", fmt.Errorf("recursion detected when expanding variable %q.", key)
 	}
 	visited[key] = true
 
-	if env := s.lookupProcessEnv(key); env != "" {
+	if env := suite.lookupProcessEnv(key); env != "" {
 		return env, nil
 	}
 
-	for i := len(s.envFiles); i > 0; i-- {
-		v, err := s.lookupEnvFile(s.envFiles[i-1], key)
+	for i := len(suite.envFiles); i > 0; i-- {
+		v, err := suite.lookupEnvFile(suite.envFiles[i-1], key)
 		if err != nil {
 			return "", err
 		}
 		if v != "" {
-			return s.expand(v, visited)
+			return suite.expand(v, visited)
 		}
 	}
 	return "", fmt.Errorf("variable %q not found.", key)
 }
 
 // Lookup key in process environment
-func (s *Suite) lookupProcessEnv(key string) string {
+func (suite *Suite) lookupProcessEnv(key string) string {
 	if env := os.Getenv(key); env != "" {
 		return env
 	}
@@ -104,7 +104,7 @@ func (s *Suite) lookupProcessEnv(key string) string {
 }
 
 // Lookup key in environment file
-func (s *Suite) lookupEnvFile(file *File, key string) (string, error) {
+func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 	b, err := file.Bytes()
 	if err != nil {
 		// It's okay if this file does not exist.

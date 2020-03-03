@@ -27,29 +27,29 @@ type Suite struct {
 
 // Id returns the unique session id (aka K3_SESSION_ID). This ID is the smallest
 // integer available on this machine.
-func (s *Suite) Id() (int, error) {
-	if s.id == 0 {
+func (suite *Suite) Id() (int, error) {
+	if suite.id == 0 {
 		id, err := session.Get()
 		if err != nil {
 			return 0, err
 		}
-		s.id = id
+		suite.id = id
 	}
-	return s.id, nil
+	return suite.id, nil
 }
 
 // File returns a new file struct for reading.
-func (s *Suite) File(path string) *File {
+func (suite *Suite) File(path string) *File {
 	uri := span.NewURI(path)
 
-	s.filesMu.Lock()
-	defer s.filesMu.Unlock()
+	suite.filesMu.Lock()
+	defer suite.filesMu.Unlock()
 
-	if s.files == nil {
-		s.files = make(map[span.URI]*File)
+	if suite.files == nil {
+		suite.files = make(map[span.URI]*File)
 	}
 
-	if f, found := s.files[uri]; found {
+	if f, found := suite.files[uri]; found {
 		return f
 	}
 
@@ -57,7 +57,7 @@ func (s *Suite) File(path string) *File {
 		uri:  uri,
 		path: path,
 	}
-	s.files[uri] = f
+	suite.files[uri] = f
 	return f
 }
 
@@ -65,9 +65,9 @@ func (s *Suite) File(path string) *File {
 //
 // The root folder is the main-package, which may contain a manifest file
 // (`package.yml`)
-func (s *Suite) SetRoot(folder string) {
-	s.root = s.File(folder)
-	s.sources = nil
+func (suite *Suite) SetRoot(folder string) {
+	suite.root = suite.File(folder)
+	suite.sources = nil
 }
 
 func init() {

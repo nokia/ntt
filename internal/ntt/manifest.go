@@ -15,15 +15,15 @@ import (
 //
 // The error will be != nil if timeout could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (s *Suite) Timeout() (float64, error) {
-	if s, _ := s.Getenv("NTT_TIMEOUT"); s != "" {
+func (suite *Suite) Timeout() (float64, error) {
+	if s, _ := suite.Getenv("NTT_TIMEOUT"); s != "" {
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return 0, err
 		}
 		return f, nil
 	}
-	m, err := s.parseManifest()
+	m, err := suite.parseManifest()
 	if err != nil {
 		return 0, err
 	}
@@ -36,30 +36,30 @@ func (s *Suite) Timeout() (float64, error) {
 // Sources returns the list of sources required to compile a Suite.
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (s *Suite) Sources() ([]*File, error) {
+func (suite *Suite) Sources() ([]*File, error) {
 	var ret []*File
 
 	// Environment variable overwrite everything.
-	if env, _ := s.Getenv("NTT_SOURCES"); env != "" {
+	if env, _ := suite.Getenv("NTT_SOURCES"); env != "" {
 		for _, x := range strings.Fields(env) {
-			ret = append(ret, s.File(x))
+			ret = append(ret, suite.File(x))
 		}
 		return ret, nil
 	}
 
 	// If there's a parseable package.yml, try that one.
-	m, err := s.parseManifest()
+	m, err := suite.parseManifest()
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && len(m.Sources) > 0 && s.root != nil {
+	if m != nil && len(m.Sources) > 0 && suite.root != nil {
 		for i := range m.Sources {
 			// Substitute environment variables
-			src, _ := s.Expand(m.Sources[i])
+			src, _ := suite.Expand(m.Sources[i])
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(src) && src[0] != '$' {
-				src = filepath.Clean(filepath.Join(s.root.Path(), src))
+				src = filepath.Clean(filepath.Join(suite.root.Path(), src))
 			}
 
 			// Directories need expansion into single files.
@@ -77,111 +77,111 @@ func (s *Suite) Sources() ([]*File, error) {
 					return nil, fmt.Errorf("Could not find ttcn3 source files in directory %q", src)
 				}
 				for i := range files {
-					ret = append(ret, s.File(files[i]))
+					ret = append(ret, suite.File(files[i]))
 				}
 
 			case info.Mode().IsRegular() && hasTTCN3Extension(src):
-				ret = append(ret, s.File(src))
+				ret = append(ret, suite.File(src))
 
 			default:
 				return nil, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", src)
 			}
 
 		}
-		return append(ret, s.sources...), nil
+		return append(ret, suite.sources...), nil
 	}
 
 	// If there's only a root folder, look for .ttcn3 files
-	if s.root != nil {
-		files, err := TTCN3Files(s.root.Path())
+	if suite.root != nil {
+		files, err := TTCN3Files(suite.root.Path())
 		if err != nil {
 			return nil, err
 		}
 		for _, f := range files {
-			ret = append(ret, s.File(f))
+			ret = append(ret, suite.File(f))
 		}
-		return append(ret, s.sources...), nil
+		return append(ret, suite.sources...), nil
 
 	}
 
 	// Last resort is sources list, explicitly curated by AddSources-calls.
-	return s.sources, nil
+	return suite.sources, nil
 }
 
-func (s *Suite) Imports() ([]*File, error) {
+func (suite *Suite) Imports() ([]*File, error) {
 	var ret []*File
 
 	// Environment variable overwrite everything.
-	if env, _ := s.Getenv("NTT_IMPORTS"); env != "" {
+	if env, _ := suite.Getenv("NTT_IMPORTS"); env != "" {
 		for _, x := range strings.Fields(env) {
-			ret = append(ret, s.File(x))
+			ret = append(ret, suite.File(x))
 		}
 		return ret, nil
 	}
 
 	// If there's a parseable package.yml, try that one.
-	m, err := s.parseManifest()
+	m, err := suite.parseManifest()
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && len(m.Imports) > 0 && s.root != nil {
+	if m != nil && len(m.Imports) > 0 && suite.root != nil {
 		for i := range m.Imports {
 			// Substitute environment variables
-			path, _ := s.Expand(m.Imports[i])
+			path, _ := suite.Expand(m.Imports[i])
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(path) && path[0] != '$' {
-				path = filepath.Clean(filepath.Join(s.root.Path(), path))
+				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
 			}
 
-			ret = append(ret, s.File(path))
+			ret = append(ret, suite.File(path))
 
 		}
-		return append(ret, s.sources...), nil
+		return append(ret, suite.sources...), nil
 	}
 
 	// Last resort is imports list, explicitly curated by AddImports-calls.
-	return s.imports, nil
+	return suite.imports, nil
 }
 
-func (s *Suite) AddSources(files ...string) {
+func (suite *Suite) AddSources(files ...string) {
 	for i := range files {
-		s.sources = append(s.sources, s.File(files[i]))
+		suite.sources = append(suite.sources, suite.File(files[i]))
 	}
 }
 
-func (s *Suite) AddImports(folders ...string) {
+func (suite *Suite) AddImports(folders ...string) {
 	for i := range folders {
-		s.imports = append(s.imports, s.File(folders[i]))
+		suite.imports = append(suite.imports, suite.File(folders[i]))
 	}
 }
 
-func (s *Suite) Name() (string, error) {
-	if env, _ := s.Getenv("NTT_NAME"); env != "" {
+func (suite *Suite) Name() (string, error) {
+	if env, _ := suite.Getenv("NTT_NAME"); env != "" {
 		return env, nil
 	}
 
 	// TODO(5nord) Should have SetName a higher priority than package.yml?
-	if s.name != "" {
-		return s.name, nil
+	if suite.name != "" {
+		return suite.name, nil
 	}
 
 	// If there's a parseable package.yml, try that one.
-	m, err := s.parseManifest()
+	m, err := suite.parseManifest()
 	if err != nil {
 		return "", err
 	}
 	if m != nil && m.Name != "" {
-		return s.Expand(m.Name)
+		return suite.Expand(m.Name)
 	}
 
 	// If there's a root dir, use its name.
-	if s.root != nil {
-		return filepath.Base(s.root.URI().Filename()), nil
+	if suite.root != nil {
+		return filepath.Base(suite.root.URI().Filename()), nil
 	}
 
 	// As last resort, try to find a name in source files.
-	srcs, err := s.Sources()
+	srcs, err := suite.Sources()
 	if err != nil {
 		return "", err
 	}
@@ -198,53 +198,53 @@ func (s *Suite) Name() (string, error) {
 	return "", fmt.Errorf("Could not determine a suite name")
 }
 
-func (s *Suite) SetName(name string) {
-	s.name = name
+func (suite *Suite) SetName(name string) {
+	suite.name = name
 }
 
 // TestHook return the File object to the test hook. If not hook was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
-func (s *Suite) TestHook() (*File, error) {
-	if env, _ := s.Getenv("NTT_TEST_HOOK"); env != "" {
-		return s.File(env), nil
+func (suite *Suite) TestHook() (*File, error) {
+	if env, _ := suite.Getenv("NTT_TEST_HOOK"); env != "" {
+		return suite.File(env), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
-	m, err := s.parseManifest()
+	m, err := suite.parseManifest()
 	if err != nil {
 		return nil, err
 	}
 	if m != nil && m.TestHook != "" {
-		path, _ := s.Expand(m.TestHook)
+		path, _ := suite.Expand(m.TestHook)
 		if !filepath.IsAbs(path) && path[0] != '$' {
-			path = filepath.Clean(filepath.Join(s.root.Path(), path))
+			path = filepath.Clean(filepath.Join(suite.root.Path(), path))
 		}
 
-		return s.File(path), nil
+		return suite.File(path), nil
 	}
 
 	// Construct default name
-	filename, err := s.Name()
+	filename, err := suite.Name()
 	if err != nil || filename == "" {
 		return nil, err
 	}
 	filename = filename + ".control"
 
 	// Look for hook in root folder
-	if s.root != nil {
-		hook := filepath.Join(s.root.Path(), filename)
+	if suite.root != nil {
+		hook := filepath.Join(suite.root.Path(), filename)
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
 		}
 		if ok {
-			return s.File(hook), nil
+			return suite.File(hook), nil
 		}
 	}
 
 	// As last resort use directory of first source file
-	srcs, err := s.Sources()
+	srcs, err := suite.Sources()
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (s *Suite) TestHook() (*File, error) {
 			return nil, err
 		}
 		if ok {
-			return s.File(hook), nil
+			return suite.File(hook), nil
 		}
 
 	}
@@ -266,46 +266,46 @@ func (s *Suite) TestHook() (*File, error) {
 // ParametersFile return the File object to the parameter file. If no file was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
-func (s *Suite) ParametersFile() (*File, error) {
-	if env, _ := s.Getenv("NTT_PARAMETERS_FILE"); env != "" {
-		return s.File(env), nil
+func (suite *Suite) ParametersFile() (*File, error) {
+	if env, _ := suite.Getenv("NTT_PARAMETERS_FILE"); env != "" {
+		return suite.File(env), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
-	m, err := s.parseManifest()
+	m, err := suite.parseManifest()
 	if err != nil {
 		return nil, err
 	}
 	if m != nil && m.ParametersFile != "" {
-		path, _ := s.Expand(m.ParametersFile)
+		path, _ := suite.Expand(m.ParametersFile)
 		if !filepath.IsAbs(path) && path[0] != '$' {
-			path = filepath.Clean(filepath.Join(s.root.Path(), path))
+			path = filepath.Clean(filepath.Join(suite.root.Path(), path))
 		}
 
-		return s.File(path), nil
+		return suite.File(path), nil
 	}
 
 	// Construct default name
-	filename, err := s.Name()
+	filename, err := suite.Name()
 	if err != nil || filename == "" {
 		return nil, err
 	}
 	filename = filename + ".parameters"
 
 	// Look for hook in root folder
-	if s.root != nil {
-		path := filepath.Join(s.root.Path(), filename)
+	if suite.root != nil {
+		path := filepath.Join(suite.root.Path(), filename)
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
 		}
 		if ok {
-			return s.File(path), nil
+			return suite.File(path), nil
 		}
 	}
 
 	// As last resort use directory of first source file
-	srcs, err := s.Sources()
+	srcs, err := suite.Sources()
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (s *Suite) ParametersFile() (*File, error) {
 			return nil, err
 		}
 		if ok {
-			return s.File(path), nil
+			return suite.File(path), nil
 		}
 
 	}
@@ -355,13 +355,13 @@ type manifest struct {
 }
 
 // parseManifest tries to parse an (optional) manifest file.
-func (s *Suite) parseManifest() (*manifest, error) {
+func (suite *Suite) parseManifest() (*manifest, error) {
 	// Without root folder, there's no manifest to parse. This is ok.
-	if s.root == nil {
+	if suite.root == nil {
 		return nil, nil
 	}
 
-	f := s.File(filepath.Join(s.root.Path(), "package.yml"))
+	f := suite.File(filepath.Join(suite.root.Path(), "package.yml"))
 	b, err := f.Bytes()
 	if err != nil {
 		// If there's not package.yml, it's okay, too.
