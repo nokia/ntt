@@ -8,6 +8,24 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
+var knownVars = map[string]bool{
+	"CFLAGS":              true,
+	"CXXFLAGS":            true,
+	"K3CFLAGS":            true,
+	"K3RFLAGS":            true,
+	"LDFLAGS":             true,
+	"LD_LIBRARY_PATH":     true,
+	"PATH":                true,
+	"NTT_DATADIR":         true,
+	"NTT_IMPORTS":         true,
+	"NTT_NAME":            true,
+	"NTT_PARAMETERS_FILE": true,
+	"NTT_SOURCES":         true,
+	"NTT_SOURCE_DIR":      true,
+	"NTT_TEST_HOOK":       true,
+	"NTT_TIMEOUT":         true,
+}
+
 // Environ returns a copy of strings representing the environment, in the form "key=value".
 func (suite *Suite) Environ() []string {
 	return nil
@@ -86,6 +104,11 @@ func (suite *Suite) getenv(key string, visited map[string]bool) (string, error) 
 			return suite.expand(v, visited)
 		}
 	}
+
+	if suite.isKnown(key) {
+		return "", nil
+	}
+
 	return "", fmt.Errorf("variable %q not found.", key)
 }
 
@@ -131,4 +154,16 @@ func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func (suite *Suite) isKnown(key string) bool {
+	if knownVars[key] {
+		return true
+	}
+
+	if len(key) >= 3 && key[:3] == "NTT" {
+		key = "K3" + strings.TrimPrefix(key, "NTT")
+	}
+
+	return knownVars[key]
 }

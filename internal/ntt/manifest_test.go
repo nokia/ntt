@@ -141,10 +141,8 @@ func TestImports(t *testing.T) {
 
 	conf.SetBytes([]byte(`imports: [ "${SOMETHING_UNKNOWN}/dir1" ]`))
 	v, err = suite.Imports()
-	assert.Nil(t, err)
-	// TODO(5nord) It would be nice, if unset variables would be replaced to
-	//             just `/dir1` but `${SOMETHING_UNKNOWN}/dir1`
-	assert.Equal(t, []string{"/dir1"}, strs(v))
+	assert.NotNil(t, err)
+	assert.Nil(t, v)
 }
 
 func TestName(t *testing.T) {
