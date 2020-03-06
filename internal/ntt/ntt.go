@@ -1,6 +1,7 @@
 package ntt
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/nokia/ntt/internal/session"
@@ -29,6 +30,14 @@ type Suite struct {
 // integer available on this machine.
 func (suite *Suite) Id() (int, error) {
 	if suite.id == 0 {
+		if s := suite.lookupProcessEnv("NTT_SESSION_ID)"); s != "" {
+			id, err := strconv.ParseUint(s, 10, 32)
+			if err != nil {
+				return 0, err
+			}
+			suite.id = int(id)
+			return suite.id, nil
+		}
 		id, err := session.Get()
 		if err != nil {
 			return 0, err
@@ -59,6 +68,10 @@ func (suite *Suite) File(path string) *File {
 	}
 	suite.files[uri] = f
 	return f
+}
+
+func (suite *Suite) Root() *File {
+	return suite.root
 }
 
 // SetRoot set the root folder for Suite.

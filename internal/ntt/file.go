@@ -14,8 +14,9 @@ type File struct {
 	version int
 }
 
-func (f *File) URI() span.URI { return f.uri }
-func (f *File) Path() string  { return f.path }
+func (f *File) URI() span.URI  { return f.uri }
+func (f *File) Path() string   { return f.path }
+func (f *File) String() string { return f.path }
 
 // Bytes returns the contents of the file
 func (f *File) Bytes() ([]byte, error) {
