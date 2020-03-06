@@ -30,12 +30,7 @@ var (
 			if err != nil {
 				fatal(err)
 			}
-
-			var ret []string
-			for i := range srcs {
-				ret = append(ret, srcs[i].String())
-			}
-			return strings.Join(ret, "\n")
+			return strings.Join(ntt.PathSlice(srcs...), "\n")
 		},
 
 		"imports": func(suite *ntt.Suite) string {
@@ -43,12 +38,7 @@ var (
 			if err != nil {
 				fatal(err)
 			}
-
-			var ret []string
-			for i := range imps {
-				ret = append(ret, imps[i].String())
-			}
-			return strings.Join(ret, "\n")
+			return strings.Join(ntt.PathSlice(imps...), "\n")
 		},
 
 		"timeout": func(suite *ntt.Suite) string {

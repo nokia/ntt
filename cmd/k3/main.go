@@ -9,7 +9,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/internal/ttcn3/parser"
 	"github.com/spf13/cobra"
@@ -51,13 +50,26 @@ var (
 
 func init() {
 	session.SharedDir = "/tmp/k3"
-	env.SetPrefix("k3")
-	env.AddPath("${PWD}")
-	env.AddPath("${HOME}/.config/k3")
-	env.AddPath("${HOME}/.k3/config")
-
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.AddCommand(showCmd)
+}
+
+func main() {
+	if s := os.Getenv("K3_DATADIR"); s == "" {
+		os.Setenv("K3_DATADIR", filepath.Join(k3rootdir(), "share/k3"))
+	}
+
+	if s := os.Getenv("K3_SESSION_ID"); s == "" {
+		sid, err := session.Get()
+		if err != nil {
+			fatal(err)
+		}
+		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
+	}
+
+	if err := rootCmd.Execute(); err != nil {
+		fatal(err)
+	}
 }
 
 func k3rootdir() string {
@@ -76,44 +88,8 @@ func fatal(err error) {
 		os.Exit(waitStatus.ExitStatus())
 	case parser.ErrorList:
 		parser.PrintError(os.Stderr, err)
-		os.Exit(1)
 	default:
 		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
 	}
-}
-
-func main() {
-	if s := os.Getenv("K3_DATADIR"); s == "" {
-		os.Setenv("K3_DATADIR", filepath.Join(k3rootdir(), "share/k3"))
-	}
-
-	if s := os.Getenv("K3_SESSION_ID"); s == "" {
-		sid, err := session.Get()
-		if err != nil {
-			fatal(err)
-		}
-		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
-	}
-
-	if err := env.ReadEnvFiles(); err != nil {
-		fatal(err)
-	}
-
-	// Bash Workaround: If a custom command is a shell script, array variables
-	// like K3_IMPORTS cannot be exported. Such scripts export _K3_SOURCES, ...
-	// instead.
-	copyEnv("_K3_SOURCES", "K3_SOURCES")
-	copyEnv("_K3_IMPORTS", "K3_IMPORTS")
-	copyEnv("_K3_TTCN3_FILES", "K3_TTCN3_FILES")
-
-	if err := rootCmd.Execute(); err != nil {
-		fatal(err)
-	}
-}
-
-func copyEnv(from, to string) {
-	if s := os.Getenv(from); s != "" {
-		os.Setenv(to, s)
-	}
+	os.Exit(1)
 }

@@ -39,3 +39,17 @@ func (f *File) SetBytes(b []byte) {
 func (f *File) Reset() {
 	f.SetBytes(nil)
 }
+
+// PathSlice returns a string slice of the File object passed as argument.
+func PathSlice(files ...*File) []string {
+	ret := make([]string, 0, len(files))
+	for i := range files {
+		if files[i] != nil {
+			ret = append(ret, files[i].Path())
+		}
+	}
+	if len(ret) == 0 {
+		return nil
+	}
+	return ret
+}

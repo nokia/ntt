@@ -5,11 +5,10 @@ package loader
 
 import (
 	"errors"
-	"sort"
 	"strings"
 
+	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/runtime"
-	st "github.com/nokia/ntt/internal/suite"
 )
 
 // A Config specifies how a test suite should be loaded.
@@ -63,16 +62,32 @@ func (conf *Config) FromArgs(args []string) ([]string, error) {
 		return nil, errors.New("t3xf format is not supported")
 	}
 
-	suite, err := st.NewFromArgs(args)
+	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
 		return nil, err
 	}
-	suite.SetEnv()
-	sort.Strings(suite.Sources)
-	conf.Name = suite.Name
-	conf.Dir = suite.Dir()
-	conf.Sources = suite.Sources
-	conf.ImportPackages = suite.Imports
+
+	name, err := suite.Name()
+	if err != nil {
+		return nil, err
+	}
+	conf.Name = name
+
+	if dir := suite.Root(); dir != nil {
+		conf.Dir = dir.Path()
+	}
+
+	srcs, err := suite.Sources()
+	if err != nil {
+		return nil, err
+	}
+	conf.Sources = ntt.PathSlice(srcs...)
+
+	imps, err := suite.Imports()
+	if err != nil {
+		return nil, err
+	}
+	conf.ImportPackages = ntt.PathSlice(imps...)
 	return rest, nil
 }
 
