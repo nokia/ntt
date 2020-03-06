@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/internal/span"
 )
@@ -24,6 +25,9 @@ type Suite struct {
 	sources  []*File
 	imports  []*File
 	testHook *File
+
+	// Memoization
+	store memoize.Store
 }
 
 // Id returns the unique session id (aka K3_SESSION_ID). This ID is the smallest

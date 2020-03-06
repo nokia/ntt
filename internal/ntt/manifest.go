@@ -1,6 +1,7 @@
 package ntt
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -408,6 +409,19 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		return nil, err
 	}
 
-	var m manifest
-	return &m, yaml.UnmarshalStrict(b, &m)
+	type manifestData struct {
+		manifest manifest
+		err      error
+	}
+
+	f.handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
+		data := manifestData{}
+		data.err = yaml.UnmarshalStrict(b, &data.manifest)
+		return &data
+	})
+
+	v := f.handle.Get(context.Background())
+	data := v.(*manifestData)
+
+	return &data.manifest, data.err
 }

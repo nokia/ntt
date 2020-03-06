@@ -1,8 +1,12 @@
 package ntt
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"io/ioutil"
+	"strconv"
 
+	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/span"
 )
 
@@ -12,11 +16,16 @@ type File struct {
 	bytes   []byte   // nil is file hasn't been read yet
 	err     error    // error of previous read
 	version int
+
+	handle *memoize.Handle
 }
 
 func (f *File) URI() span.URI  { return f.uri }
 func (f *File) Path() string   { return f.path }
 func (f *File) String() string { return f.path }
+func (f *File) ID() string {
+	return fmt.Sprintf("%x", sha1.Sum([]byte(strconv.Itoa(f.version)+f.URI().Filename())))
+}
 
 // Bytes returns the contents of the file
 func (f *File) Bytes() ([]byte, error) {
