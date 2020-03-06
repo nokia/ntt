@@ -124,7 +124,9 @@ func show(cmd *cobra.Command, args []string) error {
 
 	for _, key := range keys {
 		if fun, found := stringers[key]; found {
-			fmt.Println(fun(suite))
+			if s := fun(suite); s != "" {
+				fmt.Println(s)
+			}
 			continue
 		}
 
