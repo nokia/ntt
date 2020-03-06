@@ -91,7 +91,7 @@ func (suite *Suite) getenv(key string, visited map[string]bool) (string, error) 
 	}
 	visited[key] = true
 
-	if env := suite.lookupProcessEnv(key); env != "" {
+	if env, ok := suite.lookupProcessEnv(key); ok {
 		return env, nil
 	}
 
@@ -113,17 +113,17 @@ func (suite *Suite) getenv(key string, visited map[string]bool) (string, error) 
 }
 
 // Lookup key in process environment
-func (suite *Suite) lookupProcessEnv(key string) string {
-	if env := os.Getenv(key); env != "" {
-		return env
+func (suite *Suite) lookupProcessEnv(key string) (string, bool) {
+	if env, ok := os.LookupEnv(key); ok {
+		return env, true
 	}
 
 	if len(key) >= 3 && key[:3] == "NTT" {
 		key = "K3" + strings.TrimPrefix(key, "NTT")
-		return os.Getenv(key)
+		return os.LookupEnv(key)
 	}
 
-	return ""
+	return "", false
 }
 
 // Lookup key in environment file

@@ -84,6 +84,13 @@ func TestEnvFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "var2", s)
 
+	// Also test empty environment variables
+	os.Setenv("K3_FNORD", "")
+	s, err = suite.Getenv("NTT_FNORD")
+	os.Unsetenv("K3_FNORD")
+	assert.Nil(t, err)
+	assert.Equal(t, "", s)
+
 	// Test if types are converted to strings nicely.
 	suite = &ntt.Suite{}
 	suite.AddEnvFiles("ntt.env")
