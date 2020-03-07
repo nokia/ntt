@@ -28,6 +28,9 @@ func (suite *Suite) Parse(f *File) ([]*ast.Module, *loc.FileSet, error) {
 			return &data
 		}
 
+		parseLimit <- struct{}{}
+		defer func() { <-parseLimit }()
+
 		data.fset = loc.NewFileSet()
 		data.mods, data.err = parser.ParseModules(data.fset, f.Path(), b, 0)
 		return &data
