@@ -1,6 +1,7 @@
 package ntt
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -27,8 +28,30 @@ var knownVars = map[string]bool{
 }
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
-func (suite *Suite) Environ() []string {
-	return nil
+func (suite *Suite) Environ() ([]string, error) {
+	allKeys := make(map[string]struct{})
+	for i := range suite.envFiles {
+		tree, err := suite.parseEnvFile(suite.envFiles[i])
+		if err != nil {
+			return nil, err
+		}
+		if tree == nil {
+			continue
+		}
+		for _, k := range tree.Keys() {
+			allKeys[k] = struct{}{}
+		}
+	}
+
+	ret := make([]string, 0, len(allKeys))
+	for k := range allKeys {
+		v, err := suite.Getenv(k)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+	}
+	return ret, nil
 }
 
 func (suite *Suite) AddEnvFiles(files ...string) {
@@ -128,16 +151,8 @@ func (suite *Suite) lookupProcessEnv(key string) (string, bool) {
 
 // Lookup key in environment file
 func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
-	b, err := file.Bytes()
-	if err != nil {
-		// It's okay if this file does not exist.
-		if os.IsNotExist(err) {
-			return "", nil
-		}
-	}
-
-	tree, err := toml.LoadBytes(b)
-	if tree == nil || err != nil {
+	tree, err := suite.parseEnvFile(file)
+	if err != nil || tree == nil {
 		return "", err
 	}
 
@@ -154,6 +169,35 @@ func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func (suite *Suite) parseEnvFile(f *File) (*toml.Tree, error) {
+
+	type envData struct {
+		tree *toml.Tree
+		err  error
+	}
+
+	f.handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
+		data := envData{}
+
+		b, err := f.Bytes()
+		if err != nil {
+			// It's okay if this file does not exist.
+			if os.IsNotExist(err) {
+				data.tree, data.err = nil, nil
+				return &data
+			}
+		}
+
+		data.tree, data.err = toml.LoadBytes(b)
+		return &data
+	})
+
+	v := f.handle.Get(context.TODO())
+	data := v.(*envData)
+
+	return data.tree, data.err
 }
 
 func (suite *Suite) isKnown(key string) bool {

@@ -420,7 +420,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		return &data
 	})
 
-	v := f.handle.Get(context.Background())
+	v := f.handle.Get(context.TODO())
 	data := v.(*manifestData)
 
 	return &data.manifest, data.err

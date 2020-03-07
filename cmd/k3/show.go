@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/nokia/ntt/internal/ntt"
@@ -88,6 +89,15 @@ var (
 
 		"session_id": func(suite *ntt.Suite) string {
 			return os.Getenv("K3_SESSION_ID")
+		},
+
+		"env": func(suite *ntt.Suite) string {
+			env, err := suite.Environ()
+			if err != nil {
+				fatal(err)
+			}
+			sort.Strings(env)
+			return strings.Join(env, "\n")
 		},
 	}
 )

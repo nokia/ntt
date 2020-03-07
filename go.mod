@@ -7,6 +7,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.3.0
 	github.com/y0ssar1an/q v1.0.9
+	golang.org/x/perf v0.0.0-20200225203053-adf48cbc4550 // indirect
 	golang.org/x/tools v0.0.0-20200214201135-548b770e2dfa // indirect
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
 	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
