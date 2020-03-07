@@ -2,6 +2,7 @@ package ntt
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -12,9 +13,9 @@ import (
 // Limits the number of parallel parser calls per process.
 var parseLimit = make(chan struct{}, runtime.NumCPU())
 
-func (suite *Suite) Parse(f *File) ([]*ast.Module, *loc.FileSet, error) {
+func (suite *Suite) Parse(f *File) (*ast.Module, *loc.FileSet, error) {
 	type parseData struct {
-		mods []*ast.Module
+		mod  *ast.Module
 		fset *loc.FileSet
 		err  error
 	}
@@ -31,12 +32,20 @@ func (suite *Suite) Parse(f *File) ([]*ast.Module, *loc.FileSet, error) {
 		parseLimit <- struct{}{}
 		defer func() { <-parseLimit }()
 
+		var mods []*ast.Module
 		data.fset = loc.NewFileSet()
-		data.mods, data.err = parser.ParseModules(data.fset, f.Path(), b, 0)
+		mods, data.err = parser.ParseModules(data.fset, f.Path(), b, 0)
+
+		// It's easier to support only one module per file.
+		if len(mods) == 1 {
+			data.mod = mods[0]
+		} else if len(mods) > 1 {
+			data.err = fmt.Errorf("file %q contains more than one module.", f.Path())
+		}
 		return &data
 	})
 
 	v := f.handle.Get(context.TODO())
 	data := v.(*parseData)
-	return data.mods, data.fset, data.err
+	return data.mod, data.fset, data.err
 }
