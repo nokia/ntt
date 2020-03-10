@@ -7,6 +7,7 @@ import (
 
 	"github.com/nokia/ntt/internal/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/internal/ntt"
 )
 
 func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
@@ -44,7 +45,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			DocumentLinkProvider:       protocol.DocumentLinkOptions{},
 			ReferencesProvider:         false,
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
-				Change:    protocol.Incremental,
+				Change:    protocol.Full,
 				OpenClose: true,
 				Save: protocol.SaveOptions{
 					IncludeText: false,
@@ -65,8 +66,15 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	s.state = serverInitialized
 	s.stateMu.Unlock()
 
-	// Create Session and add folders
-	s.Log(ctx, "K3 initialized")
+	// Create Session and add folders, the first workspace folder is considered
+	// as root folder, which might contain a manifest file (package.yml)
+	s.suite = &ntt.Suite{}
+	if len(s.pendingFolders) >= 1 {
+		s.suite.SetRoot(s.pendingFolders[0].URI)
+		for i := range s.pendingFolders[1:] {
+			s.suite.AddImports(s.pendingFolders[i].URI)
+		}
+	}
 
 	return nil
 }
