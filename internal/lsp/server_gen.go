@@ -68,8 +68,8 @@ func (s *Server) DocumentHighlight(context.Context, *protocol.DocumentHighlightP
 	return nil, notImplemented("DocumentHighlight")
 }
 
-func (s *Server) DocumentLink(context.Context, *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
-	return nil, notImplemented("DocumentLink")
+func (s *Server) DocumentLink(ctx context.Context, params *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
+	return s.documentLink(ctx, params)
 }
 
 func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams) ([]protocol.DocumentSymbol, error) {
