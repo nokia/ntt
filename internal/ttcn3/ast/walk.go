@@ -1,6 +1,8 @@
 package ast
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // WalkModuleDefs calls fun for every module definition.
 func WalkModuleDefs(fun func(def Node) bool, nodes ...Node) {
@@ -41,6 +43,10 @@ type Visitor interface {
 // w for each of the non-nil children of node, followed by a call of
 // w.Visit(nil).
 func Walk(v Visitor, node Node) {
+	if node == nil {
+		return
+	}
+
 	if v = v.Visit(node); v == nil {
 		return
 	}
