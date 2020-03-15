@@ -38,7 +38,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 		s.Log(ctx, fmt.Sprintf("Found identifier %q in %s", id.Name, elapsed))
 		var de string
 		for i, n := range path {
-			de = de + fmt.Sprintf("\t%d: %#v\n", i, n)
+			de = de + fmt.Sprintf("\t%d: %T\n", i, n)
 		}
 		s.Log(context.TODO(), "Path:\n"+de)
 	}
@@ -75,7 +75,7 @@ var ErrNoIdentFound = errors.New("no identifier found")
 func findIdentifier(ctx context.Context, mod *ast.Module, pos loc.Pos) (*IdentifierInfo, []ast.Node, error) {
 	path := pathEnclosingObjNode(mod, pos)
 
-	if len(path) == 0 {
+	if path == nil {
 		return nil, nil, ErrNoIdentFound
 	}
 
@@ -114,6 +114,10 @@ func pathEnclosingObjNode(mod *ast.Module, pos loc.Pos) []ast.Node {
 
 		return !found
 	})
+
+	if len(path) == 0 {
+		return nil
+	}
 
 	// Reverse the path.
 	for i, l := 0, len(path); i < l/2; i++ {
