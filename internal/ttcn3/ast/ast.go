@@ -3,6 +3,8 @@
 package ast
 
 import (
+	"encoding/json"
+
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
 )
@@ -83,6 +85,39 @@ func (t *Token) Comments() string {
 	return joinComments(t.LeadingTriv)
 }
 
+func (x Token) MarshalJSON() ([]byte, error) {
+	// Empty tokens become `null`. That should make it simpler to filter,
+	// compared to `""`. When Tokens use pointer semantics we can use omitempty
+	// to filter them out.
+	if !x.IsValid() {
+		return []byte("null"), nil
+	}
+
+	// Tokens without any comments become a string. That makes the output easier
+	// one the eye.
+	if len(x.LeadingTriv) == 0 && len(x.TrailingTriv) == 0 {
+		return json.Marshal(x.String())
+	}
+
+	// If there are comments we'll make an array of 3 strings out of it.
+	var strs []string
+
+	// First element is the leading trivia
+	if triv := x.LeadingTriv; len(triv) > 0 {
+		strs = append(strs, joinComments(triv))
+	}
+
+	// Second element is be token itself.
+	strs = append(strs, x.String())
+
+	// Third element is the trailing trivia
+	if triv := x.TrailingTriv; len(triv) > 0 {
+		strs = append(strs, joinComments(triv))
+	}
+
+	return json.Marshal(strs)
+}
+
 func (t *Token) LastTok() *Token { return t }
 
 // Trivia represent the parts of the source text that are largely insignificant
@@ -100,7 +135,7 @@ type (
 	// Ident represents an identifier.
 	Ident struct {
 		Tok  Token // first identifier token
-		Tok2 Token // optional second identifier token, e.g. for "any port"
+		Tok2 Token `json:",omitempty"` // optional second identifier token, e.g. for "any port"
 	}
 
 	// ParametrizedIdent represents a paremetrized identifier, e.g. "f<charstring>".
