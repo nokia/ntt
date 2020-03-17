@@ -9,8 +9,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/session"
-	"github.com/nokia/ntt/internal/ttcn3/parser"
 	"github.com/spf13/cobra"
 )
 
@@ -86,8 +86,8 @@ func fatal(err error) {
 	case *exec.ExitError:
 		waitStatus := err.Sys().(syscall.WaitStatus)
 		os.Exit(waitStatus.ExitStatus())
-	case parser.ErrorList:
-		parser.PrintError(os.Stderr, err)
+	case errors.ErrorList:
+		errors.PrintError(os.Stderr, err)
 	default:
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
