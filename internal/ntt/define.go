@@ -20,7 +20,7 @@ func (suite *Suite) Define(fset *loc.FileSet, mod *ast.Module) *Module {
 			Tests:     make([]*Function, 0, len(mod.Defs)),
 			Functions: make([]*Function, 0, len(mod.Defs)),
 			Altsteps:  make([]*Function, 0, len(mod.Defs)),
-			links:     make(map[*ast.Ident]Scope),
+			Links:     make(map[*ast.Ident]Scope),
 		},
 		scopes: make([]Scope, 0, 25),
 		fset:   fset,
@@ -77,7 +77,7 @@ func (v *visitor) insert(obj Object) {
 
 // link current scope with identifier for later resolve.
 func (v *visitor) linkScope(id *ast.Ident) {
-	v.links[id] = v.currScope()
+	v.Links[id] = v.currScope()
 }
 
 func (v *visitor) Visit(n ast.Node) ast.Visitor {

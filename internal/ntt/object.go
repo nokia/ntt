@@ -121,7 +121,7 @@ type Module struct {
 	object
 	scope
 	syntax *ast.Module
-	links  map[*ast.Ident]Scope
+	Links  map[*ast.Ident]Scope
 
 	Imports   []*Import
 	Tests     []*Function

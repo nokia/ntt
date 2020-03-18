@@ -2,7 +2,6 @@ package lsp
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -14,8 +13,11 @@ import (
 )
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+	start := time.Now()
 	f := s.suite.File(params.TextDocument.URI)
 	mod, fset, _ := s.suite.Parse(f)
+	elapsed := time.Since(start)
+	s.Log(ctx, fmt.Sprintf("Parsing %q took %s", f.URI(), elapsed))
 
 	// Without AST we don't need to continue any further. We also don't return
 	// any syntax error or such. The diagnostics are probably a better place for
@@ -29,20 +31,39 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 		return nil, err
 	}
 
-	start := time.Now()
-	id, path, _ := findIdentifier(ctx, mod, offs)
-	elapsed := time.Since(start)
+	// Find identifier
+	start = time.Now()
+	id := findIdentifier(ctx, mod, offs)
+	if id == nil {
+		return nil, nil
+	}
+	elapsed = time.Since(start)
+	s.Log(ctx, fmt.Sprintf("Found identifier %q in %s", id.String(), elapsed))
 
-	// Just for debugging
-	if id != nil {
-		s.Log(ctx, fmt.Sprintf("Found identifier %q in %s", id.Name, elapsed))
-		var de string
-		for i, n := range path {
-			de = de + fmt.Sprintf("\t%d: %T\n", i, n)
-		}
-		s.Log(context.TODO(), "Path:\n"+de)
+	// Build scope tree
+	start = time.Now()
+	m := s.suite.Define(fset, mod)
+	if m == nil {
+		return nil, nil
+	}
+	elapsed = time.Since(start)
+	s.Log(ctx, fmt.Sprintf("Unresolved identifiers: %d. Define took %s", len(m.Links), elapsed))
+
+	if scope, ok := m.Links[id]; ok {
+		start = time.Now()
+		obj := scope.Lookup(id.String())
+		elapsed = time.Since(start)
+		s.Log(ctx, fmt.Sprintf("Found %#v. Lookup took %s", obj, elapsed))
+		return []protocol.Location{
+			{
+				URI: string(f.URI()),
+				//Range: decRange,
+			},
+		}, nil
+
 	}
 
+	s.Log(ctx, "Done.\n")
 	return nil, nil
 }
 
@@ -70,59 +91,32 @@ type IdentifierInfo struct {
 	Name string
 }
 
-var ErrNoIdentFound = errors.New("no identifier found")
-
-func findIdentifier(ctx context.Context, mod *ast.Module, pos loc.Pos) (*IdentifierInfo, []ast.Node, error) {
-	path := pathEnclosingObjNode(mod, pos)
-
-	if path == nil {
-		return nil, nil, ErrNoIdentFound
-	}
-
-	ident, _ := path[0].(*ast.Ident)
-	if ident == nil {
-		return nil, nil, ErrNoIdentFound
-	}
-
-	id := IdentifierInfo{Name: ident.String()}
-
-	return &id, path, nil
-}
-
-func pathEnclosingObjNode(mod *ast.Module, pos loc.Pos) []ast.Node {
+func findIdentifier(ctx context.Context, mod *ast.Module, pos loc.Pos) *ast.Ident {
 	var (
-		path  []ast.Node
 		found bool
+		id    *ast.Ident = nil
 	)
 
 	ast.Inspect(mod, func(n ast.Node) bool {
-		if found {
+		if found || n == nil {
 			return false
 		}
 
-		if n == nil {
-			path = path[:len(path)-1]
+		// We don't need to descend any deeper if we're not near desired
+		// position.
+		if n.End() < pos || pos < n.Pos() {
 			return false
 		}
 
-		path = append(path, n)
-
-		switch n := n.(type) {
-		case *ast.Ident:
-			found = n.Pos() <= pos && pos <= n.End()
+		if n, ok := n.(*ast.Ident); ok {
+			if n.Pos() <= pos && pos <= n.End() {
+				found = true
+				id = n
+			}
 		}
 
 		return !found
 	})
 
-	if len(path) == 0 {
-		return nil
-	}
-
-	// Reverse the path.
-	for i, l := 0, len(path); i < l/2; i++ {
-		path[i], path[l-1-i] = path[l-1-i], path[i]
-	}
-
-	return path
+	return id
 }
