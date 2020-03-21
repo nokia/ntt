@@ -42,22 +42,32 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 	// Build scope tree
 	start = time.Now()
-	m := s.suite.Define(fset, mod)
-	if m == nil {
+	m, err := s.suite.Symbols(params.TextDocument.URI)
+	if err != nil {
 		return nil, nil
 	}
 	elapsed = time.Since(start)
-	s.Log(ctx, fmt.Sprintf("Unresolved identifiers: %d. Define took %s", len(m.Links), elapsed))
+	s.Log(ctx, fmt.Sprintf("Symbols() took %s", elapsed))
 
-	if scope, ok := m.Links[id]; ok {
-		start = time.Now()
-		obj := scope.Lookup(id.String())
-		elapsed = time.Since(start)
+	start = time.Now()
+	_, obj := m.Lookup(id.String())
+	elapsed = time.Since(start)
+
+	if obj != nil {
 		s.Log(ctx, fmt.Sprintf("Found %#v. Lookup took %s", obj, elapsed))
 		return []protocol.Location{
 			{
 				URI: string(f.URI()),
-				//Range: decRange,
+				Range: protocol.Range{
+					Start: protocol.Position{
+						Line:      float64(fset.Position(obj.Pos()).Line - 1),
+						Character: float64(fset.Position(obj.Pos()).Column - 1),
+					},
+					End: protocol.Position{
+						Line:      float64(fset.Position(obj.End()).Line - 1),
+						Character: float64(fset.Position(obj.End()).Column - 1),
+					},
+				},
 			},
 		}, nil
 

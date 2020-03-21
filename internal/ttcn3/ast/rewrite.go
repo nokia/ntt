@@ -530,8 +530,9 @@ func (a *application) applyList(parent Node, name string) {
 
 		// element x may be nil in a bad AST - be cautious
 		var x Node
+
 		if e := v.Index(a.iter.index); e.IsValid() {
-			x = e.Interface().(Node)
+			x, _ = e.Interface().(Node)
 		}
 
 		a.iter.step = 1

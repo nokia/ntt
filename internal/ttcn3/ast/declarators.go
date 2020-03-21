@@ -48,7 +48,7 @@ func (v *visitor) Visit(n Node) Visitor {
 	return nil
 }
 
-func Declarators(decl *ValueDecl, fset *loc.FileSet, f func(name Node, arrays []Expr, value Expr)) error {
+func Declarators(decl *ValueDecl, fset *loc.FileSet, f func(decl Expr, name Node, arrays []Expr, value Expr)) error {
 	var errs errors.ErrorList
 	for _, d := range decl.Decls {
 		v := visitor{
@@ -61,7 +61,7 @@ func Declarators(decl *ValueDecl, fset *loc.FileSet, f func(name Node, arrays []
 			for i, l := 0, len(v.arrays); i < l/2; i++ {
 				v.arrays[i], v.arrays[l-1-i] = v.arrays[l-1-i], v.arrays[i]
 			}
-			f(v.name, v.arrays, v.value)
+			f(d, v.name, v.arrays, v.value)
 		}
 	}
 
