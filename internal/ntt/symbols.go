@@ -23,7 +23,7 @@ func (suite *Suite) Symbols(file string) (*Module, error) {
 	b := newBuilder(fset)
 
 	// Add syntax errors to the error list
-	if err, ok := err.(*errors.ErrorList); !ok {
+	if err, ok := err.(*errors.ErrorList); ok {
 		for _, e := range err.List() {
 			b.errs = append(b.errs, e)
 		}
