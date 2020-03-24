@@ -33,6 +33,10 @@ func (e Error) Error() string {
 //
 type ErrorList []*Error
 
+func (p *ErrorList) List() []*Error {
+	return *p
+}
+
 // Add adds an Error with given position and error message to an ErrorList.
 func (p *ErrorList) Add(pos loc.Position, msg string) {
 	*p = append(*p, &Error{pos, msg})

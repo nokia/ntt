@@ -13,16 +13,26 @@ import (
 // Symbols
 func (suite *Suite) Symbols(file string) (*Module, error) {
 	syntax, fset, err := suite.Parse(suite.File(file))
+
+	// If we don't a have a syntax tree, we don't need to
+	// process any further.
 	if syntax == nil {
 		return nil, err
 	}
 
 	b := newBuilder(fset)
+
+	// Add syntax errors to the error list
+	if err, ok := err.(*errors.ErrorList); !ok {
+		for _, e := range err.List() {
+			b.errs = append(b.errs, e)
+		}
+	}
+
 	b.define(syntax)
 	b.resolve(syntax)
 
-	// TODO(5nord) Add proper error handling
-	return b.mods[0], b.errs
+	return b.mods[0], &b.errs
 }
 
 type Scope interface {
@@ -244,7 +254,7 @@ func (s *scope) Names() []string {
 
 type builder struct {
 	fset  *loc.FileSet
-	errs  error
+	errs  errors.ErrorList
 	stack []Scope
 	mods  []*Module
 
@@ -385,14 +395,7 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 
 // error records errors during definition phase, such like ErrRedefined, ...
 func (b *builder) error(pos loc.Pos, msg string) {
-	if b.errs == nil {
-		b.errs = &errors.ErrorList{}
-	}
-	if err, ok := b.errs.(*errors.ErrorList); ok {
-		err.Add(b.fset.Position(pos), msg)
-		return
-	}
-	panic(fmt.Sprintf("expecting errors.ErrorList. Cannot handle error %#v", b.errs))
+	b.errs.Add(b.fset.Position(pos), msg)
 }
 
 // insert object into current scope.
