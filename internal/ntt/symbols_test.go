@@ -6,6 +6,7 @@ import (
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
+	"github.com/y0ssar1an/q"
 )
 
 func symbols(t *testing.T, strs ...string) (*ntt.Suite, []*ntt.Module, []error) {
@@ -45,7 +46,7 @@ func symbols(t *testing.T, strs ...string) (*ntt.Suite, []*ntt.Module, []error) 
 
 func TestDecl(t *testing.T) {
 	// TODO(5nord) Check the errors described in the module.
-	suite, mods, _ := symbols(t, `module Test
+	suite, mods, err := symbols(t, `module Test
 	{
 	    control {
 			var boolean x;         // ERR: Shadowing is not permitted.
@@ -67,4 +68,12 @@ func TestDecl(t *testing.T) {
 	assert.Equal(t, "x", v.Name())
 	assert.Equal(t, 10, suite.Position("TestDecl_Module_0.ttcn3", v.Pos()).Line)
 	assert.Equal(t, "Test", scope.(*ntt.Module).Name())
+	q.Q(err)
+	//assert.ElementsMatch(t, []error{
+	//	&errors.Error{
+	//		Pos: loc.Position{Filename: "TestDecl_Module_0.ttcn3", Offset: 215, Line: 7, Column: 18},
+	//		Msg: "redefinition of \"b\"",
+	//	},
+	//},
+	//	err.(*errors.ErrorList).List())
 }

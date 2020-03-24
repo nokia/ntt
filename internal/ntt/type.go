@@ -26,6 +26,12 @@ const (
 	Timer
 	UniversalCharstring
 	Verdict
+
+	// TODO(5nord) Merge strings types into String and merge integer, float into
+	// Numerical. Or make them sort of untyped types like unused, omit and
+	// template?
+	String
+	Numerical
 )
 
 type BasicType struct {

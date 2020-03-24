@@ -99,7 +99,7 @@ func (m *Module) Lookup(name string) (Scope, Object) {
 	if _, obj := m.scope.Lookup(name); obj != nil {
 		return m, obj
 	}
-	return nil, nil
+	return Universe.Lookup(name)
 }
 
 // Func describes testcases, altsteps, functions and external functions.
@@ -201,8 +201,8 @@ func NewLocalScope(rng Range, parent Scope) *LocalScope {
 }
 
 func (ls *LocalScope) Lookup(name string) (Scope, Object) {
-	if scp, obj := ls.scope.Lookup(name); obj != nil {
-		return scp, obj
+	if _, obj := ls.scope.Lookup(name); obj != nil {
+		return ls, obj
 	}
 
 	// Ascend into parent scopes.
@@ -226,6 +226,7 @@ func (s *scope) Insert(obj Object) Object {
 	if s.elems == nil {
 		s.elems = make(map[string]Object)
 	}
+
 	s.elems[name] = obj
 	if obj.Parent() == nil {
 		obj.setParent(s)
@@ -335,9 +336,14 @@ func (b *builder) defineVar(n *ast.ValueDecl) {
 		}
 		b.define(value)
 	})
+
+	// Add syntax errors to the error list
 	if err != nil {
-		panic("TODO(5nord) add proper error handling")
+		for _, e := range err.List() {
+			b.errs = append(b.errs, e)
+		}
 	}
+
 	b.define(n.With)
 }
 
@@ -351,9 +357,6 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 	case *ast.ValueLiteral:
 		b.types[n] = literalType(n.Tok.Kind)
 
-	case *ast.CompositeLiteral:
-		panic(fmt.Sprintf("TODO: %T", n))
-
 	case *ast.Ident:
 		scp := b.scopes[n]
 
@@ -363,13 +366,20 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 			break
 		}
 
-		_, obj := scp.Lookup(n.String())
-		if obj == nil {
-			b.error(n.Pos(), fmt.Sprintf("unknown identifier %q", n.String()))
+		scp, def := scp.Lookup(n.String())
+		if def == nil {
+			b.errorf(n, "unknown identifier %q", n.String())
 			break
 		}
 
-		b.types[n] = obj.Type()
+		// In local scopes, check if declaration comes after
+		if _, ok := scp.(*LocalScope); ok {
+			if def.End() >= n.Pos() {
+				b.errorf(n, "unknown identifier %q", n.String())
+			}
+		}
+
+		b.types[n] = def.Type()
 
 	case *ast.ParametrizedIdent:
 		b.types[n] = b.types[n.Ident]
@@ -378,24 +388,49 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 		b.types[n] = b.types[n.X]
 
 	case *ast.BinaryExpr:
-		rhs := b.types[n.X]
-		lhs := b.types[n.Y]
-		if rhs == nil || lhs == nil {
-			break
+		switch n.Op.Kind {
+		case token.ASSIGN:
+			b.types[n] = b.types[n.X]
+		case token.COLON:
+			b.types[n] = b.types[n.X]
+		case token.RANGE:
+			b.types[n] = Typ[Integer]
+		case token.OR:
+			b.types[n] = Typ[Boolean]
+		case token.XOR:
+			b.types[n] = Typ[Boolean]
+		case token.AND:
+			b.types[n] = Typ[Boolean]
+		case token.NOT:
+			b.types[n] = Typ[Boolean]
+		case token.EQ, token.NE:
+			b.types[n] = Typ[Boolean]
+		case token.LT, token.LE, token.GT, token.GE:
+			b.types[n] = Typ[Boolean]
+		case token.SHR, token.SHL, token.ROR, token.ROL:
+			b.types[n] = Typ[String]
+		case token.OR4B:
+			b.types[n] = Typ[String]
+		case token.XOR4B:
+			b.types[n] = Typ[String]
+		case token.AND4B:
+			b.types[n] = Typ[String]
+		case token.NOT4B:
+			b.types[n] = Typ[String]
+		case token.CONCAT:
+			b.types[n] = Typ[String]
+		case token.ADD, token.SUB:
+			b.types[n] = Typ[Numerical]
+		case token.MUL, token.DIV, token.REM, token.MOD:
+			b.types[n] = Typ[Numerical]
 		}
-
-		if lhs != rhs {
-			b.error(n.X.Pos(), fmt.Sprintf(""))
-		}
-
-		b.types[n] = b.types[n.X]
 	}
 	return true
 }
 
 // error records errors during definition phase, such like ErrRedefined, ...
-func (b *builder) error(pos loc.Pos, msg string) {
-	b.errs.Add(b.fset.Position(pos), msg)
+func (b *builder) errorf(rng Range, format string, args ...interface{}) {
+	b.errs.Add(b.fset.Position(rng.Pos()), fmt.Sprintf(format, args...))
 }
 
 // insert object into current scope.
@@ -403,7 +438,7 @@ func (b *builder) insert(obj Object) {
 	if alt := b.currScope.Insert(obj); alt != nil {
 		// TODO(5nord) Make nicer errors: On what location is which object
 		// defined.
-		b.error(obj.(Range).Pos(), fmt.Sprintf("redefinition of %q", obj.Name()))
+		b.errorf(obj, "redefinition of %q", obj.Name())
 	}
 }
 
