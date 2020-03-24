@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/internal/span"
@@ -87,6 +88,11 @@ func (suite *Suite) SetRoot(folder string) {
 	suite.sources = nil
 }
 
+// Position returns human readable description of the pos tag.
+func (suite *Suite) Position(file string, pos loc.Pos) loc.Position {
+	_, fset, _ := suite.Parse(suite.File(file))
+	return fset.Position(pos)
+}
 func init() {
 	// TODO(5nord) We still have to figure how this sharedDir could be handled
 	// more elegantly, maybe even with support for Windows.
