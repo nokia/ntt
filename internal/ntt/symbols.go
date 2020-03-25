@@ -44,9 +44,8 @@ type Scope interface {
 	// returns nil.
 	Insert(obj Object) Object
 
-	// Lookup returns the object for a given name and the scope where the object
-	// is defined in. Lookup may follow scope chains.
-	Lookup(name string) (Scope, Object)
+	// Lookup returns the object for a given name. Lookup may follow scope chains.
+	Lookup(name string) Object
 
 	// Names lists all names defined in this scope.
 	Names() []string
@@ -91,13 +90,13 @@ func NewModule(rng Range, name string) *Module {
 	}
 }
 
-func (m *Module) Lookup(name string) (Scope, Object) {
+func (m *Module) Lookup(name string) Object {
 	// m.scope.Lookup does not climb up scope chains. When obj != nil we know
 	// the scope is m.scope.
 	// However we must return m to make sure clients can a type assertions, like
 	// 		scp.(*ntt.Module).Name()
-	if _, obj := m.scope.Lookup(name); obj != nil {
-		return m, obj
+	if obj := m.scope.Lookup(name); obj != nil {
+		return obj
 	}
 	return Universe.Lookup(name)
 }
@@ -200,9 +199,9 @@ func NewLocalScope(rng Range, parent Scope) *LocalScope {
 	}
 }
 
-func (ls *LocalScope) Lookup(name string) (Scope, Object) {
-	if _, obj := ls.scope.Lookup(name); obj != nil {
-		return ls, obj
+func (ls *LocalScope) Lookup(name string) Object {
+	if obj := ls.scope.Lookup(name); obj != nil {
+		return obj
 	}
 
 	// Ascend into parent scopes.
@@ -210,7 +209,7 @@ func (ls *LocalScope) Lookup(name string) (Scope, Object) {
 		return ls.parent.Lookup(name)
 	}
 
-	return nil, nil
+	return nil
 }
 
 // scope implements the common parts of Scope
@@ -228,18 +227,15 @@ func (s *scope) Insert(obj Object) Object {
 	}
 
 	s.elems[name] = obj
-	if obj.Parent() == nil {
-		obj.setParent(s)
-	}
 	return nil
 }
 
-func (s *scope) Lookup(name string) (Scope, Object) {
+func (s *scope) Lookup(name string) Object {
 	if obj := s.elems[name]; obj != nil {
-		return s, obj
+		return obj
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (s *scope) Names() []string {
@@ -366,14 +362,14 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 			break
 		}
 
-		scp, def := scp.Lookup(n.String())
+		def := scp.Lookup(n.String())
 		if def == nil {
 			b.errorf(n, "unknown identifier %q", n.String())
 			break
 		}
 
 		// In local scopes, check if declaration comes after
-		if _, ok := scp.(*LocalScope); ok {
+		if _, ok := def.Parent().(*LocalScope); ok {
 			if def.End() >= n.Pos() {
 				b.errorf(n, "unknown identifier %q", n.String())
 			}
@@ -439,6 +435,10 @@ func (b *builder) insert(obj Object) {
 		// TODO(5nord) Make nicer errors: On what location is which object
 		// defined.
 		b.errorf(obj, "redefinition of %q", obj.Name())
+		return
+	}
+	if obj.Parent() == nil {
+		obj.setParent(b.currScope)
 	}
 }
 

@@ -19,8 +19,9 @@ var Typ = []*BasicType{
 	Timer:               {Timer, "timer"},
 	UniversalCharstring: {UniversalCharstring, "universal charstring"},
 	Verdict:             {Verdict, "verdict"},
-	String:              {String, "string"},
-	Numerical:           {Numerical, "numerical"},
+
+	String:    {String, "string"},
+	Numerical: {Numerical, "numerical"},
 }
 
 type noPos struct{}
