@@ -297,6 +297,14 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 	case *ast.ValueDecl:
 		b.defineVar(n)
 		return false
+
+	case *ast.StructTypeDecl:
+		b.defineStruct(n)
+		return false
+
+	case *ast.Field:
+		b.defineField(n)
+		return false
 	}
 	return true
 }
@@ -341,6 +349,24 @@ func (b *builder) defineVar(n *ast.ValueDecl) {
 	}
 
 	b.define(n.With)
+}
+
+func (b *builder) defineStruct(n *ast.StructTypeDecl) {
+	s := NewStruct(n)
+	name := NewTypeName(n, n.Name.String(), s)
+	b.insert(name)
+	b.currScope = s
+
+	for i := range n.Fields {
+		b.define(n.Fields[i])
+	}
+	b.currScope = name.Parent()
+}
+
+func (b *builder) defineField(n *ast.Field) {
+	v := NewVar(n, n.Name.String())
+	b.insert(v)
+	b.define(n.Type)
 }
 
 // resolve resolves all references and types.

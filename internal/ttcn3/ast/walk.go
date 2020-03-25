@@ -361,7 +361,9 @@ func Walk(v Visitor, node Node) {
 		}
 
 	case *StructTypeDecl:
-		Walk(v, n.Name)
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}

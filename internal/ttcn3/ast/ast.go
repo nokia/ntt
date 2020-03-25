@@ -635,7 +635,7 @@ type (
 	Field struct {
 		DefaultTok       Token    // Position of "@default" or nil
 		Type             TypeSpec // Type
-		Name             Expr     // Name
+		Name             *Ident   // Name
 		TypePars         *FormalPars
 		ValueConstraint  *ParenExpr  // Value constraint or nil
 		LengthConstraint *LengthExpr // Length constraint or nil
@@ -814,9 +814,9 @@ type (
 
 	// A StructTypeDecl represents a name struct type.
 	StructTypeDecl struct {
-		TypeTok  Token // Position of "type"
-		Kind     Token // RECORD, SET, UNION
-		Name     Expr  // Name
+		TypeTok  Token  // Position of "type"
+		Kind     Token  // RECORD, SET, UNION
+		Name     *Ident // Name
 		TypePars *FormalPars
 		LBrace   Token    // Position of "{"
 		Fields   []*Field // Member list

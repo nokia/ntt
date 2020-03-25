@@ -32,9 +32,33 @@ func symbols(t *testing.T, strs ...string) (*ntt.Suite, []*ntt.Module, []error) 
 // TODO: func TestSubType(t *testing.T)       {}
 // TODO: func TestPortType(t *testing.T)      {}
 // TODO: func TestComponentType(t *testing.T) {}
-// TODO: func TestStructType(t *testing.T)    {}
 // TODO: func TestEnumType(t *testing.T)      {}
 // TODO: func TestBehaviourType(t *testing.T) {}
+func TestStructType(t *testing.T) {
+	_, mods, _ := symbols(t, `module Test
+	{
+	    control {
+			var Rec r
+			r.x := 23
+			r.next.next.x := 5
+			r.x := r.y.x
+			r.a := 4         // ERR: No such field a.
+	    }
+
+	    type record Rec {
+			integer x,
+			Rec     next      // ERR: Recursive field is non-optional
+			struct {
+				int x
+			} y
+		}
+
+    }`)
+
+	m := mods[0]
+	assert.NotNil(t, m)
+
+}
 
 // Other
 // TODO: func TestTemplates(t *testing.T) {}
@@ -44,7 +68,6 @@ func symbols(t *testing.T, strs ...string) (*ntt.Suite, []*ntt.Module, []error) 
 // TODO: func TestFunc(t *testing.T)      {}
 
 func TestDecl(t *testing.T) {
-	// TODO(5nord) Check the errors described in the module.
 	suite, mods, _ := symbols(t, `module Test
 	{
 	    control {
