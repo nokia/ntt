@@ -26,6 +26,8 @@ func New(path string) (*storage, error) {
 		return nil, err
 	}
 
+	os.Chmod(path, 0777)
+
 	// TODO(5nord) session directory should be created.
 	return &storage{
 		dir:          path,
