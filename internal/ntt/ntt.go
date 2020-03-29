@@ -90,7 +90,7 @@ func (suite *Suite) SetRoot(folder string) {
 
 // Position returns human readable description of the pos tag.
 func (suite *Suite) Position(file string, pos loc.Pos) loc.Position {
-	syntax := suite.Parse(suite.File(file))
+	syntax := suite.Parse(file)
 	return syntax.FileSet.Position(pos)
 }
 func init() {

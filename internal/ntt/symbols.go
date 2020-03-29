@@ -13,7 +13,7 @@ import (
 
 // Symbols
 func (suite *Suite) Symbols(file string) (*Module, error) {
-	syntax := suite.Parse(suite.File(file))
+	syntax := suite.Parse(file)
 
 	// If we don't a have a syntax tree, we don't need to
 	// process any further.

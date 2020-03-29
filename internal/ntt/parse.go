@@ -19,7 +19,8 @@ type ParseInfo struct {
 	Err     error
 }
 
-func (suite *Suite) Parse(f *File) *ParseInfo {
+func (suite *Suite) Parse(file string) *ParseInfo {
+	f := suite.File(file)
 	f.handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := ParseInfo{}
 
