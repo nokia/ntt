@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/y0ssar1an/q"
 )
 
 // Symbols
@@ -313,6 +314,8 @@ func (b *builder) defineExit(c *ast.Cursor) bool {
 	switch c.Node().(type) {
 	case *ast.BlockStmt, *ast.ForStmt:
 		b.currScope = b.currScope.(*LocalScope).parent
+	case *ast.StructTypeDecl:
+		b.currScope = b.currScope.(*Struct).parent
 
 	}
 	return true
@@ -352,15 +355,16 @@ func (b *builder) defineVar(n *ast.ValueDecl) {
 }
 
 func (b *builder) defineStruct(n *ast.StructTypeDecl) {
-	s := NewStruct(n)
-	name := NewTypeName(n, n.Name.String(), s)
+	name := NewTypeName(n, n.Name.String(), nil)
 	b.insert(name)
+
+	s := NewStruct(n, name.Parent())
+	name.typ = s
 	b.currScope = s
 
 	for i := range n.Fields {
 		b.define(n.Fields[i])
 	}
-	b.currScope = name.Parent()
 }
 
 func (b *builder) defineField(n *ast.Field) {
@@ -371,7 +375,29 @@ func (b *builder) defineField(n *ast.Field) {
 
 // resolve resolves all references and types.
 func (b *builder) resolve(n ast.Node) {
-	ast.Apply(n, nil, b.resolveExit)
+	ast.Apply(n, b.resolveEnter, b.resolveExit)
+}
+
+func (b *builder) resolveEnter(c *ast.Cursor) bool {
+	switch n := c.Node().(type) {
+	case *ast.ValueDecl:
+		b.resolveVar(n)
+		return false
+	}
+	return true
+}
+
+func (b *builder) resolveVar(n *ast.ValueDecl) {
+	b.resolve(n.Type)
+	ast.Declarators(n, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+		//v := NewVar(decl, identName(name))
+		//b.insert(v)
+		//for i := range arrays {
+		//	b.define(arrays[i])
+		//}
+		b.resolve(value)
+	})
+	b.resolve(n.With)
 }
 
 func (b *builder) resolveExit(c *ast.Cursor) bool {
@@ -400,11 +426,26 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 				b.errorf(n, "unknown identifier %q", n.String())
 			}
 		}
-
+		q.Q("IDENT", n, def, def.Type())
 		b.types[n] = def.Type()
 
 	case *ast.ParametrizedIdent:
 		b.types[n] = b.types[n.Ident]
+
+	case *ast.SelectorExpr:
+		typ := b.types[n.X]
+		if typ == nil {
+			q.Q("NOT FOUND", n.X)
+			break
+		}
+
+		id := identName(n.Sel)
+		if scp, ok := typ.(Scope); ok {
+			if obj := scp.Lookup(id); obj != nil {
+				b.types[n] = obj.Type()
+			}
+		}
+		b.errorf(n.Sel, "unknown identifer %q", id)
 
 	case *ast.UnaryExpr:
 		b.types[n] = b.types[n.X]

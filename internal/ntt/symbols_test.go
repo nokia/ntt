@@ -6,6 +6,7 @@ import (
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
+	"github.com/y0ssar1an/q"
 )
 
 func symbols(t *testing.T, strs ...string) (*ntt.Suite, []*ntt.Module, []error) {
@@ -35,7 +36,7 @@ func symbols(t *testing.T, strs ...string) (*ntt.Suite, []*ntt.Module, []error) 
 // TODO: func TestEnumType(t *testing.T)      {}
 // TODO: func TestBehaviourType(t *testing.T) {}
 func TestStructType(t *testing.T) {
-	_, mods, _ := symbols(t, `module Test
+	_, mods, err := symbols(t, `module Test
 	{
 	    control {
 			var Rec r
@@ -57,7 +58,7 @@ func TestStructType(t *testing.T) {
 
 	m := mods[0]
 	assert.NotNil(t, m)
-
+	q.Q(err)
 }
 
 // Other
