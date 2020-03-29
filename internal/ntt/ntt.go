@@ -90,8 +90,8 @@ func (suite *Suite) SetRoot(folder string) {
 
 // Position returns human readable description of the pos tag.
 func (suite *Suite) Position(file string, pos loc.Pos) loc.Position {
-	_, fset, _ := suite.Parse(suite.File(file))
-	return fset.Position(pos)
+	syntax := suite.Parse(suite.File(file))
+	return syntax.FileSet.Position(pos)
 }
 func init() {
 	// TODO(5nord) We still have to figure how this sharedDir could be handled

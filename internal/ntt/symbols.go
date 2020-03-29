@@ -13,26 +13,25 @@ import (
 
 // Symbols
 func (suite *Suite) Symbols(file string) (*Module, error) {
-	syntax, fset, err := suite.Parse(suite.File(file))
+	syntax := suite.Parse(suite.File(file))
 
 	// If we don't a have a syntax tree, we don't need to
 	// process any further.
-	if syntax == nil {
-		return nil, err
+	if syntax.Module == nil {
+		return nil, syntax.Err
 	}
 
-	b := newBuilder(fset)
+	b := newBuilder(syntax.FileSet)
 
 	// Add syntax errors to the error list
-	if err, ok := err.(*errors.ErrorList); ok {
+	if err, ok := syntax.Err.(*errors.ErrorList); ok {
 		for _, e := range err.List() {
 			b.errs = append(b.errs, e)
 		}
 	}
 
-	b.define(syntax)
-	b.resolve(syntax)
-
+	b.define(syntax.Module)
+	b.resolve(syntax.Module)
 	return b.mods[0], &b.errs
 }
 

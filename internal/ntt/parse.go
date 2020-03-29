@@ -13,19 +13,19 @@ import (
 // Limits the number of parallel parser calls per process.
 var parseLimit = make(chan struct{}, runtime.NumCPU())
 
-func (suite *Suite) Parse(f *File) (*ast.Module, *loc.FileSet, error) {
-	type parseData struct {
-		mod  *ast.Module
-		fset *loc.FileSet
-		err  error
-	}
+type ParseInfo struct {
+	Module  *ast.Module
+	FileSet *loc.FileSet
+	Err     error
+}
 
+func (suite *Suite) Parse(f *File) *ParseInfo {
 	f.handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
-		data := parseData{}
+		data := ParseInfo{}
 
 		b, err := f.Bytes()
 		if err != nil {
-			data.err = err
+			data.Err = err
 			return &data
 		}
 
@@ -33,19 +33,18 @@ func (suite *Suite) Parse(f *File) (*ast.Module, *loc.FileSet, error) {
 		defer func() { <-parseLimit }()
 
 		var mods []*ast.Module
-		data.fset = loc.NewFileSet()
-		mods, data.err = parser.ParseModules(data.fset, f.Path(), b, 0)
+		data.FileSet = loc.NewFileSet()
+		mods, data.Err = parser.ParseModules(data.FileSet, f.Path(), b, 0)
 
 		// It's easier to support only one module per file.
 		if len(mods) == 1 {
-			data.mod = mods[0]
+			data.Module = mods[0]
 		} else if len(mods) > 1 {
-			data.err = fmt.Errorf("file %q contains more than one module.", f.Path())
+			data.Err = fmt.Errorf("file %q contains more than one module.", f.Path())
 		}
 		return &data
 	})
 
 	v := f.handle.Get(context.TODO())
-	data := v.(*parseData)
-	return data.mod, data.fset, data.err
+	return v.(*ParseInfo)
 }
