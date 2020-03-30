@@ -1,6 +1,7 @@
 package ntt
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -12,27 +13,33 @@ import (
 )
 
 // Symbols
-func (suite *Suite) Symbols(file string) (*Module, error) {
-	syntax := suite.Parse(file)
+func (suite *Suite) symbols(syntax *ParseInfo) *Module {
 
-	// If we don't a have a syntax tree, we don't need to
-	// process any further.
-	if syntax.Module == nil {
-		return nil, syntax.Err
-	}
+	syntax.handle = suite.store.Bind(syntax.ID(), func(ctx context.Context) interface{} {
 
-	b := newBuilder(syntax.FileSet)
-
-	// Add syntax errors to the error list
-	if err, ok := syntax.Err.(*errors.ErrorList); ok {
-		for _, e := range err.List() {
-			b.errs = append(b.errs, e)
+		b := &builder{
+			fset:   syntax.FileSet,
+			scopes: make(map[*ast.Ident]Scope),
+			types:  make(map[ast.Expr]Type),
 		}
-	}
+		b.currScope = &b.scope
 
-	b.define(syntax.Module)
-	b.resolve(syntax.Module)
-	return b.mods[0], &b.errs
+		b.define(syntax.Module)
+		b.resolve(syntax.Module)
+
+		// This should not happen, so a panic is fine, I guess.
+		if len(b.mods) != 1 {
+			panic("exptecting only one module")
+		}
+
+		b.mods[0].Scopes = b.scopes
+		b.mods[0].Types = b.types
+
+		return b.mods[0]
+	})
+
+	v := syntax.handle.Get(context.TODO())
+	return v.(*Module)
 }
 
 type Scope interface {
@@ -64,6 +71,9 @@ type Object interface {
 	// setParent sets the scope the object is defined in.
 	setParent(s Scope)
 
+	// Node returns the representing AST node of the object.
+	Node() ast.Node
+
 	Range
 }
 
@@ -78,15 +88,21 @@ type Range interface {
 type Module struct {
 	object
 	scope
+
+	Scopes map[*ast.Ident]Scope
+	Types  map[ast.Expr]Type
+
+	fset *loc.FileSet
 }
 
-func NewModule(rng Range, name string) *Module {
+func NewModule(n *ast.Module, name string) *Module {
 	return &Module{
 		object: object{
-			pos:  rng.Pos(),
-			end:  rng.End(),
+			node: n,
 			name: name,
 		},
+		Scopes: make(map[*ast.Ident]Scope),
+		Types:  make(map[ast.Expr]Type),
 	}
 }
 
@@ -107,11 +123,10 @@ type Func struct {
 	external bool
 }
 
-func NewFunc(rng Range, name string) *Func {
+func NewFunc(n *ast.FuncDecl, name string) *Func {
 	return &Func{
 		object: object{
-			pos:  rng.Pos(),
-			end:  rng.End(),
+			node: n,
 			name: name,
 		},
 	}
@@ -123,11 +138,10 @@ type Import struct {
 	module string
 }
 
-func NewImport(rng Range, name string, module string) *Import {
+func NewImport(n *ast.ImportDecl, name string, module string) *Import {
 	return &Import{
 		object: object{
-			pos:  rng.Pos(),
-			end:  rng.End(),
+			node: n,
 			name: name,
 		},
 		module: module,
@@ -140,11 +154,10 @@ type Var struct {
 	object
 }
 
-func NewVar(rng Range, name string) *Var {
+func NewVar(n ast.Node, name string) *Var {
 	return &Var{
 		object: object{
-			pos:  rng.Pos(),
-			end:  rng.End(),
+			node: n,
 			name: name,
 		},
 	}
@@ -154,11 +167,10 @@ type TypeName struct {
 	object
 }
 
-func NewTypeName(rng Range, name string, typ Type) *TypeName {
+func NewTypeName(n ast.Node, name string, typ Type) *TypeName {
 	return &TypeName{
 		object: object{
-			pos:  rng.Pos(),
-			end:  rng.End(),
+			node: n,
 			name: name,
 			typ:  typ,
 		},
@@ -167,10 +179,10 @@ func NewTypeName(rng Range, name string, typ Type) *TypeName {
 
 // object implements the common parts of an Object
 type object struct {
-	pos, end loc.Pos
-	name     string
-	parent   Scope
-	typ      Type
+	node   ast.Node
+	name   string
+	parent Scope
+	typ    Type
 }
 
 // Object interface
@@ -180,10 +192,12 @@ func (obj *object) Parent() Scope     { return obj.parent }
 func (obj *object) Type() Type        { return obj.typ }
 func (obj *object) setParent(s Scope) { obj.parent = s }
 
+func (obj *object) Node() ast.Node { return obj.node }
+
 // Range interface
 
-func (obj *object) Pos() loc.Pos { return obj.pos }
-func (obj *object) End() loc.Pos { return obj.end }
+func (obj *object) Pos() loc.Pos { return obj.node.Pos() }
+func (obj *object) End() loc.Pos { return obj.node.End() }
 
 type LocalScope struct {
 	pos, end loc.Pos
@@ -265,16 +279,6 @@ type builder struct {
 	types map[ast.Expr]Type
 }
 
-func newBuilder(fset *loc.FileSet) *builder {
-	b := &builder{
-		fset:   fset,
-		scopes: make(map[*ast.Ident]Scope),
-		types:  make(map[ast.Expr]Type),
-	}
-	b.currScope = &b.scope
-	return b
-}
-
 // define builds a scope tree in which all identifiers part of a declaration are
 // defined. All referencing identifiers will be associated with current scope.
 func (b *builder) define(n ast.Node) {
@@ -313,8 +317,6 @@ func (b *builder) defineExit(c *ast.Cursor) bool {
 	switch c.Node().(type) {
 	case *ast.BlockStmt, *ast.ForStmt:
 		b.currScope = b.currScope.(*LocalScope).parent
-	case *ast.StructTypeDecl:
-		b.currScope = b.currScope.(*Struct).parent
 
 	}
 	return true
@@ -354,7 +356,7 @@ func (b *builder) defineVar(n *ast.ValueDecl) {
 }
 
 func (b *builder) defineStruct(n *ast.StructTypeDecl) {
-	name := NewTypeName(n, n.Name.String(), nil)
+	name := NewTypeName(n.Name, n.Name.String(), nil)
 	b.insert(name)
 
 	s := NewStruct(n, name.Parent())
@@ -364,6 +366,8 @@ func (b *builder) defineStruct(n *ast.StructTypeDecl) {
 	for i := range n.Fields {
 		b.define(n.Fields[i])
 	}
+
+	b.currScope = name.Parent()
 }
 
 func (b *builder) defineField(n *ast.Field) {

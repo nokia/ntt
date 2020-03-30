@@ -9,6 +9,7 @@ var (
 	ErrSyntax           = errors.New("syntax error")
 	ErrNoSuchIdentifier = errors.New("no such identifier")
 	ErrRedefinition     = errors.New("redefinition")
+	ErrNoIdentFound     = errors.New("no identifier found")
 )
 
 type SyntaxError struct {

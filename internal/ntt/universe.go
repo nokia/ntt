@@ -1,6 +1,9 @@
 package ntt
 
-import "github.com/nokia/ntt/internal/loc"
+import (
+	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
+)
 
 var Universe scope
 
@@ -26,8 +29,9 @@ var Typ = []*BasicType{
 
 type noPos struct{}
 
-func (n *noPos) Pos() loc.Pos { return loc.NoPos }
-func (n *noPos) End() loc.Pos { return loc.NoPos }
+func (n *noPos) Pos() loc.Pos        { return loc.NoPos }
+func (n *noPos) End() loc.Pos        { return loc.NoPos }
+func (n *noPos) LastTok() *ast.Token { return nil }
 
 func init() {
 	for _, t := range Typ {
