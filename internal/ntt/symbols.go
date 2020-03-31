@@ -9,7 +9,6 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/token"
-	"github.com/y0ssar1an/q"
 )
 
 // Symbols
@@ -429,7 +428,6 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 				b.errorf(n, "unknown identifier %q", n.String())
 			}
 		}
-		q.Q("IDENT", n, def, def.Type())
 		b.types[n] = def.Type()
 
 	case *ast.ParametrizedIdent:
@@ -438,7 +436,6 @@ func (b *builder) resolveExit(c *ast.Cursor) bool {
 	case *ast.SelectorExpr:
 		typ := b.types[n.X]
 		if typ == nil {
-			q.Q("NOT FOUND", n.X)
 			break
 		}
 
