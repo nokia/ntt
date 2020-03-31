@@ -37,7 +37,7 @@ func (info *ParseInfo) Position(pos loc.Pos) loc.Position {
 	return info.FileSet.Position(pos)
 }
 
-// Pos encodes a line and column information into a Pos tag. If file nas
+// Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
 // not been parsed yet, Pos will return loc.NoPos.
 func (info *ParseInfo) Pos(line int, column int) loc.Pos {
 	if info.FileSet == nil {
@@ -45,7 +45,7 @@ func (info *ParseInfo) Pos(line int, column int) loc.Pos {
 	}
 
 	// We asume every FileSet has only one file, to make this work.
-	return loc.Pos(int(info.FileSet.File(loc.Pos(1)).LineStart(line)) + column)
+	return loc.Pos(int(info.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
 func (suite *Suite) Parse(file string) *ParseInfo {

@@ -6,9 +6,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/spf13/cobra"
 )
 
@@ -50,23 +48,21 @@ func dump(cmd *cobra.Command, args []string) {
 	}
 
 	var (
-		modules  = make([]*ast.Module, len(srcs))
-		errors   = make([]error, len(srcs))
-		filesets = make([]*loc.FileSet, len(srcs))
-		wg       sync.WaitGroup
+		asts = make([]*ntt.ParseInfo, len(srcs))
+		wg   sync.WaitGroup
 	)
 
 	wg.Add(len(srcs))
 	for i, src := range srcs {
 		go func(i int, src *ntt.File) {
-			modules[i], filesets[i], errors[i] = suite.Parse(src)
+			asts[i] = suite.Parse(src.Path())
 			wg.Done()
 		}(i, src)
 	}
 	wg.Wait()
 
-	for i := range modules {
-		b, err := json.MarshalIndent(modules[i], "", "  ")
+	for i := range asts {
+		b, err := json.MarshalIndent(asts[i].Module, "", "  ")
 		if err != nil {
 			fatal(err)
 		}
