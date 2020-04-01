@@ -368,20 +368,32 @@ func (x *UnaryExpr) Pos() loc.Pos         { return x.Op.Pos() }
 func (x *BinaryExpr) Pos() loc.Pos        { return x.X.Pos() }
 func (x *ParenExpr) Pos() loc.Pos         { return x.LParen.Pos() }
 func (x *SelectorExpr) Pos() loc.Pos      { return x.X.Pos() }
-func (x *IndexExpr) Pos() loc.Pos         { return x.X.Pos() }
-func (x *CallExpr) Pos() loc.Pos          { return x.Fun.Pos() }
-func (x *LengthExpr) Pos() loc.Pos        { return x.X.Pos() }
-func (x *RedirectExpr) Pos() loc.Pos      { return x.X.Pos() }
-func (x *ValueExpr) Pos() loc.Pos         { return x.X.Pos() }
-func (x *ParamExpr) Pos() loc.Pos         { return x.X.Pos() }
-func (x *FromExpr) Pos() loc.Pos          { return x.Kind.Pos() }
-func (x *ModifiesExpr) Pos() loc.Pos      { return x.Tok.Pos() }
-func (x *RegexpExpr) Pos() loc.Pos        { return x.Tok.Pos() }
-func (x *PatternExpr) Pos() loc.Pos       { return x.Tok.Pos() }
-func (x *DecmatchExpr) Pos() loc.Pos      { return x.Tok.Pos() }
-func (x *DecodedExpr) Pos() loc.Pos       { return x.Tok.Pos() }
-func (x *DefKindExpr) Pos() loc.Pos       { return x.Kind.Pos() }
-func (x *ExceptExpr) Pos() loc.Pos        { return x.X.Pos() }
+func (x *IndexExpr) Pos() loc.Pos {
+	if x.X != nil {
+		return x.X.Pos()
+	}
+	return x.LBrack.Pos()
+}
+func (x *CallExpr) Pos() loc.Pos { return x.Fun.Pos() }
+
+func (x *LengthExpr) Pos() loc.Pos {
+	if x.X != nil {
+		return x.X.Pos()
+	}
+	return x.Len.Pos()
+}
+
+func (x *RedirectExpr) Pos() loc.Pos { return x.X.Pos() }
+func (x *ValueExpr) Pos() loc.Pos    { return x.X.Pos() }
+func (x *ParamExpr) Pos() loc.Pos    { return x.X.Pos() }
+func (x *FromExpr) Pos() loc.Pos     { return x.Kind.Pos() }
+func (x *ModifiesExpr) Pos() loc.Pos { return x.Tok.Pos() }
+func (x *RegexpExpr) Pos() loc.Pos   { return x.Tok.Pos() }
+func (x *PatternExpr) Pos() loc.Pos  { return x.Tok.Pos() }
+func (x *DecmatchExpr) Pos() loc.Pos { return x.Tok.Pos() }
+func (x *DecodedExpr) Pos() loc.Pos  { return x.Tok.Pos() }
+func (x *DefKindExpr) Pos() loc.Pos  { return x.Kind.Pos() }
+func (x *ExceptExpr) Pos() loc.Pos   { return x.X.Pos() }
 
 func (x *Ident) End() loc.Pos             { return x.LastTok().End() }
 func (x *ParametrizedIdent) End() loc.Pos { return x.LastTok().End() }

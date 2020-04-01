@@ -14,7 +14,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	elapsed := time.Since(start)
 	s.Log(ctx, fmt.Sprintf("Goto definition took %s. IdentifierInfo: %#v", elapsed, id))
 
-	if id.Def != nil {
+	if id != nil && id.Def != nil {
 		return []protocol.Location{
 			{
 				URI: string(params.TextDocument.URI),
