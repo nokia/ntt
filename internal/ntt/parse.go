@@ -24,7 +24,7 @@ type ParseInfo struct {
 }
 
 func (info *ParseInfo) ID() string {
-	return fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprint(info))))
+	return fmt.Sprintf("%x", sha1.Sum([]byte(fmt.Sprint(info.Module))))
 }
 
 // Position decodes a Pos tag into a Position. If file has not been parsed

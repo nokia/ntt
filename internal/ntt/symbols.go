@@ -13,7 +13,6 @@ import (
 
 // Symbols
 func (suite *Suite) symbols(syntax *ParseInfo) *Module {
-
 	syntax.handle = suite.store.Bind(syntax.ID(), func(ctx context.Context) interface{} {
 
 		b := &builder{

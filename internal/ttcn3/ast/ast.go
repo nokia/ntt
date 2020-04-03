@@ -1305,7 +1305,7 @@ func (x *FormalPar) Pos() loc.Pos {
 	if x.Direction.Pos().IsValid() {
 		return x.Direction.Pos()
 	}
-	if x.TemplateRestriction.Pos().IsValid() {
+	if x.TemplateRestriction != nil && x.TemplateRestriction.Pos().IsValid() {
 		return x.TemplateRestriction.Pos()
 	}
 	if x.Modif.Pos().IsValid() {
