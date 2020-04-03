@@ -308,6 +308,14 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 	case *ast.Field:
 		b.defineField(n)
 		return false
+
+	case *ast.FuncDecl:
+		b.defineFunc(n)
+		return false
+
+	case *ast.FormalPar:
+		b.defineFormalPar(n)
+		return false
 	}
 	return true
 }
@@ -335,7 +343,7 @@ func (b *builder) defineModule(n *ast.Module) {
 
 func (b *builder) defineVar(n *ast.ValueDecl) {
 	b.define(n.Type)
-	err := ast.Declarators(n, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+	err := ast.Declarators(n.Decls, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
 		v := NewVar(decl, identName(name))
 		b.insert(v)
 		for i := range arrays {
@@ -352,6 +360,53 @@ func (b *builder) defineVar(n *ast.ValueDecl) {
 	}
 
 	b.define(n.With)
+}
+
+func (b *builder) defineFunc(n *ast.FuncDecl) {
+	sym := NewFunc(n, n.Name.String())
+	b.insert(sym)
+	if n.TypePars != nil {
+		b.currScope = NewLocalScope(n.TypePars, b.currScope)
+		b.define(n.TypePars)
+	}
+	b.define(n.RunsOn)
+	b.define(n.Mtc)
+	b.define(n.System)
+	b.define(n.Return)
+	if n.Params != nil {
+		b.currScope = NewLocalScope(n.Params, b.currScope)
+		b.define(n.Params)
+	}
+	b.define(n.Body)
+	b.define(n.With)
+
+	if n.Params != nil {
+		b.currScope = b.currScope.(*LocalScope).parent
+	}
+
+	if n.TypePars != nil {
+		b.currScope = b.currScope.(*LocalScope).parent
+	}
+}
+
+func (b *builder) defineFormalPar(n *ast.FormalPar) {
+	b.define(n.Type)
+	err := ast.Declarators([]ast.Expr{n.Name}, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+		v := NewVar(decl, identName(name))
+		b.insert(v)
+		for i := range arrays {
+			b.define(arrays[i])
+		}
+		b.define(value)
+	})
+
+	// Add syntax errors to the error list
+	if err != nil {
+		for _, e := range err.List() {
+			b.errs = append(b.errs, e)
+		}
+	}
+
 }
 
 func (b *builder) defineStruct(n *ast.StructTypeDecl) {
@@ -391,7 +446,7 @@ func (b *builder) resolveEnter(c *ast.Cursor) bool {
 
 func (b *builder) resolveVar(n *ast.ValueDecl) {
 	b.resolve(n.Type)
-	ast.Declarators(n, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+	ast.Declarators(n.Decls, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
 		//v := NewVar(decl, identName(name))
 		//b.insert(v)
 		//for i := range arrays {

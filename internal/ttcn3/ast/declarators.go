@@ -49,9 +49,9 @@ func (v *visitor) Visit(n Node) Visitor {
 }
 
 // TODO(5nord) make this function part of ttcn3 parser.
-func Declarators(decl *ValueDecl, fset *loc.FileSet, f func(decl Expr, name Node, arrays []Expr, value Expr)) *errors.ErrorList {
+func Declarators(exprs []Expr, fset *loc.FileSet, f func(decl Expr, name Node, arrays []Expr, value Expr)) *errors.ErrorList {
 	var errs errors.ErrorList
-	for _, d := range decl.Decls {
+	for _, d := range exprs {
 		v := visitor{
 			fset: fset,
 			errs: &errs,

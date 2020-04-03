@@ -89,7 +89,46 @@ func TestStructType(t *testing.T) {
 // TODO: func TestSignature(t *testing.T) {}
 // TODO: func TestGoto(t *testing.T)      {}
 // TODO: func TestModulePar(t *testing.T) {}
-// TODO: func TestFunc(t *testing.T)      {}
+
+func TestFunc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+	{
+		function f1(integer x := y) {
+			f2(x)
+		}
+
+		function f2() {
+			x := 19;
+			f2(f1())
+		}
+
+		const integer y := 23
+	}`)
+
+	// Lookup `f2`
+	def := gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 4, 4)
+	assert.Equal(t, Pos{Line: 7, Column: 3}, def)
+
+	// Lookup `f2` recursivly
+	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 9, 4)
+	assert.Equal(t, Pos{Line: 7, Column: 3}, def)
+
+	// Lookup `f1`
+	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 9, 7)
+	assert.Equal(t, Pos{Line: 3, Column: 3}, def)
+
+	// Lookup unknown `x`
+	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 8, 4)
+	assert.Equal(t, Pos{Line: 0, Column: 0}, def)
+
+	// Lookup `x` parameter.
+	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 4, 7)
+	assert.Equal(t, Pos{Line: 3, Column: 23}, def)
+
+	// Lookup `y` constant.
+	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 3, 28)
+	assert.Equal(t, Pos{Line: 12, Column: 17}, def)
+}
 
 func TestDecl(t *testing.T) {
 	suite := buildSuite(t, `module Test
