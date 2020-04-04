@@ -41,7 +41,54 @@ func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 
 // Types
 // TODO: func TestSubType(t *testing.T)       {}
-// TODO: func TestPortType(t *testing.T)      {}
+func TestPortType(t *testing.T) {
+	suite := buildSuite(t, `module Test
+	{
+		type record Msg{}
+		type record Msg2{}
+
+		type port P1 message {
+			in charstring
+			out Msg, Msg2
+		}
+
+		type port P4 message {
+			in Msg
+			map param (Msg p1)
+		}
+
+		type port P5 message {
+			in Msg
+			map param (int Msg)
+		}
+
+		type port P6 mixed { }
+		type port P7 procedure { }
+
+		// It's a common mistake to forget the port kind (message, procedure or
+		// mixed). To go defintion should work despite that.
+		type port P8 {
+			inout Msg
+		}
+	  }`)
+
+	// Lookup `Msg`
+	def := gotoDefinition(suite, "TestPortType_Module_0.ttcn3", 8, 8)
+	assert.Equal(t, Pos{Line: 3, Column: 15}, def)
+
+	// Lookup `Msg2`
+	def = gotoDefinition(suite, "TestPortType_Module_0.ttcn3", 8, 13)
+	assert.Equal(t, Pos{Line: 4, Column: 15}, def)
+
+	// Lookup `Msg`
+	def = gotoDefinition(suite, "TestPortType_Module_0.ttcn3", 13, 15)
+	assert.Equal(t, Pos{Line: 3, Column: 15}, def)
+
+	// Lookup `Msg`
+	def = gotoDefinition(suite, "TestPortType_Module_0.ttcn3", 18, 19)
+	assert.Equal(t, Pos{Line: 0, Column: 0}, def)
+}
+
 // TODO: func TestComponentType(t *testing.T) {}
 // TODO: func TestEnumType(t *testing.T)      {}
 // TODO: func TestBehaviourType(t *testing.T) {}

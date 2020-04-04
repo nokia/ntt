@@ -312,6 +312,11 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 		b.defineFunc(n)
 		return false
 
+	case *ast.PortMapAttribute:
+		b.currScope = NewLocalScope(n, b.currScope)
+		b.define(n.Params)
+		return false
+
 	case *ast.FormalPar:
 		b.defineFormalPar(n)
 		return false
@@ -321,7 +326,7 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 
 func (b *builder) defineExit(c *ast.Cursor) bool {
 	switch c.Node().(type) {
-	case *ast.BlockStmt, *ast.ForStmt:
+	case *ast.BlockStmt, *ast.ForStmt, *ast.PortMapAttribute:
 		b.currScope = b.currScope.(*LocalScope).parent
 
 	}
