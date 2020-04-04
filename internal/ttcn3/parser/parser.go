@@ -959,7 +959,7 @@ func (p *parser) parseIdent() *ast.Ident {
 }
 
 func (p *parser) parseRefList() []ast.Expr {
-	l := make([]ast.Expr, 1)
+	l := make([]ast.Expr, 0, 1)
 	for {
 		l = append(l, p.parseTypeRef())
 		if p.tok != token.COMMA {

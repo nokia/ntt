@@ -41,6 +41,7 @@ func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 
 // Types
 // TODO: func TestSubType(t *testing.T)       {}
+
 func TestPortType(t *testing.T) {
 	suite := buildSuite(t, `module Test
 	{
@@ -89,9 +90,56 @@ func TestPortType(t *testing.T) {
 	assert.Equal(t, Pos{Line: 0, Column: 0}, def)
 }
 
-// TODO: func TestComponentType(t *testing.T) {}
+func TestComponentType(t *testing.T) {
+	suite := buildSuite(t, `module Test
+	{
+        type component CompA {
+           integer compA_var1;
+        }
+
+        type component CompB extends CompA {
+           integer comp_var2
+        }
+
+        type component CompC extends CompA {
+           bool comp_var2
+        }
+
+        type component CompD extends CompB, CompC {
+           integer compD_var3
+        }
+
+        type component CompE<type T, C> extends C {
+           integer compE_var1
+		   T       compE_var2
+        }
+
+		type component CompF extends CompE<integer> {}
+
+		function f1() runs on CompE {}
+
+	}`)
+
+	// Lookup `CompA`
+	def := gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 7, 39)
+	assert.Equal(t, Pos{Line: 3, Column: 9}, def)
+
+	// Lookup `CompC`
+	def = gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 15, 45)
+	assert.Equal(t, Pos{Line: 11, Column: 9}, def)
+
+	// Lookup `C`
+	def = gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 19, 49)
+	assert.Equal(t, Pos{Line: 19, Column: 32}, def)
+
+	// Lookup `CompE`
+	def = gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 26, 25)
+	assert.Equal(t, Pos{Line: 19, Column: 9}, def)
+}
+
 // TODO: func TestEnumType(t *testing.T)      {}
 // TODO: func TestBehaviourType(t *testing.T) {}
+
 func TestStructType(t *testing.T) {
 	suite := buildSuite(t, `module Test
 	{
@@ -102,7 +150,7 @@ func TestStructType(t *testing.T) {
 			r.x := r.y.x
 			r.a := 4         // ERR: No such field a.
 	    }
-	
+
 	    type record Rec {
 			integer x,
 			Rec     next      // ERR: Recursive field is non-optional
@@ -110,7 +158,7 @@ func TestStructType(t *testing.T) {
 				int x
 			} y
 		}
-	
+
 	  }`)
 
 	// Lookup `Rec`

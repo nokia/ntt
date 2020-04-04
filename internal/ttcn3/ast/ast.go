@@ -888,7 +888,7 @@ type (
 	ComponentTypeDecl struct {
 		TypeTok    Token
 		CompTok    Token
-		Name       Expr
+		Name       *Ident
 		TypePars   *FormalPars
 		ExtendsTok Token
 		Extends    []Expr

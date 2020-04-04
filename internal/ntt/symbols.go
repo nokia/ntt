@@ -262,10 +262,9 @@ func (s *scope) Names() []string {
 }
 
 type builder struct {
-	fset  *loc.FileSet
-	errs  errors.ErrorList
-	stack []Scope
-	mods  []*Module
+	fset *loc.FileSet
+	errs errors.ErrorList
+	mods []*Module
 
 	scope
 	currScope Scope
@@ -302,6 +301,10 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 
 	case *ast.StructTypeDecl:
 		b.defineStruct(n)
+		return false
+
+	case *ast.ComponentTypeDecl:
+		b.defineComponent(n)
 		return false
 
 	case *ast.Field:
@@ -426,6 +429,24 @@ func (b *builder) defineStruct(n *ast.StructTypeDecl) {
 	}
 
 	b.currScope = name.Parent()
+}
+
+func (b *builder) defineComponent(n *ast.ComponentTypeDecl) {
+	c := NewComponentType(n, n.Name.String())
+	b.insert(c)
+	if n.TypePars != nil {
+		b.currScope = NewLocalScope(n.TypePars, b.currScope)
+		b.define(n.TypePars)
+	}
+	if n.Extends != nil {
+		for i := range n.Extends {
+			b.define(n.Extends[i])
+		}
+	}
+
+	b.currScope = c
+	b.define(n.Body)
+	b.currScope = c.parent
 }
 
 func (b *builder) defineField(n *ast.Field) {
