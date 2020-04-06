@@ -39,9 +39,6 @@ func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 // TODO: func TestGroup(t *testing.T)  {}
 // TODO: func TestFriend(t *testing.T) {}
 
-// Types
-// TODO: func TestSubType(t *testing.T)       {}
-
 func TestPortType(t *testing.T) {
 	suite := buildSuite(t, `module Test
 	{
