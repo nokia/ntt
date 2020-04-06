@@ -299,6 +299,10 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 		b.defineVar(n)
 		return false
 
+	case *ast.TemplateDecl:
+		b.defineTemplate(n)
+		return false
+
 	case *ast.StructTypeDecl:
 		b.defineStruct(n)
 		return false
@@ -367,6 +371,31 @@ func (b *builder) defineVar(n *ast.ValueDecl) {
 	}
 
 	b.define(n.With)
+}
+
+func (b *builder) defineTemplate(n *ast.TemplateDecl) {
+	sym := NewVar(n, n.Name.String())
+	b.insert(sym)
+	if n.TypePars != nil {
+		b.currScope = NewLocalScope(n.TypePars, b.currScope)
+		b.define(n.TypePars)
+	}
+	b.define(n.Type)
+	b.define(n.Base)
+	if n.Params != nil {
+		b.currScope = NewLocalScope(n.Params, b.currScope)
+		b.define(n.Params)
+	}
+	b.define(n.Value)
+	b.define(n.With)
+
+	if n.Params != nil {
+		b.currScope = b.currScope.(*LocalScope).parent
+	}
+
+	if n.TypePars != nil {
+		b.currScope = b.currScope.(*LocalScope).parent
+	}
 }
 
 func (b *builder) defineFunc(n *ast.FuncDecl) {
