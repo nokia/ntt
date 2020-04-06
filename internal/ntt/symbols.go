@@ -279,7 +279,7 @@ type builder struct {
 // define builds a scope tree in which all identifiers part of a declaration are
 // defined. All referencing identifiers will be associated with current scope.
 func (b *builder) define(n ast.Node) {
-	ast.Apply(n, b.defineEnter, b.defineExit)
+	ast.Apply(n, b.defineEnter, nil)
 }
 
 func (b *builder) defineEnter(c *ast.Cursor) bool {
@@ -287,201 +287,177 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 
 	case *ast.Ident:
 		b.scopes[n] = b.currScope
+		return true
 
-	case *ast.BlockStmt, *ast.ForStmt:
+	case *ast.BlockStmt:
 		b.currScope = NewLocalScope(n, b.currScope)
+		for i := range n.Stmts {
+			b.define(n.Stmts[i])
+		}
+		b.currScope = b.currScope.(*LocalScope).parent
+		return false
+
+	case *ast.ForStmt:
+		b.currScope = NewLocalScope(n, b.currScope)
+		b.define(n.Init)
+		b.define(n.Cond)
+		b.define(n.Post)
+		b.define(n.Body)
+		b.currScope = b.currScope.(*LocalScope).parent
+		return false
 
 	case *ast.Module:
-		b.defineModule(n)
+		mod := NewModule(n, n.Name.String())
+		b.mods = append(b.mods, mod)
+		b.insert(mod)
+		b.currScope = mod
+		for i := range n.Defs {
+			b.define(n.Defs[i])
+		}
+		b.define(n.With)
+		b.currScope = mod.Parent()
 		return false
 
 	case *ast.ValueDecl:
-		b.defineVar(n)
+		b.define(n.Type)
+		err := ast.Declarators(n.Decls, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+			v := NewVar(decl, identName(name))
+			b.insert(v)
+			for i := range arrays {
+				b.define(arrays[i])
+			}
+			b.define(value)
+		})
+
+		// Add syntax errors to the error list
+		if err != nil {
+			for _, e := range err.List() {
+				b.errs = append(b.errs, e)
+			}
+		}
+
+		b.define(n.With)
 		return false
 
 	case *ast.TemplateDecl:
-		b.defineTemplate(n)
-		return false
+		sym := NewVar(n, n.Name.String())
+		b.insert(sym)
+		if n.TypePars != nil {
+			b.currScope = NewLocalScope(n.TypePars, b.currScope)
+			b.define(n.TypePars)
+		}
+		b.define(n.Type)
+		b.define(n.Base)
+		if n.Params != nil {
+			b.currScope = NewLocalScope(n.Params, b.currScope)
+			b.define(n.Params)
+		}
+		b.define(n.Value)
+		b.define(n.With)
 
-	case *ast.StructTypeDecl:
-		b.defineStruct(n)
-		return false
+		if n.Params != nil {
+			b.currScope = b.currScope.(*LocalScope).parent
+		}
 
-	case *ast.ComponentTypeDecl:
-		b.defineComponent(n)
-		return false
-
-	case *ast.Field:
-		b.defineField(n)
+		if n.TypePars != nil {
+			b.currScope = b.currScope.(*LocalScope).parent
+		}
 		return false
 
 	case *ast.FuncDecl:
-		b.defineFunc(n)
+		sym := NewFunc(n, n.Name.String())
+		b.insert(sym)
+		if n.TypePars != nil {
+			b.currScope = NewLocalScope(n.TypePars, b.currScope)
+			b.define(n.TypePars)
+		}
+		b.define(n.RunsOn)
+		b.define(n.Mtc)
+		b.define(n.System)
+		b.define(n.Return)
+		if n.Params != nil {
+			b.currScope = NewLocalScope(n.Params, b.currScope)
+			b.define(n.Params)
+		}
+		b.define(n.Body)
+		b.define(n.With)
+
+		if n.Params != nil {
+			b.currScope = b.currScope.(*LocalScope).parent
+		}
+
+		if n.TypePars != nil {
+			b.currScope = b.currScope.(*LocalScope).parent
+		}
+		return false
+
+	case *ast.StructTypeDecl:
+		name := NewTypeName(n.Name, n.Name.String(), nil)
+		b.insert(name)
+
+		s := NewStruct(n, name.Parent())
+		name.typ = s
+		b.currScope = s
+
+		for i := range n.Fields {
+			b.define(n.Fields[i])
+		}
+
+		b.currScope = name.Parent()
+		return false
+
+	case *ast.ComponentTypeDecl:
+		c := NewComponentType(n, n.Name.String())
+		b.insert(c)
+		if n.TypePars != nil {
+			b.currScope = NewLocalScope(n.TypePars, b.currScope)
+			b.define(n.TypePars)
+		}
+		if n.Extends != nil {
+			for i := range n.Extends {
+				b.define(n.Extends[i])
+			}
+		}
+
+		b.currScope = c
+		b.define(n.Body)
+		b.currScope = c.parent
+		return false
+
+	case *ast.Field:
+		v := NewVar(n, n.Name.String())
+		b.insert(v)
+		b.define(n.Type)
 		return false
 
 	case *ast.PortMapAttribute:
 		b.currScope = NewLocalScope(n, b.currScope)
 		b.define(n.Params)
+		b.currScope = b.currScope.(*LocalScope).parent
 		return false
 
 	case *ast.FormalPar:
-		b.defineFormalPar(n)
+		b.define(n.Type)
+		err := ast.Declarators([]ast.Expr{n.Name}, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+			v := NewVar(decl, identName(name))
+			b.insert(v)
+			for i := range arrays {
+				b.define(arrays[i])
+			}
+			b.define(value)
+		})
+
+		// Add syntax errors to the error list
+		if err != nil {
+			for _, e := range err.List() {
+				b.errs = append(b.errs, e)
+			}
+		}
+
 		return false
+	default:
+		return true
 	}
-	return true
-}
-
-func (b *builder) defineExit(c *ast.Cursor) bool {
-	switch c.Node().(type) {
-	case *ast.BlockStmt, *ast.ForStmt, *ast.PortMapAttribute:
-		b.currScope = b.currScope.(*LocalScope).parent
-
-	}
-	return true
-}
-
-func (b *builder) defineModule(n *ast.Module) {
-	mod := NewModule(n, n.Name.String())
-	b.mods = append(b.mods, mod)
-	b.insert(mod)
-	b.currScope = mod
-	for i := range n.Defs {
-		b.define(n.Defs[i])
-	}
-	b.define(n.With)
-	b.currScope = mod.Parent()
-}
-
-func (b *builder) defineVar(n *ast.ValueDecl) {
-	b.define(n.Type)
-	err := ast.Declarators(n.Decls, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-		v := NewVar(decl, identName(name))
-		b.insert(v)
-		for i := range arrays {
-			b.define(arrays[i])
-		}
-		b.define(value)
-	})
-
-	// Add syntax errors to the error list
-	if err != nil {
-		for _, e := range err.List() {
-			b.errs = append(b.errs, e)
-		}
-	}
-
-	b.define(n.With)
-}
-
-func (b *builder) defineTemplate(n *ast.TemplateDecl) {
-	sym := NewVar(n, n.Name.String())
-	b.insert(sym)
-	if n.TypePars != nil {
-		b.currScope = NewLocalScope(n.TypePars, b.currScope)
-		b.define(n.TypePars)
-	}
-	b.define(n.Type)
-	b.define(n.Base)
-	if n.Params != nil {
-		b.currScope = NewLocalScope(n.Params, b.currScope)
-		b.define(n.Params)
-	}
-	b.define(n.Value)
-	b.define(n.With)
-
-	if n.Params != nil {
-		b.currScope = b.currScope.(*LocalScope).parent
-	}
-
-	if n.TypePars != nil {
-		b.currScope = b.currScope.(*LocalScope).parent
-	}
-}
-
-func (b *builder) defineFunc(n *ast.FuncDecl) {
-	sym := NewFunc(n, n.Name.String())
-	b.insert(sym)
-	if n.TypePars != nil {
-		b.currScope = NewLocalScope(n.TypePars, b.currScope)
-		b.define(n.TypePars)
-	}
-	b.define(n.RunsOn)
-	b.define(n.Mtc)
-	b.define(n.System)
-	b.define(n.Return)
-	if n.Params != nil {
-		b.currScope = NewLocalScope(n.Params, b.currScope)
-		b.define(n.Params)
-	}
-	b.define(n.Body)
-	b.define(n.With)
-
-	if n.Params != nil {
-		b.currScope = b.currScope.(*LocalScope).parent
-	}
-
-	if n.TypePars != nil {
-		b.currScope = b.currScope.(*LocalScope).parent
-	}
-}
-
-func (b *builder) defineFormalPar(n *ast.FormalPar) {
-	b.define(n.Type)
-	err := ast.Declarators([]ast.Expr{n.Name}, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-		v := NewVar(decl, identName(name))
-		b.insert(v)
-		for i := range arrays {
-			b.define(arrays[i])
-		}
-		b.define(value)
-	})
-
-	// Add syntax errors to the error list
-	if err != nil {
-		for _, e := range err.List() {
-			b.errs = append(b.errs, e)
-		}
-	}
-
-}
-
-func (b *builder) defineStruct(n *ast.StructTypeDecl) {
-	name := NewTypeName(n.Name, n.Name.String(), nil)
-	b.insert(name)
-
-	s := NewStruct(n, name.Parent())
-	name.typ = s
-	b.currScope = s
-
-	for i := range n.Fields {
-		b.define(n.Fields[i])
-	}
-
-	b.currScope = name.Parent()
-}
-
-func (b *builder) defineComponent(n *ast.ComponentTypeDecl) {
-	c := NewComponentType(n, n.Name.String())
-	b.insert(c)
-	if n.TypePars != nil {
-		b.currScope = NewLocalScope(n.TypePars, b.currScope)
-		b.define(n.TypePars)
-	}
-	if n.Extends != nil {
-		for i := range n.Extends {
-			b.define(n.Extends[i])
-		}
-	}
-
-	b.currScope = c
-	b.define(n.Body)
-	b.currScope = c.parent
-}
-
-func (b *builder) defineField(n *ast.Field) {
-	v := NewVar(n, n.Name.String())
-	b.insert(v)
-	b.define(n.Type)
 }
 
 // resolve resolves all references and types.
