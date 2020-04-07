@@ -47,9 +47,24 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 		if obj := scp.Lookup(id.String()); obj != nil {
 			info.Def = obj.Node()
 			info.Type = obj.Type()
+			return &info, nil
 		}
-	}
 
+		// Try our luck in import imported.
+		for i := range mod.Imports {
+			if file, _ := suite.FindModule(mod.Imports[i]); file != "" {
+				if syntax := suite.Parse(file); syntax.Module != nil {
+					imp := suite.symbols(syntax)
+					if obj := imp.Lookup(id.String()); obj != nil {
+						info.Def = obj.Node()
+						info.Type = obj.Type()
+						return &info, nil
+					}
+				}
+			}
+		}
+
+	}
 	return &info, nil
 }
 

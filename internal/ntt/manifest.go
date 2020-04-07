@@ -425,3 +425,30 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 
 	return &data.manifest, data.err
 }
+
+func (suite *Suite) FindModule(name string) (string, error) {
+	srcs, err := suite.Sources()
+	if err != nil {
+		return "", err
+	}
+	for _, src := range srcs {
+		if filepath.Base(src.Path()) == name+".ttcn3" {
+			return src.Path(), nil
+		}
+	}
+
+	dirs, err := suite.Imports()
+	if err != nil {
+		return "", err
+	}
+
+	for _, dir := range dirs {
+		path := filepath.Join(dir.Path(), name+".ttcn3")
+		if ok, err := fileExists(path); ok {
+			return path, err
+		}
+
+	}
+
+	return "", fmt.Errorf("No such module %q", name)
+}

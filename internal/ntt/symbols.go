@@ -87,8 +87,9 @@ type Module struct {
 	object
 	scope
 
-	Scopes map[*ast.Ident]Scope
-	Types  map[ast.Expr]Type
+	Imports []string
+	Scopes  map[*ast.Ident]Scope
+	Types   map[ast.Expr]Type
 
 	fset *loc.FileSet
 }
@@ -276,8 +277,9 @@ type builder struct {
 	types map[ast.Expr]Type
 }
 
-// define builds a scope tree in which all identifiers part of a declaration are
-// defined. All referencing identifiers will be associated with current scope.
+// define builds a scope tree. ~efinitionis are inserted in their enclosing
+// scope. All referencing identifiers will be associated with current scope for
+// later resolving.
 func (b *builder) define(n ast.Node) {
 	ast.Apply(n, b.defineEnter, nil)
 }
@@ -316,6 +318,11 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 		}
 		b.define(n.With)
 		b.currScope = mod.Parent()
+		return false
+
+	case *ast.ImportDecl:
+		mod := b.mods[len(b.mods)-1]
+		mod.Imports = append(mod.Imports, n.Module.String())
 		return false
 
 	case *ast.ValueDecl:
