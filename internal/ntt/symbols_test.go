@@ -29,8 +29,8 @@ func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 		return Pos{}
 	}
 	return Pos{
-		Line:   id.Line(id.Def.Pos()),
-		Column: id.Column(id.Def.Pos()),
+		Line:   id.Def.Position.Line,
+		Column: id.Def.Position.Column,
 	}
 }
 
@@ -192,7 +192,7 @@ func TestTemplates(t *testing.T) {
 
 	// Lookup `int`
 	def := gotoDefinition(suite, "TestTemplates_Module_0.ttcn3", 6, 13)
-	assert.Equal(t, Pos{Line: 3, Column: 8}, def)
+	assert.Equal(t, Pos{Line: 3, Column: 16}, def)
 
 	// Lookup `t0`
 	def = gotoDefinition(suite, "TestTemplates_Module_0.ttcn3", 7, 36)

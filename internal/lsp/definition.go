@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/internal/span"
 )
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
@@ -15,17 +16,20 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	s.Log(ctx, fmt.Sprintf("Goto definition took %s. IdentifierInfo: %#v", elapsed, id))
 
 	if id != nil && id.Def != nil {
+		file := span.NewURI(id.Def.Position.Filename)
+		line := id.Def.Position.Line - 1
+		column := id.Def.Position.Column - 1
 		return []protocol.Location{
 			{
-				URI: string(params.TextDocument.URI),
+				URI: string(file),
 				Range: protocol.Range{
 					Start: protocol.Position{
-						Line:      float64(id.Line(id.Def.Pos()) - 1),
-						Character: float64(id.Column(id.Def.Pos()) - 1),
+						Line:      float64(line),
+						Character: float64(column),
 					},
 					End: protocol.Position{
-						Line:      float64(id.Line(id.Def.End()) - 1),
-						Character: float64(id.Column(id.Def.End()) - 1),
+						Line:      float64(line),
+						Character: float64(column),
 					},
 				},
 			},

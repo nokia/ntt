@@ -6,19 +6,9 @@ import (
 )
 
 type IdentInfo struct {
-	Syntax *ast.Ident
-	Def    ast.Node
-	Type   Type
-
-	ParseInfo *ParseInfo
-}
-
-func (info *IdentInfo) Line(pos loc.Pos) int {
-	return info.ParseInfo.Position(pos).Line
-}
-
-func (info *IdentInfo) Column(pos loc.Pos) int {
-	return info.ParseInfo.Position(pos).Column
+	Syntax   ast.Node
+	Position loc.Position
+	Def      *IdentInfo
 }
 
 // IdentifierAt parses file and returns IdentInfo about identifier at position
@@ -35,8 +25,8 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 	}
 
 	info := IdentInfo{
-		Syntax:    id,
-		ParseInfo: syntax,
+		Syntax:   id,
+		Position: syntax.Position(id.Pos()),
 	}
 
 	// build symbol table for lookup
@@ -45,8 +35,10 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 	// Fill info struct with everything we have.
 	if scp := mod.Scopes[id]; scp != nil {
 		if obj := scp.Lookup(id.String()); obj != nil {
-			info.Def = obj.Node()
-			info.Type = obj.Type()
+			info.Def = &IdentInfo{
+				Syntax:   obj.Node(),
+				Position: syntax.Position(obj.Pos()),
+			}
 			return &info, nil
 		}
 
@@ -56,8 +48,10 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 				if syntax := suite.Parse(file); syntax.Module != nil {
 					imp := suite.symbols(syntax)
 					if obj := imp.Lookup(id.String()); obj != nil {
-						info.Def = obj.Node()
-						info.Type = obj.Type()
+						info.Def = &IdentInfo{
+							Syntax:   obj.Node(),
+							Position: syntax.Position(obj.Pos()),
+						}
 						return &info, nil
 					}
 				}
