@@ -3,6 +3,8 @@
 package ast
 
 import (
+	"encoding/json"
+
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
 )
@@ -83,6 +85,39 @@ func (t *Token) Comments() string {
 	return joinComments(t.LeadingTriv)
 }
 
+func (x Token) MarshalJSON() ([]byte, error) {
+	// Empty tokens become `null`. That should make it simpler to filter,
+	// compared to `""`. When Tokens use pointer semantics we can use omitempty
+	// to filter them out.
+	if !x.IsValid() {
+		return []byte("null"), nil
+	}
+
+	// Tokens without any comments become a string. That makes the output easier
+	// one the eye.
+	if len(x.LeadingTriv) == 0 && len(x.TrailingTriv) == 0 {
+		return json.Marshal(x.String())
+	}
+
+	// If there are comments we'll make an array of 3 strings out of it.
+	var strs []string
+
+	// First element is the leading trivia
+	if triv := x.LeadingTriv; len(triv) > 0 {
+		strs = append(strs, joinComments(triv))
+	}
+
+	// Second element is be token itself.
+	strs = append(strs, x.String())
+
+	// Third element is the trailing trivia
+	if triv := x.TrailingTriv; len(triv) > 0 {
+		strs = append(strs, joinComments(triv))
+	}
+
+	return json.Marshal(strs)
+}
+
 func (t *Token) LastTok() *Token { return t }
 
 // Trivia represent the parts of the source text that are largely insignificant
@@ -100,7 +135,7 @@ type (
 	// Ident represents an identifier.
 	Ident struct {
 		Tok  Token // first identifier token
-		Tok2 Token // optional second identifier token, e.g. for "any port"
+		Tok2 Token `json:",omitempty"` // optional second identifier token, e.g. for "any port"
 	}
 
 	// ParametrizedIdent represents a paremetrized identifier, e.g. "f<charstring>".
@@ -333,20 +368,32 @@ func (x *UnaryExpr) Pos() loc.Pos         { return x.Op.Pos() }
 func (x *BinaryExpr) Pos() loc.Pos        { return x.X.Pos() }
 func (x *ParenExpr) Pos() loc.Pos         { return x.LParen.Pos() }
 func (x *SelectorExpr) Pos() loc.Pos      { return x.X.Pos() }
-func (x *IndexExpr) Pos() loc.Pos         { return x.X.Pos() }
-func (x *CallExpr) Pos() loc.Pos          { return x.Fun.Pos() }
-func (x *LengthExpr) Pos() loc.Pos        { return x.X.Pos() }
-func (x *RedirectExpr) Pos() loc.Pos      { return x.X.Pos() }
-func (x *ValueExpr) Pos() loc.Pos         { return x.X.Pos() }
-func (x *ParamExpr) Pos() loc.Pos         { return x.X.Pos() }
-func (x *FromExpr) Pos() loc.Pos          { return x.Kind.Pos() }
-func (x *ModifiesExpr) Pos() loc.Pos      { return x.Tok.Pos() }
-func (x *RegexpExpr) Pos() loc.Pos        { return x.Tok.Pos() }
-func (x *PatternExpr) Pos() loc.Pos       { return x.Tok.Pos() }
-func (x *DecmatchExpr) Pos() loc.Pos      { return x.Tok.Pos() }
-func (x *DecodedExpr) Pos() loc.Pos       { return x.Tok.Pos() }
-func (x *DefKindExpr) Pos() loc.Pos       { return x.Kind.Pos() }
-func (x *ExceptExpr) Pos() loc.Pos        { return x.X.Pos() }
+func (x *IndexExpr) Pos() loc.Pos {
+	if x.X != nil {
+		return x.X.Pos()
+	}
+	return x.LBrack.Pos()
+}
+func (x *CallExpr) Pos() loc.Pos { return x.Fun.Pos() }
+
+func (x *LengthExpr) Pos() loc.Pos {
+	if x.X != nil {
+		return x.X.Pos()
+	}
+	return x.Len.Pos()
+}
+
+func (x *RedirectExpr) Pos() loc.Pos { return x.X.Pos() }
+func (x *ValueExpr) Pos() loc.Pos    { return x.X.Pos() }
+func (x *ParamExpr) Pos() loc.Pos    { return x.X.Pos() }
+func (x *FromExpr) Pos() loc.Pos     { return x.Kind.Pos() }
+func (x *ModifiesExpr) Pos() loc.Pos { return x.Tok.Pos() }
+func (x *RegexpExpr) Pos() loc.Pos   { return x.Tok.Pos() }
+func (x *PatternExpr) Pos() loc.Pos  { return x.Tok.Pos() }
+func (x *DecmatchExpr) Pos() loc.Pos { return x.Tok.Pos() }
+func (x *DecodedExpr) Pos() loc.Pos  { return x.Tok.Pos() }
+func (x *DefKindExpr) Pos() loc.Pos  { return x.Kind.Pos() }
+func (x *ExceptExpr) Pos() loc.Pos   { return x.X.Pos() }
 
 func (x *Ident) End() loc.Pos             { return x.LastTok().End() }
 func (x *ParametrizedIdent) End() loc.Pos { return x.LastTok().End() }
@@ -600,7 +647,7 @@ type (
 	Field struct {
 		DefaultTok       Token    // Position of "@default" or nil
 		Type             TypeSpec // Type
-		Name             Expr     // Name
+		Name             Expr     // Name or Array
 		TypePars         *FormalPars
 		ValueConstraint  *ParenExpr  // Value constraint or nil
 		LengthConstraint *LengthExpr // Length constraint or nil
@@ -779,9 +826,9 @@ type (
 
 	// A StructTypeDecl represents a name struct type.
 	StructTypeDecl struct {
-		TypeTok  Token // Position of "type"
-		Kind     Token // RECORD, SET, UNION
-		Name     Expr  // Name
+		TypeTok  Token  // Position of "type"
+		Kind     Token  // RECORD, SET, UNION
+		Name     *Ident // Name
 		TypePars *FormalPars
 		LBrace   Token    // Position of "{"
 		Fields   []*Field // Member list
@@ -841,7 +888,7 @@ type (
 	ComponentTypeDecl struct {
 		TypeTok    Token
 		CompTok    Token
-		Name       Expr
+		Name       *Ident
 		TypePars   *FormalPars
 		ExtendsTok Token
 		Extends    []Expr
@@ -1258,7 +1305,7 @@ func (x *FormalPar) Pos() loc.Pos {
 	if x.Direction.Pos().IsValid() {
 		return x.Direction.Pos()
 	}
-	if x.TemplateRestriction.Pos().IsValid() {
+	if x.TemplateRestriction != nil && x.TemplateRestriction.Pos().IsValid() {
 		return x.TemplateRestriction.Pos()
 	}
 	if x.Modif.Pos().IsValid() {

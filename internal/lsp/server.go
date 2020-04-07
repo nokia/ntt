@@ -11,6 +11,7 @@ import (
 
 	"github.com/nokia/ntt/internal/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/internal/ntt"
 )
 
 func NewServer(ctx context.Context, stream jsonrpc2.Stream, withTelemetry bool) (context.Context, *Server) {
@@ -50,6 +51,8 @@ type Server struct {
 	// folders is only valid between initialize and initialized, and holds the
 	// set of folders to build views for when we are ready
 	pendingFolders []protocol.WorkspaceFolder
+
+	suite *ntt.Suite
 }
 
 func (s *Server) Info(ctx context.Context, msg string) {

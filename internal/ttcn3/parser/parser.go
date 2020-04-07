@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/scanner"
@@ -14,7 +15,7 @@ import (
 // The parser structure holds the parser's internal state.
 type parser struct {
 	file    *loc.File
-	errors  ErrorList
+	errors  errors.ErrorList
 	scanner scanner.Scanner
 
 	// Tracing/debugging
@@ -958,7 +959,7 @@ func (p *parser) parseIdent() *ast.Ident {
 }
 
 func (p *parser) parseRefList() []ast.Expr {
-	l := make([]ast.Expr, 1)
+	l := make([]ast.Expr, 0, 1)
 	for {
 		l = append(l, p.parseTypeRef())
 		if p.tok != token.COMMA {

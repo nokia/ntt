@@ -1,4 +1,4 @@
-package parser
+package errors
 
 import (
 	"fmt"
@@ -32,6 +32,10 @@ func (e Error) Error() string {
 // The zero value for an ErrorList is an empty ErrorList ready to use.
 //
 type ErrorList []*Error
+
+func (p *ErrorList) List() []*Error {
+	return *p
+}
 
 // Add adds an Error with given position and error message to an ErrorList.
 func (p *ErrorList) Add(pos loc.Position, msg string) {

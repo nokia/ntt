@@ -28,12 +28,12 @@ func (s *Server) Declaration(context.Context, *protocol.DeclarationParams) (prot
 	return nil, notImplemented("Declaration")
 }
 
-func (s *Server) Definition(context.Context, *protocol.DefinitionParams) (protocol.Definition, error) {
-	return nil, notImplemented("Definition")
+func (s *Server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+	return s.definition(ctx, params)
 }
 
-func (s *Server) DidChange(context.Context, *protocol.DidChangeTextDocumentParams) error {
-	return notImplemented("DidChange")
+func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
+	return s.didChange(ctx, params)
 }
 
 func (s *Server) DidChangeConfiguration(context.Context, *protocol.DidChangeConfigurationParams) error {
@@ -48,12 +48,12 @@ func (s *Server) DidChangeWorkspaceFolders(context.Context, *protocol.DidChangeW
 	return notImplemented("DidChangeWorkspaceFolders")
 }
 
-func (s *Server) DidClose(context.Context, *protocol.DidCloseTextDocumentParams) error {
-	return notImplemented("DidClose")
+func (s *Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
+	return s.didClose(ctx, params)
 }
 
-func (s *Server) DidOpen(context.Context, *protocol.DidOpenTextDocumentParams) error {
-	return notImplemented("DidOpen")
+func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
+	return s.didOpen(ctx, params)
 }
 
 func (s *Server) DidSave(context.Context, *protocol.DidSaveTextDocumentParams) error {
@@ -68,8 +68,8 @@ func (s *Server) DocumentHighlight(context.Context, *protocol.DocumentHighlightP
 	return nil, notImplemented("DocumentHighlight")
 }
 
-func (s *Server) DocumentLink(context.Context, *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
-	return nil, notImplemented("DocumentLink")
+func (s *Server) DocumentLink(ctx context.Context, params *protocol.DocumentLinkParams) ([]protocol.DocumentLink, error) {
+	return s.documentLink(ctx, params)
 }
 
 func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams) ([]protocol.DocumentSymbol, error) {
