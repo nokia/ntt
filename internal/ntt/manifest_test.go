@@ -202,7 +202,7 @@ func TestParametersFile(t *testing.T) {
 func strs(files []*ntt.File) []string {
 	ret := make([]string, len(files))
 	for i := range files {
-		ret[i] = files[i].Path()
+		ret[i] = files[i].String()
 	}
 	return ret
 }

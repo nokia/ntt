@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"strings"
 
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/span"
@@ -20,9 +21,21 @@ type File struct {
 	handle *memoize.Handle
 }
 
-func (f *File) URI() span.URI  { return f.uri }
-func (f *File) Path() string   { return f.path }
+func (f *File) URI() span.URI { return f.uri }
+
+// Path returns the file system path.
+func (f *File) Path() string {
+	if strings.HasPrefix(f.path, "file://") {
+		return f.uri.Filename()
+	}
+	return f.path
+}
+
+// String returns the file path as it was using during creation: If File was
+// created as URI, String will return an URI, if File was created as relativ
+// path, String will return this relativ path.
 func (f *File) String() string { return f.path }
+
 func (f *File) ID() string {
 	return fmt.Sprintf("%x", sha1.Sum([]byte(strconv.Itoa(f.version)+f.URI().Filename())))
 }
@@ -54,7 +67,7 @@ func PathSlice(files ...*File) []string {
 	ret := make([]string, 0, len(files))
 	for i := range files {
 		if files[i] != nil {
-			ret = append(ret, files[i].Path())
+			ret = append(ret, files[i].String())
 		}
 	}
 	if len(ret) == 0 {

@@ -70,7 +70,7 @@ func (suite *Suite) Parse(file string) *ParseInfo {
 		if len(mods) == 1 {
 			data.Module = mods[0]
 		} else if len(mods) > 1 {
-			data.Err = fmt.Errorf("file %q contains more than one module.", f.Path())
+			data.Err = fmt.Errorf("file %q contains more than one module.", f.String())
 		}
 		return &data
 	})
