@@ -647,7 +647,7 @@ type (
 	Field struct {
 		DefaultTok       Token    // Position of "@default" or nil
 		Type             TypeSpec // Type
-		Name             *Ident   // Name
+		Name             Expr     // Name or Array
 		TypePars         *FormalPars
 		ValueConstraint  *ParenExpr  // Value constraint or nil
 		LengthConstraint *LengthExpr // Length constraint or nil

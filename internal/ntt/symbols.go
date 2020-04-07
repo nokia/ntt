@@ -432,15 +432,22 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 		return false
 
 	case *ast.Field:
-		v := NewVar(n, n.Name.String())
-		b.insert(v)
-		b.define(n.Type)
-		return false
+		err := ast.Declarators([]ast.Expr{n.Name}, b.fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
+			v := NewVar(decl, identName(name))
+			b.insert(v)
+			for i := range arrays {
+				b.define(arrays[i])
+			}
+			b.define(value)
+		})
 
-	case *ast.PortMapAttribute:
-		b.currScope = NewLocalScope(n, b.currScope)
-		b.define(n.Params)
-		b.currScope = b.currScope.(*LocalScope).parent
+		// Add syntax errors to the error list
+		if err != nil {
+			for _, e := range err.List() {
+				b.errs = append(b.errs, e)
+			}
+		}
+		b.define(n.Type)
 		return false
 
 	case *ast.FormalPar:
@@ -460,8 +467,14 @@ func (b *builder) defineEnter(c *ast.Cursor) bool {
 				b.errs = append(b.errs, e)
 			}
 		}
-
 		return false
+
+	case *ast.PortMapAttribute:
+		b.currScope = NewLocalScope(n, b.currScope)
+		b.define(n.Params)
+		b.currScope = b.currScope.(*LocalScope).parent
+		return false
+
 	default:
 		return true
 	}

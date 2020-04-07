@@ -1674,7 +1674,7 @@ func (p *parser) parseField() *ast.Field {
 		x.DefaultTok = p.consume()
 	}
 	x.Type = p.parseTypeSpec()
-	x.Name = p.parseIdent()
+	x.Name = p.parsePrimaryExpr()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
