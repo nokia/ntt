@@ -840,7 +840,7 @@ type (
 	EnumTypeDecl struct {
 		TypeTok  Token // Position of "type"
 		EnumTok  Token // Position of "ENUMERATED"
-		Name     Expr
+		Name     *Ident
 		TypePars *FormalPars
 		LBrace   Token  // Position of "{"
 		Enums    []Expr // Enum list
@@ -852,7 +852,7 @@ type (
 	BehaviourTypeDecl struct {
 		TypeTok  Token // Position of "type"
 		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
-		Name     Expr
+		Name     *Ident
 		TypePars *FormalPars
 		Params   *FormalPars // Formal parameter list
 		RunsOn   *RunsOnSpec // Optional runs-on spec
