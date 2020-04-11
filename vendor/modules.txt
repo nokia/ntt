@@ -2,6 +2,10 @@
 github.com/davecgh/go-spew/spew
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
+# github.com/kr/pretty v0.2.0
+github.com/kr/pretty
+# github.com/kr/text v0.1.0
+github.com/kr/text
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
 # github.com/pmezard/go-difflib v1.0.0
@@ -15,7 +19,7 @@ github.com/stretchr/testify/assert
 # golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
-# gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
+# gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 gopkg.in/check.v1
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2

@@ -426,6 +426,28 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	return &data.manifest, data.err
 }
 
+func (suite *Suite) Files() ([]string, error) {
+	srcs, err := suite.Sources()
+	if err != nil {
+		return nil, err
+	}
+	files := PathSlice(srcs...)
+
+	dirs, err := suite.Imports()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dir := range dirs {
+		f, err := TTCN3Files(dir.Path())
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, f...)
+	}
+	return files, err
+}
+
 func (suite *Suite) FindModule(name string) (string, error) {
 	srcs, err := suite.Sources()
 	if err != nil {
