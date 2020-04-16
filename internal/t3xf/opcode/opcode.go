@@ -479,8 +479,8 @@ func Unpack(x uint32) (Opcode, int) {
 	case instrClass:
 		return Opcode(i >> 4 & 0xfff), i >> 16
 	case refClass:
-		if i&(1<<31) != 0 {
-			return FROZEN_REF, i &^ (1 << 31)
+		if uint32(i)&(1<<31) != 0 {
+			return FROZEN_REF, int(uint32(i) &^ (1 << 31))
 		}
 		return REF, i
 	case lineClass:

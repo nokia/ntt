@@ -47,6 +47,10 @@ var (
 	}
 
 	Verbose = false
+
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 func init() {

@@ -1,0 +1,62 @@
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: k3
+    binary: k3
+    dir: ./cmd/k3
+
+  - id: k3objdump
+    binary: k3objdump
+    dir: ./cmd/k3objdump
+
+  - id: k3-mcov
+    binary: k3-mcov
+    dir: ./cmd/k3-mcov
+
+nfpms:
+  - file_name_template: '{{ .ProjectName }}.{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    homepage:  https://github.com/nokia/ntt
+    description: A versatile TTCN-3 toolkit
+    maintainer: Matthias Simon <matthias.simon@nokia.com>
+    license: BSD-3 Clause
+    vendor: Nokia
+
+    formats:
+      - deb
+      - rpm
+
+    recommends:
+      - git
+      - gcc
+      - gcc-c++
+      - golang
+
+    bindir: /usr/bin
+    replacements:
+      386: i386
+      amd64: x86_64
+
+archives:
+- builds: ["amd64"]
+  replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - Merge branch
