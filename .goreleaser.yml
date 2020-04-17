@@ -60,3 +60,6 @@ changelog:
     - '^docs:'
     - '^test:'
     - Merge branch
+
+release:
+  draft: true
