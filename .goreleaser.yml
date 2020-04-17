@@ -60,3 +60,7 @@ changelog:
     - '^docs:'
     - '^test:'
     - Merge branch
+
+release:
+  github:
+    name: nokia/ntt
