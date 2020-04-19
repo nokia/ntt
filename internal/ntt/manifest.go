@@ -263,7 +263,7 @@ func (suite *Suite) TestHook() (*File, error) {
 
 	// Look for hook in root folder
 	if suite.root != nil {
-		hook := filepath.Join(suite.root.Path(), filename)
+		hook, _ := filepath.Abs(filepath.Join(suite.root.Path(), filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -279,7 +279,7 @@ func (suite *Suite) TestHook() (*File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		hook := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
+		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(srcs[0].Path()), filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
