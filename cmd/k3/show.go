@@ -125,7 +125,7 @@ func show(cmd *cobra.Command, args []string) error {
 			"session_id",
 		} {
 			if s := stringers[key](suite); s != "" {
-				fmt.Printf("K3_%s=%s\n", strings.ToUpper(key), strings.Replace(s, "\n", " ", -1))
+				fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(key), strings.Replace(s, "\n", " ", -1))
 			}
 		}
 

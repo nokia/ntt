@@ -49,7 +49,7 @@ func (suite *Suite) Environ() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+		ret = append(ret, fmt.Sprintf("%s=\"%s\"", k, v))
 	}
 	return ret, nil
 }
