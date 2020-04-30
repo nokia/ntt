@@ -1,7 +1,10 @@
 package ntt
 
 import (
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -53,7 +56,24 @@ func (suite *Suite) Id() (int, error) {
 }
 
 // File returns a new file struct for reading.
+//
+// Environment variable K3_CACHE will be used to find path, if path is a single
+// file-name without leading directory.
 func (suite *Suite) File(path string) *File {
+
+	if cache, _ := suite.Getenv("NTT_CACHE"); cache != "" {
+		if dir, file := filepath.Split(path); dir == "" {
+			for _, dir := range strings.Split(cache, ":") {
+				file := filepath.Join(dir, file)
+				if _, err := os.Stat(file); err == nil {
+					path = file
+					goto found
+				}
+			}
+		}
+	}
+
+found:
 	uri := span.NewURI(path)
 
 	suite.filesMu.Lock()
