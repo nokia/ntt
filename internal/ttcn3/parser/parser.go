@@ -125,7 +125,9 @@ func (p *parser) handlePreproc(s string) {
 			p.error(p.pos(1), "malformed 'define' directive")
 		}
 	default:
-		p.error(p.pos(1), "unknown preprocessor directive")
+		if !strings.HasPrefix(s, "#!") {
+			p.error(p.pos(1), "unknown preprocessor directive")
+		}
 	}
 }
 
