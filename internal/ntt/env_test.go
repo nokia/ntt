@@ -104,14 +104,14 @@ func TestEnvFile(t *testing.T) {
 	suite = &ntt.Suite{}
 	suite.AddEnvFiles("ntt.env")
 	suite.File("ntt.env").SetBytes([]byte(`
-		# Undefined reference is okay.
+		# Undefined reference gives an error.
 		NTT_A="${NTT_UNDEFINED}"
 
-		# Keys may be defined later.
-		NTT_B="${NTT_C}"
+		# Multiple keys may be defined later.
+		NTT_B="${NTT_C} ${NTT_C}"
 		NTT_C=23.5
 
-		# Direct recursion should not break ntt.
+		# Direct recursion should not break ntt. NTT_D will be replaced with an empty string.
 		NTT_D="${NTT_D}"
 
 		# Indirect recursion shouldn't either.
@@ -125,9 +125,9 @@ func TestEnvFile(t *testing.T) {
 
 	s, err = suite.Getenv("NTT_B")
 	assert.Nil(t, err)
-	assert.Equal(t, "23.5", s)
+	assert.Equal(t, "23.5 23.5", s)
 
 	s, err = suite.Getenv("NTT_D")
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }

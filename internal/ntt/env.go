@@ -65,11 +65,11 @@ func (suite *Suite) AddEnvFiles(files ...string) {
 
 // Expand expands string v using Suite.Getenv
 func (suite *Suite) Expand(v string) (string, error) {
-	return suite.expand(v, make(map[string]bool))
+	return suite.expand(v, make(map[string]string))
 }
 
 // Expand expands string v using Suite.Getenv
-func (suite *Suite) expand(v string, visited map[string]bool) (string, error) {
+func (suite *Suite) expand(v string, visited map[string]string) (string, error) {
 	var gerr error
 	mapper := func(name string) string {
 		v, err := suite.getenv(name, visited)
@@ -108,32 +108,38 @@ func (suite *Suite) expand(v string, visited map[string]bool) (string, error) {
 //
 //
 func (suite *Suite) Getenv(key string) (string, error) {
-	return suite.getenv(key, make(map[string]bool))
+	return suite.getenv(key, make(map[string]string))
 }
 
-func (suite *Suite) getenv(key string, visited map[string]bool) (string, error) {
-	if visited[key] {
-		return "", fmt.Errorf("recursion detected when expanding variable %q.", key)
+func (suite *Suite) getenv(key string, visited map[string]string) (string, error) {
+	if s, ok := visited[key]; ok {
+		return s, nil
 	}
-	visited[key] = true
 
 	if env, ok := suite.lookupProcessEnv(key); ok {
+		visited[key] = env
 		return env, nil
 	}
 
 	for i := len(suite.envFiles); i > 0; i-- {
 		v, err := suite.lookupEnvFile(suite.envFiles[i-1], key)
 		if err == nil {
-			return suite.expand(v, visited)
+			visited[key] = ""
+			s, err := suite.expand(v, visited)
+			visited[key] = s
+			return s, err
 		} else if err != ErrNoSuchVariable {
+			visited[key] = ""
 			return "", err
 		}
 	}
 
 	if suite.isKnown(key) {
+		visited[key] = ""
 		return "", nil
 	}
 
+	visited[key] = ""
 	return "", fmt.Errorf("variable %q not found.", key)
 }
 
