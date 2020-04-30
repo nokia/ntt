@@ -7,7 +7,10 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml"
+	errors "golang.org/x/xerrors"
 )
+
+var ErrNoSuchVariable = errors.New("no such variable")
 
 var knownVars = map[string]bool{
 	"CFLAGS":              true,
@@ -120,11 +123,10 @@ func (suite *Suite) getenv(key string, visited map[string]bool) (string, error) 
 
 	for i := len(suite.envFiles); i > 0; i-- {
 		v, err := suite.lookupEnvFile(suite.envFiles[i-1], key)
-		if err != nil {
-			return "", err
-		}
-		if v != "" {
+		if err == nil {
 			return suite.expand(v, visited)
+		} else if err != ErrNoSuchVariable {
+			return "", err
 		}
 	}
 
@@ -152,8 +154,12 @@ func (suite *Suite) lookupProcessEnv(key string) (string, bool) {
 // Lookup key in environment file
 func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 	tree, err := suite.parseEnvFile(file)
-	if err != nil || tree == nil {
+	if err != nil {
 		return "", err
+	}
+
+	if tree == nil {
+		return "", ErrNoSuchVariable
 	}
 
 	if v := tree.Get(key); v != nil {
@@ -168,7 +174,7 @@ func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 		}
 	}
 
-	return "", nil
+	return "", ErrNoSuchVariable
 }
 
 func (suite *Suite) parseEnvFile(f *File) (*toml.Tree, error) {
