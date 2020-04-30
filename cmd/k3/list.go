@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/nokia/ntt/internal/loader"
 	"github.com/nokia/ntt/internal/runtime"
@@ -16,7 +18,54 @@ var (
 		Short: "List various types of objects",
 		Long: `List various types of objects.
 
-Default output shows the testcase names in current directory.`,
+List modules, imports or tests. The list command without any explicit
+sub-commands will output tests.
+
+List will not output objects from imported directories. If you need to list all
+objects from a testsuite you currently have to pass .ttcn3 files as arguments.
+Example:
+
+    k3 list $(k3 show -- sources) $(find $(k3 show -- imports) -name \*.ttcn3)
+
+
+You can use regular expressions to filter objects. If you pass multiple regular
+expressions, all of them must match (AND). Example:
+
+	$ cat example.ttcn3
+	testcase foo() ...
+	testcase bar() ...
+	testcase foobar() ...
+	...
+
+	$ k3 list --regex=foo --regex=bar
+	example.foobar
+
+	$ k3 list --regex='foo|bar'
+	example.foo
+	example.bar
+	example.foobar
+
+
+Similarly, you can also specify regular expressions for documentation tags.
+Example:
+
+	$ cat example.ttcn3
+	// @one
+	// @two some-value
+	testcase foo() ...
+
+	// @two: some-other-value
+	testcase bar() ...
+	...
+
+	$ k3 list --tags-regex=@one --tags-regex=@two
+	example.foo
+
+	$ k3 list --tags-regex='@two: some'
+	example.foo
+	example.bar
+
+`,
 
 		Run: listTests,
 	}
@@ -42,10 +91,19 @@ Default output shows the testcase names in current directory.`,
 	w = bufio.NewWriter(os.Stdout)
 
 	Tags = false
+
+	ItemsRegex   = []string{}
+	ItemsExclude = []string{}
+	TagsRegex    = []string{}
+	TagsExclude  = []string{}
 )
 
 func init() {
 	listCmd.PersistentFlags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
+	listCmd.PersistentFlags().StringSliceVarP(&ItemsRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
+	listCmd.PersistentFlags().StringSliceVarP(&ItemsExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
+	listCmd.PersistentFlags().StringSliceVarP(&TagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
+	listCmd.PersistentFlags().StringSliceVarP(&TagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
 	listCmd.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
 	rootCmd.AddCommand(listCmd)
 }
@@ -53,8 +111,8 @@ func init() {
 func listTests(cmd *cobra.Command, args []string) {
 	suite := loadSuite(args, loader.Config{
 		IgnoreImports:  true,
-		IgnoreTags:     !Tags,
-		IgnoreComments: !Tags,
+		IgnoreTags:     !needTags(),
+		IgnoreComments: !needTags(),
 	})
 
 	for _, test := range suite.Tests() {
@@ -66,8 +124,8 @@ func listTests(cmd *cobra.Command, args []string) {
 func listModules(cmd *cobra.Command, args []string) {
 	suite := loadSuite(args, loader.Config{
 		IgnoreImports:  true,
-		IgnoreTags:     !Tags,
-		IgnoreComments: !Tags,
+		IgnoreTags:     !needTags(),
+		IgnoreComments: !needTags(),
 	})
 
 	for _, mod := range suite.Modules() {
@@ -78,8 +136,8 @@ func listModules(cmd *cobra.Command, args []string) {
 
 func listImports(cmd *cobra.Command, args []string) {
 	suite := loadSuite(args, loader.Config{
-		IgnoreTags:     true,
-		IgnoreComments: true,
+		IgnoreTags:     !needTags(),
+		IgnoreComments: !needTags(),
 	})
 
 	for _, mod := range suite.Modules() {
@@ -106,12 +164,34 @@ func loadSuite(args []string, conf loader.Config) runtime.Suite {
 }
 
 func printItem(file string, item string, tags [][]string) {
+
+	if !matchAll(ItemsRegex, item) {
+		return
+	}
+
+	if len(ItemsExclude) > 0 && matchAll(ItemsExclude, item) {
+		return
+	}
+
+	if len(TagsRegex) > 0 {
+		if len(tags) == 0 {
+			return
+		}
+		if !matchAllTags(TagsRegex, tags) {
+			return
+		}
+	}
+
+	if len(TagsExclude) > 0 && matchAllTags(TagsExclude, tags) {
+		return
+	}
+
 	file = file + "\t"
 	if !Verbose {
 		file = ""
 	}
 
-	if len(tags) != 0 {
+	if Tags && len(tags) != 0 {
 		for _, tag := range tags {
 			fmt.Fprintf(w, "%s%s\t%s\t%s\n", file, item, tag[0], tag[1])
 		}
@@ -119,4 +199,40 @@ func printItem(file string, item string, tags [][]string) {
 	}
 
 	fmt.Fprintf(w, "%s%s\n", file, item)
+}
+
+func matchAll(regexes []string, s string) bool {
+	for _, r := range regexes {
+		if ok, _ := regexp.Match(r, []byte(s)); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func matchAllTags(regexes []string, tags [][]string) bool {
+next:
+	for _, r := range regexes {
+		f := strings.SplitN(r, ":", 2)
+		for i := range f {
+			f[i] = strings.TrimSpace(f[i])
+		}
+		for _, tag := range tags {
+			if ok, _ := regexp.Match(f[0], []byte(tag[0])); !ok {
+				continue
+			}
+			if len(f) > 1 {
+				if ok, _ := regexp.Match(f[1], []byte(tag[1])); !ok {
+					continue
+				}
+			}
+			continue next
+		}
+		return false
+	}
+	return true
+}
+
+func needTags() bool {
+	return Tags || len(ItemsRegex) != 0 || len(ItemsExclude) != 0 || len(TagsRegex) != 0 || len(TagsExclude) != 0
 }
