@@ -61,19 +61,10 @@ func (suite *Suite) Id() (int, error) {
 // file-name without leading directory.
 func (suite *Suite) File(path string) *File {
 
-	if cache, _ := suite.Getenv("NTT_CACHE"); cache != "" {
-		if dir, file := filepath.Split(path); dir == "" {
-			for _, dir := range strings.Split(cache, ":") {
-				file := filepath.Join(dir, file)
-				if _, err := os.Stat(file); err == nil {
-					path = file
-					goto found
-				}
-			}
-		}
+	if s := suite.searchCacheForFile(path); s != "" {
+		path = s
 	}
 
-found:
 	uri := span.NewURI(path)
 
 	suite.filesMu.Lock()
@@ -93,6 +84,36 @@ found:
 	}
 	suite.files[uri] = f
 	return f
+}
+
+// searchCacheForFile searches for a file in every directory specified by
+// environment variable NTT_CACHE.
+//
+// If found, the directory with joined file name will be returned.
+//
+// searchCacheForFile will return an empty string:
+
+//  * if the file could not be found
+//  * if NTT_CACHE is empty
+//  * if file-string has a directory prefix.
+//
+// Purpose and behaviour of this function are similar to GNU Make's VPATH. It
+// is used to prevent re-built of generated files.
+func (suite *Suite) searchCacheForFile(file string) string {
+	if dirPrefix, _ := filepath.Split(file); dirPrefix != "" {
+		return ""
+	}
+
+	if cache, _ := suite.Getenv("NTT_CACHE"); cache != "" {
+		for _, dir := range strings.Split(cache, ":") {
+			file := filepath.Join(dir, file)
+			if _, err := os.Stat(file); err == nil {
+				return file
+			}
+		}
+	}
+
+	return ""
 }
 
 func (suite *Suite) Root() *File {
