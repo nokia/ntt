@@ -87,11 +87,18 @@ func (suite *Suite) File(path string) *File {
 }
 
 // searchCacheForFile searches for a file in every directory specified by
-// NTT_CACHE.
+// environment variable NTT_CACHE.
 //
-// If found, joined directory and file name will be returned.  An empty string
-// will be returned, if not file could not be found or if NTT_CACHE is empty or
-// if file-string has a directory prefix.
+// If found, the directory with joined file name will be returned.
+//
+// searchCacheForFile will return an empty string:
+
+//  * if the file could not be found
+//  * if NTT_CACHE is empty
+//  * if file-string has a directory prefix.
+//
+// Purpose and behaviour of this function are similar to GNU Make's VPATH. It
+// is used to prevent re-built of generated files.
 func (suite *Suite) searchCacheForFile(file string) string {
 	if dirPrefix, _ := filepath.Split(file); dirPrefix != "" {
 		return ""
