@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sort"
@@ -22,16 +23,24 @@ var (
 func main() {
 
 	// Scanner reads stdin line by line
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
+	r := bufio.NewReader(os.Stdin)
+
+	var (
+		text string
+		err  error
+	)
+	for {
 		line++
+
+		text, err = r.ReadString('\n')
+
 		// We are only interested in ptrx events ending with +consume. Until we
 		// require other events for coverage, do the filtering before splitting
 		// the whole string.
-		if !strings.HasSuffix(scanner.Text(), "+consume") {
+		if !strings.HasSuffix(text, "+consume") {
 			continue
 		}
-		s := strings.Split(scanner.Text(), "|")
+		s := strings.Split(text, "|")
 		if s[1] != "ptrx" {
 			continue
 		}
@@ -49,17 +58,21 @@ func main() {
 		tmpl = tmpl[idx+1:]
 
 		// Parse template
-		ast, err := parser.ParseExpr(loc.NewFileSet(), "stdin", tmpl)
-		if err != nil {
-			log.Println(err)
+		ast, err2 := parser.ParseExpr(loc.NewFileSet(), "stdin", tmpl)
+		if err2 != nil {
+			log.Println(err2)
 			continue
 		}
 
 		// Calculate coverage
 		cover(typ, ast)
+
+		if err != nil {
+			break
+		}
 	}
 
-	if err := scanner.Err(); err != nil {
+	if err != io.EOF {
 		log.Println(err)
 	}
 
