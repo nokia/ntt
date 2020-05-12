@@ -233,10 +233,10 @@ We are currently implementing the [Language Server Protocol](https://microsoft.g
 | Workspace Symbols           | `workspace/symbol`                | :x:                |
 | Execute Command             | `workspace/executeCommand`        | :x:                |
 | Diagnostics                 | `textDocument/publishDiagnostics` | :x:                |
-| Completion                  | `textDocument/completion`         | :heavy_check_mark: |
+| Completion                  | `textDocument/completion`         | :x:                |
 | Hover                       | `textDocument/hover`              | :x:                |
 | Signature Help              | `textDocument/signatureHelp`      | :x:                |
-| Goto Definition             | `textDocument/definition`         | :x:                |
+| Goto Definition             | `textDocument/definition`         | :heavy_check_mark: |
 | Goto Type Definition        | `textDocument/typeDefinition`     | :x:                |
 | Goto Implementation         | `textDocument/implementation`     | :x:                |
 | Find References             | `textDocument/references`         | :x:                |
@@ -268,7 +268,7 @@ For TTCN-3 support in Visual Studio Code have a look at our co-project
 
 **Vim**
 
-Use [prabirshrestha/vim-lsp], with the following configuration:
+Use [prabirshrestha/vim-lsp](https://github.com/prabirshrestha/vim-lsp/), with the following configuration:
 
 ```vim
 augroup LspTTCN3
