@@ -51,7 +51,7 @@ If you have questions, you are welcome to contact us at
 [ntt@groups.io](mailto:ntt@groups.io).
 
 You want to contribute? That's great! Kindly read our [contribution
-guide](https://github.com/nokia/ntt/blob/master/CONTRIBUTION.md) for more
+guide](https://github.com/nokia/ntt/blob/master/CONTRIBUTING.md) for more
 details.
 
 
