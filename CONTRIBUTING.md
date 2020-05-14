@@ -17,7 +17,7 @@ questions.
 
 ## Reporting Issues
 
-If you believe you have found an issue in k3, please use the GitHub issue tracker
+If you believe you have found an issue in ntt, please use the GitHub issue tracker
 to report the Problem. If you're not sure if it's a bug or not, start by asking
 on the mailing list [ntt@groups.io](mailto:ntt@groups.io).
 

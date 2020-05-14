@@ -34,7 +34,7 @@ type Suite struct {
 	store memoize.Store
 }
 
-// Id returns the unique session id (aka K3_SESSION_ID). This ID is the smallest
+// Id returns the unique session id (aka NTT_SESSION_ID). This ID is the smallest
 // integer available on this machine.
 func (suite *Suite) Id() (int, error) {
 	if suite.id == 0 {
@@ -57,7 +57,7 @@ func (suite *Suite) Id() (int, error) {
 
 // File returns a new file struct for reading.
 //
-// Environment variable K3_CACHE will be used to find path, if path is a single
+// Environment variable NTT_CACHE will be used to find path, if path is a single
 // file-name without leading directory.
 func (suite *Suite) File(path string) *File {
 

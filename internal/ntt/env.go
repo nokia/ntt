@@ -101,10 +101,6 @@ func (suite *Suite) expand(v string, visited map[string]string) (string, error) 
 //         suite.lookupEnvFile("$PWD/ntt.env", "K3_FOO")
 //         suite.lookupEnvFile("$PWD/k3.env", "NTT_FOO")
 //         suite.lookupEnvFile("$PWD/k3.env", "K3_FOO")
-//         suite.lookupEnvFile("$HOME/.config/ntt/ntt.env", "NTT_FOO")
-//         suite.lookupEnvFile("$HOME/.config/ntt/ntt.env", "K3_FOO")
-//         suite.lookupEnvFile("$HOME/.config/ntt/k3.env", "NTT_FOO")
-//         suite.lookupEnvFile("$HOME/.config/ntt/k3.env", "K3_FOO") ...
 //
 //
 func (suite *Suite) Getenv(key string) (string, error) {

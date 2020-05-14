@@ -19,7 +19,7 @@ together should be put together. Package names should describe their purpose,
 they should be short and easy to understand. Avoid catchall packages like:
 `utils`, `helpers`, `functions`, ...
 
-You may use environment variables and variables from `k3.env` at any place, also
+You may use environment variables and variables from `ntt.env` at any place, also
 in `package.yml`. They become expanded when the suite is loaded.
 
 
@@ -99,7 +99,7 @@ func NewFromArgs(args ...string) (*Suite, error) {
 // Except for `NTT_SOURCES` You may use the usual environment variables to
 // overwrite default configuration.
 //
-// Allowing only ttcn3 files is a compromise between keeping k3 tool simple and
+// Allowing only ttcn3 files is a compromise between keeping ntt tool simple and
 // allowing user to create ad-hoc packages for proto-typing. This constraint
 // might be lifted in the future.
 func NewFromFiles(files ...string) (*Suite, error) {

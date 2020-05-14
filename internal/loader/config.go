@@ -25,7 +25,7 @@ type Config struct {
 
 	// Logf is the logger for the config.
 	// If the user provides a logger, debug logging is enabled.
-	// If if the K3_DEBUG environment variable is set, but the logger is
+	// If if the NTT_DEBUG environment variable is set, but the logger is
 	// nil, default to log.Printf.
 	Logf func(format string, arg ...interface{})
 

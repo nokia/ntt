@@ -19,5 +19,5 @@ func init() {
 }
 
 func versionInfo(cmd *cobra.Command, args []string) {
-	fmt.Printf("k3 %v, commit %v, built at %v\n", version, commit, date)
+	fmt.Printf("ntt %v, commit %v, built at %v\n", version, commit, date)
 }

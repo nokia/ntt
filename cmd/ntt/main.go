@@ -16,8 +16,8 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "k3",
-		Short: "k3 is a tool for managing TTCN-3 source code and tests",
+		Use:   "ntt",
+		Short: "ntt is a tool for managing TTCN-3 source code and tests",
 
 		// Support for custom commands
 		SilenceErrors:         true,
@@ -29,6 +29,14 @@ var (
 			if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 				cmd.Help()
 				return nil
+			}
+
+			if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
+				cmd := exec.Command(path, args[1:]...)
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				return cmd.Run()
 			}
 
 			if path, err := exec.LookPath("k3-" + args[0]); err == nil {
