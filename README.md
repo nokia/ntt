@@ -271,17 +271,24 @@ For TTCN-3 support in Visual Studio Code have a look at our co-project
 Use [prabirshrestha/vim-lsp](https://github.com/prabirshrestha/vim-lsp/), with the following configuration:
 
 ```vim
-augroup LspTTCN3
-  au!
-  autocmd User lsp_setup call lsp#register_server({
-      \ 'name': 'k3',
-      \ 'cmd': {server_info->['k3', 'langserver']},
-      \ 'whitelist': ['ttcn3'],
-      \ })
-  autocmd FileType ttcn3 setlocal omnifunc=lsp#complete
-  autocmd FileType ttcn3 nmap <buffer> gd <plug>(lsp-definition)
-  "autocmd FileType ttcn3 nmap <buffer> ,n <plug>(lsp-next-error)
-  "autocmd FileType ttcn3 nmap <buffer> ,p <plug>(lsp-previous-error)
+if executable('k3')
+    au User lsp_setup call lsp#register_server({
+        \ 'name': 'k3',
+        \ 'cmd': {server_info->['k3', 'langserver']},
+        \ 'whitelist': ['ttcn3'],
+        \ })
+endif
+
+function! s:on_lsp_buffer_enabled() abort
+    setlocal omnifunc=lsp#complete
+    setlocal signcolumn=yes
+    nmap <buffer> gd <plug>(lsp-definition)
+    nmap <buffer> <f2> <plug>(lsp-rename)
+endfunction
+
+augroup lsp_install
+    au!
+    autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
 augroup END
 ```
 
