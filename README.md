@@ -1,7 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/nokia/ntt?style=flat-square)](https://goreportcard.com/report/github.com/nokia/ntt)
 [![Build Status](https://travis-ci.com/nokia/ntt.svg?branch=master)](https://travis-ci.com/nokia/ntt)
 
-<p align="center"><img src="https://user-images.githubusercontent.com/12729086/81290451-63961480-9068-11ea-82b0-572c9d763fa7.png"/></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/12729086/82152035-0c115900-985f-11ea-8867-0c727a90b549.png"/></p>
 
 # About
 
