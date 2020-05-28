@@ -7,6 +7,10 @@ builds:
     binary: ntt
     dir: ./cmd/ntt
 
+  - id: k3
+    binary: k3
+    dir: ./cmd/k3
+
   - id: k3objdump
     binary: k3objdump
     dir: ./cmd/k3objdump
