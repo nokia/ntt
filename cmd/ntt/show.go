@@ -13,7 +13,7 @@ import (
 var (
 	showCmd = &cobra.Command{
 		Use:   "show [ <file>...] [-- var...]",
-		Short: "show configuration variables used by k3",
+		Short: "show configuration variables used by ntt",
 		RunE:  show,
 	}
 
@@ -84,11 +84,19 @@ var (
 		},
 
 		"datadir": func(suite *ntt.Suite) string {
-			return os.Getenv("K3_DATADIR")
+			s, err := suite.Getenv("NTT_DATADIR")
+			if err != nil {
+				fatal(err)
+			}
+			return s
 		},
 
 		"session_id": func(suite *ntt.Suite) string {
-			return os.Getenv("K3_SESSION_ID")
+			s, err := suite.Getenv("NTT_SESSION_ID")
+			if err != nil {
+				fatal(err)
+			}
+			return s
 		},
 
 		"env": func(suite *ntt.Suite) string {

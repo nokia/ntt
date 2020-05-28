@@ -103,7 +103,7 @@ func cover(typ string, tmpl ast.Expr) {
 
 	switch x := tmpl.(type) {
 
-	// Low hanging fruits: We assume the k3 runtime log format uses assignment
+	// Low hanging fruits: We assume the ntt runtime log format uses assignment
 	// lists (`{ a:=1, b:=2}`) for structured types and value lists (`{1,2}`)
 	// for list types, so we don't need a ttcn3 typesystem, yet. We don't get
 	// full coverage for unions and optional fields, though.

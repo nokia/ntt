@@ -17,7 +17,7 @@ questions.
 
 ## Reporting Issues
 
-If you believe you have found an issue in k3, please use the GitHub issue tracker
+If you believe you have found an issue in ntt, please use the GitHub issue tracker
 to report the Problem. If you're not sure if it's a bug or not, start by asking
 on the mailing list [ntt@groups.io](mailto:ntt@groups.io).
 
@@ -56,6 +56,15 @@ Labels help us track and manage issues and pull requests.
 | `invalid`          | [search][search-label-invalid]     | This doesn't seem right
 | `question`         | [search][search-label-question]    | Further information is requested
 | `wontfix`          | [search][search-label-wontfix]     | This will not be worked on
+
+## Releasing
+
+Besides source we also provide pre-built binaries. Those binary releases are
+built using [GoReleaser](https://goreleaser.com/). If you want to release NTT
+manually you should install goreleaser and then try a dry-run:
+
+	$ goreleaser --snapshot --skip-publish --rm-dist
+
 
 ## Resources
 

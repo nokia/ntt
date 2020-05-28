@@ -3,6 +3,10 @@ before:
     - go mod download
 
 builds:
+  - id: ntt
+    binary: ntt
+    dir: ./cmd/ntt
+
   - id: k3
     binary: k3
     dir: ./cmd/k3
@@ -11,9 +15,9 @@ builds:
     binary: k3objdump
     dir: ./cmd/k3objdump
 
-  - id: k3-mcov
-    binary: k3-mcov
-    dir: ./cmd/k3-mcov
+  - id: ntt-mcov
+    binary: ntt-mcov
+    dir: ./cmd/ntt-mcov
 
 nfpms:
   - file_name_template: '{{ .ProjectName }}.{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'

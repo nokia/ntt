@@ -25,7 +25,7 @@ List will not output objects from imported directories. If you need to list all
 objects from a testsuite you currently have to pass .ttcn3 files as arguments.
 Example:
 
-    k3 list $(k3 show -- sources) $(find $(k3 show -- imports) -name \*.ttcn3)
+    ntt list $(ntt show -- sources) $(find $(ntt show -- imports) -name \*.ttcn3)
 
 
 You can use regular expressions to filter objects. If you pass multiple regular
@@ -37,10 +37,10 @@ expressions, all of them must match (AND). Example:
 	testcase foobar() ...
 	...
 
-	$ k3 list --regex=foo --regex=bar
+	$ ntt list --regex=foo --regex=bar
 	example.foobar
 
-	$ k3 list --regex='foo|bar'
+	$ ntt list --regex='foo|bar'
 	example.foo
 	example.bar
 	example.foobar
@@ -58,10 +58,10 @@ Example:
 	testcase bar() ...
 	...
 
-	$ k3 list --tags-regex=@one --tags-regex=@two
+	$ ntt list --tags-regex=@one --tags-regex=@two
 	example.foo
 
-	$ k3 list --tags-regex='@two: some'
+	$ ntt list --tags-regex='@two: some'
 	example.foo
 	example.bar
 

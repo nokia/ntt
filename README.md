@@ -1,7 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/nokia/ntt?style=flat-square)](https://goreportcard.com/report/github.com/nokia/ntt)
 [![Build Status](https://travis-ci.com/nokia/ntt.svg?branch=master)](https://travis-ci.com/nokia/ntt)
 
-<p align="center"><img src="https://user-images.githubusercontent.com/12729086/81290451-63961480-9068-11ea-82b0-572c9d763fa7.png"/></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/12729086/82152035-0c115900-985f-11ea-8867-0c727a90b549.png"/></p>
 
 # About
 
@@ -17,7 +17,7 @@ running production workloads at Nokia. This repository contains:
 
 Note, the libraries are still internal, to give us some more time for
 fine-tuning the API. The first releases will be for Go. But C and Python will
-follow later. 
+follow later.
 
 **What's TTCN-3?**
 
@@ -33,7 +33,7 @@ features for testing protocols and services:
   language you see fit. So you can leverage any ecosystem you need.
 
 For a nice introduction have a look at this video: https://media.ccc.de/v/XQKBZG
- 
+
 
 **Why not just use Titan**?
 
@@ -111,20 +111,20 @@ clone the repository or where to install NTT:
 
     $ git clone https://github.com/nokia/ntt.git
     $ cd ntt
-    $ go build ./cmd/k3
+    $ go build ./cmd/ntt
 
 Go will download all dependencies, if you have Go modules support available. If
 you don't want Go to connect to the Internet, you may disable Go proxies and
 enable vendoring:
 
-    $ GOPROXY=off go build -mod=vendor ./cmd/k3
+    $ GOPROXY=off go build -mod=vendor ./cmd/ntt
 
 
 If you want to provide your own version information, you may also pass linker flags:
 
-    $ go build -ldflags="-X main.version=1.2.3 -X main.commit=deadbeef123 -X main.date=today" ./cmd/k3
-    $ ./k3 version
-    k3 1.2.3, commit deadbeef123, built at today
+    $ go build -ldflags="-X main.version=1.2.3 -X main.commit=deadbeef123 -X main.date=today" ./cmd/ntt
+    $ ./ntt version
+    ntt 1.2.3, commit deadbeef123, built at today
 
 
 # Getting Started
@@ -152,20 +152,20 @@ the root of the test suite directory structure. Supported fields:
 
 
 You can use variables and environment variables in the manifest. Variables have
-to be declared in a TOML formatted file `k3.env`. Environment variables always
+to be declared in a TOML formatted file `ntt.env`. Environment variables always
 take precedence:
 
     $ echo "name: OriginalName" > package.yml
 
-    $ k3 show -- name
+    $ ntt show -- name
     OriginalName
 
-    $ K3_NAME=NewName k3 show -- name
+    $ NTT_NAME=NewName ntt show -- name
     NewName
 
 
 You also can overwrite arrays like `sources` or `imports` with environment
-variables (`K3_SOURCES="foo.ttcn3 bar.ttcn3" ...`), but note that spaces might
+variables (`NTT_SOURCES="foo.ttcn3 bar.ttcn3" ...`), but note that spaces might
 become problematic.
 
 
@@ -173,7 +173,7 @@ become problematic.
 
 NTT tools provide a uniform user interface, where possible:
 
-    k3 <command> [<sources>...] [--] [<args>...]
+    ntt <command> [<sources>...] [--] [<args>...]
 
 * `<command>`: The command you want to execute, sub-commands are possible.
 * `<sources>...`: The test suite sources. This might be a list of .ttcn3 files
@@ -185,41 +185,41 @@ NTT tools provide a uniform user interface, where possible:
 
 Example:
 
-    k3 show foo.ttcn3 bar.ttcn3 -- name sources
+    ntt show foo.ttcn3 bar.ttcn3 -- name sources
 
 
 **Available Commands**
 
 | Command         | Details
 | --------------- | -------
-| `k3 version`    | Displays version, git revision and build time if available.
-| `k3 list`       | Lists tests, imports and modules of a test suite.
-| `k3 show`       | Shows manifest information and variables.
-| `k3 tags`       | Creates a tags file with exuberant ctags format.
-| `k3 lint`       | Shows warnings and errors. This is a work in progress.
-| `k3 mcov`       | Reads a K3 runtime log and reports message coverage.
-| `k3 langserver` | Starts a language server waiting on stdin.
+| `ntt version`    | Displays version, git revision and build time if available.
+| `ntt list`       | Lists tests, imports and modules of a test suite.
+| `ntt show`       | Shows manifest information and variables.
+| `ntt tags`       | Creates a tags file with exuberant ctags format.
+| `ntt lint`       | Shows warnings and errors. This is a work in progress.
+| `ntt mcov`       | Reads a NTT runtime log and reports message coverage.
+| `ntt langserver` | Starts a language server waiting on stdin.
 
 
 **Custom Commands**
 
 You can extend and customize NTT through custom commands. Place any executable
-with a name like `k3-jaegerschnitzel` in your `PATH` and k3 will automatically
-make it available as a subcommand. You can then call it just like any other k3
+with a name like `ntt-jaegerschnitzel` in your `PATH` and ntt will automatically
+make it available as a subcommand. You can then call it just like any other ntt
 command:
 
-    $ k3 jaegerschnitzel +6000
+    $ ntt jaegerschnitzel +6000
 
 
 **Environment Variables**
 
 Manifest values can be overwritten by environment variables. Environment
 variables will always take precedence over regular variables. Regular variables
-have to be declared in a variables file `k3.env`.
+have to be declared in a variables file `ntt.env`.
 
-Environment variable `K3_CACHE` is a colon-separated list of directories and has
+Environment variable `NTT_CACHE` is a colon-separated list of directories and has
 similar purpose and behaviour like GNU Make's VPATH. It is use to find files
-like `k3.env`.
+like `ntt.env`.
 
 
 ## TTCN-3 Language Server
@@ -254,7 +254,7 @@ We are currently implementing the [Language Server Protocol](https://microsoft.g
 
 This is very important. When you open multiple folders, the first one is
 considered root folder. If you do not open the right folders, very little will
-work. This is the most common issue of k3 language server that we see.
+work. This is the most common issue of ntt language server that we see.
 
 Unfortunately there isn't much you can do, yet. we are currently working on
 diagnostics and additional debug messages, so we can figure out what relevant
@@ -271,10 +271,10 @@ For TTCN-3 support in Visual Studio Code have a look at our co-project
 Use [prabirshrestha/vim-lsp](https://github.com/prabirshrestha/vim-lsp/), with the following configuration:
 
 ```vim
-if executable('k3')
+if executable('ntt')
     au User lsp_setup call lsp#register_server({
-        \ 'name': 'k3',
-        \ 'cmd': {server_info->['k3', 'langserver']},
+        \ 'name': 'ntt',
+        \ 'cmd': {server_info->['ntt', 'langserver']},
         \ 'whitelist': ['ttcn3'],
         \ })
 endif
