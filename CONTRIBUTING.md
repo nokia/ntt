@@ -57,6 +57,15 @@ Labels help us track and manage issues and pull requests.
 | `question`         | [search][search-label-question]    | Further information is requested
 | `wontfix`          | [search][search-label-wontfix]     | This will not be worked on
 
+## Releasing
+
+Besides source we also provide pre-built binaries. Those binary releases are
+built using [GoReleaser](https://goreleaser.com/). If you want to release NTT
+manually you should install goreleaser and then try a dry-run:
+
+	$ goreleaser --snapshot --skip-publish --rm-dist
+
+
 ## Resources
 
 * [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
