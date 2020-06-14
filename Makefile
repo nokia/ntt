@@ -68,7 +68,7 @@ help:
 	@perl -ne 'printf("\t%-10s\t%s\n", $$1, $$2)  if /^\.PHONY:\s*(.*)\s*##\s*(.*)$$/' <$(MAKEFILE_LIST)
 
 .PHONY: build ## build everything
-build: bin/ntt bin/ntt-mcov bin/k3objdump
+build: bin/ntt bin/ntt-mcov bin/k3objdump bin/ttcn3c
 
 .PHONY: check ## run tests
 check:
@@ -101,6 +101,11 @@ bin/ntt-mcov:
 .PHONY: bin/k3objdump ## build k3objdump CLI
 bin/k3objdump:
 	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/k3objdump
+
+
+.PHONY: bin/ttcn3c ## build ttcn3c
+bin/ttcn3c:
+	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ttcn3c
 
 .PHONY: generate ## run code generators
 generate:
