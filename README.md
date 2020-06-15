@@ -88,43 +88,16 @@ manager of your choice. You can also install directly from the internet:
 
 ## Compiling from Source
 
-Because this is a Go project you may use the usual Go methods to build and
-install NTT. Note, you usually won't have proper version info.
+NTT requires a [Go compiler](https://golang.org/dl/) >= 1.10, git and make to
+build. To build and install simply call:
 
-NTT requires only a [Go compiler](https://golang.org/dl/) >= 1.10 to build. The
-simplest method to build and install NTT is by `go get`. 
+	make
+	sudo make install
 
+You may control installation by specifying PREFIX and DESTDIR variables. For example:
 
-**Go Get**
-
-`go get` will download, build and install NTT into your GOPATH:
-
-        go get -u github.com/nokia/ntt/cmd/...
-
-You'll find the commands usually in `$HOME/go/bin`.
-
-
-**Git Clone && Go Build**
-
-For the manual method you also need a Git client. You can decide where to
-clone the repository or where to install NTT:
-
-    $ git clone https://github.com/nokia/ntt.git
-    $ cd ntt
-    $ go build ./cmd/ntt
-
-Go will download all dependencies, if you have Go modules support available. If
-you don't want Go to connect to the Internet, you may disable Go proxies and
-enable vendoring:
-
-    $ GOPROXY=off go build -mod=vendor ./cmd/ntt
-
-
-If you want to provide your own version information, you may also pass linker flags:
-
-    $ go build -ldflags="-X main.version=1.2.3 -X main.commit=deadbeef123 -X main.date=today" ./cmd/ntt
-    $ ./ntt version
-    ntt 1.2.3, commit deadbeef123, built at today
+	make PREFIX=/
+	make install DESTDIR=$HOME/.local
 
 
 # Getting Started

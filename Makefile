@@ -1,8 +1,8 @@
 PROJECT := github.com/nokia/ntt
 
 # Common GNU installation folders
-DESTDIR ?=
-PREFIX     ?= /ust/local
+DESTDIR    ?=
+PREFIX     ?= /usr/local
 BINDIR     ?= ${PREFIX}/bin
 LIBEXECDIR ?= ${PREFIX}/libexec
 MANDIR     ?= ${PREFIX}/share/man
@@ -12,7 +12,7 @@ BASHINSTALLDIR=${PREFIX}/share/bash-completion/completions
 ZSHINSTALLDIR=${PREFIX}/share/zsh/site-functions
 
 # Commands
-GO   ?= go
+GO ?= go
 
 # Go specific stuff
 export GO111MODULE=off
@@ -41,27 +41,19 @@ ifeq ($(shell $(GO) help mod >/dev/null 2>&1 && echo true), true)
 endif
 
 
-#GCFLAGS ?= all=-trimpath=${PWD}
-#ASMFLAGS ?= all=-trimpath=${PWD}
-#LDFLAGS_NTT ?= \
-#	  -X $(CMD_NTT)/define.gitCommit=$(GIT_COMMIT) \
-#	  -X $(CMD_NTT)/define.buildInfo=$(BUILD_INFO) \
-#	  -X $(CMD_NTT)/config._installPrefix=$(PREFIX) \
-#	  -X $(CMD_NTT)/config._etcDir=$(ETCDIR) \
-#	  $(EXTRA_LDFLAGS)
-#
-#SOURCES = $(shell find . -path './.*' -prune -o -name "*.go")
+GIT_COMMIT ?= $(shell git rev-parse HEAD 2> /dev/null || true)
+VERSION = $(shell git describe HEAD 2> /dev/null || echo v0)
 
-#COMMIT_NO ?= $(shell git rev-parse HEAD 2> /dev/null || true)
-#GIT_COMMIT ?= $(if $(shell git status --porcelain --untracked-files=no),${COMMIT_NO}-dirty,${COMMIT_NO})
-#DATE_FMT = %s
-#ifdef SOURCE_DATE_EPOCH
-#	BUILD_INFO ?= $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
-#	ISODATE ?= $(shell date -d "@$(SOURCE_DATE_EPOCH)" --iso-8601)
-#else
-#	BUILD_INFO ?= $(shell date "+$(DATE_FMT)")
-#	ISODATE ?= $(shell date --iso-8601)
-#endif
+DATE_FMT = %c
+ifdef SOURCE_DATE_EPOCH
+	BUILD_INFO ?= $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
+else
+	BUILD_INFO ?= $(shell date "+$(DATE_FMT)")
+endif
+NTT_LDFLAGS  = -X 'main.version=$(VERSION)'
+NTT_LDFLAGS += -X 'main.commit=$(GIT_COMMIT)'
+NTT_LDFLAGS += -X 'main.date=$(BUILD_INFO)'
+NTT_LDFLAGS += -X 'main.prefix=$(PREFIX)'
 
 .PHONY: all ## build whole project (default)
 all: build
@@ -87,10 +79,14 @@ install: build
 	install -m 755 bin/ntt $(DESTDIR)$(BINDIR)/ntt
 
 
+.PHONY: clean ## delete build artifacts
+clean:
+	rm -f ntt
+
 # Binaries must be PHONY-targets, because
 .PHONY: ntt ## build ntt CLI
 ntt:
-	$(GO_BUILD) -o $@ ./cmd/ntt
+	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ntt
 
 .PHONY: generate ## run code generators
 generate:
