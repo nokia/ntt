@@ -6,6 +6,7 @@ PREFIX     ?= /usr/local
 BINDIR     ?= ${PREFIX}/bin
 LIBEXECDIR ?= ${PREFIX}/libexec
 MANDIR     ?= ${PREFIX}/share/man
+DATADIR    ?= ${PREFIX}/share/ntt
 ETCDIR     ?= /etc
 
 BASHINSTALLDIR=${PREFIX}/share/bash-completion/completions
@@ -67,7 +68,7 @@ help:
 	@perl -ne 'printf("\t%-10s\t%s\n", $$1, $$2)  if /^\.PHONY:\s*(.*)\s*##\s*(.*)$$/' <$(MAKEFILE_LIST)
 
 .PHONY: build ## build everything
-build: ntt
+build: bin/ntt bin/ntt-mcov bin/k3objdump
 
 .PHONY: check ## run tests
 check:
@@ -77,16 +78,29 @@ check:
 install: build
 	install -d -m 755 $(DESTDIR)$(BINDIR)
 	install -m 755 bin/ntt $(DESTDIR)$(BINDIR)/ntt
+	install -m 755 bin/ntt-mcov $(DESTDIR)$(BINDIR)/ntt-mcov
+	install -m 755 bin/k3objdump $(DESTDIR)$(BINDIR)/k3objdump
+	install -d -m 755 $(DESTDIR)$(DATADIR)/cmake
+	install -m 644 cmake/FindNTT.cmake $(DESTDIR)$(DATADIR)/cmake
 
 
 .PHONY: clean ## delete build artifacts
 clean:
-	rm -f ntt
+	rm -f bin/ntt bin/ntt-mcov bin/k3objdump
+	rmdir bin
 
-# Binaries must be PHONY-targets, because
-.PHONY: ntt ## build ntt CLI
-ntt:
+.PHONY: bin/ntt ## build ntt CLI
+bin/ntt:
 	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ntt
+
+.PHONY: bin/ntt-mcov ## build ntt-mcov CLI
+
+bin/ntt-mcov:
+	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ntt-mcov
+
+.PHONY: bin/k3objdump ## build k3objdump CLI
+bin/k3objdump:
+	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/k3objdump
 
 .PHONY: generate ## run code generators
 generate:
