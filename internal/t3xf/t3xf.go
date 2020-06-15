@@ -201,7 +201,13 @@ func isT3XF(r peeker) bool {
 	if err != nil {
 		return false
 	}
-	return bytes.Equal(b, t3xfMagic)
+
+	// Some code-generators create incorrect header.
+	c := make([]byte, len(b))
+	copy(c, b)
+	c[3] = 0x13
+
+	return bytes.Equal(c, t3xfMagic)
 }
 
 // isTASM returns true if r begins with the TASM magic string
