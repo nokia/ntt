@@ -111,3 +111,9 @@ bin/ttcn3c:
 generate:
 	$(GO) generate -x ./...
 
+.PHONY: vendor ## vendor dependencies (works only with module support)
+vendor:
+	GO111MODULE=on $(GO) mod tidy
+	GO111MODULE=on $(GO) mod vendor
+
+
