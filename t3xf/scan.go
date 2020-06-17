@@ -7,7 +7,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/nokia/ntt/internal/t3xf/opcode"
+	"github.com/nokia/ntt/t3xf/opcode"
 )
 
 type instr struct {
