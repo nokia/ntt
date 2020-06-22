@@ -56,8 +56,8 @@ func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	return s.didOpen(ctx, params)
 }
 
-func (s *Server) DidSave(context.Context, *protocol.DidSaveTextDocumentParams) error {
-	return notImplemented("DidSave")
+func (s *Server) DidSave(ctx context.Context, params *protocol.DidSaveTextDocumentParams) error {
+	return s.didSave(ctx, params)
 }
 
 func (s *Server) DocumentColor(context.Context, *protocol.DocumentColorParams) ([]protocol.ColorInformation, error) {

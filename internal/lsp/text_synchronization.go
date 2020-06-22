@@ -25,6 +25,10 @@ func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDo
 	return nil
 }
 
+func (s *Server) didSave(ctx context.Context, params *protocol.DidSaveTextDocumentParams) error {
+	return nil
+}
+
 func (s *Server) didClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
 	f := s.suite.File(params.TextDocument.URI)
 	f.Reset()
