@@ -111,10 +111,10 @@ if(NTT_EXECUTABLE)
     )
     string(REGEX REPLACE "[^ ]+ ([0-9\.]+).*$" "\\1" NTT_VERSION "${NTT_version_output}")
 
-    if(NOT TARGET ntt:ntt)
+    if(NOT TARGET ntt::ntt)
         add_executable(ntt::ntt IMPORTED)
         if(EXISTS "$NTT_EXECUTABLE")
-            set_property(TARGET ntt:ntt PROPERTIES IMPORTED_LOCATION "${NTT_EXECUTABLE}")
+            set_property(TARGET ntt::ntt PROPERTIES IMPORTED_LOCATION "${NTT_EXECUTABLE}")
         endif()
     endif()
 endif()
@@ -143,7 +143,7 @@ function(add_ttcn3_suite TGT)
     set(MANIFEST_FILE "${_WORKING_DIRECTORY}/package.yml")
 
     add_custom_target("${TGT}"
-        COMMAND ntt:ntt list
+        COMMAND ntt::ntt list
         BYPRODUCTS "${MANIFEST_FILE}"
     )
 
