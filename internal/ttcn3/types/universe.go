@@ -1,4 +1,4 @@
-package ntt
+package types
 
 import (
 	"github.com/nokia/ntt/internal/loc"
