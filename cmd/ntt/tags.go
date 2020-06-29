@@ -74,39 +74,39 @@ func tags(cmd *cobra.Command, args []string) {
 			case *ast.ImportDecl:
 				name := n.Module.String()
 				if file, _ := suite.FindModule(name); file != "" {
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tn\n", name, file, 1)] = struct{}{}
+					tags[fmt.Sprintf("%s\t%s\t%d;\"\tn", name, file, 1)] = struct{}{}
 				}
 				return false
 
 			case *ast.FriendDecl:
 				name := n.Module.String()
 				if file, _ := suite.FindModule(name); file != "" {
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tn\n", name, file, 1)] = struct{}{}
+					tags[fmt.Sprintf("%s\t%s\t%d;\"\tn", name, file, 1)] = struct{}{}
 				}
 				return false
 
 			case *ast.SubTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt\n", n.Field.Name, file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Field.Name, file, line)] = struct{}{}
 				return false
 
 			case *ast.PortTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt\n", n.Name, file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name, file, line)] = struct{}{}
 				return false
 
 			case *ast.ComponentTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tc\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tc", n.Name.String(), file, line)] = struct{}{}
 				return false
 
 			case *ast.StructTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tm\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tm", n.Name.String(), file, line)] = struct{}{}
 				return false
 
 			case *ast.EnumTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\te\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\te", n.Name.String(), file, line)] = struct{}{}
 				return false
 
 			case *ast.BehaviourTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name.String(), file, line)] = struct{}{}
 				return false
 
 			case *ast.ValueDecl:
@@ -115,7 +115,7 @@ func tags(cmd *cobra.Command, args []string) {
 					pos := mods[i].Position(decl.Pos())
 					file := pos.Filename
 					line := pos.Line
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tv\n", name, file, line)] = struct{}{}
+					tags[fmt.Sprintf("%s\t%s\t%d;\"\tv", name, file, line)] = struct{}{}
 				})
 				return false
 
@@ -125,20 +125,20 @@ func tags(cmd *cobra.Command, args []string) {
 					pos := mods[i].Position(decl.Pos())
 					file := pos.Filename
 					line := pos.Line
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tv\n", name, file, line)] = struct{}{}
+					tags[fmt.Sprintf("%s\t%s\t%d;\"\tv", name, file, line)] = struct{}{}
 				})
 				return false
 
 			case *ast.TemplateDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\td\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\td", n.Name.String(), file, line)] = struct{}{}
 				return false
 
 			case *ast.FuncDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf", n.Name.String(), file, line)] = struct{}{}
 				return true
 
 			case *ast.SignatureDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf\n", n.Name.String(), file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf", n.Name.String(), file, line)] = struct{}{}
 				return false
 
 			default:
@@ -147,7 +147,7 @@ func tags(cmd *cobra.Command, args []string) {
 		})
 	}
 
-	lines := make([]string, len(tags))
+	lines := make([]string, 0, len(tags))
 	for k := range tags {
 		lines = append(lines, k)
 	}
