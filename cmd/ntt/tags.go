@@ -103,6 +103,19 @@ func tags(cmd *cobra.Command, args []string) {
 
 			case *ast.EnumTypeDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\te", n.Name.String(), file, line)] = struct{}{}
+				for _, e := range n.Enums {
+					line := mods[i].Position(e.Pos()).Line
+					name := identName(e)
+					tags[fmt.Sprintf("%s\t%s\t%d;\"\te", name, file, line)] = struct{}{}
+				}
+				return false
+
+			case *ast.EnumSpec:
+				for _, e := range n.Enums {
+					line := mods[i].Position(e.Pos()).Line
+					name := identName(e)
+					tags[fmt.Sprintf("%s\t%s\t%d;\"\te", name, file, line)] = struct{}{}
+				}
 				return false
 
 			case *ast.BehaviourTypeDecl:
@@ -167,10 +180,13 @@ func tags(cmd *cobra.Command, args []string) {
 
 func identName(n ast.Node) string {
 	switch n := n.(type) {
+	case *ast.CallExpr:
+		return identName(n.Fun)
 	case *ast.Ident:
 		return n.String()
 	case *ast.ParametrizedIdent:
 		return n.Ident.String()
+
 	}
 	return "_"
 }
