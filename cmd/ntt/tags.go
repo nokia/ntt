@@ -86,11 +86,11 @@ func tags(cmd *cobra.Command, args []string) {
 				return false
 
 			case *ast.Field:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name, file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", identName(n.Name), file, line)] = struct{}{}
 				return true
 
 			case *ast.PortTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name, file, line)] = struct{}{}
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", identName(n.Name), file, line)] = struct{}{}
 				return false
 
 			case *ast.ComponentTypeDecl:
@@ -182,11 +182,12 @@ func identName(n ast.Node) string {
 	switch n := n.(type) {
 	case *ast.CallExpr:
 		return identName(n.Fun)
+	case *ast.LengthExpr:
+		return identName(n.X)
 	case *ast.Ident:
 		return n.String()
 	case *ast.ParametrizedIdent:
 		return n.Ident.String()
-
 	}
 	return "_"
 }
