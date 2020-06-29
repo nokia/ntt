@@ -85,9 +85,9 @@ func tags(cmd *cobra.Command, args []string) {
 				}
 				return false
 
-			case *ast.SubTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Field.Name, file, line)] = struct{}{}
-				return false
+			case *ast.Field:
+				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name, file, line)] = struct{}{}
+				return true
 
 			case *ast.PortTypeDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name, file, line)] = struct{}{}
@@ -95,11 +95,11 @@ func tags(cmd *cobra.Command, args []string) {
 
 			case *ast.ComponentTypeDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\tc", n.Name.String(), file, line)] = struct{}{}
-				return false
+				return true
 
 			case *ast.StructTypeDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\tm", n.Name.String(), file, line)] = struct{}{}
-				return false
+				return true
 
 			case *ast.EnumTypeDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\te", n.Name.String(), file, line)] = struct{}{}
