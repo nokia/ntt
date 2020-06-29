@@ -144,7 +144,7 @@ func tags(cmd *cobra.Command, args []string) {
 
 			case *ast.TemplateDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\td", n.Name.String(), file, line)] = struct{}{}
-				return false
+				return true
 
 			case *ast.FuncDecl:
 				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf", n.Name.String(), file, line)] = struct{}{}
