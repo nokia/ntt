@@ -169,8 +169,8 @@ func tags(cmd *cobra.Command, args []string) {
 	w := bufio.NewWriter(os.Stdout)
 	fmt.Fprintln(w, "!_TAG_FILE_FORMAT	2	//")
 	fmt.Fprintln(w, "!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted/")
-	fmt.Fprintln(w, "!_TAG_PROGRAM_NAME	ttcn3_ctags	//")
-	fmt.Fprintln(w, "!_TAG_PROGRAM_VERSION	1.0	//")
+	fmt.Fprintln(w, "!_TAG_PROGRAM_NAME	ntt	//")
+	fmt.Fprintln(w, "!_TAG_PROGRAM_VERSION	0.1	//")
 
 	for i := range lines {
 		fmt.Fprintln(w, lines[i])
