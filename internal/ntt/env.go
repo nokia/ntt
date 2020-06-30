@@ -28,6 +28,7 @@ var knownVars = map[string]bool{
 	"NTT_SOURCE_DIR":      true,
 	"NTT_TEST_HOOK":       true,
 	"NTT_TIMEOUT":         true,
+	"NTT_VARIABLES":       true,
 }
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
@@ -117,25 +118,39 @@ func (suite *Suite) getenv(key string, visited map[string]string) (string, error
 		return env, nil
 	}
 
+	visited[key] = ""
+
 	for i := len(suite.envFiles); i > 0; i-- {
 		v, err := suite.lookupEnvFile(suite.envFiles[i-1], key)
 		if err == nil {
-			visited[key] = ""
 			s, err := suite.expand(v, visited)
 			visited[key] = s
 			return s, err
 		} else if err != ErrNoSuchVariable {
-			visited[key] = ""
 			return "", err
 		}
 	}
 
+	// We must not look for NTT_CACHE in variables sections of package.yml,
+	// because this would create an endless loop.
+	if key != "NTT_CACHE" && key != "K3_CACHE" {
+		v, err := suite.Variables()
+		if err != nil {
+			return "", err
+		}
+		if v != nil {
+			if s, ok := v[key]; ok {
+				s, err := suite.expand(s, visited)
+				visited[key] = s
+				return s, err
+			}
+		}
+	}
+
 	if suite.isKnown(key) {
-		visited[key] = ""
 		return "", nil
 	}
 
-	visited[key] = ""
 	return "", fmt.Errorf("variable %q not found.", key)
 }
 

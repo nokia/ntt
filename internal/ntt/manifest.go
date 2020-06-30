@@ -176,17 +176,16 @@ func (suite *Suite) AddImports(folders ...string) {
 }
 
 func (suite *Suite) Name() (string, error) {
+	if suite.name != "" {
+		return suite.name, nil
+	}
+
 	env, err := suite.Getenv("NTT_NAME")
 	if err != nil {
 		return "", err
 	}
 	if env != "" {
 		return env, nil
-	}
-
-	// TODO(5nord) Should have SetName a higher priority than package.yml?
-	if suite.name != "" {
-		return suite.name, nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -223,6 +222,17 @@ func (suite *Suite) Name() (string, error) {
 
 func (suite *Suite) SetName(name string) {
 	suite.name = name
+}
+
+func (suite *Suite) Variables() (map[string]string, error) {
+	m, err := suite.parseManifest()
+	if err != nil {
+		return nil, err
+	}
+	if m != nil && m.Variables != nil {
+		return m.Variables, nil
+	}
+	return nil, nil
 }
 
 // TestHook return the File object to the test hook. If not hook was found, it
@@ -381,14 +391,15 @@ func fileExists(path string) (bool, error) {
 
 type manifest struct {
 	// Static configuration
-	Name    string
-	Sources []string
-	Imports []string
+	Name      string
+	Sources   []string
+	Imports   []string
+	Variables map[string]string
 
 	// Runtime configuration
-	TestHook       string  `yaml:test_hook`       // Path for test hook.
-	ParametersFile string  `yaml:parameters_file` // Path for module parameters file.
-	Timeout        float64 `yaml:timeout`         // Global timeout for tests.
+	TestHook       string  `yaml:"test_hook"`       // Path for test hook.
+	ParametersFile string  `yaml:"parameters_file"` // Path for module parameters file.
+	Timeout        float64 `yaml:"timeout"`         // Global timeout for tests.
 }
 
 // parseManifest tries to parse an (optional) manifest file.
