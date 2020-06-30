@@ -34,6 +34,12 @@ var knownVars = map[string]bool{
 // Environ returns a copy of strings representing the environment, in the form "key=value".
 func (suite *Suite) Environ() ([]string, error) {
 	allKeys := make(map[string]struct{})
+
+	if vars, _ := suite.Variables(); vars != nil {
+		for k := range vars {
+			allKeys[k] = struct{}{}
+		}
+	}
 	for i := range suite.envFiles {
 		tree, err := suite.parseEnvFile(suite.envFiles[i])
 		if err != nil {
