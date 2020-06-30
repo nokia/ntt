@@ -225,6 +225,17 @@ func (suite *Suite) SetName(name string) {
 	suite.name = name
 }
 
+func (suite *Suite) Variables() (map[string]string, error) {
+	m, err := suite.parseManifest()
+	if err != nil {
+		return nil, err
+	}
+	if m != nil && m.Variables != nil {
+		return m.Variables, nil
+	}
+	return nil, nil
+}
+
 // TestHook return the File object to the test hook. If not hook was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
@@ -381,9 +392,10 @@ func fileExists(path string) (bool, error) {
 
 type manifest struct {
 	// Static configuration
-	Name    string
-	Sources []string
-	Imports []string
+	Name      string
+	Sources   []string
+	Imports   []string
+	Variables map[string]string
 
 	// Runtime configuration
 	TestHook       string  `yaml:test_hook`       // Path for test hook.

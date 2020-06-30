@@ -131,3 +131,34 @@ func TestEnvFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
+
+func TestVariables(t *testing.T) {
+	suite := &ntt.Suite{}
+	suite.SetRoot(".")
+	conf := suite.File("package.yml")
+	conf.SetBytes([]byte(`
+                variables:
+                  "FOO": "foo"
+                  "BAR": "$bar"
+                  "bar": "$NTT_FNORD"`))
+
+	v, err := suite.Getenv("FOO")
+	assert.Nil(t, err)
+	assert.Equal(t, "foo", v)
+
+	// Verify environment overwrites variables-section
+	os.Setenv("FOO", "xxx")
+	v, err = suite.Getenv("FOO")
+	assert.Nil(t, err)
+	assert.Equal(t, "xxx", v)
+
+	// Verify expands works for variables-section
+	v, err = suite.Getenv("BAR")
+	assert.NotNil(t, err)
+
+	os.Setenv("NTT_FNORD", "fnord")
+	v, err = suite.Getenv("BAR")
+	assert.Nil(t, err)
+	assert.Equal(t, "fnord", v)
+
+}
