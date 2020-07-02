@@ -187,7 +187,7 @@ function(add_ttcn3_suite TGT)
         endforeach()
     endif()
 
-    if (_IMPORTS)
+    if (_DEPENDS)
         string(APPEND MANIFEST "imports:\n")
         foreach(x ${_DEPENDS})
             if (TARGET "${x}")
