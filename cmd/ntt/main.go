@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"syscall"
@@ -59,15 +60,30 @@ var (
 	version = "dev"
 	commit  = "none"
 	date    = "unknown"
+
+	cpuprofile = ""
 )
 
 func init() {
 	session.SharedDir = "/tmp/k3"
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	rootCmd.AddCommand(showCmd)
 }
 
 func main() {
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			fatal(err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fatal(err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+
 	if s := os.Getenv("K3_DATADIR"); s == "" {
 		os.Setenv("K3_DATADIR", filepath.Join(k3rootdir(), "share/k3"))
 	}
@@ -104,5 +120,6 @@ func fatal(err error) {
 	default:
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
+
 	os.Exit(1)
 }
