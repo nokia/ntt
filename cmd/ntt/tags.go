@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/nokia/ntt/internal/ntt"
@@ -44,138 +45,135 @@ func tags(cmd *cobra.Command, args []string) {
 	var wg sync.WaitGroup
 	wg.Add(len(files))
 
-	mods := make([]*ntt.ParseInfo, len(files))
+	tags := make([][]string, len(files))
 
 	for i := range files {
 		go func(i int) {
-			mods[i] = suite.Parse(files[i])
-			wg.Done()
+			defer wg.Done()
+			mod := suite.Parse(files[i])
+			if mod == nil || mod.Module == nil {
+				return
+			}
+
+			t := make([]string, 0, len(mod.Module.Defs)*2)
+			ast.Inspect(mod.Module, func(n ast.Node) bool {
+				if n == nil {
+					return false
+				}
+
+				pos := mod.Position(n.Pos())
+				file := pos.Filename
+				line := pos.Line
+
+				switch n := n.(type) {
+				case *ast.Module:
+					t = append(t, NewTag(identName(n.Name), file, line, "n"))
+					return true
+
+				case *ast.ImportDecl:
+					return false
+
+				case *ast.FriendDecl:
+					return false
+
+				case *ast.Field:
+					t = append(t, NewTag(identName(n.Name), file, line, "t"))
+					return true
+
+				case *ast.PortTypeDecl:
+					t = append(t, NewTag(identName(n.Name), file, line, "t"))
+					return false
+
+				case *ast.ComponentTypeDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "c"))
+					return true
+
+				case *ast.StructTypeDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "m"))
+					return true
+
+				case *ast.EnumTypeDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "e"))
+					for _, e := range n.Enums {
+						line := mod.Position(e.Pos()).Line
+						name := identName(e)
+						t = append(t, NewTag(name, file, line, "e"))
+					}
+					return false
+
+				case *ast.EnumSpec:
+					for _, e := range n.Enums {
+						line := mod.Position(e.Pos()).Line
+						name := identName(e)
+						t = append(t, NewTag(name, file, line, "e"))
+					}
+					return false
+
+				case *ast.BehaviourTypeDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "t"))
+					return false
+
+				case *ast.ValueDecl:
+					ast.Declarators(n.Decls, mod.FileSet, func(decl ast.Expr, id ast.Node, arrays []ast.Expr, value ast.Expr) {
+						name := identName(id)
+						pos := mod.Position(decl.Pos())
+						file := pos.Filename
+						line := pos.Line
+						t = append(t, NewTag(name, file, line, "v"))
+					})
+					return false
+
+				case *ast.FormalPar:
+					ast.Declarators([]ast.Expr{n.Name}, mod.FileSet, func(decl ast.Expr, id ast.Node, arrays []ast.Expr, value ast.Expr) {
+						name := identName(id)
+						pos := mod.Position(decl.Pos())
+						file := pos.Filename
+						line := pos.Line
+						t = append(t, NewTag(name, file, line, "v"))
+					})
+					return false
+
+				case *ast.TemplateDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "d"))
+					return true
+
+				case *ast.FuncDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "f"))
+					return true
+
+				case *ast.SignatureDecl:
+					t = append(t, NewTag(n.Name.String(), file, line, "f"))
+					return false
+
+				default:
+					return true
+				}
+			})
+			tags[i] = t
+
 		}(i)
 	}
 
 	wg.Wait()
 
-	tags := make(map[string]struct{})
-
-	for i := range mods {
-		if mods[i] == nil || mods[i].Module == nil {
-			continue
-		}
-		ast.Inspect(mods[i].Module, func(n ast.Node) bool {
-			if n == nil {
-				return false
-			}
-
-			pos := mods[i].Position(n.Pos())
-			file := pos.Filename
-			line := pos.Line
-
-			switch n := n.(type) {
-			case *ast.ImportDecl:
-				name := n.Module.String()
-				if file, _ := suite.FindModule(name); file != "" {
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tn", name, file, 1)] = struct{}{}
-				}
-				return false
-
-			case *ast.FriendDecl:
-				name := n.Module.String()
-				if file, _ := suite.FindModule(name); file != "" {
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tn", name, file, 1)] = struct{}{}
-				}
-				return false
-
-			case *ast.Field:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", identName(n.Name), file, line)] = struct{}{}
-				return true
-
-			case *ast.PortTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", identName(n.Name), file, line)] = struct{}{}
-				return false
-
-			case *ast.ComponentTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tc", n.Name.String(), file, line)] = struct{}{}
-				return true
-
-			case *ast.StructTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tm", n.Name.String(), file, line)] = struct{}{}
-				return true
-
-			case *ast.EnumTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\te", n.Name.String(), file, line)] = struct{}{}
-				for _, e := range n.Enums {
-					line := mods[i].Position(e.Pos()).Line
-					name := identName(e)
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\te", name, file, line)] = struct{}{}
-				}
-				return false
-
-			case *ast.EnumSpec:
-				for _, e := range n.Enums {
-					line := mods[i].Position(e.Pos()).Line
-					name := identName(e)
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\te", name, file, line)] = struct{}{}
-				}
-				return false
-
-			case *ast.BehaviourTypeDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tt", n.Name.String(), file, line)] = struct{}{}
-				return false
-
-			case *ast.ValueDecl:
-				ast.Declarators(n.Decls, mods[i].FileSet, func(decl ast.Expr, id ast.Node, arrays []ast.Expr, value ast.Expr) {
-					name := identName(id)
-					pos := mods[i].Position(decl.Pos())
-					file := pos.Filename
-					line := pos.Line
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tv", name, file, line)] = struct{}{}
-				})
-				return false
-
-			case *ast.FormalPar:
-				ast.Declarators([]ast.Expr{n.Name}, mods[i].FileSet, func(decl ast.Expr, id ast.Node, arrays []ast.Expr, value ast.Expr) {
-					name := identName(id)
-					pos := mods[i].Position(decl.Pos())
-					file := pos.Filename
-					line := pos.Line
-					tags[fmt.Sprintf("%s\t%s\t%d;\"\tv", name, file, line)] = struct{}{}
-				})
-				return false
-
-			case *ast.TemplateDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\td", n.Name.String(), file, line)] = struct{}{}
-				return true
-
-			case *ast.FuncDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf", n.Name.String(), file, line)] = struct{}{}
-				return true
-
-			case *ast.SignatureDecl:
-				tags[fmt.Sprintf("%s\t%s\t%d;\"\tf", n.Name.String(), file, line)] = struct{}{}
-				return false
-
-			default:
-				return true
-			}
-		})
+	var lines []string
+	for i := range tags {
+		lines = append(lines, tags[i]...)
 	}
 
-	lines := make([]string, 0, len(tags))
-	for k := range tags {
-		lines = append(lines, k)
-	}
 	sort.Strings(lines)
 
 	w := bufio.NewWriter(os.Stdout)
 	fmt.Fprintln(w, "!_TAG_FILE_FORMAT	2	//")
 	fmt.Fprintln(w, "!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted/")
 	fmt.Fprintln(w, "!_TAG_PROGRAM_NAME	ntt	//")
-	fmt.Fprintln(w, "!_TAG_PROGRAM_VERSION	0.1	//")
-
-	for i := range lines {
-		fmt.Fprintln(w, lines[i])
-	}
+	fmt.Fprintf(w, "!_TAG_PROGRAM_VERSION	%s	//\n", version)
+	fmt.Fprintln(w, strings.Join(lines, "\n"))
 	w.Flush()
+}
+
+func NewTag(name string, file string, line int, kind string) string {
+	return fmt.Sprintf("%s\t%s\t%d;\"\t%s", name, file, line, kind)
 }
 
 func identName(n ast.Node) string {
