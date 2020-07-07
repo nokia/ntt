@@ -201,27 +201,12 @@ func TestDecode(t *testing.T) {
 
 		assert.Equal(t, true, s.Scan())
 		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
-		assert.Equal(t, 7, s.Arg())
+		assert.Equal(t, 28, s.Arg())
 		assert.Nil(t, s.Err())
 
 		assert.Equal(t, true, s.Scan())
 		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
-		assert.Equal(t, 2, s.Arg())
-		assert.Nil(t, s.Err())
-
-		assert.Equal(t, true, s.Scan())
-		assert.Equal(t, opcode.Opcode(opcode.BLOCK), s.Opcode())
-		assert.Equal(t, 1, s.Arg())
-		assert.Nil(t, s.Err())
-
-		assert.Equal(t, true, s.Scan())
-		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
-		assert.Equal(t, 6, s.Arg())
-		assert.Nil(t, s.Err())
-
-		assert.Equal(t, true, s.Scan())
-		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
-		assert.Equal(t, 5, s.Arg())
+		assert.Equal(t, 8, s.Arg())
 		assert.Nil(t, s.Err())
 
 		assert.Equal(t, true, s.Scan())
@@ -230,8 +215,23 @@ func TestDecode(t *testing.T) {
 		assert.Nil(t, s.Err())
 
 		assert.Equal(t, true, s.Scan())
+		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
+		assert.Equal(t, 24, s.Arg())
+		assert.Nil(t, s.Err())
+
+		assert.Equal(t, true, s.Scan())
+		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
+		assert.Equal(t, 20, s.Arg())
+		assert.Nil(t, s.Err())
+
+		assert.Equal(t, true, s.Scan())
 		assert.Equal(t, opcode.Opcode(opcode.BLOCK), s.Opcode())
-		assert.Equal(t, 3, s.Arg())
+		assert.Equal(t, 16, s.Arg())
+		assert.Nil(t, s.Err())
+
+		assert.Equal(t, true, s.Scan())
+		assert.Equal(t, opcode.Opcode(opcode.BLOCK), s.Opcode())
+		assert.Equal(t, 12, s.Arg())
 		assert.Nil(t, s.Err())
 
 		assert.Equal(t, true, s.Scan())
@@ -241,12 +241,12 @@ func TestDecode(t *testing.T) {
 
 		assert.Equal(t, true, s.Scan())
 		assert.Equal(t, opcode.Opcode(opcode.SCAN), s.Opcode())
-		assert.Equal(t, 9, s.Arg())
+		assert.Equal(t, 36, s.Arg())
 		assert.Nil(t, s.Err())
 
 		assert.Equal(t, true, s.Scan())
 		assert.Equal(t, opcode.Opcode(opcode.BLOCK), s.Opcode())
-		assert.Equal(t, 8, s.Arg())
+		assert.Equal(t, 32, s.Arg())
 		assert.Nil(t, s.Err())
 	})
 
