@@ -23,7 +23,8 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&format, "--generator", "G", "t3xf", "generator to use")
+	rootCmd.PersistentFlags().StringVarP(&format, "generator", "G", "", "generator to use")
+	rootCmd.MarkPersistentFlagRequired("generator")
 }
 
 func main() {
@@ -38,6 +39,7 @@ func fatal(err error) {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+
 	name := fmt.Sprintf("ttcn3c-gen-%s", format)
 	generator, err := exec.LookPath(name)
 	if err != nil {
@@ -50,10 +52,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	req := &plugin.GeneratorRequest{
-		Version: &plugin.Version{
-			Major: 3,
-			Minor: 6,
-		},
+		Version: &plugin.Version{},
 	}
 
 	out, err := proto.Marshal(req)
