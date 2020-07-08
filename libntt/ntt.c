@@ -1,15 +1,27 @@
-#include <assert.h>
 #include "ntt.h"
+#include "libntt.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-char * ntt_list_testcases(const char * path) {
-	assert(path != NULL);
-
-	return NULL;
+void path_error() {
+       printf("error path is null\n");
+       abort();
 }
+
+
+
+char *  ntt_list_testcases(const char * path) {
+    if (path == NULL) {
+        path_error();
+    }
+
+    return NttListTests(path);
+}
+
 char * ntt_list_imports(const char * path) {
-	assert(path != NULL);
+    if (path == NULL) {
+        path_error();
+    }
 
-	return NULL;
+    return NttListImports(path);
 }
-
-
