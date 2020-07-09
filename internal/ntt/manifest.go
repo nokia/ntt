@@ -81,7 +81,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 			}
 			switch {
 			case info.IsDir():
-				files, err := TTCN3Files(src)
+				files, err := findTTCN3Files(src)
 				if err != nil {
 					return nil, err
 				}
@@ -105,7 +105,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 
 	// If there's only a root folder, look for .ttcn3 files
 	if suite.root != nil {
-		files, err := TTCN3Files(suite.root.Path())
+		files, err := findTTCN3Files(suite.root.Path())
 		if err != nil {
 			return nil, err
 		}
@@ -450,7 +450,7 @@ func (suite *Suite) Files() ([]string, error) {
 	}
 
 	for _, dir := range dirs {
-		f, err := TTCN3Files(dir.Path())
+		f, err := findTTCN3Files(dir.Path())
 		if err != nil {
 			return nil, err
 		}

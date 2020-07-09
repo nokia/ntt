@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/nokia/ntt/internal/ntt"
@@ -27,24 +26,10 @@ func dump(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fatal(err)
 	}
-	srcs, err := suite.Sources()
+
+	srcs, err := suite.Files()
 	if err != nil {
 		fatal(err)
-	}
-
-	imps, err := suite.Imports()
-	if err != nil {
-		fatal(err)
-	}
-
-	for i := range imps {
-		files, err := ntt.TTCN3Files(imps[i].Path())
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: warning: %s\n", imps[i].Path(), err.Error())
-		}
-		for _, f := range files {
-			srcs = append(srcs, suite.File(f))
-		}
 	}
 
 	var (
@@ -54,8 +39,8 @@ func dump(cmd *cobra.Command, args []string) {
 
 	wg.Add(len(srcs))
 	for i, src := range srcs {
-		go func(i int, src *ntt.File) {
-			asts[i] = suite.Parse(src.Path())
+		go func(i int, src string) {
+			asts[i] = suite.Parse(src)
 			wg.Done()
 		}(i, src)
 	}
