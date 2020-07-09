@@ -30,10 +30,10 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 	}
 
 	// build symbol table for lookup
-	mod := suite.symbols(syntax)
+	syms := suite.symbols(syntax)
 
 	// Fill info struct with everything we have.
-	if scp := mod.Scopes[id]; scp != nil {
+	if scp := syms.Scopes[id]; scp != nil {
 		if obj := scp.Lookup(id.String()); obj != nil {
 			info.Def = &IdentInfo{
 				Syntax:   obj.Node(),
@@ -42,11 +42,13 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 			return &info, nil
 		}
 
-		// Try our luck in import imported.
+		// Try our luck in imported modules.
+		mod := syms.Modules[syntax.Module.Name.String()]
 		for i := range mod.Imports {
 			if file, _ := suite.FindModule(mod.Imports[i]); file != "" {
 				if syntax := suite.Parse(file); syntax.Module != nil {
-					imp := suite.symbols(syntax)
+					syms := suite.symbols(syntax)
+					imp := syms.Modules[mod.Imports[i]]
 					if obj := imp.Lookup(id.String()); obj != nil {
 						info.Def = &IdentInfo{
 							Syntax:   obj.Node(),
