@@ -2,6 +2,10 @@ CC=gcc
 GOBUILD=go build
 CFLAGS=-shared -fPIC
 GOFLAGS=-buildmode=c-archive
+DESTDIR    ?=
+PREFIX     ?= /usr/local
+INCLUDEDIR ?= $(PREFIX)/include
+LIBDIR     ?= $(PREFIX)/lib
 
 OS:=$(shell uname)
 
@@ -22,7 +26,10 @@ libntt.a: *.go
 
 
 install: all
-	echo "install"
+	install -d -m 755 $(DESTDIR)$(INCLUDEDIR)
+	install -d -m 755 $(DESTDIR)$(LIBDIR)
+	install -m 644 $(LIB) $(DESTDIR)$(LIBDIR)
+	install -m 644 ntt.h  $(DESTDIR)$(INCLUDEDIR)
 
 
 .PHONY: clean
