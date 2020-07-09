@@ -7,18 +7,22 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/internal/span"
 )
 
+// Suite represents a TTCN-3 test suite.
 type Suite struct {
 	id int // A unique session id
 
 	// File handling
 	filesMu sync.Mutex
 	files   map[span.URI]*File
+
+	// Module handling (maps module names to paths)
+	modulesMu sync.Mutex
+	modules   map[string]string
 
 	// Environent handling
 	envFiles []*File
@@ -127,15 +131,6 @@ func (suite *Suite) Root() *File {
 func (suite *Suite) SetRoot(folder string) {
 	suite.root = suite.File(folder)
 	suite.sources = nil
-}
-
-// Position returns human readable description of the pos tag.
-func (suite *Suite) Position(file string, pos loc.Pos) loc.Position {
-	return suite.Parse(file).Position(pos)
-}
-
-func (suite *Suite) Pos(file string, line int, column int) loc.Pos {
-	return suite.Parse(file).Pos(line, column)
 }
 
 func init() {

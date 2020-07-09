@@ -6,9 +6,9 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/types"
 )
 
-// Symbols
+// Symbols returns the symbol table from a syntax tree.
 func (suite *Suite) symbols(syntax *ParseInfo) *types.Info {
-	syntax.handle = suite.store.Bind(syntax.ID(), func(ctx context.Context) interface{} {
+	syntax.handle = suite.store.Bind(syntax.id(), func(ctx context.Context) interface{} {
 
 		info := &types.Info{
 			Fset:  syntax.FileSet,

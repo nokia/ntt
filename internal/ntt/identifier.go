@@ -5,6 +5,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
+// IdentInfo associates an identifier reference and its definition.
 type IdentInfo struct {
 	Syntax   ast.Node
 	Position loc.Position
