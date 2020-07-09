@@ -9,14 +9,17 @@ This project provides open tools and libraries for testing with
 [TTCN-3](http://www.ttcn-3.org). It builds upon 15 years of experience of
 running production workloads at Nokia. This repository contains:
 
-* A TTCN-3 language server for a better IDE experience.
-* A modern CLI for test suite configuration and execution.
-* An error tolerant [TTCN-3 parser library](https://pkg.go.dev/github.com/nokia/ntt/internal/ttcn3/parser).
-* A lazy [TTCN-3 compiler library](https://pkg.go.dev/github.com/nokia/ntt/internal/ntt) with focus on minimizing latency.
+* A modern CLI for test suite configuration and execution, including a TTCN-3
+  language server for a better IDE experience.
+* An error tolerant [TTCN-3 parser
+  library](https://pkg.go.dev/github.com/nokia/ntt/internal/ttcn3/parser).
+* A lazy [TTCN-3 compiler
+  library](https://pkg.go.dev/github.com/nokia/ntt/internal/ntt) with focus on
+minimizing latency.
 * And more to come ...
 
-Note, the libraries are still internal, to give us some more time for
-fine-tuning the API. The first releases will be for Go. But C and Python will
+Note, _the libraries are still internal, to give us some more time for
+stabilizing the API_. The first releases will be for Go. C and Python will
 follow later.
 
 **What's TTCN-3?**
@@ -102,46 +105,6 @@ You may control installation by specifying PREFIX and DESTDIR variables. For exa
 
 # Getting Started
 
-To execute a test suite you usually need more than just a bunch of TTCN-3 source
-files: You need generators, adapters, codecs, a lot of scripting, compile time
-configuration, runtime configuration, post processing tools, caching of
-build-artifacts and much, much more. A manifest file provides a stable frame for
-tools to work together nicely.
-
-**The Test Suite Manifest**
-
-Every NTT test suite should provide a manifest file `package.yml` at
-the root of the test suite directory structure. Supported fields:
-
-
-| Name               | Type     | Details
-| ------------------ | -------- | --------
-| `name`             | string   | Name of the test suite.
-| `sources`          | string[] | TTCN-3 Source files containing tests.
-| `imports`          | string[] | Packages the suite depends on. This could be adapters, codecs, generators, ...
-| `timeout`          | number   | Default timeout for tests in seconds.
-| `test_hook`        | string   | Path to test hook script.
-| `parameters_file`  | string   | Path to module parameters file.
-
-
-You can use variables and environment variables in the manifest. Variables have
-to be declared in a TOML formatted file `ntt.env`. Environment variables always
-take precedence:
-
-    $ echo "name: OriginalName" > package.yml
-
-    $ ntt show -- name
-    OriginalName
-
-    $ NTT_NAME=NewName ntt show -- name
-    NewName
-
-
-You also can overwrite arrays like `sources` or `imports` with environment
-variables (`NTT_SOURCES="foo.ttcn3 bar.ttcn3" ...`), but note that spaces might
-become problematic.
-
-
 ## Command Line Interface
 
 NTT tools provide a uniform user interface, where possible:
@@ -151,8 +114,8 @@ NTT tools provide a uniform user interface, where possible:
 * `<command>`: The command you want to execute, sub-commands are possible.
 * `<sources>...`: The test suite sources. This might be a list of .ttcn3 files
   or the test suite root directory. If your test suite requires additional
-  adapters, the test suite root directory must contain a manifest file.
-* `<-->`: This marker is required to separate the sources list from the
+  adapters, the test suite root directory must contain a manifest file (see below).
+* `--`: This marker is required to separate the sources list from the
   remaining arguments.
 * `<args>...`: Remaining arguments.
 
@@ -184,15 +147,69 @@ command:
     $ ntt jaegerschnitzel +6000
 
 
+
+**Environment variables**
+
+You may define environment variable `NTT_SOURCE_DIR` to specify a test suite root directory:
+
+    $ ntt list                      # Lists tests in current working directory
+
+    $ export NTT_SOURCE_DIR=~/foo
+    $ ntt list                      # Now, ntt lists tests in ~/foo
+
+
+Environment variable `NTT_CACHE` is a colon-separated list of directories and has
+similar purpose and behaviour like GNU Make's VPATH. It is use to find files
+like `ntt.env`:
+
+    $ echo "FOO=23" > ntt.env
+    $ mkdir -p build && cd build
+    $ NTT_CACHE=.. ntt show -- FOO
+    23
+
+
+## The Test Suite Manifest
+
+To execute a test suite you usually need more than just a bunch of TTCN-3 source
+files: You need generators, adapters, codecs, a lot of scripting, compile time
+configuration, runtime configuration, post processing tools, caching of
+build-artifacts and more. A manifest file provides a stable frame for
+tools to work together nicely.
+
+Every NTT test suite should provide a manifest file `package.yml` at
+the root of the test suite directory structure. Supported fields:
+
+
+| Name               | Type              | Details
+| ------------------ | ----------------- | --------
+| `name`             | string            | Name of the test suite.
+| `sources`          | string[]          | TTCN-3 Source files containing tests.
+| `imports`          | string[]          | Packages the suite depends on. This could be adapters, codecs, generators, ...
+| `timeout`          | number            | Default timeout for tests in seconds.
+| `test_hook`        | string            | Path to test hook script.
+| `parameters_file`  | string            | Path to module parameters file.
+| `variables`        | map[string]string | A key value list of custom variables.
+
+
 **Environment Variables**
 
 Manifest values can be overwritten by environment variables. Environment
 variables will always take precedence over regular variables. Regular variables
-have to be declared in a variables file `ntt.env`.
+have to be declared in a TOML formatted file `ntt.env` or in `variables` section in
+the manifest:
 
-Environment variable `NTT_CACHE` is a colon-separated list of directories and has
-similar purpose and behaviour like GNU Make's VPATH. It is use to find files
-like `ntt.env`.
+    $ echo '{"variables": {"NTT_NAME": "OrignalName" }, "name": "$NTT_NAME" }' > package.yml
+
+    $ ntt show -- name
+    OriginalName
+
+    $ NTT_NAME=NewName ntt show -- name
+    NewName
+
+
+You also can overwrite arrays like `sources` or `imports` with environment
+variables (`NTT_SOURCES="foo.ttcn3 bar.ttcn3" ...`), but note that spaces might
+become problematic.
 
 
 ## TTCN-3 Language Server
