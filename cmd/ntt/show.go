@@ -112,7 +112,7 @@ var (
 
 func show(cmd *cobra.Command, args []string) error {
 
-	sources, keys := ntt.SplitArgs(args, cmd.ArgsLenAtDash())
+	sources, keys := splitArgs(args, cmd.ArgsLenAtDash())
 
 	suite, err := ntt.NewFromArgs(sources...)
 	if err != nil {
@@ -156,4 +156,15 @@ func show(cmd *cobra.Command, args []string) error {
 		fmt.Println(s)
 	}
 	return nil
+}
+
+// splitArgs splits an argument list at pos. Pos is usually the position of '--'
+// (see cobra.Command.ArgsLenAtDash).
+//
+// Is pos < 0, the second list will be empty
+func splitArgs(args []string, pos int) ([]string, []string) {
+	if pos < 0 {
+		return args, []string{}
+	}
+	return args[:pos], args[pos:]
 }
