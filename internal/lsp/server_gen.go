@@ -56,8 +56,8 @@ func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	return s.didOpen(ctx, params)
 }
 
-func (s *Server) DidSave(context.Context, *protocol.DidSaveTextDocumentParams) error {
-	return notImplemented("DidSave")
+func (s *Server) DidSave(ctx context.Context, params *protocol.DidSaveTextDocumentParams) error {
+	return s.didSave(ctx, params)
 }
 
 func (s *Server) DocumentColor(context.Context, *protocol.DocumentColorParams) ([]protocol.ColorInformation, error) {
@@ -180,8 +180,8 @@ func (s *Server) SemanticTokensRange(context.Context, *protocol.SemanticTokensRa
 	return nil, notImplemented("SemanticTokensRange")
 }
 
-func (s *Server) SetTraceNotification(context.Context, *protocol.SetTraceParams) error {
-	return notImplemented("SetTraceNotification")
+func (s *Server) SetTraceNotification(ctx context.Context, params *protocol.SetTraceParams) error {
+	return s.setTraceNotification(ctx, params)
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
