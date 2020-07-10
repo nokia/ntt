@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nokia/ntt/internal/jsonrpc2"
+	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/telemetry/log"
 	"github.com/nokia/ntt/internal/telemetry/trace"
 	"github.com/nokia/ntt/internal/xcontext"

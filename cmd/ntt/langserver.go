@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/nokia/ntt/internal/jsonrpc2"
+	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/spf13/cobra"
 )

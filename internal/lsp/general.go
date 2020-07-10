@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/nokia/ntt/internal/jsonrpc2"
+	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 )

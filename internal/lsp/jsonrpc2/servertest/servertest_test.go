@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt/internal/jsonrpc2"
+	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 )
 
 type fakeHandler struct {
