@@ -81,7 +81,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 			}
 			switch {
 			case info.IsDir():
-				files, err := TTCN3Files(src)
+				files, err := findTTCN3Files(src)
 				if err != nil {
 					return nil, err
 				}
@@ -105,7 +105,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 
 	// If there's only a root folder, look for .ttcn3 files
 	if suite.root != nil {
-		files, err := TTCN3Files(suite.root.Path())
+		files, err := findTTCN3Files(suite.root.Path())
 		if err != nil {
 			return nil, err
 		}
@@ -120,6 +120,9 @@ func (suite *Suite) Sources() ([]*File, error) {
 	return suite.sources, nil
 }
 
+// Imports returns the list of imported packages required to compile a Suite.
+// The error will be != nil if imports could not be determined correctly. For
+// example, when `package.yml` had syntax errors.
 func (suite *Suite) Imports() ([]*File, error) {
 	var ret []*File
 
@@ -163,18 +166,27 @@ func (suite *Suite) Imports() ([]*File, error) {
 	return suite.imports, nil
 }
 
+// AddSources appends files... to the known sources list.
 func (suite *Suite) AddSources(files ...string) {
 	for i := range files {
 		suite.sources = append(suite.sources, suite.File(files[i]))
 	}
 }
 
+// AddImports appends folders.. to the known imports list.
 func (suite *Suite) AddImports(folders ...string) {
 	for i := range folders {
 		suite.imports = append(suite.imports, suite.File(folders[i]))
 	}
 }
 
+// Name returns the name of the test suite. Or err != nil if the name could not
+// determined correctly.
+//
+// Name first checks for environment variable NTT_NAME, then if a name is
+// specified in a manifest. Then if a name was specified explicitly. Next, if
+// suite has a root folder, its base-name will be used. Last resort is the
+// first source .ttcn3 without extension.
 func (suite *Suite) Name() (string, error) {
 	if suite.name != "" {
 		return suite.name, nil
@@ -220,10 +232,13 @@ func (suite *Suite) Name() (string, error) {
 	return "", fmt.Errorf("Could not determine a suite name")
 }
 
+// SetName will set the suites name.
 func (suite *Suite) SetName(name string) {
 	suite.name = name
 }
 
+// Variables will return a string map containing the variables-sections of the
+// manifest files.
 func (suite *Suite) Variables() (map[string]string, error) {
 	m, err := suite.parseManifest()
 	if err != nil {
@@ -370,6 +385,7 @@ func (suite *Suite) ParametersFile() (*File, error) {
 
 	return nil, nil
 }
+
 func fileExists(path string) (bool, error) {
 
 	info, err := os.Stat(path)
@@ -425,7 +441,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		err      error
 	}
 
-	f.handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
+	f.handle = suite.store.Bind(f.id(), func(ctx context.Context) interface{} {
 		data := manifestData{}
 		data.err = yaml.UnmarshalStrict(b, &data.manifest)
 		return &data
@@ -437,6 +453,8 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	return &data.manifest, data.err
 }
 
+// Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
+// On error Files will return an error.
 func (suite *Suite) Files() ([]string, error) {
 	srcs, err := suite.Sources()
 	if err != nil {
@@ -450,7 +468,7 @@ func (suite *Suite) Files() ([]string, error) {
 	}
 
 	for _, dir := range dirs {
-		f, err := TTCN3Files(dir.Path())
+		f, err := findTTCN3Files(dir.Path())
 		if err != nil {
 			return nil, err
 		}
@@ -459,28 +477,27 @@ func (suite *Suite) Files() ([]string, error) {
 	return files, err
 }
 
+// FindModule tries to find a .ttcn3 based on its module name.
 func (suite *Suite) FindModule(name string) (string, error) {
-	srcs, err := suite.Sources()
-	if err != nil {
-		return "", err
+
+	suite.modulesMu.Lock()
+	defer suite.modulesMu.Unlock()
+
+	if suite.modules == nil {
+		suite.modules = make(map[string]string)
 	}
-	for _, src := range srcs {
-		if filepath.Base(src.Path()) == name+".ttcn3" {
-			return src.Path(), nil
+
+	if file, ok := suite.modules[name]; ok {
+		return file, nil
+	}
+
+	if files, err := suite.Files(); err != nil {
+		for _, file := range files {
+			if filepath.Base(file) == name+".ttcn3" {
+				suite.modules[name] = file
+				return file, nil
+			}
 		}
-	}
-
-	dirs, err := suite.Imports()
-	if err != nil {
-		return "", err
-	}
-
-	for _, dir := range dirs {
-		path := filepath.Join(dir.Path(), name+".ttcn3")
-		if ok, err := fileExists(path); ok {
-			return path, err
-		}
-
 	}
 
 	return "", fmt.Errorf("No such module %q", name)

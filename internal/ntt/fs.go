@@ -22,29 +22,29 @@ func hasCExtension(file string) bool {
 		strings.HasSuffix(file, ".cc") || strings.HasSuffix(file, ".cxx") || strings.HasSuffix(file, ".cpp")
 }
 
-// TTCN3Files returns a list of TTCN-3 source files (.ttcn3, .ttcn) or error if
+// findTTCN3Files returns a list of TTCN-3 source files (.ttcn3, .ttcn) or error if
 // directory could not be read.
-func TTCN3Files(dir string) ([]string, error) {
-	return FindFiles(dir, hasTTCN3Extension)
+func findTTCN3Files(dir string) ([]string, error) {
+	return findFiles(dir, hasTTCN3Extension)
 }
 
-// ASN1Files returns a list of ASN.1 files (.asn, asn1) or error if directory could
+// findASN1Files returns a list of ASN.1 files (.asn, asn1) or error if directory could
 // not be read.
-func ASN1Files(dir string) ([]string, error) {
-	return FindFiles(dir, hasASN1Extension)
+func findASN1Files(dir string) ([]string, error) {
+	return findFiles(dir, hasASN1Extension)
 }
 
-// CFiles returns a list of C/C++ files (.c, .cc, .cxx) or error if directory
+// findCFiles returns a list of C/C++ files (.c, .cc, .cxx) or error if directory
 // could not be read.
-func CFiles(dir string) ([]string, error) {
-	return FindFiles(dir, hasCExtension)
+func findCFiles(dir string) ([]string, error) {
+	return findFiles(dir, hasCExtension)
 }
 
-// FindFiles returns regular files from directory dir, for which matcher function
+// findFiles returns regular files from directory dir, for which matcher function
 // returned true.
-// FindFiles returns an empty slice if no file was found. On error it returns
+// findFiles returns an empty slice if no file was found. On error it returns
 // nil and error.
-func FindFiles(dir string, matcher func(name string) bool) ([]string, error) {
+func findFiles(dir string, matcher func(name string) bool) ([]string, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err

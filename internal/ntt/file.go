@@ -11,6 +11,8 @@ import (
 	"github.com/nokia/ntt/internal/span"
 )
 
+// File represents an abstract file. Its content does not necessarly need to be
+// on the disk, but may be set using SetBytes method.
 type File struct {
 	uri     span.URI // URI
 	path    string   // Original path used on construction
@@ -21,6 +23,7 @@ type File struct {
 	handle *memoize.Handle
 }
 
+// URI returns returns the absolute file path with a "file://" prefix.
 func (f *File) URI() span.URI { return f.uri }
 
 // Path returns the file system path.
@@ -32,15 +35,17 @@ func (f *File) Path() string {
 }
 
 // String returns the file path as it was using during creation: If File was
-// created as URI, String will return an URI, if File was created as relativ
-// path, String will return this relativ path.
+// created as URI, String will return an URI, if File was created as relative
+// path, String will return this relative path.
 func (f *File) String() string { return f.path }
 
-func (f *File) ID() string {
+func (f *File) id() string {
+	// TODO(5nord) include modification date.
 	return fmt.Sprintf("%x", sha1.Sum([]byte(strconv.Itoa(f.version)+f.URI().Filename())))
 }
 
-// Bytes returns the contents of the file
+// Bytes returns the contents of File. If content was not specified using
+// SetBytes, Bytes will try reading the file path's content from disk.
 func (f *File) Bytes() ([]byte, error) {
 	if f.bytes == nil && f.err == nil {
 		f.bytes, f.err = ioutil.ReadFile(f.path)

@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/nokia/ntt/internal/jsonrpc2"
+	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 )
 
 // Server is a helper for executing tests against a remote jsonrpc2 connection.

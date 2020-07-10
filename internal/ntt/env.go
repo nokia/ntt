@@ -64,6 +64,8 @@ func (suite *Suite) Environ() ([]string, error) {
 	return ret, nil
 }
 
+// AddEnvFiles adds the TOML formatted files to the list of environment files
+// to look for variables.
 func (suite *Suite) AddEnvFiles(files ...string) {
 	for i := range files {
 		suite.envFiles = append(suite.envFiles, suite.File(files[i]))
@@ -207,7 +209,7 @@ func (suite *Suite) parseEnvFile(f *File) (*toml.Tree, error) {
 		err  error
 	}
 
-	f.handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
+	f.handle = suite.store.Bind(f.id(), func(ctx context.Context) interface{} {
 		data := envData{}
 
 		b, err := f.Bytes()
