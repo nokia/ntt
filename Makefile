@@ -7,6 +7,8 @@ BINDIR     ?= ${PREFIX}/bin
 LIBEXECDIR ?= ${PREFIX}/libexec
 MANDIR     ?= ${PREFIX}/share/man
 DATADIR    ?= ${PREFIX}/share/ntt
+LIBDIR     ?= ${PREFIX}/lib
+INCLUDEDIR ?= ${PREFIX}/include
 ETCDIR     ?= /etc
 
 BASHINSTALLDIR=${PREFIX}/share/bash-completion/completions
@@ -79,7 +81,7 @@ help:
 	@perl -ne 'printf("\t%-10s\t%s\n", $$1, $$2)  if /^\.PHONY:\s*(.*)\s*##\s*(.*)$$/' <$(MAKEFILE_LIST)
 
 .PHONY: build ## build everything
-build: bin/ntt bin/ntt-mcov bin/k3objdump
+build: bin/ntt bin/ntt-mcov bin/k3objdump pyntt
 
 .PHONY: check ## run tests
 check:
@@ -93,12 +95,16 @@ install: build
 	install -m 755 bin/k3objdump $(DESTDIR)$(BINDIR)/k3objdump
 	install -d -m 755 $(DESTDIR)$(DATADIR)/cmake
 	install -m 644 cmake/FindNTT.cmake $(DESTDIR)$(DATADIR)/cmake
-
+	install -m 644 libntt/$(LIBNTT) $(DESTDIR)$(LIBDIR)
+	install -m 644 libntt/ntt.h $(DESTDIR)$(INCLUDEDIR)
+	$(PYTHON) pyntt/setup.py install
 
 .PHONY: clean ## delete build artifacts
 clean:
 	rm -f bin/ntt bin/ntt-mcov bin/k3objdump
+	rm -r pyntt/build libntt/$(LIBNTT) libntt/libntt.a libntt/libntt.h
 	rmdir bin
+
 
 .PHONY: bin/ntt ## build ntt CLI
 bin/ntt:
@@ -120,13 +126,13 @@ generate:
 
 .PHONY: pyntt
 pyntt: libntt
-	$(PYTHON) python/setup.py build_ext --build-lib python --build-temp python
+	$(PYTHON) $@/setup.py build_ext --build-lib $@/build --build-temp $@/build
 
 .PHONY: libntt
 libntt: $(LIBNTT)
 
-$(LIBNTT): libntt/libntt.a
-	$(CC) -shared -fPIC -o libntt/$@ libntt/ntt.c $^ -lpthread
+$(LIBNTT): libntt/ntt.c libntt/libntt.a
+	$(CC) -shared -fPIC -o libntt/$@ $^ -lpthread
 
 libntt/libntt.a: libntt/libntt.go
 	$(GO_BUILD) -o $@ -buildmode=c-archive $^
