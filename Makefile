@@ -14,6 +14,7 @@ ZSHINSTALLDIR=${PREFIX}/share/zsh/site-functions
 
 # Commands
 GO ?= go
+PYTHON ?= python3
 
 # Go specific stuff
 export GO111MODULE=off
@@ -55,6 +56,16 @@ NTT_LDFLAGS  = -X 'main.version=$(VERSION)'
 NTT_LDFLAGS += -X 'main.commit=$(GIT_COMMIT)'
 NTT_LDFLAGS += -X 'main.date=$(BUILD_INFO)'
 NTT_LDFLAGS += -X 'main.prefix=$(PREFIX)'
+
+OS:=$(shell uname)
+
+ifeq ($(OS), Darwin)
+    LIBNTT+=libntt.dylib
+endif
+ifeq ($(OS), Linux)
+    LIBNTT+=libntt.so
+endif
+
 
 .PHONY: all ## build whole project (default)
 all: build
@@ -105,4 +116,18 @@ bin/k3objdump:
 .PHONY: generate ## run code generators
 generate:
 	$(GO) generate -x ./...
+
+
+.PHONY: pyntt
+pyntt: libntt
+	$(PYTHON) python/setup.py build_ext --build-lib python --build-temp python
+
+.PHONY: libntt
+libntt: $(LIBNTT)
+
+$(LIBNTT): libntt/libntt.a
+	$(CC) -shared -fPIC -o libntt/$@ libntt/ntt.c $^ -lpthread
+
+libntt/libntt.a: libntt/libntt.go
+	$(GO_BUILD) -o $@ -buildmode=c-archive $^
 
