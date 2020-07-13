@@ -34,8 +34,20 @@ func init() {
 }
 
 func lint(cmd *cobra.Command, args []string) {
-	_, err := ntt.NewFromArgs(args...)
+	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
 		fatal(err)
+	}
+
+	files, err := suite.Files()
+	if err != nil {
+		fatal(err)
+	}
+
+	for i := range files {
+		info := suite.Parse(files[i])
+		if info.Err != nil {
+			fatal(err)
+		}
 	}
 }
