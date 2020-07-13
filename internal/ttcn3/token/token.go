@@ -40,12 +40,13 @@ const (
 	ROR    // @>
 	CONCAT // &
 
-	REDIR  // ->
-	DECODE // =>
-	ANY    // ?
-	EXCL   // !
-	RANGE  // ..
-	ASSIGN // :=
+	REDIR      // ->
+	DECODE     // =>
+	ANY        // ?
+	EXCL       // !
+	RANGE      // ..
+	ASSIGN     // :=
+	COLONCOLON // ::
 
 	EQ // ==
 	NE // !=
@@ -211,13 +212,14 @@ var tokens = [...]string{
 	EXCL:   "!",
 	RANGE:  "..",
 
-	ASSIGN: ":=",
-	EQ:     "==",
-	NE:     "!=",
-	LT:     "<",
-	LE:     "<=",
-	GT:     ">",
-	GE:     ">=",
+	ASSIGN:     ":=",
+	COLONCOLON: "::",
+	EQ:         "==",
+	NE:         "!=",
+	LT:         "<",
+	LE:         "<=",
+	GT:         ">",
+	GE:         ">=",
 
 	LPAREN:    "(",
 	LBRACK:    "[",
@@ -411,6 +413,8 @@ func (tok Kind) Precedence() int {
 		return 17
 	case MUL, DIV, REM, MOD:
 		return 18
+	case COLONCOLON:
+		return 19
 	}
 	return LowestPrec
 }
