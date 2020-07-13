@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "github.com/nokia/ntt/plugin";
+
+message Version {
+  int32 major = 1;
+  int32 minor = 2;
+  int32 patch = 3;
+}
+
+message GeneratorRequest {
+	Version version = 1;
+}
+
+message GeneratorResponse {}

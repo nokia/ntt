@@ -7,7 +7,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/nokia/ntt/internal/t3xf/opcode"
+	"github.com/nokia/ntt/t3xf/opcode"
 )
 
 type instr struct {
@@ -221,8 +221,8 @@ func (s *Scanner) decode(b []byte) {
 				return
 			}
 			scan := stack[len(stack)-1]
-			s.code[scan].arg = s.pos
-			s.code[s.pos].arg = scan
+			s.code[scan].arg = s.pos * 4
+			s.code[s.pos].arg = scan * 4
 			stack = stack[:len(stack)-1]
 
 		// Deprecated Instructions
