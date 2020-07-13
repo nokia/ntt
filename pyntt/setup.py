@@ -1,13 +1,14 @@
 from distutils.core import setup, Extension
 
-ntt = Extension('ntt',
-                         sources = ['pyntt/ntt_python.c'],
-                         include_dirs = ['./libntt/'],
+ntt_impl = Extension('ntt_impl',
+                         sources = ['ntt_python.c'],
+                         include_dirs = ['../libntt/'],
                          libraries=['ntt'],
-                         library_dirs = ['./libntt/'],
+                         library_dirs = ['../libntt/'],
                          )
 
 setup(  name='ntt',
-        ext_modules=[ntt]
+        ext_modules=[ntt_impl],
+        packages=['ntt'],
      )
 

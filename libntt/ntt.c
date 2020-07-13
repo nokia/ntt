@@ -25,3 +25,11 @@ char * ntt_list_imports(const char * path) {
 
     return NttListImports(path);
 }
+
+char * ntt_load_suite(const char * path) {
+    if(path == NULL) {
+        path_error();
+    }
+
+    return NttLoadSuite(path);
+}

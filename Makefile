@@ -97,7 +97,7 @@ install: build
 	install -m 644 cmake/FindNTT.cmake $(DESTDIR)$(DATADIR)/cmake
 	install -m 644 libntt/$(LIBNTT) $(DESTDIR)$(LIBDIR)
 	install -m 644 libntt/ntt.h $(DESTDIR)$(INCLUDEDIR)
-	$(PYTHON) pyntt/setup.py install
+	cd pyntt; $(PYTHON) setup.py install
 
 .PHONY: clean ## delete build artifacts
 clean:
@@ -126,7 +126,7 @@ generate:
 
 .PHONY: pyntt
 pyntt: libntt
-	$(PYTHON) $@/setup.py build_ext --build-lib $@/build --build-temp $@/build
+	cd $@; $(PYTHON) setup.py build_ext --build-lib build --build-temp build
 
 .PHONY: libntt
 libntt: $(LIBNTT)

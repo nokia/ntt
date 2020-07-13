@@ -1,19 +1,10 @@
-import ntt
+from ntt.suite import Suite
 
-path = "/home/peter/ccsstubtest"
+path = "/home/peter/src/ccsstubtest/sourcedir"
 
-testcases = ntt.list_testcases(path)
-print(testcases)
-for tc in testcases:
-    print(tc)
+suite = Suite(path)
 
-imports = ntt.list_imports(path)
-print(imports["test"])
+tests = suite.tests()
 
-for imp in imports["test"]:
-    print(imp)
-
-
-print(type(imports))
-#print(ntt.list_imports(path))
-#print(ntt.list_testcases(path + "/logs"))
+for test in tests:
+    print(test.name())

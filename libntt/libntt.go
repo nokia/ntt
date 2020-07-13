@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"encoding/json"
 )
 
 func fatal(err error) {
@@ -76,6 +77,36 @@ func NttListImports(path * C.char) * C.char {
 	}
 
 	return C.CString(imports.String())
+}
+
+type M map[string]interface{}
+
+//export NttLoadSuite
+func NttLoadSuite(path * C.char) * C.char {
+	args := []string{ C.GoString(path)}
+	suite := loadSuite(args, loader.Config{
+		IgnoreTags: false,
+		IgnoreImports: false,
+		IgnoreComments: true,
+	})
+
+	var testcases []M
+
+	for _, test := range suite.Tests() {
+		var t = make(M)
+		t["mod"] = test.Module()
+		t["tags"] = test.Tags()
+		t["name"] = test.FullName()
+
+		testcases = append(testcases, t)
+	}
+
+	data, err := json.MarshalIndent(testcases, "", "  ")
+	if err != nil {
+		fatal(err)
+	}
+
+	return C.CString(string(data))
 }
 
 func main() { }

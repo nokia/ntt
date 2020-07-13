@@ -105,12 +105,31 @@ static PyObject * list_imports(PyObject * self, PyObject * args)
 }
 
 
+static PyObject * load_suite(PyObject * self, PyObject* args) {
+    const char * path;
+
+    if(!PyArg_ParseTuple(args, "s", &path))
+        return NULL;
+
+    char * suite = ntt_load_suite(path);
+
+    PyObject * json_string = Py_BuildValue("s", suite);
+
+    if(suite) {
+        free(suite);
+    }
+
+    return json_string;
+}
+
+
 
  /*  define functions in module */
  static PyMethodDef NttMethods[] =
  {
       {"list_testcases", list_testcases, METH_VARARGS, "list ttcn3 testcases"},
       {"list_imports", list_imports, METH_VARARGS, "list ttcn3 imports in testcase"},
+      {"load_suite", load_suite, METH_VARARGS, "load the ttcn3 suite as json document"},
       {NULL, NULL, 0, NULL}
  };
 
@@ -118,12 +137,12 @@ static PyObject * list_imports(PyObject * self, PyObject * args)
 static struct PyModuleDef cModPyDem =
  {
      PyModuleDef_HEAD_INIT,
-     "ntt", "Some documentation",
+     "ntt_impl", "Some documentation",
      -1,
      NttMethods
 };
  
-PyMODINIT_FUNC PyInit_ntt(void)
+PyMODINIT_FUNC PyInit_ntt_impl(void)
 {
      return PyModule_Create(&cModPyDem);
 }
