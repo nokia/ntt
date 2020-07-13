@@ -93,6 +93,7 @@ var ttokens = [...]elt{
 	{token.RBRACK, `]`},
 	{token.SEMICOLON, `;`},
 	{token.COLON, `:`},
+	{token.COLONCOLON, `::`},
 }
 
 const whitespace string = "\t \n \r\n\n"

@@ -424,8 +424,6 @@ func (s *Scanner) Scan() (pos loc.Pos, tok token.Kind, lit string) {
 		case '#':
 			tok = token.PREPROC
 			lit = s.scanPreproc()
-		case ':':
-			tok = s.switch2('=', token.ASSIGN, token.COLON)
 		case '.':
 			tok = s.switch2('.', token.RANGE, token.DOT)
 		case ',':
@@ -457,6 +455,17 @@ func (s *Scanner) Scan() (pos loc.Pos, tok token.Kind, lit string) {
 				lit = comment
 			} else {
 				tok = token.DIV
+			}
+		case ':':
+			switch s.ch {
+			case '=':
+				tok = token.ASSIGN
+				s.next()
+			case ':':
+				tok = token.COLONCOLON
+				s.next()
+			default:
+				tok = token.COLON
 			}
 		case '>':
 			switch s.ch {

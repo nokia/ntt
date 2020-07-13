@@ -365,9 +365,15 @@ func (x *ParametrizedIdent) Pos() loc.Pos { return x.Ident.Pos() }
 func (x *ValueLiteral) Pos() loc.Pos      { return x.Tok.Pos() }
 func (x *CompositeLiteral) Pos() loc.Pos  { return x.LBrace.Pos() }
 func (x *UnaryExpr) Pos() loc.Pos         { return x.Op.Pos() }
-func (x *BinaryExpr) Pos() loc.Pos        { return x.X.Pos() }
-func (x *ParenExpr) Pos() loc.Pos         { return x.LParen.Pos() }
-func (x *SelectorExpr) Pos() loc.Pos      { return x.X.Pos() }
+func (x *BinaryExpr) Pos() loc.Pos {
+	if x.X != nil {
+		return x.X.Pos()
+	}
+	return x.Op.Pos()
+}
+
+func (x *ParenExpr) Pos() loc.Pos    { return x.LParen.Pos() }
+func (x *SelectorExpr) Pos() loc.Pos { return x.X.Pos() }
 func (x *IndexExpr) Pos() loc.Pos {
 	if x.X != nil {
 		return x.X.Pos()

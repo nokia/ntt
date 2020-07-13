@@ -591,6 +591,9 @@ func (p *parser) parseUnaryExpr() ast.Expr {
 			}
 		}
 		return &ast.UnaryExpr{Op: tok, X: p.parseUnaryExpr()}
+	case token.COLONCOLON:
+		tok := p.consume()
+		return &ast.BinaryExpr{Op: tok, Y: p.parseExpr()}
 	}
 
 	return p.parsePrimaryExpr()

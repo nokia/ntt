@@ -82,6 +82,7 @@ func TestExprs(t *testing.T) {
 		{pass, `regexp @nocase(x,charstring:"?+(text)?+",0)`},
 		{pass, `match(ptc.alive, false)`},
 		{pass, `x.universal charstring := "FF80"`},
+		{pass, `::E + NS::E`},
 	}
 
 	testParse(t, exprs, func(p *parser) { p.parseExprList() })
