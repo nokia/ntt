@@ -14,6 +14,7 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 
 	f := s.suite.File(params.TextDocument.URI)
 	f.SetBytes([]byte(params.TextDocument.Text))
+	s.Diagnose()
 	return nil
 }
 

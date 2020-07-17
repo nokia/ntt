@@ -53,6 +53,16 @@ type Server struct {
 	pendingFolders []protocol.WorkspaceFolder
 
 	suite *ntt.Suite
+
+	diagsMu sync.Mutex
+	diags   map[string][]protocol.Diagnostic
+}
+
+func (s *Server) Fatal(ctx context.Context, msg string) {
+	s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
+		Type:    protocol.Error,
+		Message: msg,
+	})
 }
 
 func (s *Server) Info(ctx context.Context, msg string) {
