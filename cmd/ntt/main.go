@@ -14,11 +14,11 @@ import (
 	"github.com/nokia/ntt/internal/session"
 	"github.com/spf13/cobra"
 
-	"github.com/nokia/ntt/cmd/ntt/internal/dump"
-	"github.com/nokia/ntt/cmd/ntt/internal/langserver"
-	"github.com/nokia/ntt/cmd/ntt/internal/lint"
-	"github.com/nokia/ntt/cmd/ntt/internal/list"
-	"github.com/nokia/ntt/cmd/ntt/internal/tags"
+	"github.com/nokia/ntt/internal/cmds/dump"
+	"github.com/nokia/ntt/internal/cmds/langserver"
+	"github.com/nokia/ntt/internal/cmds/lint"
+	"github.com/nokia/ntt/internal/cmds/list"
+	"github.com/nokia/ntt/internal/cmds/tags"
 )
 
 var (
