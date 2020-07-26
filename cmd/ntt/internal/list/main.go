@@ -6,9 +6,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 
-	"github.com/nokia/ntt/internal/loader"
-	"github.com/nokia/ntt/internal/runtime"
+	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/spf13/cobra"
 )
 
@@ -67,31 +70,57 @@ Example:
 
 `,
 
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			verbose, _ = cmd.Flags().GetBool("verbose")
+
+			suite, err := ntt.NewFromArgs(args...)
+			if err != nil {
+				return err
+			}
+
+			var srcs []string
+
+			switch cmd.Name() {
+			case "tests", "list":
+				var x []*ntt.File
+				x, err = suite.Sources()
+				srcs = ntt.PathSlice(x...)
+			default:
+				srcs, err = suite.Files()
+			}
+
+			if err != nil {
+				return err
+			}
+
+			var wg sync.WaitGroup
+			wg.Add(len(srcs))
+			infos = make([]*ntt.ParseInfo, len(srcs))
+			for i, src := range srcs {
+				go func(i int, src string) {
+					defer wg.Done()
+					infos[i] = suite.Parse(src)
+				}(i, src)
+			}
+			wg.Wait()
+			return nil
+		},
+
+		PersistentPostRun: func(cmd *cobra.Command, args []string) { w.Flush() },
+
+		// Listing tests is the default command
 		RunE: listTests,
 	}
 
-	listTestsCmd = &cobra.Command{
-		Use:     `tests`,
-		Aliases: []string{"test", "tc", "tcs", "testcase", "testcases"},
-		RunE:    listTests,
-	}
-
-	listModulesCmd = &cobra.Command{
-		Use:     `modules`,
-		Aliases: []string{"module", "mod", "mods"},
-		RunE:    listModules,
-	}
-
-	listImportsCmd = &cobra.Command{
-		Use:     `imports`,
-		Aliases: []string{"import", "dep", "deps", "dependency", "dependencies"},
-		RunE:    listImports,
-	}
+	listTestsCmd   = &cobra.Command{Use: `tests`, RunE: listTests}
+	listModulesCmd = &cobra.Command{Use: `modules`, RunE: listModules}
+	listImportsCmd = &cobra.Command{Use: `imports`, RunE: listImports}
 
 	w = bufio.NewWriter(os.Stdout)
 
-	Tags    = false
-	verbose = false
+	showTags = false
+	verbose  = false
+	infos    []*ntt.ParseInfo
 
 	ItemsRegex   = []string{}
 	ItemsExclude = []string{}
@@ -100,7 +129,7 @@ Example:
 )
 
 func init() {
-	Command.PersistentFlags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
+	Command.PersistentFlags().BoolVarP(&showTags, "tags", "t", false, "enable output of testcase documentation tags")
 	Command.PersistentFlags().StringSliceVarP(&ItemsRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
 	Command.PersistentFlags().StringSliceVarP(&ItemsExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
 	Command.PersistentFlags().StringSliceVarP(&TagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
@@ -109,115 +138,116 @@ func init() {
 }
 
 func listTests(cmd *cobra.Command, args []string) error {
-	verbose, _ = cmd.Flags().GetBool("verbose")
+	for _, info := range infos {
+		if info.Err != nil {
+			return info.Err
+		}
+		ast.Inspect(info.Module, func(n ast.Node) bool {
+			if n == nil {
+				return false
+			}
+			switch n := n.(type) {
+			case *ast.FuncDecl:
+				if !n.IsTest() {
+					break
+				}
 
-	suite, err := loadSuite(args, loader.Config{
-		IgnoreImports:  true,
-		IgnoreTags:     !needTags(),
-		IgnoreComments: !needTags(),
-	})
+				name := info.Module.Name.String() + "." + n.Name.String()
+				tags := doc.FindAllTags(n.Kind.Comments())
+				if match(name, tags) {
+					printItem(info.FileSet, n.Pos(), tags, name)
+				}
 
-	if err != nil {
-		return err
+			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			}
+			return false
+		})
 	}
-
-	for _, test := range suite.Tests() {
-		printItem(test.Module().File(), test.FullName(), test.Tags())
-	}
-	w.Flush()
 	return nil
 }
 
 func listModules(cmd *cobra.Command, args []string) error {
-	verbose, _ = cmd.Flags().GetBool("verbose")
-	suite, err := loadSuite(args, loader.Config{
-		IgnoreImports:  true,
-		IgnoreTags:     !needTags(),
-		IgnoreComments: !needTags(),
-	})
-
-	if err != nil {
-		return err
+	for _, info := range infos {
+		if info.Err != nil {
+			return info.Err
+		}
+		name := info.Module.Name.String()
+		tags := doc.FindAllTags(info.Module.Tok.Comments())
+		if match(name, tags) {
+			printItem(info.FileSet, info.Module.Pos(), tags, name)
+		}
 	}
-
-	for _, mod := range suite.Modules() {
-		printItem(mod.File(), mod.Name(), mod.Tags())
-	}
-	w.Flush()
 	return nil
 }
 
 func listImports(cmd *cobra.Command, args []string) error {
-	verbose, _ = cmd.Flags().GetBool("verbose")
-	suite, err := loadSuite(args, loader.Config{
-		IgnoreTags:     !needTags(),
-		IgnoreComments: !needTags(),
-	})
-
-	if err != nil {
-		return err
-	}
-
-	for _, mod := range suite.Modules() {
-		for _, imp := range mod.Imports {
-			printItem(imp.Module().File(), mod.Name()+"\t"+imp.ImportedModule(), nil)
+	for _, info := range infos {
+		if info.Err != nil {
+			return info.Err
 		}
+		ast.Inspect(info.Module, func(n ast.Node) bool {
+			if n == nil {
+				return false
+			}
+			switch n := n.(type) {
+			case *ast.ImportDecl:
+				name := n.Module.String()
+				tags := doc.FindAllTags(n.ImportTok.Comments())
+				if match(name, tags) {
+					printItem(info.FileSet, n.Pos(), tags, info.Module.Name.String(), name)
+				}
+
+			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			}
+			return false
+		})
 	}
-	w.Flush()
 	return nil
 }
 
-func loadSuite(args []string, conf loader.Config) (runtime.Suite, error) {
-	// Update configuration with TTCN-3 source files from args
-	if _, err := conf.FromArgs(args); err != nil {
-		return nil, err
+func printItem(fset *loc.FileSet, pos loc.Pos, tags [][]string, fields ...string) {
+
+	if verbose {
+		p := fset.Position(pos)
+		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
 	}
 
-	// Load suite
-	suite, err := conf.Load()
-	if err != nil {
-		return nil, err
+	s := strings.Join(fields, "\t")
+
+	if showTags && len(tags) != 0 {
+		for _, tag := range tags {
+			fmt.Fprintf(w, "%s\t%s\t%s\n", s, tag[0], tag[1])
+		}
+		return
 	}
 
-	return suite, nil
+	fmt.Fprintf(w, "%s\n", s)
 }
 
-func printItem(file string, item string, tags [][]string) {
-
-	if !matchAll(ItemsRegex, item) {
-		return
+func match(name string, tags [][]string) bool {
+	if !matchAll(ItemsRegex, name) {
+		return false
 	}
-
-	if len(ItemsExclude) > 0 && matchAll(ItemsExclude, item) {
-		return
+	if len(ItemsExclude) > 0 && matchAll(ItemsExclude, name) {
+		return false
 	}
 
 	if len(TagsRegex) > 0 {
 		if len(tags) == 0 {
-			return
+			return false
 		}
 		if !matchAllTags(TagsRegex, tags) {
-			return
+			return false
 		}
 	}
 
 	if len(TagsExclude) > 0 && matchAllTags(TagsExclude, tags) {
-		return
+		return false
 	}
 
-	file = file + "\t"
-	if !verbose {
-		file = ""
-	}
-
-	if Tags && len(tags) != 0 {
-		for _, tag := range tags {
-			fmt.Fprintf(w, "%s%s\t%s\t%s\n", file, item, tag[0], tag[1])
-		}
-		return
-	}
-
-	fmt.Fprintf(w, "%s%s\n", file, item)
+	return true
 }
 
 func matchAll(regexes []string, s string) bool {
@@ -250,8 +280,4 @@ next:
 		return false
 	}
 	return true
-}
-
-func needTags() bool {
-	return Tags || len(ItemsRegex) != 0 || len(ItemsExclude) != 0 || len(TagsRegex) != 0 || len(TagsExclude) != 0
 }
