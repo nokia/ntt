@@ -13,6 +13,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -78,32 +79,12 @@ Example:
 				return err
 			}
 
-			var srcs []string
-
-			switch cmd.Name() {
-			case "tests", "list":
-				var x []*ntt.File
-				x, err = suite.Sources()
-				srcs = ntt.PathSlice(x...)
-			default:
-				srcs, err = suite.Files()
+			if err := parseFiles(cmd, suite); err != nil {
+				return nil
 			}
 
-			if err != nil {
-				return err
-			}
+			return loadBaskets(suite)
 
-			var wg sync.WaitGroup
-			wg.Add(len(srcs))
-			infos = make([]*ntt.ParseInfo, len(srcs))
-			for i, src := range srcs {
-				go func(i int, src string) {
-					defer wg.Done()
-					infos[i] = suite.Parse(src)
-				}(i, src)
-			}
-			wg.Wait()
-			return nil
 		},
 
 		PersistentPostRun: func(cmd *cobra.Command, args []string) { w.Flush() },
@@ -122,19 +103,103 @@ Example:
 	verbose  = false
 	infos    []*ntt.ParseInfo
 
-	ItemsRegex   = []string{}
-	ItemsExclude = []string{}
-	TagsRegex    = []string{}
-	TagsExclude  = []string{}
+	baskets = []basket{{name: "default"}}
 )
 
 func init() {
 	Command.PersistentFlags().BoolVarP(&showTags, "tags", "t", false, "enable output of testcase documentation tags")
-	Command.PersistentFlags().StringSliceVarP(&ItemsRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
-	Command.PersistentFlags().StringSliceVarP(&ItemsExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
-	Command.PersistentFlags().StringSliceVarP(&TagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
-	Command.PersistentFlags().StringSliceVarP(&TagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
+	Command.PersistentFlags().StringSliceVarP(&baskets[0].nameRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
+	Command.PersistentFlags().StringSliceVarP(&baskets[0].nameExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
+	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
+	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
 	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
+}
+
+type basket struct {
+	name        string
+	nameRegex   []string
+	nameExclude []string
+	tagsRegex   []string
+	tagsExclude []string
+}
+
+func newBasket(name string, args []string) (basket, error) {
+	b := basket{name: name}
+
+	fs := pflag.NewFlagSet(name, pflag.ContinueOnError)
+	fs.StringSliceVarP(&b.nameRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
+	fs.StringSliceVarP(&b.nameExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
+	fs.StringSliceVarP(&b.tagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
+	fs.StringSliceVarP(&b.tagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
+
+	if err := fs.Parse(args); err != nil {
+		return b, err
+	}
+
+	return b, nil
+}
+
+func loadBaskets(suite *ntt.Suite) error {
+	env, err := suite.Getenv("NTT_LIST_BASKETS")
+	if err != nil || env == "" {
+		if _, ok := err.(*ntt.NoSuchVariableError); ok {
+			return nil
+		}
+		return err
+	}
+
+	for _, name := range strings.Split(env, ":") {
+		if name == "" {
+			continue
+		}
+
+		flags, err := suite.Getenv("NTT_LIST_BASKETS_" + name)
+		if err != nil {
+			if _, ok := err.(*ntt.NoSuchVariableError); !ok {
+				return err
+			}
+			flags = fmt.Sprintf(`-R "@%s"`, name)
+		}
+
+		basket, err := newBasket(name, strings.Fields(flags))
+		if err != nil {
+			return err
+		}
+		baskets = append(baskets, basket)
+	}
+	return nil
+}
+
+func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
+	var (
+		srcs []string
+		err  error
+	)
+
+	switch cmd.Name() {
+	case "tests", "list":
+		var x []*ntt.File
+		x, err = suite.Sources()
+		srcs = ntt.PathSlice(x...)
+	default:
+		srcs, err = suite.Files()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(srcs))
+	infos = make([]*ntt.ParseInfo, len(srcs))
+	for i, src := range srcs {
+		go func(i int, src string) {
+			defer wg.Done()
+			infos[i] = suite.Parse(src)
+		}(i, src)
+	}
+	wg.Wait()
+	return nil
 }
 
 func listTests(cmd *cobra.Command, args []string) error {
@@ -227,30 +292,44 @@ func printItem(fset *loc.FileSet, pos loc.Pos, tags [][]string, fields ...string
 }
 
 func match(name string, tags [][]string) bool {
-	if !matchAll(ItemsRegex, name) {
+	ok := baskets[0].match(name, tags)
+	if len(baskets) == 1 {
+		return ok
+	}
+
+	for _, basket := range baskets[1:] {
+		if basket.match(name, tags) && ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (b *basket) match(name string, tags [][]string) bool {
+	if !b.matchAll(b.nameRegex, name) {
 		return false
 	}
-	if len(ItemsExclude) > 0 && matchAll(ItemsExclude, name) {
+	if len(b.nameExclude) > 0 && b.matchAll(b.nameExclude, name) {
 		return false
 	}
 
-	if len(TagsRegex) > 0 {
+	if len(b.tagsRegex) > 0 {
 		if len(tags) == 0 {
 			return false
 		}
-		if !matchAllTags(TagsRegex, tags) {
+		if !b.matchAllTags(b.tagsRegex, tags) {
 			return false
 		}
 	}
 
-	if len(TagsExclude) > 0 && matchAllTags(TagsExclude, tags) {
+	if len(b.tagsExclude) > 0 && b.matchAllTags(b.tagsExclude, tags) {
 		return false
 	}
 
 	return true
 }
 
-func matchAll(regexes []string, s string) bool {
+func (b *basket) matchAll(regexes []string, s string) bool {
 	for _, r := range regexes {
 		if ok, _ := regexp.Match(r, []byte(s)); !ok {
 			return false
@@ -259,7 +338,7 @@ func matchAll(regexes []string, s string) bool {
 	return true
 }
 
-func matchAllTags(regexes []string, tags [][]string) bool {
+func (b *basket) matchAllTags(regexes []string, tags [][]string) bool {
 next:
 	for _, r := range regexes {
 		f := strings.SplitN(r, ":", 2)

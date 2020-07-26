@@ -7,13 +7,17 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml"
-	errors "golang.org/x/xerrors"
 )
 
-var ErrNoSuchVariable = errors.New("no such variable")
+type NoSuchVariableError struct {
+	Name string
+}
+
+func (e *NoSuchVariableError) Error() string {
+	return e.Name + ": variable not defined"
+}
 
 var knownVars = map[string]bool{
-	"CFLAGS":              true,
 	"CXXFLAGS":            true,
 	"K3CFLAGS":            true,
 	"K3RFLAGS":            true,
@@ -134,7 +138,7 @@ func (suite *Suite) getenv(key string, visited map[string]string) (string, error
 			s, err := suite.expand(v, visited)
 			visited[key] = s
 			return s, err
-		} else if err != ErrNoSuchVariable {
+		} else if _, ok := err.(*NoSuchVariableError); !ok {
 			return "", err
 		}
 	}
@@ -159,7 +163,7 @@ func (suite *Suite) getenv(key string, visited map[string]string) (string, error
 		return "", nil
 	}
 
-	return "", fmt.Errorf("variable %q not found.", key)
+	return "", &NoSuchVariableError{Name: key}
 }
 
 // Lookup key in process environment
@@ -184,7 +188,7 @@ func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 	}
 
 	if tree == nil {
-		return "", ErrNoSuchVariable
+		return "", &NoSuchVariableError{Name: key}
 	}
 
 	if v := tree.Get(key); v != nil {
@@ -199,7 +203,7 @@ func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 		}
 	}
 
-	return "", ErrNoSuchVariable
+	return "", &NoSuchVariableError{Name: key}
 }
 
 func (suite *Suite) parseEnvFile(f *File) (*toml.Tree, error) {
