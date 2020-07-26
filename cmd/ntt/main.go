@@ -33,6 +33,19 @@ var (
 		DisableFlagsInUseLine: true,
 
 		Args: cobra.ArbitraryArgs,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cpuprofile != "" {
+				f, err := os.Create(cpuprofile)
+				if err != nil {
+					return err
+				}
+				if err := pprof.StartCPUProfile(f); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 				cmd.Help()
@@ -84,18 +97,6 @@ func init() {
 }
 
 func main() {
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
-		if err != nil {
-			fatal(err)
-		}
-		defer f.Close()
-		if err := pprof.StartCPUProfile(f); err != nil {
-			fatal(err)
-		}
-		defer pprof.StopCPUProfile()
-	}
-
 	if s := os.Getenv("K3_DATADIR"); s == "" {
 		os.Setenv("K3_DATADIR", filepath.Join(k3rootdir(), "share/k3"))
 	}
@@ -108,7 +109,12 @@ func main() {
 		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
 	}
 
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if cpuprofile != "" {
+		pprof.StopCPUProfile()
+	}
+
+	if err != nil {
 		fatal(err)
 	}
 }
