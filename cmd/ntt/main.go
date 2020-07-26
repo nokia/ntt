@@ -13,6 +13,12 @@ import (
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/spf13/cobra"
+
+	"github.com/nokia/ntt/cmd/ntt/internal/dump"
+	"github.com/nokia/ntt/cmd/ntt/internal/langserver"
+	"github.com/nokia/ntt/cmd/ntt/internal/lint"
+	"github.com/nokia/ntt/cmd/ntt/internal/list"
+	"github.com/nokia/ntt/cmd/ntt/internal/tags"
 )
 
 var (
@@ -25,7 +31,8 @@ var (
 		SilenceUsage:          true,
 		DisableFlagParsing:    true,
 		DisableFlagsInUseLine: true,
-		Args:                  cobra.ArbitraryArgs,
+
+		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 				cmd.Help()
@@ -69,6 +76,11 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	rootCmd.AddCommand(showCmd)
+	rootCmd.AddCommand(dump.Command)
+	rootCmd.AddCommand(langserver.Command)
+	rootCmd.AddCommand(lint.Command)
+	rootCmd.AddCommand(list.Command)
+	rootCmd.AddCommand(tags.Command)
 }
 
 func main() {

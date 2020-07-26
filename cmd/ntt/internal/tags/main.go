@@ -1,4 +1,4 @@
-package main
+package tags
 
 import (
 	"bufio"
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	tagsCmd = &cobra.Command{
+	Command = &cobra.Command{
 		Use:   "tags",
 		Short: "tags generates an index file for TTCN-3 language objects",
 		Long: `tags  generates an index (or "tag") file for TTCN-3 language objects found in file(s). 
@@ -24,22 +24,20 @@ editor or other utility. A "tag" signifies a language object for which an index
 entry is available (or, alternatively, the index entry created for that
 object).`,
 
-		Run: tags,
+		RunE: tags,
 	}
+
+	w = bufio.NewWriter(os.Stdout)
 )
 
-func init() {
-	rootCmd.AddCommand(tagsCmd)
-}
-
-func tags(cmd *cobra.Command, args []string) {
+func tags(cmd *cobra.Command, args []string) error {
 	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
-		fatal(err)
+		return err
 	}
 	files, err := suite.Files()
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	var wg sync.WaitGroup
@@ -167,9 +165,9 @@ func tags(cmd *cobra.Command, args []string) {
 	fmt.Fprintln(w, "!_TAG_FILE_FORMAT	2	//")
 	fmt.Fprintln(w, "!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted/")
 	fmt.Fprintln(w, "!_TAG_PROGRAM_NAME	ntt	//")
-	fmt.Fprintf(w, "!_TAG_PROGRAM_VERSION	%s	//\n", version)
 	fmt.Fprintln(w, strings.Join(lines, "\n"))
 	w.Flush()
+	return nil
 }
 
 func NewTag(name string, file string, line int, kind string) string {

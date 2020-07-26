@@ -1,4 +1,4 @@
-package main
+package dump
 
 import (
 	"encoding/json"
@@ -10,26 +10,22 @@ import (
 )
 
 var (
-	dumpCmd = &cobra.Command{
+	Command = &cobra.Command{
 		Use:    "dump",
 		Hidden: true,
-		Run:    dump,
+		RunE:   dump,
 	}
 )
 
-func init() {
-	rootCmd.AddCommand(dumpCmd)
-}
-
-func dump(cmd *cobra.Command, args []string) {
+func dump(cmd *cobra.Command, args []string) error {
 	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	srcs, err := suite.Files()
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	var (
@@ -49,9 +45,10 @@ func dump(cmd *cobra.Command, args []string) {
 	for i := range asts {
 		b, err := json.MarshalIndent(asts[i].Module, "", "  ")
 		if err != nil {
-			fatal(err)
+			return err
 		}
 		fmt.Println(string(b))
 	}
 
+	return nil
 }

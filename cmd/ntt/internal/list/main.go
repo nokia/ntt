@@ -1,4 +1,4 @@
-package main
+package list
 
 import (
 	"bufio"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	listCmd = &cobra.Command{
+	Command = &cobra.Command{
 		Use:   "list",
 		Short: "List various types of objects",
 		Long: `List various types of objects.
@@ -67,30 +67,31 @@ Example:
 
 `,
 
-		Run: listTests,
+		RunE: listTests,
 	}
 
 	listTestsCmd = &cobra.Command{
 		Use:     `tests`,
 		Aliases: []string{"test", "tc", "tcs", "testcase", "testcases"},
-		Run:     listTests,
+		RunE:    listTests,
 	}
 
 	listModulesCmd = &cobra.Command{
 		Use:     `modules`,
 		Aliases: []string{"module", "mod", "mods"},
-		Run:     listModules,
+		RunE:    listModules,
 	}
 
 	listImportsCmd = &cobra.Command{
 		Use:     `imports`,
 		Aliases: []string{"import", "dep", "deps", "dependency", "dependencies"},
-		Run:     listImports,
+		RunE:    listImports,
 	}
 
 	w = bufio.NewWriter(os.Stdout)
 
-	Tags = false
+	Tags    = false
+	verbose = false
 
 	ItemsRegex   = []string{}
 	ItemsExclude = []string{}
@@ -99,46 +100,63 @@ Example:
 )
 
 func init() {
-	listCmd.PersistentFlags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
-	listCmd.PersistentFlags().StringSliceVarP(&ItemsRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
-	listCmd.PersistentFlags().StringSliceVarP(&ItemsExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
-	listCmd.PersistentFlags().StringSliceVarP(&TagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
-	listCmd.PersistentFlags().StringSliceVarP(&TagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
-	listCmd.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
-	rootCmd.AddCommand(listCmd)
+	Command.PersistentFlags().BoolVarP(&Tags, "tags", "t", false, "enable output of testcase documentation tags")
+	Command.PersistentFlags().StringSliceVarP(&ItemsRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
+	Command.PersistentFlags().StringSliceVarP(&ItemsExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
+	Command.PersistentFlags().StringSliceVarP(&TagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
+	Command.PersistentFlags().StringSliceVarP(&TagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
+	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
 }
 
-func listTests(cmd *cobra.Command, args []string) {
-	suite := loadSuite(args, loader.Config{
+func listTests(cmd *cobra.Command, args []string) error {
+	verbose, _ = cmd.Flags().GetBool("verbose")
+
+	suite, err := loadSuite(args, loader.Config{
 		IgnoreImports:  true,
 		IgnoreTags:     !needTags(),
 		IgnoreComments: !needTags(),
 	})
+
+	if err != nil {
+		return err
+	}
 
 	for _, test := range suite.Tests() {
 		printItem(test.Module().File(), test.FullName(), test.Tags())
 	}
 	w.Flush()
+	return nil
 }
 
-func listModules(cmd *cobra.Command, args []string) {
-	suite := loadSuite(args, loader.Config{
+func listModules(cmd *cobra.Command, args []string) error {
+	verbose, _ = cmd.Flags().GetBool("verbose")
+	suite, err := loadSuite(args, loader.Config{
 		IgnoreImports:  true,
 		IgnoreTags:     !needTags(),
 		IgnoreComments: !needTags(),
 	})
 
+	if err != nil {
+		return err
+	}
+
 	for _, mod := range suite.Modules() {
 		printItem(mod.File(), mod.Name(), mod.Tags())
 	}
 	w.Flush()
+	return nil
 }
 
-func listImports(cmd *cobra.Command, args []string) {
-	suite := loadSuite(args, loader.Config{
+func listImports(cmd *cobra.Command, args []string) error {
+	verbose, _ = cmd.Flags().GetBool("verbose")
+	suite, err := loadSuite(args, loader.Config{
 		IgnoreTags:     !needTags(),
 		IgnoreComments: !needTags(),
 	})
+
+	if err != nil {
+		return err
+	}
 
 	for _, mod := range suite.Modules() {
 		for _, imp := range mod.Imports {
@@ -146,21 +164,22 @@ func listImports(cmd *cobra.Command, args []string) {
 		}
 	}
 	w.Flush()
+	return nil
 }
 
-func loadSuite(args []string, conf loader.Config) runtime.Suite {
+func loadSuite(args []string, conf loader.Config) (runtime.Suite, error) {
 	// Update configuration with TTCN-3 source files from args
 	if _, err := conf.FromArgs(args); err != nil {
-		fatal(err)
+		return nil, err
 	}
 
 	// Load suite
 	suite, err := conf.Load()
 	if err != nil {
-		fatal(err)
+		return nil, err
 	}
 
-	return suite
+	return suite, nil
 }
 
 func printItem(file string, item string, tags [][]string) {
@@ -187,7 +206,7 @@ func printItem(file string, item string, tags [][]string) {
 	}
 
 	file = file + "\t"
-	if !Verbose {
+	if !verbose {
 		file = ""
 	}
 

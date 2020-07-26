@@ -1,4 +1,4 @@
-package main
+package lint
 
 import (
 	"github.com/nokia/ntt/internal/ntt"
@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	lintCmd = &cobra.Command{
+	Command = &cobra.Command{
 		Use:   "lint",
 		Short: "lint examines TTCN-3 source files and reports suspicious code",
 		Long: `lint examines TTCN-3 source files and reports suspicious code.
@@ -25,29 +25,26 @@ For details and flags of a particular check, run "ntt lint help <check>".
 For information on writing a new check, see <TBD>.
 `,
 
-		Run: lint,
+		RunE: lint,
 	}
 )
 
-func init() {
-	rootCmd.AddCommand(lintCmd)
-}
-
-func lint(cmd *cobra.Command, args []string) {
+func lint(cmd *cobra.Command, args []string) error {
 	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	files, err := suite.Files()
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	for i := range files {
 		info := suite.Parse(files[i])
 		if info.Err != nil {
-			fatal(err)
+			return err
 		}
 	}
+	return nil
 }
