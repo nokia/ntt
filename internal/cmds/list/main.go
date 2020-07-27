@@ -32,6 +32,10 @@ Example:
     ntt list $(ntt show -- sources) $(find $(ntt show -- imports) -name \*.ttcn3)
 
 
+
+Filtering
+---------
+
 You can use regular expressions to filter objects. If you pass multiple regular
 expressions, all of them must match (AND). Example:
 
@@ -68,6 +72,36 @@ Example:
 	$ ntt list --tags-regex='@two: some'
 	example.foo
 	example.bar
+
+
+Baskets
+-------
+
+Baskets are predefined filters. For example the basket "stable" may exlude all
+objects with @wip or @flaky tags.
+
+
+You may select baskets using the colon separated environment variable
+NTT_LIST_BASKET. If you specify multiple baskets their results will be joined.
+
+Baskets are defined similar environment variables of the form:
+
+	NTT_LIST_BASKETS_$name=$filters
+
+Below example defines two baskets. The list command will output all tests,
+which have a @flaky and a @ipv6 tag, but not a @wip tag:
+
+	$ export NTT_LIST_BASKETS_stable="-X @wip|@flaky"
+	$ export NTT_LIST_BASKETS_ipv6="-R @ipv6"
+
+	$ NTT_LIST_BASKETS=stable:ipv6 ntt list -R @flaky
+
+
+If a basket is not defined, its name will be used a filter directly:
+
+	# Below calls are identical
+	$ NTT_LIST_BASKETS=flaky ntt list
+        $ ntt list -R @flaky
 
 `,
 
