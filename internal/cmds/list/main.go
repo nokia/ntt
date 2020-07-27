@@ -154,14 +154,15 @@ func loadBaskets(suite *ntt.Suite) error {
 		}
 
 		flags, err := suite.Getenv("NTT_LIST_BASKETS_" + name)
+		args := strings.Fields(flags)
 		if err != nil {
 			if _, ok := err.(*ntt.NoSuchVariableError); !ok {
 				return err
 			}
-			flags = fmt.Sprintf(`-R "@%s"`, name)
+			args = []string{"-R", "@" + name}
 		}
 
-		basket, err := newBasket(name, strings.Fields(flags))
+		basket, err := newBasket(name, args)
 		if err != nil {
 			return err
 		}
