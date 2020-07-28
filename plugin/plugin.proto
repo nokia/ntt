@@ -1,5 +1,6 @@
 syntax = "proto3";
 option go_package = "github.com/nokia/ntt/plugin";
+import "ttcn3/ttcn3.proto";
 
 message Version {
   int32 major = 1;
@@ -9,6 +10,7 @@ message Version {
 
 message GeneratorRequest {
 	Version version = 1;
+	repeated Module modules = 2;
 }
 
 message GeneratorResponse {}
