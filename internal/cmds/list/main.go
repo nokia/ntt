@@ -77,31 +77,39 @@ Example:
 Baskets
 -------
 
-Baskets are predefined filters. For example the basket "stable" may exlude all
-objects with @wip or @flaky tags.
+Baskets are filters defined by environment variables of the form:
 
+        NTT_LIST_BASKETS_<name> = <filters>
 
-You may select baskets using the colon separated environment variable
-NTT_LIST_BASKET. If you specify multiple baskets their results will be joined.
+For example, to define a basket "stable" which excludes all objects with @wip
+or @flaky tags:
 
-Baskets are defined similar environment variables of the form:
+	export NTT_LIST_BASKETS_stable="-X @wip|@flaky"
 
-	NTT_LIST_BASKETS_$name=$filters
+Baskets become active when they are listed in colon separated environment
+variable NTT_LIST_BASKETS. If you specify multiple baskets, at least of them
+must match (OR).
 
-Below example defines two baskets. The list command will output all tests,
-which have a @flaky and a @ipv6 tag, but not a @wip tag:
+Rule of thumb: all baskets are ORed, all explicit filter options are ANDed.
+Example:
 
-	$ export NTT_LIST_BASKETS_stable="-X @wip|@flaky"
-	$ export NTT_LIST_BASKETS_ipv6="-R @ipv6"
-
+	$ export NTT_LIST_BASKETS_stable="--tags-exclude @wip|@flaky"
+	$ export NTT_LIST_BASKETS_ipv6="--tags-regex @ipv6"
 	$ NTT_LIST_BASKETS=stable:ipv6 ntt list -R @flaky
 
 
-If a basket is not defined, its name will be used a filter directly:
+Above example will output all tests with a @flaky tag and either @wip or @ipv6 tag.
 
-	# Below calls are identical
-	$ NTT_LIST_BASKETS=flaky ntt list
-        $ ntt list -R @flaky
+
+If a basket is not defined by an environment variable, it's equivalent to a
+"--tags-regex" filter. For example, to lists all tests, which have either a
+@flaky or a @wip tag:
+
+	# Note, flaky and wip baskets are not specified explicitly.
+	$ NTT_LIST_BASKETS=flaky:wip ntt list
+
+	# This does the same:
+	$ ntt list --tags-regex="@wip|@flaky"
 
 `,
 
