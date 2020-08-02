@@ -1,6 +1,0 @@
-syntax = "proto3";
-option go_package = "github.com/nokia/ntt/ttcn3";
-
-message Module {
-	string name = 1;
-}
