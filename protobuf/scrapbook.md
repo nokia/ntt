@@ -180,3 +180,63 @@ You should now have various updated Go files, like `ttcn3.pb.go`.
 ## Component Handling (TCI-CH)
 
 
+service SystemAdapter {
+  rpc Reset() {}
+  rpc Prepare(PrepareMessage) {}
+  rpc Map(MapRequest) {}
+  rpc UnMap(MapRequest) {}
+  rpc Finish() {}
+  rpc Send() {}
+  rpc Call() {}
+  rpc Reply() {}
+  rpc Raise() {}
+  rpc CommunicationEvents() returns (stream CommunicationEvent) {}
+}
+
+message PrepareMessage {
+  string test_id = 1;
+  repeated string port_ids = 2;
+}
+
+message MapRequest {
+  string port_id = 1;
+  string comp_id = 2;
+  repeated Parameter params = 3;
+}
+
+message CommunicationEvent {
+  //* Error
+  //* EnqueueMessage
+  //* EnqueueCall
+  //* EnqueueReply
+  //* EnqueueException
+}
+
+/*
+
+## Test Management (TCI-TM)
+
+ * TE <-- RootModule
+ * TE <-| ImportedModules returns modules
+ * TE <-| ModuleParameters returns params
+ * TE <-| Testcases returns tests
+ * TE <-| TestcaseParameters returns params
+ * TE <-| TestcaseTSI returns ports
+ * TE <-- StartTestcase
+ * TE <-- StopTestcase
+ * TE <-- StartControl
+ * TE <-- StartControlWithParams
+ * TE <-- StopControl
+ * TE <-- ControlParameters
+
+**Notifications**
+
+ * TM <-- TestcaseStarted
+ * TM <-- TastcaseTerminated
+ * TM <-- ControlTerminated
+ * TM <-- Log
+ * TM <-- Error
+ * TM <-| GetModulePar returns Value
+ */
+service Runtime { rpc ListTests() return }
+
