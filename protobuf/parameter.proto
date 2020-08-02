@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "github.com/nokia/ntt/protobuf";
+package ntt;
+
+import "value.proto";
+
+message Parameter {
+	enum Direction {
+		IN = 0;
+		OUT = 1;
+		INOUT = 2;
+	}
+	Direction direction = 1;
+	Value value = 2;
+}
