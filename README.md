@@ -290,3 +290,8 @@ will focus on adding features to the language server.
 Of course you are very welcome to contribute. Check the
 [feature requests](https://github.com/nokia/ntt/labels/enhancement) if something suits
 you or create your own feature request.
+
+
+## License
+
+This project is licensed under the BSD-3-Clause license - see the [LICENSE](https://github.com/nokia/ntt/blob/master/LICENSE).
