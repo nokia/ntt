@@ -45,7 +45,7 @@ func run(cmd *cobra.Command, args []string) error {
 		fatal(fmt.Errorf("could not find generator %q", name))
 	}
 
-	suite, err = ntt.NewFromArgs(args...)
+	_, err = ntt.NewFromArgs(args...)
 	if err != nil {
 		fatal(err)
 	}

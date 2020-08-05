@@ -1,5 +1,5 @@
 .PHONY: generate
-generate: generate-go generate-cpp generate-python
+generate: generate-go
 
 .PHONY: generate-go
 generate-go:
