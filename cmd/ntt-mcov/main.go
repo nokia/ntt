@@ -33,6 +33,7 @@ func main() {
 		line++
 
 		text, err = r.ReadString('\n')
+		text = strings.TrimSuffix(text, "\n")
 		if err != nil {
 			break
 		}
