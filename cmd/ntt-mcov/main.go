@@ -33,6 +33,9 @@ func main() {
 		line++
 
 		text, err = r.ReadString('\n')
+		if err != nil {
+			break
+		}
 
 		// We are only interested in ptrx events ending with +consume. Until we
 		// require other events for coverage, do the filtering before splitting
@@ -66,10 +69,6 @@ func main() {
 
 		// Calculate coverage
 		cover(typ, ast)
-
-		if err != nil {
-			break
-		}
 	}
 
 	if err != io.EOF {
