@@ -76,6 +76,7 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 		}
 	}
 
+	s.Diagnose()
 	return nil
 }
 
