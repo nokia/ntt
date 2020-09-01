@@ -10,11 +10,11 @@ import * as ts from 'typescript';
 let dir = process.env['HOME'];
 const srcDir = '/vscode-languageserver-node'
 export const fnames = [
-  //`${dir}${srcDir}/protocol/src/protocol.ts`, // why isn't this main.ts?
-  `${dir}/${srcDir}/protocol/src/main.ts`,
-  `${dir}${srcDir}/types/src/main.ts`, `${dir}${srcDir}/jsonrpc/src/main.ts`
+  `${dir}${srcDir}/protocol/src/common/protocol.ts`,
+  `${dir}/${srcDir}/protocol/src/browser/main.ts`, `${dir}${srcDir}/types/src/main.ts`,
+  `${dir}${srcDir}/jsonrpc/src/node/main.ts`
 ];
-export const gitHash = '7b90c29d0cb5cd7b9c41084f6cb3781a955adeba';
+export const gitHash = '399de64448129835b53c7efe8962de91681d6cde'
 let outFname = 'tsprotocol.go';
 let fda: number, fdb: number, fde: number;  // file descriptors
 

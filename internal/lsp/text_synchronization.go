@@ -20,7 +20,7 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 }
 
 func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	f := s.suite.File(params.TextDocument.URI)
+	f := s.suite.File(params.TextDocument.URI.SpanURI().Filename())
 	for _, ch := range params.ContentChanges {
 		f.SetBytes([]byte(ch.Text))
 	}
@@ -32,7 +32,7 @@ func (s *Server) didSave(ctx context.Context, params *protocol.DidSaveTextDocume
 }
 
 func (s *Server) didClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
-	f := s.suite.File(params.TextDocument.URI)
+	f := s.suite.File(params.TextDocument.URI.SpanURI().Filename())
 	f.Reset()
 	return nil
 }

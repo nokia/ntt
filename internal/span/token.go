@@ -19,10 +19,10 @@ type Range struct {
 	Converter Converter
 }
 
-// TokenConverter is a Converter backed by a loc file set and file.
+// PosConverter is a Converter backed by a loc file set and file.
 // It uses the file set methods to work out the conversions, which
 // makes it fast and does not require the file contents.
-type TokenConverter struct {
+type PosConverter struct {
 	fset *loc.FileSet
 	file *loc.File
 }
@@ -37,19 +37,19 @@ func NewRange(fset *loc.FileSet, start, end loc.Pos) Range {
 	}
 }
 
-// NewTokenConverter returns an implementation of Converter backed by a
+// NewPosConverter returns an implementation of Converter backed by a
 // loc.File.
-func NewTokenConverter(fset *loc.FileSet, f *loc.File) *TokenConverter {
-	return &TokenConverter{fset: fset, file: f}
+func NewPosConverter(fset *loc.FileSet, f *loc.File) *PosConverter {
+	return &PosConverter{fset: fset, file: f}
 }
 
 // NewContentConverter returns an implementation of Converter for the
 // given file content.
-func NewContentConverter(filename string, content []byte) *TokenConverter {
+func NewContentConverter(filename string, content []byte) *PosConverter {
 	fset := loc.NewFileSet()
 	f := fset.AddFile(filename, -1, len(content))
 	f.SetLinesForContent(content)
-	return &TokenConverter{fset: fset, file: f}
+	return &PosConverter{fset: fset, file: f}
 }
 
 // IsPoint returns true if the range represents a single point.
@@ -75,7 +75,7 @@ func (r Range) Span() (Span, error) {
 	if err != nil {
 		return Span{}, err
 	}
-	s.v.URI = FileURI(startFilename)
+	s.v.URI = URIFromPath(startFilename)
 	if r.End.IsValid() {
 		var endFilename string
 		endFilename, s.v.End.Line, s.v.End.Column, err = position(f, r.End)
@@ -97,7 +97,7 @@ func (r Range) Span() (Span, error) {
 	if startFilename != f.Name() {
 		return Span{}, fmt.Errorf("must supply Converter for file %q containing lines from %q", f.Name(), startFilename)
 	}
-	return s.WithOffset(NewTokenConverter(r.FileSet, f))
+	return s.WithOffset(NewPosConverter(r.FileSet, f))
 }
 
 func position(f *loc.File, pos loc.Pos) (string, int, int, error) {
@@ -114,6 +114,8 @@ func positionFromOffset(f *loc.File, offset int) (string, int, int, error) {
 	}
 	pos := f.Pos(offset)
 	p := f.Position(pos)
+	// TODO(golang/go#41029): Consider returning line, column instead of line+1, 1 if
+	// the file's last character is not a newline.
 	if offset == f.Size() {
 		return p.Filename, p.Line + 1, 1, nil
 	}
@@ -131,7 +133,7 @@ func offset(f *loc.File, pos loc.Pos) (int, error) {
 
 // Range converts a Span to a Range that represents the Span for the supplied
 // File.
-func (s Span) Range(converter *TokenConverter) (Range, error) {
+func (s Span) Range(converter *PosConverter) (Range, error) {
 	s, err := s.WithOffset(converter)
 	if err != nil {
 		return Range{}, err
@@ -152,12 +154,12 @@ func (s Span) Range(converter *TokenConverter) (Range, error) {
 	}, nil
 }
 
-func (l *TokenConverter) ToPosition(offset int) (int, int, error) {
+func (l *PosConverter) ToPosition(offset int) (int, int, error) {
 	_, line, col, err := positionFromOffset(l.file, offset)
 	return line, col, err
 }
 
-func (l *TokenConverter) ToOffset(line, col int) (int, error) {
+func (l *PosConverter) ToOffset(line, col int) (int, error) {
 	if line < 0 {
 		return -1, fmt.Errorf("line is not valid")
 	}

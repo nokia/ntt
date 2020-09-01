@@ -31,31 +31,31 @@ package test`)},
 package test`)},
 }
 
-var tokenTests = []span.Span{
-	span.New(span.FileURI("/a.go"), span.NewPoint(1, 1, 0), span.Point{}),
-	span.New(span.FileURI("/a.go"), span.NewPoint(3, 7, 20), span.NewPoint(3, 7, 20)),
-	span.New(span.FileURI("/b.go"), span.NewPoint(4, 9, 15), span.NewPoint(4, 13, 19)),
-	span.New(span.FileURI("/c.go"), span.NewPoint(4, 1, 26), span.Point{}),
+var locTests = []span.Span{
+	span.New(span.URIFromPath("/a.go"), span.NewPoint(1, 1, 0), span.Point{}),
+	span.New(span.URIFromPath("/a.go"), span.NewPoint(3, 7, 20), span.NewPoint(3, 7, 20)),
+	span.New(span.URIFromPath("/b.go"), span.NewPoint(4, 9, 15), span.NewPoint(4, 13, 19)),
+	span.New(span.URIFromPath("/c.go"), span.NewPoint(4, 1, 26), span.Point{}),
 }
 
-func TestToken(t *testing.T) {
+func TestPos(t *testing.T) {
 	fset := loc.NewFileSet()
 	files := map[span.URI]*loc.File{}
 	for _, f := range testdata {
 		file := fset.AddFile(f.uri, -1, len(f.content))
 		file.SetLinesForContent(f.content)
-		files[span.FileURI(f.uri)] = file
+		files[span.URIFromPath(f.uri)] = file
 	}
-	for _, test := range tokenTests {
+	for _, test := range locTests {
 		f := files[test.URI()]
-		c := span.NewTokenConverter(fset, f)
+		c := span.NewPosConverter(fset, f)
 		t.Run(path.Base(f.Name()), func(t *testing.T) {
-			checkToken(t, c, span.New(
+			checkPos(t, c, span.New(
 				test.URI(),
 				span.NewPoint(test.Start().Line(), test.Start().Column(), 0),
 				span.NewPoint(test.End().Line(), test.End().Column(), 0),
 			), test)
-			checkToken(t, c, span.New(
+			checkPos(t, c, span.New(
 				test.URI(),
 				span.NewPoint(0, 0, test.Start().Offset()),
 				span.NewPoint(0, 0, test.End().Offset()),
@@ -64,7 +64,7 @@ func TestToken(t *testing.T) {
 	}
 }
 
-func checkToken(t *testing.T, c *span.TokenConverter, in, expect span.Span) {
+func checkPos(t *testing.T, c *span.PosConverter, in, expect span.Span) {
 	rng, err := in.Range(c)
 	if err != nil {
 		t.Error(err)

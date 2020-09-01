@@ -2,9 +2,11 @@ package lsp
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
@@ -15,7 +17,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	state := s.state
 	s.stateMu.Unlock()
 	if state >= serverInitializing {
-		return nil, jsonrpc2.NewErrorf(jsonrpc2.CodeInvalidRequest, "server already initialized")
+		return nil, fmt.Errorf("%w: initialize called while server in %v state", jsonrpc2.ErrInvalidRequest, s.state)
 	}
 	s.stateMu.Lock()
 	s.state = serverInitializing
@@ -24,8 +26,8 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	s.pendingFolders = params.WorkspaceFolders
 	if len(s.pendingFolders) == 0 && params.RootURI != "" {
 		s.pendingFolders = []protocol.WorkspaceFolder{{
-			URI:  params.RootURI,
-			Name: path.Base(params.RootURI),
+			URI:  string(params.RootURI),
+			Name: path.Base(params.RootURI.SpanURI().Filename()),
 		}}
 	}
 
@@ -84,7 +86,7 @@ func (s *Server) shutdown(ctx context.Context) error {
 	s.stateMu.Lock()
 	defer s.stateMu.Unlock()
 	if s.state < serverInitialized {
-		return jsonrpc2.NewErrorf(jsonrpc2.CodeInvalidRequest, "server not initialized")
+		log.Verbose("language server shutdown without initialization")
 	}
 	s.state = serverShutDown
 	return nil

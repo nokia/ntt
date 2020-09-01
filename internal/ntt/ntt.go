@@ -69,7 +69,7 @@ func (suite *Suite) File(path string) *File {
 		path = s
 	}
 
-	uri := span.NewURI(path)
+	uri := span.URIFromPath(path)
 
 	suite.filesMu.Lock()
 	defer suite.filesMu.Unlock()
