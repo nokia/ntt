@@ -7,12 +7,13 @@ import (
 )
 
 func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
+	path := params.TextDocument.URI.SpanURI().Filename()
 	// TODO(5nord) Sources might added multiple times.
 	if params.TextDocument.LanguageID == "ttcn3" {
-		s.suite.AddSources(params.TextDocument.URI)
+		s.suite.AddSources(path)
 	}
 
-	f := s.suite.File(params.TextDocument.URI)
+	f := s.suite.File(path)
 	f.SetBytes([]byte(params.TextDocument.Text))
 	s.Diagnose()
 	return nil
