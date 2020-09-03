@@ -491,7 +491,7 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		return file, nil
 	}
 
-	if files, err := suite.Files(); err != nil {
+	if files, err := suite.Files(); err == nil {
 		for _, file := range files {
 			if filepath.Base(file) == name+".ttcn3" {
 				suite.modules[name] = file
