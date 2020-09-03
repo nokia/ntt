@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
@@ -22,6 +23,7 @@ func NewServer(stream jsonrpc2.Stream) *Server {
 }
 
 func (s *Server) Serve(ctx context.Context) error {
+	log.SetGlobalLogger(s)
 	s.client = protocol.ClientDispatcher(s.conn)
 	ctx = protocol.WithClient(ctx, s.client)
 	handler := protocol.ServerHandler(s, jsonrpc2.MethodNotFound)
@@ -90,6 +92,13 @@ func (s *Server) Log(ctx context.Context, msg string) {
 		Type:    protocol.Log,
 		Message: msg,
 	})
+}
+
+func (s *Server) Output(level log.Level, msg string) error {
+	if level <= log.GlobalLevel() {
+		s.Log(context.TODO(), msg)
+	}
+	return nil
 }
 
 func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParams) error {
