@@ -64,12 +64,16 @@ func (suite *Suite) Id() (int, error) {
 // Environment variable NTT_CACHE will be used to find path, if path is a single
 // file-name without leading directory.
 func (suite *Suite) File(path string) *File {
+	var uri span.URI
 
-	if s := suite.searchCacheForFile(path); s != "" {
-		path = s
+	if strings.HasPrefix(path, "file://") {
+		uri = span.URIFromURI(path)
+	} else {
+		if s := suite.searchCacheForFile(path); s != "" {
+			path = s
+		}
+		uri = span.URIFromPath(path)
 	}
-
-	uri := span.URIFromPath(path)
 
 	suite.filesMu.Lock()
 	defer suite.filesMu.Unlock()
