@@ -159,7 +159,7 @@ func (suite *Suite) Imports() ([]*File, error) {
 			ret = append(ret, suite.File(path))
 
 		}
-		return append(ret, suite.sources...), nil
+		return append(ret, suite.imports...), nil
 	}
 
 	// Last resort is imports list, explicitly curated by AddImports-calls.
