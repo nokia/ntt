@@ -9,8 +9,8 @@ This project provides open tools and libraries for testing with
 [TTCN-3](http://www.ttcn-3.org). It builds upon 15 years of experience of
 running production workloads at Nokia. This repository contains:
 
-* A modern CLI for test suite configuration and execution, including a TTCN-3
-  language server for a better IDE experience.
+* A [modern CLI](#command-line-interface) for test suite configuration and
+  execution, including a TTCN-3 language server for a better IDE experience.
 * An error tolerant [TTCN-3 parser
   library](https://pkg.go.dev/github.com/nokia/ntt/internal/ttcn3/parser).
 * A lazy [TTCN-3 compiler
