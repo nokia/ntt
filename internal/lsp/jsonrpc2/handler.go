@@ -6,10 +6,10 @@ package jsonrpc2
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/nokia/ntt/internal/log"
+	errors "golang.org/x/xerrors"
 )
 
 // Handler is invoked to handle incoming requests.
@@ -24,7 +24,7 @@ type Replier func(ctx context.Context, result interface{}, err error) error
 // standard method not found response.
 // This should normally be the final handler in a chain.
 func MethodNotFound(ctx context.Context, reply Replier, req Request) error {
-	return reply(ctx, nil, fmt.Errorf("%w: %q", ErrMethodNotFound, req.Method()))
+	return reply(ctx, nil, errors.Errorf("%w: %q", ErrMethodNotFound, req.Method()))
 }
 
 // MustReplyHandler creates a Handler that panics if the wrapped handler does
@@ -34,13 +34,13 @@ func MustReplyHandler(handler Handler) Handler {
 		called := false
 		err := handler(ctx, func(ctx context.Context, result interface{}, err error) error {
 			if called {
-				panic(fmt.Errorf("request %q replied to more than once", req.Method()))
+				panic(errors.Errorf("request %q replied to more than once", req.Method()))
 			}
 			called = true
 			return reply(ctx, result, err)
 		}, req)
 		if !called {
-			panic(fmt.Errorf("request %q was never replied to", req.Method()))
+			panic(errors.Errorf("request %q was never replied to", req.Method()))
 		}
 		return err
 	}

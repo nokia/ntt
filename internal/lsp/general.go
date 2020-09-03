@@ -2,7 +2,6 @@ package lsp
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	errors "golang.org/x/xerrors"
 )
 
 func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
@@ -17,7 +17,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	state := s.state
 	s.stateMu.Unlock()
 	if state >= serverInitializing {
-		return nil, fmt.Errorf("%w: initialize called while server in %v state", jsonrpc2.ErrInvalidRequest, s.state)
+		return nil, errors.Errorf("%w: initialize called while server in %v state", jsonrpc2.ErrInvalidRequest, s.state)
 	}
 	s.stateMu.Lock()
 	s.state = serverInitializing

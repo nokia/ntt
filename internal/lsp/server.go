@@ -14,6 +14,7 @@ import (
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	errors "golang.org/x/xerrors"
 )
 
 func NewServer(stream jsonrpc2.Stream) *Server {
@@ -114,7 +115,7 @@ func (s *Server) nonstandardRequest(ctx context.Context, method string, params i
 }
 
 func notImplemented(method string) error {
-	return fmt.Errorf("%w: %q not yet implemented", jsonrpc2.ErrMethodNotFound, method)
+	return errors.Errorf("%w: %q not yet implemented", jsonrpc2.ErrMethodNotFound, method)
 }
 
 //go:generate helper/helper -d protocol/tsserver.go -o server_gen.go -u .

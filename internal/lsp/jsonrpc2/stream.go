@@ -13,6 +13,8 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	errors "golang.org/x/xerrors"
 )
 
 // Stream abstracts the transport mechanics from the JSON RPC protocol.
@@ -110,7 +112,7 @@ func (s *headerStream) Read(ctx context.Context) (Message, int64, error) {
 		line, err := s.in.ReadString('\n')
 		total += int64(len(line))
 		if err != nil {
-			return nil, total, fmt.Errorf("failed reading header line: %w", err)
+			return nil, total, errors.Errorf("failed reading header line: %w", err)
 		}
 		line = strings.TrimSpace(line)
 		// check we have a header line

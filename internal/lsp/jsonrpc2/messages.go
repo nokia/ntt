@@ -6,7 +6,6 @@ package jsonrpc2
 
 import (
 	"encoding/json"
-	"fmt"
 
 	errors "golang.org/x/xerrors"
 )
@@ -80,7 +79,7 @@ func (n *Notification) MarshalJSON() ([]byte, error) {
 	msg := wireRequest{Method: n.method, Params: &n.params}
 	data, err := json.Marshal(msg)
 	if err != nil {
-		return data, fmt.Errorf("marshaling notification: %w", err)
+		return data, errors.Errorf("marshaling notification: %w", err)
 	}
 	return data, nil
 }
@@ -88,7 +87,7 @@ func (n *Notification) MarshalJSON() ([]byte, error) {
 func (n *Notification) UnmarshalJSON(data []byte) error {
 	msg := wireRequest{}
 	if err := json.Unmarshal(data, &msg); err != nil {
-		return fmt.Errorf("unmarshaling notification: %w", err)
+		return errors.Errorf("unmarshaling notification: %w", err)
 	}
 	n.method = msg.Method
 	if msg.Params != nil {
@@ -114,7 +113,7 @@ func (c *Call) MarshalJSON() ([]byte, error) {
 	msg := wireRequest{Method: c.method, Params: &c.params, ID: &c.id}
 	data, err := json.Marshal(msg)
 	if err != nil {
-		return data, fmt.Errorf("marshaling call: %w", err)
+		return data, errors.Errorf("marshaling call: %w", err)
 	}
 	return data, nil
 }
@@ -122,7 +121,7 @@ func (c *Call) MarshalJSON() ([]byte, error) {
 func (c *Call) UnmarshalJSON(data []byte) error {
 	msg := wireRequest{}
 	if err := json.Unmarshal(data, &msg); err != nil {
-		return fmt.Errorf("unmarshaling call: %w", err)
+		return errors.Errorf("unmarshaling call: %w", err)
 	}
 	c.method = msg.Method
 	if msg.Params != nil {
@@ -153,7 +152,7 @@ func (r *Response) MarshalJSON() ([]byte, error) {
 	}
 	data, err := json.Marshal(msg)
 	if err != nil {
-		return data, fmt.Errorf("marshaling notification: %w", err)
+		return data, errors.Errorf("marshaling notification: %w", err)
 	}
 	return data, nil
 }
@@ -180,7 +179,7 @@ func toWireError(err error) *wireError {
 func (r *Response) UnmarshalJSON(data []byte) error {
 	msg := wireResponse{}
 	if err := json.Unmarshal(data, &msg); err != nil {
-		return fmt.Errorf("unmarshaling jsonrpc response: %w", err)
+		return errors.Errorf("unmarshaling jsonrpc response: %w", err)
 	}
 	if msg.Result != nil {
 		r.result = *msg.Result
@@ -197,7 +196,7 @@ func (r *Response) UnmarshalJSON(data []byte) error {
 func DecodeMessage(data []byte) (Message, error) {
 	msg := wireCombined{}
 	if err := json.Unmarshal(data, &msg); err != nil {
-		return nil, fmt.Errorf("unmarshaling jsonrpc message: %w", err)
+		return nil, errors.Errorf("unmarshaling jsonrpc message: %w", err)
 	}
 	if msg.Method == "" {
 		// no method, should be a response

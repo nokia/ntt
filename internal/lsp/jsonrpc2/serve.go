@@ -6,7 +6,6 @@ package jsonrpc2
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -83,7 +82,7 @@ func Serve(ctx context.Context, ln net.Listener, server StreamServer, idleTimeou
 			nc, err := ln.Accept()
 			if err != nil {
 				select {
-				case doneListening <- fmt.Errorf("Accept(): %w", err):
+				case doneListening <- errors.Errorf("Accept(): %w", err):
 				case <-ctx.Done():
 				}
 				return
