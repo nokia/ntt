@@ -78,7 +78,7 @@ func (s *Server) syncDiagnostics() {
 	for k, v := range s.diags {
 		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 			Diagnostics: v,
-			URI:         k,
+			URI:         protocol.URIFromPath(k),
 		})
 	}
 }

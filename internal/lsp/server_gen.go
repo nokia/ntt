@@ -72,7 +72,7 @@ func (s *Server) DocumentLink(ctx context.Context, params *protocol.DocumentLink
 	return s.documentLink(ctx, params)
 }
 
-func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams) ([]protocol.DocumentSymbol, error) {
+func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	return nil, notImplemented("DocumentSymbol")
 }
 
@@ -112,8 +112,8 @@ func (s *Server) Initialized(ctx context.Context, params *protocol.InitializedPa
 	return s.initialized(ctx, params)
 }
 
-func (s *Server) LogTraceNotification(context.Context, *protocol.LogTraceParams) error {
-	return notImplemented("LogTraceNotification")
+func (s *Server) LogTrace(context.Context, *protocol.LogTraceParams) error {
+	return notImplemented("LogTrace")
 }
 
 func (s *Server) NonstandardRequest(ctx context.Context, method string, params interface{}) (interface{}, error) {
@@ -132,12 +132,8 @@ func (s *Server) PrepareCallHierarchy(context.Context, *protocol.CallHierarchyPr
 	return nil, notImplemented("PrepareCallHierarchy")
 }
 
-func (s *Server) PrepareRename(context.Context, *protocol.PrepareRenameParams) (interface{}, error) {
+func (s *Server) PrepareRename(context.Context, *protocol.PrepareRenameParams) (*protocol.Range, error) {
 	return nil, notImplemented("PrepareRename")
-}
-
-func (s *Server) Progress(context.Context, *protocol.ProgressParams) error {
-	return notImplemented("Progress")
 }
 
 func (s *Server) RangeFormatting(context.Context, *protocol.DocumentRangeFormattingParams) ([]protocol.TextEdit, error) {
@@ -168,20 +164,20 @@ func (s *Server) SelectionRange(context.Context, *protocol.SelectionRangeParams)
 	return nil, notImplemented("SelectionRange")
 }
 
-func (s *Server) SemanticTokens(context.Context, *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
-	return nil, notImplemented("SemanticTokens")
+func (s *Server) SemanticTokensFull(context.Context, *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
+	return nil, notImplemented("SemanticTokensFull")
 }
 
-func (s *Server) SemanticTokensEdits(context.Context, *protocol.SemanticTokensEditsParams) (interface{}, error) {
-	return nil, notImplemented("SemanticTokensEdits")
+func (s *Server) SemanticTokensFullDelta(context.Context, *protocol.SemanticTokensDeltaParams) (interface{}, error) {
+	return nil, notImplemented("SemanticTokensFullDelta")
 }
 
 func (s *Server) SemanticTokensRange(context.Context, *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
 	return nil, notImplemented("SemanticTokensRange")
 }
 
-func (s *Server) SetTraceNotification(ctx context.Context, params *protocol.SetTraceParams) error {
-	return s.setTraceNotification(ctx, params)
+func (s *Server) SetTrace(ctx context.Context, params *protocol.SetTraceParams) error {
+	return s.setTrace(ctx, params)
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
@@ -210,8 +206,4 @@ func (s *Server) WillSaveWaitUntil(context.Context, *protocol.WillSaveTextDocume
 
 func (s *Server) WorkDoneProgressCancel(context.Context, *protocol.WorkDoneProgressCancelParams) error {
 	return notImplemented("WorkDoneProgressCancel")
-}
-
-func (s *Server) WorkDoneProgressCreate(context.Context, *protocol.WorkDoneProgressCreateParams) error {
-	return notImplemented("WorkDoneProgressCreate")
 }

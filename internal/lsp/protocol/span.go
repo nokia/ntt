@@ -1,6 +1,6 @@
 // Copyright 2018 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
-// license that can be found in the NOTICE file.
+// license that can be found in the LICENSE file.
 
 // this file contains protocol<->span converters
 
@@ -15,12 +15,20 @@ import (
 
 type ColumnMapper struct {
 	URI       span.URI
-	Converter *span.TokenConverter
+	Converter *span.PosConverter
 	Content   []byte
 }
 
-func NewURI(uri span.URI) string {
-	return string(uri)
+func URIFromSpanURI(uri span.URI) DocumentURI {
+	return DocumentURI(uri)
+}
+
+func URIFromPath(path string) DocumentURI {
+	return URIFromSpanURI(span.URIFromPath(path))
+}
+
+func (u DocumentURI) SpanURI() span.URI {
+	return span.URIFromURI(string(u))
 }
 
 func (m *ColumnMapper) Location(s span.Span) (Location, error) {
@@ -28,7 +36,7 @@ func (m *ColumnMapper) Location(s span.Span) (Location, error) {
 	if err != nil {
 		return Location{}, err
 	}
-	return Location{URI: NewURI(s.URI()), Range: rng}, nil
+	return Location{URI: URIFromSpanURI(s.URI()), Range: rng}, nil
 }
 
 func (m *ColumnMapper) Range(s span.Span) (Range, error) {
@@ -120,6 +128,14 @@ func ComparePosition(a, b Position) int {
 		return 1
 	}
 	return 0
+}
+
+func Intersect(a, b Range) bool {
+	if a.Start.Line > b.End.Line || a.End.Line < b.Start.Line {
+		return false
+	}
+	return !((a.Start.Line == b.End.Line) && a.Start.Character > b.End.Character ||
+		(a.End.Line == b.Start.Line) && a.End.Character < b.Start.Character)
 }
 
 func (r Range) Format(f fmt.State, _ rune) {

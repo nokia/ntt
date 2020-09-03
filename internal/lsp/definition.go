@@ -5,23 +5,24 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/span"
 )
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	start := time.Now()
-	id, _ := s.suite.IdentifierAt(params.TextDocument.URI, int(params.Position.Line)+1, int(params.Position.Character)+1)
+	id, _ := s.suite.IdentifierAt(params.TextDocument.URI.SpanURI().Filename(), int(params.Position.Line)+1, int(params.Position.Character)+1)
 	elapsed := time.Since(start)
-	s.Log(ctx, fmt.Sprintf("Goto definition took %s. IdentifierInfo: %#v", elapsed, id))
+	log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
 
 	if id != nil && id.Def != nil {
-		file := span.NewURI(id.Def.Position.Filename)
+		file := span.URIFromPath(id.Def.Position.Filename)
 		line := id.Def.Position.Line - 1
 		column := id.Def.Position.Column - 1
 		return []protocol.Location{
 			{
-				URI: string(file),
+				URI: protocol.URIFromSpanURI(file),
 				Range: protocol.Range{
 					Start: protocol.Position{
 						Line:      float64(line),

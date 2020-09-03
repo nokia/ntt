@@ -7,28 +7,30 @@ package lsp
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	errors "golang.org/x/xerrors"
 )
 
-func NewServer(ctx context.Context, stream jsonrpc2.Stream, withTelemetry bool) (context.Context, *Server) {
-	s := &Server{}
-	s.conn = jsonrpc2.NewConn(stream)
-	s.client = protocol.ClientDispatcher(s.conn)
-	s.conn.AddHandler(protocol.ServerHandler(s))
-	s.conn.AddHandler(protocol.Canceller{})
-	if withTelemetry {
-		s.conn.AddHandler(telemetryHandler{})
+func NewServer(stream jsonrpc2.Stream) *Server {
+	return &Server{
+		conn: jsonrpc2.NewConn(stream),
 	}
-
-	return ctx, s
 }
 
-func (s *Server) Run(ctx context.Context) error {
-	return s.conn.Run(protocol.WithClient(ctx, s.client))
+func (s *Server) Serve(ctx context.Context) error {
+	log.SetGlobalLogger(s)
+	s.client = protocol.ClientDispatcher(s.conn)
+	ctx = protocol.WithClient(ctx, s.client)
+	handler := protocol.ServerHandler(s, jsonrpc2.MethodNotFound)
+	s.conn.Go(ctx, protocol.Handlers(handler))
+	<-s.conn.Done()
+	return s.conn.Err()
 }
 
 type serverState int
@@ -40,9 +42,23 @@ const (
 	serverShutDown
 )
 
+func (s serverState) String() string {
+	switch s {
+	case serverCreated:
+		return "created"
+	case serverInitializing:
+		return "initializing"
+	case serverInitialized:
+		return "initialized"
+	case serverShutDown:
+		return "shutDown"
+	}
+	return fmt.Sprintf("(unknown state: %d)", int(s))
+}
+
 // Server implements the protocol.Server interface.
 type Server struct {
-	conn   *jsonrpc2.Conn
+	conn   jsonrpc2.Conn
 	client protocol.Client
 
 	stateMu sync.Mutex
@@ -79,6 +95,13 @@ func (s *Server) Log(ctx context.Context, msg string) {
 	})
 }
 
+func (s *Server) Output(level log.Level, msg string) error {
+	if level <= log.GlobalLevel() {
+		s.Log(context.TODO(), msg)
+	}
+	return nil
+}
+
 func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParams) error {
 	return nil
 }
@@ -91,8 +114,8 @@ func (s *Server) nonstandardRequest(ctx context.Context, method string, params i
 	return nil, notImplemented(method)
 }
 
-func notImplemented(method string) *jsonrpc2.Error {
-	return jsonrpc2.NewErrorf(jsonrpc2.CodeMethodNotFound, "method %q not yet implemented", method)
+func notImplemented(method string) error {
+	return errors.Errorf("%w: %q not yet implemented", jsonrpc2.ErrMethodNotFound, method)
 }
 
 //go:generate helper/helper -d protocol/tsserver.go -o server_gen.go -u .
