@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/span"
 )
@@ -13,7 +14,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	start := time.Now()
 	id, _ := s.suite.IdentifierAt(params.TextDocument.URI.SpanURI().Filename(), int(params.Position.Line)+1, int(params.Position.Character)+1)
 	elapsed := time.Since(start)
-	s.Log(ctx, fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
+	log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
 
 	if id != nil && id.Def != nil {
 		file := span.URIFromPath(id.Def.Position.Filename)

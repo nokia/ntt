@@ -176,8 +176,8 @@ func (s *Server) SemanticTokensRange(context.Context, *protocol.SemanticTokensRa
 	return nil, notImplemented("SemanticTokensRange")
 }
 
-func (s *Server) SetTrace(context.Context, *protocol.SetTraceParams) error {
-	return notImplemented("SetTrace")
+func (s *Server) SetTrace(ctx context.Context, params *protocol.SetTraceParams) error {
+	return s.setTrace(ctx, params)
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {

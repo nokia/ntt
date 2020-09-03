@@ -31,6 +31,8 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 		}}
 	}
 
+	setTrace(params.Trace)
+
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			CodeActionProvider:         false,
