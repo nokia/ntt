@@ -34,8 +34,23 @@ type Suite struct {
 	imports  []*File
 	testHook *File
 
+	// Error handling
+	eh func(error)
+
 	// Memoization
 	store memoize.Store
+}
+
+// SetErrorHandler sets function fn to be called, when an error occures.
+func (suite *Suite) SetErrorHandler(fn func(error)) {
+	suite.eh = fn
+}
+
+func (suite *Suite) reportError(err error) error {
+	if suite.eh != nil {
+		suite.eh(err)
+	}
+	return err
 }
 
 // Id returns the unique session id (aka NTT_SESSION_ID). This ID is the smallest
