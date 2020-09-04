@@ -219,11 +219,14 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 		err  error
 	)
 
+	// When listing tests we do not need to parse the whole suite and may
+	// ignore imported modules.
 	switch cmd.Name() {
 	case "tests", "list":
-		var x []*ntt.File
-		x, err = suite.Sources()
-		srcs = ntt.PathSlice(x...)
+		// TODO(5nord) Move handler up a layer.
+		suite.SetErrorHandler(func(e error) { err = e })
+		srcs = ntt.PathSlice(suite.Sources()...)
+		suite.SetErrorHandler(nil)
 	default:
 		srcs, err = suite.Files()
 	}

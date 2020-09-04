@@ -27,11 +27,7 @@ var (
 		},
 
 		"sources": func(suite *ntt.Suite) string {
-			srcs, err := suite.Sources()
-			if err != nil {
-				fatal(err)
-			}
-			return strings.Join(ntt.PathSlice(srcs...), "\n")
+			return strings.Join(ntt.PathSlice(suite.Sources()...), "\n")
 		},
 
 		"imports": func(suite *ntt.Suite) string {
