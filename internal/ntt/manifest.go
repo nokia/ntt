@@ -11,31 +11,31 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Timeout returns the configured timeout of the Suite. If there's no timeout,
-// the function will return 0.
-//
-// The error will be != nil if timeout could not be determined correctly. For
-// example, when `package.yml` had syntax errors.
-func (suite *Suite) Timeout() (float64, error) {
+// Timeout returns the configured timeout of the Suite. If timeout could not
+// retrieved, the function will return 0.
+func (suite *Suite) Timeout() float64 {
 	s, err := suite.Getenv("NTT_TIMEOUT")
 	if err != nil {
-		return 0, err
+		suite.reportError(err)
+		return 0
 	}
 	if s != "" {
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			return 0, err
+			suite.reportError(err)
+			return 0
 		}
-		return f, nil
+		return f
 	}
 	m, err := suite.parseManifest()
 	if err != nil {
-		return 0, err
+		suite.reportError(err)
+		return 0
 	}
 	if m != nil {
-		return m.Timeout, nil
+		return m.Timeout
 	}
-	return 0, nil
+	return 0
 }
 
 // Sources returns the list of sources required to compile a Suite.

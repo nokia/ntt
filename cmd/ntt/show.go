@@ -43,10 +43,7 @@ var (
 		},
 
 		"timeout": func(suite *ntt.Suite) string {
-			t, err := suite.Timeout()
-			if err != nil {
-				fatal(err)
-			}
+			t := suite.Timeout()
 			if t > 0 {
 				return fmt.Sprint(t)
 			}
@@ -120,6 +117,8 @@ func show(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
+	suite.SetErrorHandler(func(e error) { err = e })
+
 	if len(keys) == 0 {
 		for _, key := range []string{
 			"name",
@@ -137,7 +136,7 @@ func show(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		return nil
+		return err
 	}
 
 	for _, key := range keys {
@@ -155,7 +154,7 @@ func show(cmd *cobra.Command, args []string) error {
 
 		fmt.Println(s)
 	}
-	return nil
+	return err
 }
 
 // splitArgs splits an argument list at pos. Pos is usually the position of '--'
