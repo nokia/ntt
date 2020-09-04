@@ -36,10 +36,10 @@ var (
 
 		"timeout": func(suite *ntt.Suite) string {
 			t := suite.Timeout()
-			if t > 0 {
-				return fmt.Sprint(t)
+			if t <= 0 {
+				return ""
 			}
-			return ""
+			return fmt.Sprint(t)
 
 		},
 
