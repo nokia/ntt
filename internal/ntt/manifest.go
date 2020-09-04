@@ -62,7 +62,6 @@ func (suite *Suite) Sources() []*File {
 	m, err := suite.parseManifest()
 	if err != nil {
 		suite.reportError(err)
-		return suite.sources
 	}
 	if m != nil && len(m.Sources) > 0 && suite.root != nil {
 		for i := range m.Sources {
@@ -127,34 +126,33 @@ func (suite *Suite) Sources() []*File {
 }
 
 // Imports returns the list of imported packages required to compile a Suite.
-// The error will be != nil if imports could not be determined correctly. For
-// example, when `package.yml` had syntax errors.
-func (suite *Suite) Imports() ([]*File, error) {
+func (suite *Suite) Imports() []*File {
 	var ret []*File
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_IMPORTS")
 	if err != nil {
-		return nil, err
+		suite.reportError(err)
 	}
 	if env != "" {
 		for _, x := range strings.Fields(env) {
 			ret = append(ret, suite.File(x))
 		}
-		return ret, nil
+		return ret
 	}
 
 	// If there's a parseable package.yml, try that one.
 	m, err := suite.parseManifest()
 	if err != nil {
-		return nil, err
+		suite.reportError(err)
 	}
 	if m != nil && len(m.Imports) > 0 && suite.root != nil {
 		for i := range m.Imports {
 			// Substitute environment variables
 			path, err := suite.Expand(m.Imports[i])
 			if err != nil {
-				return nil, err
+				suite.reportError(err)
+				continue
 			}
 
 			// Make paths which are relative to manifest, relative to CWD.
@@ -165,11 +163,11 @@ func (suite *Suite) Imports() ([]*File, error) {
 			ret = append(ret, suite.File(path))
 
 		}
-		return append(ret, suite.imports...), nil
+		return append(ret, suite.imports...)
 	}
 
 	// Last resort is imports list, explicitly curated by AddImports-calls.
-	return suite.imports, nil
+	return suite.imports
 }
 
 // AddSources appends files... to the known sources list.
@@ -456,19 +454,14 @@ func (suite *Suite) Files() ([]string, error) {
 	srcs := suite.Sources()
 	files := PathSlice(srcs...)
 
-	dirs, err := suite.Imports()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, dir := range dirs {
+	for _, dir := range suite.Imports() {
 		f, err := findTTCN3Files(dir.Path())
 		if err != nil {
 			return nil, err
 		}
 		files = append(files, f...)
 	}
-	return files, err
+	return files, nil
 }
 
 // FindModule tries to find a .ttcn3 based on its module name.

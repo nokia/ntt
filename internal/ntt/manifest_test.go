@@ -161,20 +161,25 @@ func TestSources(t *testing.T) {
 }
 
 func TestImports(t *testing.T) {
+	var err error
+
 	suite := &ntt.Suite{}
 	suite.SetRoot("./testdata/suite2")
+	suite.SetErrorHandler(func(e error) { err = e })
 
 	// This handle is used to overwrite package.yml with custom import testing
 	// stuff.
 	conf := suite.File("./testdata/suite2/package.yml")
 
 	conf.SetBytes([]byte(`imports: [ "dir1" ]`))
-	v, err := suite.Imports()
+	err = nil
+	v := suite.Imports()
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"testdata/suite2/dir1"}, strs(v))
 
 	conf.SetBytes([]byte(`imports: [ "${SOMETHING_UNKNOWN}/dir1" ]`))
-	v, err = suite.Imports()
+	err = nil
+	v = suite.Imports()
 	assert.NotNil(t, err)
 	assert.Nil(t, v)
 }

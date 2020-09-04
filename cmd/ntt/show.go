@@ -31,11 +31,7 @@ var (
 		},
 
 		"imports": func(suite *ntt.Suite) string {
-			imps, err := suite.Imports()
-			if err != nil {
-				fatal(err)
-			}
-			return strings.Join(ntt.PathSlice(imps...), "\n")
+			return strings.Join(ntt.PathSlice(suite.Imports()...), "\n")
 		},
 
 		"timeout": func(suite *ntt.Suite) string {
