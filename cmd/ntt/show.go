@@ -19,11 +19,7 @@ var (
 
 	stringers = map[string]func(suite *ntt.Suite) string{
 		"name": func(suite *ntt.Suite) string {
-			s, err := suite.Name()
-			if err != nil {
-				fatal(err)
-			}
-			return s
+			return suite.Name()
 		},
 
 		"sources": func(suite *ntt.Suite) string {

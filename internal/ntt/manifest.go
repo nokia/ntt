@@ -191,31 +191,36 @@ func (suite *Suite) AddImports(folders ...string) {
 // specified in a manifest. Then if a name was specified explicitly. Next, if
 // suite has a root folder, its base-name will be used. Last resort is the
 // first source .ttcn3 without extension.
-func (suite *Suite) Name() (string, error) {
+func (suite *Suite) Name() string {
 	if suite.name != "" {
-		return suite.name, nil
+		return suite.name
 	}
 
 	env, err := suite.Getenv("NTT_NAME")
 	if err != nil {
-		return "", err
+		suite.reportError(err)
 	}
 	if env != "" {
-		return env, nil
+		return env
 	}
 
 	// If there's a parseable package.yml, try that one.
 	m, err := suite.parseManifest()
 	if err != nil {
-		return "", err
+		suite.reportError(err)
 	}
 	if m != nil && m.Name != "" {
-		return suite.Expand(m.Name)
+		if n, err := suite.Expand(m.Name); n != "" {
+			if err != nil {
+				suite.reportError(err)
+			}
+			return n
+		}
 	}
 
 	// If there's a root dir, use its name.
 	if suite.root != nil {
-		return filepath.Base(suite.root.URI().Filename()), nil
+		return filepath.Base(suite.root.URI().Filename())
 	}
 
 	// As last resort, try to find a name in source files.
@@ -223,14 +228,16 @@ func (suite *Suite) Name() (string, error) {
 	if len(srcs) > 0 {
 		n, err := filepath.Abs(srcs[0].Path())
 		if err != nil {
-			return "", err
+			suite.reportError(err)
+			return ""
 		}
 		n = filepath.Base(n)
 		n = strings.TrimSuffix(n, filepath.Ext(n))
-		return n, nil
+		return n
 	}
 
-	return "", fmt.Errorf("Could not determine a suite name")
+	suite.reportError(fmt.Errorf("Could not determine a suite name"))
+	return ""
 }
 
 // SetName will set the suites name.
@@ -281,9 +288,9 @@ func (suite *Suite) TestHook() (*File, error) {
 	}
 
 	// Construct default name
-	filename, err := suite.Name()
-	if err != nil || filename == "" {
-		return nil, err
+	filename := suite.Name()
+	if filename == "" {
+		return nil, fmt.Errorf("could not decude name")
 	}
 	filename = filename + ".control"
 
@@ -346,9 +353,9 @@ func (suite *Suite) ParametersFile() (*File, error) {
 	}
 
 	// Construct default name
-	filename, err := suite.Name()
-	if err != nil || filename == "" {
-		return nil, err
+	filename := suite.Name()
+	if filename == "" {
+		return nil, fmt.Errorf("could not decude name")
 	}
 	filename = filename + ".parameters"
 

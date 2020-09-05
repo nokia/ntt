@@ -185,41 +185,50 @@ func TestImports(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
+	var err error
 	suite := &ntt.Suite{}
+	suite.SetErrorHandler(func(e error) { err = e })
 
 	// Initial call to name shall return an error.
-	n, err := suite.Name()
+	err = nil
+	n := suite.Name()
 	assert.NotNil(t, err)
 	assert.Equal(t, "", n)
 
 	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
-	n, err = suite.Name()
+	err = nil
+	n = suite.Name()
 	assert.Nil(t, err)
 	assert.Equal(t, "foo", n)
 
 	suite.SetRoot("testdata/suite2")
-	n, err = suite.Name()
+	err = nil
+	n = suite.Name()
 	assert.Nil(t, err)
 	assert.Equal(t, "suite2", n)
 
 	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
-	n, err = suite.Name()
+	err = nil
+	n = suite.Name()
 	assert.Nil(t, err)
 	assert.Equal(t, "suite2", n)
 
 	conf := suite.File("testdata/suite2/package.yml")
 	conf.SetBytes([]byte("name: fnord"))
-	n, err = suite.Name()
+	err = nil
+	n = suite.Name()
 	assert.Nil(t, err)
 	assert.Equal(t, "fnord", n)
 
 	conf.SetBytes([]byte(`name: [ 23.5, "See fnords, now!"]`))
-	n, err = suite.Name()
+	err = nil
+	n = suite.Name()
 	assert.NotNil(t, err)
-	assert.Equal(t, "", n)
+	assert.Equal(t, "suite2", n)
 
 	suite.SetName("haaraxwd")
-	n, err = suite.Name()
+	err = nil
+	n = suite.Name()
 	assert.Nil(t, err)
 	assert.Equal(t, "haaraxwd", n)
 }
