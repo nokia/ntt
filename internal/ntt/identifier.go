@@ -46,7 +46,7 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 		// Try our luck in imported modules.
 		mod := syms.Modules[syntax.Module.Name.String()]
 		for i := range mod.Imports {
-			if file, _ := suite.FindModule(mod.Imports[i]); file != "" {
+			if file := suite.FindModule(mod.Imports[i]); file != "" {
 				if syntax := suite.Parse(file); syntax.Module != nil {
 					syms := suite.symbols(syntax)
 					imp := syms.Modules[mod.Imports[i]]

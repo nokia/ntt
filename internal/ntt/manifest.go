@@ -472,7 +472,7 @@ func (suite *Suite) Files() []string {
 }
 
 // FindModule tries to find a .ttcn3 based on its module name.
-func (suite *Suite) FindModule(name string) (string, error) {
+func (suite *Suite) FindModule(name string) string {
 
 	suite.modulesMu.Lock()
 	defer suite.modulesMu.Unlock()
@@ -482,15 +482,15 @@ func (suite *Suite) FindModule(name string) (string, error) {
 	}
 
 	if file, ok := suite.modules[name]; ok {
-		return file, nil
+		return file
 	}
 
 	for _, file := range suite.Files() {
 		if filepath.Base(file) == name+".ttcn3" {
 			suite.modules[name] = file
-			return file, nil
+			return file
 		}
 	}
 
-	return "", fmt.Errorf("No such module %q", name)
+	return ""
 }
