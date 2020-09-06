@@ -39,7 +39,7 @@ var knownVars = map[string]bool{
 func (suite *Suite) Environ() ([]string, error) {
 	allKeys := make(map[string]struct{})
 
-	if vars, _ := suite.Variables(); vars != nil {
+	if vars := suite.Variables(); vars != nil {
 		for k := range vars {
 			allKeys[k] = struct{}{}
 		}
@@ -146,11 +146,7 @@ func (suite *Suite) getenv(key string, visited map[string]string) (string, error
 	// We must not look for NTT_CACHE in variables sections of package.yml,
 	// because this would create an endless loop.
 	if key != "NTT_CACHE" && key != "K3_CACHE" {
-		v, err := suite.Variables()
-		if err != nil {
-			return "", err
-		}
-		if v != nil {
+		if v := suite.Variables(); v != nil {
 			if s, ok := v[key]; ok {
 				s, err := suite.expand(s, visited)
 				visited[key] = s

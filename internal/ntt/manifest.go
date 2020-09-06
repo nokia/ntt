@@ -247,15 +247,15 @@ func (suite *Suite) SetName(name string) {
 
 // Variables will return a string map containing the variables-sections of the
 // manifest files.
-func (suite *Suite) Variables() (map[string]string, error) {
+func (suite *Suite) Variables() map[string]string {
 	m, err := suite.parseManifest()
 	if err != nil {
-		return nil, err
+		suite.reportError(err)
 	}
 	if m != nil && m.Variables != nil {
-		return m.Variables, nil
+		return m.Variables
 	}
-	return nil, nil
+	return nil
 }
 
 // TestHook return the File object to the test hook. If not hook was found, it
