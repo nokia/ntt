@@ -35,10 +35,8 @@ func tags(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	files, err := suite.Files()
-	if err != nil {
-		return err
-	}
+	suite.SetErrorHandler(func(e error) { err = e })
+	files := suite.Files()
 
 	var wg sync.WaitGroup
 	wg.Add(len(files))

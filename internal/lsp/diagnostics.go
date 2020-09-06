@@ -31,11 +31,7 @@ func (s *Server) Diagnose() {
 	defer s.syncDiagnostics()
 
 	// Just do a very basic test if all .ttcn3 files are accessable.
-	_, err := s.suite.Files()
-	if err != nil {
-		s.reportError(err)
-		return
-	}
+	s.suite.Files()
 
 }
 

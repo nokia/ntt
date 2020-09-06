@@ -23,10 +23,8 @@ func dump(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	srcs, err := suite.Files()
-	if err != nil {
-		return err
-	}
+	suite.SetErrorHandler(func(e error) { err = e })
+	srcs := suite.Files()
 
 	var (
 		asts = make([]*ntt.ParseInfo, len(srcs))
@@ -50,5 +48,5 @@ func dump(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(b))
 	}
 
-	return nil
+	return err
 }

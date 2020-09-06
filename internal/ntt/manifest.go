@@ -455,20 +455,20 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	return &data.manifest, data.err
 }
 
-// Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
-// On error Files will return an error.
-func (suite *Suite) Files() ([]string, error) {
+// Files returns all .ttcn3 file available.
+func (suite *Suite) Files() []string {
 	srcs := suite.Sources()
 	files := PathSlice(srcs...)
 
 	for _, dir := range suite.Imports() {
 		f, err := findTTCN3Files(dir.Path())
 		if err != nil {
-			return nil, err
+			suite.reportError(err)
+			continue
 		}
 		files = append(files, f...)
 	}
-	return files, nil
+	return files
 }
 
 // FindModule tries to find a .ttcn3 based on its module name.
@@ -485,12 +485,10 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		return file, nil
 	}
 
-	if files, err := suite.Files(); err == nil {
-		for _, file := range files {
-			if filepath.Base(file) == name+".ttcn3" {
-				suite.modules[name] = file
-				return file, nil
-			}
+	for _, file := range suite.Files() {
+		if filepath.Base(file) == name+".ttcn3" {
+			suite.modules[name] = file
+			return file, nil
 		}
 	}
 

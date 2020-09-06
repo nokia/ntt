@@ -35,16 +35,14 @@ func lint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	files, err := suite.Files()
-	if err != nil {
-		return err
-	}
+	suite.SetErrorHandler(func(e error) { err = e })
+	files := suite.Files()
 
-	for i := range files {
+	for i := range suite.Files() {
 		info := suite.Parse(files[i])
 		if info.Err != nil {
 			return err
 		}
 	}
-	return nil
+	return err
 }
