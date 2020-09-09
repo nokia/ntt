@@ -217,3 +217,33 @@ function(add_ttcn3_suite TGT)
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
 endfunction()
+
+function(protobuf_generate_ttcn3_target TGT)
+    if(NOT ARGN)
+        message(SEND_ERROR "Error: protobuf_generate_ttcn3_target() called without any proto files")
+        return()
+    endif()
+
+    if(DEFINED Protobuf_IMPORT_DIRS)
+        foreach(PATH IN ITEMS ${Protobuf_IMPORT_DIRS})
+            list(APPEND PROTO_PATH -I ${PATH})
+        endforeach()
+    endif()
+    foreach(FIL ${ARGN})
+        get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+        get_filename_component(ABS_PATH ${ABS_FIL} PATH)
+        list(APPEND SRCS ${ABS_FIL})
+        list(FIND PROTO_PATH ${ABS_PATH} _CONTAINS_ALREADY)
+        if(${_CONTAINS_ALREADY} EQUAL -1)
+            list(APPEND PROTO_PATH -I ${ABS_PATH})
+        endif()
+    endforeach()
+
+    add_custom_target(
+        ${TGT}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/ttcn3
+        COMMAND ${Protobuf_PROTOC_EXECUTABLE} --ttcn3_out ${CMAKE_CURRENT_BINARY_DIR}/ttcn3 ${PROTO_PATH} ${SRCS}
+        COMMENT "Running TTCN-3 protocol buffer compiler for ${TGT}"
+        VERBATIM
+    )
+endfunction()
