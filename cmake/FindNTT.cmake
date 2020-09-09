@@ -143,9 +143,13 @@ function(add_ttcn3_suite TGT)
     set(MANIFEST_FILE "${_WORKING_DIRECTORY}/package.yml")
 
     add_custom_target("${TGT}"
-        COMMAND NTT_CACHE="${CMAKE_BINARY_DIR}" ${NTT_EXECUTABLE} run --build ${_WORKING_DIRECTORY}
+        COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} run --build ${_WORKING_DIRECTORY}
         BYPRODUCTS "${MANIFEST_FILE}"
     )
+
+    add_custom_target("${TGT}.tags"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} tags            "${_WORKING_DIRECTORY}" >"${TGT}.tags")
+    add_custom_target("${TGT}.tests" COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list tests      "${_WORKING_DIRECTORY}" >"${TGT}.tests")
+    add_custom_target("${TGT}.deps"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list imports -v "${_WORKING_DIRECTORY}" >"${TGT}.deps")
 
     set(MANIFEST "")
     string(APPEND MANIFEST "# DO NOT MODIFY.\n")
