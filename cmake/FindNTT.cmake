@@ -143,7 +143,7 @@ function(add_ttcn3_suite TGT)
     set(MANIFEST_FILE "${_WORKING_DIRECTORY}/package.yml")
 
     add_custom_target("${TGT}"
-        COMMAND ntt::ntt list
+        COMMAND NTT_CACHE="${CMAKE_BINARY_DIR}" ${NTT_EXECUTABLE} run --build ${_WORKING_DIRECTORY}
         BYPRODUCTS "${MANIFEST_FILE}"
     )
 
