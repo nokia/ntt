@@ -12,7 +12,7 @@ import (
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	start := time.Now()
-	id, _ := s.suite.IdentifierAt(params.TextDocument.URI.SpanURI().Filename(), int(params.Position.Line)+1, int(params.Position.Character)+1)
+	id, _ := s.suite.IdentifierAt(string(params.TextDocument.URI.SpanURI()), int(params.Position.Line)+1, int(params.Position.Character)+1)
 	elapsed := time.Since(start)
 	log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
 

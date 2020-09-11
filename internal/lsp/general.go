@@ -27,7 +27,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	if len(s.pendingFolders) == 0 && params.RootURI != "" {
 		s.pendingFolders = []protocol.WorkspaceFolder{{
 			URI:  string(params.RootURI),
-			Name: path.Base(params.RootURI.SpanURI().Filename()),
+			Name: path.Base(string(params.RootURI.SpanURI())),
 		}}
 	}
 
