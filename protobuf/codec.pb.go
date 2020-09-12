@@ -7,7 +7,11 @@
 package protobuf
 
 import (
+	context "context"
 	proto "github.com/golang/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -251,4 +255,120 @@ func file_codec_proto_init() {
 	file_codec_proto_rawDesc = nil
 	file_codec_proto_goTypes = nil
 	file_codec_proto_depIdxs = nil
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// CodecClient is the client API for Codec service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type CodecClient interface {
+	Encode(ctx context.Context, in *Value, opts ...grpc.CallOption) (*BinaryString, error)
+	Decode(ctx context.Context, in *DecodeRequest, opts ...grpc.CallOption) (*DecodeResponse, error)
+}
+
+type codecClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCodecClient(cc grpc.ClientConnInterface) CodecClient {
+	return &codecClient{cc}
+}
+
+func (c *codecClient) Encode(ctx context.Context, in *Value, opts ...grpc.CallOption) (*BinaryString, error) {
+	out := new(BinaryString)
+	err := c.cc.Invoke(ctx, "/ntt.Codec/Encode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *codecClient) Decode(ctx context.Context, in *DecodeRequest, opts ...grpc.CallOption) (*DecodeResponse, error) {
+	out := new(DecodeResponse)
+	err := c.cc.Invoke(ctx, "/ntt.Codec/Decode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CodecServer is the server API for Codec service.
+type CodecServer interface {
+	Encode(context.Context, *Value) (*BinaryString, error)
+	Decode(context.Context, *DecodeRequest) (*DecodeResponse, error)
+}
+
+// UnimplementedCodecServer can be embedded to have forward compatible implementations.
+type UnimplementedCodecServer struct {
+}
+
+func (*UnimplementedCodecServer) Encode(context.Context, *Value) (*BinaryString, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Encode not implemented")
+}
+func (*UnimplementedCodecServer) Decode(context.Context, *DecodeRequest) (*DecodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Decode not implemented")
+}
+
+func RegisterCodecServer(s *grpc.Server, srv CodecServer) {
+	s.RegisterService(&_Codec_serviceDesc, srv)
+}
+
+func _Codec_Encode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Value)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CodecServer).Encode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ntt.Codec/Encode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CodecServer).Encode(ctx, req.(*Value))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Codec_Decode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CodecServer).Decode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ntt.Codec/Decode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CodecServer).Decode(ctx, req.(*DecodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Codec_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "ntt.Codec",
+	HandlerType: (*CodecServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Encode",
+			Handler:    _Codec_Encode_Handler,
+		},
+		{
+			MethodName: "Decode",
+			Handler:    _Codec_Decode_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "codec.proto",
 }

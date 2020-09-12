@@ -3,7 +3,7 @@ generate: generate-go
 
 .PHONY: generate-go
 generate-go:
-	protoc --go_out=. --go_opt=paths=source_relative *.proto
+	protoc --go_out=plugins=grpc:. --go_opt=paths=source_relative *.proto
 
 .PHONY: generate-cpp
 generate-cpp:

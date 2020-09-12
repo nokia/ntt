@@ -7,7 +7,11 @@
 package protobuf
 
 import (
+	context "context"
 	proto "github.com/golang/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -255,4 +259,84 @@ func file_runtime_proto_init() {
 	file_runtime_proto_rawDesc = nil
 	file_runtime_proto_goTypes = nil
 	file_runtime_proto_depIdxs = nil
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// RuntimeClient is the client API for Runtime service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type RuntimeClient interface {
+	Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunResponse, error)
+}
+
+type runtimeClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRuntimeClient(cc grpc.ClientConnInterface) RuntimeClient {
+	return &runtimeClient{cc}
+}
+
+func (c *runtimeClient) Run(ctx context.Context, in *RunRequest, opts ...grpc.CallOption) (*RunResponse, error) {
+	out := new(RunResponse)
+	err := c.cc.Invoke(ctx, "/ntt.Runtime/Run", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RuntimeServer is the server API for Runtime service.
+type RuntimeServer interface {
+	Run(context.Context, *RunRequest) (*RunResponse, error)
+}
+
+// UnimplementedRuntimeServer can be embedded to have forward compatible implementations.
+type UnimplementedRuntimeServer struct {
+}
+
+func (*UnimplementedRuntimeServer) Run(context.Context, *RunRequest) (*RunResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Run not implemented")
+}
+
+func RegisterRuntimeServer(s *grpc.Server, srv RuntimeServer) {
+	s.RegisterService(&_Runtime_serviceDesc, srv)
+}
+
+func _Runtime_Run_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuntimeServer).Run(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ntt.Runtime/Run",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuntimeServer).Run(ctx, req.(*RunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Runtime_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "ntt.Runtime",
+	HandlerType: (*RuntimeServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Run",
+			Handler:    _Runtime_Run_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "runtime.proto",
 }
