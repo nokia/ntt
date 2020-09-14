@@ -64,6 +64,13 @@ func (info *Info) define(n ast.Node) {
 			}
 
 			info.currMod.Imports = append(info.currMod.Imports, n.Module.String())
+
+			if n.Module != nil {
+				info.define(n.Module)
+			}
+			for i := range n.List {
+				info.define(n.List[i])
+			}
 			return false
 
 		case *ast.ValueDecl:
