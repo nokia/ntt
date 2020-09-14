@@ -48,6 +48,16 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 		for i := range mod.Imports {
 			if file, _ := suite.FindModule(mod.Imports[i]); file != "" {
 				if syntax := suite.Parse(file); syntax.Module != nil {
+					// Check if we were looking for a module id
+					if syntax.Module.Name.String() == id.String() {
+						info.Def = &IdentInfo{
+							Syntax:   syntax.Module,
+							Position: syntax.Position(syntax.Module.Pos()),
+						}
+						return &info, nil
+					}
+
+					// Build symbol table and check module definitions
 					syms := suite.symbols(syntax)
 					imp := syms.Modules[mod.Imports[i]]
 					if obj := imp.Lookup(id.String()); obj != nil {
