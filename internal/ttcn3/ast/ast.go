@@ -1170,7 +1170,25 @@ func (x *ImportDecl) LastTok() *Token {
 	if x.With != nil {
 		return x.With.LastTok()
 	}
-	return x.RBrace.LastTok()
+	if x.RBrace.IsValid() {
+		return x.RBrace.LastTok()
+	}
+	if l := len(x.List); l != 0 {
+		return x.List[l-1].LastTok()
+	}
+	if x.Language != nil {
+		return x.Language.LastTok()
+	}
+	if x.LBrace.IsValid() {
+		return x.LBrace.LastTok()
+	}
+	if x.Module != nil {
+		return x.Module.LastTok()
+	}
+	if x.FromTok.IsValid() {
+		return x.FromTok.LastTok()
+	}
+	return x.ImportTok.LastTok()
 }
 
 func (x *GroupDecl) LastTok() *Token {
