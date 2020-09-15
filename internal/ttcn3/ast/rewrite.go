@@ -495,6 +495,8 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 		a.apply(n, "TemplateRestriction", nil, n.TemplateRestriction)
 		a.apply(n, "Type", nil, n.Type)
 		a.apply(n, "Name", nil, n.Name)
+		a.applyList(n, "ArrayDef")
+		a.apply(n, "Value", nil, n.Value)
 
 	case *WithSpec:
 		a.applyList(n, "List")

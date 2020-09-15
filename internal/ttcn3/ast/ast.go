@@ -1283,7 +1283,10 @@ type (
 		TemplateRestriction *RestrictionSpec
 		Modif               Token
 		Type                Expr
-		Name                Expr
+		Name                *Ident
+		ArrayDef            []*ParenExpr
+		AssignTok           Token
+		Value               Expr
 	}
 
 	WithSpec struct {
@@ -1315,9 +1318,34 @@ func (x *SystemSpec) LastTok() *Token { return x.Comp.LastTok() }
 func (x *MtcSpec) LastTok() *Token    { return x.Comp.LastTok() }
 func (x *ReturnSpec) LastTok() *Token { return x.Type.LastTok() }
 func (x *FormalPars) LastTok() *Token { return x.RParen.LastTok() }
-func (x *FormalPar) LastTok() *Token  { return x.Name.LastTok() }
-func (x *WithSpec) LastTok() *Token   { return x.RBrace.LastTok() }
-func (x *WithStmt) LastTok() *Token   { return x.Value.LastTok() }
+
+func (x *FormalPar) LastTok() *Token {
+	if x.Value != nil {
+		return x.Value.LastTok()
+	}
+	if x.AssignTok.IsValid() {
+		return x.AssignTok.LastTok()
+	}
+	if l := len(x.ArrayDef); l != 0 {
+		return x.ArrayDef[l-1].LastTok()
+	}
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+	if x.Type != nil {
+		return x.Type.LastTok()
+	}
+	if x.Modif.IsValid() {
+		return x.Modif.LastTok()
+	}
+	if x.TemplateRestriction != nil {
+		return x.TemplateRestriction.LastTok()
+	}
+	return x.Direction.LastTok()
+}
+
+func (x *WithSpec) LastTok() *Token { return x.RBrace.LastTok() }
+func (x *WithStmt) LastTok() *Token { return x.Value.LastTok() }
 
 func (x *LanguageSpec) Pos() loc.Pos { return x.Tok.Pos() }
 func (x *RestrictionSpec) Pos() loc.Pos {

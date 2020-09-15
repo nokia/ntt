@@ -518,6 +518,8 @@ func Walk(v Visitor, node Node) {
 		}
 		Walk(v, n.Type)
 		Walk(v, n.Name)
+		walkParenExprList(v, n.ArrayDef)
+		Walk(v, n.Value)
 
 	case *WithSpec:
 		walkWithStmtList(v, n.List)
@@ -566,6 +568,11 @@ func walkFieldList(v Visitor, list []*Field) {
 	}
 }
 
+func walkParenExprList(v Visitor, list []*ParenExpr) {
+	for _, n := range list {
+		Walk(v, n)
+	}
+}
 func walkFormalParList(v Visitor, list []*FormalPar) {
 	for _, n := range list {
 		Walk(v, n)
