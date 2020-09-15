@@ -331,6 +331,7 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 	case *Field:
 		a.apply(n, "Type", nil, n.Type)
 		a.apply(n, "Name", nil, n.Name)
+		a.applyList(n, "ArrayDef")
 		a.apply(n, "TypePars", nil, n.TypePars)
 		a.apply(n, "ValueConstraint", nil, n.ValueConstraint)
 		a.apply(n, "LengthConstraint", nil, n.LengthConstraint)
