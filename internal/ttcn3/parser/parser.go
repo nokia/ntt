@@ -963,6 +963,22 @@ func (p *parser) parseIdent() *ast.Ident {
 	}
 }
 
+func (p *parser) parseArrayDefs() []*ast.ParenExpr {
+	var l []*ast.ParenExpr
+	for p.tok == token.LBRACK {
+		l = append(l, p.parseArrayDef())
+	}
+	return l
+}
+
+func (p *parser) parseArrayDef() *ast.ParenExpr {
+	return &ast.ParenExpr{
+		LParen: p.expect(token.LBRACK),
+		List:   p.parseExprList(),
+		RParen: p.expect(token.RBRACK),
+	}
+}
+
 func (p *parser) parseRefList() []ast.Expr {
 	l := make([]ast.Expr, 0, 1)
 	for {
@@ -1679,12 +1695,15 @@ func (p *parser) parseField() *ast.Field {
 		x.DefaultTok = p.consume()
 	}
 	x.Type = p.parseTypeSpec()
-	x.Name = p.parsePrimaryExpr()
+	x.Name = p.parseIdent()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
-	// TODO(5nord) fix constraints consumed by previous PrimaryExpr
+	if p.tok == token.LBRACK {
+		x.ArrayDef = p.parseArrayDefs()
+	}
+
 	if p.tok == token.LPAREN {
 		x.ValueConstraint = p.parseParenExpr()
 	}
