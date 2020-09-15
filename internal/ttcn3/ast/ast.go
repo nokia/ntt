@@ -172,9 +172,9 @@ type (
 
 	// A ParenExpr represents parenthized expression lists.
 	ParenExpr struct {
-		LParen Token  // Position of "(", "<"
+		LParen Token  // Position of "(", "<", "["
 		List   []Expr // Expression list
-		RParen Token  // Position of ")", ">"
+		RParen Token  // Position of ")", ">", "]"
 	}
 
 	// A SelectorExpr represents an expression followed by a selector.
@@ -651,9 +651,10 @@ type TypeSpec interface {
 type (
 	// A Field represents a named struct member or sub type definition
 	Field struct {
-		DefaultTok       Token    // Position of "@default" or nil
-		Type             TypeSpec // Type
-		Name             Expr     // Name or Array
+		DefaultTok       Token        // Position of "@default" or nil
+		Type             TypeSpec     // Type
+		Name             *Ident       // Name
+		ArrayDef         []*ParenExpr // Array definitions
 		TypePars         *FormalPars
 		ValueConstraint  *ParenExpr  // Value constraint or nil
 		LengthConstraint *LengthExpr // Length constraint or nil
@@ -708,6 +709,12 @@ func (x *Field) LastTok() *Token {
 	}
 	if x.ValueConstraint != nil {
 		return x.ValueConstraint.LastTok()
+	}
+	if x.TypePars != nil {
+		return x.TypePars.LastTok()
+	}
+	if l := len(x.ArrayDef); l != 0 {
+		return x.ArrayDef[l-1].LastTok()
 	}
 	return x.Name.LastTok()
 }

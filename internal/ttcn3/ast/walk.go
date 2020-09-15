@@ -229,6 +229,7 @@ func Walk(v Visitor, node Node) {
 	case *Field:
 		Walk(v, n.Type)
 		Walk(v, n.Name)
+		walkParenExprList(v, n.ArrayDef)
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}
