@@ -236,7 +236,7 @@ func TestFunc(t *testing.T) {
 
 	// Lookup `x` parameter.
 	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 4, 7)
-	assert.Equal(t, Pos{Line: 3, Column: 23}, def)
+	assert.Equal(t, Pos{Line: 3, Column: 15}, def)
 
 	// Lookup `y` constant.
 	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 3, 28)

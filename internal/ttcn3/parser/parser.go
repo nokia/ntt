@@ -1203,7 +1203,7 @@ func (p *parser) parseModuleDef() *ast.ModuleDef {
  * Import Definition
  *************************************************************************/
 
-func make_ident(tok ast.Token) ast.Expr {
+func make_ident(tok ast.Token) *ast.Ident {
 	return &ast.Ident{Tok: tok}
 }
 
@@ -1224,7 +1224,7 @@ func (p *parser) parseImport() *ast.ImportDecl {
 	switch p.tok {
 	case token.ALL:
 		y := &ast.DefKindExpr{}
-		z := make_ident(p.consume())
+		var z ast.Expr = make_ident(p.consume())
 		if p.tok == token.EXCEPT {
 			z = &ast.ExceptExpr{
 				X:         z,
@@ -1259,7 +1259,7 @@ func (p *parser) parseImportStmt() *ast.DefKindExpr {
 		token.SIGNATURE, token.TEMPLATE, token.TESTCASE, token.TYPE:
 		x.Kind = p.consume()
 		if p.tok == token.ALL {
-			y := make_ident(p.consume())
+			var y ast.Expr = make_ident(p.consume())
 			if p.tok == token.EXCEPT {
 				y = &ast.ExceptExpr{
 					X:         y,
@@ -1442,7 +1442,7 @@ func (p *parser) parseWithQualifier() ast.Expr {
 	case token.TYPE, token.TEMPLATE, token.CONST, token.ALTSTEP, token.TESTCASE, token.FUNCTION, token.SIGNATURE, token.MODULEPAR, token.GROUP:
 		x := new(ast.DefKindExpr)
 		x.Kind = p.consume()
-		y := make_ident(p.expect(token.ALL))
+		var y ast.Expr = make_ident(p.expect(token.ALL))
 		if p.tok == token.EXCEPT {
 			y = &ast.ExceptExpr{
 				X:         y,
@@ -2123,8 +2123,15 @@ func (p *parser) parseFormalPar() *ast.FormalPar {
 		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
-	x.Name = p.parseExpr()
+	x.Name = p.parseIdent()
 
+	if p.tok == token.LBRACK {
+		x.ArrayDef = p.parseArrayDefs()
+	}
+	if p.tok == token.ASSIGN {
+		x.AssignTok = p.consume()
+		x.Value = p.parseExpr()
+	}
 	return x
 }
 
@@ -2166,11 +2173,8 @@ func (p *parser) parseTypeFormalPar() *ast.FormalPar {
 	}
 	x.Name = make_ident(p.expect(token.IDENT))
 	if p.tok == token.ASSIGN {
-		x.Name = &ast.BinaryExpr{
-			X:  x.Name,
-			Op: p.consume(),
-			Y:  p.parseTypeRef(),
-		}
+		x.AssignTok = p.consume()
+		x.Value = p.parseTypeRef()
 	}
 
 	return x
