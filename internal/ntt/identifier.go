@@ -3,7 +3,6 @@ package ntt
 import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/types"
 )
 
 // IdentInfo associates an identifier reference and its definition.
@@ -36,21 +35,12 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 
 	// Fill info struct with everything we have.
 	if scp := syms.Scopes[id]; scp != nil {
-		for scp != nil {
-			if obj := scp.Lookup(id.String()); obj != nil {
-				info.Def = &IdentInfo{
-					Syntax:   obj.Node(),
-					Position: syntax.Position(obj.Pos()),
-				}
-				return &info, nil
-			} else {
-				switch scpType := scp.(type) {
-				case *types.Struct:
-					scp = scpType.Parent()
-				default:
-					scp = nil
-				}
+		if obj := scp.Lookup(id.String()); obj != nil {
+			info.Def = &IdentInfo{
+				Syntax:   obj.Node(),
+				Position: syntax.Position(obj.Pos()),
 			}
+			return &info, nil
 		}
 
 		// Try our luck in imported modules.
