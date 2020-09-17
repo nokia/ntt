@@ -4,7 +4,7 @@ go 1.11
 
 require (
 	github.com/golang/protobuf v1.4.2
-	github.com/kr/pretty v0.2.0 // indirect
+	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.4.0
 	github.com/spf13/cobra v0.0.5

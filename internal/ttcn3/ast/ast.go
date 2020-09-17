@@ -172,9 +172,9 @@ type (
 
 	// A ParenExpr represents parenthized expression lists.
 	ParenExpr struct {
-		LParen Token  // Position of "(", "<"
+		LParen Token  // Position of "(", "<", "["
 		List   []Expr // Expression list
-		RParen Token  // Position of ")", ">"
+		RParen Token  // Position of ")", ">", "]"
 	}
 
 	// A SelectorExpr represents an expression followed by a selector.
@@ -316,11 +316,12 @@ func (x *ValueLiteral) LastTok() *Token      { return x.Tok.LastTok() }
 func (x *CompositeLiteral) LastTok() *Token  { return x.RBrace.LastTok() }
 func (x *UnaryExpr) LastTok() *Token         { return x.X.LastTok() }
 func (x *BinaryExpr) LastTok() *Token        { return x.Y.LastTok() }
-func (x *ParenExpr) LastTok() *Token         { return x.RParen.LastTok() }
-func (x *SelectorExpr) LastTok() *Token      { return x.Sel.LastTok() }
-func (x *IndexExpr) LastTok() *Token         { return x.RBrack.LastTok() }
-func (x *CallExpr) LastTok() *Token          { return x.Args.LastTok() }
-func (x *LengthExpr) LastTok() *Token        { return x.Size.LastTok() }
+
+func (x *ParenExpr) LastTok() *Token    { return x.RParen.LastTok() }
+func (x *SelectorExpr) LastTok() *Token { return x.Sel.LastTok() }
+func (x *IndexExpr) LastTok() *Token    { return x.RBrack.LastTok() }
+func (x *CallExpr) LastTok() *Token     { return x.Args.LastTok() }
+func (x *LengthExpr) LastTok() *Token   { return x.Size.LastTok() }
 func (x *RedirectExpr) LastTok() *Token {
 	if x.Timestamp != nil {
 		return x.Timestamp.LastTok()
@@ -651,9 +652,10 @@ type TypeSpec interface {
 type (
 	// A Field represents a named struct member or sub type definition
 	Field struct {
-		DefaultTok       Token    // Position of "@default" or nil
-		Type             TypeSpec // Type
-		Name             Expr     // Name or Array
+		DefaultTok       Token        // Position of "@default" or nil
+		Type             TypeSpec     // Type
+		Name             *Ident       // Name
+		ArrayDef         []*ParenExpr // Array definitions
 		TypePars         *FormalPars
 		ValueConstraint  *ParenExpr  // Value constraint or nil
 		LengthConstraint *LengthExpr // Length constraint or nil
@@ -708,6 +710,12 @@ func (x *Field) LastTok() *Token {
 	}
 	if x.ValueConstraint != nil {
 		return x.ValueConstraint.LastTok()
+	}
+	if x.TypePars != nil {
+		return x.TypePars.LastTok()
+	}
+	if l := len(x.ArrayDef); l != 0 {
+		return x.ArrayDef[l-1].LastTok()
 	}
 	return x.Name.LastTok()
 }
@@ -767,8 +775,16 @@ type (
 		TemplateRestriction *RestrictionSpec
 		Modif               Token // "@lazy", "@fuzzy" or nil
 		Type                Expr
-		Decls               []Expr
+		Decls               []Decl
 		With                *WithSpec
+	}
+
+	// A Declarator represents a single varable declaration
+	Declarator struct {
+		Name      *Ident
+		ArrayDef  []*ParenExpr
+		AssignTok Token
+		Value     Expr
 	}
 
 	TemplateDecl struct {
@@ -914,6 +930,22 @@ func (x *ValueDecl) LastTok() *Token {
 	return x.Decls[len(x.Decls)-1].LastTok()
 }
 
+func (x *Declarator) LastTok() *Token {
+	if x.Value != nil {
+		return x.Value.LastTok()
+	}
+	if x.AssignTok.IsValid() {
+		return x.AssignTok.LastTok()
+	}
+	if l := len(x.ArrayDef); l > 0 {
+		return x.ArrayDef[l-1].LastTok()
+	}
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+	return nil
+}
+
 func (x *TemplateDecl) LastTok() *Token {
 	if x.With != nil {
 		return x.With.LastTok()
@@ -1032,6 +1064,22 @@ func (x *ValueDecl) Pos() loc.Pos {
 	return x.Type.Pos()
 }
 
+func (x *Declarator) Pos() loc.Pos {
+	if x.Name != nil {
+		return x.Name.Pos()
+	}
+	if len(x.ArrayDef) > 0 {
+		return x.ArrayDef[0].Pos()
+	}
+	if x.AssignTok.IsValid() {
+		return x.AssignTok.Pos()
+	}
+	if x.Value != nil {
+		return x.Value.Pos()
+	}
+	return loc.NoPos
+}
+
 func (x *ModuleParameterGroup) Pos() loc.Pos {
 	return x.Tok.Pos()
 }
@@ -1054,6 +1102,7 @@ func (x *PortMapAttribute) Pos() loc.Pos  { return x.MapTok.Pos() }
 func (x *ComponentTypeDecl) Pos() loc.Pos { return x.TypeTok.Pos() }
 
 func (x *ValueDecl) End() loc.Pos            { return x.LastTok().End() }
+func (x *Declarator) End() loc.Pos           { return x.LastTok().End() }
 func (x *TemplateDecl) End() loc.Pos         { return x.LastTok().End() }
 func (x *ModuleParameterGroup) End() loc.Pos { return x.LastTok().End() }
 func (x *FuncDecl) End() loc.Pos             { return x.LastTok().End() }
@@ -1068,6 +1117,7 @@ func (x *PortMapAttribute) End() loc.Pos     { return x.LastTok().End() }
 func (x *ComponentTypeDecl) End() loc.Pos    { return x.LastTok().End() }
 
 func (x *ValueDecl) declNode()            {}
+func (x *Declarator) declNode()           {}
 func (x *TemplateDecl) declNode()         {}
 func (x *ModuleParameterGroup) declNode() {}
 func (x *FuncDecl) declNode()             {}
@@ -1276,7 +1326,10 @@ type (
 		TemplateRestriction *RestrictionSpec
 		Modif               Token
 		Type                Expr
-		Name                Expr
+		Name                *Ident
+		ArrayDef            []*ParenExpr
+		AssignTok           Token
+		Value               Expr
 	}
 
 	WithSpec struct {
@@ -1308,9 +1361,34 @@ func (x *SystemSpec) LastTok() *Token { return x.Comp.LastTok() }
 func (x *MtcSpec) LastTok() *Token    { return x.Comp.LastTok() }
 func (x *ReturnSpec) LastTok() *Token { return x.Type.LastTok() }
 func (x *FormalPars) LastTok() *Token { return x.RParen.LastTok() }
-func (x *FormalPar) LastTok() *Token  { return x.Name.LastTok() }
-func (x *WithSpec) LastTok() *Token   { return x.RBrace.LastTok() }
-func (x *WithStmt) LastTok() *Token   { return x.Value.LastTok() }
+
+func (x *FormalPar) LastTok() *Token {
+	if x.Value != nil {
+		return x.Value.LastTok()
+	}
+	if x.AssignTok.IsValid() {
+		return x.AssignTok.LastTok()
+	}
+	if l := len(x.ArrayDef); l != 0 {
+		return x.ArrayDef[l-1].LastTok()
+	}
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+	if x.Type != nil {
+		return x.Type.LastTok()
+	}
+	if x.Modif.IsValid() {
+		return x.Modif.LastTok()
+	}
+	if x.TemplateRestriction != nil {
+		return x.TemplateRestriction.LastTok()
+	}
+	return x.Direction.LastTok()
+}
+
+func (x *WithSpec) LastTok() *Token { return x.RBrace.LastTok() }
+func (x *WithStmt) LastTok() *Token { return x.Value.LastTok() }
 
 func (x *LanguageSpec) Pos() loc.Pos { return x.Tok.Pos() }
 func (x *RestrictionSpec) Pos() loc.Pos {

@@ -12,10 +12,12 @@ func (info *Info) Define(m *ast.Module) {
 	if info.Modules == nil {
 		info.Modules = make(map[string]*Module)
 	}
-	info.define(m)
+	info.descent(m)
 }
 
-func (info *Info) define(n ast.Node) {
+// descent inserts all declarations into their enclosing scope. It also tracks
+// the scopes of referencing identifiers.
+func (info *Info) descent(n ast.Node) {
 	ast.Apply(n, func(c *ast.Cursor) bool {
 		switch n := c.Node().(type) {
 
@@ -26,17 +28,17 @@ func (info *Info) define(n ast.Node) {
 		case *ast.BlockStmt:
 			info.currScope = NewLocalScope(n, info.currScope)
 			for i := range n.Stmts {
-				info.define(n.Stmts[i])
+				info.descent(n.Stmts[i])
 			}
 			info.currScope = info.currScope.(*LocalScope).parent
 			return false
 
 		case *ast.ForStmt:
 			info.currScope = NewLocalScope(n, info.currScope)
-			info.define(n.Init)
-			info.define(n.Cond)
-			info.define(n.Post)
-			info.define(n.Body)
+			info.descent(n.Init)
+			info.descent(n.Cond)
+			info.descent(n.Post)
+			info.descent(n.Body)
 			info.currScope = info.currScope.(*LocalScope).parent
 			return false
 
@@ -45,10 +47,10 @@ func (info *Info) define(n ast.Node) {
 			info.Modules[n.Name.String()] = info.currMod
 			info.currScope = info.currMod
 			for i := range n.Defs {
-				info.define(n.Defs[i])
+				info.descent(n.Defs[i])
 			}
 			if n.With == nil {
-				info.define(n.With)
+				info.descent(n.With)
 			}
 
 			info.currScope = nil
@@ -66,32 +68,21 @@ func (info *Info) define(n ast.Node) {
 			info.currMod.Imports = append(info.currMod.Imports, n.Module.String())
 
 			if n.Module != nil {
-				info.define(n.Module)
+				info.descent(n.Module)
 			}
 			for i := range n.List {
-				info.define(n.List[i])
+				info.descent(n.List[i])
 			}
 			return false
 
-		case *ast.ValueDecl:
-			info.define(n.Type)
-			err := ast.Declarators(n.Decls, info.Fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-				v := NewVar(decl, identName(name))
-				info.insert(v)
-				for i := range arrays {
-					info.define(arrays[i])
-				}
-				info.define(value)
-			})
+		case *ast.Declarator:
+			v := NewVar(n, identName(n.Name))
+			info.insert(v)
 
-			// Add syntax errors to the error list
-			if err != nil {
-				for _, e := range err.List() {
-					info.error(e)
-				}
+			for i := range n.ArrayDef {
+				info.descent(n.ArrayDef[i])
 			}
-
-			info.define(n.With)
+			info.descent(n.Value)
 			return false
 
 		case *ast.TemplateDecl:
@@ -99,16 +90,16 @@ func (info *Info) define(n ast.Node) {
 			info.insert(sym)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
-				info.define(n.TypePars)
+				info.descent(n.TypePars)
 			}
-			info.define(n.Type)
-			info.define(n.Base)
+			info.descent(n.Type)
+			info.descent(n.Base)
 			if n.Params != nil {
 				info.currScope = NewLocalScope(n.Params, info.currScope)
-				info.define(n.Params)
+				info.descent(n.Params)
 			}
-			info.define(n.Value)
-			info.define(n.With)
+			info.descent(n.Value)
+			info.descent(n.With)
 
 			if n.Params != nil {
 				info.currScope = info.currScope.(*LocalScope).parent
@@ -124,18 +115,18 @@ func (info *Info) define(n ast.Node) {
 			info.insert(sym)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
-				info.define(n.TypePars)
+				info.descent(n.TypePars)
 			}
-			info.define(n.RunsOn)
-			info.define(n.Mtc)
-			info.define(n.System)
-			info.define(n.Return)
+			info.descent(n.RunsOn)
+			info.descent(n.Mtc)
+			info.descent(n.System)
+			info.descent(n.Return)
 			if n.Params != nil {
 				info.currScope = NewLocalScope(n.Params, info.currScope)
-				info.define(n.Params)
+				info.descent(n.Params)
 			}
-			info.define(n.Body)
-			info.define(n.With)
+			info.descent(n.Body)
+			info.descent(n.With)
 
 			if n.Params != nil {
 				info.currScope = info.currScope.(*LocalScope).parent
@@ -155,71 +146,58 @@ func (info *Info) define(n ast.Node) {
 			info.currScope = s
 
 			for i := range n.Fields {
-				info.define(n.Fields[i])
+				info.descent(n.Fields[i])
 			}
 
 			info.currScope = name.Parent()
 			return false
 
 		case *ast.ComponentTypeDecl:
-			c := NewComponentType(n, n.Name.String())
+			c := NewComponentType(n.Name, n.Name.String())
 			info.insert(c)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
-				info.define(n.TypePars)
+				info.descent(n.TypePars)
 			}
 			if n.Extends != nil {
 				for i := range n.Extends {
-					info.define(n.Extends[i])
+					info.descent(n.Extends[i])
 				}
 			}
 
 			info.currScope = c
-			info.define(n.Body)
+			info.descent(n.Body)
 			info.currScope = c.parent
 			return false
 
 		case *ast.Field:
-			err := ast.Declarators([]ast.Expr{n.Name}, info.Fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-				v := NewVar(decl, identName(name))
-				info.insert(v)
-				for i := range arrays {
-					info.define(arrays[i])
-				}
-				info.define(value)
-			})
+			v := NewVar(n.Name, identName(n.Name))
+			info.insert(v)
+			info.descent(n.TypePars)
 
-			// Add syntax errors to the error list
-			if err != nil {
-				for _, e := range err.List() {
-					info.error(e)
-				}
+			for i := range n.ArrayDef {
+				info.descent(n.ArrayDef[i])
 			}
-			info.define(n.Type)
+			info.descent(n.Type)
+			info.descent(n.ValueConstraint)
+			info.descent(n.LengthConstraint)
 			return false
 
 		case *ast.FormalPar:
-			info.define(n.Type)
-			err := ast.Declarators([]ast.Expr{n.Name}, info.Fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-				v := NewVar(decl, identName(name))
-				info.insert(v)
-				for i := range arrays {
-					info.define(arrays[i])
-				}
-				info.define(value)
-			})
+			info.descent(n.Type)
+			v := NewVar(n.Name, identName(n.Name))
 
-			// Add syntax errors to the error list
-			if err != nil {
-				for _, e := range err.List() {
-					info.error(e)
-				}
+			info.insert(v)
+			for i := range n.ArrayDef {
+				info.descent(n.ArrayDef[i])
 			}
+			info.descent(n.Value)
+
 			return false
 
 		case *ast.PortMapAttribute:
 			info.currScope = NewLocalScope(n, info.currScope)
-			info.define(n.Params)
+			info.descent(n.Params)
 			info.currScope = info.currScope.(*LocalScope).parent
 			return false
 

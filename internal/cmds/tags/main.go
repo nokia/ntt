@@ -111,24 +111,12 @@ func tags(cmd *cobra.Command, args []string) error {
 					t = append(t, NewTag(n.Name.String(), file, line, "t"))
 					return false
 
-				case *ast.ValueDecl:
-					ast.Declarators(n.Decls, mod.FileSet, func(decl ast.Expr, id ast.Node, arrays []ast.Expr, value ast.Expr) {
-						name := identName(id)
-						pos := mod.Position(decl.Pos())
-						file := pos.Filename
-						line := pos.Line
-						t = append(t, NewTag(name, file, line, "v"))
-					})
+				case *ast.Declarator:
+					t = append(t, NewTag(n.Name.String(), file, line, "v"))
 					return false
 
 				case *ast.FormalPar:
-					ast.Declarators([]ast.Expr{n.Name}, mod.FileSet, func(decl ast.Expr, id ast.Node, arrays []ast.Expr, value ast.Expr) {
-						name := identName(id)
-						pos := mod.Position(decl.Pos())
-						file := pos.Filename
-						line := pos.Line
-						t = append(t, NewTag(name, file, line, "v"))
-					})
+					t = append(t, NewTag(n.Name.String(), file, line, "v"))
 					return false
 
 				case *ast.TemplateDecl:

@@ -331,6 +331,7 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 	case *Field:
 		a.apply(n, "Type", nil, n.Type)
 		a.apply(n, "Name", nil, n.Name)
+		a.applyList(n, "ArrayDef")
 		a.apply(n, "TypePars", nil, n.TypePars)
 		a.apply(n, "ValueConstraint", nil, n.ValueConstraint)
 		a.apply(n, "LengthConstraint", nil, n.LengthConstraint)
@@ -361,6 +362,11 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 		a.apply(n, "Type", nil, n.Type)
 		a.applyList(n, "Decls")
 		a.apply(n, "With", nil, n.With)
+
+	case *Declarator:
+		a.apply(n, "Name", nil, n.Name)
+		a.applyList(n, "ArrayDef")
+		a.apply(n, "Value", nil, n.Value)
 
 	case *TemplateDecl:
 		a.apply(n, "Type", nil, n.Type)
@@ -494,6 +500,8 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 		a.apply(n, "TemplateRestriction", nil, n.TemplateRestriction)
 		a.apply(n, "Type", nil, n.Type)
 		a.apply(n, "Name", nil, n.Name)
+		a.applyList(n, "ArrayDef")
+		a.apply(n, "Value", nil, n.Value)
 
 	case *WithSpec:
 		a.applyList(n, "List")

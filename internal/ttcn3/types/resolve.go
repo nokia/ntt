@@ -16,27 +16,7 @@ func (info *Info) Resolve() {
 }
 
 func (info *Info) resolve(n ast.Node) {
-	ast.Apply(n, info.resolveEnter, info.resolveExit)
-}
-
-func (info *Info) resolveEnter(c *ast.Cursor) bool {
-	switch n := c.Node().(type) {
-	case *ast.ValueDecl:
-		info.resolve(n.Type)
-		ast.Declarators(n.Decls, info.Fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-			//v := NewVar(decl, identName(name))
-			//info.insert(v)
-			//for i := range arrays {
-			//	info.define(arrays[i])
-			//}
-			info.resolve(value)
-		})
-		info.resolve(n.With)
-
-		return false
-
-	}
-	return true
+	ast.Apply(n, nil, info.resolveExit)
 }
 
 func (info *Info) resolveExit(c *ast.Cursor) bool {
@@ -170,7 +150,6 @@ func (info *Info) resolveExit(c *ast.Cursor) bool {
 		}
 
 		info.Types[n] = obj.Type()
-
 	}
 	return true
 }

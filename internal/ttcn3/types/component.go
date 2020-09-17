@@ -14,7 +14,7 @@ type ComponentType struct {
 	Ports []*Port
 }
 
-func NewComponentType(n *ast.ComponentTypeDecl, name string) *ComponentType {
+func NewComponentType(n ast.Node, name string) *ComponentType {
 	return &ComponentType{
 		object: object{
 			node: n,

@@ -229,6 +229,7 @@ func Walk(v Visitor, node Node) {
 	case *Field:
 		Walk(v, n.Type)
 		Walk(v, n.Name)
+		walkParenExprList(v, n.ArrayDef)
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}
@@ -275,10 +276,17 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.TemplateRestriction)
 		}
 		Walk(v, n.Type)
-		walkExprList(v, n.Decls)
+		walkDeclList(v, n.Decls)
 		if n.With != nil {
 			Walk(v, n.With)
 		}
+
+	case *Declarator:
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
+		walkParenExprList(v, n.ArrayDef)
+		Walk(v, n.Value)
 
 	case *TemplateDecl:
 		Walk(v, n.Type)
@@ -517,6 +525,8 @@ func Walk(v Visitor, node Node) {
 		}
 		Walk(v, n.Type)
 		Walk(v, n.Name)
+		walkParenExprList(v, n.ArrayDef)
+		Walk(v, n.Value)
 
 	case *WithSpec:
 		walkWithStmtList(v, n.List)
@@ -565,6 +575,11 @@ func walkFieldList(v Visitor, list []*Field) {
 	}
 }
 
+func walkParenExprList(v Visitor, list []*ParenExpr) {
+	for _, n := range list {
+		Walk(v, n)
+	}
+}
 func walkFormalParList(v Visitor, list []*FormalPar) {
 	for _, n := range list {
 		Walk(v, n)
@@ -578,6 +593,12 @@ func walkModuleDefList(v Visitor, list []*ModuleDef) {
 }
 
 func walkNodeList(v Visitor, list []Node) {
+	for _, n := range list {
+		Walk(v, n)
+	}
+}
+
+func walkDeclList(v Visitor, list []Decl) {
 	for _, n := range list {
 		Walk(v, n)
 	}
