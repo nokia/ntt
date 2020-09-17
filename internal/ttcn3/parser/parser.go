@@ -1824,7 +1824,7 @@ func (p *parser) parseTemplateDecl() *ast.TemplateDecl {
 		defer un(trace(p, "TemplateDecl"))
 	}
 
-	x := new(ast.TemplateDecl)
+	x := &ast.TemplateDecl{}
 	x.TemplateTok = p.consume()
 
 	if p.tok == token.LPAREN {
@@ -1875,7 +1875,7 @@ func (p *parser) parseModulePar() ast.Decl {
 			d := new(ast.ValueDecl)
 			d.TemplateRestriction = p.parseRestrictionSpec()
 			d.Type = p.parseTypeRef()
-			d.Decls = p.parseExprList()
+			d.Decls = p.parseDeclList()
 			p.expectSemi(d.Decls[len(d.Decls)-1].LastTok())
 			x.Decls = append(x.Decls, d)
 		}
@@ -1887,7 +1887,7 @@ func (p *parser) parseModulePar() ast.Decl {
 	x := &ast.ValueDecl{Kind: tok}
 	x.TemplateRestriction = p.parseRestrictionSpec()
 	x.Type = p.parseTypeRef()
-	x.Decls = p.parseExprList()
+	x.Decls = p.parseDeclList()
 	x.With = p.parseWith()
 	return x
 }
@@ -1910,7 +1910,7 @@ func (p *parser) parseValueDecl() *ast.ValueDecl {
 	if x.Kind.Kind != token.TIMER {
 		x.Type = p.parseTypeRef()
 	}
-	x.Decls = p.parseExprList()
+	x.Decls = p.parseDeclList()
 	x.With = p.parseWith()
 	return x
 }
@@ -1930,6 +1930,32 @@ func (p *parser) parseRestrictionSpec() *ast.RestrictionSpec {
 
 	case token.OMIT, token.VALUE, token.PRESENT:
 		x.Tok = p.consume()
+	}
+	return x
+}
+
+func (p *parser) parseDeclList() (list []ast.Decl) {
+	if p.trace {
+		defer un(trace(p, "DeclList"))
+	}
+
+	list = append(list, p.parseDeclarator())
+	for p.tok == token.COMMA {
+		p.consumeTrivia(list[len(list)-1].LastTok())
+		list = append(list, p.parseDeclarator())
+	}
+	return
+}
+
+func (p *parser) parseDeclarator() *ast.Declarator {
+	x := &ast.Declarator{}
+	x.Name = p.parseIdent()
+	if p.tok == token.LBRACK {
+		x.ArrayDef = p.parseArrayDefs()
+	}
+	if p.tok == token.ASSIGN {
+		x.AssignTok = p.consume()
+		x.Value = p.parseExpr()
 	}
 	return x
 }
@@ -2206,9 +2232,9 @@ func (p *parser) parseStmt() ast.Stmt {
 	etok := p.peek(1)
 	switch p.tok {
 	case token.TEMPLATE:
-		return &ast.DeclStmt{p.parseTemplateDecl()}
+		return &ast.DeclStmt{Decl: p.parseTemplateDecl()}
 	case token.VAR, token.CONST, token.TIMER, token.PORT:
-		return &ast.DeclStmt{p.parseValueDecl()}
+		return &ast.DeclStmt{Decl: p.parseValueDecl()}
 	case token.REPEAT, token.BREAK, token.CONTINUE:
 		return &ast.BranchStmt{Tok: p.consume()}
 	case token.LABEL:

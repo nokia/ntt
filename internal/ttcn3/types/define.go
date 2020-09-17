@@ -15,6 +15,8 @@ func (info *Info) Define(m *ast.Module) {
 	info.descent(m)
 }
 
+// descent inserts all declarations into their enclosing scope. It also tracks
+// the scopes of referencing identifiers.
 func (info *Info) descent(n ast.Node) {
 	ast.Apply(n, func(c *ast.Cursor) bool {
 		switch n := c.Node().(type) {
@@ -73,25 +75,16 @@ func (info *Info) descent(n ast.Node) {
 			}
 			return false
 
-		case *ast.ValueDecl:
-			info.descent(n.Type)
-			err := ast.Declarators(n.Decls, info.Fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-				v := NewVar(decl, identName(name))
-				info.insert(v)
-				for i := range arrays {
-					info.descent(arrays[i])
-				}
-				info.descent(value)
-			})
 
-			// Add syntax errors to the error list
-			if err != nil {
-				for _, e := range err.List() {
-					info.error(e)
-				}
+		case *ast.Declarator:
+			v := NewVar(n, identName(n.Name))
+			info.insert(v)
+
+			for i := range n.ArrayDef {
+				info.descent(n.ArrayDef[i])
 			}
 
-			info.descent(n.With)
+			info.descent(n.Value)
 			return false
 
 		case *ast.TemplateDecl:
@@ -162,7 +155,7 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.ComponentTypeDecl:
-			c := NewComponentType(n, n.Name.String())
+			c := NewComponentType(n.Name, n.Name.String())
 			info.insert(c)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
@@ -180,28 +173,24 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.Field:
-			err := ast.Declarators([]ast.Expr{n.Name}, info.Fset, func(decl ast.Expr, name ast.Node, arrays []ast.Expr, value ast.Expr) {
-				v := NewVar(decl, identName(name))
-				info.insert(v)
-				for i := range arrays {
-					info.descent(arrays[i])
-				}
-				info.descent(value)
-			})
 
-			// Add syntax errors to the error list
-			if err != nil {
-				for _, e := range err.List() {
-					info.error(e)
-				}
+			v := NewVar(n.Name, identName(n.Name))
+			info.insert(v)
+			info.descent(n.TypePars)
+
+			for i := range n.ArrayDef {
+				info.descent(n.ArrayDef[i])
 			}
 			info.descent(n.Type)
+
+			info.descent(n.ValueConstraint)
+			info.descent(n.LengthConstraint)
 			return false
 
 		case *ast.FormalPar:
 			info.descent(n.Type)
-			v := NewVar(n, identName(n.Name))
 
+			v := NewVar(n.Name, identName(n.Name))
 			info.insert(v)
 			for i := range n.ArrayDef {
 				info.descent(n.ArrayDef[i])
