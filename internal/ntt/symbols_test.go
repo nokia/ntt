@@ -119,11 +119,11 @@ func TestComponentType(t *testing.T) {
 
 	// Lookup `CompA`
 	def := gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 7, 39)
-	assert.Equal(t, Pos{Line: 3, Column: 9}, def)
+	assert.Equal(t, Pos{Line: 3, Column: 24}, def)
 
 	// Lookup `CompC`
 	def = gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 15, 45)
-	assert.Equal(t, Pos{Line: 11, Column: 9}, def)
+	assert.Equal(t, Pos{Line: 11, Column: 24}, def)
 
 	// Lookup `C`
 	// TODO(5nord) Fix parser bug
@@ -131,7 +131,7 @@ func TestComponentType(t *testing.T) {
 	//assert.Equal(t, Pos{Line: 19, Column: 32}, def)
 
 	// Lookup `CompE`
-	def = gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 26, 25)
+	//def = gotoDefinition(suite, "TestComponentType_Module_0.ttcn3", 26, 25)
 	//assert.Equal(t, Pos{Line: 19, Column: 9}, def)
 }
 
@@ -151,8 +151,8 @@ func TestStructType(t *testing.T) {
 
 	    type record Rec {
 			integer x,
-			Rec     next      // ERR: Recursive field is non-optional
-			struct {
+			Rec     next,      // ERR: Recursive field is non-optional
+			record {
 				int x
 			} y
 		}
@@ -163,7 +163,7 @@ func TestStructType(t *testing.T) {
 	def := gotoDefinition(suite, "TestStructType_Module_0.ttcn3", 4, 8)
 	assert.Equal(t, Pos{Line: 11, Column: 18}, def)
 
-	//// Lookup `r` (LHS)
+	// Lookup `r` (LHS)
 	def = gotoDefinition(suite, "TestStructType_Module_0.ttcn3", 7, 11)
 	assert.Equal(t, Pos{Line: 4, Column: 12}, def)
 
@@ -236,7 +236,7 @@ func TestFunc(t *testing.T) {
 
 	// Lookup `x` parameter.
 	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 4, 7)
-	assert.Equal(t, Pos{Line: 3, Column: 15}, def)
+	assert.Equal(t, Pos{Line: 3, Column: 23}, def)
 
 	// Lookup `y` constant.
 	def = gotoDefinition(suite, "TestFunc_Module_0.ttcn3", 3, 28)

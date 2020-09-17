@@ -363,6 +363,11 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 		a.applyList(n, "Decls")
 		a.apply(n, "With", nil, n.With)
 
+	case *Declarator:
+		a.apply(n, "Name", nil, n.Name)
+		a.applyList(n, "ArrayDef")
+		a.apply(n, "Value", nil, n.Value)
+
 	case *TemplateDecl:
 		a.apply(n, "Type", nil, n.Type)
 		a.apply(n, "Name", nil, n.Name)
