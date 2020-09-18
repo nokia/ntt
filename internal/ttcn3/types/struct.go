@@ -36,6 +36,18 @@ func (s *Struct) Insert(obj Object) Object {
 	return nil
 }
 
+func (s *Struct) Lookup(name string) Object {
+	if obj := s.scope.Lookup(name); obj != nil {
+		return obj
+	}
+
+	if s.parent != nil {
+		return s.parent.Lookup(name)
+	}
+
+	return nil
+}
+
 func (s *Struct) Underlying() Type { return s }
 func (s *Struct) String() string {
 	var buf bytes.Buffer
