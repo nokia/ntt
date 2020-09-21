@@ -1,9 +1,14 @@
 package ntt
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/nokia/ntt/internal/log"
 )
 
 // hasASN1Extension returns true if file has suffix .asn or .asn1
@@ -58,4 +63,45 @@ func findFiles(dir string, matcher func(name string) bool) ([]string, error) {
 	}
 
 	return sources, nil
+}
+
+func findAuxiliaryDirectories() []string {
+	var path string
+	var ret []string
+	var err error = nil
+	if path, err = exec.LookPath("k3r"); err != nil {
+		return nil
+	}
+	path = filepath.Dir(path)
+	var dirSuffix = []string{"/../lib/k3/plugins/ttcn3", "/../lib64/k3/plugins/ttcn3", "/../lib/x86_64/k3/plugins/ttcn3"}
+	for i := range dirSuffix {
+		dirSuffix[i] = path + dirSuffix[i]
+	}
+	for _, realPath := range dirSuffix {
+		log.Debug(fmt.Sprintf("after initializing: %s", realPath))
+	}
+	for _, realPath := range dirSuffix {
+		var finfo os.FileInfo = nil
+		if finfo, err = os.Stat(realPath); err != nil {
+			continue
+		}
+		if finfo.IsDir() {
+			ret = append(ret, realPath)
+		}
+	}
+	return ret
+}
+
+func FindAuxiliaryTTCN3Files() []string {
+	if dirs := findAuxiliaryDirectories(); len(dirs) != 0 {
+		var ret []string
+		for _, dir := range dirs {
+			if files, err := findTTCN3Files(dir); err == nil {
+				ret = append(ret, files...)
+			}
+		}
+		log.Debug(fmt.Sprintf("FindAuxiliaryTTCN3Files: %#v", ret))
+		return ret
+	}
+	return nil
 }

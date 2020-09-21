@@ -69,8 +69,26 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 					}
 				}
 			}
-		}
 
+			// Try our luck in modules provided by k3 tooling
+			for _, file := range FindAuxiliaryTTCN3Files() {
+				if syntax := suite.Parse(file); syntax.Module != nil {
+					if syntax.Module.Name.String() == mod.Imports[i] {
+						// Build symbol table and check module definitions
+						syms := suite.symbols(syntax)
+						imp := syms.Modules[mod.Imports[i]]
+
+						if obj := imp.Lookup(id.String()); obj != nil {
+							info.Def = &IdentInfo{
+								Syntax:   obj.Node(),
+								Position: syntax.Position(obj.Pos()),
+							}
+							return &info, nil
+						}
+					}
+				}
+			}
+		}
 	}
 	return &info, nil
 }
