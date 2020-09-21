@@ -73,6 +73,15 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 			// Try our luck in modules provided by k3 tooling
 			for _, file := range FindAuxiliaryTTCN3Files() {
 				if syntax := suite.Parse(file); syntax.Module != nil {
+					// Check if we were looking for a module id
+					if syntax.Module.Name.String() == id.String() {
+						info.Def = &IdentInfo{
+							Syntax:   syntax.Module,
+							Position: syntax.Position(syntax.Module.Pos()),
+						}
+						return &info, nil
+					}
+
 					if syntax.Module.Name.String() == mod.Imports[i] {
 						// Build symbol table and check module definitions
 						syms := suite.symbols(syntax)
