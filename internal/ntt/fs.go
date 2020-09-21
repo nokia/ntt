@@ -1,14 +1,11 @@
 package ntt
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/nokia/ntt/internal/log"
 )
 
 // hasASN1Extension returns true if file has suffix .asn or .asn1
@@ -77,9 +74,7 @@ func findAuxiliaryDirectories() []string {
 	for i := range dirSuffix {
 		dirSuffix[i] = path + dirSuffix[i]
 	}
-	for _, realPath := range dirSuffix {
-		log.Debug(fmt.Sprintf("after initializing: %s", realPath))
-	}
+
 	for _, realPath := range dirSuffix {
 		var finfo os.FileInfo = nil
 		if finfo, err = os.Stat(realPath); err != nil {
@@ -100,7 +95,6 @@ func FindAuxiliaryTTCN3Files() []string {
 				ret = append(ret, files...)
 			}
 		}
-		log.Debug(fmt.Sprintf("FindAuxiliaryTTCN3Files: %#v", ret))
 		return ret
 	}
 	return nil
