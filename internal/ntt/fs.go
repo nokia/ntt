@@ -62,38 +62,33 @@ func findFiles(dir string, matcher func(name string) bool) ([]string, error) {
 	return sources, nil
 }
 
-func findAuxiliaryDirectories() []string {
+func findAuxiliaryDirectory() string {
 	var path string
-	var ret []string
 	var err error = nil
 	if path, err = exec.LookPath("k3r"); err != nil {
-		return nil
+		return ""
 	}
 	path = filepath.Dir(path)
 	var dirSuffix = []string{"/../lib/k3/plugins/ttcn3", "/../lib64/k3/plugins/ttcn3", "/../lib/x86_64/k3/plugins/ttcn3"}
-	for i := range dirSuffix {
-		dirSuffix[i] = path + dirSuffix[i]
-	}
 
 	for _, realPath := range dirSuffix {
 		var finfo os.FileInfo = nil
+		realPath = path + realPath
 		if finfo, err = os.Stat(realPath); err != nil {
 			continue
 		}
 		if finfo.IsDir() {
-			ret = append(ret, realPath)
+			return realPath
 		}
 	}
-	return ret
+	return ""
 }
 
 func FindAuxiliaryTTCN3Files() []string {
-	if dirs := findAuxiliaryDirectories(); len(dirs) != 0 {
+	if dir := findAuxiliaryDirectory(); len(dir) != 0 {
 		var ret []string
-		for _, dir := range dirs {
-			if files, err := findTTCN3Files(dir); err == nil {
-				ret = append(ret, files...)
-			}
+		if files, err := findTTCN3Files(dir); err == nil {
+			ret = append(ret, files...)
 		}
 		return ret
 	}
