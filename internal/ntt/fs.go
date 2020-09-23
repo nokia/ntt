@@ -82,6 +82,7 @@ func findAuxiliaryDirectories() []string {
 			continue
 		}
 		if idx <= 2 {
+			// the first valid directory entry out of the first 3 elements is the right one
 			if pluginDirFound {
 				continue
 			}
