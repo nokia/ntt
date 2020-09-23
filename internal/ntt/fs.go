@@ -2,6 +2,8 @@ package ntt
 
 import (
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -58,4 +60,47 @@ func findFiles(dir string, matcher func(name string) bool) ([]string, error) {
 	}
 
 	return sources, nil
+}
+
+func findAuxiliaryDirectories() []string {
+	var path string
+	var ret []string
+	var err error = nil
+	if path, err = exec.LookPath("k3r"); err != nil {
+		return nil
+	}
+	path = filepath.Dir(path)
+	var dirSuffix = []string{"/../lib/k3/plugins/ttcn3", "/../lib64/k3/plugins/ttcn3", "/../lib/x86_64/k3/plugins/ttcn3", "/../share/k3/ttcn3"}
+	pluginDirFound := false
+	for idx, realPath := range dirSuffix {
+		var finfo os.FileInfo = nil
+		realPath = path + realPath
+		if finfo, err = os.Stat(realPath); err != nil {
+			continue
+		}
+		if !finfo.IsDir() {
+			continue
+		}
+		if idx <= 2 {
+			// the first valid directory entry out of the first 3 elements is the right one
+			if pluginDirFound {
+				continue
+			}
+			pluginDirFound = true
+		}
+		ret = append(ret, realPath)
+	}
+	return ret
+}
+
+// FindAuxiliaryTTCN3Files returns a list of ttcn3 files provided by Nokia internal toolset k3.
+func FindAuxiliaryTTCN3Files() []string {
+	var ret []string
+
+	for _, dir := range findAuxiliaryDirectories() {
+		if files, err := findTTCN3Files(dir); err == nil {
+			ret = append(ret, files...)
+		}
+	}
+	return ret
 }
