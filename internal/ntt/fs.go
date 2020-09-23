@@ -78,7 +78,7 @@ func findAuxiliaryDirectories() []string {
 		if finfo, err = os.Stat(realPath); err != nil {
 			continue
 		}
-		if finfo.IsDir() == false {
+		if !finfo.IsDir() {
 			continue
 		}
 		if idx <= 2 {
