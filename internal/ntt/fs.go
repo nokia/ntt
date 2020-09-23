@@ -92,6 +92,7 @@ func findAuxiliaryDirectories() []string {
 	return ret
 }
 
+// FindAuxiliaryTTCN3Files returns a list of ttcn3 files provided by Nokia internal toolset k3.
 func FindAuxiliaryTTCN3Files() []string {
 	var ret []string
 
