@@ -78,19 +78,16 @@ func findAuxiliaryDirectories() []string {
 		if finfo, err = os.Stat(realPath); err != nil {
 			continue
 		}
+		if finfo.IsDir() == false {
+			continue
+		}
 		if idx <= 2 {
 			if pluginDirFound {
 				continue
 			}
-			if finfo.IsDir() {
-				ret = append(ret, realPath)
-				pluginDirFound = true
-			}
-		} else {
-			if finfo.IsDir() {
-				ret = append(ret, realPath)
-			}
+			pluginDirFound = true
 		}
+		ret = append(ret, realPath)
 	}
 	return ret
 }
