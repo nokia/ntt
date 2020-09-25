@@ -152,6 +152,16 @@ func (info *Info) descent(n ast.Node) {
 			info.currScope = name.Parent()
 			return false
 
+		case *ast.EnumTypeDecl:
+			name := NewTypeName(n.Name, n.Name.String(), nil)
+			info.insert(name)
+
+			// enumerated labels are in the global scope too
+			for i := range n.Enums {
+				info.descent(n.Enums[i])
+			}
+			return false
+
 		case *ast.ComponentTypeDecl:
 			c := NewComponentType(n.Name, n.Name.String())
 			info.insert(c)
