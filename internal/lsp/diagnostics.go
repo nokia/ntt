@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nokia/ntt/internal/errors"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
@@ -23,20 +24,14 @@ import (
 //     has to push the empty array to clear former diagnostics. Newly pushed
 //     diagnostics always replace previously pushed diagnostics. There is no
 //     merging that happens on the client side.
-func (s *Server) Diagnose() {
+func (s *Server) Diagnose(uris ...protocol.DocumentURI) {
 	s.diagsMu.Lock()
 	defer s.diagsMu.Unlock()
 
 	s.diags = make(map[string][]protocol.Diagnostic)
 	defer s.syncDiagnostics()
 
-	// Just do a very basic test if all .ttcn3 files are accessable.
-	_, err := s.suite.Files()
-	if err != nil {
-		s.reportError(err)
-		return
-	}
-
+	// TODO(5nord): Run linter against uris
 }
 
 func (s *Server) reportError(err error) {
@@ -44,7 +39,7 @@ func (s *Server) reportError(err error) {
 
 	// Errors with a location will become diagnostics
 	case errors.Error:
-		uri := string(s.suite.File(err.Pos.Filename).URI())
+		uri := string(fs.Open(err.Pos.Filename).URI())
 		diag := protocol.Diagnostic{
 			Range: protocol.Range{
 				Start: protocol.Position{

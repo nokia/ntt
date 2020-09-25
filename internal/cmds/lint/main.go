@@ -230,7 +230,7 @@ func lint(cmd *cobra.Command, args []string) error {
 				return
 			}
 
-			if isWhiteListed(style.Ignore.Modules, identName(mod.Module.Name)) {
+			if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Module.Name)) {
 				return
 			}
 
@@ -419,7 +419,7 @@ func lint(cmd *cobra.Command, args []string) error {
 }
 
 func checkNaming(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
-	checkPatterns(fset, n, patterns, identName(n))
+	checkPatterns(fset, n, patterns, ast.Name(n))
 }
 
 func checkTags(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
@@ -532,8 +532,8 @@ func checkImport(fset *loc.FileSet, n *ast.ImportDecl, mod *ast.Module) {
 		return
 	}
 
-	imported := identName(n.Module)
-	importing := identName(mod.Name)
+	imported := ast.Name(n.Module)
+	importing := ast.Name(mod.Name)
 
 	usedModuleMu.Lock()
 	usedModules[imported] = Import{
@@ -651,32 +651,6 @@ func isVarTemplate(d *ast.ValueDecl) bool {
 
 func isCaseElse(n *ast.CaseClause) bool {
 	return n.Case == nil
-}
-
-func identName(n ast.Node) string {
-	switch n := n.(type) {
-	case *ast.CallExpr:
-		return identName(n.Fun)
-	case *ast.LengthExpr:
-		return identName(n.X)
-	case *ast.Ident:
-		return n.String()
-	case *ast.ParametrizedIdent:
-		return n.Ident.String()
-	case *ast.FuncDecl:
-		return n.Name.String()
-	case *ast.Module:
-		return n.Name.String()
-	case *ast.FormalPar:
-		return n.Name.String()
-	case *ast.PortTypeDecl:
-		return identName(n.Name)
-	case *ast.Declarator:
-		return n.Name.String()
-	case *ast.TemplateDecl:
-		return n.Name.String()
-	}
-	return "_"
 }
 
 func buildRegexCache() error {

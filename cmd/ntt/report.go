@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/k3"
 	"github.com/nokia/ntt/internal/ntt"
 )
 
@@ -85,7 +87,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Sources()
-		r.Sources = ntt.PathSlice(paths...)
+		r.Sources = fs.PathSlice(paths...)
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}
@@ -93,7 +95,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Imports()
-		r.Imports = ntt.PathSlice(paths...)
+		r.Imports = fs.PathSlice(paths...)
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}
@@ -113,7 +115,9 @@ func NewReport(args []string) *Report {
 		}
 	}
 
-	r.AuxFiles = ntt.FindAuxiliaryTTCN3Files()
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		r.AuxFiles = append(r.AuxFiles, fs.FindTTCN3Files(dir)...)
+	}
 
 	r.K3.Compiler = findK3Tool(r.suite, "mtc", "k3c")
 	r.K3.Runtime = findK3Tool(r.suite, "k3r")
@@ -218,7 +222,7 @@ func removeDuplicates(slice []string) []string {
 	return ret
 }
 
-func path(f *ntt.File, err error) (string, error) {
+func path(f *fs.File, err error) (string, error) {
 	if f == nil {
 		return "", err
 	}

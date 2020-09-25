@@ -48,93 +48,16 @@ func tags(cmd *cobra.Command, args []string) error {
 	for i := range files {
 		go func(i int) {
 			defer wg.Done()
-			mod := suite.Parse(files[i])
+			mod, nodes := suite.Tags(files[i])
 			if mod == nil || mod.Module == nil {
 				return
 			}
 
 			t := make([]string, 0, len(mod.Module.Defs)*2)
-			ast.Inspect(mod.Module, func(n ast.Node) bool {
-				if n == nil {
-					return false
-				}
-
+			for _, n := range nodes {
 				pos := mod.Position(n.Pos())
-				file := pos.Filename
-				line := pos.Line
-
-				switch n := n.(type) {
-				case *ast.Module:
-					t = append(t, NewTag(identName(n.Name), file, line, "n"))
-					return true
-
-				case *ast.ImportDecl:
-					return false
-
-				case *ast.FriendDecl:
-					return false
-
-				case *ast.Field:
-					t = append(t, NewTag(identName(n.Name), file, line, "t"))
-					return true
-
-				case *ast.PortTypeDecl:
-					t = append(t, NewTag(identName(n.Name), file, line, "t"))
-					return false
-
-				case *ast.ComponentTypeDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "c"))
-					return true
-
-				case *ast.StructTypeDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "m"))
-					return true
-
-				case *ast.EnumTypeDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "e"))
-					for _, e := range n.Enums {
-						line := mod.Position(e.Pos()).Line
-						name := identName(e)
-						t = append(t, NewTag(name, file, line, "e"))
-					}
-					return false
-
-				case *ast.EnumSpec:
-					for _, e := range n.Enums {
-						line := mod.Position(e.Pos()).Line
-						name := identName(e)
-						t = append(t, NewTag(name, file, line, "e"))
-					}
-					return false
-
-				case *ast.BehaviourTypeDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "t"))
-					return false
-
-				case *ast.Declarator:
-					t = append(t, NewTag(n.Name.String(), file, line, "v"))
-					return false
-
-				case *ast.FormalPar:
-					t = append(t, NewTag(n.Name.String(), file, line, "v"))
-					return false
-
-				case *ast.TemplateDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "d"))
-					return true
-
-				case *ast.FuncDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "f"))
-					return true
-
-				case *ast.SignatureDecl:
-					t = append(t, NewTag(n.Name.String(), file, line, "f"))
-					return false
-
-				default:
-					return true
-				}
-			})
+				t = append(t, NewTag(ast.Name(n), pos.Filename, pos.Line, Kind(n)))
+			}
 			tags[i] = t
 
 		}(i)
@@ -162,16 +85,33 @@ func NewTag(name string, file string, line int, kind string) string {
 	return fmt.Sprintf("%s\t%s\t%d;\"\t%s", name, file, line, kind)
 }
 
-func identName(n ast.Node) string {
-	switch n := n.(type) {
-	case *ast.CallExpr:
-		return identName(n.Fun)
-	case *ast.LengthExpr:
-		return identName(n.X)
-	case *ast.Ident:
-		return n.String()
-	case *ast.ParametrizedIdent:
-		return n.Ident.String()
+func Kind(n ast.Node) string {
+	switch n.(type) {
+	case *ast.Module:
+		return "n"
+	case *ast.Field:
+		return "t"
+	case *ast.PortTypeDecl:
+		return "t"
+	case *ast.ComponentTypeDecl:
+		return "c"
+	case *ast.StructTypeDecl:
+		return "m"
+	case *ast.EnumTypeDecl:
+		return "e"
+	case *ast.BehaviourTypeDecl:
+		return "t"
+	case *ast.Declarator:
+		return "v"
+	case *ast.FormalPar:
+		return "v"
+	case *ast.TemplateDecl:
+		return "d"
+	case *ast.FuncDecl:
+		return "f"
+	case *ast.SignatureDecl:
+		return "f"
+	default:
+		return "e"
 	}
-	return "_"
 }

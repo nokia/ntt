@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime/pprof"
 	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/nokia/ntt/internal/errors"
+	"github.com/nokia/ntt/internal/k3"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/spf13/cobra"
 
@@ -99,10 +99,9 @@ func init() {
 }
 
 func main() {
-	if s := os.Getenv("K3_DATADIR"); s == "" {
-		os.Setenv("K3_DATADIR", filepath.Join(k3rootdir(), "share/k3"))
+	if s := k3.DataDir(); s != "" {
+		os.Setenv("K3_DATADIR", s)
 	}
-
 	if s := os.Getenv("K3_SESSION_ID"); s == "" {
 		sid, err := session.Get()
 		if err != nil {
@@ -119,15 +118,6 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-}
-
-func k3rootdir() string {
-	if s := os.Getenv("K3ROOT"); s != "" {
-		return s
-	}
-	exe, _ := os.Executable()
-	dir, _ := filepath.Abs(filepath.Join(filepath.Dir(exe), ".."))
-	return dir
 }
 
 func fatal(err error) {

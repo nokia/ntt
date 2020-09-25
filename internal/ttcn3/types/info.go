@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
@@ -42,7 +40,7 @@ func (info *Info) error(err error) {
 func (info *Info) unknownIdentifierError(n ast.Node) {
 	info.error(&UnknownIdentifierError{
 		Pos:  info.Fset.Position(n.Pos()),
-		Name: identName(n),
+		Name: ast.Name(n),
 	})
 }
 
@@ -50,17 +48,6 @@ func (info *Info) noFieldError(typ Type, field ast.Expr, pos loc.Pos) {
 	info.error(&NoFieldError{
 		Pos:   info.Fset.Position(pos),
 		Type:  typ.String(),
-		Field: identName(field),
+		Field: ast.Name(field),
 	})
-}
-
-func identName(n ast.Node) string {
-	switch n := n.(type) {
-	case *ast.Ident:
-		return n.String()
-	case *ast.ParametrizedIdent:
-		return n.Ident.String()
-	default:
-		panic(fmt.Sprintf("unexpected type %t", n))
-	}
 }

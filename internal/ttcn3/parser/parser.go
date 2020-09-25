@@ -448,9 +448,11 @@ var stmtStart = map[token.Kind]bool{
 	token.PORT:       true,
 	token.PRIVATE:    true,
 	token.PUBLIC:     true,
+	token.RBRACE:     true,
 	token.REPEAT:     true,
 	token.RETURN:     true,
 	token.SELECT:     true,
+	token.SEMICOLON:  true,
 	token.SIGNATURE:  true,
 	token.TEMPLATE:   true,
 	token.TESTCASE:   true,
@@ -781,6 +783,10 @@ func (p *parser) parseOperand() ast.Expr {
 
 func (p *parser) parseRef() ast.Expr {
 	id := p.parseIdent()
+	if id == nil {
+		return nil
+	}
+
 	if p.tok != token.LT {
 		return id
 	}

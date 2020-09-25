@@ -135,7 +135,7 @@ func (info *Info) resolveExit(c *ast.Cursor) bool {
 			return false
 		}
 
-		id := identName(n.Sel)
+		id := ast.Name(n.Sel)
 
 		scp, ok := typ.(Scope)
 		if !ok {

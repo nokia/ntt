@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/k3"
 	"github.com/nokia/ntt/internal/log"
 	"gopkg.in/yaml.v2"
 )
@@ -42,8 +44,8 @@ func (suite *Suite) Timeout() (float64, error) {
 // Sources returns the list of sources required to compile a Suite.
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Sources() ([]*File, error) {
-	var ret []*File
+func (suite *Suite) Sources() ([]*fs.File, error) {
+	var ret []*fs.File
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_SOURCES")
@@ -82,10 +84,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 			}
 			switch {
 			case info.IsDir():
-				files, err := findTTCN3Files(src)
-				if err != nil {
-					return nil, err
-				}
+				files := fs.FindTTCN3Files(src)
 				if len(files) == 0 {
 					return nil, fmt.Errorf("Could not find ttcn3 source files in directory %q", src)
 				}
@@ -93,7 +92,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 					ret = append(ret, suite.File(files[i]))
 				}
 
-			case info.Mode().IsRegular() && hasTTCN3Extension(src):
+			case info.Mode().IsRegular() && fs.HasTTCN3Extension(src):
 				ret = append(ret, suite.File(src))
 
 			default:
@@ -106,10 +105,7 @@ func (suite *Suite) Sources() ([]*File, error) {
 
 	// If there's only a root folder, look for .ttcn3 files
 	if suite.root != nil {
-		files, err := findTTCN3Files(suite.root.Path())
-		if err != nil {
-			return nil, err
-		}
+		files := fs.FindTTCN3Files(suite.root.Path())
 		for _, f := range files {
 			ret = append(ret, suite.File(f))
 		}
@@ -124,8 +120,8 @@ func (suite *Suite) Sources() ([]*File, error) {
 // Imports returns the list of imported packages required to compile a Suite.
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Imports() ([]*File, error) {
-	var ret []*File
+func (suite *Suite) Imports() ([]*fs.File, error) {
+	var ret []*fs.File
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_IMPORTS")
@@ -254,7 +250,7 @@ func (suite *Suite) Variables() (map[string]string, error) {
 // TestHook return the File object to the test hook. If not hook was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
-func (suite *Suite) TestHook() (*File, error) {
+func (suite *Suite) TestHook() (*fs.File, error) {
 	env, err := suite.Getenv("NTT_TEST_HOOK")
 	if err != nil {
 		return nil, err
@@ -322,7 +318,7 @@ func (suite *Suite) TestHook() (*File, error) {
 // ParametersFile return the File object to the parameter file. If no file was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
-func (suite *Suite) ParametersFile() (*File, error) {
+func (suite *Suite) ParametersFile() (*fs.File, error) {
 	env, err := suite.Getenv("NTT_PARAMETERS_FILE")
 	if err != nil {
 		return nil, err
@@ -444,13 +440,13 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		err      error
 	}
 
-	f.handle = suite.store.Bind(f.id(), func(ctx context.Context) interface{} {
+	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := manifestData{}
 		data.err = yaml.UnmarshalStrict(b, &data.manifest)
 		return &data
 	})
 
-	v := f.handle.Get(context.TODO())
+	v := f.Handle.Get(context.TODO())
 	data := v.(*manifestData)
 
 	return &data.manifest, data.err
@@ -463,7 +459,7 @@ func (suite *Suite) Files() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	files := PathSlice(srcs...)
+	files := fs.PathSlice(srcs...)
 
 	dirs, err := suite.Imports()
 	if err != nil {
@@ -471,10 +467,7 @@ func (suite *Suite) Files() ([]string, error) {
 	}
 
 	for _, dir := range dirs {
-		f, err := findTTCN3Files(dir.Path())
-		if err != nil {
-			return nil, err
-		}
+		f := fs.FindTTCN3Files(dir.Path())
 		files = append(files, f...)
 	}
 	return files, err
@@ -494,6 +487,13 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		return file, nil
 	}
 
+	// Use NTT_CACHE to locate file
+	f := suite.File(name + ".ttcn3")
+	if _, err := f.Bytes(); err != nil {
+		suite.modules[name] = f.Path()
+		return f.Path(), nil
+	}
+
 	if files, err := suite.Files(); err == nil {
 		for _, file := range files {
 			if filepath.Base(file) == name+".ttcn3" {
@@ -503,5 +503,28 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		}
 	}
 
+	// Use auxilliaryFiles from K3 to locate file
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		for _, file := range fs.FindTTCN3Files(dir) {
+			if filepath.Base(file) == name+".ttcn3" {
+				suite.modules[name] = file
+				return file, nil
+			}
+		}
+	}
+
 	return "", fmt.Errorf("No such module %q", name)
+}
+
+// IsOwned returns true if path is part of this test suite
+func (suite *Suite) IsOwned(path string) bool {
+	path = fs.Open(path).String()
+
+	files, _ := suite.Files()
+	for _, file := range files {
+		if file == path {
+			return true
+		}
+	}
+	return false
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	errors "golang.org/x/xerrors"
 )
 
@@ -36,7 +35,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			CodeActionProvider:         false,
-			CompletionProvider:         protocol.CompletionOptions{},
+			CompletionProvider:         protocol.CompletionOptions{TriggerCharacters: []string{"."}},
 			DefinitionProvider:         true,
 			TypeDefinitionProvider:     false,
 			ImplementationProvider:     false,
@@ -70,17 +69,10 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	s.state = serverInitialized
 	s.stateMu.Unlock()
 
-	// Create Session and add folders, the first workspace folder is considered
-	// as root folder, which might contain a manifest file (package.yml)
-	s.suite = &ntt.Suite{}
-	if len(s.pendingFolders) >= 1 {
-		s.suite.SetRoot(s.pendingFolders[0].URI)
-		for i := range s.pendingFolders[1:] {
-			s.suite.AddImports(s.pendingFolders[i].URI)
-		}
+	for _, folder := range s.pendingFolders {
+		s.AddFolder(folder.URI)
 	}
 
-	s.Diagnose()
 	return nil
 }
 

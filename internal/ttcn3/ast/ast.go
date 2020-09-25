@@ -317,11 +317,17 @@ func (x *CompositeLiteral) LastTok() *Token  { return x.RBrace.LastTok() }
 func (x *UnaryExpr) LastTok() *Token         { return x.X.LastTok() }
 func (x *BinaryExpr) LastTok() *Token        { return x.Y.LastTok() }
 
-func (x *ParenExpr) LastTok() *Token    { return x.RParen.LastTok() }
-func (x *SelectorExpr) LastTok() *Token { return x.Sel.LastTok() }
-func (x *IndexExpr) LastTok() *Token    { return x.RBrack.LastTok() }
-func (x *CallExpr) LastTok() *Token     { return x.Args.LastTok() }
-func (x *LengthExpr) LastTok() *Token   { return x.Size.LastTok() }
+func (x *ParenExpr) LastTok() *Token { return x.RParen.LastTok() }
+func (x *SelectorExpr) LastTok() *Token {
+	if x.Sel != nil {
+		return x.Sel.LastTok()
+	}
+	return x.Dot.LastTok()
+}
+
+func (x *IndexExpr) LastTok() *Token  { return x.RBrack.LastTok() }
+func (x *CallExpr) LastTok() *Token   { return x.Args.LastTok() }
+func (x *LengthExpr) LastTok() *Token { return x.Size.LastTok() }
 func (x *RedirectExpr) LastTok() *Token {
 	if x.Timestamp != nil {
 		return x.Timestamp.LastTok()
@@ -351,7 +357,10 @@ func (x *DecmatchExpr) LastTok() *Token { return x.X.LastTok() }
 func (x *DecodedExpr) LastTok() *Token  { return x.X.LastTok() }
 
 func (x *DefKindExpr) LastTok() *Token {
-	return x.List[len(x.List)-1].LastTok()
+	if len(x.List) > 0 {
+		return x.List[len(x.List)-1].LastTok()
+	}
+	return &x.Kind
 }
 
 func (x *ExceptExpr) LastTok() *Token {
@@ -717,7 +726,10 @@ func (x *Field) LastTok() *Token {
 	if l := len(x.ArrayDef); l != 0 {
 		return x.ArrayDef[l-1].LastTok()
 	}
-	return x.Name.LastTok()
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+	return x.Type.LastTok()
 }
 
 func (x *RefSpec) LastTok() *Token    { return x.X.LastTok() }

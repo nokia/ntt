@@ -5,36 +5,79 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
-	start := time.Now()
-	id, _ := s.suite.IdentifierAt(string(params.TextDocument.URI.SpanURI()), int(params.Position.Line)+1, int(params.Position.Character)+1)
-	elapsed := time.Since(start)
-	log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
+	var (
+		locs []protocol.Location
+		file = params.TextDocument.URI
+		line = int(params.Position.Line) + 1
+		col  = int(params.Position.Character) + 1
+	)
 
-	if id != nil && id.Def != nil {
-		file := span.URIFromPath(id.Def.Position.Filename)
-		line := id.Def.Position.Line - 1
-		column := id.Def.Position.Column - 1
-		return []protocol.Location{
-			{
-				URI: protocol.URIFromSpanURI(file),
-				Range: protocol.Range{
-					Start: protocol.Position{
-						Line:      float64(line),
-						Character: float64(column),
-					},
-					End: protocol.Position{
-						Line:      float64(line),
-						Character: float64(column),
-					},
-				},
-			},
-		}, nil
+	for _, suite := range s.Owners(file) {
+		start := time.Now()
+		id, _ := suite.DefinitionAt(string(file.SpanURI()), line, col)
+		elapsed := time.Since(start)
+		log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
+
+		if id != nil && id.Def != nil {
+			locs = append(locs, location(id.Def.Position))
+		} else {
+			locs = append(locs, cTags(suite, string(file.SpanURI()), line, col)...)
+		}
 	}
-	return nil, nil
+
+	return locs, nil
+}
+
+func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {
+	var ret []protocol.Location
+
+	tree := suite.Parse(file)
+	if tree == nil {
+		return nil
+	}
+
+	id := suite.IdentifierAt(tree, line, col)
+	if id == nil {
+		return nil
+	}
+
+	for _, mod := range tree.ImportedModules() {
+		file, _ := suite.FindModule(mod)
+		if file == "" {
+			continue
+		}
+		tree, tags := suite.Tags(file)
+		for _, t := range tags {
+			if ast.Name(t) == ast.Name(id) {
+				ret = append(ret, location(tree.Position(t.Pos())))
+			}
+		}
+	}
+	return ret
+}
+
+func location(pos loc.Position) protocol.Location {
+	return protocol.Location{
+		URI: protocol.URIFromSpanURI(span.URIFromPath(pos.Filename)),
+		Range: protocol.Range{
+			Start: position(pos.Line, pos.Column),
+			End:   position(pos.Line, pos.Column),
+		},
+	}
+}
+
+func position(line, column int) protocol.Position {
+	return protocol.Position{
+		Line:      float64(line - 1),
+		Character: float64(column - 1),
+	}
 }

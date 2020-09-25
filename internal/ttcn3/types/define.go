@@ -76,7 +76,7 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.Declarator:
-			v := NewVar(n, identName(n.Name))
+			v := NewVar(n, ast.Name(n.Name))
 			info.insert(v)
 
 			for i := range n.ArrayDef {
@@ -152,6 +152,35 @@ func (info *Info) descent(n ast.Node) {
 			info.currScope = name.Parent()
 			return false
 
+		case *ast.EnumTypeDecl:
+			name := NewEnumeratedType(n.Name, n.Name.String(), nil)
+			info.insert(name)
+
+			// enumerated labels are in the global scope too
+			for _, l := range n.Enums {
+				switch l := l.(type) {
+				case *ast.CallExpr:
+					id := l.Fun
+					switch id := id.(type) {
+					case *ast.Ident:
+						enumLabel := NewVar(id, id.String())
+						enumLabel.typ = name
+						info.insert(enumLabel)
+					}
+				case *ast.Ident:
+					enumLabel := NewVar(l, l.String())
+					enumLabel.typ = name
+					info.insert(enumLabel)
+				default:
+					continue
+				}
+			}
+
+			if n.With == nil {
+				info.descent(n.With)
+			}
+			return false
+
 		case *ast.ComponentTypeDecl:
 			c := NewComponentType(n.Name, n.Name.String())
 			info.insert(c)
@@ -171,7 +200,7 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.Field:
-			v := NewVar(n.Name, identName(n.Name))
+			v := NewVar(n.Name, ast.Name(n.Name))
 			info.insert(v)
 			info.descent(n.TypePars)
 
@@ -185,7 +214,7 @@ func (info *Info) descent(n ast.Node) {
 
 		case *ast.FormalPar:
 			info.descent(n.Type)
-			v := NewVar(n.Name, identName(n.Name))
+			v := NewVar(n.Name, ast.Name(n.Name))
 
 			info.insert(v)
 			for i := range n.ArrayDef {
