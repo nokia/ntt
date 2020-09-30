@@ -153,12 +153,34 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.EnumTypeDecl:
-			name := NewTypeName(n.Name, n.Name.String(), nil)
+			name := NewEnumeratedType(n.Name, n.Name.String(), nil)
 			info.insert(name)
 
 			// enumerated labels are in the global scope too
-			for i := range n.Enums {
-				info.descent(n.Enums[i])
+			for _, l := range n.Enums {
+				switch l := l.(type) {
+				case *ast.CallExpr:
+					id := l.Fun
+					switch id := id.(type) {
+					case *ast.Ident:
+						enumLabel := NewVar(id, id.String())
+						enumLabel.typ = name
+						info.insert(enumLabel)
+						//log.Debug(fmt.Sprintf("Enumlabels with value:%s[%d]=%s", name.Name(), i, enumLabel.Name()))
+					}
+				case *ast.Ident:
+					enumLabel := NewVar(l, l.String())
+					enumLabel.typ = name
+					info.insert(enumLabel)
+				default:
+					//info.error(errors.Error{Pos: l.Pos()., Msg: "Expected label or label(integer value)"})
+					continue
+
+				}
+			}
+
+			if n.With == nil {
+				info.descent(n.With)
 			}
 			return false
 
