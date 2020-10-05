@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -426,8 +427,10 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	}
 
 	f := suite.File(filepath.Join(suite.root.Path(), "package.yml"))
+	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
+		log.Debugln(err.Error())
 		// If there's not package.yml, it's okay, too.
 		if os.IsNotExist(err) {
 			return nil, nil

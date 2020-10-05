@@ -108,6 +108,10 @@ func (suite *Suite) File(path string) *File {
 // Purpose and behaviour of this function are similar to GNU Make's VPATH. It
 // is used to prevent re-built of generated files.
 func (suite *Suite) searchCacheForFile(file string) string {
+	if file == "." || file == ".." {
+		return ""
+	}
+
 	if dirPrefix, _ := filepath.Split(file); dirPrefix != "" {
 		return ""
 	}
