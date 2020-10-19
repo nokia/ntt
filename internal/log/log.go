@@ -67,3 +67,13 @@ func Debugln(v ...interface{})               { std.Output(DebugLevel, fmt.Sprint
 func Trace(v ...interface{})                 { std.Output(TraceLevel, fmt.Sprint(v...)) }
 func Tracef(format string, v ...interface{}) { std.Output(TraceLevel, fmt.Sprintf(format, v...)) }
 func Traceln(v ...interface{})               { std.Output(TraceLevel, fmt.Sprintln(v...)) }
+
+func init() {
+	if s := os.Getenv("K3_DEBUG"); s != "" {
+		lvl = DebugLevel
+	}
+	if s := os.Getenv("NTT_DEBUG"); s != "" {
+		lvl = DebugLevel
+	}
+
+}
