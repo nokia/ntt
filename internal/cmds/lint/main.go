@@ -55,6 +55,7 @@ For information on writing a new check, see <TBD>.
 			Altsteps        map[string]string
 			Parameters      map[string]string
 			ComponentVars   map[string]string `yaml:"component_vars"`
+			VarTemplates    map[string]string `yaml:"var_templates"`
 			PortTypes       map[string]string `yaml:"port_types"`
 			Ports           map[string]string
 			GlobalConsts    map[string]string `yaml:"global_consts"`
@@ -190,7 +191,7 @@ func lint(cmd *cobra.Command, args []string) error {
 							checkNaming(fset, n, style.Naming.ComponentConsts)
 						}
 					case isVarTemplate(parent):
-						checkNaming(fset, n, style.Naming.Templates)
+						checkNaming(fset, n, style.Naming.VarTemplates)
 					case isVar(parent):
 						switch {
 						case inComponentScope(scope):
@@ -493,6 +494,11 @@ func buildRegexCache() error {
 		}
 	}
 	for p := range style.Naming.Templates {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.VarTemplates {
 		if err := cacheRegex(p); err != nil {
 			return err
 		}
