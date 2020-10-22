@@ -1,10 +1,17 @@
 package lint
 
 import (
+	"bufio"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+)
+
+var (
+	nolintRegex = regexp.MustCompile(`^[/*\s]*NOLINT\(([^\)]+)\)[/*\r\n\s]*$`)
 )
 
 type errNaming struct {
@@ -17,6 +24,8 @@ func (e errNaming) Error() string {
 	return fmt.Sprintf("%s: error: %s", e.fset.Position(e.node.Pos()), e.msg)
 }
 
+func (e errNaming) IsSilent() bool { return isSilent(e.node, "TemplateDef") }
+
 type errLines struct {
 	fset  *loc.FileSet
 	node  ast.Node
@@ -27,6 +36,8 @@ func (e errLines) Error() string {
 	return fmt.Sprintf("%s: error: %q must not have more than %d lines (%d)",
 		e.fset.Position(e.node.Pos()), identName(e.node), style.MaxLines, e.lines)
 }
+
+func (e errLines) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooLong") }
 
 type errBraces struct {
 	fset        *loc.FileSet
@@ -47,4 +58,28 @@ type errComplexity struct {
 func (e errComplexity) Error() string {
 	return fmt.Sprintf("%s: error: cyclomatic complexity of %q (%d) must not be higher than %d",
 		e.fset.Position(e.node.Pos()), identName(e.node), e.complexity, style.Complexity.Max)
+}
+
+func (e errComplexity) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooComplex") }
+
+func isSilent(n ast.Node, checks ...string) bool {
+	scanner := bufio.NewScanner(strings.NewReader(ast.FirstToken(n).Comments()))
+	for scanner.Scan() {
+		if s := nolintRegex.FindStringSubmatch(scanner.Text()); len(s) == 2 {
+			for _, s := range strings.Split(s[1], ",") {
+				if searchString(checks, s) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+func searchString(slice []string, s string) bool {
+	for _, s2 := range slice {
+		if strings.TrimSpace(s) == strings.TrimSpace(s2) {
+			return true
+		}
+	}
+	return false
 }

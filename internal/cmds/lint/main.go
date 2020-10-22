@@ -3,6 +3,7 @@ package lint
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -123,7 +124,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 			stack := make([]ast.Node, 1, 64)
 			cc := make(map[ast.Node]int)
-			ccID := mod.Module.Name
+			ccID := ast.Node(mod.Module)
 
 			ast.Inspect(mod.Module, func(n ast.Node) bool {
 				if n == nil {
@@ -140,7 +141,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					checkBraces(fset, n.LBrace, n.RBrace)
 
 				case *ast.FuncDecl:
-					ccID = n.Name
+					ccID = n
 					cc[ccID] = 1 // Intial McCabe value
 
 					switch n.Kind.Kind {
@@ -236,7 +237,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 				case *ast.ModuleDef:
 					// Reset ID for counting cyclomatic complexity.
-					ccID = mod.Module.Name
+					ccID = mod.Module
 
 				case *ast.BinaryExpr:
 					if n.Op.Kind == token.AND || n.Op.Kind == token.OR {
@@ -358,7 +359,16 @@ func matchAny(patterns []string, s string) bool {
 }
 
 func report(e error) {
-	fmt.Println(e.Error())
+
+	// Check if this error is silenced (with a NOLINT-directive for example).
+	type silencer interface {
+		IsSilent() bool
+	}
+	if e, ok := e.(silencer); ok && e.IsSilent() {
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, e.Error())
 }
 
 func isWhiteListed(list []string, s string) bool {
