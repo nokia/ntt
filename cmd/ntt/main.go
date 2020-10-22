@@ -53,19 +53,11 @@ var (
 			}
 
 			if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
-				cmd := exec.Command(path, args[1:]...)
-				cmd.Stdin = os.Stdin
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				return cmd.Run()
+				return Execute(path, args[1:]...)
 			}
 
 			if path, err := exec.LookPath("k3-" + args[0]); err == nil {
-				cmd := exec.Command(path, args[1:]...)
-				cmd.Stdin = os.Stdin
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				return cmd.Run()
+				return Execute(path, args[1:]...)
 			}
 
 			err := fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
