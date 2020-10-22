@@ -1920,13 +1920,11 @@ func (p *parser) parseRestrictionSpec() *ast.RestrictionSpec {
 	case token.TEMPLATE:
 		x := new(ast.RestrictionSpec)
 		x.TemplateTok = p.consume()
-		if p.tok != token.LPAREN {
-			return nil
+		if p.tok == token.LPAREN {
+			x.LParen = p.consume()
+			x.Tok = p.consume()
+			x.RParen = p.expect(token.RPAREN)
 		}
-
-		x.LParen = p.consume()
-		x.Tok = p.consume()
-		x.RParen = p.expect(token.RPAREN)
 		return x
 
 	case token.OMIT, token.VALUE, token.PRESENT:
