@@ -118,7 +118,7 @@ func (x Token) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strs)
 }
 
-func (t *Token) LastTok() *Token { return t }
+func (t Token) LastTok() *Token { return &t }
 
 // Trivia represent the parts of the source text that are largely insignificant
 // for normal understanding of the code, such as whitespace, comments, and

@@ -137,7 +137,7 @@ func lint(cmd *cobra.Command, args []string) error {
 				switch n := n.(type) {
 				case *ast.Module:
 					checkNaming(fset, n, style.Naming.Modules)
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 
 				case *ast.FuncDecl:
 					ccID = n.Name
@@ -165,7 +165,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 				case *ast.PortTypeDecl:
 					checkNaming(fset, n, style.Naming.PortTypes)
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 
 				case *ast.Declarator:
 					if len(stack) <= 2 {
@@ -206,32 +206,32 @@ func lint(cmd *cobra.Command, args []string) error {
 					checkNaming(fset, n, style.Naming.Templates)
 
 				case *ast.BlockStmt:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.CompositeLiteral:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.ExceptExpr:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.SelectStmt:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.StructSpec:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.EnumSpec:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.ModuleParameterGroup:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.StructTypeDecl:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.EnumTypeDecl:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.ImportDecl:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.GroupDecl:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.WithSpec:
-					checkBraces(fset, n.LBrace.Pos(), n.RBrace.Pos())
+					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.ParenExpr:
 					if n.LParen.Kind == token.LBRACE {
-						checkBraces(fset, n.LParen.Pos(), n.RParen.Pos())
+						checkBraces(fset, n.LParen, n.RParen)
 					}
 
 				case *ast.ModuleDef:
@@ -295,7 +295,7 @@ func checkNaming(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
 		}
 
 		if regexes[p].MatchString(s) != expect {
-			reportIssue(fset.Position(n.Pos()), msg)
+			report(&errNaming{fset: fset, node: n, msg: msg})
 		}
 
 	}
@@ -309,21 +309,22 @@ func checkLines(fset *loc.FileSet, n ast.Node) {
 
 	begin := fset.Position(n.Pos())
 	end := fset.Position(n.End())
-	if end.Line-begin.Line > style.MaxLines {
-		reportIssue(begin, fmt.Sprintf("%q must not have more than %d lines", identName(n), style.MaxLines))
+	lines := end.Line - begin.Line
+	if lines > style.MaxLines {
+		report(&errLines{fset: fset, node: n, lines: lines})
 	}
 
 }
 
-func checkBraces(fset *loc.FileSet, pos1 loc.Pos, pos2 loc.Pos) {
+func checkBraces(fset *loc.FileSet, left ast.Node, right ast.Node) {
 	if !style.AlignedBraces {
 		return
 	}
 
-	p1 := fset.Position(pos1)
-	p2 := fset.Position(pos2)
+	p1 := fset.Position(left.Pos())
+	p2 := fset.Position(right.Pos())
 	if p1.Line != p2.Line && p1.Column != p2.Column {
-		reportIssue(p2, "Braces must be in the same line or same column")
+		report(&errBraces{fset: fset, left: left, right: right})
 	}
 }
 
@@ -333,14 +334,10 @@ func checkComplexity(fset *loc.FileSet, cc map[ast.Node]int) {
 	}
 
 	for n, v := range cc {
-		if v <= style.Complexity.Max {
-			continue
+		if v > style.Complexity.Max {
+			report(&errComplexity{fset: fset, node: n, complexity: v})
 		}
 
-		pos := fset.Position(n.Pos())
-		reportIssue(pos,
-			fmt.Sprintf("the cyclomatic complexity of %q (%d) must not be higher than %d",
-				identName(n), v, style.Complexity.Max))
 	}
 }
 
@@ -360,8 +357,8 @@ func matchAny(patterns []string, s string) bool {
 	return false
 }
 
-func reportIssue(pos loc.Position, msg string) {
-	fmt.Printf("%s: %s\n", pos.String(), msg)
+func report(e error) {
+	fmt.Println(e.Error())
 }
 
 func isWhiteListed(list []string, s string) bool {
