@@ -62,6 +62,15 @@ func (e errComplexity) Error() string {
 
 func (e errComplexity) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooComplex") }
 
+type errMissingCaseElse struct {
+	fset *loc.FileSet
+	node ast.Node
+}
+
+func (e errMissingCaseElse) Error() string {
+	return fmt.Sprintf("%s: error: missing case else in select statement", e.fset.Position(e.node.Pos()))
+}
+
 func isSilent(n ast.Node, checks ...string) bool {
 	scanner := bufio.NewScanner(strings.NewReader(ast.FirstToken(n).Comments()))
 	for scanner.Scan() {

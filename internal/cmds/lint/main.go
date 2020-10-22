@@ -42,9 +42,10 @@ For information on writing a new check, see <TBD>.
 	regexes = make(map[string]*regexp.Regexp)
 
 	style = struct {
-		MaxLines      int  `yaml:"max_lines"`
-		AlignedBraces bool `yaml:"aligned_braces"`
-		Complexity    struct {
+		MaxLines        int  `yaml:"max_lines"`
+		AlignedBraces   bool `yaml:"aligned_braces"`
+		RequireCaseElse bool `yaml:"require_case_else"`
+		Complexity      struct {
 			Max          int
 			IgnoreGuards bool `yaml:"ignore_guards"`
 		}
@@ -125,6 +126,9 @@ func lint(cmd *cobra.Command, args []string) error {
 			stack := make([]ast.Node, 1, 64)
 			cc := make(map[ast.Node]int)
 			ccID := ast.Node(mod.Module)
+
+			caseElse := make(map[ast.Node]int)
+			var selectID *ast.SelectStmt
 
 			ast.Inspect(mod.Module, func(n ast.Node) bool {
 				if n == nil {
@@ -213,6 +217,8 @@ func lint(cmd *cobra.Command, args []string) error {
 				case *ast.ExceptExpr:
 					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.SelectStmt:
+					selectID = n
+					caseElse[selectID] = 0
 					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.StructSpec:
 					checkBraces(fset, n.LBrace, n.RBrace)
@@ -248,8 +254,10 @@ func lint(cmd *cobra.Command, args []string) error {
 					cc[ccID]++
 
 				case *ast.CaseClause:
-					// Do not count case else
-					if n.Case != nil {
+					if isCaseElse(n) {
+						caseElse[selectID]++
+					} else {
+						// Do not count case else for complexity
 						cc[ccID]++
 					}
 
@@ -275,6 +283,7 @@ func lint(cmd *cobra.Command, args []string) error {
 			})
 
 			checkComplexity(mod.FileSet, cc)
+			checkCaseElse(mod.FileSet, caseElse)
 		}(i)
 	}
 
@@ -339,6 +348,17 @@ func checkComplexity(fset *loc.FileSet, cc map[ast.Node]int) {
 			report(&errComplexity{fset: fset, node: n, complexity: v})
 		}
 
+	}
+}
+
+func checkCaseElse(fset *loc.FileSet, caseElse map[ast.Node]int) {
+	if !style.RequireCaseElse {
+		return
+	}
+	for n, v := range caseElse {
+		if v == 0 {
+			report(&errMissingCaseElse{fset: fset, node: n})
+		}
 	}
 }
 
@@ -413,6 +433,10 @@ func isVar(d *ast.ValueDecl) bool {
 
 func isVarTemplate(d *ast.ValueDecl) bool {
 	return d.TemplateRestriction != nil
+}
+
+func isCaseElse(n *ast.CaseClause) bool {
+	return n.Case == nil
 }
 
 func identName(n ast.Node) string {
