@@ -1416,8 +1416,8 @@ func (x *FormalPar) Pos() loc.Pos {
 	return x.Type.Pos()
 }
 
-func (x *WithSpec) Pos() loc.Pos        { return x.LastTok().End() }
-func (x *WithStmt) Pos() loc.Pos        { return x.LastTok().End() }
+func (x *WithSpec) Pos() loc.Pos        { return x.Tok.Pos() }
+func (x *WithStmt) Pos() loc.Pos        { return x.Kind.Pos() }
 func (x *LanguageSpec) End() loc.Pos    { return x.LastTok().End() }
 func (x *RestrictionSpec) End() loc.Pos { return x.LastTok().End() }
 func (x *RunsOnSpec) End() loc.Pos      { return x.LastTok().End() }
