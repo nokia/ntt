@@ -3,7 +3,6 @@ package lint
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -368,7 +367,7 @@ func report(e error) {
 		return
 	}
 
-	fmt.Fprintln(os.Stderr, e.Error())
+	fmt.Println(e.Error())
 }
 
 func isWhiteListed(list []string, s string) bool {
