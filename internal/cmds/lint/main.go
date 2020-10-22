@@ -191,7 +191,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						}
 					case isVarTemplate(parent):
 						checkNaming(fset, n, style.Naming.Templates)
-					default:
+					case isVar(parent):
 						switch {
 						case inComponentScope(scope):
 							checkNaming(fset, n, style.Naming.ComponentVars)
@@ -404,6 +404,10 @@ func isPort(d *ast.ValueDecl) bool {
 
 func isConst(d *ast.ValueDecl) bool {
 	return d.Kind.Kind == token.CONST
+}
+
+func isVar(d *ast.ValueDecl) bool {
+	return !isVarTemplate(d) && d.Kind.Kind == token.VAR
 }
 
 func isVarTemplate(d *ast.ValueDecl) bool {
