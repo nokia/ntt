@@ -379,23 +379,16 @@ func checkTags(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
 		return
 	}
 
-	tags := doc.FindAllTags(ast.FirstToken(n).Comments())
-
-	// If a syntax node does not have any tags, we still invoke
-	// checkPattern, so the user get reports about missing tags.
-	if len(tags) == 0 {
-		checkPatterns(fset, n, patterns, "")
-		return
+	var tags []string
+	for _, t := range doc.FindAllTags(ast.FirstToken(n).Comments()) {
+		tags = append(tags, strings.Join(t, ":"))
 	}
 
-	for i := range tags {
-		checkPatterns(fset, n, patterns, strings.Join(tags[i], ":"))
-	}
-
-	return
+	checkPatterns(fset, n, patterns, tags...)
 }
 
-func checkPatterns(fset *loc.FileSet, n ast.Node, patterns map[string]string, s string) {
+func checkPatterns(fset *loc.FileSet, n ast.Node, patterns map[string]string, ss ...string) {
+next:
 	for p, msg := range patterns {
 		expect := true
 		if strings.HasPrefix(p, "!") {
@@ -403,9 +396,15 @@ func checkPatterns(fset *loc.FileSet, n ast.Node, patterns map[string]string, s 
 			p = p[1:]
 		}
 
-		if regexes[p].MatchString(s) != expect {
-			report(&errPattern{fset: fset, node: n, msg: msg})
+		// Match any.
+		for _, s := range ss {
+			if regexes[p].MatchString(s) == expect {
+				continue next
+			}
 		}
+
+		// If we could not match any, we report an error
+		report(&errPattern{fset: fset, node: n, msg: msg})
 	}
 }
 
