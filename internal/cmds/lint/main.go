@@ -10,6 +10,7 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -151,6 +152,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					switch n.Kind.Kind {
 					case token.TESTCASE:
 						checkNaming(fset, n, style.Naming.Tests)
+						checkTags(fset, n, style.Tags.Tests)
 					case token.FUNCTION:
 						checkNaming(fset, n, style.Naming.Functions)
 					case token.ALTSTEP:
@@ -292,11 +294,31 @@ func lint(cmd *cobra.Command, args []string) error {
 }
 
 func checkNaming(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
+	checkPatterns(fset, n, patterns, identName(n))
+}
+
+func checkTags(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
 	if len(patterns) == 0 {
 		return
 	}
 
-	s := identName(n)
+	tags := doc.FindAllTags(ast.FirstToken(n).Comments())
+
+	// If a syntax node does not have any tags, we still invoke
+	// checkPattern, so the user get reports about missing tags.
+	if len(tags) == 0 {
+		checkPatterns(fset, n, patterns, "")
+		return
+	}
+
+	for i := range tags {
+		checkPatterns(fset, n, patterns, strings.Join(tags[i], ":"))
+	}
+
+	return
+}
+
+func checkPatterns(fset *loc.FileSet, n ast.Node, patterns map[string]string, s string) {
 	for p, msg := range patterns {
 		expect := true
 		if strings.HasPrefix(p, "!") {
@@ -305,11 +327,9 @@ func checkNaming(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
 		}
 
 		if regexes[p].MatchString(s) != expect {
-			report(&errNaming{fset: fset, node: n, msg: msg})
+			report(&errPattern{fset: fset, node: n, msg: msg})
 		}
-
 	}
-	return
 }
 
 func checkLines(fset *loc.FileSet, n ast.Node) {

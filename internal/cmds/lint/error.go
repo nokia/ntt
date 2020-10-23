@@ -14,17 +14,17 @@ var (
 	nolintRegex = regexp.MustCompile(`^[/*\s]*NOLINT\(([^\)]+)\)[/*\r\n\s]*$`)
 )
 
-type errNaming struct {
+type errPattern struct {
 	fset *loc.FileSet
 	node ast.Node
 	msg  string
 }
 
-func (e errNaming) Error() string {
+func (e errPattern) Error() string {
 	return fmt.Sprintf("%s: error: %s", e.fset.Position(e.node.Pos()), e.msg)
 }
 
-func (e errNaming) IsSilent() bool { return isSilent(e.node, "TemplateDef") }
+func (e errPattern) IsSilent() bool { return isSilent(e.node, "TemplateDef") }
 
 type errLines struct {
 	fset  *loc.FileSet
