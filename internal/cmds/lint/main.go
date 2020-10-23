@@ -27,11 +27,79 @@ considered "bad style".
 Lint's exit code is non-zero for erroneous invocation of the tool or if a
 problem was reported.
 
-To list the available checks, run "ntt lint help":
 
-    <none>
+Formatting Checks
 
-For details and flags of a particular check, run "ntt lint help <check>".
+    max_lines          Number of lines a behaviour body must not exceed.
+    aligned_braces     Braces must be in the same column or same line.
+    require_case_else  Every select-statement must have one case-else.
+
+
+Cyclomatic Complexity Checks
+
+    complexity.max           Cyclomatic complexity muss not exceed.
+    complexity.ignore_guards Ignore complexity of alt- and interleave guards
+
+
+Naming Convention Checks
+
+    naming.modules            Checks for module identifiers.
+    naming.tests              Checks for test-case identifier.
+    naming.functions          Checks for function identifiers.
+    naming.altsteps           Checks for altstep identifiers.
+    naming.parameters         Checks for parameter identifiers.
+    naming.component_vars     Checks for component variable identifiers.
+    naming.var_templates      Checks for variable template identifiers.
+    naming.port_types         Checks for port type identifiers.
+    naming.ports              Checks for port instance identifiers.
+    naming.global_consts      Checks for global constant identifiers.
+    naming.component_consts   Checks for component scoped constant identifiers.
+    naming.templates          Checks for constant template identifiers.
+    naming.locals             Checks for local variable identifiers.
+
+    tags.tests                Checks for test-case tags.
+
+
+White-Listing
+
+    ignore.modules    Ignore modules
+    ignore.files      Ignore files
+
+
+Example configuration file:
+
+	aligned_braces: true
+	require_case_else: true
+	max_lines: 40
+
+	complexity:
+	  max: 15
+	  ignore_guards: true
+
+	tags:
+	  tests:
+	    "@author": "testcases must have a @author tag"
+
+	naming:
+	  tests:
+	    # An exlamation mark inverts the match.
+	    "!.{130,}": "testcase identifiers must not be longer than 130 characters"
+
+	  functions:
+	    "^[a-z]"      : "function identifiers must begin with a lower case letter"
+	    "!^(f|func)_" : "function identifiers must not begin with f_ or func_"
+
+	  global_consts:
+	    "^[A-Z0-9_]+$": "global constants must be UPPER_CASE"
+
+	ignore:
+	  modules:
+	    # Ignore generated modules
+	    - "^Protobuf_.+$"
+
+	  files:
+	    # Ignore all files from generated folders
+	    - "generated/"
 
 For information on writing a new check, see <TBD>.
 `,
