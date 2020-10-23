@@ -41,6 +41,7 @@ For information on writing a new check, see <TBD>.
 
 	config  string
 	regexes = make(map[string]*regexp.Regexp)
+	issues  = 0
 
 	style = struct {
 		MaxLines        int  `yaml:"max_lines"`
@@ -290,7 +291,15 @@ func lint(cmd *cobra.Command, args []string) error {
 	}
 
 	wg.Wait()
-	return nil
+	switch issues {
+	case 0:
+		return nil
+	case 1:
+		return fmt.Errorf("1 issue found.")
+	default:
+		return fmt.Errorf("%d issues found.", issues)
+	}
+
 }
 
 func checkNaming(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
@@ -408,6 +417,7 @@ func report(e error) {
 		return
 	}
 
+	issues++
 	fmt.Println(e.Error())
 }
 
