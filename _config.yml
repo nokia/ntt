@@ -9,8 +9,8 @@ theme: jekyll-theme-minimal
 logo: static/ntt.png
 show_downloads: true
 
-plugins:
-  - jekyll-readme-index
-  - jekyll-sitemap
-  - jekyll-seo-tag
-  - jekyll-mentions
+  #plugins:
+  #- jekyll-readme-index
+  #- jekyll-sitemap
+  #- jekyll-seo-tag
+  #- jekyll-mentions
