@@ -3,7 +3,6 @@ description: Tools to improve testing with TTCN-3
 permalink: pretty
 
 exclude:
-  - Gemfile*
   - README.md
 
 theme: jekyll-theme-minimal
