@@ -118,7 +118,7 @@ func (x Token) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strs)
 }
 
-func (t *Token) LastTok() *Token { return t }
+func (t Token) LastTok() *Token { return &t }
 
 // Trivia represent the parts of the source text that are largely insignificant
 // for normal understanding of the code, such as whitespace, comments, and
@@ -1416,8 +1416,8 @@ func (x *FormalPar) Pos() loc.Pos {
 	return x.Type.Pos()
 }
 
-func (x *WithSpec) Pos() loc.Pos        { return x.LastTok().End() }
-func (x *WithStmt) Pos() loc.Pos        { return x.LastTok().End() }
+func (x *WithSpec) Pos() loc.Pos        { return x.Tok.Pos() }
+func (x *WithStmt) Pos() loc.Pos        { return x.Kind.Pos() }
 func (x *LanguageSpec) End() loc.Pos    { return x.LastTok().End() }
 func (x *RestrictionSpec) End() loc.Pos { return x.LastTok().End() }
 func (x *RunsOnSpec) End() loc.Pos      { return x.LastTok().End() }
