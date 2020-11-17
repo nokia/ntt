@@ -43,8 +43,7 @@ nfpms:
       amd64: x86_64
 
 archives:
-- builds: ["amd64"]
-  replacements:
+- replacements:
     darwin: Darwin
     linux: Linux
     windows: Windows
@@ -56,14 +55,6 @@ checksum:
 
 snapshot:
   name_template: "{{ .Tag }}-next"
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-    - '^docs:'
-    - '^test:'
-    - Merge branch
 
 release:
   draft: true
