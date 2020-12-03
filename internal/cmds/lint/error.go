@@ -71,6 +71,19 @@ func (e errMissingCaseElse) Error() string {
 	return fmt.Sprintf("%s: error: missing case else in select statement", e.fset.Position(e.node.Pos()))
 }
 
+type errUsageExceedsLimit struct {
+	fset  *loc.FileSet
+	node  ast.Node
+	usage int
+	limit int
+	text  string
+}
+
+func (e errUsageExceedsLimit) Error() string {
+	return fmt.Sprintf("%s: error: %q must not be used more than %d times. %s",
+		e.fset.Position(e.node.Pos()), identName(e.node), e.limit, e.text)
+}
+
 func isSilent(n ast.Node, checks ...string) bool {
 	scanner := bufio.NewScanner(strings.NewReader(ast.FirstToken(n).Comments()))
 	for scanner.Scan() {

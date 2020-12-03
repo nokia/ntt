@@ -66,11 +66,22 @@ White-Listing
     ignore.files      Ignore files
 
 
+Refactoring
+
+When TTCN-3 code is refactored incrementally, it happens that references to
+legacy code are faster added than one can remove them. This check helps with a
+warning, as soon as the usage of a symbol exceed a defined limit.
+
 Example configuration file:
 
 	aligned_braces: true
 	require_case_else: true
 	max_lines: 40
+
+	usage:
+	  "foo":
+	    limit: 12
+	    text: Use "bar" instead.
 
 	complexity:
 	  max: 15
@@ -101,7 +112,7 @@ Example configuration file:
 	    # Ignore all files from generated folders
 	    - "generated/"
 
-For information on writing a new check, see <TBD>.
+For information on writing new checks, see <TBD>.
 `,
 
 		RunE: lint,
@@ -140,6 +151,11 @@ For information on writing a new check, see <TBD>.
 		Ignore struct {
 			Modules []string
 			Files   []string
+		}
+		Usage map[string]*struct {
+			Text  string
+			Limit int
+			count int
 		}
 	}{}
 )
@@ -211,6 +227,8 @@ func lint(cmd *cobra.Command, args []string) error {
 				fset := mod.FileSet
 
 				switch n := n.(type) {
+				case *ast.Ident:
+					checkUsage(fset, n)
 				case *ast.Module:
 					checkNaming(fset, n, style.Naming.Modules)
 					checkBraces(fset, n.LBrace, n.RBrace)
@@ -456,6 +474,27 @@ func checkCaseElse(fset *loc.FileSet, caseElse map[ast.Node]int) {
 		if v == 0 {
 			report(&errMissingCaseElse{fset: fset, node: n})
 		}
+	}
+}
+
+func checkUsage(fset *loc.FileSet, n *ast.Ident) {
+
+	if style.Usage == nil {
+		return
+	}
+	id := n.String()
+	u, ok := style.Usage[id]
+	if !ok {
+		return
+	}
+	u.count++
+	if u.count >= u.Limit {
+		report(&errUsageExceedsLimit{
+			fset:  fset,
+			node:  n,
+			usage: u.count,
+			limit: u.Limit,
+			text:  u.Text})
 	}
 }
 
