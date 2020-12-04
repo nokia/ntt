@@ -2,12 +2,12 @@ package lint
 
 import (
 	"fmt"
-	"io/ioutil"
 	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
@@ -149,25 +149,26 @@ func init() {
 }
 
 func lint(cmd *cobra.Command, args []string) error {
-	if config != "" {
-		b, err := ioutil.ReadFile(config)
-		if err != nil {
-			return err
-		}
+	suite, err := ntt.NewFromArgs(args...)
+	if err != nil {
+		return err
+	}
 
-		if err := yaml.UnmarshalStrict(b, &style); err != nil {
-			return err
-		}
+	c := suite.File(".ntt-lint.yml")
+	b, err := c.Bytes()
+	if err != nil {
+		log.Verbose(err.Error())
+		return nil
+	}
+
+	if err := yaml.UnmarshalStrict(b, &style); err != nil {
+		return err
 	}
 
 	if err := buildRegexCache(); err != nil {
 		return err
 	}
 
-	suite, err := ntt.NewFromArgs(args...)
-	if err != nil {
-		return err
-	}
 	files, err := suite.Files()
 	if err != nil {
 		return err
