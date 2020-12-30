@@ -550,6 +550,7 @@ func checkImport(fset *loc.FileSet, n *ast.ImportDecl, mod *ast.Module) {
 }
 
 func checkSuite(suite *ntt.Suite) {
+
 	if !style.Unused.Modules {
 		return
 	}
@@ -558,8 +559,17 @@ func checkSuite(suite *ntt.Suite) {
 	for _, pkg := range pkgs {
 		files, _ := filepath.Glob(pkg.Path() + "/*.ttcn3")
 		for _, file := range files {
+			if isWhiteListed(style.Ignore.Files, file) {
+				continue
+			}
+
 			mod := filepath.Base(file)
 			mod = strings.TrimSuffix(mod, filepath.Ext(mod))
+
+			if isWhiteListed(style.Ignore.Modules, mod) {
+				return
+			}
+
 			if _, found := usedModules[mod]; !found {
 				report(&errUnusedModule{file: file})
 			}
