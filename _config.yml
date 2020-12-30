@@ -5,12 +5,38 @@ permalink: pretty
 exclude:
   - README.md
 
-theme: jekyll-theme-minimal
+remote_theme: pmarsceill/just-the-docs
 logo: static/ntt.png
 show_downloads: true
+color_scheme: cyan-light
 
-  #plugins:
-  #- jekyll-readme-index
-  #- jekyll-sitemap
-  #- jekyll-seo-tag
-  #- jekyll-mentions
+
+# Footer last edited timestamp
+last_edit_timestamp: true
+last_edit_time_format: "%b %e %Y at %I:%M %p"
+
+back_to_top: true
+back_to_top_text: "Back to top"
+
+aux_links:
+    "ntt on GitHub":
+      - "//github.com/nokia/ntt"
+aux_links_new_tab: true
+
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: "https://github.com/nokia/ntt"
+gh_edit_branch: "gh-pages"
+#gh_edit_source: . # the source that your files originate from
+# gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into the editor immediately
+
+plugins:
+- jekyll-sitemap
+- jekyll-seo-tag
+- jekyll-mentions
+
+
+kramdown:
+  syntax_highlighter_opts:
+    block:
+      line_numbers: false
