@@ -84,6 +84,14 @@ func (e errUsageExceedsLimit) Error() string {
 		e.fset.Position(e.node.Pos()), identName(e.node), e.limit, e.text)
 }
 
+type errUnusedModule struct {
+	file string
+}
+
+func (e errUnusedModule) Error() string {
+	return fmt.Sprintf("%s: error: unused module", e.file)
+}
+
 func isSilent(n ast.Node, checks ...string) bool {
 	scanner := bufio.NewScanner(strings.NewReader(ast.FirstToken(n).Comments()))
 	for scanner.Scan() {
