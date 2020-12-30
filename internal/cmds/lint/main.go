@@ -135,8 +135,6 @@ For information on writing new checks, see <TBD>.
 	usedModules  = make(map[string]Import)
 	usedModuleMu sync.Mutex
 
-	importGraph = make(map[string]Import)
-
 	style = struct {
 		MaxLines        int  `yaml:"max_lines"`
 		AlignedBraces   bool `yaml:"aligned_braces"`
