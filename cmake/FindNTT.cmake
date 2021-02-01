@@ -95,16 +95,12 @@ manifest.
 
 ]====================================================================]
 
-# if(TTCN3_PROTOBUF_INCLUDED)
-#     return()
-# endif()
-
-set(TTCN3_PROTOBUF_INCLUDED true)
-if (NOT NTT_ROOT)
-    set(NTT_ROOT ${CMAKE_SOURCE_DIR}/lib/ntt)
+if(TTCN3_PROTOBUF_INCLUDED)
+     return()
 endif()
+set(TTCN3_PROTOBUF_INCLUDED true)
 
-find_program(NTT_EXECUTABLE NAMES ntt k3 PATHS ${NTT_ROOT}/bin DOC "Path to NTT")
+find_program(NTT_EXECUTABLE NAMES ntt k3 DOC "Path to NTT")
 
 if(NTT_EXECUTABLE)
     execute_process(
