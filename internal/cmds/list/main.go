@@ -22,7 +22,7 @@ var (
 		Short: "List various types of objects",
 		Long: `List various types of objects.
 
-List modules, imports or tests. The list command without any explicit
+List control parts, modules, imports or tests. The list command without any explicit
 sub-commands will output tests.
 
 List will not output objects from imported directories. If you need to list all
@@ -135,9 +135,10 @@ If a basket is not defined by an environment variable, it's equivalent to a
 		RunE: listTests,
 	}
 
-	listTestsCmd   = &cobra.Command{Use: `tests`, RunE: listTests}
-	listModulesCmd = &cobra.Command{Use: `modules`, RunE: listModules}
-	listImportsCmd = &cobra.Command{Use: `imports`, RunE: listImports}
+	listTestsCmd    = &cobra.Command{Use: `tests`, RunE: listTests}
+	listModulesCmd  = &cobra.Command{Use: `modules`, RunE: listModules}
+	listImportsCmd  = &cobra.Command{Use: `imports`, RunE: listImports}
+	listControlsCmd = &cobra.Command{Use: `controls`, RunE: listControls}
 
 	w = bufio.NewWriter(os.Stdout)
 
@@ -154,7 +155,7 @@ func init() {
 	Command.PersistentFlags().StringSliceVarP(&baskets[0].nameExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
 	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
 	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
-	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
+	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd, listControlsCmd)
 }
 
 type basket struct {
@@ -304,6 +305,32 @@ func listImports(cmd *cobra.Command, args []string) error {
 				tags := doc.FindAllTags(n.ImportTok.Comments())
 				if match(name, tags) {
 					printItem(info.FileSet, n.Pos(), tags, info.Module.Name.String(), name)
+				}
+
+			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			}
+			return false
+		})
+	}
+	return nil
+}
+
+func listControls(cmd *cobra.Command, args []string) error {
+	for _, info := range infos {
+		if info.Err != nil {
+			return info.Err
+		}
+		ast.Inspect(info.Module, func(n ast.Node) bool {
+			if n == nil {
+				return false
+			}
+			switch n := n.(type) {
+			case *ast.ControlPart:
+				name := info.Module.Name.String() + ".control"
+				tags := doc.FindAllTags(n.Tok.Comments())
+				if match(name, tags) {
+					printItem(info.FileSet, n.Pos(), tags, name)
 				}
 
 			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
