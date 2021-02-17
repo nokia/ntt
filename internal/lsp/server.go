@@ -115,7 +115,6 @@ func (s *Server) nonstandardRequest(ctx context.Context, method string, params i
 }
 
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
-	s.Log(ctx, params.Command)
 	if params.Command == "ntt.status" {
 		return s.status(ctx)
 	}
