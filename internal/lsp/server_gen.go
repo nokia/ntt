@@ -76,8 +76,8 @@ func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams)
 	return nil, notImplemented("DocumentSymbol")
 }
 
-func (s *Server) ExecuteCommand(context.Context, *protocol.ExecuteCommandParams) (interface{}, error) {
-	return nil, notImplemented("ExecuteCommand")
+func (s *Server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+	return s.executeCommand(ctx, params)
 }
 
 func (s *Server) Exit(ctx context.Context) error {
