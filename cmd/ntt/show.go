@@ -168,13 +168,24 @@ function k3-cached-file()
     echo "$1"
 }
 
-{{ if .Name           -}} K3_NAME='{{ .Name }}'                      {{- end }}
-{{ if gt .Timeout 0.0 -}} K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
-{{ if .ParametersFile -}} K3_PARAMETERS_FILE='{{ .ParametersFile }}' {{- end }}
-{{ if .TestHook       -}} K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
-{{ if .SourceDir      -}} K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
-{{ if .DataDir        -}} K3_DATA_DIR='{{ .DataDir }}'               {{- end }}
-{{ if .SessionID      -}} K3_SESSION_ID='{{ .SessionID }}'           {{- end }}
+# k3-hook calls the K3 test hook (if defined) with action passed by $1.
+function k3-hook()
+{
+    if [ -n "$K3_TEST_HOOK" ]; then
+        K3_SOURCES="${K3_SOURCES[*]}" \
+        K3_IMPORTS="${K3_IMPORTS[*]}" \
+        K3_TTCN3_FILES="${K3_TTCN3_FILES[*]}" \
+            "$K3_TEST_HOOK" "$@" 1>&2
+    fi
+}
+
+{{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
+{{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
+{{ if .ParametersFile -}} export K3_PARAMETERS_FILE='{{ .ParametersFile }}' {{- end }}
+{{ if .TestHook       -}} export K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
+{{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
+{{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
+{{ if .SessionID      -}} export K3_SESSION_ID='{{ .SessionID }}'           {{- end }}
 
 {{ range .Environ }}export '{{.}}'
 {{end}}
