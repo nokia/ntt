@@ -14,14 +14,16 @@ const statusTemplate = `
 
 === Language Server Status ===
 
-executable: {{ .Executable }}
-version: {{ .Version }}
-revision: {{ .Sum }}
-pid: {{ .PID }} 
+Executable : {{ .Executable }}
+Version    : {{ .Version }} {{ .Sum }}
+Process ID : {{ .PID }}
 
-TTCN-3 Session:
+
+=== Session ===
 
 Root Folder: {{ .Suite.Root }}
+Known Files: {{- range .Suite.Files}}
+	{{.}}{{end}}
 
 `
 
@@ -31,7 +33,8 @@ type Status struct {
 	Sum        string
 	PID        int
 	Suite      struct {
-		Root string
+		Root  string
+		Files []string
 	}
 }
 
@@ -52,6 +55,9 @@ func NewStatus(suite *ntt.Suite) *Status {
 	if root := suite.Root(); root != nil {
 		s.Suite.Root = root.Path()
 	}
+
+	s.Suite.Files, _ = suite.Files()
+	s.Suite.Files = append(s.Suite.Files, ntt.FindAuxiliaryTTCN3Files()...)
 
 	return &s
 }
