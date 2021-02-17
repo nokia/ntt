@@ -68,6 +68,8 @@ var (
 	}
 
 	Verbose = false
+	ShSetup = false
+	JSON    = false
 
 	version = "dev"
 	commit  = "none"
@@ -79,6 +81,8 @@ var (
 func init() {
 	session.SharedDir = "/tmp/k3"
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
+	rootCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
 	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	rootCmd.AddCommand(showCmd)
 	rootCmd.AddCommand(dump.Command)

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
+	"text/template"
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/spf13/cobra"
@@ -41,7 +43,6 @@ var (
 			}
 			return strings.Join(ntt.PathSlice(imps...), "\n")
 		},
-
 		"timeout": func(suite *ntt.Suite) string {
 			t, err := suite.Timeout()
 			if err != nil {
@@ -105,7 +106,11 @@ var (
 				fatal(err)
 			}
 			sort.Strings(env)
-			return strings.Join(env, "\n")
+			res := make([]string, 0, len(env))
+			for _, e := range env {
+				res = append(res, fmt.Sprintf(`'%s'`, e))
+			}
+			return strings.Join(res, "\n")
 		},
 	}
 )
@@ -120,25 +125,106 @@ func show(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	if len(keys) == 0 {
-		for _, key := range []string{
-			"name",
-			"sources",
-			"imports",
-			"timeout",
-			"parameters_file",
-			"test_hook",
-			"source_dir",
-			"datadir",
-			"session_id",
-		} {
-			if s := stringers[key](suite); s != "" {
-				fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(key), strings.Replace(s, "\n", " ", -1))
-			}
-		}
+	report := NewReport(sources)
 
-		return nil
+	switch {
+	case JSON:
+		return printJSON(report, keys)
+	case ShSetup:
+		return printShellScript(report, keys)
+	case len(keys) != 0:
+		return printUserKeys(suite, keys)
+	default:
+		return printDefaultKeys(suite)
 	}
+}
+
+func printJSON(report *Report, keys []string) error {
+	if len(keys) != 0 {
+		return fmt.Errorf("command line option --json does not accept additional command line arguments")
+	}
+
+	b, err := json.MarshalIndent(report, "", "  ")
+	fmt.Println(string(b))
+	return err
+}
+
+func printShellScript(report *Report, keys []string) error {
+	const shellTemplate = `# This is a generated output of ntt show. Args: {{ .Args }}
+
+# k3-cached-file searches for file $1 in $K3_CACHE and $NTT_CACHE and returns its first
+# occurrence.
+function k3-cached-file()
+{
+    local IFS=:
+    read -r -a dirs <<<"$K3_CACHE:$NTT_CACHE"
+    for dir in "${dirs[@]}"; do
+        local cached_file="$dir/$1"
+        if [ -e "$cached_file" ]; then
+            echo "$cached_file"
+            return
+        fi
+    done
+    echo "$1"
+}
+
+# k3-hook calls the K3 test hook (if defined) with action passed by $1.
+function k3-hook()
+{
+    if [ -n "$K3_TEST_HOOK" ]; then
+        K3_SOURCES="${K3_SOURCES[*]}" \
+        K3_IMPORTS="${K3_IMPORTS[*]}" \
+        K3_TTCN3_FILES="${K3_TTCN3_FILES[*]}" \
+            "$K3_TEST_HOOK" "$@" 1>&2
+    fi
+}
+
+{{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
+{{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
+{{ if .ParametersFile -}} export K3_PARAMETERS_FILE='{{ .ParametersFile }}' {{- end }}
+{{ if .TestHook       -}} export K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
+{{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
+{{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
+{{ if .SessionID      -}} export K3_SESSION_ID='{{ .SessionID }}'           {{- end }}
+
+{{ range .Environ }}export '{{.}}'
+{{end}}
+
+K3_SOURCES=(
+{{ range .Sources }}	{{.}}
+{{end}})
+
+K3_IMPORTS=(
+{{ range .Imports }}	{{.}}
+{{end}})
+
+K3_TTCN3_FILES=(
+{{ range .Files }}	{{.}}
+{{end}}
+	# Auxiliary files from K3
+{{ range .AuxFiles }}	{{.}}
+{{end}})
+{{ if .Err }}
+# ERROR
+# Output might not be complete, because some errors have occurred during
+# execution. We return "false", to give you the chance to detect this
+# situation
+false
+{{ end }}
+`
+	if len(keys) != 0 {
+		return fmt.Errorf("command line option --sh does not accept additional command line arguments")
+	}
+
+	t := template.Must(template.New("k3-sh-setup").Parse(shellTemplate))
+	if err := t.Execute(os.Stdout, report); err != nil {
+		panic(err.Error())
+	}
+
+	return report.Err
+}
+
+func printUserKeys(suite *ntt.Suite, keys []string) error {
 
 	for _, key := range keys {
 		if fun, found := stringers[key]; found {
@@ -155,6 +241,26 @@ func show(cmd *cobra.Command, args []string) error {
 
 		fmt.Println(s)
 	}
+	return nil
+}
+
+func printDefaultKeys(suite *ntt.Suite) error {
+	for _, key := range []string{
+		"name",
+		"sources",
+		"imports",
+		"timeout",
+		"parameters_file",
+		"test_hook",
+		"source_dir",
+		"datadir",
+		"session_id",
+	} {
+		if s := stringers[key](suite); s != "" {
+			fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(key), strings.Replace(s, "\n", " ", -1))
+		}
+	}
+
 	return nil
 }
 
