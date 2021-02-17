@@ -83,5 +83,9 @@ func NewReport(args []string) *Report {
 }
 
 func path(f *ntt.File, err error) (string, error) {
+	if f == nil {
+		return "", err
+	}
+
 	return f.Path(), err
 }
