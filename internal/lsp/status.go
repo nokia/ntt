@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"context"
 	"os"
-	"runtime/debug"
+	"os/exec"
+	"strings"
 	"text/template"
 
 	"github.com/nokia/ntt/internal/ntt"
@@ -15,7 +16,7 @@ const statusTemplate = `
 === Language Server Status ===
 
 Executable : {{ .Executable }}
-Version    : {{ .Version }} {{ .Sum }}
+Version    : {{ .Version }}
 Process ID : {{ .PID }}
 
 
@@ -30,7 +31,6 @@ Known Files: {{- range .Suite.Files}}
 type Status struct {
 	Executable string
 	Version    string
-	Sum        string
 	PID        int
 	Suite      struct {
 		Root  string
@@ -45,11 +45,9 @@ func NewStatus(suite *ntt.Suite) *Status {
 
 	if path, err := os.Executable(); err == nil {
 		s.Executable = path
-	}
-
-	if info, ok := debug.ReadBuildInfo(); ok {
-		s.Version = info.Main.Version
-		s.Sum = info.Main.Sum
+		if out, err := exec.Command(path, "version").Output(); err == nil {
+			s.Version = strings.TrimSpace(string(out))
+		}
 	}
 
 	if root := suite.Root(); root != nil {
