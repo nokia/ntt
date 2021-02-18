@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -67,6 +68,7 @@ func NewReport(args []string) *Report {
 
 	if r.Err == nil {
 		r.Environ, r.Err = r.suite.Environ()
+		sort.Strings(r.Environ)
 	}
 
 	if r.Err == nil {
