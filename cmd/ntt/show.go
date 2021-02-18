@@ -187,6 +187,10 @@ function k3-hook()
 {{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
 {{ if .SessionID      -}} export K3_SESSION_ID='{{ .SessionID }}'           {{- end }}
 
+{{ if .K3.Compiler    -}} export K3C='{{ .K3.Compiler }}'           {{- end }}
+{{ if .K3.Runtime     -}} export K3R='{{ .K3.Runtime  }}'           {{- end }}
+{{ if .OssInfo        -}} export OSSINFO='{{ .OssInfo }}'           {{- end }}
+
 {{ range .Environ }}export '{{.}}'
 {{end}}
 
@@ -204,6 +208,11 @@ K3_TTCN3_FILES=(
 	# Auxiliary files from K3
 {{ range .AuxFiles }}	{{.}}
 {{end}})
+
+K3_BUILTINS=(
+{{ range .K3.Builtins }}	{{.}}
+{{end}})
+
 {{ if .Err }}
 # ERROR
 # Output might not be complete, because some errors have occurred during
