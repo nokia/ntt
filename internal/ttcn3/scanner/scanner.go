@@ -216,6 +216,14 @@ func (s *Scanner) scanModifier() string {
 	return string(s.src[offs:s.offset])
 }
 
+func (s *Scanner) scanTitanMacro() string {
+	offs := s.offset - 1
+	for isAlpha(s.ch) || isDigit(s.ch) {
+		s.next()
+	}
+	return string(s.src[offs:s.offset])
+}
+
 func digitVal(ch rune) int {
 	switch {
 	case '0' <= ch && ch <= '9':
@@ -424,6 +432,9 @@ func (s *Scanner) Scan() (pos loc.Pos, tok token.Kind, lit string) {
 		case '#':
 			tok = token.PREPROC
 			lit = s.scanPreproc()
+		case '%':
+			tok = token.IDENT
+			lit = s.scanTitanMacro()
 		case '.':
 			tok = s.switch2('.', token.RANGE, token.DOT)
 		case ',':
