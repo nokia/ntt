@@ -215,9 +215,13 @@ K3_BUILTINS=(
 
 {{ if .Err }}
 # ERROR
+#
 # Output might not be complete, because some errors have occurred during
 # execution. We return "false", to give you the chance to detect this
 # situation
+read -r -d '' K3_ERROR <<'EOF'
+{{.Err}}
+EOF
 false
 {{ end }}
 `
@@ -227,7 +231,15 @@ false
 
 	t := template.Must(template.New("k3-sh-setup").Parse(shellTemplate))
 	if err := t.Execute(os.Stdout, report); err != nil {
-		panic(err.Error())
+		fmt.Printf(`
+# ERROR: Internal template did not compile: %s
+#
+# Output might not be complete, because some errors have occurred during
+# execution. We return "false", to give you the chance to detect this
+# situation
+false
+`, err.Error())
+		return err
 	}
 
 	return report.Err
