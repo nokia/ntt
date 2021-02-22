@@ -111,7 +111,7 @@ func NewReport(args []string) *Report {
 			hint+"/../share/k3/ttcn3",
 		)
 		if r.OssInfo == "" {
-			r.OssInfo = filepath.Clean(hint + "/../share/asn1")
+			r.OssInfo = filepath.Clean(hint + "/../share/k3/asn1")
 		}
 
 	// If the runtime seems to be a buildtree of our source repository, we
