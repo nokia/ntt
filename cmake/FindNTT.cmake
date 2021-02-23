@@ -144,6 +144,7 @@ function(add_ttcn3_suite TGT)
     set(MANIFEST_FILE "${_WORKING_DIRECTORY}/package.yml")
 
     add_custom_target("${TGT}" DEPENDS "${MANIFEST_FILE}")
+    add_custom_target("${TGT}.lint"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} lint            "${_WORKING_DIRECTORY}" >"${TGT}.lint"  DEPENDS "${TGT}")
     add_custom_target("${TGT}.tags"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} tags            "${_WORKING_DIRECTORY}" >"${TGT}.tags"  DEPENDS "${TGT}")
     add_custom_target("${TGT}.tests" COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list tests      "${_WORKING_DIRECTORY}" >"${TGT}.tests" DEPENDS "${TGT}")
     add_custom_target("${TGT}.deps"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list imports -v "${_WORKING_DIRECTORY}" >"${TGT}.deps"  DEPENDS "${TGT}")
