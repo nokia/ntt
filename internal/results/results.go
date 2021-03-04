@@ -43,6 +43,7 @@ func (r *Run) Duration() time.Duration {
 	return r.End.Sub(r.Begin.Time)
 }
 
+// String returns a printable and simplified representation of Run
 func (r *Run) String() string {
 	return fmt.Sprintf("%s	%s	%s", r.Verdict, r.ID(), r.Duration())
 }
@@ -157,7 +158,11 @@ func Durations(runs []Run) []time.Duration {
 	return ret
 }
 
-// FinalVerdicts folds multiple runs instances into one
+// FinalVerdicts folds multiple runs instances into one with a final verdict.
+//
+// * A test is considered "pass", if all runs had verdict "pass".
+// * A test is considered "unstable", if only some runs had verdict "pass"
+// * Runs with worse or equal verdict will overwrite previous runs.
 func FinalVerdicts(runs []Run) []Run {
 
 	severity := func(verdict string) int {
