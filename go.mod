@@ -1,6 +1,6 @@
 module github.com/nokia/ntt
 
-go 1.11
+go 1.12
 
 require (
 	github.com/golang/protobuf v1.4.2
@@ -13,6 +13,6 @@ require (
 	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/protobuf v1.25.0
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/yaml.v2 v2.2.8
 )
