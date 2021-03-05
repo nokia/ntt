@@ -2,6 +2,7 @@ package results
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,7 +14,7 @@ type DB struct {
 	Version int
 	MaxJobs int
 	MaxLoad int
-	runs    []Run
+	Runs    []Run
 }
 
 // A Run describes the execution of a single test case.
@@ -34,17 +35,17 @@ type Run struct {
 }
 
 // A unique identifier of the run. Usually something like "testname-2"
-func (r *Run) ID() string {
+func (r Run) ID() string {
 	return r.Name + "-" + fmt.Sprintf("%d\n", r.Instance)
 }
 
 // Duration of an individual run
-func (r *Run) Duration() time.Duration {
+func (r Run) Duration() time.Duration {
 	return r.End.Sub(r.Begin.Time)
 }
 
 // String returns a printable and simplified representation of Run
-func (r *Run) String() string {
+func (r Run) String() string {
 	return fmt.Sprintf("%s	%s	%s", r.Verdict, r.ID(), r.Duration())
 }
 
@@ -245,6 +246,32 @@ func Average(slice []time.Duration) time.Duration {
 	// even slice length
 	return (slice[n-1] + slice[n]) / 2
 
+}
+
+// Mean returns arithmetic mean
+func Mean(slice []time.Duration) time.Duration {
+	var sum int
+	for _, d := range slice {
+		sum += int(d)
+	}
+
+	return time.Duration(sum / len(slice))
+}
+
+// Deviation returns the standard deviation of duration
+func Deviation(slice []time.Duration) time.Duration {
+	if len(slice) == 0 {
+		return 0
+	}
+
+	mean := Mean(slice)
+
+	v := 0.0
+	for _, d := range slice {
+		v += math.Pow(float64(d), 2) / float64(mean)
+	}
+
+	return time.Duration(math.Sqrt(v))
 }
 
 type durationSlice []time.Duration

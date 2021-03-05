@@ -18,6 +18,7 @@ import (
 	"github.com/nokia/ntt/internal/cmds/langserver"
 	"github.com/nokia/ntt/internal/cmds/lint"
 	"github.com/nokia/ntt/internal/cmds/list"
+	"github.com/nokia/ntt/internal/cmds/report"
 	"github.com/nokia/ntt/internal/cmds/tags"
 )
 
@@ -81,15 +82,18 @@ var (
 func init() {
 	session.SharedDir = "/tmp/k3"
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
-	rootCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
 	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	rootCmd.AddCommand(showCmd)
+
+	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
+	showCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
 	rootCmd.AddCommand(dump.Command)
 	rootCmd.AddCommand(langserver.Command)
 	rootCmd.AddCommand(lint.Command)
 	rootCmd.AddCommand(list.Command)
 	rootCmd.AddCommand(tags.Command)
+	rootCmd.AddCommand(report.Command)
+
 }
 
 func main() {
