@@ -3,7 +3,6 @@ package report
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -35,15 +34,15 @@ const (
 {{range .Tests.NotPassed}}{{ printf "%-10s %s" .Verdict .Name  | colorize }}
 {{else}}{{green}}all tests have passed{{off}}
 {{end}}
-{{len .Tests}} test cases took {{bold}}{{.Duration}}{{off}} to execute (total runs: {{len .Runs}}
+{{len .Tests}} test cases took {{bold}}{{.Tests.Duration}}{{off}} to execute (total runs: {{len .Runs}}
 {{- with .Tests.Failed}}, {{red}}not passed: {{len .}}{{off}}{{end}}
 {{- with .Tests.Unstable}}, {{orange}}unstable: {{len .}}{{off}}{{end}})
 {{bold}}==============================================================================={{off}}
 
-{{ printf "%s (±%s)" .Average .Deviation | printf "Average  : %-30s CPU cores      : " }}{{printf "%d" .Cores}}
-{{ printf "Shortest : %-30s Parallel tests : %d" .Shortest.Duration .MaxJobs }}
-{{ printf "Longest  : %-30s Load limit     : %d" .Longest.Duration .MaxLoad}}
-{{ printf "Total    : %-30s Load           : %.2f" .Total .Loads}}
+{{ printf "%s (±%s)" .Tests.Average .Tests.Deviation | printf "Average  : %-30s CPU cores      : " }}{{printf "%d" .Cores}}
+{{ printf "Shortest : %-30s Parallel tests : %d" .Tests.Shortest.Duration .MaxJobs }}
+{{ printf "Longest  : %-30s Load limit     : %d" .Tests.Longest.Duration .MaxLoad}}
+{{ printf "Total    : %-30s Load           : %.2f" .Tests.Total .Loads}}
 
 {{bold}}==============================================================================={{off}}
 {{bold}}Final Result: {{.Tests.Result | colorize}}{{off}}
@@ -51,14 +50,45 @@ const (
 `
 
 	junitTemplate = `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites>{{range .Tests.Modules}}
-    <testsuite name="{{.Name}}" tests="{{len .Tests}}" failures="$failures" errors="" time="{{.Duration}}">
-	{{range .Tests}}<testcase name="{{.Testcase}}" time="{{.Duration}}">
-	{{if ne .Verdict "pass"}}<failure>Verdict: {{.Verdict}}
-		{{.Reason | html }}</failure>
-	{{end}}</testcase>
-	{{end}}</testsuite>
+<testsuites>{{range .Modules}}
+
+<testsuite name="{{.Name}}" tests="{{len .Tests}}" failures="{{len .Tests.Failed}}" errors="" time="{{.Tests.Total.Seconds}}">
+{{range .Tests}}<testcase name="{{.Testcase}}" time="{{.Duration.Seconds}}">
+  {{if ne .Verdict "pass"}}<failure>Verdict: {{.Verdict}} {{with .Reason}}({{. | html }}){{end}}
+{{range .ReasonFiles}}{{.Name}}: {{.Content}}{{end}}
+  </failure>
+{{end}}</testcase>
+
+{{end}}</testsuite>
 {{end}}</testsuites>
+`
+
+	jsonTemplate = `{
+  "name"          : "{{.Name}}",
+  "timestamp"     : {{.Runs.First.Begin.Unix}},
+  "cores"         : {{.Cores}},
+  "parallel_jobs" : {{.MaxJobs}},
+  "max_load"      : {{.MaxLoad}},
+  "load_average"  : {{ .Loads | json }},
+  "suite": {
+    "linecount": {{.LineCount}}
+  },
+  "tests": {
+    "result"   : "{{ .Tests.Result }}",
+    "tests"    : {{len .Tests }},
+    "failed"   : {{len .Tests.Failed}},
+    "unstable" : {{.Tests.Unstable | json}},
+    "duration" : {
+      "real"  : {{.Tests.Duration.Milliseconds}},
+      "total" : {{.Tests.Total.Milliseconds}},
+      "min"   : {{.Tests.Shortest.Duration.Milliseconds}},
+      "max"   : {{.Tests.Longest.Duration.Milliseconds}},
+      "avg"   : {{.Tests.Average.Milliseconds}},
+      "dev"   : {{.Tests.Deviation.Milliseconds}}
+    }
+  },
+  "env": {{ .Environ | json }}
+}
 `
 )
 
@@ -76,7 +106,7 @@ func report(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case useJSON:
-		return reportJSON(report)
+		return reportTemplate(report, jsonTemplate)
 	case useJUnit:
 		return reportTemplate(report, junitTemplate)
 	default:
@@ -84,17 +114,8 @@ func report(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func reportJSON(report *Report) error {
-	b, err := json.Marshal(report)
-	if err != nil {
-		return err
-	}
-	fmt.Print(string(b))
-	return nil
-}
-
 func reportTemplate(report *Report, text string) error {
-	tmpl, err := template.New("ntt report").Funcs(funcMap).Parse(text)
+	tmpl, err := template.New("ntt-report-template").Funcs(funcMap).Parse(text)
 	if err != nil {
 		return err
 	}
@@ -144,6 +165,10 @@ var funcMap = template.FuncMap{
 	},
 	"join": func(sep string, v interface{}) string {
 		return strings.Join(v.([]string), sep)
+	},
+	"json": func(v interface{}) (string, error) {
+		b, err := json.Marshal(v)
+		return string(b), err
 	},
 }
 
