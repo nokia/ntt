@@ -31,14 +31,20 @@ func NewReport(suite *ntt.Suite) (*Report, error) {
 		return nil, err
 	}
 
-	name, _ := suite.Name()
-	return &Report{
-		Collection: *NewCollection(name, db.Runs...),
-		suite:      suite,
-		db:         *db,
-		Cores:      runtime.NumCPU(),
-		Loads:      loads(),
-	}, nil
+	r := Report{
+		suite: suite,
+		Cores: runtime.NumCPU(),
+		Loads: loads(),
+	}
+
+	r.Name, _ = suite.Name()
+
+	if db != nil {
+		r.db = *db
+		r.Collection = *NewCollection(r.Name, db.Runs...)
+	}
+
+	return &r, nil
 }
 
 func (r *Report) Getenv(s string) string {

@@ -125,8 +125,9 @@ JSON template:
 const (
 	summaryTemplate = `{{bold}}==================================  Summary  =================================={{off}}
 {{range .Tests.NotPassed}}{{ printf "%-10s %s" .Verdict .Name  | colorize }}
+{{else}}{{if eq (len .Tests) 0}}{{orange}}{{bold}}WARNING: No matching test cases found!{{off}}
 {{else}}{{green}}all tests have passed{{off}}
-{{end}}
+{{end}}{{end}}
 {{len .Tests}} test cases took {{bold}}{{.Tests.Duration}}{{off}} to execute (total runs: {{len .Runs}}
 {{- with .Tests.Failed}}, {{red}}not passed: {{len .}}{{off}}{{end}}
 {{- with .Tests.Unstable}}, {{orange}}unstable: {{len .}}{{off}}{{end}})
@@ -244,9 +245,11 @@ var funcMap = template.FuncMap{
 		none := regexp.MustCompile(`(?i)\bnone`)
 		inconc := regexp.MustCompile(`(?i)\binconc`)
 
-		re := regexp.MustCompile(`(?i)\b(pass\w*|fail\w*|\w*error\w*|unstable|none|inconc\w*)\b`)
+		re := regexp.MustCompile(`(?i)\b(NORUN|pass\w*|fail\w*|\w*error\w*|unstable|none|inconc\w*)\b`)
 		return re.ReplaceAllStringFunc(s, func(s string) string {
 			switch {
+			case s == "NORUN":
+				return "[38;5;208;1m" + s + "[0m"
 			case pass.MatchString(s):
 				return "[32;1m" + s + "[0m"
 			case fail.MatchString(s):
