@@ -1,6 +1,7 @@
 package ntt
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/nokia/ntt/internal/memoize"
+	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/internal/span"
 )
@@ -139,6 +141,19 @@ func (suite *Suite) Root() *File {
 func (suite *Suite) SetRoot(folder string) {
 	suite.root = suite.File(folder)
 	suite.sources = nil
+}
+
+func (suite *Suite) LatestResults() (*results.DB, error) {
+	b, err := suite.File("test_results.json").Bytes()
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var db results.DB
+	return &db, json.Unmarshal(b, &db)
 }
 
 func init() {
