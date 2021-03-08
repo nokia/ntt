@@ -15,8 +15,101 @@ import (
 var (
 	Command = &cobra.Command{
 		Use:   "report",
-		Short: "show test suite information",
-		Long: `show test suite information
+		Short: "show information about latest test run",
+		Long: `show information about latest test run",
+
+The report command shows a summary of the latest test run. The summary includes
+information such as a list of tests which did not pass, average run times, CPU
+load, etc.
+Command line options '--json' and '--junit' show similar output, but with JSON
+or JUNIT formatting.
+
+
+Templating
+----------
+
+ntt uses the Go templates format which you can use to specify custom output templates.
+Example:
+
+	ntt report --template "{{.Name}} took {{.Tests.Duration}}"
+
+
+Available Objects
+
+  .Report is a collection of test runs
+  .Report.Cores:     number of CPU cores
+  .Report.Environ:   list of environment variable
+  .Report.Getenv:    value of an environment variable
+  .Report.LineCount: number of TTCN-3 source code lines
+  .Report.Loads:     system load (1m, 5m, 15m)
+  .Report.MaxJobs:   maximum number of parallel test jobs
+  .Report.MaxLoad:   maximum allowed CPU load
+  .Report.Modules:   a list of collection sorted by module
+  .Report.Name:      name of the collection
+  .Report.Runs:      list of test runs
+  .Report.Tests:     list of tests (with final verdict)
+
+  .RunSlice is a list of test runs
+  .RunSlice.Average:   Average duration of runs (median)
+  .RunSlice.Deviation: Standard deviation
+  .RunSlice.Duration:  Timespan of first and last test run
+  .RunSlice.Failed:    A slice of failed test runs (inconc, none, error, fail, ...)
+  .RunSlice.First:     First test run
+  .RunSlice.Last:      Last test run
+  .RunSlice.Longest:   Longest test run
+  .RunSlice.NotPassed: A slice of tests without 'pass' verdict
+  .RunSlice.Result:    Final result (PASSED, FAILED, UNSTABLE, NOEXEC)
+  .RunSlice.Shortest:  Shortest test run
+  .RunSlice.Total:     Sum of all test run durations
+  .RunSlice.Unstable:  List of unstable test runs
+
+  .Run is a individual test run
+  .Run.ID:          test run ID (e.g. test.Stable_A-2)
+  .Run.Name:        full qualified test name (test.Stable_A)
+  .Run.Instance:    test instance (e.g. 2)
+  .Run.Module:      module name (test)
+  .Run.Testcase:    testcase name (e.g. Stable_A)
+  .Run.Verdict:     the test verdict (pass, fail, none, ...)
+  .Run.Begin:       when the test was started (time.Time Go object)
+  .Run.End:         when the test ended (time.Time Go object)
+  .Run.Duration:    a time.Duration Go object
+  .Run.Load:        the system load when the test was started
+  .Run.MaxMem:      the maximum memory used when the test ended
+  .Run.Reason:      optional reason for verdicts
+  .Run.ReasonFiles: content of *.reason files
+  .Run.RunnerID:    the ID of the runner exeuting the run
+  .Run.WorkingDir:  working Directory of the test
+
+  .File is a (reason) file
+  .File.Name:    path to file
+  .File.Content: content of file
+
+
+Additional commands
+
+  green:    output ANSI sequences for color green
+  red:      output ANSI sequences for color red
+  orange:   output ANSI sequences for color orange
+  bold:     output ANSI sequences for bold text
+  off:      output ANSI sequences to reset attributes
+  colorize: colorize output
+  join:     join input with a separator
+  json:     encode input using JSON format
+
+
+
+Summary template:
+` + summaryTemplate + `
+
+
+JUnit template:
+` + junitTemplate + `
+
+
+JSON template:
+` + jsonTemplate + `
+
+
 `,
 		RunE: report,
 	}
@@ -104,6 +197,10 @@ func report(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if templateText == "" {
+		templateText = summaryTemplate
+	}
+
 	switch {
 	case useJSON:
 		return reportTemplate(report, jsonTemplate)
@@ -175,5 +272,5 @@ var funcMap = template.FuncMap{
 func init() {
 	Command.PersistentFlags().BoolVarP(&useJSON, "json", "", false, "output report in JSON format")
 	Command.PersistentFlags().BoolVarP(&useJUnit, "junit", "", false, "output report in Junit format")
-	Command.PersistentFlags().StringVarP(&templateText, "template", "t", summaryTemplate, "output report with custom template")
+	Command.PersistentFlags().StringVarP(&templateText, "template", "t", "", "output report with custom template")
 }
