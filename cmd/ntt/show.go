@@ -152,22 +152,6 @@ func printJSON(report *Report, keys []string) error {
 func printShellScript(report *Report, keys []string) error {
 	const shellTemplate = `# This is a generated output of ntt show. Args: {{ .Args }}
 
-# k3-cached-file searches for file $1 in $K3_CACHE and $NTT_CACHE and returns its first
-# occurrence.
-function k3-cached-file()
-{
-    local IFS=:
-    read -r -a dirs <<<"$K3_CACHE:$NTT_CACHE"
-    for dir in "${dirs[@]}"; do
-        local cached_file="$dir/$1"
-        if [ -e "$cached_file" ]; then
-            echo "$cached_file"
-            return
-        fi
-    done
-    echo "$1"
-}
-
 # k3-hook calls the K3 test hook (if defined) with action passed by $1.
 function k3-hook()
 {

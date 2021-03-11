@@ -18,6 +18,7 @@ import (
 	"github.com/nokia/ntt/internal/cmds/langserver"
 	"github.com/nokia/ntt/internal/cmds/lint"
 	"github.com/nokia/ntt/internal/cmds/list"
+	"github.com/nokia/ntt/internal/cmds/locate_file"
 	"github.com/nokia/ntt/internal/cmds/report"
 	"github.com/nokia/ntt/internal/cmds/tags"
 )
@@ -88,6 +89,7 @@ func init() {
 	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 	showCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
 	rootCmd.AddCommand(dump.Command)
+	rootCmd.AddCommand(locate_file.Command)
 	rootCmd.AddCommand(langserver.Command)
 	rootCmd.AddCommand(lint.Command)
 	rootCmd.AddCommand(list.Command)
