@@ -113,10 +113,6 @@ func (suite *Suite) File(path string) *File {
 // is used to prevent re-built of generated files.
 func (suite *Suite) searchCacheForFile(file string) string {
 
-	if _, err := os.Stat(file); err == nil {
-		return file
-	}
-
 	if file == "." || file == ".." {
 		return ""
 	}
