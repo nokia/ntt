@@ -71,8 +71,10 @@ func (suite *Suite) File(path string) *File {
 	if strings.HasPrefix(path, "file://") {
 		uri = span.URIFromURI(path)
 	} else {
-		if s := suite.searchCacheForFile(path); s != "" {
-			path = s
+		if ok, _ := fileExists(path); !ok {
+			if s := suite.searchCacheForFile(path); s != "" {
+				path = s
+			}
 		}
 		uri = span.URIFromPath(path)
 	}
@@ -110,6 +112,11 @@ func (suite *Suite) File(path string) *File {
 // Purpose and behaviour of this function are similar to GNU Make's VPATH. It
 // is used to prevent re-built of generated files.
 func (suite *Suite) searchCacheForFile(file string) string {
+
+	if _, err := os.Stat(file); err == nil {
+		return file
+	}
+
 	if file == "." || file == ".." {
 		return ""
 	}
