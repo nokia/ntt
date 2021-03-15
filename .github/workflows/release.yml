@@ -29,7 +29,7 @@ jobs:
         id: download_exe
         shell: bash
         run: |
-          hub release download "${GITHUB_REF@refs/tags/}" -i ntt_windows_x86_64.tar.gz
+          hub release download "${GITHUB_REF#refs/tags/}" -i ntt_windows_x86_64.tar.gz
           printf "::set-output name=zip::%s\n" *.tar.gz
           tar xz ntt_windows_x86_64.tar.gz && rm ntt_windows_x86_64.tar.gz
         env:
