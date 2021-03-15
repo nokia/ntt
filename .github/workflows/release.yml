@@ -33,7 +33,7 @@ jobs:
           printf "::set-output name=zip::%s\n" *.tar.gz
           tar xz ntt_windows_x86_64.tar.gz && rm ntt_windows_x86_64.tar.gz
         env:
-          GITHUB_TOKEN: ${{secreyts.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Install go-msi
         run: choco install -y "go-msi"
       - name: Prepare PATH
