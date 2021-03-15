@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -41,7 +42,6 @@ Available Objects
   .Report.Environ:   list of environment variable
   .Report.Getenv:    value of an environment variable
   .Report.LineCount: number of TTCN-3 source code lines
-  .Report.Loads:     system load (1m, 5m, 15m)
   .Report.MaxJobs:   maximum number of parallel test jobs
   .Report.MaxLoad:   maximum allowed CPU load
   .Report.Modules:   a list of collection sorted by module
@@ -50,6 +50,7 @@ Available Objects
   .Report.Tests:     list of tests (with final verdict)
 
   .RunSlice is a list of test runs
+  .RunSlice.Load:      Return systemload slice for every run
   .RunSlice.Average:   Average duration of runs (median)
   .RunSlice.Deviation: Standard deviation
   .RunSlice.Duration:  Timespan of first and last test run
@@ -95,6 +96,9 @@ Additional commands
   colorize: colorize output
   join:     join input with a separator
   json:     encode input using JSON format
+  min:      returns the minimum of a float slice
+  max:      returns the maximum of a float slice
+  median:   returns the median of a float slice
 
 
 
@@ -136,7 +140,7 @@ const (
 {{ printf "%s (±%s)" .Tests.Average .Tests.Deviation | printf "Average  : %-30s CPU cores      : " }}{{printf "%d" .Cores}}
 {{ printf "Shortest : %-30s Parallel tests : %d" .Tests.Shortest.Duration .MaxJobs }}
 {{ printf "Longest  : %-30s Load limit     : %d" .Tests.Longest.Duration .MaxLoad}}
-{{ printf "Total    : %-30s Load           : %.2f" .Tests.Total .Loads}}
+{{ printf "Total    : %-30s Load average   : %.2f" .Tests.Total (median .Tests.Load)}}
 
 {{bold}}==============================================================================={{off}}
 {{bold}}Final Result: {{.Tests.Result | colorize}}{{off}}
@@ -163,10 +167,14 @@ const (
   "cores"         : {{.Cores}},
   "parallel_jobs" : {{.MaxJobs}},
   "max_load"      : {{.MaxLoad}},
-  "load_average"  : {{ .Loads | json }},
   "suite": {
     "linecount": {{.LineCount}}
   },
+  "load": {
+    "min" : {{min .Tests.Load}},
+    "max" : {{max .Tests.Load}},
+    "avg" : {{median .Tests.Load}},
+  }
   "tests": {
     "result"   : "{{ .Tests.Result }}",
     "tests"    : {{len .Tests }},
@@ -269,6 +277,49 @@ var funcMap = template.FuncMap{
 	"json": func(v interface{}) (string, error) {
 		b, err := json.Marshal(v)
 		return string(b), err
+	},
+	"min": func(v []float64) float64 {
+		if len(v) == 0 {
+			return 0
+		}
+
+		x := v[0]
+		for _, r := range v {
+			if r < x {
+				x = r
+			}
+		}
+		return x
+	},
+	"max": func(v []float64) float64 {
+		if len(v) == 0 {
+			return 0
+		}
+
+		x := v[0]
+		for _, r := range v {
+			if r > x {
+				x = r
+			}
+		}
+		return x
+	},
+	"median": func(v []float64) float64 {
+		if len(v) == 0 {
+			return 0
+		}
+
+		sort.Float64s(v)
+
+		n := len(v) / 2
+
+		// odd v length
+		if len(v)&1 == 1 {
+			return v[n]
+		}
+
+		// even v length
+		return (v[n-1] + v[n]) / 2
 	},
 }
 

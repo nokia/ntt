@@ -22,7 +22,6 @@ type Report struct {
 	suite *ntt.Suite
 	db    results.DB
 	Cores int
-	Loads [3]float64
 }
 
 func NewReport(suite *ntt.Suite) (*Report, error) {
@@ -34,7 +33,6 @@ func NewReport(suite *ntt.Suite) (*Report, error) {
 	r := Report{
 		suite: suite,
 		Cores: runtime.NumCPU(),
-		Loads: loads(),
 	}
 
 	r.Name, _ = suite.Name()
@@ -178,6 +176,10 @@ func (rs RunSlice) Shortest() Run {
 
 func (rs RunSlice) Longest() Run {
 	return Run{results.Longest(rs.asResultsRun())}
+}
+
+func (rs RunSlice) Load() []float64 {
+	return results.Loads(rs.asResultsRun())
 }
 
 func (rs RunSlice) Average() time.Duration {

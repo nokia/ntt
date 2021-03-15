@@ -159,6 +159,15 @@ func Durations(runs []Run) []time.Duration {
 	return ret
 }
 
+// Loads returns a slice of test run durations
+func Loads(runs []Run) []float64 {
+	ret := make([]float64, len(runs))
+	for i := range runs {
+		ret[i] = runs[i].Load
+	}
+	return ret
+}
+
 // FinalVerdicts folds multiple runs instances into one with a final verdict.
 //
 // * A test is considered "pass", if all runs had verdict "pass".
@@ -273,6 +282,12 @@ func Deviation(slice []time.Duration) time.Duration {
 
 	return time.Duration(math.Sqrt(v))
 }
+
+type floatSlice []Run
+
+func (a floatSlice) Len() int           { return len(a) }
+func (a floatSlice) Less(i, j int) bool { return a[i].Load < a[j].Load }
+func (a floatSlice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 type durationSlice []time.Duration
 
