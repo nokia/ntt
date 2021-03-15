@@ -6,7 +6,7 @@
   "files": {
     "guid": "26a7a2ac-eee0-48f0-aa1e-fd71be0dfdd1",
     "items": [
-      "bin/ntt.exe"
+      "ntt.exe"
     ]
   },
   "env": {
