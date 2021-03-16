@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+if [ $# != 1 ]; then
+	cat >&2 <<EOT
+Usage: $0 <name>
+
+Creates a terminal screen cast using asciinema <name>.cast and converts it into
+a animated svg.
+
+Your terminal size will be used as output size.
+EOT
+exit 1
+fi
+
+if [ -e "$1.cast" ]; then
+	rm -i "$1.cast"
+fi
+
+if [ -e "$1.svg" ]; then
+	rm -i "$1.svg"
+fi
+
+env -i HOME=$HOME TERM=$TERM /usr/local/bin/asciinema rec -c /bin/zsh "$1.cast"
+svg-term --window --out "$1.svg" <"$1.cast"

@@ -4,6 +4,8 @@ permalink: pretty
 
 exclude:
   - README.md
+  - Makefile
+  - scripts/*
 
 remote_theme: pmarsceill/just-the-docs
 logo: static/ntt.png

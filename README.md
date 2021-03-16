@@ -1,7 +1,17 @@
-# NTT Page
+# Project Page
 
-This is the home of https://nokia.github.io/ntt
+This is the source of our project page https://nokia.github.io/ntt
 
-## Run local version
+Content is written in Markdown and the HTML pages are generated using Jekyll.
 
-    bundle exec jekyll serve
+When you add content please preview you changes locally. You can install all required tools by running:
+	make install-tools
+
+You start the local web-server by running:
+	make
+
+
+## Screen casts
+
+The tool `screencast` allows you to create fancy terminal screen casts in SVG
+format. Screencasts are comfortable way to show users how something works.
