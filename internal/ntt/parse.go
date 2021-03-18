@@ -60,7 +60,7 @@ func (info *ParseInfo) Pos(line int, column int) loc.Pos {
 // called for every unique file exactly once.
 func (suite *Suite) Parse(file string) *ParseInfo {
 	f := suite.File(file)
-	f.handle = suite.store.Bind(f.id(), func(ctx context.Context) interface{} {
+	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := ParseInfo{}
 
 		b, err := f.Bytes()
@@ -85,6 +85,6 @@ func (suite *Suite) Parse(file string) *ParseInfo {
 		return &data
 	})
 
-	v := f.handle.Get(context.TODO())
+	v := f.Handle.Get(context.TODO())
 	return v.(*ParseInfo)
 }
