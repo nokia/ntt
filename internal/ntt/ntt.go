@@ -8,33 +8,29 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
-	"github.com/nokia/ntt/internal/span"
 )
 
 // Suite represents a TTCN-3 test suite.
 type Suite struct {
 	id int // A unique session id
 
-	// File handling
-	filesMu sync.Mutex
-	files   map[span.URI]*File
-
 	// Module handling (maps module names to paths)
 	modulesMu sync.Mutex
 	modules   map[string]string
 
 	// Environent handling
-	envFiles []*File
+	envFiles []*fs.File
 
 	// Manifest stuff
 	name     string
-	root     *File
-	sources  []*File
-	imports  []*File
-	testHook *File
+	root     *fs.File
+	sources  []*fs.File
+	imports  []*fs.File
+	testHook *fs.File
 
 	// Memoization
 	store memoize.Store
@@ -65,37 +61,16 @@ func (suite *Suite) Id() (int, error) {
 //
 // Environment variable NTT_CACHE will be used to find path, if path is a single
 // file-name without leading directory.
-func (suite *Suite) File(path string) *File {
-	var uri span.URI
-
-	if strings.HasPrefix(path, "file://") {
-		uri = span.URIFromURI(path)
-	} else {
+func (suite *Suite) File(path string) *fs.File {
+	if !strings.HasPrefix(path, "file://") {
 		if ok, _ := fileExists(path); !ok {
 			if s := suite.searchCacheForFile(path); s != "" {
 				path = s
 			}
 		}
-		uri = span.URIFromPath(path)
 	}
 
-	suite.filesMu.Lock()
-	defer suite.filesMu.Unlock()
-
-	if suite.files == nil {
-		suite.files = make(map[span.URI]*File)
-	}
-
-	if f, found := suite.files[uri]; found {
-		return f
-	}
-
-	f := &File{
-		uri:  uri,
-		path: path,
-	}
-	suite.files[uri] = f
-	return f
+	return fs.Open(path)
 }
 
 // searchCacheForFile searches for a file in every directory specified by
@@ -133,7 +108,7 @@ func (suite *Suite) searchCacheForFile(file string) string {
 	return ""
 }
 
-func (suite *Suite) Root() *File {
+func (suite *Suite) Root() *fs.File {
 	return suite.root
 }
 

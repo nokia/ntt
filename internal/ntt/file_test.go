@@ -76,6 +76,7 @@ func TestFileContent(t *testing.T) {
 	t.Run("DiskReadError2", func(t *testing.T) {
 		suite := &ntt.Suite{}
 		f1 := suite.File("../ntt/does_not_exist")
+		f1.Reset()
 		_, err := f1.Bytes()
 		assert.NotNil(t, err)
 	})
