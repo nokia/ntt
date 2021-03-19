@@ -23,6 +23,19 @@ func newModuleDefKw() []protocol.CompletionItem {
 	return complList
 }
 
+func moduleNameListFromSuite(suite *ntt.Suite) []protocol.CompletionItem {
+	var list []protocol.CompletionItem = nil
+	if files, err := suite.Files(); err == nil {
+		list = make([]protocol.CompletionItem, 0, len(files))
+		for _, f := range files {
+			fileName := filepath.Base(f)
+			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
+			list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
+		}
+	}
+	return list
+}
+
 func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
@@ -40,27 +53,13 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			}
 			if _, ok := nodes[l-2].(*ast.ImportDecl); ok {
 				// look for available modules for import
-				if files, err := suite.Files(); err == nil {
-					list = make([]protocol.CompletionItem, 0, len(files))
-					for _, f := range files {
-						fileName := filepath.Base(f)
-						fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
-						list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
-					}
-				}
+				list = moduleNameListFromSuite(suite)
 			}
 		}
 	case *ast.ImportDecl:
 		if nodet.Module == nil {
 			// look for available modules for import
-			if files, err := suite.Files(); err == nil {
-				list = make([]protocol.CompletionItem, 0, len(files))
-				for _, f := range files {
-					fileName := filepath.Base(f)
-					fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
-					list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
-				}
-			}
+			list = moduleNameListFromSuite(suite)
 		}
 	case *ast.ErrorNode:
 		// i.e. user started typing => ast.Ident might be detected instead of a kw
