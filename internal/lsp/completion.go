@@ -13,7 +13,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
-var moduleDefKw = []string{"import from", "type", "const", "modulepar", "template", "function", "external function", "altstep", "testcase", "control", "signature"}
+var moduleDefKw = []string{"import from ", "type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
 
 func newModuleDefKw() []protocol.CompletionItem {
 	complList := make([]protocol.CompletionItem, 0, len(moduleDefKw))
@@ -72,6 +72,7 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 		log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
 
 	}
+	log.Debug(fmt.Sprintf("Completion List :%#v", list))
 	return list
 }
 
@@ -96,7 +97,6 @@ func lastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 			completed = true
 			return false
 		}
-		log.Debug(fmt.Sprintf("Not a Token :%#v", n))
 		nodeStack = append(nodeStack, n)
 		lastStack = make([]ast.Node, len(nodeStack))
 		copy(lastStack, nodeStack)
