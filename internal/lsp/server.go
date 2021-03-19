@@ -10,16 +10,17 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	errors "golang.org/x/xerrors"
 )
 
 func NewServer(stream jsonrpc2.Stream) *Server {
 	return &Server{
-		conn: jsonrpc2.NewConn(stream),
+		conn:  jsonrpc2.NewConn(stream),
+		files: make(map[*fs.File]bool),
 	}
 }
 
@@ -68,7 +69,10 @@ type Server struct {
 	// set of folders to build views for when we are ready
 	pendingFolders []protocol.WorkspaceFolder
 
-	suite *ntt.Suite
+	Suites
+
+	filesMu sync.Mutex
+	files   map[*fs.File]bool
 
 	diagsMu sync.Mutex
 	diags   map[string][]protocol.Diagnostic

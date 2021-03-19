@@ -30,6 +30,8 @@ func (f *File) Close() {
 	f.store.filesMu.Lock()
 	defer f.store.filesMu.Unlock()
 	delete(f.store.files, f.uri)
+
+	f.Reset()
 }
 
 // URI returns returns the absolute file path with a "file://" prefix.
@@ -75,4 +77,5 @@ func (f *File) SetBytes(b []byte) {
 // Reset sets the content to zero. This is identcal to SetBytes(nil)
 func (f *File) Reset() {
 	f.SetBytes(nil)
+	f.Handle = nil
 }

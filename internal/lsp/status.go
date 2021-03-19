@@ -22,25 +22,25 @@ Process ID : {{ .PID }}
 
 === Session ===
 
-Root Folder: {{ .Suite.Root }}
-Known Files: {{- range .Suite.Files}}
-	{{.}}{{end}}
+{{range .Suites}}
+Root Folder: {{ .Root }}
+Known Files: {{ range .Files}}
+	- {{.}}{{end}}
 
+{{end}}
 `
 
 type Status struct {
 	Executable string
 	Version    string
 	PID        int
-	Suite      struct {
-		Root  string
-		Files []string
-	}
+	Suites     []*ntt.Suite
 }
 
-func NewStatus(suite *ntt.Suite) *Status {
+func NewStatus(suites []*ntt.Suite) *Status {
 	s := Status{
-		PID: os.Getpid(),
+		PID:    os.Getpid(),
+		Suites: suites,
 	}
 
 	if path, err := os.Executable(); err == nil {
@@ -50,22 +50,17 @@ func NewStatus(suite *ntt.Suite) *Status {
 		}
 	}
 
-	if root := suite.Root(); root != nil {
-		s.Suite.Root = root.Path()
-	}
-
-	s.Suite.Files, _ = suite.Files()
-	s.Suite.Files = append(s.Suite.Files, ntt.FindAuxiliaryTTCN3Files()...)
-
 	return &s
 }
 
 func (s *Server) status(ctx context.Context) (interface{}, error) {
-
-	var buf bytes.Buffer
-
 	t := template.Must(template.New("ntt.status").Parse(statusTemplate))
-	if err := t.Execute(&buf, NewStatus(s.suite)); err != nil {
+	var suites []*ntt.Suite
+	for _, s := range s.roots {
+		suites = append(suites, s)
+	}
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, NewStatus(suites)); err != nil {
 		panic(err.Error())
 	}
 	s.Log(ctx, buf.String())

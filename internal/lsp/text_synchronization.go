@@ -2,26 +2,33 @@ package lsp
 
 import (
 	"context"
+	"path/filepath"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
 func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	uri := string(params.TextDocument.URI.SpanURI())
-
-	// TODO(5nord) Sources might added multiple times.
-	if params.TextDocument.LanguageID == "ttcn3" {
-		s.suite.AddSources(uri)
+	if params.TextDocument.LanguageID != "ttcn3" {
+		return nil
 	}
 
-	f := s.suite.File(uri)
-	f.SetBytes([]byte(params.TextDocument.Text))
-	s.Diagnose()
+	// Register file for diagnostics and set content
+	s.registerFile(params.TextDocument)
+
+	uri := params.TextDocument.URI
+
+	// Every file should be owned by at least one suite to provide proper
+	// language support.
+	if len(s.Owners(uri)) == 0 {
+		s.AddFolder(filepath.Dir(fs.Open(string(uri.SpanURI())).Path()))
+	}
+	s.Diagnose(uri)
 	return nil
 }
 
 func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	f := s.suite.File(string(params.TextDocument.URI.SpanURI()))
+	f := fs.Open(string(params.TextDocument.URI.SpanURI()))
 	for _, ch := range params.ContentChanges {
 		f.SetBytes([]byte(ch.Text))
 	}
@@ -33,7 +40,26 @@ func (s *Server) didSave(ctx context.Context, params *protocol.DidSaveTextDocume
 }
 
 func (s *Server) didClose(ctx context.Context, params *protocol.DidCloseTextDocumentParams) error {
-	f := s.suite.File(string(params.TextDocument.URI.SpanURI()))
-	f.Reset()
+	s.unregisterFile(params.TextDocument)
 	return nil
+}
+
+func (s *Server) registerFile(doc protocol.TextDocumentItem) {
+	s.filesMu.Lock()
+	defer s.filesMu.Unlock()
+
+	f := fs.Open(string(doc.URI.SpanURI()))
+	f.SetBytes([]byte(doc.Text))
+	if !s.files[f] {
+		s.files[f] = true
+	}
+}
+
+func (s *Server) unregisterFile(doc protocol.TextDocumentIdentifier) {
+	s.filesMu.Lock()
+	defer s.filesMu.Unlock()
+
+	f := fs.Open(string(doc.URI.SpanURI()))
+	f.Close()
+	delete(s.files, f)
 }
