@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 )
 
@@ -85,7 +86,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Sources()
-		r.Sources = ntt.PathSlice(paths...)
+		r.Sources = fs.PathSlice(paths...)
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}
@@ -93,7 +94,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Imports()
-		r.Imports = ntt.PathSlice(paths...)
+		r.Imports = fs.PathSlice(paths...)
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}
@@ -218,7 +219,7 @@ func removeDuplicates(slice []string) []string {
 	return ret
 }
 
-func path(f *ntt.File, err error) (string, error) {
+func path(f *fs.File, err error) (string, error) {
 	if f == nil {
 		return "", err
 	}

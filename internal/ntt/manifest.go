@@ -506,3 +506,16 @@ func (suite *Suite) FindModule(name string) (string, error) {
 
 	return "", fmt.Errorf("No such module %q", name)
 }
+
+// IsOwned returns true if path is part of this test suite
+func (suite *Suite) IsOwned(path string) bool {
+	path = fs.Open(path).String()
+
+	files, _ := suite.Files()
+	for _, file := range files {
+		if file == path {
+			return true
+		}
+	}
+	return false
+}

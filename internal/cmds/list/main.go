@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
@@ -224,9 +225,9 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 
 	switch cmd.Name() {
 	case "tests", "list":
-		var x []*ntt.File
+		var x []*fs.File
 		x, err = suite.Sources()
-		srcs = ntt.PathSlice(x...)
+		srcs = fs.PathSlice(x...)
 	default:
 		srcs, err = suite.Files()
 	}

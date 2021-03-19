@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +34,7 @@ var (
 			if err != nil {
 				fatal(err)
 			}
-			return strings.Join(ntt.PathSlice(srcs...), "\n")
+			return strings.Join(fs.PathSlice(srcs...), "\n")
 		},
 
 		"imports": func(suite *ntt.Suite) string {
@@ -41,7 +42,7 @@ var (
 			if err != nil {
 				fatal(err)
 			}
-			return strings.Join(ntt.PathSlice(imps...), "\n")
+			return strings.Join(fs.PathSlice(imps...), "\n")
 		},
 		"timeout": func(suite *ntt.Suite) string {
 			t, err := suite.Timeout()
