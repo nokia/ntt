@@ -1,0 +1,32 @@
+{
+  "product": "ntt",
+  "company": "Nokia",
+  "license": "LICENSE",
+  "upgrade-code": "f041e5fe-d9b3-4516-9a55-a81419e3c557",
+  "files": {
+    "guid": "26a7a2ac-eee0-48f0-aa1e-fd71be0dfdd1",
+    "items": [
+      "ntt.exe"
+    ]
+  },
+  "env": {
+    "guid": "d1a908a3-fed4-48f1-a8ed-793bb11b3420",
+    "vars": [
+      {
+        "name": "PATH",
+        "value": "[INSTALLDIR]",
+        "permanent": "yes",
+        "system": "no",
+        "action": "set",
+        "part": "last"
+      }
+    ]
+  },
+  "shortcuts": {},
+  "choco": {
+    "description": "Modern tools for TTCN-3",
+    "project-url": "https://github.com/nokia/ntt",
+    "tags": "ttcn3 language server",
+    "license-url": "https://github.com/nokia/ntt/blob/master/LICENSE"
+  }
+}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"gopkg.in/yaml.v2"
 )
@@ -42,8 +43,8 @@ func (suite *Suite) Timeout() (float64, error) {
 // Sources returns the list of sources required to compile a Suite.
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Sources() ([]*File, error) {
-	var ret []*File
+func (suite *Suite) Sources() ([]*fs.File, error) {
+	var ret []*fs.File
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_SOURCES")
@@ -124,8 +125,8 @@ func (suite *Suite) Sources() ([]*File, error) {
 // Imports returns the list of imported packages required to compile a Suite.
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Imports() ([]*File, error) {
-	var ret []*File
+func (suite *Suite) Imports() ([]*fs.File, error) {
+	var ret []*fs.File
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_IMPORTS")
@@ -254,7 +255,7 @@ func (suite *Suite) Variables() (map[string]string, error) {
 // TestHook return the File object to the test hook. If not hook was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
-func (suite *Suite) TestHook() (*File, error) {
+func (suite *Suite) TestHook() (*fs.File, error) {
 	env, err := suite.Getenv("NTT_TEST_HOOK")
 	if err != nil {
 		return nil, err
@@ -322,7 +323,7 @@ func (suite *Suite) TestHook() (*File, error) {
 // ParametersFile return the File object to the parameter file. If no file was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
-func (suite *Suite) ParametersFile() (*File, error) {
+func (suite *Suite) ParametersFile() (*fs.File, error) {
 	env, err := suite.Getenv("NTT_PARAMETERS_FILE")
 	if err != nil {
 		return nil, err
@@ -444,13 +445,13 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		err      error
 	}
 
-	f.handle = suite.store.Bind(f.id(), func(ctx context.Context) interface{} {
+	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := manifestData{}
 		data.err = yaml.UnmarshalStrict(b, &data.manifest)
 		return &data
 	})
 
-	v := f.handle.Get(context.TODO())
+	v := f.Handle.Get(context.TODO())
 	data := v.(*manifestData)
 
 	return &data.manifest, data.err
@@ -463,7 +464,7 @@ func (suite *Suite) Files() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	files := PathSlice(srcs...)
+	files := fs.PathSlice(srcs...)
 
 	dirs, err := suite.Imports()
 	if err != nil {
@@ -504,4 +505,17 @@ func (suite *Suite) FindModule(name string) (string, error) {
 	}
 
 	return "", fmt.Errorf("No such module %q", name)
+}
+
+// IsOwned returns true if path is part of this test suite
+func (suite *Suite) IsOwned(path string) bool {
+	path = fs.Open(path).String()
+
+	files, _ := suite.Files()
+	for _, file := range files {
+		if file == path {
+			return true
+		}
+	}
+	return false
 }
