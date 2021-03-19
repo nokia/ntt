@@ -1,0 +1,8 @@
+module test {
+
+testcase Fail() runs on Component {
+	setverdict(fail, "This test always fails")
+}
+
+}
+
