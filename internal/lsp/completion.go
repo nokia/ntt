@@ -111,7 +111,13 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	fileName := filepath.Base(params.TextDocument.URI.SpanURI().Filename())
 	defaultModuleId := fileName[:len(fileName)-len(filepath.Ext(fileName))]
 
-	syntax := s.suite.Parse(params.TextDocument.URI.SpanURI().Filename())
+	suites := s.Owners(params.TextDocument.URI)
+	// NOTE: having the current file owned by more then one suite should not
+	// import from modules originating from both suites. This would
+	// in most ways end up with cyclic imports.
+	// Thus 'completion' shall collect items only from one suite.
+	// Decision: first suite
+	syntax := suites[0].Parse(params.TextDocument.URI.SpanURI().Filename())
 	log.Debug(fmt.Sprintf("Completion after Parse :%p", &syntax.Module))
 	if syntax.Module == nil {
 		return nil, syntax.Err
@@ -130,5 +136,5 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	pos := syntax.Pos(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
 	nodeStack := lastNonWsToken(syntax.Module, pos)
 
-	return &protocol.CompletionList{IsIncomplete: false, Items: newCompListItems(s.suite, pos, nodeStack)}, nil //notImplemented("Completion")
+	return &protocol.CompletionList{IsIncomplete: false, Items: newCompListItems(suites[0], pos, nodeStack)}, nil //notImplemented("Completion")
 }
