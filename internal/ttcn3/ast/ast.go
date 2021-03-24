@@ -723,7 +723,7 @@ func (x *Field) LastTok() *Token {
 	if x.Name != nil {
 		return x.Name.LastTok()
 	}
-	return nil
+	return x.Type.LastTok()
 }
 
 func (x *RefSpec) LastTok() *Token    { return x.X.LastTok() }
