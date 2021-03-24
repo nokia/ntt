@@ -11,14 +11,75 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/token"
 )
 
-var moduleDefKw = []string{"import from ", "type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
+var (
+	moduleDefKw               = []string{"import from ", "type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
+	importAfterModName        = []string{"all [except {}];", "{}"}
+	importAfterModNameSnippet = []string{"${1:all${2: except {$3\\}}};$0", "{$0}"}
+	importKinds               = []string{"type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
+)
+
+func newImportkinds() []protocol.CompletionItem {
+	complList := make([]protocol.CompletionItem, 0, len(importKinds))
+	for _, v := range importKinds {
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+	}
+	return complList
+}
+
+func getAllAltstepsFromModule(suite *ntt.Suite, mname string) []string {
+	list := make([]string, 0, 10)
+	if file, err := suite.FindModule(mname); err == nil {
+		syntax := suite.Parse(file)
+		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+			if n == nil {
+				// called on node exit
+				return false
+			}
+
+			switch node := n.(type) {
+			case *ast.FuncDecl:
+				if node.Kind.Kind == token.ALTSTEP {
+					list = append(list, node.Name.String())
+				}
+				return false
+			default:
+				return true
+			}
+
+		})
+	}
+	log.Debug(fmt.Sprintf("AltstepCompletion List :%#v", list))
+	return list
+}
+
+func newImportAltsteps(suite *ntt.Suite, mname string) []protocol.CompletionItem {
+	// TODO: exchange with list of altsteps defined in this module
+	items := getAllAltstepsFromModule(suite, mname)
+	complList := make([]protocol.CompletionItem, 0, len(items)+1)
+	for _, v := range items {
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+	}
+	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
+	return complList
+}
 
 func newModuleDefKw() []protocol.CompletionItem {
 	complList := make([]protocol.CompletionItem, 0, len(moduleDefKw))
 	for _, v := range moduleDefKw {
 		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+	}
+	return complList
+}
+
+func newImportAfterModName() []protocol.CompletionItem {
+	complList := make([]protocol.CompletionItem, 0, len(importAfterModName))
+	for i, v := range importAfterModName {
+		complList = append(complList, protocol.CompletionItem{Label: v,
+			InsertText:       importAfterModNameSnippet[i],
+			InsertTextFormat: protocol.SnippetTextFormat, Kind: protocol.KeywordCompletion})
 	}
 	return complList
 }
@@ -52,8 +113,21 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 				list = newModuleDefKw()
 			}
 			if _, ok := nodes[l-2].(*ast.ImportDecl); ok {
-				// look for available modules for import
-				list = moduleNameListFromSuite(suite)
+				// TODO: this is the place where I end up as well after { by pressing ctrl+space
+				if nodet.End() >= pos {
+					// look for available modules for import
+					list = moduleNameListFromSuite(suite)
+				} else {
+					list = newImportAfterModName()
+				}
+			}
+			if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
+				// happens after the altstep kw while typing the identifier
+				if defKind.Kind.Kind == token.ALTSTEP {
+					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+						list = newImportAltsteps(suite, impDecl.Module.Tok.String())
+					}
+				}
 			}
 		}
 	case *ast.ImportDecl:
@@ -61,11 +135,22 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			// look for available modules for import
 			list = moduleNameListFromSuite(suite)
 		}
+	case *ast.DefKindExpr:
+		if !nodet.Kind.IsValid() {
+			list = newImportkinds()
+		}
 	case *ast.ErrorNode:
 		// i.e. user started typing => ast.Ident might be detected instead of a kw
 		if _, ok := nodes[l-2].(*ast.ModuleDef); l > 1 && ok {
 			// start a new module def
 			list = newModuleDefKw()
+		} else if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
+			// happens streight after the altstep kw if ctrl+space is pressed
+			if defKind.Kind.Kind == token.ALTSTEP {
+				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+					list = newImportAltsteps(suite, impDecl.Module.Tok.String())
+				}
+			}
 		}
 	default:
 		log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
