@@ -29,7 +29,7 @@ func newImportkinds() []protocol.CompletionItem {
 	return complList
 }
 
-func getAllAltstepsFromModule(suite *ntt.Suite, mname string) []string {
+func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		syntax := suite.Parse(file)
@@ -41,7 +41,7 @@ func getAllAltstepsFromModule(suite *ntt.Suite, mname string) []string {
 
 			switch node := n.(type) {
 			case *ast.FuncDecl:
-				if node.Kind.Kind == token.ALTSTEP {
+				if node.Kind.Kind == kind {
 					list = append(list, node.Name.String())
 				}
 				return false
@@ -55,9 +55,9 @@ func getAllAltstepsFromModule(suite *ntt.Suite, mname string) []string {
 	return list
 }
 
-func newImportAltsteps(suite *ntt.Suite, mname string) []protocol.CompletionItem {
+func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
 	// TODO: exchange with list of altsteps defined in this module
-	items := getAllAltstepsFromModule(suite, mname)
+	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
 		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
@@ -122,10 +122,11 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 				}
 			}
 			if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
-				// happens after the altstep kw while typing the identifier
-				if defKind.Kind.Kind == token.ALTSTEP {
+				// happens after the altstep/function/testcase kw while typing the identifier
+				switch defKind.Kind.Kind {
+				case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
 					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-						list = newImportAltsteps(suite, impDecl.Module.Tok.String())
+						list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 					}
 				}
 			}
@@ -146,9 +147,10 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			list = newModuleDefKw()
 		} else if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
 			// happens streight after the altstep kw if ctrl+space is pressed
-			if defKind.Kind.Kind == token.ALTSTEP {
+			switch defKind.Kind.Kind {
+			case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
 				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-					list = newImportAltsteps(suite, impDecl.Module.Tok.String())
+					list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 				}
 			}
 		}
