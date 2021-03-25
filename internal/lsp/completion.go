@@ -112,9 +112,11 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			if _, ok := nodes[l-2].(*ast.ModuleDef); ok {
 				list = newModuleDefKw()
 			}
-			if _, ok := nodes[l-2].(*ast.ImportDecl); ok {
+			if importDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
 				// TODO: this is the place where I end up as well after { by pressing ctrl+space
-				if nodet.End() >= pos {
+				if importDecl.LBrace.IsValid() {
+					list = newImportkinds()
+				} else if nodet.End() >= pos {
 					// look for available modules for import
 					list = moduleNameListFromSuite(suite)
 				} else {
