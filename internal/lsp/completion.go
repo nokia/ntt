@@ -122,15 +122,36 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 				}
 			}
 			if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
-				// happens after the altstep/function/testcase kw while typing the identifier
-				switch defKind.Kind.Kind {
-				case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
-					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-						list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+				// happens after
+				// * the altstep/function/testcase kw while typing the identifier
+				// * inside the exception list after { while typing the kind
+				if l == 7 {
+					if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
+						if defKind.Kind.IsValid() {
+							switch defKind.Kind.Kind {
+							case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
+								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+									list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+								}
+							}
+						} else {
+							list = newImportkinds()
+						}
+					}
+				} else {
+					switch defKind.Kind.Kind {
+					case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
+						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+							list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+						}
 					}
 				}
 			}
+			if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
+				list = newImportkinds()
+			}
 		}
+
 	case *ast.ImportDecl:
 		if nodet.Module == nil {
 			// look for available modules for import
@@ -151,7 +172,13 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
 				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
 					list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+						list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+					}
 				}
+			default:
+				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", defKind))
 			}
 		}
 	default:
