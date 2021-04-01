@@ -97,7 +97,7 @@ func moduleNameListFromSuite(suite *ntt.Suite) []protocol.CompletionItem {
 	return list
 }
 
-func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protocol.CompletionItem {
+func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
 	if nodes == nil || l == 0 {
@@ -190,7 +190,7 @@ func newCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 	return list
 }
 
-func lastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
+func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 	var (
 		completed bool       = false
 		nodeStack []ast.Node = make([]ast.Node, 0, 10)
@@ -248,7 +248,7 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 		return &protocol.CompletionList{IsIncomplete: false, Items: complList}, nil
 	}
 	pos := syntax.Pos(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
-	nodeStack := lastNonWsToken(syntax.Module, pos)
+	nodeStack := LastNonWsToken(syntax.Module, pos)
 
-	return &protocol.CompletionList{IsIncomplete: false, Items: newCompListItems(suites[0], pos, nodeStack)}, nil //notImplemented("Completion")
+	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack)}, nil //notImplemented("Completion")
 }
