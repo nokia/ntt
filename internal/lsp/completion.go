@@ -55,12 +55,45 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 	return list
 }
 
+func getAllTemplatesFromModule(suite *ntt.Suite, mname string) []string {
+	list := make([]string, 0, 10)
+	if file, err := suite.FindModule(mname); err == nil {
+		syntax := suite.Parse(file)
+		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+			if n == nil {
+				// called on node exit
+				return false
+			}
+
+			switch node := n.(type) {
+			case *ast.TemplateDecl:
+				list = append(list, node.Name.String())
+				return false
+			default:
+				return true
+			}
+
+		})
+	}
+	log.Debug(fmt.Sprintf("AltstepCompletion List :%#v", list))
+	return list
+}
+
 func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
-	// TODO: exchange with list of altsteps defined in this module
 	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
 		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.FunctionCompletion})
+	}
+	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
+	return complList
+}
+
+func newImportTemplates(suite *ntt.Suite, mname string) []protocol.CompletionItem {
+	items := getAllTemplatesFromModule(suite, mname)
+	complList := make([]protocol.CompletionItem, 0, len(items)+1)
+	for _, v := range items {
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
 	}
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
@@ -134,6 +167,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
 									list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 								}
+							case token.TEMPLATE:
+								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+									list = newImportTemplates(suite, impDecl.Module.Tok.String())
+								}
 							}
 						} else {
 							list = newImportkinds()
@@ -144,6 +181,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 					case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
 						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
 							list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+						}
+					case token.TEMPLATE:
+						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+							list = newImportTemplates(suite, impDecl.Module.Tok.String())
 						}
 					}
 				}
@@ -171,6 +212,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 						list = newImportBehaviours(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
 					}
 				}
+			case token.TEMPLATE:
+				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
+					list = newImportTemplates(suite, impDecl.Module.Tok.String())
+				}
 			default:
 				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", nodet.Kind.Kind))
 			}
@@ -190,6 +235,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
 						list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 					}
+				}
+			case token.TEMPLATE:
+				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+					list = newImportTemplates(suite, impDecl.Module.Tok.String())
 				}
 			default:
 				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", defKind))
