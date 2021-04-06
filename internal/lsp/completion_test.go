@@ -124,9 +124,52 @@ func TestImportBehaviours(t *testing.T) {
 
 	// Lookup `Msg`
 	list := completionAt(t, suite, 92)
-	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "tc1", Kind: protocol.FunctionCompletion},
 		{Label: "tc2", Kind: protocol.FunctionCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportTemplates(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportTemplates_Module_1 {
+            template a_}
+		import from A all;
+	  }`, `module TestImportTemplates_Module_1
+      {
+		  template charstring a_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  template R1 a_r1(boolean b) := {f1 := 10. f2 := b}
+	  }`, `module B
+	  {}`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 92)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "a_name", Kind: protocol.ConstantCompletion},
+		{Label: "a_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportTemplatesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportTemplatesCtrlSpc_Module_1 {
+            template }
+		import from A all;
+	  }`, `module TestImportTemplatesCtrlSpc_Module_1
+      {
+		  template charstring a_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  template R1 a_r1(boolean b) := {f1 := 10. f2 := b}
+	  }`, `module B
+	  {}`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 97)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "a_name", Kind: protocol.ConstantCompletion},
+		{Label: "a_r1", Kind: protocol.ConstantCompletion},
 		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
 }
