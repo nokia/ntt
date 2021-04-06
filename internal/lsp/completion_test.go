@@ -49,13 +49,10 @@ func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 }
 
 // Completion within Import statement.
-// TODO: func TestImportModulenamesCtrlSpc(t *testing.T) {}
-// TODO: func TestImportBehaviours(t *testing.T)  {}
-// TODO: func TestImportBehavioursCtrlSpc(t *testing.T)  {}
 // TODO: func TestImportTypes(t *testing.T) {}
 // TODO: func TestImportTypesCtrlSpc(t *testing.T) {}
 
-func TestImportModulenames(t *testing.T) {
+func TestImportModulenamesCtrlSpc(t *testing.T) {
 	suite := buildSuite(t, `module Test
 	{
 		import from
@@ -67,8 +64,69 @@ func TestImportModulenames(t *testing.T) {
 	// Lookup `Msg`
 	list := completionAt(t, suite, 30)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
+	assert.Equal(t, []protocol.CompletionItem{{Label: "TestImportModulenamesCtrlSpc_Module_0", Kind: protocol.ModuleCompletion},
+		{Label: "TestImportModulenamesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestImportModulenamesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestImportModulenames(t *testing.T) {
+	suite := buildSuite(t, `module Test
+	{
+		import from Tes
+		import from A all;
+	  }`, `module A
+	  {}`, `module B
+	  {}`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 33)
+	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{{Label: "TestImportModulenames_Module_0", Kind: protocol.ModuleCompletion},
 		{Label: "TestImportModulenames_Module_1", Kind: protocol.ModuleCompletion},
 		{Label: "TestImportModulenames_Module_2", Kind: protocol.ModuleCompletion}}, list)
 
+}
+
+func TestImportBehavioursCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportBehavioursCtrlSpc_Module_1 {
+            altstep   }
+		import from A all;
+	  }`, `module TestImportBehavioursCtrlSpc_Module_1
+      {
+		  altstep a1() {}
+		  altstep a2() {}
+	  }`, `module B
+	  {}`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 99)
+	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "a1", Kind: protocol.FunctionCompletion},
+		{Label: "a2", Kind: protocol.FunctionCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportBehaviours(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportBehaviours_Module_1 {
+            testcase t}
+		import from A all;
+	  }`, `module TestImportBehaviours_Module_1
+      {
+		  testcase tc1() runs on C0 {}
+		  testcase tc2() runs on C0 {}
+	  }`, `module B
+	  {}`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 92)
+	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "tc1", Kind: protocol.FunctionCompletion},
+		{Label: "tc2", Kind: protocol.FunctionCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
 }
