@@ -60,7 +60,7 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.FunctionCompletion})
 	}
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
@@ -161,6 +161,19 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 	case *ast.DefKindExpr:
 		if !nodet.Kind.IsValid() {
 			list = newImportkinds()
+		} else {
+			switch nodet.Kind.Kind {
+			case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
+				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
+					list = newImportBehaviours(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
+						list = newImportBehaviours(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
+					}
+				}
+			default:
+				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", nodet.Kind.Kind))
+			}
 		}
 	case *ast.ErrorNode:
 		// i.e. user started typing => ast.Ident might be detected instead of a kw
