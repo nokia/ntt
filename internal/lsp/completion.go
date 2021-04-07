@@ -72,10 +72,30 @@ func getAllTemplatesFromModule(suite *ntt.Suite, mname string) []string {
 			default:
 				return true
 			}
-
 		})
 	}
-	log.Debug(fmt.Sprintf("AltstepCompletion List :%#v", list))
+	return list
+}
+
+func getAllConstsFromModule(suite *ntt.Suite, mname string) []string {
+	list := make([]string, 0, 10)
+	if file, err := suite.FindModule(mname); err == nil {
+		syntax := suite.Parse(file)
+		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+			if n == nil {
+				// called on node exit
+				return false
+			}
+
+			switch node := n.(type) {
+			case *ast.Declarator:
+				list = append(list, node.Name.String())
+				return false
+			default:
+				return true
+			}
+		})
+	}
 	return list
 }
 
@@ -99,6 +119,15 @@ func newImportTemplates(suite *ntt.Suite, mname string) []protocol.CompletionIte
 	return complList
 }
 
+func newImportConsts(suite *ntt.Suite, mname string) []protocol.CompletionItem {
+	items := getAllConstsFromModule(suite, mname)
+	complList := make([]protocol.CompletionItem, 0, len(items)+1)
+	for _, v := range items {
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
+	}
+	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
+	return complList
+}
 func newModuleDefKw() []protocol.CompletionItem {
 	complList := make([]protocol.CompletionItem, 0, len(moduleDefKw))
 	for _, v := range moduleDefKw {
@@ -171,6 +200,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
 									list = newImportTemplates(suite, impDecl.Module.Tok.String())
 								}
+							case token.CONST:
+								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+									list = newImportConsts(suite, impDecl.Module.Tok.String())
+								}
 							}
 						} else {
 							list = newImportkinds()
@@ -185,6 +218,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 					case token.TEMPLATE:
 						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
 							list = newImportTemplates(suite, impDecl.Module.Tok.String())
+						}
+					case token.CONST:
+						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+							list = newImportConsts(suite, impDecl.Module.Tok.String())
 						}
 					}
 				}
@@ -215,6 +252,18 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			case token.TEMPLATE:
 				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
 					list = newImportTemplates(suite, impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
+						list = newImportTemplates(suite, impDecl.Module.Tok.String())
+					}
+				}
+			case token.CONST:
+				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
+					list = newImportConsts(suite, impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
+						list = newImportConsts(suite, impDecl.Module.Tok.String())
+					}
 				}
 			default:
 				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", nodet.Kind.Kind))
@@ -239,6 +288,18 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			case token.TEMPLATE:
 				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
 					list = newImportTemplates(suite, impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+						list = newImportTemplates(suite, impDecl.Module.Tok.String())
+					}
+				}
+			case token.CONST:
+				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+					list = newImportConsts(suite, impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+						list = newImportConsts(suite, impDecl.Module.Tok.String())
+					}
 				}
 			default:
 				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", defKind))
