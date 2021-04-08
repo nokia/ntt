@@ -173,3 +173,92 @@ func TestImportTemplatesCtrlSpc(t *testing.T) {
 		{Label: "a_r1", Kind: protocol.ConstantCompletion},
 		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
 }
+
+func TestImportTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportTypesCtrlSpc_Module_1 {
+            type }
+		import from A all;
+	  }`, `module TestImportTypesCtrlSpc_Module_1
+      {
+		  type charstring String;
+		  type record R1 {integer f1, boolean f2}
+		  type set S1 {integer f1, boolean f2}
+		  type union U1 {integer f1, boolean f2}
+		  type record of integer RoI1;
+		  type record length(2..10) of integer RoI2;
+		  type record of T MyList <in type T>;
+		  type set of integer SoI;
+		  type function MyBehavType() return integer;
+		  type enumerated E1 {red, green, blue};
+		  type port MyPort message {inout E1}
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 89)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "String", Kind: protocol.StructCompletion},
+		{Label: "R1", Kind: protocol.StructCompletion},
+		{Label: "S1", Kind: protocol.StructCompletion},
+		{Label: "U1", Kind: protocol.StructCompletion},
+		{Label: "RoI1", Kind: protocol.StructCompletion},
+		{Label: "RoI2", Kind: protocol.StructCompletion},
+		{Label: "MyList", Kind: protocol.StructCompletion},
+		{Label: "SoI", Kind: protocol.StructCompletion},
+		{Label: "MyBehavType", Kind: protocol.StructCompletion},
+		{Label: "E1", Kind: protocol.StructCompletion},
+		{Label: "MyPort", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportTypes_Module_1 {
+            type E}
+		import from A all;
+	  }`, `module TestImportTypes_Module_1
+      {
+		  type charstring String;
+		  type record R1 {integer f1, boolean f2}
+		  type set S1 {integer f1, boolean f2}
+		  type union U1 {integer f1, boolean f2}
+		  type record of integer RoI1;
+		  type record length(2..10) of integer RoI2;
+		  type record of T MyList <in type T>;
+		  type set of integer SoI;
+		  type function MyBehavType() return integer;
+		  type enumerated E1 {red, green, blue};
+		  type port MyPort message {inout E1}
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 83)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "String", Kind: protocol.StructCompletion},
+		{Label: "R1", Kind: protocol.StructCompletion},
+		{Label: "S1", Kind: protocol.StructCompletion},
+		{Label: "U1", Kind: protocol.StructCompletion},
+		{Label: "RoI1", Kind: protocol.StructCompletion},
+		{Label: "RoI2", Kind: protocol.StructCompletion},
+		{Label: "MyList", Kind: protocol.StructCompletion},
+		{Label: "SoI", Kind: protocol.StructCompletion},
+		{Label: "MyBehavType", Kind: protocol.StructCompletion},
+		{Label: "E1", Kind: protocol.StructCompletion},
+		{Label: "MyPort", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestSubTypeDefSegv(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type r
+	  }`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 32)
+	assert.Empty(t, list)
+}
