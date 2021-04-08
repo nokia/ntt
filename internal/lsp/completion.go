@@ -173,8 +173,9 @@ func newImportConsts(suite *ntt.Suite, mname string) []protocol.CompletionItem {
 func newImportTypes(suite *ntt.Suite, mname string) []protocol.CompletionItem {
 	items := getAllTypesFromModule(suite, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
+	// NOTE: instead of 'StructCompletion' a better matching kind could be used
 	for _, v := range items {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
 	}
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
