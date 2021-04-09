@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/pelletier/go-toml"
 )
 
@@ -63,7 +64,7 @@ func (suite *Suite) Environ() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, fmt.Sprintf("%s=\"%s\"", k, v))
+		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
 	}
 	return ret, nil
 }
@@ -181,7 +182,7 @@ func (suite *Suite) lookupProcessEnv(key string) (string, bool) {
 }
 
 // Lookup key in environment file
-func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
+func (suite *Suite) lookupEnvFile(file *fs.File, key string) (string, error) {
 	tree, err := suite.parseEnvFile(file)
 	if err != nil {
 		return "", err
@@ -206,14 +207,14 @@ func (suite *Suite) lookupEnvFile(file *File, key string) (string, error) {
 	return "", &NoSuchVariableError{Name: key}
 }
 
-func (suite *Suite) parseEnvFile(f *File) (*toml.Tree, error) {
+func (suite *Suite) parseEnvFile(f *fs.File) (*toml.Tree, error) {
 
 	type envData struct {
 		tree *toml.Tree
 		err  error
 	}
 
-	f.handle = suite.store.Bind(f.id(), func(ctx context.Context) interface{} {
+	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := envData{}
 
 		b, err := f.Bytes()
@@ -229,7 +230,7 @@ func (suite *Suite) parseEnvFile(f *File) (*toml.Tree, error) {
 		return &data
 	})
 
-	v := f.handle.Get(context.TODO())
+	v := f.Handle.Get(context.TODO())
 	data := v.(*envData)
 
 	return data.tree, data.err

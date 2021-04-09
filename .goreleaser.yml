@@ -6,18 +6,16 @@ builds:
   - id: ntt
     binary: ntt
     dir: ./cmd/ntt
+    goos:
+      - linux
+      - darwin
+      - windows
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: windows
+        goarch: 386
 
-  - id: k3
-    binary: k3
-    dir: ./cmd/k3
-
-  - id: k3objdump
-    binary: k3objdump
-    dir: ./cmd/k3objdump
-
-  - id: ntt-mcov
-    binary: ntt-mcov
-    dir: ./cmd/ntt-mcov
 
 nfpms:
   - file_name_template: '{{ .ProjectName }}.{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
@@ -43,27 +41,16 @@ nfpms:
       amd64: x86_64
 
 archives:
-- builds: ["amd64"]
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+    replacements:
+      386: i386
+      amd64: x86_64
 
 checksum:
   name_template: 'checksums.txt'
 
 snapshot:
   name_template: "{{ .Tag }}-next"
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-    - '^docs:'
-    - '^test:'
-    - Merge branch
 
 release:
   draft: true

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
 )
@@ -199,7 +200,7 @@ func TestParametersFile(t *testing.T) {
 	assert.Nil(t, h)
 
 }
-func strs(files []*ntt.File) []string {
+func strs(files []*fs.File) []string {
 	ret := make([]string, len(files))
 	for i := range files {
 		ret[i] = files[i].String()

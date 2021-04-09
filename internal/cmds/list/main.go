@@ -8,10 +8,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
+	"github.com/nokia/ntt/internal/ttcn3/token"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -22,7 +24,7 @@ var (
 		Short: "List various types of objects",
 		Long: `List various types of objects.
 
-List modules, imports or tests. The list command without any explicit
+List control parts, modules, imports or tests. The list command without any explicit
 sub-commands will output tests.
 
 List will not output objects from imported directories. If you need to list all
@@ -135,9 +137,11 @@ If a basket is not defined by an environment variable, it's equivalent to a
 		RunE: listTests,
 	}
 
-	listTestsCmd   = &cobra.Command{Use: `tests`, RunE: listTests}
-	listModulesCmd = &cobra.Command{Use: `modules`, RunE: listModules}
-	listImportsCmd = &cobra.Command{Use: `imports`, RunE: listImports}
+	listTestsCmd      = &cobra.Command{Use: `tests`, RunE: listTests}
+	listModulesCmd    = &cobra.Command{Use: `modules`, RunE: listModules}
+	listImportsCmd    = &cobra.Command{Use: `imports`, RunE: listImports}
+	listControlsCmd   = &cobra.Command{Use: `controls`, RunE: listControls}
+	listModuleParsCmd = &cobra.Command{Use: `modulepars`, RunE: listModulePars}
 
 	w = bufio.NewWriter(os.Stdout)
 
@@ -154,7 +158,7 @@ func init() {
 	Command.PersistentFlags().StringSliceVarP(&baskets[0].nameExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
 	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
 	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
-	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd)
+	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd, listControlsCmd, listModuleParsCmd)
 }
 
 type basket struct {
@@ -221,9 +225,9 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 
 	switch cmd.Name() {
 	case "tests", "list":
-		var x []*ntt.File
+		var x []*fs.File
 		x, err = suite.Sources()
-		srcs = ntt.PathSlice(x...)
+		srcs = fs.PathSlice(x...)
 	default:
 		srcs, err = suite.Files()
 	}
@@ -307,6 +311,66 @@ func listImports(cmd *cobra.Command, args []string) error {
 				}
 
 			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			}
+			return false
+		})
+	}
+	return nil
+}
+
+func listControls(cmd *cobra.Command, args []string) error {
+	for _, info := range infos {
+		if info.Err != nil {
+			return info.Err
+		}
+		ast.Inspect(info.Module, func(n ast.Node) bool {
+			if n == nil {
+				return false
+			}
+			switch n := n.(type) {
+			case *ast.ControlPart:
+				name := info.Module.Name.String() + ".control"
+				tags := doc.FindAllTags(n.Tok.Comments())
+				if match(name, tags) {
+					printItem(info.FileSet, n.Pos(), tags, name)
+				}
+
+			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			}
+			return false
+		})
+	}
+	return nil
+}
+
+func listModulePars(cmd *cobra.Command, args []string) error {
+	for _, info := range infos {
+		if info.Err != nil {
+			return info.Err
+		}
+		ast.Inspect(info.Module, func(n ast.Node) bool {
+			if n == nil {
+				return false
+			}
+			switch n := n.(type) {
+			case *ast.ValueDecl:
+				if n.Kind.Kind == token.MODULEPAR || n.Kind.Kind == token.ILLEGAL {
+					return true
+				}
+
+				return false
+
+			case *ast.Declarator:
+				name := info.Module.Name.String() + "." + n.Name.String()
+				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
+				if !match(name, tags) {
+					return false
+				}
+				printItem(info.FileSet, n.Pos(), tags, name)
+
+			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
 				return true
 			}
 			return false

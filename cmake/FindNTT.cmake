@@ -95,11 +95,12 @@ manifest.
 
 ]====================================================================]
 
-if (NOT NTT_ROOT)
-    set(NTT_ROOT ${CMAKE_SOURCE_DIR}/lib/ntt)
+if(TTCN3_PROTOBUF_INCLUDED)
+     return()
 endif()
+set(TTCN3_PROTOBUF_INCLUDED true)
 
-find_program(NTT_EXECUTABLE NAMES ntt k3 PATHS ${NTT_ROOT}/bin DOC "Path to NTT")
+find_program(NTT_EXECUTABLE NAMES ntt k3 DOC "Path to NTT")
 
 if(NTT_EXECUTABLE)
     execute_process(
@@ -142,14 +143,11 @@ function(add_ttcn3_suite TGT)
 
     set(MANIFEST_FILE "${_WORKING_DIRECTORY}/package.yml")
 
-    add_custom_target("${TGT}"
-        COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} run --build ${_WORKING_DIRECTORY}
-        BYPRODUCTS "${MANIFEST_FILE}"
-    )
-
-    add_custom_target("${TGT}.tags"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} tags            "${_WORKING_DIRECTORY}" >"${TGT}.tags")
-    add_custom_target("${TGT}.tests" COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list tests      "${_WORKING_DIRECTORY}" >"${TGT}.tests")
-    add_custom_target("${TGT}.deps"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list imports -v "${_WORKING_DIRECTORY}" >"${TGT}.deps")
+    add_custom_target("${TGT}" DEPENDS "${MANIFEST_FILE}")
+    add_custom_target("${TGT}.lint"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} lint            "${_WORKING_DIRECTORY}" >"${TGT}.lint"  DEPENDS "${TGT}")
+    add_custom_target("${TGT}.tags"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} tags            "${_WORKING_DIRECTORY}" >"${TGT}.tags"  DEPENDS "${TGT}")
+    add_custom_target("${TGT}.tests" COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list tests      "${_WORKING_DIRECTORY}" >"${TGT}.tests" DEPENDS "${TGT}")
+    add_custom_target("${TGT}.deps"  COMMAND NTT_CACHE=${CMAKE_BINARY_DIR} ${NTT_EXECUTABLE} list imports -v "${_WORKING_DIRECTORY}" >"${TGT}.deps"  DEPENDS "${TGT}")
 
     set(MANIFEST "")
     string(APPEND MANIFEST "# DO NOT MODIFY.\n")
@@ -216,4 +214,35 @@ function(add_ttcn3_suite TGT)
     endforeach()
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
+endfunction()
+
+function(protobuf_generate_ttcn3 TGT)
+    if(NOT ARGN)
+        message(SEND_ERROR "Error: protobuf_generate_ttcn3() called without any proto files")
+        return()
+    endif()
+
+    if(DEFINED Protobuf_IMPORT_DIRS)
+        foreach(PATH IN ITEMS ${Protobuf_IMPORT_DIRS})
+            list(APPEND PROTO_PATH -I ${PATH})
+        endforeach()
+    endif()
+    foreach(FIL ${ARGN})
+        get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+        get_filename_component(ABS_PATH ${ABS_FIL} PATH)
+        if(NOT(ABS_PATH MATCHES ".*/itf/types" ))
+            list(APPEND SRCS ${ABS_FIL})
+        endif()
+        list(FIND PROTO_PATH ${ABS_PATH} _CONTAINS_ALREADY)
+        if(${_CONTAINS_ALREADY} EQUAL -1)
+            list(APPEND PROTO_PATH -I ${ABS_PATH})
+        endif()
+    endforeach()
+
+    add_custom_target(
+        ${TGT}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/ttcn3
+        COMMAND ${Protobuf_PROTOC_EXECUTABLE} --ttcn3_out ${CMAKE_CURRENT_BINARY_DIR}/ttcn3 ${PROTO_PATH} ${SRCS}
+        COMMENT "Running TTCN-3 protocol buffer compiler for ${TGT}"
+        VERBATIM )
 endfunction()

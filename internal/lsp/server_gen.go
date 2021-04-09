@@ -4,7 +4,6 @@ package lsp
 
 import (
 	"context"
-
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
@@ -20,8 +19,8 @@ func (s *Server) ColorPresentation(context.Context, *protocol.ColorPresentationP
 	return nil, notImplemented("ColorPresentation")
 }
 
-func (s *Server) Completion(context.Context, *protocol.CompletionParams) (*protocol.CompletionList, error) {
-	return nil, notImplemented("Completion")
+func (s *Server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
+	return s.completion(ctx, params)
 }
 
 func (s *Server) Declaration(context.Context, *protocol.DeclarationParams) (protocol.Declaration, error) {
@@ -76,8 +75,8 @@ func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams)
 	return nil, notImplemented("DocumentSymbol")
 }
 
-func (s *Server) ExecuteCommand(context.Context, *protocol.ExecuteCommandParams) (interface{}, error) {
-	return nil, notImplemented("ExecuteCommand")
+func (s *Server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
+	return s.executeCommand(ctx, params)
 }
 
 func (s *Server) Exit(ctx context.Context) error {

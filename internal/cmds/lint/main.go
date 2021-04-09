@@ -2,12 +2,13 @@ package lint
 
 import (
 	"fmt"
-	"io/ioutil"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
@@ -66,11 +67,31 @@ White-Listing
     ignore.files      Ignore files
 
 
+Refactoring
+
+When TTCN-3 code is refactored incrementally, it happens that references to
+legacy code are faster added than one can remove them. This check helps with a
+warning, as soon as the usage of a symbol exceed a defined limit.
+
+
+Unused Symbols
+
+    unused.modules    Checks for unused modules
+
+
 Example configuration file:
 
 	aligned_braces: true
 	require_case_else: true
 	max_lines: 40
+
+	usage:
+	  "foo":
+	    limit: 12
+	    text: Use "bar" instead.
+
+	unused:
+	  modules: true
 
 	complexity:
 	  max: 15
@@ -101,7 +122,7 @@ Example configuration file:
 	    # Ignore all files from generated folders
 	    - "generated/"
 
-For information on writing a new check, see <TBD>.
+For information on writing new checks, see <TBD>.
 `,
 
 		RunE: lint,
@@ -110,6 +131,9 @@ For information on writing a new check, see <TBD>.
 	config  string
 	regexes = make(map[string]*regexp.Regexp)
 	issues  = 0
+
+	usedModules  = make(map[string]Import)
+	usedModuleMu sync.Mutex
 
 	style = struct {
 		MaxLines        int  `yaml:"max_lines"`
@@ -141,33 +165,50 @@ For information on writing a new check, see <TBD>.
 			Modules []string
 			Files   []string
 		}
+		Usage map[string]*struct {
+			Text  string
+			Limit int
+			count int
+		}
+		Unused struct {
+			Modules bool
+		}
 	}{}
 )
+
+type Import struct {
+	Fset     *loc.FileSet
+	Node     *ast.ImportDecl
+	Path     string
+	From     string
+	Imported string
+}
 
 func init() {
 	Command.PersistentFlags().StringVarP(&config, "config", "c", "", "path to YAML formatted file containing linter configuration")
 }
 
 func lint(cmd *cobra.Command, args []string) error {
-	if config != "" {
-		b, err := ioutil.ReadFile(config)
-		if err != nil {
-			return err
-		}
+	suite, err := ntt.NewFromArgs(args...)
+	if err != nil {
+		return err
+	}
 
-		if err := yaml.UnmarshalStrict(b, &style); err != nil {
-			return err
-		}
+	c := suite.File(".ntt-lint.yml")
+	b, err := c.Bytes()
+	if err != nil {
+		log.Verbose(err.Error())
+		return nil
+	}
+
+	if err := yaml.UnmarshalStrict(b, &style); err != nil {
+		return err
 	}
 
 	if err := buildRegexCache(); err != nil {
 		return err
 	}
 
-	suite, err := ntt.NewFromArgs(args...)
-	if err != nil {
-		return err
-	}
 	files, err := suite.Files()
 	if err != nil {
 		return err
@@ -210,6 +251,9 @@ func lint(cmd *cobra.Command, args []string) error {
 				fset := mod.FileSet
 
 				switch n := n.(type) {
+				case *ast.Ident:
+					checkUsage(fset, n)
+
 				case *ast.Module:
 					checkNaming(fset, n, style.Naming.Modules)
 					checkBraces(fset, n.LBrace, n.RBrace)
@@ -303,6 +347,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.ImportDecl:
 					checkBraces(fset, n.LBrace, n.RBrace)
+					checkImport(fset, n, mod.Module)
 				case *ast.GroupDecl:
 					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.WithSpec:
@@ -359,6 +404,9 @@ func lint(cmd *cobra.Command, args []string) error {
 	}
 
 	wg.Wait()
+
+	checkSuite(suite)
+
 	switch issues {
 	case 0:
 		return nil
@@ -454,6 +502,75 @@ func checkCaseElse(fset *loc.FileSet, caseElse map[ast.Node]int) {
 	for n, v := range caseElse {
 		if v == 0 {
 			report(&errMissingCaseElse{fset: fset, node: n})
+		}
+	}
+}
+
+func checkUsage(fset *loc.FileSet, n *ast.Ident) {
+
+	if style.Usage == nil {
+		return
+	}
+	id := n.String()
+	u, ok := style.Usage[id]
+	if !ok {
+		return
+	}
+	u.count++
+	if u.count >= u.Limit {
+		report(&errUsageExceedsLimit{
+			fset:  fset,
+			node:  n,
+			usage: u.count,
+			limit: u.Limit,
+			text:  u.Text})
+	}
+}
+
+func checkImport(fset *loc.FileSet, n *ast.ImportDecl, mod *ast.Module) {
+	if !style.Unused.Modules {
+		return
+	}
+
+	imported := identName(n.Module)
+	importing := identName(mod.Name)
+
+	usedModuleMu.Lock()
+	usedModules[imported] = Import{
+		Node:     n,
+		Fset:     fset,
+		Path:     fset.Position(n.Pos()).Filename,
+		From:     importing,
+		Imported: imported,
+	}
+	usedModuleMu.Unlock()
+
+}
+
+func checkSuite(suite *ntt.Suite) {
+
+	if !style.Unused.Modules {
+		return
+	}
+
+	pkgs, _ := suite.Imports()
+	for _, pkg := range pkgs {
+		files, _ := filepath.Glob(pkg.Path() + "/*.ttcn3")
+		for _, file := range files {
+			if isWhiteListed(style.Ignore.Files, file) {
+				continue
+			}
+
+			mod := filepath.Base(file)
+			mod = strings.TrimSuffix(mod, filepath.Ext(mod))
+
+			if isWhiteListed(style.Ignore.Modules, mod) {
+				return
+			}
+
+			if _, found := usedModules[mod]; !found {
+				report(&errUnusedModule{file: file})
+			}
 		}
 	}
 }

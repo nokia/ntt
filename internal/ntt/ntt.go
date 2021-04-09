@@ -1,38 +1,36 @@
 package ntt
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/memoize"
+	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
-	"github.com/nokia/ntt/internal/span"
 )
 
 // Suite represents a TTCN-3 test suite.
 type Suite struct {
 	id int // A unique session id
 
-	// File handling
-	filesMu sync.Mutex
-	files   map[span.URI]*File
-
 	// Module handling (maps module names to paths)
 	modulesMu sync.Mutex
 	modules   map[string]string
 
 	// Environent handling
-	envFiles []*File
+	envFiles []*fs.File
 
 	// Manifest stuff
 	name     string
-	root     *File
-	sources  []*File
-	imports  []*File
-	testHook *File
+	root     *fs.File
+	sources  []*fs.File
+	imports  []*fs.File
+	testHook *fs.File
 
 	// Memoization
 	store memoize.Store
@@ -63,35 +61,16 @@ func (suite *Suite) Id() (int, error) {
 //
 // Environment variable NTT_CACHE will be used to find path, if path is a single
 // file-name without leading directory.
-func (suite *Suite) File(path string) *File {
-	var uri span.URI
-
-	if strings.HasPrefix(path, "file://") {
-		uri = span.URIFromURI(path)
-	} else {
-		if s := suite.searchCacheForFile(path); s != "" {
-			path = s
+func (suite *Suite) File(path string) *fs.File {
+	if !strings.HasPrefix(path, "file://") {
+		if ok, _ := fileExists(path); !ok {
+			if s := suite.searchCacheForFile(path); s != "" {
+				path = s
+			}
 		}
-		uri = span.URIFromPath(path)
 	}
 
-	suite.filesMu.Lock()
-	defer suite.filesMu.Unlock()
-
-	if suite.files == nil {
-		suite.files = make(map[span.URI]*File)
-	}
-
-	if f, found := suite.files[uri]; found {
-		return f
-	}
-
-	f := &File{
-		uri:  uri,
-		path: path,
-	}
-	suite.files[uri] = f
-	return f
+	return fs.Open(path)
 }
 
 // searchCacheForFile searches for a file in every directory specified by
@@ -108,6 +87,7 @@ func (suite *Suite) File(path string) *File {
 // Purpose and behaviour of this function are similar to GNU Make's VPATH. It
 // is used to prevent re-built of generated files.
 func (suite *Suite) searchCacheForFile(file string) string {
+
 	if file == "." || file == ".." {
 		return ""
 	}
@@ -128,7 +108,7 @@ func (suite *Suite) searchCacheForFile(file string) string {
 	return ""
 }
 
-func (suite *Suite) Root() *File {
+func (suite *Suite) Root() *fs.File {
 	return suite.root
 }
 
@@ -139,6 +119,19 @@ func (suite *Suite) Root() *File {
 func (suite *Suite) SetRoot(folder string) {
 	suite.root = suite.File(folder)
 	suite.sources = nil
+}
+
+func (suite *Suite) LatestResults() (*results.DB, error) {
+	b, err := suite.File("test_results.json").Bytes()
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var db results.DB
+	return &db, json.Unmarshal(b, &db)
 }
 
 func init() {

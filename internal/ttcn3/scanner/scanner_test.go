@@ -22,6 +22,7 @@ var ttokens = [...]elt{
 	{token.IDENT, `_`},
 	{token.IDENT, `_foo`},
 	{token.IDENT, `f__2bar`},
+	{token.IDENT, `%definitionId`}, // Titan macros are like identifiers
 
 	{token.INT, `0`},
 	{token.INT, `1`},
