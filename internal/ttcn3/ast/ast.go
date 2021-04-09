@@ -351,7 +351,10 @@ func (x *DecmatchExpr) LastTok() *Token { return x.X.LastTok() }
 func (x *DecodedExpr) LastTok() *Token  { return x.X.LastTok() }
 
 func (x *DefKindExpr) LastTok() *Token {
-	return x.List[len(x.List)-1].LastTok()
+	if len(x.List) > 0 {
+		return x.List[len(x.List)-1].LastTok()
+	}
+	return &x.Kind
 }
 
 func (x *ExceptExpr) LastTok() *Token {
@@ -717,7 +720,10 @@ func (x *Field) LastTok() *Token {
 	if l := len(x.ArrayDef); l != 0 {
 		return x.ArrayDef[l-1].LastTok()
 	}
-	return x.Name.LastTok()
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+	return x.Type.LastTok()
 }
 
 func (x *RefSpec) LastTok() *Token    { return x.X.LastTok() }
