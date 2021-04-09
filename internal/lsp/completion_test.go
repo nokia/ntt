@@ -166,11 +166,70 @@ func TestImportTemplatesCtrlSpc(t *testing.T) {
 	  }`, `module B
 	  {}`)
 
-	// Lookup `Msg`
 	list := completionAt(t, suite, 97)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "a_name", Kind: protocol.ConstantCompletion},
 		{Label: "a_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportConstantsCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportConstantsCtrlSpc_Module_1 {
+            const }
+		import from A all;
+	  }`, `module TestImportConstantsCtrlSpc_Module_1
+      {
+		  const charstring c_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  const R1 c_r1(boolean b) := {f1 := 10. f2 := b}
+	  }`)
+
+	list := completionAt(t, suite, 94)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "c_name", Kind: protocol.ConstantCompletion},
+		{Label: "c_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportExceptConstantsCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportExceptConstantsCtrlSpc_Module_1 all except {
+            const }
+		import from A all;
+	  }`, `module TestImportExceptConstantsCtrlSpc_Module_1
+      {
+		  const charstring c_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  const R1 c_r1(boolean b) := {f1 := 10. f2 := b}
+	  }`)
+
+	list := completionAt(t, suite, 111)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "c_name", Kind: protocol.ConstantCompletion},
+		{Label: "c_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportExceptConstants(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportExceptConstants_Module_1 all except {
+            const c_}
+		import from A all;
+	  }`, `module TestImportExceptConstants_Module_1
+      {
+		  const charstring c_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  const R1 c_r1(boolean b) := {f1 := 10. f2 := b}
+	  }`)
+
+	list := completionAt(t, suite, 106)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "c_name", Kind: protocol.ConstantCompletion},
+		{Label: "c_r1", Kind: protocol.ConstantCompletion},
 		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
 }
 
@@ -261,4 +320,26 @@ func TestSubTypeDefSegv(t *testing.T) {
 	// Lookup `Msg`
 	list := completionAt(t, suite, 32)
 	assert.Empty(t, list)
+}
+
+func TestNewModuleDef(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        t
+	  }`)
+
+	// Lookup `Msg`
+	list := completionAt(t, suite, 27)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "import from ", Kind: protocol.KeywordCompletion},
+		{Label: "type ", Kind: protocol.KeywordCompletion},
+		{Label: "const ", Kind: protocol.KeywordCompletion},
+		{Label: "modulepar ", Kind: protocol.KeywordCompletion},
+		{Label: "template ", Kind: protocol.KeywordCompletion},
+		{Label: "function ", Kind: protocol.KeywordCompletion},
+		{Label: "external function ", Kind: protocol.KeywordCompletion},
+		{Label: "altstep ", Kind: protocol.KeywordCompletion},
+		{Label: "testcase ", Kind: protocol.KeywordCompletion},
+		{Label: "control ", Kind: protocol.KeywordCompletion},
+		{Label: "signature ", Kind: protocol.KeywordCompletion}}, list)
 }
