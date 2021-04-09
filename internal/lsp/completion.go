@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	moduleDefKw               = []string{"import from ", "type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
+	moduleDefKw               = []string{"import from ", "type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control ", "signature "}
 	importAfterModName        = []string{"all [except {}];", "{}"}
 	importAfterModNameSnippet = []string{"${1:all${2: except {$3\\}}};$0", "{$0}"}
 	importKinds               = []string{"type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
@@ -199,6 +199,22 @@ func newImportAfterModName() []protocol.CompletionItem {
 	return complList
 }
 
+func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+	var list []protocol.CompletionItem = nil
+	switch kind {
+	case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
+		list = newImportBehaviours(suite, kind, mname)
+	case token.TEMPLATE:
+		list = newImportTemplates(suite, mname)
+	case token.CONST:
+		list = newImportConsts(suite, mname)
+	case token.TYPE:
+		list = newImportTypes(suite, mname)
+	default:
+		log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", kind))
+	}
+	return list
+}
 func moduleNameListFromSuite(suite *ntt.Suite) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	if files, err := suite.Files(); err == nil {
@@ -244,46 +260,16 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 				if l == 7 {
 					if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
 						if defKind.Kind.IsValid() {
-							switch defKind.Kind.Kind {
-							case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
-								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-									list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
-								}
-							case token.TEMPLATE:
-								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-									list = newImportTemplates(suite, impDecl.Module.Tok.String())
-								}
-							case token.CONST:
-								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-									list = newImportConsts(suite, impDecl.Module.Tok.String())
-								}
-							case token.TYPE:
-								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-									list = newImportTypes(suite, impDecl.Module.Tok.String())
-								}
+							if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+								list = newImportCompletions(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 							}
 						} else {
 							list = newImportkinds()
 						}
 					}
 				} else {
-					switch defKind.Kind.Kind {
-					case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
-						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-							list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
-						}
-					case token.TEMPLATE:
-						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-							list = newImportTemplates(suite, impDecl.Module.Tok.String())
-						}
-					case token.CONST:
-						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-							list = newImportConsts(suite, impDecl.Module.Tok.String())
-						}
-					case token.TYPE:
-						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-							list = newImportTypes(suite, impDecl.Module.Tok.String())
-						}
+					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+						list = newImportCompletions(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 					}
 				}
 			}
@@ -301,92 +287,36 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 		if !nodet.Kind.IsValid() {
 			list = newImportkinds()
 		} else {
-			switch nodet.Kind.Kind {
-			case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
-				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
-					list = newImportBehaviours(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
-						list = newImportBehaviours(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
-					}
+			if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
+				list = newImportCompletions(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
+			} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
+				if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
+					list = newImportCompletions(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
 				}
-			case token.TEMPLATE:
-				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
-					list = newImportTemplates(suite, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
-						list = newImportTemplates(suite, impDecl.Module.Tok.String())
-					}
-				}
-			case token.CONST:
-				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
-					list = newImportConsts(suite, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
-						list = newImportConsts(suite, impDecl.Module.Tok.String())
-					}
-				}
-			case token.TYPE:
-				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
-					list = newImportTypes(suite, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
-						list = newImportTypes(suite, impDecl.Module.Tok.String())
-					}
-				}
-			default:
-				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", nodet.Kind.Kind))
 			}
 		}
 	case *ast.ErrorNode:
 		// i.e. user started typing => ast.Ident might be detected instead of a kw
-		if _, ok := nodes[l-2].(*ast.ModuleDef); l > 1 && ok {
-			// start a new module def
-			list = newModuleDefKw()
-		} else if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
-			// happens streight after the altstep kw if ctrl+space is pressed
-			switch defKind.Kind.Kind {
-			case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
+		if l > 1 {
+			if _, ok := nodes[l-2].(*ast.ModuleDef); ok {
+				// start a new module def
+				list = newModuleDefKw()
+			} else if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
+				// NOTE: not able to reproduce this situation. Maybe it is safe to remove this code.
+				// happens streight after the altstep kw if ctrl+space is pressed
 				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-					list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+					list = newImportCompletions(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
 					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-						list = newImportBehaviours(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+						list = newImportCompletions(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
 					}
 				}
-			case token.TEMPLATE:
-				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-					list = newImportTemplates(suite, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-						list = newImportTemplates(suite, impDecl.Module.Tok.String())
-					}
-				}
-			case token.CONST:
-				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-					list = newImportConsts(suite, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-						list = newImportConsts(suite, impDecl.Module.Tok.String())
-					}
-				}
-			case token.TYPE:
-				if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-					list = newImportTypes(suite, impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-						list = newImportTypes(suite, impDecl.Module.Tok.String())
-					}
-				}
-			default:
-				log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", defKind))
 			}
 		}
 	default:
 		log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
 
 	}
-	log.Debug(fmt.Sprintf("Completion List :%#v", list))
 	return list
 }
 
