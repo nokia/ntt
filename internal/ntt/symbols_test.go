@@ -198,7 +198,7 @@ func TestEnumType(t *testing.T) {
 		}
 
 		function f1(RGB p1) {}
-		function f2() {}
+		function f2(Colors p1) {}
 
 	    control {
 			var Colors vc := YELLOW;
