@@ -173,7 +173,6 @@ func (info *Info) descent(n ast.Node) {
 					info.insert(enumLabel)
 				default:
 					continue
-
 				}
 			}
 
