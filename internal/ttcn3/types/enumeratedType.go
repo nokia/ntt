@@ -2,7 +2,6 @@ package types
 
 import "github.com/nokia/ntt/internal/ttcn3/ast"
 
-// Struct can be an union, a record or a set structure.
 type EnumeratedType struct {
 	scope
 	object
