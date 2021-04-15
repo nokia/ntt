@@ -177,6 +177,58 @@ func TestStructType(t *testing.T) {
 	//assert.Equal(t, Pos{Line: 12, Column: 12}, def)
 }
 
+func TestEnumType(t *testing.T) {
+	suite := buildSuite(t, `module Test
+	{
+		type enumerated RGB {
+			RED,
+			GREEN,
+			BLUE
+		}
+
+		type enumerated Colors {
+			BLACK,
+			RED,
+			ORANGE,
+			YELLOW,
+			GREEN,
+			BLUE,
+			PURPLE,
+			WHITE
+		}
+
+		function f1(RGB p1) {}
+		function f2(Colors p1) {}
+
+	    control {
+			var Colors vc := YELLOW;
+			f1(GREEN);
+			f2(GREEN);
+			log(GREEN);
+	    }
+	}`)
+
+	// Lookup `Rec`
+	def := gotoDefinition(suite, "TestEnumType_Module_0.ttcn3", 20, 15)
+	assert.Equal(t, Pos{Line: 3, Column: 19}, def)
+
+	// in the middle of 'Colors'
+	def = gotoDefinition(suite, "TestEnumType_Module_0.ttcn3", 24, 9)
+	assert.Equal(t, Pos{Line: 9, Column: 19}, def)
+
+	def = gotoDefinition(suite, "TestEnumType_Module_0.ttcn3", 24, 23) //YELLOW
+	assert.Equal(t, Pos{Line: 13, Column: 4}, def)
+
+	def = gotoDefinition(suite, "TestEnumType_Module_0.ttcn3", 25, 7) //RGB::GREEN
+	assert.Equal(t, Pos{Line: 5, Column: 4}, def)                     //
+
+	def = gotoDefinition(suite, "TestEnumType_Module_0.ttcn3", 26, 7) //Colors::GREEN
+	assert.Equal(t, Pos{Line: 12, Column: 4}, def)                    //
+
+	def = gotoDefinition(suite, "TestEnumType_Module_0.ttcn3", 27, 8) //GREEN
+	assert.Equal(t, Pos{Line: 5, Column: 4}, def)                     // ambiguous: should show 2 defs
+}
+
 // Other
 func TestTemplates(t *testing.T) {
 	suite := buildSuite(t, `module Test
@@ -252,10 +304,10 @@ func TestDecl(t *testing.T) {
 			const integer b := y;
 			const integer b := 5;  // ERR: Redeclaration of b.
 	    }
-	
+
 	    const integer x := y;
 	    const integer y := 23;
-	
+
 	}`)
 
 	// Lookup `b`
