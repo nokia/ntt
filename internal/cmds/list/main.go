@@ -123,7 +123,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 			}
 
 			if err := parseFiles(cmd, suite); err != nil {
-				return nil
+				return err
 			}
 
 			return loadBaskets(suite)
