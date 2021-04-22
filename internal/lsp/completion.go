@@ -55,7 +55,7 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 	return list
 }
 
-func getAllTemplatesFromModule(suite *ntt.Suite, mname string) []string {
+func getAllValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		syntax := suite.Parse(file)
@@ -66,30 +66,22 @@ func getAllTemplatesFromModule(suite *ntt.Suite, mname string) []string {
 			}
 
 			switch node := n.(type) {
-			case *ast.TemplateDecl:
-				list = append(list, node.Name.String())
+			case *ast.FuncDecl, *ast.ComponentTypeDecl:
+				// do not descent into TESTCASE, FUNCTION, ALTSTEP,
+				// component type
 				return false
-			default:
+			case *ast.ValueDecl:
+				if node.Kind.Kind != kind {
+					return false
+				}
 				return true
-			}
-		})
-	}
-	return list
-}
-
-func getAllConstsFromModule(suite *ntt.Suite, mname string) []string {
-	list := make([]string, 0, 10)
-	if file, err := suite.FindModule(mname); err == nil {
-		syntax := suite.Parse(file)
-		ast.Inspect(syntax.Module, func(n ast.Node) bool {
-			if n == nil {
-				// called on node exit
-				return false
-			}
-
-			switch node := n.(type) {
 			case *ast.Declarator:
 				list = append(list, node.Name.String())
+				return false
+			case *ast.TemplateDecl:
+				if kind == token.TEMPLATE {
+					list = append(list, node.Name.String())
+				}
 				return false
 			default:
 				return true
@@ -150,18 +142,8 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	return complList
 }
 
-func newImportTemplates(suite *ntt.Suite, mname string) []protocol.CompletionItem {
-	items := getAllTemplatesFromModule(suite, mname)
-	complList := make([]protocol.CompletionItem, 0, len(items)+1)
-	for _, v := range items {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
-	}
-	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
-	return complList
-}
-
-func newImportConsts(suite *ntt.Suite, mname string) []protocol.CompletionItem {
-	items := getAllConstsFromModule(suite, mname)
+func newImportValueDecls(suite *ntt.Suite, mname string, kind token.Kind) []protocol.CompletionItem {
+	items := getAllValueDeclsFromModule(suite, mname, kind)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
 		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
@@ -204,10 +186,8 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 	switch kind {
 	case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
 		list = newImportBehaviours(suite, kind, mname)
-	case token.TEMPLATE:
-		list = newImportTemplates(suite, mname)
-	case token.CONST:
-		list = newImportConsts(suite, mname)
+	case token.TEMPLATE, token.CONST, token.MODULEPAR:
+		list = newImportValueDecls(suite, mname, kind)
 	case token.TYPE:
 		list = newImportTypes(suite, mname)
 	default:
