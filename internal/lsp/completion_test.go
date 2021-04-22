@@ -140,7 +140,8 @@ func TestImportTemplates(t *testing.T) {
       {
 		  template charstring a_name := "Justus"
 		  type record R1 {integer f1, boolean f2}
-		  template R1 a_r1(boolean b) := {f1 := 10. f2 := b}
+		  template R1 a_r1(boolean b) := {f1 := 10, f2 := b}
+		  function f1() {template integer a_local_int := 0;}
 	  }`, `module B
 	  {}`)
 
@@ -162,7 +163,7 @@ func TestImportTemplatesCtrlSpc(t *testing.T) {
       {
 		  template charstring a_name := "Justus"
 		  type record R1 {integer f1, boolean f2}
-		  template R1 a_r1(boolean b) := {f1 := 10. f2 := b}
+		  template R1 a_r1(boolean b) := {f1 := 10, f2 := b}
 	  }`, `module B
 	  {}`)
 
@@ -183,7 +184,8 @@ func TestImportConstantsCtrlSpc(t *testing.T) {
       {
 		  const charstring c_name := "Justus"
 		  type record R1 {integer f1, boolean f2}
-		  const R1 c_r1(boolean b) := {f1 := 10. f2 := b}
+		  const R1 c_r1 := {f1 := 10, f2 := false}
+		  function f1() { const integer c_localInt := 0;}
 	  }`)
 
 	list := completionAt(t, suite, 94)
@@ -203,7 +205,7 @@ func TestImportExceptConstantsCtrlSpc(t *testing.T) {
       {
 		  const charstring c_name := "Justus"
 		  type record R1 {integer f1, boolean f2}
-		  const R1 c_r1(boolean b) := {f1 := 10. f2 := b}
+		  const R1 c_r1 := {f1 := 10, f2 := false}
 	  }`)
 
 	list := completionAt(t, suite, 111)
@@ -223,13 +225,74 @@ func TestImportExceptConstants(t *testing.T) {
       {
 		  const charstring c_name := "Justus"
 		  type record R1 {integer f1, boolean f2}
-		  const R1 c_r1(boolean b) := {f1 := 10. f2 := b}
+		  const R1 c_r1 := {f1 := 10, f2 := false}
 	  }`)
 
 	list := completionAt(t, suite, 106)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "c_name", Kind: protocol.ConstantCompletion},
 		{Label: "c_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportModuleparsCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportModuleparsCtrlSpc_Module_1 {
+            modulepar }
+		import from A all;
+	  }`, `module TestImportModuleparsCtrlSpc_Module_1
+      {
+		  modulepar charstring m_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  modulepar R1 m_r1 := {f1 := 10, f2 := true}
+		  const integer c_int := 2;
+	  }`)
+
+	list := completionAt(t, suite, 101)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "m_name", Kind: protocol.ConstantCompletion},
+		{Label: "m_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportExceptModuleparsCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportExceptModuleparsCtrlSpc_Module_1 all except {
+            modulepar }
+		import from A all;
+	  }`, `module TestImportExceptModuleparsCtrlSpc_Module_1
+      {
+		  modulepar charstring m_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  modulepar R1 m_r1 := {f1 := 10, f2 := false}
+	  }`)
+
+	list := completionAt(t, suite, 116)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "m_name", Kind: protocol.ConstantCompletion},
+		{Label: "m_r1", Kind: protocol.ConstantCompletion},
+		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestImportExceptModulepars(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        import from TestImportExceptModulepars_Module_1 all except {
+            modulepar m_}
+		import from A all;
+	  }`, `module TestImportExceptModulepars_Module_1
+      {
+		  modulepar charstring m_name := "Justus"
+		  type record R1 {integer f1, boolean f2}
+		  modulepar R1 m_r1 := {f1 := 10, f2 := false}
+	  }`)
+
+	list := completionAt(t, suite, 111)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "m_name", Kind: protocol.ConstantCompletion},
+		{Label: "m_r1", Kind: protocol.ConstantCompletion},
 		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
 }
 
