@@ -38,6 +38,7 @@ type Report struct {
 }
 
 func NewReport(args []string) *Report {
+	var err error = nil
 	r := Report{Args: args}
 	r.suite, r.Err = ntt.NewFromArgs(args...)
 
@@ -49,47 +50,67 @@ func NewReport(args []string) *Report {
 		r.Timeout, r.Err = r.suite.Timeout()
 	}
 
-	if r.Err == nil {
-		r.ParametersFile, r.Err = path(r.suite.ParametersFile())
+	r.ParametersFile, err = path(r.suite.ParametersFile())
+
+	if (r.Err == nil) && (err != nil) {
+		r.Err = err
+	}
+	r.TestHook, err = path(r.suite.TestHook())
+	if (r.Err == nil) && (err != nil) {
+		r.Err = err
 	}
 
-	if r.Err == nil {
-		r.TestHook, r.Err = path(r.suite.TestHook())
+	r.DataDir, err = r.suite.Getenv("NTT_DATADIR")
+	if (r.Err == nil) && (err != nil) {
+		r.Err = err
 	}
 
-	if r.Err == nil {
-		r.DataDir, r.Err = r.suite.Getenv("NTT_DATADIR")
-	}
-
-	if r.Err == nil {
-		if env, err := r.suite.Getenv("NTT_SESSION_ID"); err != nil {
-			r.SessionID, r.Err = strconv.Atoi(env)
+	if env, err := r.suite.Getenv("NTT_SESSION_ID"); err == nil {
+		r.SessionID, err = strconv.Atoi(env)
+		if (r.Err == nil) && (err != nil) {
+			r.Err = err
+		}
+	} else {
+		if r.Err == nil {
+			r.Err = err
 		}
 	}
 
-	if r.Err == nil {
-		r.Environ, r.Err = r.suite.Environ()
+	r.Environ, err = r.suite.Environ()
+	if err == nil {
 		sort.Strings(r.Environ)
 	}
+	if (r.Err == nil) && (err != nil) {
+		r.Err = err
+	}
 
-	if r.Err == nil {
+	{
 		paths, err := r.suite.Sources()
-		r.Sources, r.Err = fs.PathSlice(paths...), err
+		r.Sources = fs.PathSlice(paths...)
+		if (r.Err == nil) && (err != nil) {
+			r.Err = err
+		}
 	}
 
-	if r.Err == nil {
+	{
 		paths, err := r.suite.Imports()
-		r.Imports, r.Err = fs.PathSlice(paths...), err
+		r.Imports = fs.PathSlice(paths...)
+		if (r.Err == nil) && (err != nil) {
+			r.Err = err
+		}
 	}
 
-	if r.Err == nil {
-		r.Files, r.Err = r.suite.Files()
+	r.Files, err = r.suite.Files()
+	if (r.Err == nil) && (err != nil) {
+		r.Err = err
 	}
 
 	if root := r.suite.Root(); root != nil {
 		r.SourceDir = root.Path()
 		if path, err := filepath.Abs(r.SourceDir); err == nil {
 			r.SourceDir = path
+		} else if r.Err == nil {
+			r.Err = err
 		}
 	}
 
