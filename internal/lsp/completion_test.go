@@ -2,6 +2,7 @@ package lsp_test
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -34,8 +35,8 @@ func completionAt(t *testing.T, suite *ntt.Suite, pos loc.Pos) []protocol.Comple
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	syntax := suite.Parse(name)
 	nodeStack := lsp.LastNonWsToken(syntax.Module, pos)
-
-	return lsp.NewCompListItems(suite, pos, nodeStack)
+	name = name[:len(name)-len(filepath.Ext(name))]
+	return lsp.NewCompListItems(suite, pos, nodeStack, name)
 }
 func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 	id, _ := suite.IdentifierAt(file, line, column)
@@ -372,6 +373,54 @@ func TestImportTypes(t *testing.T) {
 		{Label: "MyPort", Kind: protocol.StructCompletion},
 		{Label: "C0", Kind: protocol.StructCompletion},
 		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestRunsOnTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on //
+	  }`, `module TestRunsOnTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnTypesCtrlSpc_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 93)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "A0", Kind: protocol.StructCompletion},
+		{Label: "TestRunsOnTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestRunsOnTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestRunsOnTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on A//
+	  }`, `module TestRunsOnTypes_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnTypes_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 94)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "A0", Kind: protocol.StructCompletion},
+		{Label: "TestRunsOnTypes_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestRunsOnTypes_Module_2", Kind: protocol.ModuleCompletion}}, list)
 }
 
 func TestSubTypeDefSegv(t *testing.T) {
