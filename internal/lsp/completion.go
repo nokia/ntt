@@ -132,6 +132,28 @@ func getAllTypesFromModule(suite *ntt.Suite, mname string) []string {
 	return list
 }
 
+func getAllComponentTypesFromModule(suite *ntt.Suite, mname string) []string {
+	list := make([]string, 0, 10)
+	if file, err := suite.FindModule(mname); err == nil {
+		syntax := suite.Parse(file)
+		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+			if n == nil {
+				// called on node exit
+				return false
+			}
+
+			switch node := n.(type) {
+			case *ast.ComponentTypeDecl:
+				list = append(list, node.Name.String())
+				return false
+			default:
+				return true
+			}
+		})
+	}
+	return list
+}
+
 func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
 	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
@@ -195,20 +217,39 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 	}
 	return list
 }
-func moduleNameListFromSuite(suite *ntt.Suite) []protocol.CompletionItem {
+
+func moduleNameListFromSuite(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	if files, err := suite.Files(); err == nil {
 		list = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			fileName := filepath.Base(f)
 			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
-			list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
+			if fileName != ownModName {
+				list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
+			}
 		}
 	}
 	return list
 }
 
-func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protocol.CompletionItem {
+func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
+	var complList []protocol.CompletionItem = nil
+	if files, err := suite.Files(); err == nil {
+		complList = make([]protocol.CompletionItem, 0, len(files))
+		for _, f := range files {
+			mName := filepath.Base(f)
+			mName = mName[:len(mName)-len(filepath.Ext(mName))]
+			items := getAllComponentTypesFromModule(suite, mName)
+			for _, v := range items {
+				complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
+			}
+		}
+	}
+	return complList
+}
+
+func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
 	if nodes == nil || l == 0 {
@@ -220,28 +261,27 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 			list = newModuleDefKw()
 		}
 		if l > 2 {
-			if _, ok := nodes[l-2].(*ast.ModuleDef); ok {
+			switch scndNode := nodes[l-2].(type) {
+			case *ast.ModuleDef:
 				list = newModuleDefKw()
-			}
-			if importDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
-				if importDecl.LBrace.IsValid() {
+			case *ast.ImportDecl:
+				if scndNode.LBrace.IsValid() {
 					list = newImportkinds()
 				} else if nodet.End() >= pos {
 					// look for available modules for import
-					list = moduleNameListFromSuite(suite)
+					list = moduleNameListFromSuite(suite, ownModName)
 				} else {
 					list = newImportAfterModName()
 				}
-			}
-			if defKind, ok := nodes[l-2].(*ast.DefKindExpr); ok {
+			case *ast.DefKindExpr:
 				// happens after
 				// * the altstep/function/testcase kw while typing the identifier
 				// * inside the exception list after { while typing the kind
 				if l == 7 {
 					if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
-						if defKind.Kind.IsValid() {
+						if scndNode.Kind.IsValid() {
 							if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-								list = newImportCompletions(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+								list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
 							}
 						} else {
 							list = newImportkinds()
@@ -249,19 +289,22 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 					}
 				} else {
 					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-						list = newImportCompletions(suite, defKind.Kind.Kind, impDecl.Module.Tok.String())
+						list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
 					}
 				}
-			}
-			if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
+
+			case *ast.ExceptExpr:
 				list = newImportkinds()
+			case *ast.RunsOnSpec:
+				list = newAllComponentTypes(suite)
+				list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 			}
 		}
 
 	case *ast.ImportDecl:
 		if nodet.Module == nil {
 			// look for available modules for import
-			list = moduleNameListFromSuite(suite)
+			list = moduleNameListFromSuite(suite, ownModName)
 		}
 	case *ast.DefKindExpr:
 		if !nodet.Kind.IsValid() {
@@ -275,6 +318,9 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node) []protoco
 				}
 			}
 		}
+	case *ast.RunsOnSpec:
+		list = newAllComponentTypes(suite)
+		list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 	case *ast.ErrorNode:
 		// i.e. user started typing => ast.Ident might be detected instead of a kw
 		if l > 1 {
@@ -360,5 +406,5 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	pos := syntax.Pos(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
 	nodeStack := LastNonWsToken(syntax.Module, pos)
 
-	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack)}, nil //notImplemented("Completion")
+	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack, defaultModuleId)}, nil //notImplemented("Completion")
 }
