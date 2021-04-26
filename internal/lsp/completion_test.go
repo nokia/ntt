@@ -423,6 +423,25 @@ func TestRunsOnTypes(t *testing.T) {
 		{Label: "TestRunsOnTypes_Module_2", Kind: protocol.ModuleCompletion}}, list)
 }
 
+func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on TestRunsOnTypesCtrlSpc_Module_1.//
+	  }`, `module TestRunsOnTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnTypesCtrlSpc_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 125)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
