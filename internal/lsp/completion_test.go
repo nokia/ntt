@@ -65,7 +65,7 @@ func TestImportModulenamesCtrlSpc(t *testing.T) {
 	// Lookup `Msg`
 	list := completionAt(t, suite, 30)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
-	assert.Equal(t, []protocol.CompletionItem{{Label: "TestImportModulenamesCtrlSpc_Module_0", Kind: protocol.ModuleCompletion},
+	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "TestImportModulenamesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
 		{Label: "TestImportModulenamesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
 }
@@ -82,7 +82,7 @@ func TestImportModulenames(t *testing.T) {
 	// Lookup `Msg`
 	list := completionAt(t, suite, 33)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
-	assert.Equal(t, []protocol.CompletionItem{{Label: "TestImportModulenames_Module_0", Kind: protocol.ModuleCompletion},
+	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "TestImportModulenames_Module_1", Kind: protocol.ModuleCompletion},
 		{Label: "TestImportModulenames_Module_2", Kind: protocol.ModuleCompletion}}, list)
 
@@ -428,16 +428,16 @@ func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
     {
         type component B0 {}
 		type component B1 {}
-		function f() runs on TestRunsOnTypesCtrlSpc_Module_1.//
-	  }`, `module TestRunsOnTypesCtrlSpc_Module_1
+		function f() runs on TestRunsOnModuleDotTypesCtrlSpc_Module_1.//
+	  }`, `module TestRunsOnModuleDotTypesCtrlSpc_Module_1
       {
 		  type component C0 {}
-	  }`, `module TestRunsOnTypesCtrlSpc_Module_2
+	  }`, `module TestRunsOnModuleDotTypesCtrlSpc_Module_2
       {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 125)
+	list := completionAt(t, suite, 135)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "C0", Kind: protocol.StructCompletion}}, list)
 }

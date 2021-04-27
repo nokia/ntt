@@ -233,6 +233,15 @@ func moduleNameListFromSuite(suite *ntt.Suite, ownModName string) []protocol.Com
 	return list
 }
 
+func newAllComponentTypesFromModule(suite *ntt.Suite, modName string) []protocol.CompletionItem {
+	items := getAllComponentTypesFromModule(suite, modName)
+	complList := make([]protocol.CompletionItem, 0, len(items))
+	for _, v := range items {
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
+	}
+	return complList
+}
+
 func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files, err := suite.Files(); err == nil {
@@ -240,10 +249,8 @@ func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
 		for _, f := range files {
 			mName := filepath.Base(f)
 			mName = mName[:len(mName)-len(filepath.Ext(mName))]
-			items := getAllComponentTypesFromModule(suite, mName)
-			for _, v := range items {
-				complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
-			}
+			items := newAllComponentTypesFromModule(suite, mName)
+			complList = append(complList, items...)
 		}
 	}
 	return complList
@@ -298,6 +305,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 			case *ast.RunsOnSpec:
 				list = newAllComponentTypes(suite)
 				list = append(list, moduleNameListFromSuite(suite, ownModName)...)
+			case *ast.SelectorExpr:
+				if _, ok := nodes[l-3].(*ast.RunsOnSpec); scndNode.X != nil && ok {
+					list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String())
+				}
 			}
 		}
 
