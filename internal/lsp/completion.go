@@ -302,12 +302,18 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 
 			case *ast.ExceptExpr:
 				list = newImportkinds()
-			case *ast.RunsOnSpec:
+			case *ast.RunsOnSpec, *ast.SystemSpec:
 				list = newAllComponentTypes(suite)
 				list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 			case *ast.SelectorExpr:
-				if _, ok := nodes[l-3].(*ast.RunsOnSpec); scndNode.X != nil && ok {
-					list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String())
+				if scndNode.X != nil {
+					_, ok := nodes[l-3].(*ast.RunsOnSpec)
+					if !ok {
+						_, ok = nodes[l-3].(*ast.SystemSpec)
+					}
+					if ok {
+						list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String())
+					}
 				}
 			}
 		}
@@ -329,7 +335,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				}
 			}
 		}
-	case *ast.RunsOnSpec:
+	case *ast.RunsOnSpec, *ast.SystemSpec:
 		list = newAllComponentTypes(suite)
 		list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 	case *ast.ErrorNode:
