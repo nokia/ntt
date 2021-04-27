@@ -442,6 +442,68 @@ func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
 		{Label: "C0", Kind: protocol.StructCompletion}}, list)
 }
 
+func TestRunsOnModuleDotTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on TestRunsOnModuleDotTypes_Module_1.C//
+	  }`, `module TestRunsOnModuleDotTypes_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnModuleDotTypes_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 128)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
+func TestSystemTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		testcase f() runs on C0 system //
+	  }`, `module TestSystemTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestSystemTypesCtrlSpc_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 103)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "A0", Kind: protocol.StructCompletion},
+		{Label: "TestSystemTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestSystemTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestSystemModuleDotTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on TestSystemModuleDotTypes_Module_1.C0 system TestSystemModuleDotTypes_Module_1.C//
+	  }`, `module TestSystemModuleDotTypes_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestSystemModuleDotTypes_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 172)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
