@@ -2,6 +2,7 @@ package lsp_test
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -34,8 +35,8 @@ func completionAt(t *testing.T, suite *ntt.Suite, pos loc.Pos) []protocol.Comple
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	syntax := suite.Parse(name)
 	nodeStack := lsp.LastNonWsToken(syntax.Module, pos)
-
-	return lsp.NewCompListItems(suite, pos, nodeStack)
+	name = name[:len(name)-len(filepath.Ext(name))]
+	return lsp.NewCompListItems(suite, pos, nodeStack, name)
 }
 func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
 	id, _ := suite.IdentifierAt(file, line, column)
@@ -64,7 +65,7 @@ func TestImportModulenamesCtrlSpc(t *testing.T) {
 	// Lookup `Msg`
 	list := completionAt(t, suite, 30)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
-	assert.Equal(t, []protocol.CompletionItem{{Label: "TestImportModulenamesCtrlSpc_Module_0", Kind: protocol.ModuleCompletion},
+	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "TestImportModulenamesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
 		{Label: "TestImportModulenamesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
 }
@@ -81,7 +82,7 @@ func TestImportModulenames(t *testing.T) {
 	// Lookup `Msg`
 	list := completionAt(t, suite, 33)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
-	assert.Equal(t, []protocol.CompletionItem{{Label: "TestImportModulenames_Module_0", Kind: protocol.ModuleCompletion},
+	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "TestImportModulenames_Module_1", Kind: protocol.ModuleCompletion},
 		{Label: "TestImportModulenames_Module_2", Kind: protocol.ModuleCompletion}}, list)
 
@@ -372,6 +373,191 @@ func TestImportTypes(t *testing.T) {
 		{Label: "MyPort", Kind: protocol.StructCompletion},
 		{Label: "C0", Kind: protocol.StructCompletion},
 		{Label: "all;", Kind: protocol.KeywordCompletion}}, list)
+}
+
+func TestRunsOnTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on //
+	  }`, `module TestRunsOnTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnTypesCtrlSpc_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 93)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "A0", Kind: protocol.StructCompletion},
+		{Label: "TestRunsOnTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestRunsOnTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestRunsOnTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on A//
+	  }`, `module TestRunsOnTypes_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnTypes_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 94)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "A0", Kind: protocol.StructCompletion},
+		{Label: "TestRunsOnTypes_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestRunsOnTypes_Module_2", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on TestRunsOnModuleDotTypesCtrlSpc_Module_1.//
+	  }`, `module TestRunsOnModuleDotTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnModuleDotTypesCtrlSpc_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 135)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
+func TestRunsOnModuleDotTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on TestRunsOnModuleDotTypes_Module_1.C//
+	  }`, `module TestRunsOnModuleDotTypes_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestRunsOnModuleDotTypes_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 128)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
+func TestSystemTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		testcase f() runs on C0 system //
+	  }`, `module TestSystemTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestSystemTypesCtrlSpc_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 103)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "A0", Kind: protocol.StructCompletion},
+		{Label: "TestSystemTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
+		{Label: "TestSystemTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestSystemModuleDotTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		function f() runs on TestSystemModuleDotTypes_Module_1.C0 system TestSystemModuleDotTypes_Module_1.C//
+	  }`, `module TestSystemModuleDotTypes_Module_1
+      {
+		  type component C0 {}
+	  }`, `module TestSystemModuleDotTypes_Module_2
+      {
+		  type component A0 {}
+	  }`)
+
+	list := completionAt(t, suite, 172)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
+func TestExtendsTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		type component B2 extends //
+	  }`, `module TestExtendsTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 98)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "B2", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "TestExtendsTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestExtendsTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		type component B2 extends B//
+	  }`, `module TestExtendsTypes_Module_1
+      {
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 99)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "B2", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "TestExtendsTypes_Module_1", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestExtendsModuleDotTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		type component B2 extends TestExtendsModuleDotTypes_Module_1.//
+	  }`, `module TestExtendsModuleDotTypes_Module_1
+      {
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 133)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
 }
 
 func TestSubTypeDefSegv(t *testing.T) {

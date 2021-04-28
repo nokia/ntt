@@ -783,6 +783,10 @@ func (p *parser) parseOperand() ast.Expr {
 
 func (p *parser) parseRef() ast.Expr {
 	id := p.parseIdent()
+	if id == nil {
+		return nil
+	}
+
 	if p.tok != token.LT {
 		return id
 	}
