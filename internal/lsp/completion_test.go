@@ -560,6 +560,28 @@ func TestExtendsModuleDotTypes(t *testing.T) {
 		{Label: "C0", Kind: protocol.StructCompletion}}, list)
 }
 
+func TestModifiesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		import from TestModifiesCtrlSpc_Module_1 all;
+		template R t_r := *;
+		template integer t_i := ?;
+		template (omit) R t_rmod modifies //
+	  }`, `module TestModifiesCtrlSpc_Module_1
+      {
+		  type record R {integer f1, boolean f2 optional}
+		  template (value) R t_r2 := {10, omit}
+	  }`)
+
+	list := completionAt(t, suite, 154)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "t_r", Kind: protocol.ConstantCompletion},
+		{Label: "t_i", Kind: protocol.ConstantCompletion},    // TODO: implement filter on Compatible Type
+		{Label: "t_rmod", Kind: protocol.ConstantCompletion}, // TODO: implement filter for self
+		{Label: "t_r2", Kind: protocol.ConstantCompletion},
+		{Label: "TestModifiesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
+}
+
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {

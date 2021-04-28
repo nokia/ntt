@@ -164,12 +164,17 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	return complList
 }
 
-func newImportValueDecls(suite *ntt.Suite, mname string, kind token.Kind) []protocol.CompletionItem {
+func newValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind) []protocol.CompletionItem {
 	items := getAllValueDeclsFromModule(suite, mname, kind)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
 		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
 	}
+	return complList
+}
+
+func newImportValueDecls(suite *ntt.Suite, mname string, kind token.Kind) []protocol.CompletionItem {
+	complList := newValueDeclsFromModule(suite, mname, kind)
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
 }
@@ -256,6 +261,20 @@ func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
 	return complList
 }
 
+func newAllValueDecls(suite *ntt.Suite, kind token.Kind) []protocol.CompletionItem {
+	var complList []protocol.CompletionItem = nil
+	if files, err := suite.Files(); err == nil {
+		complList = make([]protocol.CompletionItem, 0, len(files))
+		for _, f := range files {
+			mName := filepath.Base(f)
+			mName = mName[:len(mName)-len(filepath.Ext(mName))]
+			items := newValueDeclsFromModule(suite, mName, kind)
+			complList = append(complList, items...)
+		}
+	}
+	return complList
+}
+
 func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
@@ -316,6 +335,11 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				// for ctrl+spc, after beginning to type an id after extends Token
 				if scndNode.ExtendsTok.LastTok().IsValid() && scndNode.Body.LBrace.Pos() > pos {
 					list = newAllComponentTypes(suite)
+					list = append(list, moduleNameListFromSuite(suite, ownModName)...)
+				}
+			case *ast.TemplateDecl:
+				if scndNode.ModifiesTok.LastTok().IsValid() && scndNode.AssignTok.Pos() > pos {
+					list = newAllValueDecls(suite, token.TEMPLATE)
 					list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 				}
 			}
