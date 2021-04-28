@@ -173,8 +173,8 @@ const (
   "load": {
     "min" : {{min .Tests.Load}},
     "max" : {{max .Tests.Load}},
-    "avg" : {{median .Tests.Load}},
-  }
+    "avg" : {{median .Tests.Load}}
+  },
   "tests": {
     "result"   : "{{ .Tests.Result }}",
     "tests"    : {{len .Tests }},
