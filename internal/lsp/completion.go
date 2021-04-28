@@ -307,13 +307,16 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 			case *ast.SelectorExpr:
 				if scndNode.X != nil {
-					_, ok := nodes[l-3].(*ast.RunsOnSpec)
-					if !ok {
-						_, ok = nodes[l-3].(*ast.SystemSpec)
-					}
-					if ok {
+					switch nodes[l-3].(type) {
+					case *ast.RunsOnSpec, *ast.SystemSpec, *ast.ComponentTypeDecl:
 						list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String())
 					}
+				}
+			case *ast.ComponentTypeDecl:
+				// for ctrl+spc, after beginning to type an id after extends Token
+				if scndNode.ExtendsTok.LastTok().IsValid() && scndNode.Body.LBrace.Pos() > pos {
+					list = newAllComponentTypes(suite)
+					list = append(list, moduleNameListFromSuite(suite, ownModName)...)
 				}
 			}
 		}

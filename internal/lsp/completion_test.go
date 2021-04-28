@@ -504,6 +504,62 @@ func TestSystemModuleDotTypes(t *testing.T) {
 		{Label: "C0", Kind: protocol.StructCompletion}}, list)
 }
 
+func TestExtendsTypesCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		type component B2 extends //
+	  }`, `module TestExtendsTypesCtrlSpc_Module_1
+      {
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 98)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "B2", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "TestExtendsTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestExtendsTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		type component B2 extends B//
+	  }`, `module TestExtendsTypes_Module_1
+      {
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 99)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "B0", Kind: protocol.StructCompletion},
+		{Label: "B1", Kind: protocol.StructCompletion},
+		{Label: "B2", Kind: protocol.StructCompletion},
+		{Label: "C0", Kind: protocol.StructCompletion},
+		{Label: "TestExtendsTypes_Module_1", Kind: protocol.ModuleCompletion}}, list)
+}
+
+func TestExtendsModuleDotTypes(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type component B0 {}
+		type component B1 {}
+		type component B2 extends TestExtendsModuleDotTypes_Module_1.//
+	  }`, `module TestExtendsModuleDotTypes_Module_1
+      {
+		  type component C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 133)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+}
+
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
