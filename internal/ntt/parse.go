@@ -59,6 +59,14 @@ func (info *ParseInfo) Pos(line int, column int) loc.Pos {
 // Parse returns the cached TTCN-3 syntax of the file. The actual TTCN-3 parser is
 // called for every unique file exactly once.
 func (suite *Suite) Parse(file string) *ParseInfo {
+	return suite.parse(file, 0)
+}
+
+func (suite *Suite) ParseWithAllErrors(file string) *ParseInfo {
+	return suite.parse(file, parser.AllErrors)
+}
+
+func (suite *Suite) parse(file string, moder parser.Mode) *ParseInfo {
 	f := suite.File(file)
 	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := ParseInfo{}
