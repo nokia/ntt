@@ -211,3 +211,43 @@ func FirstToken(n Node) *Token {
 		panic(fmt.Sprintf("unknown ast.Node: %T", n))
 	}
 }
+
+// Name returns the name of a Node. If the node has no name (like statements)
+// Name will return an empty string.
+func Name(n Node) string {
+	switch n := n.(type) {
+	case *Ident:
+		return n.String()
+	case *CallExpr:
+		return Name(n.Fun)
+	case *LengthExpr:
+		return Name(n.X)
+	case *ParametrizedIdent:
+		return Name(n.Ident)
+	case *Module:
+		return Name(n.Name)
+	case *Field:
+		return Name(n.Name)
+	case *PortTypeDecl:
+		return Name(n.Name)
+	case *ComponentTypeDecl:
+		return Name(n.Name)
+	case *StructTypeDecl:
+		return Name(n.Name)
+	case *EnumTypeDecl:
+		return Name(n.Name)
+	case *BehaviourTypeDecl:
+		return Name(n.Name)
+	case *Declarator:
+		return Name(n.Name)
+	case *FormalPar:
+		return Name(n.Name)
+	case *TemplateDecl:
+		return Name(n.Name)
+	case *FuncDecl:
+		return Name(n.Name)
+	case *SignatureDecl:
+		return Name(n.Name)
+	}
+	return ""
+}
