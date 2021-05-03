@@ -76,7 +76,7 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.Declarator:
-			v := NewVar(n, identName(n.Name))
+			v := NewVar(n, ast.Name(n.Name))
 			info.insert(v)
 
 			for i := range n.ArrayDef {
@@ -200,7 +200,7 @@ func (info *Info) descent(n ast.Node) {
 			return false
 
 		case *ast.Field:
-			v := NewVar(n.Name, identName(n.Name))
+			v := NewVar(n.Name, ast.Name(n.Name))
 			info.insert(v)
 			info.descent(n.TypePars)
 
@@ -214,7 +214,7 @@ func (info *Info) descent(n ast.Node) {
 
 		case *ast.FormalPar:
 			info.descent(n.Type)
-			v := NewVar(n.Name, identName(n.Name))
+			v := NewVar(n.Name, ast.Name(n.Name))
 
 			info.insert(v)
 			for i := range n.ArrayDef {

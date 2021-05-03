@@ -12,9 +12,14 @@ type IdentInfo struct {
 	Def      *IdentInfo
 }
 
-// IdentifierAt parses file and returns IdentInfo about identifier at position
+//IdentifierAt returns token of identifier at position line:column.
+func (suite *Suite) IdentifierAt(mod *ParseInfo, line int, column int) *ast.Ident {
+	return findIdentifier(mod.Module, mod.Pos(line, column))
+}
+
+// DefinitionAt parses file and returns IdentInfo about identifier at position
 // line:column.
-func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo, error) {
+func (suite *Suite) DefinitionAt(file string, line int, column int) (*IdentInfo, error) {
 	syntax := suite.Parse(file)
 	if syntax.Module == nil {
 		return nil, syntax.Err
@@ -66,34 +71,6 @@ func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo,
 							Position: syntax.Position(obj.Pos()),
 						}
 						return &info, nil
-					}
-				}
-			}
-
-			// Try our luck in modules provided by k3 tooling
-			for _, file := range FindAuxiliaryTTCN3Files() {
-				if syntax := suite.Parse(file); syntax.Module != nil {
-					// Check if we were looking for a module id
-					if syntax.Module.Name.String() == id.String() {
-						info.Def = &IdentInfo{
-							Syntax:   syntax.Module,
-							Position: syntax.Position(syntax.Module.Pos()),
-						}
-						return &info, nil
-					}
-
-					if syntax.Module.Name.String() == mod.Imports[i] {
-						// Build symbol table and check module definitions
-						syms := suite.symbols(syntax)
-						imp := syms.Modules[mod.Imports[i]]
-
-						if obj := imp.Lookup(id.String()); obj != nil {
-							info.Def = &IdentInfo{
-								Syntax:   obj.Node(),
-								Position: syntax.Position(obj.Pos()),
-							}
-							return &info, nil
-						}
 					}
 				}
 			}
