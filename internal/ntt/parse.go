@@ -29,6 +29,7 @@ type ParseInfo struct {
 	FileSet *loc.FileSet
 
 	handle *memoize.Handle
+	tags   *memoize.Handle
 }
 
 func (info *ParseInfo) id() string {

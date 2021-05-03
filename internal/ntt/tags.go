@@ -1,6 +1,8 @@
 package ntt
 
 import (
+	"context"
+
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
@@ -11,6 +13,23 @@ func (suite *Suite) Tags(file string) (*ParseInfo, []ast.Node) {
 		return mod, nil
 	}
 
+	type tagsInfo struct {
+		mod  *ParseInfo
+		tags []ast.Node
+	}
+
+	mod.tags = suite.store.Bind(mod.id(), func(ctx context.Context) interface{} {
+		return &tagsInfo{
+			tags: suite.tags(mod),
+		}
+	})
+
+	v := mod.tags.Get(context.TODO())
+	return mod, v.(*tagsInfo).tags
+
+}
+
+func (suite *Suite) tags(mod *ParseInfo) []ast.Node {
 	t := make([]ast.Node, 0, len(mod.Module.Defs)*2)
 	ast.Inspect(mod.Module, func(n ast.Node) bool {
 		if n == nil {
@@ -85,5 +104,5 @@ func (suite *Suite) Tags(file string) (*ParseInfo, []ast.Node) {
 			return true
 		}
 	})
-	return mod, t
+	return t
 }
