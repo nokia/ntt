@@ -64,6 +64,8 @@ package ntt
 import (
 	"fmt"
 	"os"
+
+	"github.com/nokia/ntt/internal/fs"
 )
 
 // NewFromArgs creates a suite from command line arguments. It expects either
@@ -104,7 +106,7 @@ func NewFromArgs(args ...string) (*Suite, error) {
 // might be lifted in the future.
 func NewFromFiles(files ...string) (*Suite, error) {
 	for _, f := range files {
-		if !hasTTCN3Extension(f) {
+		if !fs.HasTTCN3Extension(f) {
 			return nil, fmt.Errorf("%q is not a .ttcn3 file.", f)
 		}
 	}

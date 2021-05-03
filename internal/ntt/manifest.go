@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/k3"
 	"github.com/nokia/ntt/internal/log"
 	"gopkg.in/yaml.v2"
 )
@@ -83,10 +84,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 			}
 			switch {
 			case info.IsDir():
-				files, err := findTTCN3Files(src)
-				if err != nil {
-					return nil, err
-				}
+				files := fs.FindTTCN3Files(src)
 				if len(files) == 0 {
 					return nil, fmt.Errorf("Could not find ttcn3 source files in directory %q", src)
 				}
@@ -94,7 +92,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 					ret = append(ret, suite.File(files[i]))
 				}
 
-			case info.Mode().IsRegular() && hasTTCN3Extension(src):
+			case info.Mode().IsRegular() && fs.HasTTCN3Extension(src):
 				ret = append(ret, suite.File(src))
 
 			default:
@@ -107,10 +105,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 
 	// If there's only a root folder, look for .ttcn3 files
 	if suite.root != nil {
-		files, err := findTTCN3Files(suite.root.Path())
-		if err != nil {
-			return nil, err
-		}
+		files := fs.FindTTCN3Files(suite.root.Path())
 		for _, f := range files {
 			ret = append(ret, suite.File(f))
 		}
@@ -472,10 +467,7 @@ func (suite *Suite) Files() ([]string, error) {
 	}
 
 	for _, dir := range dirs {
-		f, err := findTTCN3Files(dir.Path())
-		if err != nil {
-			return nil, err
-		}
+		f := fs.FindTTCN3Files(dir.Path())
 		files = append(files, f...)
 	}
 	return files, err
@@ -511,11 +503,13 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		}
 	}
 
-	// Use AuxilliaryFiles to locate file
-	for _, file := range FindAuxiliaryTTCN3Files() {
-		if filepath.Base(file) == name+".ttcn3" {
-			suite.modules[name] = file
-			return file, nil
+	// Use auxilliaryFiles from K3 to locate file
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		for _, file := range fs.FindTTCN3Files(dir) {
+			if filepath.Base(file) == name+".ttcn3" {
+				suite.modules[name] = file
+				return file, nil
+			}
 		}
 	}
 
