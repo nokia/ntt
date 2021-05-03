@@ -33,7 +33,7 @@ type Pos struct {
 
 func completionAt(t *testing.T, suite *ntt.Suite, pos loc.Pos) []protocol.CompletionItem {
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
-	syntax := suite.Parse(name)
+	syntax := suite.ParseWithAllErrors(name)
 	nodeStack := lsp.LastNonWsToken(syntax.Module, pos)
 	name = name[:len(name)-len(filepath.Ext(name))]
 	return lsp.NewCompListItems(suite, pos, nodeStack, name)
@@ -582,6 +582,40 @@ func TestModifiesCtrlSpc(t *testing.T) {
 		{Label: "TestModifiesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
 }
 
+func TestModifiesParseErrorCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test {
+		   template integer t_base := ?
+		   template in//
+
+		   function setup_ports()
+			runs on CpMctMain
+		{
+			map(system:ifF1Sctp[0], mtc:ifF1Sctp[0]) param(t_f1SctpMapParam1);
+			map(system:ifF1Sctp[1], mtc:ifF1Sctp[1]) param(t_f1SctpMapParam2);
+			map(system:ifF1Sctp[2], mtc:ifF1Sctp[2]) param(t_f1SctpMapParam3);
+			map(system:ifF1Sctp[3], mtc:ifF1Sctp[3]) param(t_f1SctpMapParam4);
+			map(system:ifF1Sctp[4], mtc:ifF1Sctp[4]) param(t_f1SctpMapParam5);
+			map(system:ifF1Sctp[5], mtc:ifF1Sctp[5]) param(t_f1SctpMapParam6);
+			map(system:ifF1Sctp[6], mtc:ifF1Sctp[6]) param(t_f1SctpMapParam7);
+			map(system:ifX2Sctp[0], mtc:ifX2Sctp[0]) param(t_x2SctpMapParam);
+			map(system:ifXNSctp[0], mtc:ifXNSctp[0]) param(t_xnSctpMapParam);
+		}
+	}`)
+
+	list := completionAt(t, suite, 64)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "anytype ", Kind: protocol.KeywordCompletion},
+		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
+		{Label: "boolean ", Kind: protocol.KeywordCompletion},
+		{Label: "charstring ", Kind: protocol.KeywordCompletion},
+		{Label: "default ", Kind: protocol.KeywordCompletion},
+		{Label: "float ", Kind: protocol.KeywordCompletion},
+		{Label: "hexstring ", Kind: protocol.KeywordCompletion},
+		{Label: "integer ", Kind: protocol.KeywordCompletion},
+		{Label: "octetstring ", Kind: protocol.KeywordCompletion},
+		{Label: "universal charstring ", Kind: protocol.KeywordCompletion},
+		{Label: "verdicttype ", Kind: protocol.KeywordCompletion}}, list)
+}
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {

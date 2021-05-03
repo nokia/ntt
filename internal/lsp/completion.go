@@ -19,11 +19,20 @@ var (
 	importAfterModName        = []string{"all [except {}];", "{}"}
 	importAfterModNameSnippet = []string{"${1:all${2: except {$3\\}}};$0", "{$0}"}
 	importKinds               = []string{"type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control", "signature "}
+	predefinedTypes           = []string{"anytype ", "bitstring ", "boolean ", "charstring ", "default ", "float ", "hexstring ", "integer ", "octetstring ", "universal charstring ", "verdicttype "}
 )
 
 func newImportkinds() []protocol.CompletionItem {
 	complList := make([]protocol.CompletionItem, 0, len(importKinds))
 	for _, v := range importKinds {
+		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+	}
+	return complList
+}
+
+func newPredefinedTypes() []protocol.CompletionItem {
+	complList := make([]protocol.CompletionItem, 0, len(predefinedTypes))
+	for _, v := range predefinedTypes {
 		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
 	}
 	return complList
@@ -261,6 +270,12 @@ func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
 	return complList
 }
 
+func newAllTypes(suite *ntt.Suite) []protocol.CompletionItem {
+	var complList []protocol.CompletionItem = nil
+	complList = newPredefinedTypes()
+	return complList
+}
+
 func newAllValueDecls(suite *ntt.Suite, kind token.Kind) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files, err := suite.Files(); err == nil {
@@ -392,19 +407,34 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 
 func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 	var (
-		completed bool       = false
-		nodeStack []ast.Node = make([]ast.Node, 0, 10)
-		lastStack []ast.Node = nil
+		completed          bool       = false
+		nodeStack          []ast.Node = make([]ast.Node, 0, 10)
+		lastStack          []ast.Node = nil
+		isConsecutiveError bool       = false
+		//unrecoveredErr     bool       = false
 	)
 
 	ast.Inspect(n, func(n ast.Node) bool {
 		if n == nil {
 			// called on node exit
-			nodeStack = nodeStack[:len(nodeStack)-1]
+			if !isConsecutiveError {
+				nodeStack = nodeStack[:len(nodeStack)-1]
+			}
 			return false
 		}
 
 		log.Debug(fmt.Sprintf("looking for %d In node[%d .. %d] (node: %#v)", pos, n.Pos(), n.End(), n))
+		/*if _, ok := n.(*ast.ErrorNode); ok {
+			if unrecoveredErr {
+				// consecutive error. Do not consider
+				isConsecutiveError = true
+				return false
+			}
+			unrecoveredErr = true
+		} else {
+			isConsecutiveError = false
+			unrecoveredErr = false
+		}*/
 		// We don't need to descend any deeper if we're passt the
 		// position.
 		if pos < n.Pos() {
