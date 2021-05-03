@@ -24,7 +24,7 @@ type Pos struct {
 }
 
 func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
-	id, _ := suite.IdentifierAt(file, line, column)
+	id, _ := suite.DefinitionAt(file, line, column)
 	if id == nil || id.Def == nil {
 		return Pos{}
 	}

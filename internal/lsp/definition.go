@@ -8,7 +8,9 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
@@ -21,16 +23,46 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 	for _, suite := range s.Owners(file) {
 		start := time.Now()
-		id, _ := suite.IdentifierAt(string(file.SpanURI()), line, col)
+		id, _ := suite.DefinitionAt(string(file.SpanURI()), line, col)
 		elapsed := time.Since(start)
 		log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
 
 		if id != nil && id.Def != nil {
 			locs = append(locs, location(id.Def.Position))
+		} else {
+			locs = append(locs, cTags(suite, string(file.SpanURI()), line, col)...)
 		}
 	}
 
 	return locs, nil
+}
+
+func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {
+	var ret []protocol.Location
+
+	tree := suite.Parse(file)
+	if tree == nil {
+		return nil
+	}
+
+	id := suite.IdentifierAt(tree, line, col)
+	if id == nil {
+		return nil
+	}
+
+	for _, mod := range tree.ImportedModules() {
+		file, _ := suite.FindModule(mod)
+		if file == "" {
+			continue
+		}
+		tree, tags := suite.Tags(file)
+		for _, t := range tags {
+			if ast.Name(t) == ast.Name(id) {
+				ret = append(ret, location(tree.Position(t.Pos())))
+			}
+		}
+	}
+	return ret
 }
 
 func location(pos loc.Position) protocol.Location {
