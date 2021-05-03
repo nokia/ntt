@@ -34,7 +34,7 @@ type errLines struct {
 
 func (e errLines) Error() string {
 	return fmt.Sprintf("%s: error: %q must not have more than %d lines (%d)",
-		e.fset.Position(e.node.Pos()), identName(e.node), style.MaxLines, e.lines)
+		e.fset.Position(e.node.Pos()), ast.Name(e.node), style.MaxLines, e.lines)
 }
 
 func (e errLines) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooLong") }
@@ -57,7 +57,7 @@ type errComplexity struct {
 
 func (e errComplexity) Error() string {
 	return fmt.Sprintf("%s: error: cyclomatic complexity of %q (%d) must not be higher than %d",
-		e.fset.Position(e.node.Pos()), identName(e.node), e.complexity, style.Complexity.Max)
+		e.fset.Position(e.node.Pos()), ast.Name(e.node), e.complexity, style.Complexity.Max)
 }
 
 func (e errComplexity) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooComplex") }
@@ -81,7 +81,7 @@ type errUsageExceedsLimit struct {
 
 func (e errUsageExceedsLimit) Error() string {
 	return fmt.Sprintf("%s: error: %q must not be used more than %d times. %s",
-		e.fset.Position(e.node.Pos()), identName(e.node), e.limit, e.text)
+		e.fset.Position(e.node.Pos()), ast.Name(e.node), e.limit, e.text)
 }
 
 type errUnusedModule struct {
