@@ -12,9 +12,14 @@ type IdentInfo struct {
 	Def      *IdentInfo
 }
 
-// IdentifierAt parses file and returns IdentInfo about identifier at position
+//IdentifierAt returns token of identifier at position line:column.
+func (suite *Suite) IdentifierAt(mod *ParseInfo, line int, column int) *ast.Ident {
+	return findIdentifier(mod.Module, mod.Pos(line, column))
+}
+
+// DefinitionAt parses file and returns IdentInfo about identifier at position
 // line:column.
-func (suite *Suite) IdentifierAt(file string, line int, column int) (*IdentInfo, error) {
+func (suite *Suite) DefinitionAt(file string, line int, column int) (*IdentInfo, error) {
 	syntax := suite.Parse(file)
 	if syntax.Module == nil {
 		return nil, syntax.Err

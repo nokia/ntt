@@ -18,7 +18,7 @@ func (suite *Suite) Tags(file string) (*ParseInfo, []ast.Node) {
 		tags []ast.Node
 	}
 
-	mod.tags = suite.store.Bind(mod.id(), func(ctx context.Context) interface{} {
+	mod.tags = suite.store.Bind("tags_"+mod.id(), func(ctx context.Context) interface{} {
 		return &tagsInfo{
 			tags: suite.tags(mod),
 		}

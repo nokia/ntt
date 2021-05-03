@@ -57,6 +57,28 @@ func (info *ParseInfo) Pos(line int, column int) loc.Pos {
 	return loc.Pos(int(info.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
+func (info *ParseInfo) ImportedModules() []string {
+	var ret []string
+	ast.Inspect(info.Module, func(n ast.Node) bool {
+		if n == nil {
+			return false
+		}
+		switch n := n.(type) {
+		case *ast.Module, *ast.ModuleDef:
+			return true
+		case *ast.ImportDecl:
+			if s := ast.Name(n.Module); s != "" {
+				ret = append(ret, s)
+			}
+			return false
+		default:
+			return false
+		}
+
+	})
+	return ret
+}
+
 // Parse returns the cached TTCN-3 syntax of the file. The actual TTCN-3 parser is
 // called for every unique file exactly once.
 func (suite *Suite) Parse(file string) *ParseInfo {
