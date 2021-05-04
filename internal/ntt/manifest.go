@@ -490,18 +490,16 @@ func (suite *Suite) FindModule(name string) (string, error) {
 	if suite.modules == nil {
 		suite.modules = make(map[string]string)
 	}
-
 	if file, ok := suite.modules[name]; ok {
 		return file, nil
 	}
 
 	// Use NTT_CACHE to locate file
 	f := suite.File(name + ".ttcn3")
-	if _, err := f.Bytes(); err != nil {
+	if _, err := f.Bytes(); err == nil {
 		suite.modules[name] = f.Path()
 		return f.Path(), nil
 	}
-
 	if files, err := suite.Files(); err == nil {
 		for _, file := range files {
 			if filepath.Base(file) == name+".ttcn3" {
