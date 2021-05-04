@@ -27,8 +27,8 @@ var (
 List control parts, modules, imports or tests. The list command without any explicit
 sub-commands will output tests.
 
-List will not output objects from imported directories. If you need to list all
-objects from a testsuite you currently have to pass .ttcn3 files as arguments.
+List will ignore imported directories when printing tests. If you need to list all
+tests from a testsuite you'll have to pass .ttcn3 files as arguments.
 Example:
 
     ntt list $(ntt show -- sources) $(find $(ntt show -- imports) -name \*.ttcn3)
@@ -124,7 +124,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 			}
 
 			if err := parseFiles(cmd, suite); err != nil {
-				return nil
+				return err
 			}
 
 			return loadBaskets(suite)
