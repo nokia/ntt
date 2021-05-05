@@ -79,7 +79,7 @@ func FindAuxiliaryDirectories() []string {
 	var ret []string
 	for _, dir := range auxDirs {
 		if ttcn3Dir := filepath.Join(dir, "ttcn3"); dir != "" && isDir(ttcn3Dir) {
-			ret = append(ret)
+			ret = append(ret, ttcn3Dir)
 		}
 	}
 	return ret
