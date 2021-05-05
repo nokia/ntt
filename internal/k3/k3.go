@@ -38,9 +38,9 @@ func PluginDir() string {
 	}
 
 	hints := []string{
-		"/../lib/k3/plugins",
-		"/../lib64/k3/plugins",
-		"/../lib/x86_64/k3/plugins",
+		"lib/k3/plugins",
+		"lib64/k3/plugins",
+		"lib/x86_64/k3/plugins",
 	}
 	for _, hint := range hints {
 		if dir := filepath.Join(root, hint); isDir(dir) {
