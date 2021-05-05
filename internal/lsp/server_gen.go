@@ -4,6 +4,7 @@ package lsp
 
 import (
 	"context"
+
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
