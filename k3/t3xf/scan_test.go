@@ -3,7 +3,7 @@ package t3xf
 import (
 	"testing"
 
-	"github.com/nokia/ntt/t3xf/opcode"
+	"github.com/nokia/ntt/k3/t3xf/opcode"
 	"github.com/stretchr/testify/assert"
 )
 

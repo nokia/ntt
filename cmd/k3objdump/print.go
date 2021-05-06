@@ -6,8 +6,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/nokia/ntt/t3xf"
-	"github.com/nokia/ntt/t3xf/opcode"
+	"github.com/nokia/ntt/k3/t3xf"
+	"github.com/nokia/ntt/k3/t3xf/opcode"
 )
 
 type printer struct {
