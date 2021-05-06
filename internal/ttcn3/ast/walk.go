@@ -383,7 +383,9 @@ func Walk(v Visitor, node Node) {
 		}
 
 	case *EnumTypeDecl:
-		Walk(v, n.Name)
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}
@@ -393,7 +395,9 @@ func Walk(v Visitor, node Node) {
 		}
 
 	case *BehaviourTypeDecl:
-		Walk(v, n.Name)
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}
@@ -414,7 +418,9 @@ func Walk(v Visitor, node Node) {
 		}
 
 	case *PortTypeDecl:
-		Walk(v, n.Name)
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}
@@ -432,7 +438,9 @@ func Walk(v Visitor, node Node) {
 		}
 
 	case *ComponentTypeDecl:
-		Walk(v, n.Name)
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
 		if n.TypePars != nil {
 			Walk(v, n.TypePars)
 		}
@@ -526,7 +534,9 @@ func Walk(v Visitor, node Node) {
 			Walk(v, n.TemplateRestriction)
 		}
 		Walk(v, n.Type)
-		Walk(v, n.Name)
+		if n.Name != nil {
+			Walk(v, n.Name)
+		}
 		walkParenExprList(v, n.ArrayDef)
 		Walk(v, n.Value)
 
