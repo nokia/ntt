@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/k3"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/k3"
 	"gopkg.in/yaml.v2"
 )
 
