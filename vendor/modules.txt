@@ -2,7 +2,6 @@
 github.com/davecgh/go-spew/spew
 # github.com/golang/protobuf v1.4.2
 github.com/golang/protobuf/proto
-github.com/golang/protobuf/protoc-gen-go/plugin
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/kr/pretty v0.2.1
@@ -53,8 +52,6 @@ google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
-google.golang.org/protobuf/types/descriptorpb
-google.golang.org/protobuf/types/pluginpb
 # gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 gopkg.in/check.v1
 # gopkg.in/yaml.v2 v2.2.8
