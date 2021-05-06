@@ -112,10 +112,7 @@ func getAllTypesFromModule(suite *ntt.Suite, mname string) []string {
 				list = append(list, node.Name.String())
 				return false
 			case *ast.PortTypeDecl:
-				// NOTE: Name is an Expr. Why?
-				if ident, ok := node.Name.(*ast.Ident); ok {
-					list = append(list, ident.String())
-				}
+				list = append(list, node.Name.String())
 				return false
 			case *ast.StructTypeDecl:
 				list = append(list, node.Name.String())
@@ -379,7 +376,6 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 			nodeStack = nodeStack[:len(nodeStack)-1]
 			return false
 		}
-
 		log.Debug(fmt.Sprintf("looking for %d In node[%d .. %d] (node: %#v)", pos, n.Pos(), n.End(), n))
 		// We don't need to descend any deeper if we're passt the
 		// position.
