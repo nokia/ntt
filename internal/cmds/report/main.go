@@ -152,7 +152,7 @@ const (
 
 <testsuite name="{{.Name}}" tests="{{len .Tests}}" failures="{{len .Tests.Failed}}" errors="" time="{{.Tests.Total.Seconds}}">
 {{range .Tests}}<testcase name="{{.Testcase}}" time="{{.Duration.Seconds}}">
-  {{if ne .Verdict "pass"}}<failure>Verdict: {{.Verdict}} {{with .Reason}}({{. | html }}){{end}}
+  {{if and (ne .Verdict "unstable") (ne .Verdict "pass")}}<failure>Verdict: {{.Verdict}} {{with .Reason}}({{. | html }}){{end}}
 {{range .ReasonFiles}}{{.Name}}: {{.Content}}{{end}}
   </failure>
 {{end}}</testcase>
