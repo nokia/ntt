@@ -517,12 +517,13 @@ func (suite *Suite) FindModule(name string) (string, error) {
 }
 
 // IsOwned returns true if path is part of this test suite
-func (suite *Suite) IsOwned(path string) bool {
-	path = fs.Open(path).String()
+func (suite *Suite) IsOwned(uri string) bool {
+	path := fs.Open(uri).URI().Filename()
 
 	files, _ := suite.Files()
 	for _, file := range files {
-		if file == path {
+		if (file == path) ||
+			(file == uri) {
 			return true
 		}
 	}
