@@ -962,7 +962,28 @@ func (x *TemplateDecl) LastTok() *Token {
 	if x.With != nil {
 		return x.With.LastTok()
 	}
-	return x.Value.LastTok()
+	if x.Value != nil {
+		return x.Value.LastTok()
+	}
+	if x.AssignTok.IsValid() {
+		return x.AssignTok.LastTok()
+	}
+	if x.Base != nil {
+		return x.Base.LastTok()
+	}
+	if x.ModifiesTok.IsValid() {
+		x.ModifiesTok.LastTok()
+	}
+	if x.Params != nil {
+		return x.Params.LastTok()
+	}
+	if x.TypePars != nil {
+		return x.Type.LastTok()
+	}
+	if x.Name != nil {
+		return x.Name.LastTok()
+	}
+	return x.Type.LastTok()
 }
 
 func (x *ModuleParameterGroup) LastTok() *Token {
