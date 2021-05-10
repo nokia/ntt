@@ -3,7 +3,7 @@ go_import_path: github.com/nokia/ntt
 
 matrix:
   include:
-  - go: "1.12.x"
+  - go: "1.13.x"
     script:  go test -v ./...
   - go: "tip"
     script: go test -v -mod=vendor ./...

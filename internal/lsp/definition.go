@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/internal/span"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
@@ -63,21 +61,4 @@ func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location
 		}
 	}
 	return ret
-}
-
-func location(pos loc.Position) protocol.Location {
-	return protocol.Location{
-		URI: protocol.URIFromSpanURI(span.URIFromPath(pos.Filename)),
-		Range: protocol.Range{
-			Start: position(pos.Line, pos.Column),
-			End:   position(pos.Line, pos.Column),
-		},
-	}
-}
-
-func position(line, column int) protocol.Position {
-	return protocol.Position{
-		Line:      float64(line - 1),
-		Character: float64(column - 1),
-	}
 }

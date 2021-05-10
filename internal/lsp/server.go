@@ -110,20 +110,10 @@ func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParam
 	return nil
 }
 
-func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
-	return nil, nil
-}
-
 func (s *Server) nonstandardRequest(ctx context.Context, method string, params interface{}) (interface{}, error) {
 	return nil, notImplemented(method)
 }
 
-func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
-	if params.Command == "ntt.status" {
-		return s.status(ctx)
-	}
-	return nil, nil
-}
 func notImplemented(method string) error {
 	return errors.Errorf("%w: %q not yet implemented", jsonrpc2.ErrMethodNotFound, method)
 }

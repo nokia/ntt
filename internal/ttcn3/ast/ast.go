@@ -898,7 +898,7 @@ type (
 	PortTypeDecl struct {
 		TypeTok  Token
 		PortTok  Token
-		Name     Expr
+		Name     *Ident
 		TypePars *FormalPars
 		Kind     Token // MIXED, MESSAGE, PROCEDURE
 		Realtime Token

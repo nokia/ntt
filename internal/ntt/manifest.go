@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/k3"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/k3"
 	"gopkg.in/yaml.v2"
 )
 
@@ -515,12 +515,13 @@ func (suite *Suite) FindModule(name string) (string, error) {
 }
 
 // IsOwned returns true if path is part of this test suite
-func (suite *Suite) IsOwned(path string) bool {
-	path = fs.Open(path).String()
+func (suite *Suite) IsOwned(uri string) bool {
+	path := fs.Open(uri).URI().Filename()
 
 	files, _ := suite.Files()
 	for _, file := range files {
-		if file == path {
+		if (file == path) ||
+			(file == uri) {
 			return true
 		}
 	}
