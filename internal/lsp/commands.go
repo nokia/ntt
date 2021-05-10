@@ -48,10 +48,9 @@ func cmdTest(s *Server, testId string) error {
 	cmd := exec.Command("ntt", "run", "--", testId)
 	s.Log(context.TODO(), fmt.Sprint("Executing: ", cmd.String()))
 	out, err := cmd.CombinedOutput()
+	s.Log(context.TODO(), string(out))
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
-		return err
 	}
-	s.Log(context.TODO(), string(out))
-	return nil
+	return err
 }
