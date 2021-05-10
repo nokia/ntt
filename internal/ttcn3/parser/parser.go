@@ -1844,6 +1844,9 @@ func (p *parser) parseTemplateDecl() *ast.TemplateDecl {
 	}
 
 	x.Type = p.parseTypeRef()
+	if _, ok := x.Type.(*ast.ErrorNode); ok {
+		return x
+	}
 	x.Name = p.parseIdent()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
