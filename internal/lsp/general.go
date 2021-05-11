@@ -46,7 +46,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			HoverProvider:              false,
 			DocumentHighlightProvider:  false,
 			DocumentLinkProvider:       protocol.DocumentLinkOptions{},
-			ReferencesProvider:         false,
+			ReferencesProvider:         true,
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				Change:    protocol.Full,
 				OpenClose: true,
