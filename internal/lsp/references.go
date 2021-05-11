@@ -79,7 +79,7 @@ func (s *Server) references(ctx context.Context, params *protocol.ReferenceParam
 		}
 		locs = append(locs, newAllIdsWithSameName(suite, id.Tok.String())...)
 		elapsed := time.Since(start)
-		log.Debug(fmt.Sprintf("References took %s. IdentifierInfo: %#v", elapsed, id))
+		log.Debug(fmt.Sprintf("References took %s. IdentifierInfo: %#v", elapsed, id.String()))
 	}
 	return locs, nil
 }
