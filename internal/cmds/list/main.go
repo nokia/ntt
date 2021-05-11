@@ -381,20 +381,23 @@ func listModulePars(cmd *cobra.Command, args []string) error {
 
 func printItem(fset *loc.FileSet, pos loc.Pos, tags [][]string, fields ...string) {
 
-	if verbose {
-		p := fset.Position(pos)
-		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
-	}
-
 	s := strings.Join(fields, "\t")
 
 	if showTags && len(tags) != 0 {
 		for _, tag := range tags {
+			if verbose {
+				p := fset.Position(pos)
+				fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
+			}
 			fmt.Fprintf(w, "%s\t%s\t%s\n", s, tag[0], tag[1])
 		}
 		return
 	}
 
+	if verbose {
+		p := fset.Position(pos)
+		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
+	}
 	fmt.Fprintf(w, "%s\n", s)
 }
 
