@@ -217,7 +217,7 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 
 func moduleNameListFromSuite(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
-	if files, err := suite.Files(); err == nil {
+	if files := suite.FindAllFiles(); len(files) > 0 {
 		list = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			fileName := filepath.Base(f)
@@ -241,7 +241,7 @@ func newAllComponentTypesFromModule(suite *ntt.Suite, modName string) []protocol
 
 func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files, err := suite.Files(); err == nil {
+	if files := suite.FindAllFiles(); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
