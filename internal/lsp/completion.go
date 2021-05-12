@@ -393,7 +393,12 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 }
 
 func (s *Server) completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
+	if !params.TextDocument.URI.SpanURI().IsFile() {
+		log.Printf(fmt.Sprintf("for 'code completion' the new file %q needs to be saved at least once", string(params.TextDocument.URI)))
+		return &protocol.CompletionList{}, nil
+	}
 	start := time.Now()
+
 	fileName := filepath.Base(params.TextDocument.URI.SpanURI().Filename())
 	defaultModuleId := fileName[:len(fileName)-len(filepath.Ext(fileName))]
 
