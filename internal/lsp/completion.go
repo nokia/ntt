@@ -215,7 +215,7 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 	return list
 }
 
-func moduleNameListFromSuite(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
+func moduleNameListFromSuite(suite *ntt.Suite, ownModName string, sortPref string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	if files := suite.FindAllFiles(); len(files) > 0 {
 		list = make([]protocol.CompletionItem, 0, len(files))
@@ -223,30 +223,38 @@ func moduleNameListFromSuite(suite *ntt.Suite, ownModName string) []protocol.Com
 			fileName := filepath.Base(f)
 			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
 			if fileName != ownModName {
-				list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
+				if len(sortPref) > 0 {
+					list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion, SortText: sortPref + fileName})
+				} else {
+					list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
+				}
 			}
 		}
 	}
 	return list
 }
 
-func newAllComponentTypesFromModule(suite *ntt.Suite, modName string) []protocol.CompletionItem {
+func newAllComponentTypesFromModule(suite *ntt.Suite, modName string, sortPref string) []protocol.CompletionItem {
 	items := getAllComponentTypesFromModule(suite, modName)
 	complList := make([]protocol.CompletionItem, 0, len(items))
 	for _, v := range items {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
+		if len(sortPref) > 0 {
+			complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, SortText: sortPref + v, Detail: modName + "." + v})
+		} else {
+			complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, Detail: modName + "." + v})
+		}
 	}
 	return complList
 }
 
-func newAllComponentTypes(suite *ntt.Suite) []protocol.CompletionItem {
+func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files := suite.FindAllFiles(); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
 			mName = mName[:len(mName)-len(filepath.Ext(mName))]
-			items := newAllComponentTypesFromModule(suite, mName)
+			items := newAllComponentTypesFromModule(suite, mName, sortPref)
 			complList = append(complList, items...)
 		}
 	}
@@ -273,7 +281,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					list = newImportkinds()
 				} else if nodet.End() >= pos {
 					// look for available modules for import
-					list = moduleNameListFromSuite(suite, ownModName)
+					list = moduleNameListFromSuite(suite, ownModName, " ")
 				} else {
 					list = newImportAfterModName()
 				}
@@ -300,20 +308,20 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 			case *ast.ExceptExpr:
 				list = newImportkinds()
 			case *ast.RunsOnSpec, *ast.SystemSpec:
-				list = newAllComponentTypes(suite)
-				list = append(list, moduleNameListFromSuite(suite, ownModName)...)
+				list = newAllComponentTypes(suite, " 1")
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 			case *ast.SelectorExpr:
 				if scndNode.X != nil {
 					switch nodes[l-3].(type) {
 					case *ast.RunsOnSpec, *ast.SystemSpec, *ast.ComponentTypeDecl:
-						list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String())
+						list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String(), " 1")
 					}
 				}
 			case *ast.ComponentTypeDecl:
 				// for ctrl+spc, after beginning to type an id after extends Token
 				if scndNode.ExtendsTok.LastTok().IsValid() && scndNode.Body.LBrace.Pos() > pos {
-					list = newAllComponentTypes(suite)
-					list = append(list, moduleNameListFromSuite(suite, ownModName)...)
+					list = newAllComponentTypes(suite, " 1")
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 				}
 			}
 		}
@@ -321,7 +329,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 	case *ast.ImportDecl:
 		if nodet.Module == nil {
 			// look for available modules for import
-			list = moduleNameListFromSuite(suite, ownModName)
+			list = moduleNameListFromSuite(suite, ownModName, " ")
 		}
 	case *ast.DefKindExpr:
 		if !nodet.Kind.IsValid() {
@@ -336,8 +344,8 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 			}
 		}
 	case *ast.RunsOnSpec, *ast.SystemSpec:
-		list = newAllComponentTypes(suite)
-		list = append(list, moduleNameListFromSuite(suite, ownModName)...)
+		list = newAllComponentTypes(suite, " 1")
+		list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 	case *ast.ErrorNode:
 		// i.e. user started typing => ast.Ident might be detected instead of a kw
 		if l > 1 {
