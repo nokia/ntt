@@ -54,7 +54,7 @@ type Pos struct {
 
 func completionAt(t *testing.T, suite *ntt.Suite, pos loc.Pos) []protocol.CompletionItem {
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
-	syntax := suite.Parse(name)
+	syntax := suite.ParseWithAllErrors(name)
 	nodeStack := lsp.LastNonWsToken(syntax.Module, pos)
 	name = name[:len(name)-len(filepath.Ext(name))]
 	return lsp.NewCompListItems(suite, pos, nodeStack, name)
