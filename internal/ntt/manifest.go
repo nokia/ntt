@@ -473,6 +473,19 @@ func (suite *Suite) Files() ([]string, error) {
 	return files, err
 }
 
+// FindAllFiles returns all .ttcn3 files including auxiliary files from
+// k3 installation
+func (suite *Suite) FindAllFiles() []string {
+	files, _ := suite.Files()
+	// Use auxilliaryFiles from K3 to locate file
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		for _, file := range fs.FindTTCN3Files(dir) {
+			files = append(files, file)
+		}
+	}
+	return files
+}
+
 // FindModule tries to find a .ttcn3 based on its module name.
 func (suite *Suite) FindModule(name string) (string, error) {
 

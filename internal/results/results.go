@@ -36,7 +36,7 @@ type Run struct {
 
 // A unique identifier of the run. Usually something like "testname-2"
 func (r Run) ID() string {
-	return r.Name + "-" + fmt.Sprintf("%d\n", r.Instance)
+	return r.Name + "-" + fmt.Sprintf("%d", r.Instance)
 }
 
 // Duration of an individual run

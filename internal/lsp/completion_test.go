@@ -3,6 +3,7 @@ package lsp_test
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -13,6 +14,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var auxModulesMap = map[string]bool{"CCS": true, "CcsConnector": true, "ConversionFunc": true, "ExtProc_PortType": true, "Internet": true, "IpcCommunication": true, "LPTENB": true, "LameCodec": true,
+	"ProtoBaseTypes": true, "SCTP": true, "SctpMapParameters": true, "TestManager": true, "ZmqMapParameters": true, "asnExtFunctions": true, "asnPreload": true, "config": true, "controlMessages": true,
+	"math": true, "os": true, "snow3g": true, "strings": true, "tcpsConnector": true, "testCcsStub": true, "udpsLogger": true, "utilityFunctions": true, "zuc": true, "SutControl": true, "TestcaseExecutor": true}
+
+func filterContentOfAuxModules(input []protocol.CompletionItem) []protocol.CompletionItem {
+	ret := make([]protocol.CompletionItem, 0, len(input))
+	for _, v := range input {
+		mod := strings.Split(v.Detail, ".")
+		if len(mod) > 1 {
+			if _, ok := auxModulesMap[mod[0]]; ok {
+				continue
+			}
+		}
+		if _, ok := auxModulesMap[v.Label]; ok && v.Kind == protocol.ModuleCompletion {
+			continue
+		}
+		ret = append(ret, v)
+	}
+	return ret
+}
 func buildSuite(t *testing.T, strs ...string) *ntt.Suite {
 	suite := &ntt.Suite{}
 	for i, s := range strs {
@@ -38,16 +59,6 @@ func completionAt(t *testing.T, suite *ntt.Suite, pos loc.Pos) []protocol.Comple
 	name = name[:len(name)-len(filepath.Ext(name))]
 	return lsp.NewCompListItems(suite, pos, nodeStack, name)
 }
-func gotoDefinition(suite *ntt.Suite, file string, line, column int) Pos {
-	id, _ := suite.DefinitionAt(file, line, column)
-	if id == nil || id.Def == nil {
-		return Pos{}
-	}
-	return Pos{
-		Line:   id.Def.Position.Line,
-		Column: id.Def.Position.Column,
-	}
-}
 
 // Completion within Import statement.
 // TODO: func TestImportTypes(t *testing.T) {}
@@ -66,8 +77,8 @@ func TestImportModulenamesCtrlSpc(t *testing.T) {
 	list := completionAt(t, suite, 30)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "TestImportModulenamesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
-		{Label: "TestImportModulenamesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "TestImportModulenamesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " TestImportModulenamesCtrlSpc_Module_1"},
+		{Label: "TestImportModulenamesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion, SortText: " TestImportModulenamesCtrlSpc_Module_2"}}, filterContentOfAuxModules(list))
 }
 
 func TestImportModulenames(t *testing.T) {
@@ -83,8 +94,8 @@ func TestImportModulenames(t *testing.T) {
 	list := completionAt(t, suite, 33)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "TestImportModulenames_Module_1", Kind: protocol.ModuleCompletion},
-		{Label: "TestImportModulenames_Module_2", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "TestImportModulenames_Module_1", Kind: protocol.ModuleCompletion, SortText: " TestImportModulenames_Module_1"},
+		{Label: "TestImportModulenames_Module_2", Kind: protocol.ModuleCompletion, SortText: " TestImportModulenames_Module_2"}}, filterContentOfAuxModules(list))
 
 }
 
@@ -391,12 +402,12 @@ func TestRunsOnTypesCtrlSpc(t *testing.T) {
 
 	list := completionAt(t, suite, 93)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion},
-		{Label: "B1", Kind: protocol.StructCompletion},
-		{Label: "C0", Kind: protocol.StructCompletion},
-		{Label: "A0", Kind: protocol.StructCompletion},
-		{Label: "TestRunsOnTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
-		{Label: "TestRunsOnTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestRunsOnTypesCtrlSpc_Module_0.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestRunsOnTypesCtrlSpc_Module_0.B1"},
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnTypesCtrlSpc_Module_1.C0"},
+		{Label: "A0", Kind: protocol.StructCompletion, SortText: " 1A0", Detail: "TestRunsOnTypesCtrlSpc_Module_2.A0"},
+		{Label: "TestRunsOnTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestRunsOnTypesCtrlSpc_Module_1"},
+		{Label: "TestRunsOnTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion, SortText: " 2TestRunsOnTypesCtrlSpc_Module_2"}}, filterContentOfAuxModules(list))
 }
 
 func TestRunsOnTypes(t *testing.T) {
@@ -415,12 +426,12 @@ func TestRunsOnTypes(t *testing.T) {
 
 	list := completionAt(t, suite, 94)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion},
-		{Label: "B1", Kind: protocol.StructCompletion},
-		{Label: "C0", Kind: protocol.StructCompletion},
-		{Label: "A0", Kind: protocol.StructCompletion},
-		{Label: "TestRunsOnTypes_Module_1", Kind: protocol.ModuleCompletion},
-		{Label: "TestRunsOnTypes_Module_2", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestRunsOnTypes_Module_0.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestRunsOnTypes_Module_0.B1"},
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnTypes_Module_1.C0"},
+		{Label: "A0", Kind: protocol.StructCompletion, SortText: " 1A0", Detail: "TestRunsOnTypes_Module_2.A0"},
+		{Label: "TestRunsOnTypes_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestRunsOnTypes_Module_1"},
+		{Label: "TestRunsOnTypes_Module_2", Kind: protocol.ModuleCompletion, SortText: " 2TestRunsOnTypes_Module_2"}}, filterContentOfAuxModules(list))
 }
 
 func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
@@ -439,7 +450,7 @@ func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
 
 	list := completionAt(t, suite, 135)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnModuleDotTypesCtrlSpc_Module_1.C0"}}, list)
 }
 
 func TestRunsOnModuleDotTypes(t *testing.T) {
@@ -458,7 +469,7 @@ func TestRunsOnModuleDotTypes(t *testing.T) {
 
 	list := completionAt(t, suite, 128)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnModuleDotTypes_Module_1.C0"}}, list)
 }
 
 func TestSystemTypesCtrlSpc(t *testing.T) {
@@ -477,12 +488,12 @@ func TestSystemTypesCtrlSpc(t *testing.T) {
 
 	list := completionAt(t, suite, 103)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion},
-		{Label: "B1", Kind: protocol.StructCompletion},
-		{Label: "C0", Kind: protocol.StructCompletion},
-		{Label: "A0", Kind: protocol.StructCompletion},
-		{Label: "TestSystemTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion},
-		{Label: "TestSystemTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestSystemTypesCtrlSpc_Module_0.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestSystemTypesCtrlSpc_Module_0.B1"},
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestSystemTypesCtrlSpc_Module_1.C0"},
+		{Label: "A0", Kind: protocol.StructCompletion, SortText: " 1A0", Detail: "TestSystemTypesCtrlSpc_Module_2.A0"},
+		{Label: "TestSystemTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestSystemTypesCtrlSpc_Module_1"},
+		{Label: "TestSystemTypesCtrlSpc_Module_2", Kind: protocol.ModuleCompletion, SortText: " 2TestSystemTypesCtrlSpc_Module_2"}}, filterContentOfAuxModules(list))
 }
 
 func TestSystemModuleDotTypes(t *testing.T) {
@@ -501,7 +512,7 @@ func TestSystemModuleDotTypes(t *testing.T) {
 
 	list := completionAt(t, suite, 172)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestSystemModuleDotTypes_Module_1.C0"}}, list)
 }
 
 func TestExtendsTypesCtrlSpc(t *testing.T) {
@@ -517,11 +528,11 @@ func TestExtendsTypesCtrlSpc(t *testing.T) {
 
 	list := completionAt(t, suite, 98)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion},
-		{Label: "B1", Kind: protocol.StructCompletion},
-		{Label: "B2", Kind: protocol.StructCompletion},
-		{Label: "C0", Kind: protocol.StructCompletion},
-		{Label: "TestExtendsTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestExtendsTypesCtrlSpc_Module_0.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestExtendsTypesCtrlSpc_Module_0.B1"},
+		{Label: "B2", Kind: protocol.StructCompletion, SortText: " 1B2", Detail: "TestExtendsTypesCtrlSpc_Module_0.B2"}, // TODO: filter 'self' out
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestExtendsTypesCtrlSpc_Module_1.C0"},
+		{Label: "TestExtendsTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestExtendsTypesCtrlSpc_Module_1"}}, filterContentOfAuxModules(list))
 }
 
 func TestExtendsTypes(t *testing.T) {
@@ -537,11 +548,11 @@ func TestExtendsTypes(t *testing.T) {
 
 	list := completionAt(t, suite, 99)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion},
-		{Label: "B1", Kind: protocol.StructCompletion},
-		{Label: "B2", Kind: protocol.StructCompletion},
-		{Label: "C0", Kind: protocol.StructCompletion},
-		{Label: "TestExtendsTypes_Module_1", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestExtendsTypes_Module_0.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestExtendsTypes_Module_0.B1"},
+		{Label: "B2", Kind: protocol.StructCompletion, SortText: " 1B2", Detail: "TestExtendsTypes_Module_0.B2"},
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestExtendsTypes_Module_1.C0"},
+		{Label: "TestExtendsTypes_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestExtendsTypes_Module_1"}}, filterContentOfAuxModules(list))
 }
 
 func TestExtendsModuleDotTypes(t *testing.T) {
@@ -557,7 +568,7 @@ func TestExtendsModuleDotTypes(t *testing.T) {
 
 	list := completionAt(t, suite, 133)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "C0", Kind: protocol.StructCompletion}}, list)
+		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestExtendsModuleDotTypes_Module_1.C0"}}, list)
 }
 
 func TestModifiesCtrlSpc(t *testing.T) {
