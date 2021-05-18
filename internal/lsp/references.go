@@ -5,24 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/k3"
 )
-
-func FindAllFiles(suite *ntt.Suite) []string {
-	files, _ := suite.Files()
-	// Use auxilliaryFiles from K3 to locate file
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		for _, file := range fs.FindTTCN3Files(dir) {
-			files = append(files, file)
-		}
-	}
-	return files
-}
 
 func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string) []protocol.Location {
 	list := make([]protocol.Location, 0, 10)
@@ -50,7 +37,7 @@ func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string)
 }
 func newAllIdsWithSameName(suite *ntt.Suite, idName string) []protocol.Location {
 	var complList []protocol.Location = nil
-	if files := FindAllFiles(suite); len(files) != 0 {
+	if files := suite.FindAllFiles(); len(files) != 0 {
 		complList = make([]protocol.Location, 0, len(files))
 		for _, f := range files {
 			complList = append(complList, newAllIdsWithSameNameFromFile(suite, f, idName)...)
