@@ -105,7 +105,7 @@ func (suite *Suite) parse(file string, moder parser.Mode) *ParseInfo {
 
 		var mods []*ast.Module
 		data.FileSet = loc.NewFileSet()
-		mods, data.Err = parser.ParseModules(data.FileSet, f.Path(), b, 0)
+		mods, data.Err = parser.ParseModules(data.FileSet, f.Path(), b, moder)
 
 		// It's easier to support only one module per file.
 		if len(mods) == 1 {

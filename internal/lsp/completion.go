@@ -416,7 +416,7 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	// in most ways end up with cyclic imports.
 	// Thus 'completion' shall collect items only from one suite.
 	// Decision: first suite
-	syntax := suites[0].Parse(params.TextDocument.URI.SpanURI().Filename())
+	syntax := suites[0].ParseWithAllErrors(params.TextDocument.URI.SpanURI().Filename())
 	log.Debug(fmt.Sprintf("Completion after Parse :%p", &syntax.Module))
 	if syntax.Module == nil {
 		return nil, syntax.Err
