@@ -584,13 +584,13 @@ func TestModifiesCtrlSpc(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 154)
+	list := completionAt(t, suite, 155)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "t_r", Kind: protocol.ConstantCompletion},
-		{Label: "t_i", Kind: protocol.ConstantCompletion},    // TODO: implement filter on Compatible Type
-		{Label: "t_rmod", Kind: protocol.ConstantCompletion}, // TODO: implement filter for self
-		{Label: "t_r2", Kind: protocol.ConstantCompletion},
-		{Label: "TestModifiesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
+		{Label: "t_r", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_r"},
+		{Label: "t_i", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_i"},       // TODO: implement filter on Compatible Type
+		{Label: "t_rmod", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_rmod"}, // TODO: implement filter for self
+		{Label: "t_r2", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_1.t_r2"},
+		{Label: "TestModifiesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, filterContentOfAuxModules(list))
 }
 
 func TestModifiesParseErrorCtrlSpc(t *testing.T) {
@@ -613,7 +613,7 @@ func TestModifiesParseErrorCtrlSpc(t *testing.T) {
 		}
 	}`)
 
-	list := completionAt(t, suite, 64)
+	list := completionAt(t, suite, 65)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "anytype ", Kind: protocol.KeywordCompletion},
 		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
@@ -625,8 +625,39 @@ func TestModifiesParseErrorCtrlSpc(t *testing.T) {
 		{Label: "integer ", Kind: protocol.KeywordCompletion},
 		{Label: "octetstring ", Kind: protocol.KeywordCompletion},
 		{Label: "universal charstring ", Kind: protocol.KeywordCompletion},
-		{Label: "verdicttype ", Kind: protocol.KeywordCompletion}}, list)
+		{Label: "verdicttype ", Kind: protocol.KeywordCompletion}}, filterContentOfAuxModules(list))
 }
+
+func TestTemplateTypeCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		type integer Byte(0..255);
+		template //
+		template integer a_i := ?;
+	}`, `module TestTemplateTypeCtrlSpc_Module_1
+      {
+		  type record R {integer f1, boolean f2 optional}
+		  template (value) R t_r2 := {10, omit}
+	  }`)
+
+	list := completionAt(t, suite, 59)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "TestTemplateTypeCtrlSpc_Module_0.Byte"},
+		{Label: "R ", Kind: protocol.StructCompletion, SortText: " 2R", Detail: "TestTemplateTypeCtrlSpc_Module_1.R"},
+		{Label: "anytype ", Kind: protocol.KeywordCompletion},
+		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
+		{Label: "boolean ", Kind: protocol.KeywordCompletion},
+		{Label: "charstring ", Kind: protocol.KeywordCompletion},
+		{Label: "default ", Kind: protocol.KeywordCompletion},
+		{Label: "float ", Kind: protocol.KeywordCompletion},
+		{Label: "hexstring ", Kind: protocol.KeywordCompletion},
+		{Label: "integer ", Kind: protocol.KeywordCompletion},
+		{Label: "octetstring ", Kind: protocol.KeywordCompletion},
+		{Label: "universal charstring ", Kind: protocol.KeywordCompletion},
+		{Label: "verdicttype ", Kind: protocol.KeywordCompletion},
+		{Label: "TestTemplateTypeCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestTemplateTypeCtrlSpc_Module_1"}}, filterContentOfAuxModules(list))
+}
+
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
