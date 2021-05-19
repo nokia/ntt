@@ -392,6 +392,9 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				if scndNode.ModifiesTok.LastTok().IsValid() && scndNode.AssignTok.Pos() > pos {
 					list = newAllValueDecls(suite, token.TEMPLATE)
 					list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
+				} else if scndNode.Name == nil {
+					list = newAllTypes(suite, ownModName)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 				}
 			}
 		}

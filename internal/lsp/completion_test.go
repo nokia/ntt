@@ -658,6 +658,35 @@ func TestTemplateTypeCtrlSpc(t *testing.T) {
 		{Label: "TestTemplateTypeCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestTemplateTypeCtrlSpc_Module_1"}}, filterContentOfAuxModules(list))
 }
 
+func TestTemplateType(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		type integer Byte(0..255);
+		template h//
+		template integer a_i := ?;
+	}`, `module TestTemplateTypeCtrlSpc_Module_1
+      {
+		  type record R {integer f1, boolean f2 optional}
+		  template (value) R t_r2 := {10, omit}
+	  }`)
+
+	list := completionAt(t, suite, 60)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "TestTemplateType_Module_0.Byte"},
+		{Label: "R ", Kind: protocol.StructCompletion, SortText: " 2R", Detail: "TestTemplateType_Module_1.R"},
+		{Label: "anytype ", Kind: protocol.KeywordCompletion},
+		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
+		{Label: "boolean ", Kind: protocol.KeywordCompletion},
+		{Label: "charstring ", Kind: protocol.KeywordCompletion},
+		{Label: "default ", Kind: protocol.KeywordCompletion},
+		{Label: "float ", Kind: protocol.KeywordCompletion},
+		{Label: "hexstring ", Kind: protocol.KeywordCompletion},
+		{Label: "integer ", Kind: protocol.KeywordCompletion},
+		{Label: "octetstring ", Kind: protocol.KeywordCompletion},
+		{Label: "universal charstring ", Kind: protocol.KeywordCompletion},
+		{Label: "verdicttype ", Kind: protocol.KeywordCompletion},
+		{Label: "TestTemplateType_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestTemplateType_Module_1"}}, filterContentOfAuxModules(list))
+}
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
