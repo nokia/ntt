@@ -377,9 +377,17 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 			case *ast.SelectorExpr:
 				if scndNode.X != nil {
-					switch nodes[l-3].(type) {
+					switch thrdNode := nodes[l-3].(type) {
 					case *ast.RunsOnSpec, *ast.SystemSpec, *ast.ComponentTypeDecl:
 						list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String(), " 1")
+					case *ast.TemplateDecl:
+						if thrdNode.ModifiesTok.IsValid() {
+							list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), thrdNode.TemplateTok.Kind, false)
+						} else /*if thrdNode.Name == nil */ {
+							// NOTE: the parser produces a wrong ast under certain circumstances
+							// see: func TestTemplateModuleDotType(t *testing.T)
+							list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
+						}
 					}
 				}
 			case *ast.ComponentTypeDecl:
@@ -503,11 +511,15 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 }
 
 func (s *Server) completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+		log.Debug(fmt.Sprintf("Completion took %s.", elapsed))
+	}()
 	if !params.TextDocument.URI.SpanURI().IsFile() {
 		log.Printf(fmt.Sprintf("for 'code completion' the new file %q needs to be saved at least once", string(params.TextDocument.URI)))
 		return &protocol.CompletionList{}, nil
 	}
-	start := time.Now()
 
 	fileName := filepath.Base(params.TextDocument.URI.SpanURI().Filename())
 	defaultModuleId := fileName[:len(fileName)-len(filepath.Ext(fileName))]

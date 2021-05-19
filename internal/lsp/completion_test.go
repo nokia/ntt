@@ -664,7 +664,7 @@ func TestTemplateType(t *testing.T) {
 		type integer Byte(0..255);
 		template h//
 		template integer a_i := ?;
-	}`, `module TestTemplateTypeCtrlSpc_Module_1
+	}`, `module TestTemplateType_Module_1
       {
 		  type record R {integer f1, boolean f2 optional}
 		  template (value) R t_r2 := {10, omit}
@@ -687,6 +687,42 @@ func TestTemplateType(t *testing.T) {
 		{Label: "verdicttype ", Kind: protocol.KeywordCompletion},
 		{Label: "TestTemplateType_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestTemplateType_Module_1"}}, filterContentOfAuxModules(list))
 }
+
+func TestTemplateModuleDotType(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		type integer Byte(0..255);
+		template TestTemplateModuleDotType_Module_1.//
+		template integer a_i := ?;  // NOTE: this template kw is apparently consumed by the parser leading to integer being interpreted as Name!!!
+	}`, `module TestTemplateModuleDotType_Module_1
+      {
+		  type record R {integer f1, boolean f2 optional}
+		  template (value) R t_r2 := {10, omit}
+	  }`)
+
+	list := completionAt(t, suite, 94)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "R ", Kind: protocol.StructCompletion, Detail: "TestTemplateModuleDotType_Module_1.R"}}, filterContentOfAuxModules(list))
+}
+
+func TestModifiesModuleDot(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		import from TestModifiesModuleDot_Module_1 all;
+		template R t_r := *;
+		template integer t_i := ?;
+		template (omit) R t_rmod modifies TestModifiesModuleDot_Module_1.//
+	  }`, `module TestModifiesModuleDot_Module_1
+      {
+		  type record R {integer f1, boolean f2 optional}
+		  template (value) R t_r2 := {10, omit}
+	  }`)
+
+	list := completionAt(t, suite, 188)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "t_r2", Kind: protocol.ConstantCompletion}}, filterContentOfAuxModules(list))
+}
+
 func TestSubTypeDefSegv(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
