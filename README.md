@@ -23,8 +23,8 @@ code generators and much more. Have a look at the
 [documentation](https://nokia.github.io/ntt) page for further details.
 
 **ntt** is written in native Go and has full support for
-[TTCN-3 Core Language Specification v4.11.1](https://www.etsi.org/deliver/etsi_es/201800_201899/20187301/04.11.01_60/es_20187301v041101p.pdf).
-Without any cuts being made it is one of the fastest TTCN-3 tools available.
+[TTCN-3 Core Language Specification v4.11.1](https://www.etsi.org/deliver/etsi_es/201800_201899/20187301/04.11.01_60/es_20187301v041101p.pdf) and various extensions. Without cutting corners, it is one of the
+fastest TTCN-3 tools available
 
 
 # Install
@@ -56,7 +56,7 @@ Installer](https://github.com/nokia/ntt/releases/latest/download/ntt.msi). The
 advantage of this installer is it configures your PATH settings, so ntt is
 reachable from shells. This allows you to start hacking without any ado.
 
-The have not signed the installer, though.
+We have not signed the installer, though.
 
 
 **Debian Packages**
