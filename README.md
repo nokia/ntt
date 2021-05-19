@@ -6,7 +6,8 @@
 <b>
 <a href="https://nokia.github.io/ntt/">Documentation</a>&nbsp;&nbsp;|&nbsp;&nbsp;
 <a href="#install">Installation</a>&nbsp;&nbsp;|&nbsp;&nbsp;
-<a href="#contact-us">Contact</a>
+<a href="#contact-us">Contact</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+<a href="https://github.com/nokia/ntt/blob/master/CONTRIBUTING.md">Contribute</a>
 </b>
 <br>
 <br>
@@ -30,7 +31,7 @@ Without any cuts being made it is one of the fastest TTCN-3 tools available.
 
 The [Visual Studio Code
 Extension](https://marketplace.visualstudio.com/items?itemName=Nokia.ttcn3) and
-the [vim-lsp-setting](https://github.com/mattn/vim-lsp-settings) should install
+the [vim-lsp-settings](https://github.com/mattn/vim-lsp-settings) should install
 and update ntt automatically. But it's also possible to install ntt manually.
 
 You can choose between installing the pre-built binaries or compiling NTT from
@@ -80,7 +81,7 @@ If you have Go installed, you may easily install our commands by using the go-ge
      go get github.com/nokia/ntt/cmd/...
 
 However note, this will install latest ntt from master branch and thus the
-version might not be correctly:
+version might not be correct:
 
     $ ntt version
     ntt dev, commit none, built at unknown
