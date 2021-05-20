@@ -965,8 +965,14 @@ func (x *TemplateDecl) LastTok() *Token {
 	if x.Value != nil {
 		return x.Value.LastTok()
 	}
+	if x.AssignTok.IsValid() {
+		return x.AssignTok.LastTok()
+	}
 	if x.Base != nil {
 		return x.Base.LastTok()
+	}
+	if x.ModifiesTok.IsValid() {
+		x.ModifiesTok.LastTok()
 	}
 	if x.Params != nil {
 		return x.Params.LastTok()
