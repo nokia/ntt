@@ -1,5 +1,5 @@
 all:
-	bundle exec jekyll serve
+	bundle exec jekyll serve --livereload
 
 install-tools:
 	pip3 install asciinema
