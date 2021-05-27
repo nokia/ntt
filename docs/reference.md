@@ -60,6 +60,7 @@ Example:
 
 
 **Custom Commands**
+
 You can extend and customize ntt through custom commands. Place any executable
 with a name like `ntt-banana` in your `PATH` and ntt will automatically make it
 available as a subcommand. You can then call it just like any other ntt
@@ -69,11 +70,11 @@ command:
 
 
 **Environment variables**
+
 You may define environment variable `NTT_SOURCE_DIR` to specify a default test
 suite root directory:
 
     $ ntt list                      # Lists tests in current working directory
-
     $ export NTT_SOURCE_DIR=~/foo
     $ ntt list                      # Now, ntt lists tests in ~/foo
 
@@ -146,40 +147,40 @@ problem was reported.
 
 **Formatting Checks**
 
-    max_lines          Number of lines a behaviour body must not exceed.
-    aligned_braces     Braces must be in the same column or same line.
-    require_case_else  Every select-statement must have one case-else.
+* `max_lines`: Number of lines a behaviour body must not exceed.
+* `aligned_braces`: Braces must be in the same column or same line.
+* `require_case_else`: Every select-statement must have one case-else.
 
 
 **Cyclomatic Complexity Checks**
 
-    complexity.max           Cyclomatic complexity muss not exceed.
-    complexity.ignore_guards Ignore complexity of alt- and interleave guards
+* `complexity.max`: Cyclomatic complexity muss not exceed.
+* `complexity.ignore_guards`: Ignore complexity of alt- and interleave guards
 
 
 **Naming Convention Checks**
 
-    naming.modules            Checks for module identifiers.
-    naming.tests              Checks for test-case identifier.
-    naming.functions          Checks for function identifiers.
-    naming.altsteps           Checks for altstep identifiers.
-    naming.parameters         Checks for parameter identifiers.
-    naming.component_vars     Checks for component variable identifiers.
-    naming.var_templates      Checks for variable template identifiers.
-    naming.port_types         Checks for port type identifiers.
-    naming.ports              Checks for port instance identifiers.
-    naming.global_consts      Checks for global constant identifiers.
-    naming.component_consts   Checks for component scoped constant identifiers.
-    naming.templates          Checks for constant template identifiers.
-    naming.locals             Checks for local variable identifiers.
+* `naming.modules`: Checks for module identifiers.
+* `naming.tests`: Checks for test-case identifier.
+* `naming.functions`: Checks for function identifiers.
+* `naming.altsteps`: Checks for altstep identifiers.
+* `naming.parameters`: Checks for parameter identifiers.
+* `naming.component_vars`: Checks for component variable identifiers.
+* `naming.var_templates`: Checks for variable template identifiers.
+* `naming.port_types`: Checks for port type identifiers.
+* `naming.ports`: Checks for port instance identifiers.
+* `naming.global_consts`: Checks for global constant identifiers.
+* `naming.component_consts`: Checks for component scoped constant identifiers.
+* `naming.templates`: Checks for constant template identifiers.
+* `naming.locals`: Checks for local variable identifiers.
 
-    tags.tests                Checks for test-case tags.
+* `tags.tests`: Checks for test-case tags.
 
 
 **White-Listing**
 
-    ignore.modules    Ignore modules
-    ignore.files      Ignore files
+* `ignore.modules`: Ignore modules
+* `ignore.files`: Ignore files
 
 
 **Refactoring**
@@ -191,7 +192,7 @@ warning, as soon as the usage of a symbol exceed a defined limit.
 
 **Unused Symbols**
 
-    unused.modules    Checks for unused modules
+* `unused.modules`: Checks for unused modules
 
 
 **Example**
@@ -336,7 +337,7 @@ TODO: Explain the message coverage tool.
 The report command shows a summary of the latest test run. The summary includes
 information such as a list of tests which did not pass, average run times, CPU
 load, etc.
-Command line options '--json' and '--junit' show similar output, but with JSON
+Command line options `--json` and `--junit` show similar output, but with JSON
 or JUNIT formatting.
 
 
@@ -345,73 +346,74 @@ or JUNIT formatting.
 ntt uses the Go templates format which you can use to specify custom output templates.
 Example:
 
+{% raw %}
 	ntt report --template "{{.Name}} took {{.Tests.Duration}}"
-
+{% endraw %}
 
 Available Objects:
 
-  * .Report is a collection of test runs
-  * .Report.Cores:     number of CPU cores
-  * .Report.Environ:   list of environment variable
-  * .Report.Getenv:    value of an environment variable
-  * .Report.LineCount: number of TTCN-3 source code lines
-  * .Report.MaxJobs:   maximum number of parallel test jobs
-  * .Report.MaxLoad:   maximum allowed CPU load
-  * .Report.Modules:   a list of collection sorted by module
-  * .Report.Name:      name of the collection
-  * .Report.Runs:      list of test runs
-  * .Report.Tests:     list of tests (with final verdict)
+ * `.Report` is a collection of test runs
+ * `.Report.Cores`: number of CPU cores
+ * `.Report.Environ`: list of environment variable
+ * `.Report.Getenv`: value of an environment variable
+ * `.Report.LineCount`: number of TTCN-3 source code lines
+ * `.Report.MaxJobs`: maximum number of parallel test jobs
+ * `.Report.MaxLoad`: maximum allowed CPU load
+ * `.Report.Modules`: a list of collection sorted by module
+ * `.Report.Name`: name of the collection
+ * `.Report.Runs`: list of test runs
+ * `.Report.Tests`: list of tests (with final verdict)
 
-  * .RunSlice is a list of test runs
-  * .RunSlice.Load:      Return systemload slice for every run
-  * .RunSlice.Average:   Average duration of runs (median)
-  * .RunSlice.Deviation: Standard deviation
-  * .RunSlice.Duration:  Timespan of first and last test run
-  * .RunSlice.Failed:    A slice of failed test runs (inconc, none, error, fail, ...)
-  * .RunSlice.First:     First test run
-  * .RunSlice.Last:      Last test run
-  * .RunSlice.Longest:   Longest test run
-  * .RunSlice.NotPassed: A slice of tests without 'pass' verdict
-  * .RunSlice.Result:    Final result (PASSED, FAILED, UNSTABLE, NOEXEC)
-  * .RunSlice.Shortest:  Shortest test run
-  * .RunSlice.Total:     Sum of all test run durations
-  * .RunSlice.Unstable:  List of unstable test runs
+ * `.RunSlice` is a list of test runs
+ * `.RunSlice.Load`: Returnurfsystemload slice for every run
+ * `.RunSlice.Average`: Average duration of runs (median)
+ * `.RunSlice.Deviation`: Standard deviation
+ * `.RunSlice.Duration`: Timespan of first and last test run
+ * `.RunSlice.Failed`: A slice of failed test runs (inconc, none, error, fail, ...)
+ * `.RunSlice.First`: First test run
+ * `.RunSlice.Last`: Last test run
+ * `.RunSlice.Longest`: Longest test run
+ * `.RunSlice.NotPassed`: A slice of tests without 'pass' verdict
+ * `.RunSlice.Result`: Final result (PASSED, FAILED, UNSTABLE, NOEXEC)
+ * `.RunSlice.Shortest`: Shortest test run
+ * `.RunSlice.Total`: Sum of all test run durations
+ * `.RunSlice.Unstable`: List of unstable test runs
 
-  * .Run is a individual test run
-  * .Run.ID:          test run ID (e.g. test.Stable_A-2)
-  * .Run.Name:        full qualified test name (test.Stable_A)
-  * .Run.Instance:    test instance (e.g. 2)
-  * .Run.Module:      module name (test)
-  * .Run.Testcase:    testcase name (e.g. Stable_A)
-  * .Run.Verdict:     the test verdict (pass, fail, none, ...)
-  * .Run.Begin:       when the test was started (time.Time Go object)
-  * .Run.End:         when the test ended (time.Time Go object)
-  * .Run.Duration:    a time.Duration Go object
-  * .Run.Load:        the system load when the test was started
-  * .Run.MaxMem:      the maximum memory used when the test ended
-  * .Run.Reason:      optional reason for verdicts
-  * .Run.ReasonFiles: content of \*.reason files
-  * .Run.RunnerID:    the ID of the runner exeuting the run
-  * .Run.WorkingDir:  working Directory of the test
+ * `.Run` is a individual test run
+ * `.Run.ID`: test run ID (e.g. test.Stable_A-2)
+ * `.Run.Name`: full qualified test name (test.Stable_A)
+ * `.Run.Instance`: test instance (e.g. 2)
+ * `.Run.Module`: module name (test)
+ * `.Run.Testcase`: testcase name (e.g. Stable_A)
+ * `.Run.Verdict`: the test verdict (pass, fail, none, ...)
+ * `.Run.Begin`: when the test was started (time.Time Go object)
+ * `.Run.End`: when the test ended (time.Time Go object)
+ * `.Run.Duration`: a time.Duration Go object
+ * `.Run.Load`: the system load when the test was started
+ * `.Run.MaxMem`: the maximum memory used when the test ended
+ * `.Run.Reason`: optional reason for verdicts
+ * `.Run.ReasonFiles`: content of \*.reason files
+ * `.Run.RunnerID`: the ID of the runner exeuting the run
+ * `.Run.WorkingDir`: working Directory of the test
 
-  * .File is a (reason) file
-  * .File.Name:    path to file
-  * .File.Content: content of file
+ * `.File` is a (reason) file
+ * `.File.Name`: path to file
+ * `.File.Content`: content of file
 
 
 Additional filters:
 
-  * green:    output ANSI sequences for color green
-  * red:      output ANSI sequences for color red
-  * orange:   output ANSI sequences for color orange
-  * bold:     output ANSI sequences for bold text
-  * off:      output ANSI sequences to reset attributes
-  * colorize: colorize output
-  * join:     join input with a separator
-  * json:     encode input using JSON format
-  * min:      returns the minimum of a float slice
-  * max:      returns the maximum of a float slice
-  * median:   returns the median of a float slice
+ * `green`: output ANSI sequences for color green
+ * `red`: output ANSI sequences for color red
+ * `orange`: output ANSI sequences for color orange
+ * `bold`: output ANSI sequences for bold text
+ * `off`: output ANSI sequences to reset attributes
+ * `colorize`: colorize output
+ * `join`: join input with a separator
+ * `json`: encode input using JSON format
+ * `min`: returns the minimum of a float slice
+ * `max`: returns the maximum of a float slice
+ * `median`: returns the median of a float slice
 
 
 
@@ -419,6 +421,7 @@ Additional filters:
 
 Summary template:
 ```
+{% raw %}
 {{bold}}==================================  Summary  =================================={{off}}
 {{range .Tests.NotPassed}}{{ printf "%-10s %s" .Verdict .Name  | colorize }}
 {{else}}{{if eq (len .Tests) 0}}{{orange}}{{bold}}WARNING: No matching test cases found!{{off}}
@@ -437,11 +440,13 @@ Summary template:
 {{bold}}==============================================================================={{off}}
 {{bold}}Final Result: {{.Tests.Result | colorize}}{{off}}
 {{bold}}==============================================================================={{off}}
+{% endraw %}
 ```
 
 
 JUnit template:
 ```xml
+{% raw %}
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>{{range .Modules}}
 
@@ -454,10 +459,12 @@ JUnit template:
 
 {{end}}</testsuite>
 {{end}}</testsuites>
+{% endraw %}
 ```
 
 JSON template:
 ```json
+{% raw %}
 {
   "name"          : "{{.Name}}",
   "timestamp"     : {{.Runs.First.Begin.Unix}},
@@ -488,6 +495,7 @@ JSON template:
   },
   "env": {{ .Environ | json }}
 }
+{% endraw %}
 ```
 
 ## ntt run
