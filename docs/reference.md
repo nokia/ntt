@@ -187,7 +187,7 @@ problem was reported.
 
 When TTCN-3 code is refactored incrementally, it happens that references to
 legacy code are faster added than one can remove them. This check helps with a
-warning, as soon as the usage of a symbol exceed a defined limit.
+warning, as soon as the usage of a symbol exceed a defined limit (`usage.limit`).
 
 
 **Unused Symbols**
@@ -198,22 +198,30 @@ warning, as soon as the usage of a symbol exceed a defined limit.
 **Example**
 
 ```yaml
+# Assure braces are aligned (either in same line or in same column).
 aligned_braces: true
+
+# Every select-construct require an else-case.
 require_case_else: true
 max_lines: 40
 
+# Symbol 'foo' must not be used more than 12 times.
 usage:
   "foo":
     limit: 12
     text: Use "bar" instead.
 
+# Every module specified in imports-section of the test suite manifest must be
+# imported at least once.
 unused:
   modules: true
 
+# Cyclomatic complexity (aka McCabe index) must not exceed 15
 complexity:
   max: 15
-  ignore_guards: true
+  ignore_guards: true # ignore guard expressions from alt- or interleave statements.
 
+# Documentation tags
 tags:
   tests:
     "@author": "testcases must have a @author tag"
@@ -331,7 +339,53 @@ If a basket is not defined by an environment variable, it's equivalent to a
 
 ## ntt mcov
 
-TODO: Explain the message coverage tool.
+Extensive usage of wild cards `*` and `?` in templates causes gaps in message
+content validation. `ntt mcov` helps detecting those gaps and thus improve test
+quality, by printing the message coverage.
+
+It reads a k3 runtime log file from stdin and prints how often each field of a
+message was matched against. A field with zero count indicates a message was
+never properly validated. Example:
+```ttcn3
+type record MessageA {
+    integer a,
+    integer b,
+    integer c
+}
+
+type record MessageB {
+    integer a,
+    integer b
+}
+
+type record MessageC {
+    integer a,
+    float f
+}
+
+...
+p.receive(MessageA:{1,?,2});
+p.receive(MessageA:{1,?,?});
+p.receive(MessageC:{?,0.1});
+...
+```
+```
+$ ntt mcov <example.log
+Module1.MessageA.a	2
+Module1.MessageA.b	0
+Module1.MessageA.c	1
+# COV	Module1.MessageA	2/3
+
+Module1.MessageB.a	0
+Module1.MessageB.b	0
+# COV	Module1.MessageB	0/2
+
+Module2.MessageC.a	0
+Module2.MessageC.f	1
+# COV	Module2.MessageC	1/2
+
+# TOTAL	3/7 42.86%
+```
 
 ## ntt report
 The report command shows a summary of the latest test run. The summary includes
@@ -511,11 +565,133 @@ Test specific module parameter are load from file `$SCT_SOURCE_DIR/modulePar/$MO
 
 ## ntt show
 Show test suite information like name, sources, environment variables, ...
-
 The show command provide additional output formats:
 
-* `--json`: output in JSON format
-* `--sh`: output test suite data for shell consumption
+**JSON**
+
+Command line argument `--json` enables output in JSON format, for convenient
+processing by Python, JavaScript and other languages. Example:
+```json
+$ ntt show --json
+{
+  "args": [],
+  "datadir": "/usr/local/share/k3",
+  "error": null,
+  "name": "example",
+  "parameters_file": "example.parameters",
+  "session_id": 1,
+  "source_dir": "~/src/suite",
+  "test_hook": "~/src/suite/example.control",
+  "timeout": 555,
+  "env": [
+    "NTT_LIST_BASKETS_ipv4=-X @ipv6",
+    "NTT_LIST_BASKETS_stable=-X @wip|@flaky",
+    "NTT_LIST_BASKETS_stable_ipv4=-X @wip|@flaky|@ipv6",
+    "NTT_LIST_BASKETS_stable_ipv6=-X @wip|@flaky -R @ipv6"
+  ],
+  "sources": [
+    "test.ttcn3",
+    "components.ttcn3"
+  ],
+  "imports": [
+    "segfault",
+    "abort"
+  ],
+  "files": [
+    "test.ttcn3",
+    "components.ttcn3",
+    "abort/abort.ttcn3"
+  ],
+  "ossinfo": "/usr/local/share/k3/asn1",
+  "k3": {
+    "compiler": "/usr/local/bin/k3c",
+    "runtime": "/usr/local/bin/k3r",
+    "builtins": [
+      "/usr/local/lib64/k3/plugins",
+      "/usr/local/share/k3/ttcn3"
+    ]
+  }
+}
+```
+
+**Shell**
+
+Similarly command line argument `--sh` outputs test suite data for convenient
+shell consumption. Example:
+
+```bash
+#!/bin/bin/bash
+# This is a custom command: ntt-banana
+if ! . <(ntt show "$@" --sh); then
+   echo >&2 "$0: error: $K3_ERROR"
+   exit 1
+fi
+
+# Continue with loaded data
+echo "Test suite Name: $K3_NAME"
+echo "Sources: ${K3_SOURCES[*]}"
+```
+
+Note, the shell output mostly uses the `K3` prefix for variables. This may change in the future. Example output:
+```bash
+# This is a generated output of ntt show. Args: []
+
+# k3-hook calls the K3 test hook (if defined) with action passed by $1.
+function k3-hook()
+{
+    if [ -n "$K3_TEST_HOOK" ]; then
+        K3_SOURCES="${K3_SOURCES[*]}" \
+        K3_IMPORTS="${K3_IMPORTS[*]}" \
+        K3_TTCN3_FILES="${K3_TTCN3_FILES[*]}" \
+            "$K3_TEST_HOOK" "$@" 1>&2
+    fi
+}
+
+export K3_NAME='example'
+export K3_TIMEOUT='555'
+export K3_PARAMETERS_FILE='example.parameters'
+export K3_TEST_HOOK='/home/mef/src/suite/example.control'
+export K3_SOURCE_DIR='/home/mef/src/suite'
+export K3_DATADIR='/usr/local/share/k3'
+export K3_SESSION_ID='1'
+
+export K3C='/usr/local/bin/k3c'
+export K3R='/usr/local/bin/k3r'
+export OSSINFO='/usr/local/share/k3/asn1'
+
+export 'NTT_LIST_BASKETS_ipv4=-X @ipv6'
+export 'NTT_LIST_BASKETS_stable=-X @wip|@flaky'
+export 'NTT_LIST_BASKETS_stable_ipv4=-X @wip|@flaky|@ipv6'
+export 'NTT_LIST_BASKETS_stable_ipv6=-X @wip|@flaky -R @ipv6'
+
+
+K3_SOURCES=(
+	test.ttcn3
+	components.ttcn3
+)
+
+K3_IMPORTS=(
+	segfault
+	abort
+)
+
+K3_TTCN3_FILES=(
+	test.ttcn3
+	components.ttcn3
+	abort/abort.ttcn3
+
+	# Auxiliary files from K3
+	/usr/local/lib64/k3/plugins/ttcn3/CCS.ttcn3
+	/usr/local/lib64/k3/plugins/ttcn3/config.ttcn3
+	/usr/local/lib64/k3/plugins/ttcn3/math.ttcn3
+	/usr/local/lib64/k3/plugins/ttcn3/os.ttcn3
+)
+
+K3_BUILTINS=(
+	/usr/local/lib64/k3/plugins
+	/usr/local/share/k3/ttcn3
+)
+```
 
 
 ## ntt tags
@@ -535,6 +711,8 @@ Display ntt version if available.
 ## ttcn3c
 ttcn3c parses TTCN-3 files and generates output based on the options given. The `--generator` argument specifies what generator plugin shall be used by ttcn3c. Default is a t3xf output.
 
+ttcn3c uses [Protobuf](#gRPC) for plugin communication. We'll provide more details, as soon as the initial version is released.
+
 # API
 
 The Go API is described here:
@@ -544,7 +722,10 @@ The Go API is described here:
 
 # gRPC
 
-TODO: explain gRPC interfaces.
+ntt provides [Protobuf mappings for
+TTCN-3](https://github.com/nokia/ntt/tree/master/protobuf). The goal of these
+mappings is to simplify the development of code generators ([ttcn3c](#ttcn3c)), test
+adapters and more.
 
 
 # Manifest file package.yml
