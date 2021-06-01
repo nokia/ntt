@@ -99,18 +99,16 @@ using the `--cpuprofile` option.
 
 
 ## ntt build
+_Note, the build command is only available for Nokia internal environments._  
+
 The build command provides package manager functionality and builds a test
-executable. Note, we build command is only available for Nokia internal
-environments.
-
+executable.
 If no arguments are specified ntt builds a test executable from current
-directory.
-
+directory.  
 Use environment variable `PARALLEL_BUILD_JOBS` to specify how many build
-steps shall be executed in parallel (default is number of CPU cores).
-
+steps shall be executed in parallel (default is number of CPU cores).  
 Imported ASN1 files will be pass to OSS ASN.1 toolchain, every C and C++ file
-will be compiled into a K3 runtime plugin.
+will be compiled into a K3 runtime plugin.  
 
 
 ## ntt completion
@@ -132,7 +130,7 @@ issue (or even pull request) should require support for zsh.
 
 ## ntt langserver
 
-Start TTCN-3 language server and wait for input on stdin. This command is
+Start TTCN-3 [language server](/editors) and wait for input on stdin. This command is
 usually used by IDE or editors only.
 
 ## ntt lint
@@ -553,7 +551,9 @@ JSON template:
 ```
 
 ## ntt run
-Run tests from a TTCN-3 test suite. Note, this command is only available in Nokia internal environments.
+_Note, the build command is only available for Nokia internal environments._  
+
+Run tests from a TTCN-3 test suite.
 
 **Module Parameters**
 
