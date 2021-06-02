@@ -2,6 +2,7 @@ title: ntt
 description: Tools to improve testing with TTCN-3
 permalink: pretty
 url: https://nokia.github.io/ntt
+baseurl: /
 
 exclude:
   - README.md
