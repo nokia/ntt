@@ -34,5 +34,6 @@ Here are some tipps when recording VS Code sessions:
 * _consistent size_: `Ctrl`,`Shift`,`P` and `developer tools`. In Javascript
   `console` tab enter: `window.resizeTo(1920, 1080)`
 * _screencast mode_: `Ctrl`,`Shift`,`P` and `screencast`.
+* _increase font size_: `Ctrl` and `+`
 
 For recording you can use, for example Peek.
