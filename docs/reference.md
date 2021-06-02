@@ -883,7 +883,7 @@ add_ttcn3_suite(suite1
 
 # VSCode Extension
 
-![vscode TTCN-3 extension preview](/static/vscode-ttcn3-extension-preview.png)
+![vscode TTCN-3 extension preview](/ntt/static/vscode-ttcn3-extension-preview.png)
 
 The [VSCode Extension for TTCN-3](https://marketplace.visualstudio.com/items?itemName=Nokia.ttcn3)
 is the part which directly faces the user, while most of heavy lifting is done by ntt
@@ -894,7 +894,7 @@ in the background.
 
 Access VSCode settings by pressing `Ctrl` and `,` and then search for `ttcn3`:
 
-![settings cast](/static/cast-enable-ntt.gif)
+![settings cast](/ntt/static/cast-enable-ntt.gif)
 
 Contributed settings:
 
@@ -910,7 +910,7 @@ Contributed settings:
 
 Access VSCode command by pressing `Ctrl`, `Shift`, `P` and then type `ttcn3`:
 
-![commands cast](/static/cast-show-status.gif)
+![commands cast](/ntt/static/cast-show-status.gif)
 
 Contributed commands:
 
