@@ -881,7 +881,7 @@ add_ttcn3_suite(suite1
 )
 ```
 
-# VSCode Extension Settings
+# VSCode Extension
 
 ![vscode TTCN-3 extension preview](/static/vscode-ttcn3-extension-preview.png)
 
