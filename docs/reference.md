@@ -885,7 +885,6 @@ add_ttcn3_suite(suite1
 
 ![vscode TTCN-3 extension preview](/static/vscode-ttcn3-extension-preview.png)
 
-
 The [VSCode Extension for TTCN-3](https://marketplace.visualstudio.com/items?itemName=Nokia.ttcn3)
 is the part which directly faces the user, while most of heavy lifting is done by ntt
 and the [language server protocol](https://microsoft.github.io/language-server-protocol/)
