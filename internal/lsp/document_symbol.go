@@ -18,8 +18,30 @@ var kindToStringMap = map[token.Kind]string{token.ALTSTEP: "altstep", token.FUNC
 
 func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 	return protocol.Range{
-		Start: protocol.Position{Line: float64(begin.Line), Character: float64(begin.Column)},
-		End:   protocol.Position{Line: float64(end.Line), Character: float64(end.Column)}}
+		Start: protocol.Position{Line: float64(begin.Line - 1), Character: float64(begin.Column - 1)},
+		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
+}
+
+func getIdName(e ast.Expr) string {
+	name := ""
+	ast.Inspect(e, func(n ast.Node) bool {
+
+		if n == nil {
+			return false
+		}
+
+		switch node := n.(type) {
+		case *ast.Ident:
+			name = node.Tok.String()
+			if node.Tok2.IsValid() {
+				name += "." + node.Tok2.String()
+			}
+			return false
+		default:
+			return true
+		}
+	})
+	return name
 }
 
 func newAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface{} {
@@ -33,12 +55,44 @@ func newAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 
 		switch node := n.(type) {
 		case *ast.FuncDecl:
+			if node.Name == nil {
+				// looks like a syntax error
+				return false
+			}
 			begin := syntax.Position(node.Pos())
-			end := syntax.Position(node.End())
-
-			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: kindToStringMap[node.Kind.Kind] + " definition", Kind: protocol.Method,
+			end := syntax.Position(node.LastTok().End())
+			kind := protocol.Function
+			children := make([]protocol.DocumentSymbol, 0, 5)
+			if node.RunsOn != nil && node.RunsOn.Comp != nil {
+				kind = protocol.Method
+				idBegin := syntax.Position(node.RunsOn.Comp.Pos())
+				idEnd := syntax.Position(node.RunsOn.Comp.LastTok().End())
+				children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: getIdName(node.RunsOn.Comp),
+					Kind:           protocol.Class,
+					Range:          setProtocolRange(idBegin, idEnd),
+					SelectionRange: setProtocolRange(idBegin, idEnd)})
+			}
+			if node.System != nil && node.System.Comp != nil {
+				kind = protocol.Method
+				idBegin := syntax.Position(node.System.Comp.Pos())
+				idEnd := syntax.Position(node.System.Comp.LastTok().End())
+				children = append(children, protocol.DocumentSymbol{Name: "system", Detail: getIdName(node.System.Comp),
+					Kind:           protocol.Class,
+					Range:          setProtocolRange(idBegin, idEnd),
+					SelectionRange: setProtocolRange(idBegin, idEnd)})
+			}
+			if node.Return != nil && node.Return.Type != nil {
+				idBegin := syntax.Position(node.Return.Type.Pos())
+				idEnd := syntax.Position(node.Return.Type.LastTok().End())
+				children = append(children, protocol.DocumentSymbol{Name: "return", Detail: getIdName(node.Return.Type),
+					Kind:           protocol.Struct,
+					Range:          setProtocolRange(idBegin, idEnd),
+					SelectionRange: setProtocolRange(idBegin, idEnd)})
+			}
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: kindToStringMap[node.Kind.Kind] + " definition", Kind: kind,
 				Range:          setProtocolRange(begin, end),
-				SelectionRange: setProtocolRange(begin, end)})
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       children})
 
 			return false
 		default:

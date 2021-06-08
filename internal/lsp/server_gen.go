@@ -72,8 +72,8 @@ func (s *Server) DocumentLink(ctx context.Context, params *protocol.DocumentLink
 	return s.documentLink(ctx, params)
 }
 
-func (s *Server) DocumentSymbol(context.Context, *protocol.DocumentSymbolParams) ([]interface{}, error) {
-	return nil, notImplemented("DocumentSymbol")
+func (s *Server) DocumentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
+	return s.documentSymbol(ctx, params)
 }
 
 func (s *Server) ExecuteCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
