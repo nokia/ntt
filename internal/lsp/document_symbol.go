@@ -3,7 +3,6 @@ package lsp
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -44,7 +43,7 @@ func getIdName(e ast.Expr) string {
 	return name
 }
 
-func newAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface{} {
+func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface{} {
 	list := make([]interface{}, 0, 20)
 
 	ast.Inspect(syntax.Module, func(n ast.Node) bool {
@@ -109,9 +108,6 @@ func (s *Server) documentSymbol(ctx context.Context, params *protocol.DocumentSy
 		log.Debug(fmt.Sprintf("DocumentSymbol took %s.", elapsed))
 	}()
 
-	fileName := filepath.Base(params.TextDocument.URI.SpanURI().Filename())
-	defaultModuleId := fileName[:len(fileName)-len(filepath.Ext(fileName))]
-
 	suites := s.Owners(params.TextDocument.URI)
 	// NOTE: having the current file owned by more then one suite should not
 	// import from modules originating from both suites. This would
@@ -126,10 +122,6 @@ func (s *Server) documentSymbol(ctx context.Context, params *protocol.DocumentSy
 	if syntax.Module.Name == nil {
 		return nil, nil
 	}
-	ret := make([]interface{}, 0, 1)
-	ret = append(ret, protocol.DocumentSymbol{Name: defaultModuleId, Detail: "record type", Kind: protocol.Struct,
-		Range:          protocol.Range{Start: protocol.Position{Line: 1, Character: 1}, End: protocol.Position{Line: 20, Character: 1}},
-		SelectionRange: protocol.Range{Start: protocol.Position{Line: 1, Character: 1}, End: protocol.Position{Line: 20, Character: 1}}})
-	ret = newAllDefinitionSymbolsFromCurrentModule(syntax)
+	ret := NewAllDefinitionSymbolsFromCurrentModule(syntax)
 	return ret, nil
 }
