@@ -218,6 +218,12 @@ func Name(n Node) string {
 	switch n := n.(type) {
 	case *Ident:
 		return n.String()
+	case *SelectorExpr:
+		name := Name(n.X)
+		if n.Sel != nil {
+			name += "." + Name(n.Sel)
+		}
+		return name
 	case *CallExpr:
 		return Name(n.Fun)
 	case *LengthExpr:
