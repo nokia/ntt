@@ -21,28 +21,6 @@ func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
 }
 
-func getIdName(e ast.Expr) string {
-	name := ""
-	ast.Inspect(e, func(n ast.Node) bool {
-
-		if n == nil {
-			return false
-		}
-
-		switch node := n.(type) {
-		case *ast.Ident:
-			name = node.Tok.String()
-			if node.Tok2.IsValid() {
-				name += "." + node.Tok2.String()
-			}
-			return false
-		default:
-			return true
-		}
-	})
-	return name
-}
-
 func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface{} {
 	list := make([]interface{}, 0, 20)
 
@@ -66,7 +44,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				kind = protocol.Method
 				idBegin := syntax.Position(node.RunsOn.Comp.Pos())
 				idEnd := syntax.Position(node.RunsOn.Comp.LastTok().End())
-				children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: getIdName(node.RunsOn.Comp),
+				children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: ast.Name(node.RunsOn.Comp),
 					Kind:           protocol.Class,
 					Range:          setProtocolRange(idBegin, idEnd),
 					SelectionRange: setProtocolRange(idBegin, idEnd)})
@@ -75,7 +53,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				kind = protocol.Method
 				idBegin := syntax.Position(node.System.Comp.Pos())
 				idEnd := syntax.Position(node.System.Comp.LastTok().End())
-				children = append(children, protocol.DocumentSymbol{Name: "system", Detail: getIdName(node.System.Comp),
+				children = append(children, protocol.DocumentSymbol{Name: "system", Detail: ast.Name(node.System.Comp),
 					Kind:           protocol.Class,
 					Range:          setProtocolRange(idBegin, idEnd),
 					SelectionRange: setProtocolRange(idBegin, idEnd)})
@@ -83,7 +61,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 			if node.Return != nil && node.Return.Type != nil {
 				idBegin := syntax.Position(node.Return.Type.Pos())
 				idEnd := syntax.Position(node.Return.Type.LastTok().End())
-				children = append(children, protocol.DocumentSymbol{Name: "return", Detail: getIdName(node.Return.Type),
+				children = append(children, protocol.DocumentSymbol{Name: "return", Detail: ast.Name(node.Return.Type),
 					Kind:           protocol.Struct,
 					Range:          setProtocolRange(idBegin, idEnd),
 					SelectionRange: setProtocolRange(idBegin, idEnd)})
