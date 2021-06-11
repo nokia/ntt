@@ -96,7 +96,14 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Children:       nil})
 			return false
 		case *ast.SubTypeDecl:
-			list = append(list, protocol.DocumentSymbol{Name: node.Field.Name.String(), Detail: "subtype", Kind: protocol.Struct,
+			detail := "subtype"
+			kind := protocol.Struct
+			if listNode, ok := node.Field.Type.(*ast.ListSpec); ok {
+				detail = kindToStringMap[listNode.Kind.Kind] + " of type"
+				kind = protocol.Array
+			}
+
+			list = append(list, protocol.DocumentSymbol{Name: node.Field.Name.String(), Detail: detail, Kind: kind,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
@@ -108,13 +115,6 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
-		/*case *ast.Lis:
-		detail := kindToStringMap[node.Kind.Kind] + " of type"
-		list = append(list, protocol.DocumentSymbol{Name: node. Name.String(), Detail: detail, Kind: protocol.Array,
-			Range:          setProtocolRange(begin, end),
-			SelectionRange: setProtocolRange(begin, end),
-			Children:       nil})
-		return false*/
 		case *ast.BehaviourTypeDecl:
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: " subtype", Kind: protocol.Operator,
 				Range:          setProtocolRange(begin, end),
