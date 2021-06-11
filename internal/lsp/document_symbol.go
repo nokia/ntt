@@ -13,7 +13,9 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/token"
 )
 
-var kindToStringMap = map[token.Kind]string{token.ALTSTEP: "altstep", token.FUNCTION: "function", token.TESTCASE: "testcase"}
+var kindToStringMap = map[token.Kind]string{
+	token.ALTSTEP: "altstep", token.FUNCTION: "function", token.TESTCASE: "testcase",
+	token.UNION: "union", token.RECORD: "record", token.SET: "set"}
 
 func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 	return protocol.Range{
@@ -29,15 +31,15 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 		if n == nil {
 			return false
 		}
-
+		begin := syntax.Position(n.Pos())
+		end := syntax.Position(n.LastTok().End())
 		switch node := n.(type) {
 		case *ast.FuncDecl:
 			if node.Name == nil {
 				// looks like a syntax error
 				return false
 			}
-			begin := syntax.Position(node.Pos())
-			end := syntax.Position(node.LastTok().End())
+
 			kind := protocol.Function
 			children := make([]protocol.DocumentSymbol, 0, 5)
 			if node.RunsOn != nil && node.RunsOn.Comp != nil {
@@ -66,11 +68,58 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 					Range:          setProtocolRange(idBegin, idEnd),
 					SelectionRange: setProtocolRange(idBegin, idEnd)})
 			}
-			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: kindToStringMap[node.Kind.Kind] + " definition", Kind: kind,
+			detail := kindToStringMap[node.Kind.Kind] + " definition"
+			if node.External.IsValid() {
+				detail = "external " + detail
+			}
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: kind,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       children})
-
+			return false
+		case *ast.ComponentTypeDecl:
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "component type", Kind: protocol.Class,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+			return false
+		case *ast.PortTypeDecl:
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "port type", Kind: protocol.Interface,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+			return false
+		case *ast.EnumTypeDecl:
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "enum type", Kind: protocol.Enum,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+			return false
+		case *ast.SubTypeDecl:
+			list = append(list, protocol.DocumentSymbol{Name: node.Field.Name.String(), Detail: "subtype", Kind: protocol.Struct,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+			return false
+		case *ast.StructTypeDecl:
+			detail := kindToStringMap[node.Kind.Kind] + " type"
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: protocol.Struct,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+			return false
+		/*case *ast.Lis:
+		detail := kindToStringMap[node.Kind.Kind] + " of type"
+		list = append(list, protocol.DocumentSymbol{Name: node. Name.String(), Detail: detail, Kind: protocol.Array,
+			Range:          setProtocolRange(begin, end),
+			SelectionRange: setProtocolRange(begin, end),
+			Children:       nil})
+		return false*/
+		case *ast.BehaviourTypeDecl:
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: " subtype", Kind: protocol.Operator,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
 			return false
 		default:
 			return true
