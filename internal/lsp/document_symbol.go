@@ -23,6 +23,19 @@ func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
 }
 
+func getElemTypeInfo(syntax *ntt.ParseInfo, n ast.TypeSpec) []protocol.DocumentSymbol {
+	typeSymb := make([]protocol.DocumentSymbol, 0, 1)
+	begin := syntax.Position(n.Pos())
+	end := syntax.Position(n.LastTok().End())
+	switch node := n.(type) {
+	case *ast.RefSpec:
+		typeSymb = append(typeSymb, protocol.DocumentSymbol{Name: ast.Name(node), Detail: "element type", Kind: protocol.Struct,
+			Range:          setProtocolRange(begin, end),
+			SelectionRange: setProtocolRange(begin, end),
+			Children:       nil})
+	}
+	return typeSymb
+}
 func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface{} {
 	list := make([]interface{}, 0, 20)
 
@@ -96,17 +109,19 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Children:       nil})
 			return false
 		case *ast.SubTypeDecl:
+			var children []protocol.DocumentSymbol = nil
 			detail := "subtype"
 			kind := protocol.Struct
 			if listNode, ok := node.Field.Type.(*ast.ListSpec); ok {
 				detail = kindToStringMap[listNode.Kind.Kind] + " of type"
 				kind = protocol.Array
+				children = getElemTypeInfo(syntax, listNode.ElemType)
 			}
 
 			list = append(list, protocol.DocumentSymbol{Name: node.Field.Name.String(), Detail: detail, Kind: kind,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
-				Children:       nil})
+				Children:       children})
 			return false
 		case *ast.StructTypeDecl:
 			detail := kindToStringMap[node.Kind.Kind] + " type"

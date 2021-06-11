@@ -39,8 +39,8 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
         type component B0 {}
-		function f() runs on TestSystemModuleDotTypes_Module_1.C0 system B0 {}
-	  }`, `module TestSystemModuleDotTypes_Module_1
+		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_1.C0 system B0 {}
+	  }`, `module TestFunctionDefWithModuleDotRunsOn_Module_1
       {
 		  type component C0 {}
 	  }`)
@@ -52,10 +52,33 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 			Range:          setRange(syntax, 49, 119),
 			SelectionRange: setRange(syntax, 49, 119),
 			Children: []protocol.DocumentSymbol{
-				{Name: "runs on", Detail: "TestSystemModuleDotTypes_Module_1.C0", Kind: protocol.Class,
+				{Name: "runs on", Detail: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0", Kind: protocol.Class,
 					Range:          setRange(syntax, 70, 106),
 					SelectionRange: setRange(syntax, 70, 106)},
 				{Name: "system", Detail: "B0", Kind: protocol.Class,
 					Range:          setRange(syntax, 114, 116),
 					SelectionRange: setRange(syntax, 114, 116)}}}}, list)
+}
+
+func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type integer Byte(0..255)
+		type record of Byte Octets
+	  }`)
+
+	syntax, list := generateSymbols(t, suite)
+
+	assert.Equal(t, []protocol.DocumentSymbol{
+		{Name: "Byte", Kind: protocol.Struct, Detail: "subtype",
+			Range:          setRange(syntax, 26, 51),
+			SelectionRange: setRange(syntax, 26, 51),
+			Children:       nil},
+		{Name: "Octets", Kind: protocol.Array, Detail: "record of type",
+			Range:          setRange(syntax, 54, 80),
+			SelectionRange: setRange(syntax, 54, 80),
+			Children: []protocol.DocumentSymbol{
+				{Name: "Byte", Detail: "element type", Kind: protocol.Struct,
+					Range:          setRange(syntax, 69, 73),
+					SelectionRange: setRange(syntax, 69, 73)}}}}, list)
 }
