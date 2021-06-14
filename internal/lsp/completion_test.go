@@ -755,3 +755,27 @@ func TestNewModuleDef(t *testing.T) {
 		{Label: "control ", Kind: protocol.KeywordCompletion},
 		{Label: "signature ", Kind: protocol.KeywordCompletion}}, list)
 }
+
+func TestPortTypeInsideComponent(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		type port P1 message {
+			inout charstring
+		}
+        type component B0 {
+			port P//
+		}
+	  }`, `module TestPortTypeInsideComponent_Module_1
+      {
+		  type port P2 message {
+			  in integer
+			  out float
+		  }
+	  }`)
+
+	list := completionAt(t, suite, 104)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "P1", Kind: protocol.StructCompletion, SortText: " 1P1", Detail: "TestPortTypeInsideComponent_Module_0.P1"},
+		{Label: "P2", Kind: protocol.StructCompletion, SortText: " 2P2", Detail: "TestPortTypeInsideComponent_Module_1.P2"},
+		{Label: "TestPortTypeInsideComponent_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestPortTypeInsideComponent_Module_1"}}, filterContentOfAuxModules(list))
+}
