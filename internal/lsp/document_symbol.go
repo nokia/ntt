@@ -91,18 +91,27 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Children:       children})
 			return false
 		case *ast.ComponentTypeDecl:
+			if node.Name == nil {
+				return false
+			}
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "component type", Kind: protocol.Class,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
 		case *ast.PortTypeDecl:
+			if node.Name == nil {
+				return false
+			}
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "port type", Kind: protocol.Interface,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
 		case *ast.EnumTypeDecl:
+			if node.Name == nil {
+				return false
+			}
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "enum type", Kind: protocol.Enum,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
@@ -112,6 +121,11 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 			var children []protocol.DocumentSymbol = nil
 			detail := "subtype"
 			kind := protocol.Struct
+
+			if node.Field == nil || node.Field.Name == nil {
+				return false
+			}
+
 			if listNode, ok := node.Field.Type.(*ast.ListSpec); ok {
 				detail = kindToStringMap[listNode.Kind.Kind] + " of type"
 				kind = protocol.Array
@@ -124,6 +138,9 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Children:       children})
 			return false
 		case *ast.StructTypeDecl:
+			if node.Name == nil {
+				return false
+			}
 			detail := kindToStringMap[node.Kind.Kind] + " type"
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: protocol.Struct,
 				Range:          setProtocolRange(begin, end),
@@ -131,6 +148,9 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Children:       nil})
 			return false
 		case *ast.BehaviourTypeDecl:
+			if node.Name == nil {
+				return false
+			}
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: " subtype", Kind: protocol.Operator,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
