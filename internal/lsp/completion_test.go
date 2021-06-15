@@ -779,3 +779,20 @@ func TestPortTypeInsideComponent(t *testing.T) {
 		{Label: "P2", Kind: protocol.StructCompletion, SortText: " 2P2", Detail: "TestPortTypeInsideComponent_Module_1.P2"},
 		{Label: "TestPortTypeInsideComponent_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestPortTypeInsideComponent_Module_1"}}, filterContentOfAuxModules(list))
 }
+
+func TestSyntaxErrorProvokingInvalidPos(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+    type component Ptc {}
+    type component Sys {}
+    function setColor(integer p_color) runs on {
+        log(p_color);
+    }
+    testcase tc1() runs on test.Ptc system Sys { }
+    c
+	  }`)
+	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
+	syntax := suite.ParseWithAllErrors(name)
+	pos := syntax.Pos(9, 6)
+	assert.Equal(t, pos, 203)
+}
