@@ -38,7 +38,11 @@ func setRange(syntax *ntt.ParseInfo, begin loc.Pos, end loc.Pos) protocol.Range 
 func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
-        type component B0 {}
+        type component B0 {
+			var integer i := 1;
+			timer t1 := 2.0;
+			port P p;
+		}
 		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_1.C0 system B0 {}
 	  }`, `module TestFunctionDefWithModuleDotRunsOn_Module_1
       {
@@ -48,16 +52,29 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 	syntax, list := generateSymbols(t, suite)
 
 	assert.Equal(t, []protocol.DocumentSymbol{
+		{Name: "B0", Kind: protocol.Class, Detail: "component type",
+			Range:          setRange(syntax, 26, 105),
+			SelectionRange: setRange(syntax, 26, 105),
+			Children: []protocol.DocumentSymbol{
+				{Name: "i", Detail: "var integer", Kind: protocol.Variable,
+					Range:          setRange(syntax, 49, 67),
+					SelectionRange: setRange(syntax, 49, 67)},
+				{Name: "t1", Detail: "timer", Kind: protocol.Event,
+					Range:          setRange(syntax, 72, 87),
+					SelectionRange: setRange(syntax, 72, 87)},
+				{Name: "p", Detail: "port P", Kind: protocol.Interface,
+					Range:          setRange(syntax, 92, 100),
+					SelectionRange: setRange(syntax, 92, 100)}}},
 		{Name: "f", Kind: protocol.Method, Detail: "function definition",
-			Range:          setRange(syntax, 49, 119),
-			SelectionRange: setRange(syntax, 49, 119),
+			Range:          setRange(syntax, 108, 188),
+			SelectionRange: setRange(syntax, 108, 188),
 			Children: []protocol.DocumentSymbol{
 				{Name: "runs on", Detail: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0", Kind: protocol.Class,
-					Range:          setRange(syntax, 70, 106),
-					SelectionRange: setRange(syntax, 70, 106)},
+					Range:          setRange(syntax, 129, 175),
+					SelectionRange: setRange(syntax, 129, 175)},
 				{Name: "system", Detail: "B0", Kind: protocol.Class,
-					Range:          setRange(syntax, 114, 116),
-					SelectionRange: setRange(syntax, 114, 116)}}}}, list)
+					Range:          setRange(syntax, 183, 185),
+					SelectionRange: setRange(syntax, 183, 185)}}}}, list)
 }
 
 func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
