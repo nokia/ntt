@@ -23,6 +23,38 @@ func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
 }
 
+func getComponentVars(syntax *ntt.ParseInfo, stmt []ast.Stmt) []protocol.DocumentSymbol {
+	vdecls := make([]protocol.DocumentSymbol, 0, len(stmt))
+	for _, v := range stmt {
+		if n, ok := v.(*ast.DeclStmt); ok {
+			switch node := n.Decl.(type) {
+			case *ast.ValueDecl:
+				begin := syntax.Position(node.Pos())
+				end := syntax.Position(node.LastTok().End())
+				kind := protocol.Variable
+				typeName := ast.Name(node.Type)
+				if len(typeName) > 0 {
+					typeName = " " + typeName
+				}
+				switch node.Kind.Kind {
+				case token.PORT:
+					kind = protocol.Interface
+				case token.TIMER:
+					kind = protocol.Event
+				}
+
+				for _, name := range node.Decls {
+					vdecls = append(vdecls, protocol.DocumentSymbol{Name: ast.Name(name), Detail: node.Kind.Lit + typeName, Kind: kind,
+						Range:          setProtocolRange(begin, end),
+						SelectionRange: setProtocolRange(begin, end),
+						Children:       nil})
+				}
+			default:
+			}
+		}
+	}
+	return vdecls
+}
 func getElemTypeInfo(syntax *ntt.ParseInfo, n ast.TypeSpec) []protocol.DocumentSymbol {
 	typeSymb := make([]protocol.DocumentSymbol, 0, 1)
 	begin := syntax.Position(n.Pos())
@@ -94,10 +126,17 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 			if node.Name == nil {
 				return false
 			}
+			var children []protocol.DocumentSymbol = nil
+			if node.Body != nil && node.Body.Stmts != nil {
+				l := len(node.Body.Stmts)
+				children = make([]protocol.DocumentSymbol, 0, l)
+				children = append(children, getComponentVars(syntax, node.Body.Stmts)...)
+
+			}
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "component type", Kind: protocol.Class,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
-				Children:       nil})
+				Children:       children})
 			return false
 		case *ast.PortTypeDecl:
 			if node.Name == nil {
@@ -171,6 +210,10 @@ func (s *Server) documentSymbol(ctx context.Context, params *protocol.DocumentSy
 	}()
 
 	suites := s.Owners(params.TextDocument.URI)
+	// a completely new and empty file belongs to no suites at all
+	if len(suites) == 0 {
+		return nil, nil
+	}
 	// NOTE: having the current file owned by more then one suite should not
 	// import from modules originating from both suites. This would
 	// in most ways end up with cyclic imports.
