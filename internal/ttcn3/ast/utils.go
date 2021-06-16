@@ -217,6 +217,9 @@ func FirstToken(n Node) *Token {
 func Name(n Node) string {
 	switch n := n.(type) {
 	case *Ident:
+		if n == nil {
+			return ""
+		}
 		return n.String()
 	case *SelectorExpr:
 		name := Name(n.X)
