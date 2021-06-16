@@ -944,7 +944,19 @@ func (x *ValueDecl) LastTok() *Token {
 	if x.With != nil {
 		return x.With.LastTok()
 	}
-	return x.Decls[len(x.Decls)-1].LastTok()
+	if len(x.Decls) > 0 {
+		return x.Decls[len(x.Decls)-1].LastTok()
+	}
+	if x.Type != nil {
+		return x.Type.LastTok()
+	}
+	if x.Modif.IsValid() {
+		return x.Modif.LastTok()
+	}
+	if x.TemplateRestriction != nil {
+		return x.Type.LastTok()
+	}
+	return x.Kind.LastTok()
 }
 
 func (x *Declarator) LastTok() *Token {
@@ -960,7 +972,7 @@ func (x *Declarator) LastTok() *Token {
 	if x.Name != nil {
 		return x.Name.LastTok()
 	}
-	return nil
+	return &Token{}
 }
 
 func (x *TemplateDecl) LastTok() *Token {
