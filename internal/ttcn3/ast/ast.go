@@ -622,13 +622,8 @@ func (x *SelectStmt) Pos() loc.Pos  { return x.Tok.Pos() }
 func (x *CaseClause) Pos() loc.Pos  { return x.Tok.Pos() }
 func (x *CommClause) Pos() loc.Pos  { return x.LBrack.Pos() }
 
-func (x *BlockStmt) End() loc.Pos { return x.LastTok().End() }
-func (x *DeclStmt) End() loc.Pos {
-	if x != nil && x.LastTok() != nil {
-		return x.LastTok().End()
-	}
-	return loc.NoPos
-}
+func (x *BlockStmt) End() loc.Pos   { return x.LastTok().End() }
+func (x *DeclStmt) End() loc.Pos    { return x.LastTok().End() }
 func (x *ExprStmt) End() loc.Pos    { return x.LastTok().End() }
 func (x *BranchStmt) End() loc.Pos  { return x.LastTok().End() }
 func (x *ReturnStmt) End() loc.Pos  { return x.LastTok().End() }
@@ -1154,9 +1149,8 @@ func (x *PortAttribute) Pos() loc.Pos     { return x.Kind.Pos() }
 func (x *PortMapAttribute) Pos() loc.Pos  { return x.MapTok.Pos() }
 func (x *ComponentTypeDecl) Pos() loc.Pos { return x.TypeTok.Pos() }
 
-func (x *ValueDecl) End() loc.Pos  { return x.LastTok().End() }
-func (x *Declarator) End() loc.Pos { return x.LastTok().End() }
-
+func (x *ValueDecl) End() loc.Pos            { return x.LastTok().End() }
+func (x *Declarator) End() loc.Pos           { return x.LastTok().End() }
 func (x *TemplateDecl) End() loc.Pos         { return x.LastTok().End() }
 func (x *ModuleParameterGroup) End() loc.Pos { return x.LastTok().End() }
 func (x *FuncDecl) End() loc.Pos             { return x.LastTok().End() }
