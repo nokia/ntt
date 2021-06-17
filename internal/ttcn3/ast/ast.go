@@ -1154,19 +1154,8 @@ func (x *PortAttribute) Pos() loc.Pos     { return x.Kind.Pos() }
 func (x *PortMapAttribute) Pos() loc.Pos  { return x.MapTok.Pos() }
 func (x *ComponentTypeDecl) Pos() loc.Pos { return x.TypeTok.Pos() }
 
-func (x *ValueDecl) End() loc.Pos {
-	if x.LastTok() != nil {
-		x.LastTok().End()
-	}
-	return loc.NoPos
-}
-
-func (x *Declarator) End() loc.Pos {
-	if x.LastTok() != nil {
-		x.LastTok().End()
-	}
-	return loc.NoPos
-}
+func (x *ValueDecl) End() loc.Pos  { return x.LastTok().End() }
+func (x *Declarator) End() loc.Pos { return x.LastTok().End() }
 
 func (x *TemplateDecl) End() loc.Pos         { return x.LastTok().End() }
 func (x *ModuleParameterGroup) End() loc.Pos { return x.LastTok().End() }
