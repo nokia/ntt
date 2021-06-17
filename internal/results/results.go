@@ -9,6 +9,41 @@ import (
 	"time"
 )
 
+type Results struct {
+	Version  string
+	Sessions []Session
+}
+
+type Session struct {
+	id              string
+	MaxJobs         int
+	MaxLoad         int
+	ExpectedVerdict string `json:"expected_verdict"`
+	Runs            []Run
+}
+
+func ToDB(r Results) DB {
+	var db DB
+
+	last_session := len(r.Sessions) - 1
+
+	db.MaxJobs = r.Sessions[last_session].MaxJobs
+	db.MaxLoad = r.Sessions[last_session].MaxLoad
+
+	for i := range r.Sessions {
+
+		expected_verdict := r.Sessions[i].ExpectedVerdict
+
+		for j := range r.Sessions[i].Runs {
+			r.Sessions[i].Runs[j].ExpectedVerdict = expected_verdict
+		}
+
+		db.Runs = append(db.Runs, r.Sessions[i].Runs...)
+	}
+
+	return db
+}
+
 // A DB struct contains results of last test executable execution
 type DB struct {
 	Version int
@@ -31,7 +66,8 @@ type Run struct {
 	Load       float64 // the system load when the test was started
 	MaxMem     int     // the maximum memory used when the test ended
 
-	RunnerID string `json:"runnerid"`
+	RunnerID        string `json:"runnerid"`
+	ExpectedVerdict string
 }
 
 // A unique identifier of the run. Usually something like "testname-2"
