@@ -23,6 +23,26 @@ func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
 }
 
+func getExtendsComponents(syntax *ntt.ParseInfo, expr []ast.Expr) []protocol.DocumentSymbol {
+	l := len(expr)
+	list := make([]protocol.DocumentSymbol, 0, l)
+
+	for _, v := range expr {
+		begin := syntax.Position(v.Pos())
+		end := syntax.Position(v.LastTok().End())
+		list = append(list, protocol.DocumentSymbol{Name: ast.Name(v), Kind: protocol.Class,
+			Range:          setProtocolRange(begin, end),
+			SelectionRange: setProtocolRange(begin, end)})
+	}
+	begin := syntax.Position(expr[0].Pos())
+	end := syntax.Position(expr[l-1].LastTok().End())
+	extends := make([]protocol.DocumentSymbol, 0, 1)
+	extends = append(extends, protocol.DocumentSymbol{Name: "extends", Kind: protocol.Array,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end), Children: list})
+	return extends
+}
+
 func getComponentVars(syntax *ntt.ParseInfo, stmt []ast.Stmt) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, len(stmt))
 	for _, v := range stmt {
@@ -127,9 +147,13 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				return false
 			}
 			var children []protocol.DocumentSymbol = nil
+			if len(node.Extends) > 0 {
+				children = getExtendsComponents(syntax, node.Extends)
+			}
 			if node.Body != nil && node.Body.Stmts != nil {
-				l := len(node.Body.Stmts)
-				children = make([]protocol.DocumentSymbol, 0, l)
+				if l := len(node.Body.Stmts); l > 0 && children == nil {
+					children = make([]protocol.DocumentSymbol, 0, l)
+				}
 				children = append(children, getComponentVars(syntax, node.Body.Stmts)...)
 
 			}

@@ -38,7 +38,7 @@ func setRange(syntax *ntt.ParseInfo, begin loc.Pos, end loc.Pos) protocol.Range 
 func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
-        type component B0 {
+        type component B0 extends C0, C1 {
 			var integer i := 1;
 			timer t1 := 2.0;
 			port P p;
@@ -47,34 +47,45 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 	  }`, `module TestFunctionDefWithModuleDotRunsOn_Module_1
       {
 		  type component C0 {}
+		  type component C1 {}
 	  }`)
 
 	syntax, list := generateSymbols(t, suite)
 
 	assert.Equal(t, []protocol.DocumentSymbol{
 		{Name: "B0", Kind: protocol.Class, Detail: "component type",
-			Range:          setRange(syntax, 26, 105),
-			SelectionRange: setRange(syntax, 26, 105),
+			Range:          setRange(syntax, 26, 120),
+			SelectionRange: setRange(syntax, 26, 120),
 			Children: []protocol.DocumentSymbol{
+				{Name: "extends", Kind: protocol.Array,
+					Range:          setRange(syntax, 52, 58),
+					SelectionRange: setRange(syntax, 52, 58),
+					Children: []protocol.DocumentSymbol{
+						{Name: "C0", Kind: protocol.Class,
+							Range:          setRange(syntax, 52, 54),
+							SelectionRange: setRange(syntax, 52, 54)},
+						{Name: "C1", Kind: protocol.Class,
+							Range:          setRange(syntax, 56, 58),
+							SelectionRange: setRange(syntax, 56, 58)}}},
 				{Name: "i", Detail: "var integer", Kind: protocol.Variable,
-					Range:          setRange(syntax, 49, 67),
-					SelectionRange: setRange(syntax, 49, 67)},
+					Range:          setRange(syntax, 64, 82),
+					SelectionRange: setRange(syntax, 64, 82)},
 				{Name: "t1", Detail: "timer", Kind: protocol.Event,
-					Range:          setRange(syntax, 72, 87),
-					SelectionRange: setRange(syntax, 72, 87)},
+					Range:          setRange(syntax, 87, 102),
+					SelectionRange: setRange(syntax, 87, 102)},
 				{Name: "p", Detail: "port P", Kind: protocol.Interface,
-					Range:          setRange(syntax, 92, 100),
-					SelectionRange: setRange(syntax, 92, 100)}}},
+					Range:          setRange(syntax, 107, 115),
+					SelectionRange: setRange(syntax, 107, 115)}}},
 		{Name: "f", Kind: protocol.Method, Detail: "function definition",
-			Range:          setRange(syntax, 108, 188),
-			SelectionRange: setRange(syntax, 108, 188),
+			Range:          setRange(syntax, 123, 203),
+			SelectionRange: setRange(syntax, 123, 203),
 			Children: []protocol.DocumentSymbol{
 				{Name: "runs on", Detail: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0", Kind: protocol.Class,
-					Range:          setRange(syntax, 129, 175),
-					SelectionRange: setRange(syntax, 129, 175)},
+					Range:          setRange(syntax, 144, 190),
+					SelectionRange: setRange(syntax, 144, 190)},
 				{Name: "system", Detail: "B0", Kind: protocol.Class,
-					Range:          setRange(syntax, 183, 185),
-					SelectionRange: setRange(syntax, 183, 185)}}}}, list)
+					Range:          setRange(syntax, 198, 200),
+					SelectionRange: setRange(syntax, 198, 200)}}}}, list)
 }
 
 func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
