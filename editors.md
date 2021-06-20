@@ -123,7 +123,7 @@ call plug#end()
 
 Execute `:PlugInstall` to download and install all plugins. When you open a `.ttcn3` source file syntax highlighting should work already and you will be prompted to execute `:LspInstallServer` for installing ntt.
 
-Further [vim-lsp](https://git hub.com/prabirshrestha/vim-lsp) recommends to map keys for your convenience:
+Further [vim-lsp](https://github.com/prabirshrestha/vim-lsp) recommends to map keys for your convenience:
 ```vim
 function! s:on_lsp_buffer_enabled() abort
     setlocal omnifunc=lsp#complete
