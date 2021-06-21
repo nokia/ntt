@@ -39,7 +39,7 @@ func NewReport(suite *ntt.Suite) (*Report, error) {
 
 	if db != nil {
 		r.db = *db
-		r.Collection = *NewCollection(r.Name, db.Runs...)
+		r.Collection = *NewCollection(r.Name, db.Runs()...)
 	}
 
 	return &r, nil
@@ -94,11 +94,11 @@ func (r *Report) LineCount() (int, error) {
 }
 
 func (r *Report) MaxJobs() int {
-	return r.db.MaxJobs
+	return r.db.MaxJobs()
 }
 
 func (r *Report) MaxLoad() int {
-	return r.db.MaxLoad
+	return r.db.MaxLoad()
 }
 
 type Collection struct {
