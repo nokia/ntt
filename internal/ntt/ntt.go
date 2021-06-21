@@ -130,12 +130,8 @@ func (suite *Suite) LatestResults() (*results.DB, error) {
 		return nil, err
 	}
 
-	var r results.Results
 	var db results.DB
-
-	err = json.Unmarshal(b, &r)
-	db = results.ToDB(r)
-	return &db, err
+	return &db, json.Unmarshal(b, &db)
 }
 
 func init() {
