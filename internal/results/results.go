@@ -53,7 +53,7 @@ func (db *DB) MaxJobs() int {
 }
 
 type Session struct {
-	id              string
+	Id              string
 	MaxJobs         int
 	MaxLoad         int
 	ExpectedVerdict string `json:"expected_verdict"`

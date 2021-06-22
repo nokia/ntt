@@ -38,16 +38,17 @@ Example:
 Available Objects
 
   .Report is a collection of test runs
-  .Report.Cores:     number of CPU cores
-  .Report.Environ:   list of environment variable
-  .Report.Getenv:    value of an environment variable
-  .Report.LineCount: number of TTCN-3 source code lines
-  .Report.MaxJobs:   maximum number of parallel test jobs
-  .Report.MaxLoad:   maximum allowed CPU load
-  .Report.Modules:   a list of collection sorted by module
-  .Report.Name:      name of the collection
-  .Report.Runs:      list of test runs
-  .Report.Tests:     list of tests (with final verdict)
+  .Report.Cores:      number of CPU cores
+  .Report.Environ:    list of environment variable
+  .Report.Getenv:     value of an environment variable
+  .Report.LineCount:  number of TTCN-3 source code lines
+  .Report.MaxJobs:    maximum number of parallel test jobs
+  .Report.MaxLoad:    maximum allowed CPU load
+  .Report.Modules:    a list of collection sorted by module
+  .Report.Name:       name of the collection
+  .Report.Runs:       list of test runs
+  .Report.Tests:      list of tests (with final verdict)
+  .Report.FixedTests: list of tests where unstable tests are changed to pass or fail (based on ExpectedVerdict)
 
   .RunSlice is a list of test runs
   .RunSlice.Load:      Return systemload slice for every run
