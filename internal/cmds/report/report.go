@@ -39,7 +39,7 @@ func NewReport(suite *ntt.Suite) (*Report, error) {
 
 	if db != nil {
 		r.db = *db
-		r.Collection = *NewCollection(r.Name, db.Runs...)
+		r.Collection = *NewCollection(r.Name, db.Runs()...)
 	}
 
 	return &r, nil
@@ -94,11 +94,11 @@ func (r *Report) LineCount() (int, error) {
 }
 
 func (r *Report) MaxJobs() int {
-	return r.db.MaxJobs
+	return r.db.MaxJobs()
 }
 
 func (r *Report) MaxLoad() int {
-	return r.db.MaxLoad
+	return r.db.MaxLoad()
 }
 
 type Collection struct {
@@ -124,6 +124,21 @@ func (c Collection) Runs() RunSlice {
 
 func (c Collection) Tests() RunSlice {
 	return NewRunSlice(results.FinalVerdicts(c.runs.asResultsRun()))
+}
+
+func (c Collection) FixedTests() RunSlice {
+	runs := NewRunSlice(results.FinalVerdicts(c.runs.asResultsRun()))
+
+	for i := range runs {
+		if runs[i].Verdict == "unstable" {
+			if runs[i].ExpectedVerdict == "fail" {
+				runs[i].Verdict = "fail"
+			} else {
+				runs[i].Verdict = "pass"
+			}
+		}
+	}
+	return runs
 }
 
 func (c Collection) Modules() []*Collection {
