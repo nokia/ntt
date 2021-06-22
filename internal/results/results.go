@@ -43,13 +43,13 @@ func (db *DB) MaxJobs() int {
 	if len(db.Sessions) == 0 {
 		return 0
 	}
-	max := db.Sessions[0].MaxJobs
+	maxjobs := db.Sessions[0].MaxJobs
 	for _, s := range db.Sessions {
-		if s.MaxLoad > max {
-			max = s.MaxLoad
+		if s.MaxJobs > maxjobs {
+			maxjobs = s.MaxJobs
 		}
 	}
-	return max
+	return maxjobs
 }
 
 type Session struct {
