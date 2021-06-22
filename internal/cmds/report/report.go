@@ -126,6 +126,21 @@ func (c Collection) Tests() RunSlice {
 	return NewRunSlice(results.FinalVerdicts(c.runs.asResultsRun()))
 }
 
+func (c Collection) FixedTests() RunSlice {
+	runs := NewRunSlice(results.FinalVerdicts(c.runs.asResultsRun()))
+
+	for i := range runs {
+		if runs[i].Verdict == "unstable" {
+			if runs[i].ExpectedVerdict == "fail" {
+				runs[i].Verdict = "fail"
+			} else {
+				runs[i].Verdict = "pass"
+			}
+		}
+	}
+	return runs
+}
+
 func (c Collection) Modules() []*Collection {
 	suites := make(map[string]*Collection)
 	for _, r := range c.runs {
