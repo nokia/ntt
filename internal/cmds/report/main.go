@@ -38,16 +38,17 @@ Example:
 Available Objects
 
   .Report is a collection of test runs
-  .Report.Cores:     number of CPU cores
-  .Report.Environ:   list of environment variable
-  .Report.Getenv:    value of an environment variable
-  .Report.LineCount: number of TTCN-3 source code lines
-  .Report.MaxJobs:   maximum number of parallel test jobs
-  .Report.MaxLoad:   maximum allowed CPU load
-  .Report.Modules:   a list of collection sorted by module
-  .Report.Name:      name of the collection
-  .Report.Runs:      list of test runs
-  .Report.Tests:     list of tests (with final verdict)
+  .Report.Cores:      number of CPU cores
+  .Report.Environ:    list of environment variable
+  .Report.Getenv:     value of an environment variable
+  .Report.LineCount:  number of TTCN-3 source code lines
+  .Report.MaxJobs:    maximum number of parallel test jobs
+  .Report.MaxLoad:    maximum allowed CPU load
+  .Report.Modules:    a list of collection sorted by module
+  .Report.Name:       name of the collection
+  .Report.Runs:       list of test runs
+  .Report.Tests:      list of tests (with final verdict)
+  .Report.FixedTests: list of tests where unstable tests are changed to pass or fail (based on ExpectedVerdict)
 
   .RunSlice is a list of test runs
   .RunSlice.Load:      Return systemload slice for every run
@@ -150,8 +151,8 @@ const (
 	junitTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>{{range .Modules}}
 
-<testsuite name="{{.Name}}" tests="{{len .Tests}}" failures="{{len .Tests.Failed}}" errors="" time="{{.Tests.Total.Seconds}}">
-{{range .Tests}}<testcase name="{{.Testcase}}" time="{{.Duration.Seconds}}">
+<testsuite name="{{.Name}}" tests="{{len .FixedTests}}" failures="{{len .FixedTests.Failed}}" errors="" time="{{.FixedTests.Total.Seconds}}">
+{{range .FixedTests}}<testcase name="{{.Testcase}}" time="{{.Duration.Seconds}}">
   {{if and (ne .Verdict "unstable") (ne .Verdict "pass")}}<failure>Verdict: {{.Verdict}} {{with .Reason}}({{. | html }}){{end}}
 {{range .ReasonFiles}}{{.Name}}: {{.Content}}{{end}}
   </failure>

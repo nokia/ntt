@@ -9,12 +9,55 @@ import (
 	"time"
 )
 
-// A DB struct contains results of last test executable execution
 type DB struct {
-	Version int
-	MaxJobs int
-	MaxLoad int
-	Runs    []Run
+	Version  string
+	Sessions []Session
+}
+
+// Runs returns a slice with all runs from all sessions
+func (db *DB) Runs() []Run {
+	var runs []Run
+	for _, s := range db.Sessions {
+		for i := range s.Runs {
+			s.Runs[i].ExpectedVerdict = s.ExpectedVerdict
+		}
+		runs = append(runs, s.Runs...)
+	}
+	return runs
+}
+
+func (db *DB) MaxLoad() int {
+	if len(db.Sessions) == 0 {
+		return 0
+	}
+	maxload := db.Sessions[0].MaxLoad
+	for _, s := range db.Sessions {
+		if s.MaxLoad > maxload {
+			maxload = s.MaxLoad
+		}
+	}
+	return maxload
+}
+
+func (db *DB) MaxJobs() int {
+	if len(db.Sessions) == 0 {
+		return 0
+	}
+	maxjobs := db.Sessions[0].MaxJobs
+	for _, s := range db.Sessions {
+		if s.MaxJobs > maxjobs {
+			maxjobs = s.MaxJobs
+		}
+	}
+	return maxjobs
+}
+
+type Session struct {
+	Id              string
+	MaxJobs         int
+	MaxLoad         int
+	ExpectedVerdict string `json:"expected_verdict"`
+	Runs            []Run
 }
 
 // A Run describes the execution of a single test case.
@@ -31,7 +74,8 @@ type Run struct {
 	Load       float64 // the system load when the test was started
 	MaxMem     int     // the maximum memory used when the test ended
 
-	RunnerID string `json:"runnerid"`
+	RunnerID        string `json:"runnerid"`
+	ExpectedVerdict string
 }
 
 // A unique identifier of the run. Usually something like "testname-2"
