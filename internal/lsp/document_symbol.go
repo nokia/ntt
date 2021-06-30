@@ -43,6 +43,66 @@ func getExtendsComponents(syntax *ntt.ParseInfo, expr []ast.Expr) []protocol.Doc
 	return extends
 }
 
+func getTypeList(syntax *ntt.ParseInfo, types []ast.Expr) []protocol.DocumentSymbol {
+	retv := make([]protocol.DocumentSymbol, 0, len(types))
+	for _, t := range types {
+		begin := syntax.Position(t.Pos())
+		end := syntax.Position(t.LastTok().End())
+		if name := ast.Name(t); len(name) > 0 {
+			retv = append(retv, protocol.DocumentSymbol{
+				Name:           name,
+				Detail:         "type",
+				Kind:           protocol.Struct,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end)})
+		}
+	}
+	return retv
+}
+
+func getPortTypeDecl(syntax *ntt.ParseInfo, node *ast.PortTypeDecl) protocol.DocumentSymbol {
+	begin := syntax.Position(node.Pos())
+	end := syntax.Position(node.LastTok().End())
+	kindstr := ""
+	if node.Kind.IsValid() {
+		kindstr = node.Kind.Lit
+	}
+	retv := protocol.DocumentSymbol{
+		Name:           node.Name.String(),
+		Detail:         kindstr + " port type",
+		Kind:           protocol.Interface,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end)}
+	portChildren := make([]protocol.DocumentSymbol, 0, 6)
+	for _, attr := range node.Attrs {
+		begin := syntax.Position(attr.Pos())
+		end := syntax.Position(attr.LastTok().End())
+		switch node := attr.(type) {
+		case *ast.PortAttribute:
+			switch node.Kind.Kind {
+			case token.ADDRESS:
+				portChildren = append(portChildren, protocol.DocumentSymbol{
+					Name:           "address",
+					Detail:         ast.Name(node.Types[0]) + " type",
+					Kind:           protocol.Struct,
+					Range:          setProtocolRange(begin, end),
+					SelectionRange: setProtocolRange(begin, end)})
+			case token.IN, token.OUT, token.INOUT:
+				portChildren = append(portChildren, protocol.DocumentSymbol{
+					Name:           node.Kind.String(),
+					Kind:           protocol.Array,
+					Range:          setProtocolRange(begin, end),
+					SelectionRange: setProtocolRange(begin, end),
+					Children:       getTypeList(syntax, node.Types)})
+			}
+
+		case *ast.PortMapAttribute:
+		}
+	}
+	retv.Children = portChildren
+	return retv
+}
+
 func getValueDecls(syntax *ntt.ParseInfo, val *ast.ValueDecl) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, 2)
 	begin := syntax.Position(val.Pos())
@@ -174,10 +234,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 			if node.Name == nil {
 				return false
 			}
-			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "port type", Kind: protocol.Interface,
-				Range:          setProtocolRange(begin, end),
-				SelectionRange: setProtocolRange(begin, end),
-				Children:       nil})
+			list = append(list, getPortTypeDecl(syntax, node))
 			return false
 		case *ast.EnumTypeDecl:
 			if node.Name == nil {
