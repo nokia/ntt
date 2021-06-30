@@ -119,38 +119,38 @@ func TestConstTemplModulePar(t *testing.T) {
 		template R t_r1 := ?;
 		template R t_r2 := {10, true}
 		template R t_r3(integer pi:=10) := {pi, true}
-		template R t_r4 extends t_r1:= {f2:= true}
+		template R t_r4 modifies t_r1 := {f2:= true}
 	  }`)
 
 	syntax, list := generateSymbols(t, suite)
 
 	assert.Equal(t, []protocol.DocumentSymbol{
-		{Name: "c_r", Kind: protocol.Constant, Detail: "const",
+		{Name: "c_r", Kind: protocol.Constant, Detail: "const R",
 			Range:          setRange(syntax, 26, 51),
 			SelectionRange: setRange(syntax, 26, 51),
 			Children:       nil},
-		{Name: "m_r", Kind: protocol.Constant, Detail: "modulepar",
+		{Name: "m_r", Kind: protocol.Constant, Detail: "modulepar R",
 			Range:          setRange(syntax, 54, 83),
 			SelectionRange: setRange(syntax, 54, 83),
 			Children:       nil},
-		{Name: "t_r1", Kind: protocol.Constant, Detail: "template",
+		{Name: "t_r1", Kind: protocol.Constant, Detail: "template R",
 			Range:          setRange(syntax, 86, 106),
 			SelectionRange: setRange(syntax, 86, 106),
 			Children:       nil},
-		{Name: "t_r2", Kind: protocol.Constant, Detail: "template",
+		{Name: "t_r2", Kind: protocol.Constant, Detail: "template R",
 			Range:          setRange(syntax, 110, 139),
 			SelectionRange: setRange(syntax, 110, 139),
 			Children:       nil},
-		{Name: "t_r3", Kind: protocol.Constant, Detail: "template",
+		{Name: "t_r3", Kind: protocol.Constant, Detail: "template R",
 			Range:          setRange(syntax, 142, 187),
 			SelectionRange: setRange(syntax, 142, 187),
 			Children:       nil},
-		{Name: "t_r4", Kind: protocol.Constant, Detail: "template",
-			Range:          setRange(syntax, 190, 232),
-			SelectionRange: setRange(syntax, 190, 232),
+		{Name: "t_r4", Kind: protocol.Constant, Detail: "template R",
+			Range:          setRange(syntax, 190, 234),
+			SelectionRange: setRange(syntax, 190, 234),
 			Children: []protocol.DocumentSymbol{
 				{Name: "t_r1", Kind: protocol.Constant, Detail: "template",
-					Range:          setRange(syntax, 214, 218),
-					SelectionRange: setRange(syntax, 214, 218),
+					Range:          setRange(syntax, 215, 219),
+					SelectionRange: setRange(syntax, 215, 219),
 					Children:       nil}}}}, list)
 }

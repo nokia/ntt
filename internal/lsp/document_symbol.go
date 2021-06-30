@@ -43,32 +43,40 @@ func getExtendsComponents(syntax *ntt.ParseInfo, expr []ast.Expr) []protocol.Doc
 	return extends
 }
 
+func getValueDecls(syntax *ntt.ParseInfo, val *ast.ValueDecl) []protocol.DocumentSymbol {
+	vdecls := make([]protocol.DocumentSymbol, 0, 2)
+	begin := syntax.Position(val.Pos())
+	end := syntax.Position(val.LastTok().End())
+	kind := protocol.Variable
+	typeName := ast.Name(val.Type)
+	if len(typeName) > 0 {
+		typeName = " " + typeName
+	}
+	switch val.Kind.Kind {
+	case token.PORT:
+		kind = protocol.Interface
+	case token.TIMER:
+		kind = protocol.Event
+	case token.CONST, token.TEMPLATE, token.MODULEPAR:
+		kind = protocol.Constant
+	}
+
+	for _, name := range val.Decls {
+		vdecls = append(vdecls, protocol.DocumentSymbol{Name: ast.Name(name), Detail: val.Kind.Lit + typeName, Kind: kind,
+			Range:          setProtocolRange(begin, end),
+			SelectionRange: setProtocolRange(begin, end),
+			Children:       nil})
+	}
+	return vdecls
+}
+
 func getComponentVars(syntax *ntt.ParseInfo, stmt []ast.Stmt) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, len(stmt))
 	for _, v := range stmt {
 		if n, ok := v.(*ast.DeclStmt); ok {
 			switch node := n.Decl.(type) {
 			case *ast.ValueDecl:
-				begin := syntax.Position(node.Pos())
-				end := syntax.Position(node.LastTok().End())
-				kind := protocol.Variable
-				typeName := ast.Name(node.Type)
-				if len(typeName) > 0 {
-					typeName = " " + typeName
-				}
-				switch node.Kind.Kind {
-				case token.PORT:
-					kind = protocol.Interface
-				case token.TIMER:
-					kind = protocol.Event
-				}
-
-				for _, name := range node.Decls {
-					vdecls = append(vdecls, protocol.DocumentSymbol{Name: ast.Name(name), Detail: node.Kind.Lit + typeName, Kind: kind,
-						Range:          setProtocolRange(begin, end),
-						SelectionRange: setProtocolRange(begin, end),
-						Children:       nil})
-				}
+				vdecls = append(vdecls, getValueDecls(syntax, node)...)
 			default:
 			}
 		}
@@ -218,6 +226,34 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
+			return false
+		case *ast.ValueDecl:
+			for _, vdecl := range getValueDecls(syntax, node) {
+				list = append(list, vdecl)
+			}
+			return false
+		case *ast.TemplateDecl:
+			if node.Name == nil {
+				return false
+			}
+			var modifies []protocol.DocumentSymbol = nil
+			if node.ModifiesTok.IsValid() {
+				modifName := ast.Name(node.Base)
+				if len(modifName) > 0 {
+					begin := syntax.Position(node.Base.Pos())
+					end := syntax.Position(node.Base.End())
+					modifies = make([]protocol.DocumentSymbol, 0, 1)
+					modifies = append(modifies, protocol.DocumentSymbol{Name: modifName, Detail: "template", Kind: protocol.Constant,
+						Range:          setProtocolRange(begin, end),
+						SelectionRange: setProtocolRange(begin, end),
+						Children:       nil})
+				}
+			}
+			typeName := ast.Name(node.Type)
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "template " + typeName, Kind: protocol.Constant,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       modifies})
 			return false
 		default:
 			return true
