@@ -154,3 +154,63 @@ func TestConstTemplModulePar(t *testing.T) {
 					SelectionRange: setRange(syntax, 215, 219),
 					Children:       nil}}}}, list)
 }
+
+func TestPortTypeDecl(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		type port Pmessage message{
+			address AddressType;
+			in aModule.Msg1, integer, Msg2;
+			out Msg3, Msg4;
+			inout Msg5;
+			map param(PmessageMapType1 p1, PmessageMapType2 p2[]);
+			unmap(PmessageUnmapType1 p1);
+		}
+	  }`)
+
+	syntax, list := generateSymbols(t, suite)
+	assert.Equal(t, []protocol.DocumentSymbol{
+		{Name: "Pmessage", Kind: protocol.Interface, Detail: "message port type",
+			Range:          setRange(syntax, 20, 235),
+			SelectionRange: setRange(syntax, 20, 235),
+			Children: []protocol.DocumentSymbol{
+				{Name: "address", Kind: protocol.Struct, Detail: "AddressType type",
+					Range:          setRange(syntax, 51, 70),
+					SelectionRange: setRange(syntax, 51, 70),
+					Children:       nil},
+				{Name: "in", Kind: protocol.Array,
+					Range:          setRange(syntax, 75, 105),
+					SelectionRange: setRange(syntax, 75, 105),
+					Children: []protocol.DocumentSymbol{
+						{Name: "aModule.Msg1", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 78, 90),
+							SelectionRange: setRange(syntax, 78, 90),
+							Children:       nil},
+						{Name: "integer", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 92, 99),
+							SelectionRange: setRange(syntax, 92, 99),
+							Children:       nil},
+						{Name: "Msg2", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 101, 105),
+							SelectionRange: setRange(syntax, 101, 105),
+							Children:       nil}}},
+				{Name: "out", Kind: protocol.Array,
+					Range:          setRange(syntax, 110, 124),
+					SelectionRange: setRange(syntax, 110, 124),
+					Children: []protocol.DocumentSymbol{
+						{Name: "Msg3", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 114, 118),
+							SelectionRange: setRange(syntax, 114, 118),
+							Children:       nil},
+						{Name: "Msg4", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 120, 124),
+							SelectionRange: setRange(syntax, 120, 124),
+							Children:       nil}}},
+				{Name: "inout", Kind: protocol.Array,
+					Range:          setRange(syntax, 129, 139),
+					SelectionRange: setRange(syntax, 129, 139),
+					Children: []protocol.DocumentSymbol{{Name: "Msg5", Kind: protocol.Struct, Detail: "type",
+						Range:          setRange(syntax, 135, 139),
+						SelectionRange: setRange(syntax, 135, 139),
+						Children:       nil}}}}}}, list)
+}
