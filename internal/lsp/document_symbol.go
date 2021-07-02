@@ -103,6 +103,45 @@ func getPortTypeDecl(syntax *ntt.ParseInfo, node *ast.PortTypeDecl) protocol.Doc
 	return retv
 }
 
+func getSignatureDecl(syntax *ntt.ParseInfo, sig *ast.SignatureDecl) protocol.DocumentSymbol {
+	begin := syntax.Position(sig.Pos())
+	end := syntax.Position(sig.LastTok().End())
+	kindstr := "blocking"
+	if sig.NoBlock.IsValid() {
+		kindstr = "non-blocking"
+	}
+	retv := protocol.DocumentSymbol{
+		Name:           sig.Name.String(),
+		Detail:         kindstr + " signature",
+		Kind:           protocol.Function,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end)}
+	if sig.Return != nil || sig.Exception != nil {
+		retv.Children = make([]protocol.DocumentSymbol, 0, 2)
+		if sig.Return != nil {
+			begin := syntax.Position(sig.Return.Type.Pos())
+			end := syntax.Position(sig.Return.Type.LastTok().End())
+			retv.Children = append(retv.Children, protocol.DocumentSymbol{
+				Name:           ast.Name(sig.Return.Type),
+				Detail:         "return type",
+				Kind:           protocol.Struct,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end)})
+		}
+		if sig.Exception != nil {
+			begin := syntax.Position(sig.ExceptionTok.Pos())
+			end := syntax.Position(sig.Exception.LastTok().End())
+			retv.Children = append(retv.Children, protocol.DocumentSymbol{
+				Name:           "Exceptions",
+				Kind:           protocol.Array,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       getTypeList(syntax, sig.Exception.List)})
+		}
+	}
+	return retv
+}
+
 func getValueDecls(syntax *ntt.ParseInfo, val *ast.ValueDecl) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, 2)
 	begin := syntax.Position(val.Pos())
@@ -244,6 +283,12 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
+			return false
+		case *ast.SignatureDecl:
+			if node.Name == nil {
+				return false
+			}
+			list = append(list, getSignatureDecl(syntax, node))
 			return false
 		case *ast.SubTypeDecl:
 			var children []protocol.DocumentSymbol = nil

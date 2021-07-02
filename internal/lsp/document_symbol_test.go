@@ -214,3 +214,77 @@ func TestPortTypeDecl(t *testing.T) {
 						SelectionRange: setRange(syntax, 135, 139),
 						Children:       nil}}}}}}, list)
 }
+
+func TestSignatureDecl(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		signature MyRemoteProcOne ();
+		signature MyRemoteProcTwo () noblock;
+		signature MyRemoteProcThree (in integer Par1, out float Par2, inout integer Par3);
+		signature MyRemoteProcFour (in integer Par1) return integer;
+		signature MyRemoteProcFive (inout float Par1) return integer
+			exception (ExceptionType1, ExceptionType2);
+		signature MyRemoteProcSix (in integer Par1) noblock
+			exception (integer, float);
+	}`)
+
+	syntax, list := generateSymbols(t, suite)
+
+	assert.Equal(t, []protocol.DocumentSymbol{
+		{Name: "MyRemoteProcOne", Kind: protocol.Function, Detail: "blocking signature",
+			Range:          setRange(syntax, 20, 48),
+			SelectionRange: setRange(syntax, 20, 48),
+			Children:       nil},
+		{Name: "MyRemoteProcTwo", Kind: protocol.Function, Detail: "non-blocking signature",
+			Range:          setRange(syntax, 52, 88),
+			SelectionRange: setRange(syntax, 52, 88),
+			Children:       nil},
+		{Name: "MyRemoteProcThree", Kind: protocol.Function, Detail: "blocking signature",
+			Range:          setRange(syntax, 92, 173),
+			SelectionRange: setRange(syntax, 92, 173),
+			Children:       nil},
+		{Name: "MyRemoteProcFour", Kind: protocol.Function, Detail: "blocking signature",
+			Range:          setRange(syntax, 177, 236),
+			SelectionRange: setRange(syntax, 177, 236),
+			Children: []protocol.DocumentSymbol{
+				{Name: "integer", Kind: protocol.Struct, Detail: "return type",
+					Range:          setRange(syntax, 229, 236),
+					SelectionRange: setRange(syntax, 229, 236),
+					Children:       nil}}},
+		{Name: "MyRemoteProcFive", Kind: protocol.Function, Detail: "blocking signature",
+			Range:          setRange(syntax, 240, 346),
+			SelectionRange: setRange(syntax, 240, 346),
+			Children: []protocol.DocumentSymbol{
+				{Name: "integer", Kind: protocol.Struct, Detail: "return type",
+					Range:          setRange(syntax, 293, 300),
+					SelectionRange: setRange(syntax, 293, 300),
+					Children:       nil},
+				{Name: "Exceptions", Kind: protocol.Array,
+					Range:          setRange(syntax, 304, 346),
+					SelectionRange: setRange(syntax, 304, 346),
+					Children: []protocol.DocumentSymbol{
+						{Name: "ExceptionType1", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 315, 329),
+							SelectionRange: setRange(syntax, 315, 329),
+							Children:       nil},
+						{Name: "ExceptionType2", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 331, 345),
+							SelectionRange: setRange(syntax, 331, 345),
+							Children:       nil}}}}},
+		{Name: "MyRemoteProcSix", Kind: protocol.Function, Detail: "non-blocking signature",
+			Range:          setRange(syntax, 350, 431),
+			SelectionRange: setRange(syntax, 350, 431),
+			Children: []protocol.DocumentSymbol{
+				{Name: "Exceptions", Kind: protocol.Array,
+					Range:          setRange(syntax, 405, 431),
+					SelectionRange: setRange(syntax, 405, 431),
+					Children: []protocol.DocumentSymbol{
+						{Name: "integer", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 416, 423),
+							SelectionRange: setRange(syntax, 416, 423),
+							Children:       nil},
+						{Name: "float", Kind: protocol.Struct, Detail: "type",
+							Range:          setRange(syntax, 425, 430),
+							SelectionRange: setRange(syntax, 425, 430),
+							Children:       nil}}}}}}, list)
+}
