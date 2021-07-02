@@ -43,7 +43,7 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 			timer t1 := 2.0;
 			port P p;
 		}
-		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_1.C0 system B0 {}
+		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_1.C0 system B0 return integer {}
 	  }`, `module TestFunctionDefWithModuleDotRunsOn_Module_1
       {
 		  type component C0 {}
@@ -77,15 +77,18 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 					Range:          setRange(syntax, 107, 115),
 					SelectionRange: setRange(syntax, 107, 115)}}},
 		{Name: "f", Kind: protocol.Method, Detail: "function definition",
-			Range:          setRange(syntax, 123, 203),
-			SelectionRange: setRange(syntax, 123, 203),
+			Range:          setRange(syntax, 123, 218),
+			SelectionRange: setRange(syntax, 123, 218),
 			Children: []protocol.DocumentSymbol{
 				{Name: "runs on", Detail: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0", Kind: protocol.Class,
 					Range:          setRange(syntax, 144, 190),
 					SelectionRange: setRange(syntax, 144, 190)},
 				{Name: "system", Detail: "B0", Kind: protocol.Class,
 					Range:          setRange(syntax, 198, 200),
-					SelectionRange: setRange(syntax, 198, 200)}}}}, list)
+					SelectionRange: setRange(syntax, 198, 200)},
+				{Name: "return", Detail: "integer", Kind: protocol.Struct,
+					Range:          setRange(syntax, 208, 215),
+					SelectionRange: setRange(syntax, 208, 215)}}}}, list)
 }
 
 func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
