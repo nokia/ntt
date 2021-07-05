@@ -365,7 +365,15 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 	return list
 }
 func (s *Server) documentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
+	var ret []interface{} = nil
 	start := time.Now()
+	defer func() {
+		if err := recover(); err != nil {
+			// in case of a panic, just continue as this might be a common situation during typing
+			ret = nil
+			log.Debug(fmt.Sprintf("Info: %s.", err))
+		}
+	}()
 	defer func() {
 		elapsed := time.Since(start)
 		log.Debug(fmt.Sprintf("DocumentSymbol took %s.", elapsed))
@@ -389,6 +397,6 @@ func (s *Server) documentSymbol(ctx context.Context, params *protocol.DocumentSy
 	if syntax.Module.Name == nil {
 		return nil, nil
 	}
-	ret := NewAllDefinitionSymbolsFromCurrentModule(syntax)
+	ret = NewAllDefinitionSymbolsFromCurrentModule(syntax)
 	return ret, nil
 }

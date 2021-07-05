@@ -578,6 +578,12 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 		elapsed := time.Since(start)
 		log.Debug(fmt.Sprintf("Completion took %s.", elapsed))
 	}()
+	defer func() {
+		if err := recover(); err != nil {
+			// in case of a panic, just continue as this might be a common situation during typing
+			log.Debug(fmt.Sprintf("Info: %s.", err))
+		}
+	}()
 	if !params.TextDocument.URI.SpanURI().IsFile() {
 		log.Printf(fmt.Sprintf("for 'code completion' the new file %q needs to be saved at least once", string(params.TextDocument.URI)))
 		return &protocol.CompletionList{}, nil
