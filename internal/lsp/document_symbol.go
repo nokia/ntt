@@ -23,6 +23,26 @@ func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
 }
 
+func getComponentTypeDecl(syntax *ntt.ParseInfo, node *ast.ComponentTypeDecl) protocol.DocumentSymbol {
+	var children []protocol.DocumentSymbol = nil
+	begin := syntax.Position(node.Pos())
+	end := syntax.Position(node.LastTok().End())
+
+	if len(node.Extends) > 0 {
+		children = getExtendsComponents(syntax, node.Extends)
+	}
+	if node.Body != nil && node.Body.Stmts != nil {
+		if l := len(node.Body.Stmts); l > 0 && children == nil {
+			children = make([]protocol.DocumentSymbol, 0, l)
+		}
+		children = append(children, getComponentVars(syntax, node.Body.Stmts)...)
+
+	}
+	return protocol.DocumentSymbol{Name: node.Name.String(), Detail: "component type", Kind: protocol.Class,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end),
+		Children:       children}
+}
 func getExtendsComponents(syntax *ntt.ParseInfo, expr []ast.Expr) []protocol.DocumentSymbol {
 	l := len(expr)
 	list := make([]protocol.DocumentSymbol, 0, l)
@@ -41,6 +61,47 @@ func getExtendsComponents(syntax *ntt.ParseInfo, expr []ast.Expr) []protocol.Doc
 		Range:          setProtocolRange(begin, end),
 		SelectionRange: setProtocolRange(begin, end), Children: list})
 	return extends
+}
+
+func getFunctionDecl(syntax *ntt.ParseInfo, node *ast.FuncDecl) protocol.DocumentSymbol {
+	begin := syntax.Position(node.Pos())
+	end := syntax.Position(node.LastTok().End())
+	kind := protocol.Function
+	children := make([]protocol.DocumentSymbol, 0, 5)
+	if node.RunsOn != nil && node.RunsOn.Comp != nil {
+		kind = protocol.Method
+		idBegin := syntax.Position(node.RunsOn.Comp.Pos())
+		idEnd := syntax.Position(node.RunsOn.Comp.LastTok().End())
+		children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: ast.Name(node.RunsOn.Comp),
+			Kind:           protocol.Class,
+			Range:          setProtocolRange(idBegin, idEnd),
+			SelectionRange: setProtocolRange(idBegin, idEnd)})
+	}
+	if node.System != nil && node.System.Comp != nil {
+		kind = protocol.Method
+		idBegin := syntax.Position(node.System.Comp.Pos())
+		idEnd := syntax.Position(node.System.Comp.LastTok().End())
+		children = append(children, protocol.DocumentSymbol{Name: "system", Detail: ast.Name(node.System.Comp),
+			Kind:           protocol.Class,
+			Range:          setProtocolRange(idBegin, idEnd),
+			SelectionRange: setProtocolRange(idBegin, idEnd)})
+	}
+	if node.Return != nil && node.Return.Type != nil {
+		idBegin := syntax.Position(node.Return.Type.Pos())
+		idEnd := syntax.Position(node.Return.Type.LastTok().End())
+		children = append(children, protocol.DocumentSymbol{Name: "return", Detail: ast.Name(node.Return.Type),
+			Kind:           protocol.Struct,
+			Range:          setProtocolRange(idBegin, idEnd),
+			SelectionRange: setProtocolRange(idBegin, idEnd)})
+	}
+	detail := node.Kind.Lit + " definition"
+	if node.External.IsValid() {
+		detail = "external " + detail
+	}
+	return protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: kind,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end),
+		Children:       children}
 }
 
 func getTypeList(syntax *ntt.ParseInfo, types []ast.Expr) []protocol.DocumentSymbol {
@@ -142,6 +203,48 @@ func getSignatureDecl(syntax *ntt.ParseInfo, sig *ast.SignatureDecl) protocol.Do
 	return retv
 }
 
+func getSubTypeDecl(syntax *ntt.ParseInfo, node *ast.SubTypeDecl) protocol.DocumentSymbol {
+	var children []protocol.DocumentSymbol = nil
+	begin := syntax.Position(node.Pos())
+	end := syntax.Position(node.LastTok().End())
+	detail := "subtype"
+	kind := protocol.Struct
+	if listNode, ok := node.Field.Type.(*ast.ListSpec); ok {
+		detail = kindToStringMap[listNode.Kind.Kind] + " of type"
+		kind = protocol.Array
+		children = getElemTypeInfo(syntax, listNode.ElemType)
+	}
+
+	return protocol.DocumentSymbol{Name: node.Field.Name.String(), Detail: detail, Kind: kind,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end),
+		Children:       children}
+}
+
+func getTemplateDecl(syntax *ntt.ParseInfo, node *ast.TemplateDecl) protocol.DocumentSymbol {
+	var modifies []protocol.DocumentSymbol = nil
+	begin := syntax.Position(node.Pos())
+	end := syntax.Position(node.LastTok().End())
+	if node.ModifiesTok.IsValid() {
+		modifName := ast.Name(node.Base)
+		if len(modifName) > 0 {
+			begin := syntax.Position(node.Base.Pos())
+			end := syntax.Position(node.Base.End())
+			modifies = make([]protocol.DocumentSymbol, 0, 1)
+			modifies = append(modifies, protocol.DocumentSymbol{Name: modifName, Detail: "template", Kind: protocol.Constant,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+		}
+	}
+	typeName := ast.Name(node.Type)
+
+	return protocol.DocumentSymbol{Name: node.Name.String(), Detail: "template " + typeName, Kind: protocol.Constant,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end),
+		Children:       modifies}
+}
+
 func getValueDecls(syntax *ntt.ParseInfo, val *ast.ValueDecl) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, 2)
 	begin := syntax.Position(val.Pos())
@@ -182,6 +285,7 @@ func getComponentVars(syntax *ntt.ParseInfo, stmt []ast.Stmt) []protocol.Documen
 	}
 	return vdecls
 }
+
 func getElemTypeInfo(syntax *ntt.ParseInfo, n ast.TypeSpec) []protocol.DocumentSymbol {
 	typeSymb := make([]protocol.DocumentSymbol, 0, 1)
 	begin := syntax.Position(n.Pos())
@@ -195,6 +299,7 @@ func getElemTypeInfo(syntax *ntt.ParseInfo, n ast.TypeSpec) []protocol.DocumentS
 	}
 	return typeSymb
 }
+
 func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface{} {
 	list := make([]interface{}, 0, 20)
 
@@ -211,63 +316,13 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 				// looks like a syntax error
 				return false
 			}
-
-			kind := protocol.Function
-			children := make([]protocol.DocumentSymbol, 0, 5)
-			if node.RunsOn != nil && node.RunsOn.Comp != nil {
-				kind = protocol.Method
-				idBegin := syntax.Position(node.RunsOn.Comp.Pos())
-				idEnd := syntax.Position(node.RunsOn.Comp.LastTok().End())
-				children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: ast.Name(node.RunsOn.Comp),
-					Kind:           protocol.Class,
-					Range:          setProtocolRange(idBegin, idEnd),
-					SelectionRange: setProtocolRange(idBegin, idEnd)})
-			}
-			if node.System != nil && node.System.Comp != nil {
-				kind = protocol.Method
-				idBegin := syntax.Position(node.System.Comp.Pos())
-				idEnd := syntax.Position(node.System.Comp.LastTok().End())
-				children = append(children, protocol.DocumentSymbol{Name: "system", Detail: ast.Name(node.System.Comp),
-					Kind:           protocol.Class,
-					Range:          setProtocolRange(idBegin, idEnd),
-					SelectionRange: setProtocolRange(idBegin, idEnd)})
-			}
-			if node.Return != nil && node.Return.Type != nil {
-				idBegin := syntax.Position(node.Return.Type.Pos())
-				idEnd := syntax.Position(node.Return.Type.LastTok().End())
-				children = append(children, protocol.DocumentSymbol{Name: "return", Detail: ast.Name(node.Return.Type),
-					Kind:           protocol.Struct,
-					Range:          setProtocolRange(idBegin, idEnd),
-					SelectionRange: setProtocolRange(idBegin, idEnd)})
-			}
-			detail := kindToStringMap[node.Kind.Kind] + " definition"
-			if node.External.IsValid() {
-				detail = "external " + detail
-			}
-			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: kind,
-				Range:          setProtocolRange(begin, end),
-				SelectionRange: setProtocolRange(begin, end),
-				Children:       children})
+			list = append(list, getFunctionDecl(syntax, node))
 			return false
 		case *ast.ComponentTypeDecl:
 			if node.Name == nil {
 				return false
 			}
-			var children []protocol.DocumentSymbol = nil
-			if len(node.Extends) > 0 {
-				children = getExtendsComponents(syntax, node.Extends)
-			}
-			if node.Body != nil && node.Body.Stmts != nil {
-				if l := len(node.Body.Stmts); l > 0 && children == nil {
-					children = make([]protocol.DocumentSymbol, 0, l)
-				}
-				children = append(children, getComponentVars(syntax, node.Body.Stmts)...)
-
-			}
-			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "component type", Kind: protocol.Class,
-				Range:          setProtocolRange(begin, end),
-				SelectionRange: setProtocolRange(begin, end),
-				Children:       children})
+			list = append(list, getComponentTypeDecl(syntax, node))
 			return false
 		case *ast.PortTypeDecl:
 			if node.Name == nil {
@@ -291,24 +346,10 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 			list = append(list, getSignatureDecl(syntax, node))
 			return false
 		case *ast.SubTypeDecl:
-			var children []protocol.DocumentSymbol = nil
-			detail := "subtype"
-			kind := protocol.Struct
-
 			if node.Field == nil || node.Field.Name == nil {
 				return false
 			}
-
-			if listNode, ok := node.Field.Type.(*ast.ListSpec); ok {
-				detail = kindToStringMap[listNode.Kind.Kind] + " of type"
-				kind = protocol.Array
-				children = getElemTypeInfo(syntax, listNode.ElemType)
-			}
-
-			list = append(list, protocol.DocumentSymbol{Name: node.Field.Name.String(), Detail: detail, Kind: kind,
-				Range:          setProtocolRange(begin, end),
-				SelectionRange: setProtocolRange(begin, end),
-				Children:       children})
+			list = append(list, getSubTypeDecl(syntax, node))
 			return false
 		case *ast.StructTypeDecl:
 			if node.Name == nil {
@@ -338,24 +379,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 			if node.Name == nil {
 				return false
 			}
-			var modifies []protocol.DocumentSymbol = nil
-			if node.ModifiesTok.IsValid() {
-				modifName := ast.Name(node.Base)
-				if len(modifName) > 0 {
-					begin := syntax.Position(node.Base.Pos())
-					end := syntax.Position(node.Base.End())
-					modifies = make([]protocol.DocumentSymbol, 0, 1)
-					modifies = append(modifies, protocol.DocumentSymbol{Name: modifName, Detail: "template", Kind: protocol.Constant,
-						Range:          setProtocolRange(begin, end),
-						SelectionRange: setProtocolRange(begin, end),
-						Children:       nil})
-				}
-			}
-			typeName := ast.Name(node.Type)
-			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "template " + typeName, Kind: protocol.Constant,
-				Range:          setProtocolRange(begin, end),
-				SelectionRange: setProtocolRange(begin, end),
-				Children:       modifies})
+			list = append(list, getTemplateDecl(syntax, node))
 			return false
 		default:
 			return true
@@ -364,6 +388,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(syntax *ntt.ParseInfo) []interface
 	})
 	return list
 }
+
 func (s *Server) documentSymbol(ctx context.Context, params *protocol.DocumentSymbolParams) ([]interface{}, error) {
 	var ret []interface{} = nil
 	start := time.Now()
