@@ -217,7 +217,16 @@ func FirstToken(n Node) *Token {
 func Name(n Node) string {
 	switch n := n.(type) {
 	case *Ident:
+		if n == nil {
+			return ""
+		}
 		return n.String()
+	case *SelectorExpr:
+		name := Name(n.X)
+		if n.Sel != nil {
+			name += "." + Name(n.Sel)
+		}
+		return name
 	case *CallExpr:
 		return Name(n.Fun)
 	case *LengthExpr:
@@ -246,6 +255,8 @@ func Name(n Node) string {
 		return Name(n.Name)
 	case *FuncDecl:
 		return Name(n.Name)
+	case *RefSpec:
+		return Name(n.X)
 	case *SignatureDecl:
 		return Name(n.Name)
 	}

@@ -40,7 +40,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			TypeDefinitionProvider:     false,
 			ImplementationProvider:     false,
 			DocumentFormattingProvider: false,
-			DocumentSymbolProvider:     false,
+			DocumentSymbolProvider:     true,
 			WorkspaceSymbolProvider:    false,
 			FoldingRangeProvider:       false,
 			HoverProvider:              false,

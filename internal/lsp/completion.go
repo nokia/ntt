@@ -161,6 +161,28 @@ func getAllComponentTypesFromModule(suite *ntt.Suite, mname string) []string {
 	return list
 }
 
+func getAllPortTypesFromModule(suite *ntt.Suite, mname string) []string {
+	list := make([]string, 0, 10)
+	if file, err := suite.FindModule(mname); err == nil {
+		syntax := suite.Parse(file)
+		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+			if n == nil {
+				// called on node exit
+				return false
+			}
+
+			switch node := n.(type) {
+			case *ast.PortTypeDecl:
+				list = append(list, node.Name.String())
+				return false
+			default:
+				return true
+			}
+		})
+	}
+	return list
+}
+
 func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
 	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
@@ -279,6 +301,19 @@ func newAllComponentTypesFromModule(suite *ntt.Suite, modName string, sortPref s
 	return complList
 }
 
+func newAllPortTypesFromModule(suite *ntt.Suite, modName string, sortPref string) []protocol.CompletionItem {
+	items := getAllPortTypesFromModule(suite, modName)
+	portList := make([]protocol.CompletionItem, 0, len(items))
+	for _, v := range items {
+		if len(sortPref) > 0 {
+			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, SortText: sortPref + v, Detail: modName + "." + v})
+		} else {
+			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, Detail: modName + "." + v})
+		}
+	}
+	return portList
+}
+
 func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files := suite.FindAllFiles(); len(files) > 0 {
@@ -291,6 +326,24 @@ func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.Completi
 		}
 	}
 	return complList
+}
+
+func newAllPortTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
+	var portList []protocol.CompletionItem = nil
+	if files := suite.FindAllFiles(); len(files) > 0 {
+		portList = make([]protocol.CompletionItem, 0, len(files))
+		for _, f := range files {
+			mName := filepath.Base(f)
+			mName = mName[:len(mName)-len(filepath.Ext(mName))]
+			prefix := int(2)
+			if mName == ownModName {
+				prefix = 1
+			}
+			items := newAllPortTypesFromModule(suite, mName, " "+strconv.Itoa(prefix))
+			portList = append(portList, items...)
+		}
+	}
+	return portList
 }
 
 func newAllTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
@@ -459,6 +512,15 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				}
 			}
 		}
+	case *ast.Declarator:
+		if l > 2 {
+			if valueDecl, ok := nodes[l-2].(*ast.ValueDecl); ok {
+				if valueDecl.Kind.Kind == token.PORT {
+					list = newAllPortTypes(suite, ownModName)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+				}
+			}
+		}
 	default:
 		log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
 
@@ -515,6 +577,12 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	defer func() {
 		elapsed := time.Since(start)
 		log.Debug(fmt.Sprintf("Completion took %s.", elapsed))
+	}()
+	defer func() {
+		if err := recover(); err != nil {
+			// in case of a panic, just continue as this might be a common situation during typing
+			log.Debug(fmt.Sprintf("Info: %s.", err))
+		}
 	}()
 	if !params.TextDocument.URI.SpanURI().IsFile() {
 		log.Printf(fmt.Sprintf("for 'code completion' the new file %q needs to be saved at least once", string(params.TextDocument.URI)))
