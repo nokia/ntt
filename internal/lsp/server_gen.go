@@ -93,7 +93,7 @@ func (s *Server) Formatting(context.Context, *protocol.DocumentFormattingParams)
 }
 
 func (s *Server) Hover(context.Context, *protocol.HoverParams) (*protocol.Hover, error) {
-	return nil, notImplemented("Hover")
+	return s.hover(ctx, params)
 }
 
 func (s *Server) Implementation(context.Context, *protocol.ImplementationParams) (protocol.Definition, error) {
