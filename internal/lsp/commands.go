@@ -60,6 +60,13 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 		nttCache = suites[0].Root().Path()
 		if k3EnvPath := fs.FindK3EnvInCurrPath(nttCache); len(k3EnvPath) > 0 {
 			nttCache = nttCache + ":" + k3EnvPath
+			os.Mkdir(k3EnvPath+"/ntt.test", 0744)
+			if err := os.Chdir(k3EnvPath + "/ntt.test"); err != nil {
+				s.Log(context.TODO(), fmt.Sprintf("Could not change Current working directory: %q: %q", k3EnvPath+"/ntt.test", err))
+			} else {
+				s.Log(context.TODO(), fmt.Sprintf("Changed Current working directory: %q", k3EnvPath+"/ntt.test"))
+				nttCache = nttCache + ":" + k3EnvPath + "/ntt.test"
+			}
 		}
 
 		s.Log(context.TODO(), fmt.Sprintf(" NTT_CACHE: %v", nttCache))
