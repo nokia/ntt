@@ -37,6 +37,25 @@ func HasCExtension(file string) bool {
 	return withExtension(".c", ".cc", ".cxx", ".cpp")(file)
 }
 
+// returns the path of the directory containing k3.env
+func FindK3EnvInCurrPath(dir string) string {
+	path := dir
+	for len(path) > 0 {
+
+		files, err := ioutil.ReadDir(path)
+		if err != nil {
+			return ""
+		}
+		for _, file := range files {
+			if file.Mode().IsRegular() && file.Name() == "k3.env" {
+				return path
+			}
+		}
+		path = filepath.Dir(path)
+	}
+	return ""
+}
+
 func findFiles(dir string, matcher func(name string) bool) []string {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
