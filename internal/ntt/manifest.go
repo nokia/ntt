@@ -315,16 +315,40 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 	return nil, nil
 }
 
+// ParametersDir return the absolute path retrieven from either
+// * parameters_dir field from manifest
+// * suites root path.
+func (suite *Suite) ParametersDir() (string, error) {
+	// If there's a parseable package.yml, try that one.
+	m, err := suite.parseManifest()
+	if err != nil {
+		return "", err
+	}
+	if m != nil && m.ParametersDir != "" {
+		paramDir, err := suite.Expand(m.ParametersDir)
+		if err != nil {
+			return "", err
+		}
+		if !filepath.IsAbs(paramDir) && paramDir[0] != '$' {
+			paramDir, err = filepath.Abs(filepath.Join(suite.root.Path(), paramDir))
+		}
+		return paramDir, err
+	}
+	if suite.root != nil {
+		return filepath.Abs(suite.root.Path())
+	}
+	return "", err
+}
+
 // ParametersFile return the File object to the parameter file. If no file was found, it
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
 func (suite *Suite) ParametersFile() (*fs.File, error) {
+	var pDir string = ""
 	env, err := suite.Getenv("NTT_PARAMETERS_FILE")
+	log.Debug(fmt.Sprintf("ParametersFile1: %q, error: %q", env, err))
 	if err != nil {
 		return nil, err
-	}
-	if env != "" {
-		return suite.File(env), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -332,15 +356,40 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	if m != nil && m.ParametersDir != "" {
+		paramDir, err := suite.Expand(m.ParametersDir)
+		if err != nil {
+			return nil, err
+		}
+		if !filepath.IsAbs(paramDir) && paramDir[0] != '$' {
+			paramDir = filepath.Clean(filepath.Join(suite.root.Path(), paramDir))
+		}
+		pDir = paramDir
+	}
+	log.Debug(fmt.Sprintf("ParametersFile2: %q, error: %q", env, err))
+	if pDir != "" {
+		if env != "" {
+			path := filepath.Clean(filepath.Join(pDir, env))
+			return suite.File(path), nil
+		}
+
+	} else if env != "" {
+		return suite.File(env), nil
+	}
 	if m != nil && m.ParametersFile != "" {
 		path, err := suite.Expand(m.ParametersFile)
+		log.Debug(fmt.Sprintf("ParametersFile3: %q, error: %q", path, err))
 		if err != nil {
 			return nil, err
 		}
 		if !filepath.IsAbs(path) && path[0] != '$' {
-			path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+			if pDir != "" {
+				path = filepath.Clean(filepath.Join(pDir, path))
+			} else {
+				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+			}
 		}
-
+		log.Debug(fmt.Sprintf("ParametersFile4: %q, error: %q", path, err))
 		return suite.File(path), nil
 	}
 
@@ -353,7 +402,13 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 
 	// Look for hook in root folder
 	if suite.root != nil {
-		path := filepath.Join(suite.root.Path(), filename)
+		path := ""
+		if pDir != "" {
+			path = filepath.Clean(filepath.Join(pDir, path))
+		} else {
+			path = filepath.Join(suite.root.Path(), filename)
+		}
+		log.Debug(fmt.Sprintf("ParametersFile5: %q, error: %q", path, err))
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
@@ -370,6 +425,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	}
 	if len(srcs) > 0 {
 		path := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
+		log.Debug(fmt.Sprintf("ParametersFile6: %q, error: %q", path, err))
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
@@ -412,6 +468,7 @@ type manifest struct {
 	// Runtime configuration
 	TestHook       string  `yaml:"test_hook"`       // Path for test hook.
 	ParametersFile string  `yaml:"parameters_file"` // Path for module parameters file.
+	ParametersDir  string  `yaml:"parameters_dir"`  // Optional path for parameters_file.
 	Timeout        float64 `yaml:"timeout"`         // Global timeout for tests.
 }
 
