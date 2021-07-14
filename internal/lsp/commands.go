@@ -50,16 +50,17 @@ func NewCommand(pos loc.Position, title string, command string, args ...interfac
 }
 
 func cmdTest(s *Server, testId string, fileUri string) error {
-	var nttCache string
+	var nttCache, pathToManifest string
 	s.Log(context.TODO(), fmt.Sprintf("testcase file uri: %q", fileUri))
 	if cwd, err := os.Getwd(); err == nil {
 		s.Log(context.TODO(), fmt.Sprintf("Current working directory: %q", cwd))
 	}
 	suites := s.Owners(protocol.DocumentURI(fileUri))
 	if len(suites) > 0 {
-		nttCache = suites[0].Root().Path()
+		pathToManifest = suites[0].Root().Path()
+
 		if k3EnvPath := fs.FindK3EnvInCurrPath(nttCache); len(k3EnvPath) > 0 {
-			nttCache = nttCache + ":" + k3EnvPath
+			nttCache = k3EnvPath
 			os.Mkdir(k3EnvPath+"/ntt.test", 0744)
 			if err := os.Chdir(k3EnvPath + "/ntt.test"); err != nil {
 				s.Log(context.TODO(), fmt.Sprintf("Could not change Current working directory: %q: %q", k3EnvPath+"/ntt.test", err))
@@ -67,11 +68,16 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 				s.Log(context.TODO(), fmt.Sprintf("Changed Current working directory: %q", k3EnvPath+"/ntt.test"))
 				nttCache = nttCache + ":" + k3EnvPath + "/ntt.test"
 			}
+			if path, err := suites[0].ParametersDir(); path != "" {
+				nttCache = nttCache + ":" + path
+			} else if err != nil {
+				s.Log(context.TODO(), fmt.Sprintf("Error while extracting parameters_dir from manifest: %q", err))
+			}
 		}
 
 		s.Log(context.TODO(), fmt.Sprintf(" NTT_CACHE: %v", nttCache))
 	}
-	cmd := exec.Command("ntt", "run", "-j1", "--debug", "--", testId)
+	cmd := exec.Command("ntt", "run", pathToManifest, "-j1", "--debug", "--", testId)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
 	if nttCache != "" {
