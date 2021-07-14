@@ -404,7 +404,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	if suite.root != nil {
 		path := ""
 		if pDir != "" {
-			path = filepath.Clean(filepath.Join(pDir, path))
+			path = filepath.Clean(filepath.Join(pDir, filename))
 		} else {
 			path = filepath.Join(suite.root.Path(), filename)
 		}
