@@ -22,7 +22,6 @@ func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCom
 	case "ntt.status":
 		return s.status(ctx)
 	case "ntt.test":
-		//var testID, fileUri string
 		var decParam param
 		if err := unmarshalRaw(params.Arguments, &decParam); err != nil {
 			return nil, err
