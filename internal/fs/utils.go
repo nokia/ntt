@@ -47,7 +47,7 @@ func FindK3EnvInCurrPath(dir string) string {
 			return ""
 		}
 		for _, file := range files {
-			if file.Mode().IsRegular() && file.Name() == "k3.env" {
+			if file.Mode().IsRegular() && ((file.Name() == "k3.env") || file.Name() == "ntt.env") {
 				return path
 			}
 		}
