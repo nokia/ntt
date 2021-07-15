@@ -59,14 +59,14 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 	if len(suites) > 0 {
 		pathToManifest = suites[0].Root().Path()
 
-		if k3EnvPath := fs.FindK3EnvInCurrPath(nttCache); len(k3EnvPath) > 0 {
+		if k3EnvPath := fs.FindK3EnvInCurrPath(pathToManifest); len(k3EnvPath) > 0 {
 			nttCache = k3EnvPath
-			os.Mkdir(k3EnvPath+"/ntt.test", 0744)
-			if err := os.Chdir(k3EnvPath + "/ntt.test"); err != nil {
-				s.Log(context.TODO(), fmt.Sprintf("Could not change Current working directory: %q: %q", k3EnvPath+"/ntt.test", err))
+			os.Mkdir(pathToManifest+"/ntt.test", 0744)
+			if err := os.Chdir(pathToManifest + "/ntt.test"); err != nil {
+				s.Log(context.TODO(), fmt.Sprintf("Could not change Current working directory: %q: %q", pathToManifest+"/ntt.test", err))
 			} else {
-				s.Log(context.TODO(), fmt.Sprintf("Changed Current working directory: %q", k3EnvPath+"/ntt.test"))
-				nttCache = nttCache + ":" + k3EnvPath + "/ntt.test"
+				s.Log(context.TODO(), fmt.Sprintf("Changed Current working directory: %q", pathToManifest+"/ntt.test"))
+				nttCache = nttCache + ":" + pathToManifest + "/ntt.test"
 			}
 			if path, err := suites[0].ParametersDir(); path != "" {
 				nttCache = nttCache + ":" + path
