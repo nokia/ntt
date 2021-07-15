@@ -13,8 +13,8 @@ import (
 )
 
 type param struct {
-	ID  string  // Fully qualified testcase identifier
-	URI string  // URL points to the ttcn3 source file containing the testcase
+	ID  string // Fully qualified testcase identifier
+	URI string // URL points to the ttcn3 source file containing the testcase
 }
 
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
@@ -26,7 +26,7 @@ func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCom
 		if err := unmarshalRaw(params.Arguments, &decParam); err != nil {
 			return nil, err
 		}
-		return nil, cmdTest(s, decParam.Id, decParam.Uri)
+		return nil, cmdTest(s, decParam.ID, decParam.URI)
 	}
 	return nil, nil
 }

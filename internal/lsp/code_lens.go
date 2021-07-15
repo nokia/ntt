@@ -34,7 +34,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 					return false
 				}
 				id := ast.Name(tree.Module.Name) + "." + ast.Name(n.Name)
-				if cmd, err := NewCommand(tree.Position(n.Pos()), "run test", "ntt.test", param{Id: id, Uri: string(file.SpanURI())}); err == nil {
+				if cmd, err := NewCommand(tree.Position(n.Pos()), "run test", "ntt.test", param{ID: id, URI: string(file.SpanURI())}); err == nil {
 					result = append(result, cmd)
 				}
 				return false
