@@ -13,8 +13,8 @@ import (
 )
 
 type param struct {
-	Id  string
-	Uri string
+	ID  string  // Fully qualified testcase identifier
+	URI string  // URL points to the ttcn3 source file containing the testcase
 }
 
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
