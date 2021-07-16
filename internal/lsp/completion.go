@@ -306,9 +306,9 @@ func newAllPortTypesFromModule(suite *ntt.Suite, modName string, sortPref string
 	portList := make([]protocol.CompletionItem, 0, len(items))
 	for _, v := range items {
 		if len(sortPref) > 0 {
-			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, SortText: sortPref + v, Detail: modName + "." + v})
+			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.InterfaceCompletion, SortText: sortPref + v, Detail: modName + "." + v})
 		} else {
-			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, Detail: modName + "." + v})
+			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.InterfaceCompletion, Detail: modName + "." + v})
 		}
 	}
 	return portList

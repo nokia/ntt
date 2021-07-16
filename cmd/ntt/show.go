@@ -56,6 +56,14 @@ var (
 
 		},
 
+		"parameters_dir": func(suite *ntt.Suite) string {
+			d, err := suite.ParametersDir()
+			if err != nil {
+				fatal(err)
+			}
+			return d
+		},
+
 		"parameters_file": func(suite *ntt.Suite) string {
 			f, err := suite.ParametersFile()
 			if err != nil {
