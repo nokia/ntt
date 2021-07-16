@@ -47,8 +47,8 @@ manifest.
         [NAME name]
         [TIMEOUT secs]
         [TEST_HOOK executable]
-        [PARAMETER_DIR dir]
-        [PARAMETER_FILE file]
+        [PARAMETERS_DIR dir]
+        [PARAMETERS_FILE file]
         [WORKING_DIRECTORY dir]
         [TARGETS target1...]
   )
@@ -83,11 +83,11 @@ manifest.
     build time. Additionally a target-level dependency will be added so that
     the executable target will be built before this hook is used.
 
-    ``PARAMETER_DIR dir``
+    ``PARAMETERS_DIR dir``
     Specifies a directory as the root for all .parameters files holding
     module parameter initialisations.
 
-  ``PARAMETER_FILE file``
+  ``PARAMETERS_FILE file``
     Specifies a file containing TOML formatted test configuration.
 
   ``WORKING_DIRECTORY dir``
