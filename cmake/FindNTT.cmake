@@ -47,6 +47,7 @@ manifest.
         [NAME name]
         [TIMEOUT secs]
         [TEST_HOOK executable]
+        [PARAMETER_DIR dir]
         [PARAMETER_FILE file]
         [WORKING_DIRECTORY dir]
         [TARGETS target1...]
@@ -81,6 +82,10 @@ manifest.
     will automatically be replaced by the location of the executable created at
     build time. Additionally a target-level dependency will be added so that
     the executable target will be built before this hook is used.
+
+    ``PARAMETER_DIR dir``
+    Specifies a directory as the root for all .parameters files holding
+    module parameter initialisations.
 
   ``PARAMETER_FILE file``
     Specifies a file containing TOML formatted test configuration.
@@ -132,7 +137,7 @@ mark_as_advanced(NTT_EXECUTABLE)
 function(add_ttcn3_suite TGT)
     set("ARGS_PREFIX" "")
     set("ARGS_OPTIONS" "")
-    set("ARGS_ONE_VALUE" "NAME;TIMEOUT;TEST_HOOK;PARAMETERS_FILE;WORKING_DIRECTORY")
+    set("ARGS_ONE_VALUE" "NAME;TIMEOUT;TEST_HOOK;PARAMETERS_FILE;PARAMETERS_DIR;WORKING_DIRECTORY")
     set("ARGS_MULTI_VALUE" "VARS;SOURCES;DEPENDS;TARGETS")
     cmake_parse_arguments("${ARGS_PREFIX}" "${ARGS_OPTIONS}" "${ARGS_ONE_VALUE}" "${ARGS_MULTI_VALUE}" ${ARGN})
 
@@ -179,6 +184,10 @@ function(add_ttcn3_suite TGT)
 
     if (_PARAMETERS_FILE)
         string(APPEND MANIFEST "parameters_file: ${_PARAMETERS_FILE}\n")
+    endif()
+
+    if (_PARAMETERS_DIR)
+        string(APPEND MANIFEST "parameters_dir: ${_PARAMETERS_DIR}\n")
     endif()
 
     if (_SOURCES)
