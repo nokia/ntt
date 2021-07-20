@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/k3"
 )
 
 type Report struct {
@@ -18,6 +18,7 @@ type Report struct {
 	Err            error    `json:"error"`
 	Name           string   `json:"name"`
 	Timeout        float64  `json:"timeout"`
+	ParametersDir  string   `json:"parameters_dir"`
 	ParametersFile string   `json:"parameters_file"`
 	TestHook       string   `json:"test_hook"`
 	SourceDir      string   `json:"source_dir"`
@@ -49,6 +50,12 @@ func NewReport(args []string) *Report {
 
 	if r.Err == nil {
 		r.Timeout, r.Err = r.suite.Timeout()
+	}
+
+	r.ParametersDir, err = r.suite.ParametersDir()
+
+	if (r.Err == nil) && (err != nil) {
+		r.Err = err
 	}
 
 	r.ParametersFile, err = path(r.suite.ParametersFile())
