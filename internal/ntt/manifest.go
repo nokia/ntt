@@ -351,6 +351,9 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		return nil, err
 	}
 
+	if env != "" && filepath.IsAbs(env) {
+		return suite.File(env), nil
+	}
 	// If there's a parseable package.yml, try that one.
 	m, err := suite.parseManifest()
 	if err != nil {
@@ -366,10 +369,11 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		}
 		pDir = paramDir
 	}
-	log.Debug(fmt.Sprintf("ParametersFile2: %q, error: %q", env, err))
+
 	if pDir != "" {
 		if env != "" {
 			path := filepath.Clean(filepath.Join(pDir, env))
+			log.Debug(fmt.Sprintf("ParametersFile2: %q, error: %q", path, err))
 			return suite.File(path), nil
 		}
 
