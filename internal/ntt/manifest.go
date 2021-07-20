@@ -319,6 +319,14 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 // * parameters_dir field from manifest
 // * suites root path.
 func (suite *Suite) ParametersDir() (string, error) {
+	if env, err := suite.Getenv("NTT_PARAMETERS_DIR"); err == nil {
+		if env != "" {
+			return env, nil
+		}
+	} else {
+		return "", err
+	}
+
 	// If there's a parseable package.yml, try that one.
 	m, err := suite.parseManifest()
 	if err != nil {
@@ -354,20 +362,11 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	if env != "" && filepath.IsAbs(env) {
 		return suite.File(env), nil
 	}
-	// If there's a parseable package.yml, try that one.
-	m, err := suite.parseManifest()
-	if err != nil {
-		return nil, err
-	}
-	if m != nil && m.ParametersDir != "" {
-		paramDir, err := suite.Expand(m.ParametersDir)
-		if err != nil {
-			return nil, err
-		}
-		if !filepath.IsAbs(paramDir) && paramDir[0] != '$' {
-			paramDir = filepath.Clean(filepath.Join(suite.root.Path(), paramDir))
-		}
+	// first get the path to the root of the parameters file(s)
+	if paramDir, err := suite.ParametersDir(); err == nil {
 		pDir = paramDir
+	} else {
+		return nil, err
 	}
 
 	if pDir != "" {
@@ -380,6 +379,13 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	} else if env != "" {
 		return suite.File(env), nil
 	}
+
+	// If there's a parseable package.yml, try that one.
+	m, err := suite.parseManifest()
+	if err != nil {
+		return nil, err
+	}
+
 	if m != nil && m.ParametersFile != "" {
 		path, err := suite.Expand(m.ParametersFile)
 		log.Debug(fmt.Sprintf("ParametersFile3: %q, error: %q", path, err))
