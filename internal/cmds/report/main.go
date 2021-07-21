@@ -25,6 +25,7 @@ load, etc.
 Command line options '--json' and '--junit' show similar output, but with JSON
 or JUNIT formatting.
 
+Use environment variable 'NTT_COLORS=never' to disable colors.
 
 Templating
 ----------
@@ -232,22 +233,40 @@ func reportTemplate(report *Report, text string) error {
 
 var funcMap = template.FuncMap{
 	"green": func() string {
+		if env := os.Getenv("NTT_COLORS"); env == "never" {
+			return ""
+		}
 		return "[32;1m"
 	},
 	"red": func() string {
+		if env := os.Getenv("NTT_COLORS"); env == "never" {
+			return ""
+		}
 		return "[31;1m"
 	},
 	"orange": func() string {
+		if env := os.Getenv("NTT_COLORS"); env == "never" {
+			return ""
+		}
 		return "[38;5;208;1m"
 	},
 	"bold": func() string {
+		if env := os.Getenv("NTT_COLORS"); env == "never" {
+			return ""
+		}
 		return "[1m"
 	},
 	"off": func() string {
+		if env := os.Getenv("NTT_COLORS"); env == "never" {
+			return ""
+		}
 		return "[0m"
 	},
 
 	"colorize": func(s string) string {
+		if env := os.Getenv("NTT_COLORS"); env == "never" {
+			return s
+		}
 		pass := regexp.MustCompile(`(?i)pass`)
 		fail := regexp.MustCompile(`(?i)fail|error`)
 		unstable := regexp.MustCompile(`(?i)unstable`)
