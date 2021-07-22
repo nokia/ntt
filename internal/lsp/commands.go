@@ -9,6 +9,7 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
@@ -16,6 +17,8 @@ type param struct {
 	ID  string // Fully qualified testcase identifier
 	URI string // URL points to the ttcn3 source file containing the testcase
 }
+
+const separator string = "==============================================================================="
 
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
 	switch params.Command {
@@ -49,11 +52,10 @@ func NewCommand(pos loc.Position, title string, command string, args ...interfac
 }
 
 func cmdTest(s *Server, testId string, fileUri string) error {
-	var nttCache, pathToManifest string
-	s.Log(context.TODO(), fmt.Sprintf("testcase file uri: %q", fileUri))
-	if cwd, err := os.Getwd(); err == nil {
-		s.Log(context.TODO(), fmt.Sprintf("Current working directory: %q", cwd))
-	}
+	var nttCache, nttDebug, pathToManifest string
+	var cmd *exec.Cmd = nil
+	log.Debug(fmt.Sprintf("testcase file uri: %q", fileUri))
+
 	suites := s.Owners(protocol.DocumentURI(fileUri))
 	if len(suites) > 0 {
 		pathToManifest = suites[0].Root().Path()
@@ -64,7 +66,6 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 			if err := os.Chdir(pathToManifest + "/ntt.test"); err != nil {
 				s.Log(context.TODO(), fmt.Sprintf("Could not change Current working directory: %q: %q", pathToManifest+"/ntt.test", err))
 			} else {
-				s.Log(context.TODO(), fmt.Sprintf("Changed Current working directory: %q", pathToManifest+"/ntt.test"))
 				nttCache = nttCache + ":" + pathToManifest + "/ntt.test"
 			}
 			if path, err := suites[0].ParametersDir(); path != "" {
@@ -73,21 +74,46 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 				s.Log(context.TODO(), fmt.Sprintf("Error while extracting parameters_dir from manifest: %q", err))
 			}
 		}
-
-		s.Log(context.TODO(), fmt.Sprintf(" NTT_CACHE: %v", nttCache))
+		nttDebug, _ = suites[0].Getenv("NTT_DEBUG")
+		log.Debug(fmt.Sprintf("NTT_CACHE=%q", nttCache))
 	}
-	cmd := exec.Command("ntt", "run", pathToManifest, "-j1", "--debug", "--", testId)
+
+	if nttDebug != "all" {
+		cmd = exec.Command("ntt", "run", pathToManifest, "-j1", "--results-file=test_results.json", "--no-summary")
+	} else {
+		cmd = exec.Command("ntt", "run", pathToManifest, "-j1", "--debug", "--results-file=test_results.json", "--no-summary")
+	}
+
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
 	if nttCache != "" {
 		cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
 	}
 	cmd.Stdin = strings.NewReader(testId + "\n")
-	s.Log(context.TODO(), fmt.Sprint("Executing: ", cmd.String()))
+	s.Log(context.TODO(), fmt.Sprintf("%s\nExecuting test : %q\nwith command   : %s\ncwd            : %s\n%s",
+		separator, testId, cmd.String(), pathToManifest+"/ntt.test", separator))
 	out, err := cmd.CombinedOutput()
 	s.Log(context.TODO(), string(out))
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
+	}
+	s.Log(context.TODO(), fmt.Sprintf("Exit value: %d (%s)", cmd.ProcessState.ExitCode(), cmd.ProcessState.String()))
+	if cmd.ProcessState.ExitCode() >= 0 {
+		// run ntt report
+		cmd := exec.Command("ntt", "report", pathToManifest)
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, "NTT_COLORS=never")
+		if nttCache != "" {
+			cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
+		}
+		log.Debug(fmt.Sprintf("Executing: test report for %q with command: %s", testId, cmd.String()))
+		out, err := cmd.CombinedOutput()
+		s.Log(context.TODO(), string(out))
+		if err != nil {
+			s.Log(context.TODO(), err.Error())
+		}
+		logDir := "./logs/" + testId + "-0"
+		s.Log(context.TODO(), fmt.Sprintf("Content of the log directory %q:\n%s", logDir, strings.Join(fs.FindFilesRecursive(logDir), "\n")+"\n"+separator))
 	}
 	return err
 }
