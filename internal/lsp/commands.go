@@ -97,7 +97,7 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
 	}
-	s.Log(context.TODO(), fmt.Sprintf("Exit value: %d (%s)", cmd.ProcessState.ExitCode(), cmd.ProcessState.String()))
+	s.Log(context.TODO(), cmd.ProcessState.String())
 	if cmd.ProcessState.ExitCode() >= 0 {
 		// run ntt report
 		cmd := exec.Command("ntt", "report", pathToManifest)
@@ -106,7 +106,6 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 		if nttCache != "" {
 			cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
 		}
-		log.Debug(fmt.Sprintf("Executing: test report for %q with command: %s", testId, cmd.String()))
 		out, err := cmd.CombinedOutput()
 		s.Log(context.TODO(), string(out))
 		if err != nil {
