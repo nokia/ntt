@@ -51,6 +51,23 @@ func NewCommand(pos loc.Position, title string, command string, args ...interfac
 	}, nil
 }
 
+// getenvFromSuite invokes ntt show command to retrieve
+// environment variables from the provided suite
+func getenvFromSuite(nttCache string, pathToManifest string, evName string) string {
+	cmd := exec.Command("ntt", "show", pathToManifest, "--", evName)
+	cmd.Env = os.Environ()
+	if nttCache != "" {
+		cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
+	}
+	out, err := cmd.CombinedOutput()
+	v := strings.TrimSuffix(string(out), "\n")
+	log.Debug(fmt.Sprintf("%s=%q", evName, v))
+	if err != nil {
+		log.Debug(err.Error())
+	}
+	return v
+}
+
 func cmdTest(s *Server, testId string, fileUri string) error {
 	var nttCache, nttDebug, pathToManifest string
 	var cmd *exec.Cmd = nil
@@ -75,14 +92,14 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 			}
 		}
 		nttDebug, _ = suites[0].Getenv("NTT_DEBUG")
-		log.Debug(fmt.Sprintf("NTT_CACHE=%q", nttCache))
+		log.Debug(fmt.Sprintf("NTT_CACHE=%q\nNTT_DEBUG=%q\nFrom os:%q", nttCache, nttDebug, os.Getenv("NTT_DEBUG")))
 	}
-
-	if nttDebug != "all" {
-		cmd = exec.Command("ntt", "run", pathToManifest, "-j1", "--results-file=test_results.json", "--no-summary")
-	} else {
-		cmd = exec.Command("ntt", "run", pathToManifest, "-j1", "--debug", "--results-file=test_results.json", "--no-summary")
+	nttDebug = getenvFromSuite(nttCache, pathToManifest, "NTT_DEBUG")
+	var opts = []string{"run", pathToManifest, "-j1", "--results-file=test_results.json", "--no-summary"}
+	if nttDebug == "all" {
+		opts = append(opts, "--debug")
 	}
+	cmd = exec.Command("ntt", opts...)
 
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
