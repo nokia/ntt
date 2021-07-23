@@ -91,10 +91,10 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 				s.Log(context.TODO(), fmt.Sprintf("Error while extracting parameters_dir from manifest: %q", err))
 			}
 		}
-		nttDebug, _ = suites[0].Getenv("NTT_DEBUG")
-		log.Debug(fmt.Sprintf("NTT_CACHE=%q\nNTT_DEBUG=%q\nFrom os:%q", nttCache, nttDebug, os.Getenv("NTT_DEBUG")))
 	}
 	nttDebug = getenvFromSuite(nttCache, pathToManifest, "NTT_DEBUG")
+	log.Debug(fmt.Sprintf("NTT_CACHE=%q\nNTT_DEBUG=%q", nttCache, nttDebug))
+
 	var opts = []string{"run", pathToManifest, "-j1", "--results-file=test_results.json", "--no-summary"}
 	if nttDebug == "all" {
 		opts = append(opts, "--debug")
