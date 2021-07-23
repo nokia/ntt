@@ -2,6 +2,7 @@ package fs
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -61,15 +62,12 @@ func HasCExtension(file string) bool {
 func FindK3EnvInCurrPath(dir string) string {
 	path := dir
 	for len(path) > 0 {
-
-		files, err := ioutil.ReadDir(path)
-		if err != nil {
-			return ""
-		}
-		for _, file := range files {
-			if file.Mode().IsRegular() && ((file.Name() == "k3.env") || file.Name() == "ntt.env") {
+		for _, file := range []string{"k3.env", "ntt.env"} {
+			info, _ := os.Stat(filepath.Join(path, file))
+			if info != nil {
 				return path
 			}
+
 		}
 		path = filepath.Dir(path)
 	}
