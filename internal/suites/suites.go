@@ -12,7 +12,7 @@ type Build struct {
 }
 
 // Suite struct describes where to find the manifest and the source directory
-// is a test suite.
+// in a test suite.
 type Suite struct {
 	RootDir   string `json:"root_dir"`
 	SourceDir string `json:"source_dir"`
