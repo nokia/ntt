@@ -60,7 +60,7 @@ func (f *File) ID() string {
 // SetBytes, Bytes will try reading the file path's content from disk.
 func (f *File) Bytes() ([]byte, error) {
 	if f.bytes == nil && f.err == nil {
-		f.bytes, f.err = ioutil.ReadFile(f.path)
+		f.bytes, f.err = ioutil.ReadFile(f.Path())
 		f.version = 0
 	}
 
