@@ -107,29 +107,31 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 		cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
 	}
 	cmd.Stdin = strings.NewReader(testId + "\n")
+
 	s.Log(context.TODO(), fmt.Sprintf("%s\nExecuting test : %q\nwith command   : %s\ncwd            : %s\n%s",
 		separator, testId, cmd.String(), pathToManifest+"/ntt.test", separator))
 	out, err := cmd.CombinedOutput()
 	s.Log(context.TODO(), string(out))
-	if err != nil {
+	if err == nil {
+		s.Log(context.TODO(), cmd.ProcessState.String())
+		if cmd.ProcessState.ExitCode() >= 0 {
+			// run ntt report
+			cmd := exec.Command("ntt", "report", pathToManifest)
+			cmd.Env = os.Environ()
+			cmd.Env = append(cmd.Env, "NTT_COLORS=never")
+			if nttCache != "" {
+				cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
+			}
+			out, err := cmd.CombinedOutput()
+			s.Log(context.TODO(), string(out))
+			if err != nil {
+				s.Log(context.TODO(), err.Error())
+			}
+			logDir := "./logs/" + testId + "-0"
+			s.Log(context.TODO(), fmt.Sprintf("Content of the log directory %q:\n%s", logDir, strings.Join(fs.FindFilesRecursive(logDir), "\n")+"\n"+separator))
+		}
+	} else {
 		s.Log(context.TODO(), err.Error())
-	}
-	s.Log(context.TODO(), cmd.ProcessState.String())
-	if cmd.ProcessState.ExitCode() >= 0 {
-		// run ntt report
-		cmd := exec.Command("ntt", "report", pathToManifest)
-		cmd.Env = os.Environ()
-		cmd.Env = append(cmd.Env, "NTT_COLORS=never")
-		if nttCache != "" {
-			cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
-		}
-		out, err := cmd.CombinedOutput()
-		s.Log(context.TODO(), string(out))
-		if err != nil {
-			s.Log(context.TODO(), err.Error())
-		}
-		logDir := "./logs/" + testId + "-0"
-		s.Log(context.TODO(), fmt.Sprintf("Content of the log directory %q:\n%s", logDir, strings.Join(fs.FindFilesRecursive(logDir), "\n")+"\n"+separator))
 	}
 	return err
 }
