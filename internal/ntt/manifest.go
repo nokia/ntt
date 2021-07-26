@@ -354,7 +354,6 @@ func (suite *Suite) ParametersDir() (string, error) {
 func (suite *Suite) ParametersFile() (*fs.File, error) {
 	var pDir string = ""
 	env, err := suite.Getenv("NTT_PARAMETERS_FILE")
-	log.Debug(fmt.Sprintf("ParametersFile1: %q, error: %q", env, err))
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +371,6 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	if pDir != "" {
 		if env != "" {
 			path := filepath.Clean(filepath.Join(pDir, env))
-			log.Debug(fmt.Sprintf("ParametersFile2: %q, error: %q", path, err))
 			return suite.File(path), nil
 		}
 
@@ -388,7 +386,6 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 
 	if m != nil && m.ParametersFile != "" {
 		path, err := suite.Expand(m.ParametersFile)
-		log.Debug(fmt.Sprintf("ParametersFile3: %q, error: %q", path, err))
 		if err != nil {
 			return nil, err
 		}
@@ -399,7 +396,6 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
 			}
 		}
-		log.Debug(fmt.Sprintf("ParametersFile4: %q, error: %q", path, err))
 		return suite.File(path), nil
 	}
 
@@ -418,7 +414,6 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		} else {
 			path = filepath.Join(suite.root.Path(), filename)
 		}
-		log.Debug(fmt.Sprintf("ParametersFile5: %q, error: %q", path, err))
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
@@ -435,7 +430,6 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	}
 	if len(srcs) > 0 {
 		path := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
-		log.Debug(fmt.Sprintf("ParametersFile6: %q, error: %q", path, err))
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
