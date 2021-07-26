@@ -45,6 +45,12 @@ func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location
 	}
 
 	log.Debug(fmt.Sprintf("Parse: %+v", tree))
+
+	// If Module is nil, there's no need to continue, because there's no
+	// AST to iterate over.
+	if tree.Module == nil {
+		return nil
+	}
 	id := suite.IdentifierAt(tree, line, col)
 	if id == nil {
 		return nil
