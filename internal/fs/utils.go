@@ -2,6 +2,7 @@ package fs
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -32,9 +33,45 @@ func FindCFiles(dir string) []string {
 	return findFiles(dir, HasCExtension)
 }
 
+// FindFilesRecursive returns a list files from the whole directory subtree.
+func FindFilesRecursive(dir string) []string {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return []string{}
+	}
+
+	var sources []string
+	for _, file := range files {
+		if file.Mode().IsRegular() {
+			fname := file.Name()
+			fname, _ = filepath.Abs(filepath.Join(dir, fname))
+			sources = append(sources, ":"+fname)
+		} else if file.Mode().IsDir() {
+			sources = append(sources, FindFilesRecursive(filepath.Join(dir, file.Name()))...)
+		}
+	}
+	return sources
+}
+
 // HasCExtension returns true if file has suffix .c, .cc, .cxx or .cpp
 func HasCExtension(file string) bool {
 	return withExtension(".c", ".cc", ".cxx", ".cpp")(file)
+}
+
+// FindK3EnvInCurrPath returns the path of the directory containing k3.env
+func FindK3EnvInCurrPath(dir string) string {
+	path := dir
+	for len(path) > 0 {
+		for _, file := range []string{"k3.env", "ntt.env"} {
+			info, _ := os.Stat(filepath.Join(path, file))
+			if info != nil {
+				return path
+			}
+
+		}
+		path = filepath.Dir(path)
+	}
+	return ""
 }
 
 func findFiles(dir string, matcher func(name string) bool) []string {

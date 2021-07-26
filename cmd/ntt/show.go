@@ -56,6 +56,14 @@ var (
 
 		},
 
+		"parameters_dir": func(suite *ntt.Suite) string {
+			d, err := suite.ParametersDir()
+			if err != nil {
+				fatal(err)
+			}
+			return d
+		},
+
 		"parameters_file": func(suite *ntt.Suite) string {
 			f, err := suite.ParametersFile()
 			if err != nil {
@@ -166,6 +174,7 @@ function k3-hook()
 
 {{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
 {{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
+{{ if .ParametersDir  -}} export K3_PARAMETERS_DIR='{{ .ParametersDir }}'   {{- end }}
 {{ if .ParametersFile -}} export K3_PARAMETERS_FILE='{{ .ParametersFile }}' {{- end }}
 {{ if .TestHook       -}} export K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
 {{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
@@ -256,6 +265,7 @@ func printDefaultKeys(suite *ntt.Suite) error {
 		"sources",
 		"imports",
 		"timeout",
+		"parameters_dir",
 		"parameters_file",
 		"test_hook",
 		"source_dir",

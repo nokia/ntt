@@ -775,8 +775,8 @@ func TestPortTypeInsideComponent(t *testing.T) {
 
 	list := completionAt(t, suite, 104)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "P1", Kind: protocol.StructCompletion, SortText: " 1P1", Detail: "TestPortTypeInsideComponent_Module_0.P1"},
-		{Label: "P2", Kind: protocol.StructCompletion, SortText: " 2P2", Detail: "TestPortTypeInsideComponent_Module_1.P2"},
+		{Label: "P1", Kind: protocol.InterfaceCompletion, SortText: " 1P1", Detail: "TestPortTypeInsideComponent_Module_0.P1"},
+		{Label: "P2", Kind: protocol.InterfaceCompletion, SortText: " 2P2", Detail: "TestPortTypeInsideComponent_Module_1.P2"},
 		{Label: "TestPortTypeInsideComponent_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestPortTypeInsideComponent_Module_1"}}, filterContentOfAuxModules(list))
 }
 

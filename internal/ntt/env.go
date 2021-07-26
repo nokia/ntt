@@ -28,6 +28,7 @@ var knownVars = map[string]bool{
 	"NTT_DATADIR":         true,
 	"NTT_IMPORTS":         true,
 	"NTT_NAME":            true,
+	"NTT_PARAMETERS_DIR":  true,
 	"NTT_PARAMETERS_FILE": true,
 	"NTT_SOURCES":         true,
 	"NTT_SOURCE_DIR":      true,
