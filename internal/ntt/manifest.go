@@ -11,6 +11,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 	"gopkg.in/yaml.v2"
 )
 
@@ -44,8 +45,8 @@ func (suite *Suite) Timeout() (float64, error) {
 // Sources returns the list of sources required to compile a Suite.
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Sources() ([]*fs.File, error) {
-	var ret []*fs.File
+func (suite *Suite) Sources() ([]string, error) {
+	var ret []string
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_SOURCES")
@@ -54,7 +55,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 	}
 	if env != "" {
 		for _, x := range strings.Fields(env) {
-			ret = append(ret, suite.File(x))
+			ret = append(ret, x)
 		}
 		return ret, nil
 	}
@@ -64,7 +65,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && len(m.Sources) > 0 && suite.root != nil {
+	if m != nil && len(m.Sources) > 0 && suite.root != "" {
 		for i := range m.Sources {
 			// Substitute environment variables
 			src, err := suite.Expand(m.Sources[i])
@@ -74,7 +75,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(src) && src[0] != '$' {
-				src = filepath.Clean(filepath.Join(suite.root.Path(), src))
+				src = filepath.Clean(filepath.Join(suite.root, src))
 			}
 
 			// Directories need expansion into single files.
@@ -89,11 +90,11 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 					return nil, fmt.Errorf("Could not find ttcn3 source files in directory %q", src)
 				}
 				for i := range files {
-					ret = append(ret, suite.File(files[i]))
+					ret = append(ret, files[i])
 				}
 
 			case info.Mode().IsRegular() && fs.HasTTCN3Extension(src):
-				ret = append(ret, suite.File(src))
+				ret = append(ret, src)
 
 			default:
 				return nil, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", src)
@@ -104,10 +105,10 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 	}
 
 	// If there's only a root folder, look for .ttcn3 files
-	if suite.root != nil {
-		files := fs.FindTTCN3Files(suite.root.Path())
+	if suite.root != "" {
+		files := fs.FindTTCN3Files(suite.root)
 		for _, f := range files {
-			ret = append(ret, suite.File(f))
+			ret = append(ret, f)
 		}
 		return append(ret, suite.sources...), nil
 
@@ -120,8 +121,8 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 // Imports returns the list of imported packages required to compile a Suite.
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Imports() ([]*fs.File, error) {
-	var ret []*fs.File
+func (suite *Suite) Imports() ([]string, error) {
+	var ret []string
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_IMPORTS")
@@ -130,7 +131,7 @@ func (suite *Suite) Imports() ([]*fs.File, error) {
 	}
 	if env != "" {
 		for _, x := range strings.Fields(env) {
-			ret = append(ret, suite.File(x))
+			ret = append(ret, x)
 		}
 		return ret, nil
 	}
@@ -140,7 +141,7 @@ func (suite *Suite) Imports() ([]*fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && len(m.Imports) > 0 && suite.root != nil {
+	if m != nil && len(m.Imports) > 0 && suite.root != "" {
 		for i := range m.Imports {
 			// Substitute environment variables
 			path, err := suite.Expand(m.Imports[i])
@@ -150,10 +151,10 @@ func (suite *Suite) Imports() ([]*fs.File, error) {
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(path) && path[0] != '$' {
-				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+				path = filepath.Clean(filepath.Join(suite.root, path))
 			}
 
-			ret = append(ret, suite.File(path))
+			ret = append(ret, path)
 
 		}
 		return append(ret, suite.imports...), nil
@@ -166,14 +167,14 @@ func (suite *Suite) Imports() ([]*fs.File, error) {
 // AddSources appends files... to the known sources list.
 func (suite *Suite) AddSources(files ...string) {
 	for i := range files {
-		suite.sources = append(suite.sources, suite.File(files[i]))
+		suite.sources = append(suite.sources, files[i])
 	}
 }
 
 // AddImports appends folders.. to the known imports list.
 func (suite *Suite) AddImports(folders ...string) {
 	for i := range folders {
-		suite.imports = append(suite.imports, suite.File(folders[i]))
+		suite.imports = append(suite.imports, folders[i])
 	}
 }
 
@@ -207,8 +208,8 @@ func (suite *Suite) Name() (string, error) {
 	}
 
 	// If there's a root dir, use its name.
-	if suite.root != nil {
-		return filepath.Base(suite.root.URI().Filename()), nil
+	if suite.root != "" {
+		return filepath.Base(suite.root), nil
 	}
 
 	// As last resort, try to find a name in source files.
@@ -217,7 +218,7 @@ func (suite *Suite) Name() (string, error) {
 		return "", err
 	}
 	if len(srcs) > 0 {
-		n, err := filepath.Abs(srcs[0].Path())
+		n, err := filepath.Abs(srcs[0])
 		if err != nil {
 			return "", err
 		}
@@ -270,7 +271,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 			return nil, err
 		}
 		if !filepath.IsAbs(path) && path[0] != '$' {
-			path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+			path = filepath.Clean(filepath.Join(suite.root, path))
 		}
 
 		return suite.File(path), nil
@@ -284,8 +285,8 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 	filename = filename + ".control"
 
 	// Look for hook in root folder
-	if suite.root != nil {
-		hook, _ := filepath.Abs(filepath.Join(suite.root.Path(), filename))
+	if suite.root != "" {
+		hook, _ := filepath.Abs(filepath.Join(suite.root, filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -301,7 +302,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(srcs[0].Path()), filename))
+		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(srcs[0]), filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -338,12 +339,12 @@ func (suite *Suite) ParametersDir() (string, error) {
 			return "", err
 		}
 		if !filepath.IsAbs(paramDir) && paramDir[0] != '$' {
-			paramDir, err = filepath.Abs(filepath.Join(suite.root.Path(), paramDir))
+			paramDir, err = filepath.Abs(filepath.Join(suite.root, paramDir))
 		}
 		return paramDir, err
 	}
-	if suite.root != nil {
-		return filepath.Abs(suite.root.Path())
+	if suite.root != "" {
+		return filepath.Abs(suite.root)
 	}
 	return "", err
 }
@@ -393,7 +394,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 			if pDir != "" {
 				path = filepath.Clean(filepath.Join(pDir, path))
 			} else {
-				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+				path = filepath.Clean(filepath.Join(suite.root, path))
 			}
 		}
 		return suite.File(path), nil
@@ -407,12 +408,12 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	filename = filename + ".parameters"
 
 	// Look for hook in root folder
-	if suite.root != nil {
+	if suite.root != "" {
 		path := ""
 		if pDir != "" {
 			path = filepath.Clean(filepath.Join(pDir, filename))
 		} else {
-			path = filepath.Join(suite.root.Path(), filename)
+			path = filepath.Join(suite.root, filename)
 		}
 		ok, err := fileExists(path)
 		if err != nil {
@@ -429,7 +430,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		path := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
+		path := filepath.Join(filepath.Dir(srcs[0]), filename)
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
@@ -479,11 +480,11 @@ type manifest struct {
 // parseManifest tries to parse an (optional) manifest file.
 func (suite *Suite) parseManifest() (*manifest, error) {
 	// Without root folder, there's no manifest to parse. This is ok.
-	if suite.root == nil {
+	if suite.root == "" {
 		return nil, nil
 	}
 
-	f := suite.File(filepath.Join(suite.root.Path(), "package.yml"))
+	f := suite.File(filepath.Join(suite.root, "package.yml"))
 	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
@@ -513,31 +514,10 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	return &data.manifest, data.err
 }
 
-// Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
-// On error Files will return an error.
-func (suite *Suite) Files() ([]string, error) {
-	srcs, err := suite.Sources()
-	if err != nil {
-		return nil, err
-	}
-	files := fs.PathSlice(srcs...)
-
-	dirs, err := suite.Imports()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, dir := range dirs {
-		f := fs.FindTTCN3Files(dir.Path())
-		files = append(files, f...)
-	}
-	return files, err
-}
-
 // FindAllFiles returns all .ttcn3 files including auxiliary files from
 // k3 installation
 func (suite *Suite) FindAllFiles() []string {
-	files, _ := suite.Files()
+	files, _ := project.Files(suite)
 	// Use auxilliaryFiles from K3 to locate file
 	for _, dir := range k3.FindAuxiliaryDirectories() {
 		for _, file := range fs.FindTTCN3Files(dir) {
@@ -566,38 +546,13 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		suite.modules[name] = f.Path()
 		return f.Path(), nil
 	}
-	if files, err := suite.Files(); err == nil {
-		for _, file := range files {
-			if filepath.Base(file) == name+".ttcn3" {
-				suite.modules[name] = file
-				return file, nil
-			}
-		}
-	}
 
-	// Use auxilliaryFiles from K3 to locate file
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		for _, file := range fs.FindTTCN3Files(dir) {
-			if filepath.Base(file) == name+".ttcn3" {
-				suite.modules[name] = file
-				return file, nil
-			}
+	for _, file := range suite.FindAllFiles() {
+		if filepath.Base(file) == name+".ttcn3" {
+			suite.modules[name] = file
+			return file, nil
 		}
 	}
 
 	return "", fmt.Errorf("No such module %q", name)
-}
-
-// IsOwned returns true if path is part of this test suite
-func (suite *Suite) IsOwned(uri string) bool {
-	path := fs.Open(uri).URI().Filename()
-
-	files, _ := suite.Files()
-	for _, file := range files {
-		if (file == path) ||
-			(file == uri) {
-			return true
-		}
-	}
-	return false
 }

@@ -1,6 +1,4 @@
-// Package suites help finding TTCN-3 suites by implementing various heuristics
-// about test suite organization.
-package suites
+package project
 
 // Build struct provides information about build directory organisation.
 // Usually the build system write this information into the file

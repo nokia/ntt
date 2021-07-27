@@ -11,6 +11,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 )
 
 type Report struct {
@@ -94,7 +95,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Sources()
-		r.Sources = fs.PathSlice(paths...)
+		r.Sources = paths
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}
@@ -102,19 +103,19 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Imports()
-		r.Imports = fs.PathSlice(paths...)
+		r.Imports = paths
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}
 	}
 
-	r.Files, err = r.suite.Files()
+	r.Files, err = project.Files(r.suite)
 	if (r.Err == nil) && (err != nil) {
 		r.Err = err
 	}
 
-	if root := r.suite.Root(); root != nil {
-		r.SourceDir = root.Path()
+	if root := r.suite.Root(); root != "" {
+		r.SourceDir = root
 		if path, err := filepath.Abs(r.SourceDir); err == nil {
 			r.SourceDir = path
 		} else if r.Err == nil {

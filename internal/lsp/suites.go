@@ -5,6 +5,7 @@ import (
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
 )
 
 // Suites implements the mapping between ttcn3 source files and multiple test
@@ -34,7 +35,7 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 
 	var ret []*ntt.Suite
 	for _, suite := range s.roots {
-		if suite.IsOwned(string(uri.SpanURI())) {
+		if project.ContainsFile(suite, string(uri.SpanURI())) {
 			ret = append(ret, suite)
 		}
 	}
