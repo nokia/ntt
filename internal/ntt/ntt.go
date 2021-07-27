@@ -29,7 +29,7 @@ type Suite struct {
 	name     string
 	root     *fs.File
 	sources  []*fs.File
-	imports  []*fs.File
+	imports  []string
 	testHook *fs.File
 
 	// Memoization

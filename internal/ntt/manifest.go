@@ -121,7 +121,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (suite *Suite) Imports() ([]string, error) {
-	var ret []*fs.File
+	var ret []string
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_IMPORTS")
@@ -130,7 +130,7 @@ func (suite *Suite) Imports() ([]string, error) {
 	}
 	if env != "" {
 		for _, x := range strings.Fields(env) {
-			ret = append(ret, suite.File(x))
+			ret = append(ret, x)
 		}
 		return ret, nil
 	}
@@ -153,7 +153,7 @@ func (suite *Suite) Imports() ([]string, error) {
 				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
 			}
 
-			ret = append(ret, suite.File(path))
+			ret = append(ret, path)
 
 		}
 		return append(ret, suite.imports...), nil
@@ -173,7 +173,7 @@ func (suite *Suite) AddSources(files ...string) {
 // AddImports appends folders.. to the known imports list.
 func (suite *Suite) AddImports(folders ...string) {
 	for i := range folders {
-		suite.imports = append(suite.imports, suite.File(folders[i]))
+		suite.imports = append(suite.imports, folders[i])
 	}
 }
 
@@ -588,8 +588,8 @@ func (suite *Suite) FindModule(name string) (string, error) {
 	return "", fmt.Errorf("No such module %q", name)
 }
 
-// IsOwned returns true if path is part of this test suite
-func (suite *Suite) IsOwned(uri string) bool {
+// ContainsFile returns true if path is part of this test suite
+func (suite *Suite) ContainsFile(uri string) bool {
 	path := fs.Open(uri).URI().Filename()
 
 	files, _ := suite.Files()
@@ -600,8 +600,4 @@ func (suite *Suite) IsOwned(uri string) bool {
 		}
 	}
 	return false
-}
-
-func (suite *Suite) ContainsFile(path string) bool {
-	return suite.IsOwned(path)
 }

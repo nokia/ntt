@@ -34,7 +34,7 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 
 	var ret []*ntt.Suite
 	for _, suite := range s.roots {
-		if suite.IsOwned(string(uri.SpanURI())) {
+		if suite.ContainsFile(string(uri.SpanURI())) {
 			ret = append(ret, suite)
 		}
 	}
