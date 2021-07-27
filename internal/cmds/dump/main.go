@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,7 @@ func dump(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	srcs, err := suite.Files()
+	srcs, err := project.Files(suite)
 	if err != nil {
 		return err
 	}

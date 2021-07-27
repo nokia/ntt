@@ -13,6 +13,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -226,7 +227,7 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 	case "tests", "list":
 		srcs, err = suite.Sources()
 	default:
-		srcs, err = suite.Files()
+		srcs, err = project.Files(suite)
 	}
 
 	if err != nil {

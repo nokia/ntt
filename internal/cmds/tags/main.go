@@ -10,6 +10,7 @@ import (
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +36,7 @@ func tags(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	files, err := suite.Files()
+	files, err := project.Files(suite)
 	if err != nil {
 		return err
 	}

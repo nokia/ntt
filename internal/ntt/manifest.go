@@ -11,6 +11,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 	"gopkg.in/yaml.v2"
 )
 
@@ -513,30 +514,10 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	return &data.manifest, data.err
 }
 
-// Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
-// On error Files will return an error.
-func (suite *Suite) Files() ([]string, error) {
-	files, err := suite.Sources()
-	if err != nil {
-		return nil, err
-	}
-
-	dirs, err := suite.Imports()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, dir := range dirs {
-		f := fs.FindTTCN3Files(dir)
-		files = append(files, f...)
-	}
-	return files, err
-}
-
 // FindAllFiles returns all .ttcn3 files including auxiliary files from
 // k3 installation
 func (suite *Suite) FindAllFiles() []string {
-	files, _ := suite.Files()
+	files, _ := project.Files(suite)
 	// Use auxilliaryFiles from K3 to locate file
 	for _, dir := range k3.FindAuxiliaryDirectories() {
 		for _, file := range fs.FindTTCN3Files(dir) {
@@ -565,7 +546,7 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		suite.modules[name] = f.Path()
 		return f.Path(), nil
 	}
-	if files, err := suite.Files(); err == nil {
+	if files, err := project.Files(suite); err == nil {
 		for _, file := range files {
 			if filepath.Base(file) == name+".ttcn3" {
 				suite.modules[name] = file
@@ -585,18 +566,4 @@ func (suite *Suite) FindModule(name string) (string, error) {
 	}
 
 	return "", fmt.Errorf("No such module %q", name)
-}
-
-// ContainsFile returns true if path is part of this test suite
-func (suite *Suite) ContainsFile(uri string) bool {
-	path := fs.Open(uri).URI().Filename()
-
-	files, _ := suite.Files()
-	for _, file := range files {
-		if (file == path) ||
-			(file == uri) {
-			return true
-		}
-	}
-	return false
 }

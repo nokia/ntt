@@ -13,6 +13,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -209,7 +210,7 @@ func lint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	files, err := suite.Files()
+	files, err := project.Files(suite)
 	if err != nil {
 		return err
 	}

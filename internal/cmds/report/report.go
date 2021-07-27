@@ -14,6 +14,7 @@ import (
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/results"
+	"github.com/nokia/ntt/project"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -58,7 +59,7 @@ func (r *Report) Environ() []string {
 	return env
 }
 func (r *Report) LineCount() (int, error) {
-	files, err := r.suite.Files()
+	files, err := project.Files(r.suite)
 	if err != nil {
 		return -1, err
 	}

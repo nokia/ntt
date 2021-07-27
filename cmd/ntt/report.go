@@ -11,6 +11,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 )
 
 type Report struct {
@@ -108,7 +109,7 @@ func NewReport(args []string) *Report {
 		}
 	}
 
-	r.Files, err = r.suite.Files()
+	r.Files, err = project.Files(r.suite)
 	if (r.Err == nil) && (err != nil) {
 		r.Err = err
 	}
