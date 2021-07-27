@@ -94,7 +94,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Sources()
-		r.Sources = fs.PathSlice(paths...)
+		r.Sources = paths
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}

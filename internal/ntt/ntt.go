@@ -28,7 +28,7 @@ type Suite struct {
 	// Manifest stuff
 	name     string
 	root     *fs.File
-	sources  []*fs.File
+	sources  []string
 	imports  []string
 	testHook *fs.File
 

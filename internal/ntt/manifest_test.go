@@ -87,19 +87,19 @@ func TestSources(t *testing.T) {
 			v, err = suite.Sources()
 		}
 		assert.Nil(t, err)
-		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3"}, strs(v))
+		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3"}, v)
 
 		// Identical files may be added twice.
 		suite.AddSources("a.ttcn3", "b.ttcn3")
 		v, err = suite.Sources()
 		assert.Nil(t, err)
-		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3", "a.ttcn3", "b.ttcn3"}, strs(v))
+		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3", "a.ttcn3", "b.ttcn3"}, v)
 
 		// Environment shall overwrite configured sources.
 		os.Setenv("NTT_SOURCES", "x.ttcn3	y.ttcn3")
 		v, err = suite.Sources()
 		assert.Nil(t, err)
-		assert.Equal(t, []string{"x.ttcn3", "y.ttcn3"}, strs(v))
+		assert.Equal(t, []string{"x.ttcn3", "y.ttcn3"}, v)
 		os.Unsetenv("NTT_SOURCES")
 
 		// Setting root removes all previous configured sources.
@@ -109,7 +109,7 @@ func TestSources(t *testing.T) {
 		suite.AddSources("a.ttcn3", "b.ttcn3")
 		v, err = suite.Sources()
 		assert.Nil(t, err)
-		assert.Equal(t, []string{"testdata/suite1/a.ttcn3", "testdata/suite1/x.ttcn3", "a.ttcn3", "b.ttcn3"}, strs(v))
+		assert.Equal(t, []string{"testdata/suite1/a.ttcn3", "testdata/suite1/x.ttcn3", "a.ttcn3", "b.ttcn3"}, v)
 
 		// This root contains a manifest.
 		suite.SetRoot("./testdata/suite2")
@@ -122,7 +122,7 @@ func TestSources(t *testing.T) {
 			"testdata/suite2/dir1/a3.ttcn3",
 			"a.ttcn3",
 			"b.ttcn3",
-		}, strs(v))
+		}, v)
 	})
 
 }

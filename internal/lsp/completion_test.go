@@ -41,8 +41,9 @@ func buildSuite(t *testing.T, strs ...string) *ntt.Suite {
 		//file := suite.File(name)
 		//file.SetBytes([]byte(s))
 		suite.AddSources(name)
-		fh, _ := suite.Sources()
-		fh[len(fh)-1].SetBytes([]byte(s))
+		srcs, _ := suite.Sources()
+		fh := suite.File(srcs[len(srcs)-1])
+		fh.SetBytes([]byte(s))
 	}
 	return suite
 }

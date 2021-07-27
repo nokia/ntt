@@ -44,8 +44,8 @@ func (suite *Suite) Timeout() (float64, error) {
 // Sources returns the list of sources required to compile a Suite.
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Sources() ([]*fs.File, error) {
-	var ret []*fs.File
+func (suite *Suite) Sources() ([]string, error) {
+	var ret []string
 
 	// Environment variable overwrite everything.
 	env, err := suite.Getenv("NTT_SOURCES")
@@ -54,7 +54,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 	}
 	if env != "" {
 		for _, x := range strings.Fields(env) {
-			ret = append(ret, suite.File(x))
+			ret = append(ret, x)
 		}
 		return ret, nil
 	}
@@ -89,11 +89,11 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 					return nil, fmt.Errorf("Could not find ttcn3 source files in directory %q", src)
 				}
 				for i := range files {
-					ret = append(ret, suite.File(files[i]))
+					ret = append(ret, files[i])
 				}
 
 			case info.Mode().IsRegular() && fs.HasTTCN3Extension(src):
-				ret = append(ret, suite.File(src))
+				ret = append(ret, src)
 
 			default:
 				return nil, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", src)
@@ -107,7 +107,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 	if suite.root != nil {
 		files := fs.FindTTCN3Files(suite.root.Path())
 		for _, f := range files {
-			ret = append(ret, suite.File(f))
+			ret = append(ret, f)
 		}
 		return append(ret, suite.sources...), nil
 
@@ -166,7 +166,7 @@ func (suite *Suite) Imports() ([]string, error) {
 // AddSources appends files... to the known sources list.
 func (suite *Suite) AddSources(files ...string) {
 	for i := range files {
-		suite.sources = append(suite.sources, suite.File(files[i]))
+		suite.sources = append(suite.sources, files[i])
 	}
 }
 
@@ -217,7 +217,7 @@ func (suite *Suite) Name() (string, error) {
 		return "", err
 	}
 	if len(srcs) > 0 {
-		n, err := filepath.Abs(srcs[0].Path())
+		n, err := filepath.Abs(srcs[0])
 		if err != nil {
 			return "", err
 		}
@@ -301,7 +301,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(srcs[0].Path()), filename))
+		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(srcs[0]), filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -429,7 +429,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		path := filepath.Join(filepath.Dir(srcs[0].Path()), filename)
+		path := filepath.Join(filepath.Dir(srcs[0]), filename)
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
@@ -516,11 +516,10 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 // Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
 // On error Files will return an error.
 func (suite *Suite) Files() ([]string, error) {
-	srcs, err := suite.Sources()
+	files, err := suite.Sources()
 	if err != nil {
 		return nil, err
 	}
-	files := fs.PathSlice(srcs...)
 
 	dirs, err := suite.Imports()
 	if err != nil {
