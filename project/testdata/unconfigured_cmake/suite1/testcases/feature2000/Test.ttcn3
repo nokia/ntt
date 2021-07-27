@@ -1,0 +1,3 @@
+module Test {
+	import from components all;
+}
