@@ -120,7 +120,7 @@ func (suite *Suite) Sources() ([]*fs.File, error) {
 // Imports returns the list of imported packages required to compile a Suite.
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
-func (suite *Suite) Imports() ([]*fs.File, error) {
+func (suite *Suite) Imports() ([]string, error) {
 	var ret []*fs.File
 
 	// Environment variable overwrite everything.
@@ -528,7 +528,7 @@ func (suite *Suite) Files() ([]string, error) {
 	}
 
 	for _, dir := range dirs {
-		f := fs.FindTTCN3Files(dir.Path())
+		f := fs.FindTTCN3Files(dir)
 		files = append(files, f...)
 	}
 	return files, err
@@ -600,4 +600,8 @@ func (suite *Suite) IsOwned(uri string) bool {
 		}
 	}
 	return false
+}
+
+func (suite *Suite) ContainsFile(path string) bool {
+	return suite.IsOwned(path)
 }

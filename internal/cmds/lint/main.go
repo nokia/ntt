@@ -555,7 +555,7 @@ func checkSuite(suite *ntt.Suite) {
 
 	pkgs, _ := suite.Imports()
 	for _, pkg := range pkgs {
-		files, _ := filepath.Glob(pkg.Path() + "/*.ttcn3")
+		files, _ := filepath.Glob(pkg + "/*.ttcn3")
 		for _, file := range files {
 			if isWhiteListed(style.Ignore.Files, file) {
 				continue

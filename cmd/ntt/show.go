@@ -42,7 +42,7 @@ var (
 			if err != nil {
 				fatal(err)
 			}
-			return strings.Join(fs.PathSlice(imps...), "\n")
+			return strings.Join(imps, "\n")
 		},
 		"timeout": func(suite *ntt.Suite) string {
 			t, err := suite.Timeout()

@@ -102,7 +102,7 @@ func NewReport(args []string) *Report {
 
 	{
 		paths, err := r.suite.Imports()
-		r.Imports = fs.PathSlice(paths...)
+		r.Imports = paths
 		if (r.Err == nil) && (err != nil) {
 			r.Err = err
 		}

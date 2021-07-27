@@ -138,7 +138,7 @@ func TestImports(t *testing.T) {
 	conf.SetBytes([]byte(`imports: [ "dir1" ]`))
 	v, err := suite.Imports()
 	assert.Nil(t, err)
-	assert.Equal(t, []string{"testdata/suite2/dir1"}, strs(v))
+	assert.Equal(t, []string{"testdata/suite2/dir1"}, v)
 
 	conf.SetBytes([]byte(`imports: [ "${SOMETHING_UNKNOWN}/dir1" ]`))
 	v, err = suite.Imports()
