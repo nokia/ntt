@@ -86,8 +86,8 @@ var (
 		},
 
 		"source_dir": func(suite *ntt.Suite) string {
-			if root := suite.Root(); root != nil {
-				return root.Path()
+			if root := suite.Root(); root != "" {
+				return root
 			}
 			return ""
 		},

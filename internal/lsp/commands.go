@@ -75,7 +75,7 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 
 	suites := s.Owners(protocol.DocumentURI(fileUri))
 	if len(suites) > 0 {
-		pathToManifest = suites[0].Root().Path()
+		pathToManifest = suites[0].Root()
 
 		if k3EnvPath := fs.FindK3EnvInCurrPath(pathToManifest); len(k3EnvPath) > 0 {
 			nttCache = k3EnvPath

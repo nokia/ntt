@@ -64,7 +64,7 @@ func (suite *Suite) Sources() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && len(m.Sources) > 0 && suite.root != nil {
+	if m != nil && len(m.Sources) > 0 && suite.root != "" {
 		for i := range m.Sources {
 			// Substitute environment variables
 			src, err := suite.Expand(m.Sources[i])
@@ -74,7 +74,7 @@ func (suite *Suite) Sources() ([]string, error) {
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(src) && src[0] != '$' {
-				src = filepath.Clean(filepath.Join(suite.root.Path(), src))
+				src = filepath.Clean(filepath.Join(suite.root, src))
 			}
 
 			// Directories need expansion into single files.
@@ -104,8 +104,8 @@ func (suite *Suite) Sources() ([]string, error) {
 	}
 
 	// If there's only a root folder, look for .ttcn3 files
-	if suite.root != nil {
-		files := fs.FindTTCN3Files(suite.root.Path())
+	if suite.root != "" {
+		files := fs.FindTTCN3Files(suite.root)
 		for _, f := range files {
 			ret = append(ret, f)
 		}
@@ -140,7 +140,7 @@ func (suite *Suite) Imports() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && len(m.Imports) > 0 && suite.root != nil {
+	if m != nil && len(m.Imports) > 0 && suite.root != "" {
 		for i := range m.Imports {
 			// Substitute environment variables
 			path, err := suite.Expand(m.Imports[i])
@@ -150,7 +150,7 @@ func (suite *Suite) Imports() ([]string, error) {
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(path) && path[0] != '$' {
-				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+				path = filepath.Clean(filepath.Join(suite.root, path))
 			}
 
 			ret = append(ret, path)
@@ -207,8 +207,8 @@ func (suite *Suite) Name() (string, error) {
 	}
 
 	// If there's a root dir, use its name.
-	if suite.root != nil {
-		return filepath.Base(suite.root.URI().Filename()), nil
+	if suite.root != "" {
+		return filepath.Base(suite.root), nil
 	}
 
 	// As last resort, try to find a name in source files.
@@ -270,7 +270,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 			return nil, err
 		}
 		if !filepath.IsAbs(path) && path[0] != '$' {
-			path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+			path = filepath.Clean(filepath.Join(suite.root, path))
 		}
 
 		return suite.File(path), nil
@@ -284,8 +284,8 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 	filename = filename + ".control"
 
 	// Look for hook in root folder
-	if suite.root != nil {
-		hook, _ := filepath.Abs(filepath.Join(suite.root.Path(), filename))
+	if suite.root != "" {
+		hook, _ := filepath.Abs(filepath.Join(suite.root, filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -338,12 +338,12 @@ func (suite *Suite) ParametersDir() (string, error) {
 			return "", err
 		}
 		if !filepath.IsAbs(paramDir) && paramDir[0] != '$' {
-			paramDir, err = filepath.Abs(filepath.Join(suite.root.Path(), paramDir))
+			paramDir, err = filepath.Abs(filepath.Join(suite.root, paramDir))
 		}
 		return paramDir, err
 	}
-	if suite.root != nil {
-		return filepath.Abs(suite.root.Path())
+	if suite.root != "" {
+		return filepath.Abs(suite.root)
 	}
 	return "", err
 }
@@ -393,7 +393,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 			if pDir != "" {
 				path = filepath.Clean(filepath.Join(pDir, path))
 			} else {
-				path = filepath.Clean(filepath.Join(suite.root.Path(), path))
+				path = filepath.Clean(filepath.Join(suite.root, path))
 			}
 		}
 		return suite.File(path), nil
@@ -407,12 +407,12 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	filename = filename + ".parameters"
 
 	// Look for hook in root folder
-	if suite.root != nil {
+	if suite.root != "" {
 		path := ""
 		if pDir != "" {
 			path = filepath.Clean(filepath.Join(pDir, filename))
 		} else {
-			path = filepath.Join(suite.root.Path(), filename)
+			path = filepath.Join(suite.root, filename)
 		}
 		ok, err := fileExists(path)
 		if err != nil {
@@ -479,11 +479,11 @@ type manifest struct {
 // parseManifest tries to parse an (optional) manifest file.
 func (suite *Suite) parseManifest() (*manifest, error) {
 	// Without root folder, there's no manifest to parse. This is ok.
-	if suite.root == nil {
+	if suite.root == "" {
 		return nil, nil
 	}
 
-	f := suite.File(filepath.Join(suite.root.Path(), "package.yml"))
+	f := suite.File(filepath.Join(suite.root, "package.yml"))
 	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {

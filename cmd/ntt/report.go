@@ -113,8 +113,8 @@ func NewReport(args []string) *Report {
 		r.Err = err
 	}
 
-	if root := r.suite.Root(); root != nil {
-		r.SourceDir = root.Path()
+	if root := r.suite.Root(); root != "" {
+		r.SourceDir = root
 		if path, err := filepath.Abs(r.SourceDir); err == nil {
 			r.SourceDir = path
 		} else if r.Err == nil {

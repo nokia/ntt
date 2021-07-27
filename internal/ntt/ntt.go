@@ -27,7 +27,7 @@ type Suite struct {
 
 	// Manifest stuff
 	name     string
-	root     *fs.File
+	root     string
 	sources  []string
 	imports  []string
 	testHook *fs.File
@@ -108,7 +108,7 @@ func (suite *Suite) searchCacheForFile(file string) string {
 	return ""
 }
 
-func (suite *Suite) Root() *fs.File {
+func (suite *Suite) Root() string {
 	return suite.root
 }
 
@@ -117,7 +117,7 @@ func (suite *Suite) Root() *fs.File {
 // The root folder is the main-package, which may contain a manifest file
 // (`package.yml`)
 func (suite *Suite) SetRoot(folder string) {
-	suite.root = suite.File(folder)
+	suite.root = folder
 	suite.sources = nil
 }
 
