@@ -1,0 +1,9 @@
+module Example {
+
+const integer defaultValue := 23;
+
+type component Component {
+	var integer compVar := defaultValue
+}
+
+} // End of module Example

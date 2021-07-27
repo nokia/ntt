@@ -134,6 +134,8 @@ find_package_handle_standard_args(NTT
 
 mark_as_advanced(NTT_EXECUTABLE)
 
+set(NTT_DB "${CMAKE_BINARY_DIR}/ttcn3_suites.json")
+
 function(add_ttcn3_suite TGT)
     set("ARGS_PREFIX" "")
     set("ARGS_OPTIONS" "")
@@ -223,6 +225,8 @@ function(add_ttcn3_suite TGT)
     endforeach()
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
+
+    __ntt_add_db_entry("${NTT_DB}" "${MANIFEST_FILE}" "${CMAKE_CURRENT_LIST_DIR}")
 endfunction()
 
 function(protobuf_generate_ttcn3 TGT)
@@ -254,4 +258,27 @@ function(protobuf_generate_ttcn3 TGT)
         COMMAND ${Protobuf_PROTOC_EXECUTABLE} --ttcn3_out ${CMAKE_CURRENT_BINARY_DIR}/ttcn3 ${PROTO_PATH} ${SRCS}
         COMMENT "Running TTCN-3 protocol buffer compiler for ${TGT}"
         VERBATIM )
+endfunction()
+
+function(__ntt_add_db_entry JSON_FILE ROOT_DIR SOURCE_DIR)
+
+    # Create initial file content
+    if(NOT EXISTS "${JSON_FILE}")
+        file(WRITE "${JSON_FILE}" "{
+  \"source_dir\": \"${CMAKE_SOURCE_DIR}\",
+  \"binary_dir\": \"${CMAKE_BINARY_DIR}\",
+  \"suites\": [\n]}")
+    endif()
+
+    # Remove closing brackets
+    file(READ ${JSON_FILE} CONTENTS)
+    string(REGEX REPLACE "]}$" "" STRIPPED "${CONTENTS}")
+    file(WRITE "${JSON_FILE}" "${STRIPPED}")
+
+    # Append new entry
+    if(STRIPPED MATCHES "}$")
+        file(APPEND "${JSON_FILE}" ",\n")
+    endif()
+    file(APPEND "${JSON_FILE}" "    {\"ROOT_dir\":\"${ROOT_DIR}\",\"source_dir\":\"${SOURCE_DIR}\"}")
+    file(APPEND "${JSON_FILE}" "]}")
 endfunction()
