@@ -546,22 +546,11 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		suite.modules[name] = f.Path()
 		return f.Path(), nil
 	}
-	if files, err := project.Files(suite); err == nil {
-		for _, file := range files {
-			if filepath.Base(file) == name+".ttcn3" {
-				suite.modules[name] = file
-				return file, nil
-			}
-		}
-	}
 
-	// Use auxilliaryFiles from K3 to locate file
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		for _, file := range fs.FindTTCN3Files(dir) {
-			if filepath.Base(file) == name+".ttcn3" {
-				suite.modules[name] = file
-				return file, nil
-			}
+	for _, file := range suite.FindAllFiles() {
+		if filepath.Base(file) == name+".ttcn3" {
+			suite.modules[name] = file
+			return file, nil
 		}
 	}
 
