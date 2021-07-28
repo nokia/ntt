@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
@@ -21,6 +22,7 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	// Every file should be owned by at least one suite to provide proper
 	// language support.
 	if len(s.Owners(uri)) == 0 {
+		log.Debugf("File %q does not belong to any known test suite", uri)
 		s.AddFolder(filepath.Dir(fs.Open(string(uri.SpanURI())).Path()))
 	}
 	s.Diagnose(uri)

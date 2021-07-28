@@ -3,6 +3,7 @@ package lsp
 import (
 	"sync"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
@@ -59,6 +60,7 @@ func (s *Suites) AddFolder(folder string) {
 		s.roots = make(map[string]*ntt.Suite)
 	}
 
+	log.Debugf("Adding %q to list of known test suites", root)
 	suite := &ntt.Suite{}
 	suite.SetRoot(root)
 	s.roots[root] = suite
@@ -66,6 +68,15 @@ func (s *Suites) AddFolder(folder string) {
 
 // FindRoot takes a folder and uses various heuristics to determine its root folder.
 func (s *Suites) FindRoot(folder string) string {
-	// TODO(5nord) Implement various heuristics
+	log.Debugf("Scanning %q for valid test suites", folder)
+	roots := project.Discover(folder)
+	if len(roots) > 0 {
+		if len(roots) > 1 {
+			log.Debugf("Found multiple candidates for folder: %+v", roots)
+		}
+		folder = roots[0]
+	}
+
+	log.Debugf("Using %q", folder)
 	return folder
 }
