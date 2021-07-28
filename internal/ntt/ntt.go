@@ -2,6 +2,7 @@ package ntt
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
@@ -119,6 +121,7 @@ func (suite *Suite) Root() string {
 func (suite *Suite) SetRoot(folder string) {
 	suite.root = folder
 	suite.sources = nil
+	log.Debug(fmt.Sprintf("New root folder is %q", folder))
 }
 
 func (suite *Suite) LatestResults() (*results.DB, error) {
