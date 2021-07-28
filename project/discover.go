@@ -17,28 +17,18 @@ func Discover(path string) []string {
 	var list []string
 
 	walkUp(path, func(path string) bool {
+		// Check source directories
 		if file := filepath.Join(path, "package.yml"); isRegular(file) {
 			list = append(list, path)
 		}
+		list = append(list, readSuites(filepath.Join(path, "ttcn3_suites.json"))...)
 
-		if file := filepath.Join(path, "ttcn3_suites.json"); isRegular(file) {
-			if b, err := ioutil.ReadFile(file); err == nil {
-				var data Build
-				if err := json.Unmarshal(b, &data); err == nil {
-					for _, suite := range data.Suites {
-						if suite.RootDir == "" {
-							continue
-						}
-						if !filepath.IsAbs(suite.RootDir) {
-							suite.RootDir = filepath.Join(path, suite.RootDir)
-						}
-
-						if file := filepath.Join(suite.RootDir, "package.yml"); isRegular(file) {
-							list = append(list, suite.RootDir)
-						}
-					}
-				}
-			}
+		// Check build directories
+		for _, file := range glob(path + "/*build*/ttcn3_suites.json") {
+			list = append(list, readSuites(file)...)
+		}
+		for _, file := range glob(path + "/build/native/*/sct/ttcn3_suites.json") {
+			list = append(list, readSuites(file)...)
 		}
 		return true
 	})
@@ -53,6 +43,42 @@ func Discover(path string) []string {
 		}
 	}
 	return result
+}
+
+func glob(s string) []string {
+	found, _ := filepath.Glob(s)
+	return found
+}
+
+func readSuites(file string) []string {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil
+	}
+
+	var (
+		data Build
+		list []string
+	)
+
+	if err := json.Unmarshal(b, &data); err != nil {
+		return nil
+	}
+
+	for _, suite := range data.Suites {
+		if suite.RootDir == "" {
+			continue
+		}
+		if !filepath.IsAbs(suite.RootDir) {
+			suite.RootDir = filepath.Join(filepath.Dir(file), suite.RootDir)
+		}
+
+		if file := filepath.Join(suite.RootDir, "package.yml"); isRegular(file) {
+			list = append(list, suite.RootDir)
+		}
+	}
+
+	return list
 }
 
 func walkUp(path string, f func(path string) bool) {
