@@ -53,7 +53,7 @@ func (f *File) String() string { return f.path }
 // ID returns an identifier.
 func (f *File) ID() string {
 	// TODO(5nord) include modification date.
-	return fmt.Sprintf("file_%x", sha1.Sum([]byte(strconv.Itoa(f.version)+f.URI().Filename())))
+	return fmt.Sprintf("file_%x", sha1.Sum([]byte(strconv.Itoa(f.version)+string(f.uri))))
 }
 
 // Bytes returns the contents of File. If content was not specified using
