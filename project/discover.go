@@ -20,25 +20,8 @@ func Discover(path string) []string {
 		if file := filepath.Join(path, "package.yml"); isRegular(file) {
 			list = append(list, path)
 		}
-
-		if file := filepath.Join(path, "ttcn3_suites.json"); isRegular(file) {
-			if b, err := ioutil.ReadFile(file); err == nil {
-				var data Build
-				if err := json.Unmarshal(b, &data); err == nil {
-					for _, suite := range data.Suites {
-						if suite.RootDir == "" {
-							continue
-						}
-						if !filepath.IsAbs(suite.RootDir) {
-							suite.RootDir = filepath.Join(path, suite.RootDir)
-						}
-
-						if file := filepath.Join(suite.RootDir, "package.yml"); isRegular(file) {
-							list = append(list, suite.RootDir)
-						}
-					}
-				}
-			}
+		for _, dir := range readSuites(filepath.Join(path, "ttcn3_suites.json")) {
+			list = append(list, dir)
 		}
 		return true
 	})
@@ -53,6 +36,37 @@ func Discover(path string) []string {
 		}
 	}
 	return result
+}
+
+func readSuites(file string) []string {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil
+	}
+
+	var (
+		data Build
+		list []string
+	)
+
+	if err := json.Unmarshal(b, &data); err != nil {
+		return nil
+	}
+
+	for _, suite := range data.Suites {
+		if suite.RootDir == "" {
+			continue
+		}
+		if !filepath.IsAbs(suite.RootDir) {
+			suite.RootDir = filepath.Join(filepath.Dir(file), suite.RootDir)
+		}
+
+		if file := filepath.Join(suite.RootDir, "package.yml"); isRegular(file) {
+			list = append(list, suite.RootDir)
+		}
+	}
+
+	return list
 }
 
 func walkUp(path string, f func(path string) bool) {
