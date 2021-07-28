@@ -40,18 +40,15 @@ func Files(p Project) ([]string, error) {
 
 // ContainsFile returns true, when path is managed by Project.
 func ContainsFile(p Project, path string) bool {
-	path = normalize(path)
+	// The same file may be referenced by URI or by path. To normalize it
+	// we convert everything into URIs.
+	uri := fs.URI(path)
 
 	files, _ := Files(p)
 	for _, file := range files {
-		if normalize(file) == path {
+		if fs.URI(file) == uri {
 			return true
 		}
 	}
 	return false
-}
-
-// normalize turns URIs and paths into absolute paths.
-func normalize(path string) string {
-	return fs.Open(path).URI().Filename()
 }

@@ -2,6 +2,7 @@
 package fs
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/nokia/ntt/internal/span"
@@ -36,4 +37,13 @@ func Path(s string) string {
 		return s
 	}
 	return span.URIFromURI(s).Filename()
+}
+
+// URI turns paths into URIs
+func URI(path string) span.URI {
+	if u, _ := url.Parse(path); u.Scheme != "" {
+		// VSCode tends to overquote URIs. URIFromURI normalizes them a little.
+		return span.URIFromURI(path)
+	}
+	return span.URIFromPath(path)
 }
