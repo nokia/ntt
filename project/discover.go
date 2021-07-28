@@ -21,9 +21,7 @@ func Discover(path string) []string {
 		if file := filepath.Join(path, "package.yml"); isRegular(file) {
 			list = append(list, path)
 		}
-		for _, dir := range readSuites(filepath.Join(path, "ttcn3_suites.json")) {
-			list = append(list, dir)
-		}
+		list = append(list, readSuites(filepath.Join(path, "ttcn3_suites.json"))...)
 
 		// Check build directories
 		for _, file := range glob(path + "/*build*/ttcn3_suites.json") {
