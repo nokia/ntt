@@ -1,0 +1,4 @@
+sources:
+  - ./components.ttcn
+  - ./testcases/TestGeneric.ttcn3
+  - ./testcases/feature2000/Test.ttcn3

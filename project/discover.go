@@ -17,11 +17,24 @@ func Discover(path string) []string {
 	var list []string
 
 	walkUp(path, func(path string) bool {
+		// Check source directories
 		if file := filepath.Join(path, "package.yml"); isRegular(file) {
 			list = append(list, path)
 		}
 		for _, dir := range readSuites(filepath.Join(path, "ttcn3_suites.json")) {
 			list = append(list, dir)
+		}
+
+		// Check build directories
+		for _, file := range glob(path + "/*build*/ttcn3_suites.json") {
+			for _, dir := range readSuites(file) {
+				list = append(list, dir)
+			}
+		}
+		for _, file := range glob(path + "/build/native/*/sct/ttcn3_suites.json") {
+			for _, dir := range readSuites(file) {
+				list = append(list, dir)
+			}
 		}
 		return true
 	})
@@ -36,6 +49,11 @@ func Discover(path string) []string {
 		}
 	}
 	return result
+}
+
+func glob(s string) []string {
+	found, _ := filepath.Glob(s)
+	return found
 }
 
 func readSuites(file string) []string {
