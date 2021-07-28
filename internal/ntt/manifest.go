@@ -75,7 +75,7 @@ func (suite *Suite) Sources() ([]string, error) {
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(src) && src[0] != '$' {
-				src = filepath.Clean(filepath.Join(suite.root, src))
+				src = filepath.Clean(filepath.Join(fs.Path(suite.root), src))
 			}
 
 			// Directories need expansion into single files.
@@ -106,7 +106,7 @@ func (suite *Suite) Sources() ([]string, error) {
 
 	// If there's only a root folder, look for .ttcn3 files
 	if suite.root != "" {
-		files := fs.FindTTCN3Files(suite.root)
+		files := fs.FindTTCN3Files(fs.Path(suite.root))
 		for _, f := range files {
 			ret = append(ret, f)
 		}
@@ -151,7 +151,7 @@ func (suite *Suite) Imports() ([]string, error) {
 
 			// Make paths which are relative to manifest, relative to CWD.
 			if !filepath.IsAbs(path) && path[0] != '$' {
-				path = filepath.Clean(filepath.Join(suite.root, path))
+				path = filepath.Clean(filepath.Join(fs.Path(suite.root), path))
 			}
 
 			ret = append(ret, path)
@@ -218,7 +218,7 @@ func (suite *Suite) Name() (string, error) {
 		return "", err
 	}
 	if len(srcs) > 0 {
-		n, err := filepath.Abs(srcs[0])
+		n, err := filepath.Abs(fs.Path(srcs[0]))
 		if err != nil {
 			return "", err
 		}
@@ -271,7 +271,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 			return nil, err
 		}
 		if !filepath.IsAbs(path) && path[0] != '$' {
-			path = filepath.Clean(filepath.Join(suite.root, path))
+			path = filepath.Clean(filepath.Join(fs.Path(suite.root), path))
 		}
 
 		return suite.File(path), nil
@@ -286,7 +286,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 
 	// Look for hook in root folder
 	if suite.root != "" {
-		hook, _ := filepath.Abs(filepath.Join(suite.root, filename))
+		hook, _ := filepath.Abs(filepath.Join(fs.Path(suite.root), filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -302,7 +302,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(srcs[0]), filename))
+		hook, _ := filepath.Abs(filepath.Join(filepath.Dir(fs.Path(srcs[0])), filename))
 		ok, err := fileExists(hook)
 		if err != nil {
 			return nil, err
@@ -339,12 +339,12 @@ func (suite *Suite) ParametersDir() (string, error) {
 			return "", err
 		}
 		if !filepath.IsAbs(paramDir) && paramDir[0] != '$' {
-			paramDir, err = filepath.Abs(filepath.Join(suite.root, paramDir))
+			paramDir, err = filepath.Abs(filepath.Join(fs.Path(suite.root), paramDir))
 		}
 		return paramDir, err
 	}
 	if suite.root != "" {
-		return filepath.Abs(suite.root)
+		return filepath.Abs(fs.Path(suite.root))
 	}
 	return "", err
 }
@@ -394,7 +394,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 			if pDir != "" {
 				path = filepath.Clean(filepath.Join(pDir, path))
 			} else {
-				path = filepath.Clean(filepath.Join(suite.root, path))
+				path = filepath.Clean(filepath.Join(fs.Path(suite.root), path))
 			}
 		}
 		return suite.File(path), nil
@@ -413,7 +413,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		if pDir != "" {
 			path = filepath.Clean(filepath.Join(pDir, filename))
 		} else {
-			path = filepath.Join(suite.root, filename)
+			path = filepath.Join(fs.Path(suite.root), filename)
 		}
 		ok, err := fileExists(path)
 		if err != nil {
@@ -430,7 +430,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 		return nil, err
 	}
 	if len(srcs) > 0 {
-		path := filepath.Join(filepath.Dir(srcs[0]), filename)
+		path := filepath.Join(filepath.Dir(fs.Path(srcs[0])), filename)
 		ok, err := fileExists(path)
 		if err != nil {
 			return nil, err
@@ -484,7 +484,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		return nil, nil
 	}
 
-	f := suite.File(filepath.Join(suite.root, "package.yml"))
+	f := suite.File(filepath.Join(fs.Path(suite.root), "package.yml"))
 	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
