@@ -27,14 +27,10 @@ func Discover(path string) []string {
 
 		// Check build directories
 		for _, file := range glob(path + "/*build*/ttcn3_suites.json") {
-			for _, dir := range readSuites(file) {
-				list = append(list, dir)
-			}
+			list = append(list, readSuites(file)...)
 		}
 		for _, file := range glob(path + "/build/native/*/sct/ttcn3_suites.json") {
-			for _, dir := range readSuites(file) {
-				list = append(list, dir)
-			}
+			list = append(list, readSuites(file)...)
 		}
 		return true
 	})
