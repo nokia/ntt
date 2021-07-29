@@ -22,19 +22,31 @@ var todos = map[string]bool{
 	"modules/EmptyModule": true,
 }
 
-type Test struct {
-	path     string
-	input    string
-	expected string
+func TestPrinter(t *testing.T) {
+	for _, test := range tests("testdata/") {
+		t.Run(test.Name(), func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := printer.Print(&buf, test.fset, test.node); err != nil {
+				t.Error(err.Error())
+			}
 
-	fset *loc.FileSet
-	node ast.Node
-}
+			actual := buf.String()
+			if actual != test.expected && !todos[test.Name()] {
+				diff := difflib.UnifiedDiff{
+					A:        difflib.SplitLines(test.expected),
+					B:        difflib.SplitLines(actual),
+					FromFile: "Expected",
+					ToFile:   "Actual",
+					Context:  3,
+				}
+				text, _ := difflib.GetUnifiedDiffString(diff)
+				t.Errorf("%s:\n%s", test.path, text)
+			} else if actual == test.expected && todos[test.Name()] {
+				t.Errorf("test was expected to fail, but succeeded.")
+			}
 
-func (t Test) Name() string {
-	stem := strings.TrimSuffix(filepath.Base(t.path), ".expected.ttcn3")
-	path := strings.TrimPrefix(filepath.Dir(t.path), "testdata/")
-	return fmt.Sprintf("%s/%s", path, stem)
+		})
+	}
 }
 
 // Load tests from disk
@@ -93,29 +105,17 @@ func makeInput(path string, content []byte) ([]byte, error) {
 	return regexp.MustCompile(`\s+`).ReplaceAll(content, []byte(" ")), nil
 }
 
-func TestPrinter(t *testing.T) {
-	for _, test := range tests("testdata/") {
-		t.Run(test.Name(), func(t *testing.T) {
-			var buf bytes.Buffer
-			if err := printer.Print(&buf, test.fset, test.node); err != nil {
-				t.Error(err.Error())
-			}
+type Test struct {
+	path     string
+	input    string
+	expected string
 
-			actual := buf.String()
-			if actual != test.expected && !todos[test.Name()] {
-				diff := difflib.UnifiedDiff{
-					A:        difflib.SplitLines(test.expected),
-					B:        difflib.SplitLines(actual),
-					FromFile: "Expected",
-					ToFile:   "Actual",
-					Context:  3,
-				}
-				text, _ := difflib.GetUnifiedDiffString(diff)
-				t.Errorf("%s:\n%s", test.path, text)
-			} else if actual == test.expected && todos[test.Name()] {
-				t.Errorf("test was expected to fail, but succeeded.")
-			}
+	fset *loc.FileSet
+	node ast.Node
+}
 
-		})
-	}
+func (t Test) Name() string {
+	stem := strings.TrimSuffix(filepath.Base(t.path), ".expected.ttcn3")
+	path := strings.TrimPrefix(filepath.Dir(t.path), "testdata/")
+	return fmt.Sprintf("%s/%s", path, stem)
 }
