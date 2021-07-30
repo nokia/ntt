@@ -1,0 +1,9 @@
+module M
+{
+
+import from A
+{
+    type MyType1, MyType2;
+}
+
+} // end of module M

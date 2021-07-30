@@ -1,0 +1,11 @@
+module M
+{
+import from a all;
+import from A all;
+import from B all;
+import from b all;
+import from C all;
+
+import from Ab all;
+import from AA all;
+}

@@ -1,0 +1,8 @@
+module M
+{
+
+	import from A
+		language "foo"
+		all
+
+} // end of module M

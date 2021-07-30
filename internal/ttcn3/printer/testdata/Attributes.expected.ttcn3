@@ -1,0 +1,4 @@
+module M {} with {
+    extension override ([0]) "foo";
+    extension (p1, p2) "bar";
+}

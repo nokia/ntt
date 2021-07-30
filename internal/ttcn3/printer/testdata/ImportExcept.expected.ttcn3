@@ -1,0 +1,6 @@
+module M
+{
+
+import from A all except { type MyType1, MyType2 }
+
+} // end of module M
