@@ -1,0 +1,9 @@
+// Comment
+
+// Comment 2
+module M {}
+
+/*
+ *     trailing
+ *     multi line comment
+ */

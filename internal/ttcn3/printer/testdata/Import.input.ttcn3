@@ -1,0 +1,10 @@
+module M
+{
+
+
+	import
+		from
+		A
+		all;
+
+} // end of module M

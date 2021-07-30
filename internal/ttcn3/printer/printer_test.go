@@ -19,7 +19,20 @@ import (
 )
 
 var todos = map[string]bool{
-	"modules/EmptyModule": true,
+	"ModuleEmpty":       true,
+	"ModuleEmpty2":      true,
+	"ModuleLanguage":    true,
+	"Attributes":        true,
+	"AttributesShort":   true,
+	"Whitespaces":       true,
+	"Import":            true,
+	"ImportLanguage":    true,
+	"ImportGroup":       true,
+	"ImportExcept":      true,
+	"ImportIndented":    true,
+	"ImportInline":      true,
+	"ImportsSorted":     true,
+	"ImportSyntaxError": true,
 }
 
 func TestPrinter(t *testing.T) {
@@ -75,7 +88,7 @@ func tests(path string) []Test {
 		}
 
 		fset := loc.NewFileSet()
-		mods, err := parser.ParseModules(fset, path, input, parser.AllErrors)
+		mods, _ := parser.ParseModules(fset, path, input, parser.AllErrors)
 		if len(mods) != 1 {
 			panic(fmt.Sprintf("test requires %q to have exactly one module", path))
 		}
@@ -116,6 +129,6 @@ type Test struct {
 
 func (t Test) Name() string {
 	stem := strings.TrimSuffix(filepath.Base(t.path), ".expected.ttcn3")
-	path := strings.TrimPrefix(filepath.Dir(t.path), "testdata/")
-	return fmt.Sprintf("%s/%s", path, stem)
+	path := strings.TrimPrefix(filepath.Dir(t.path), "testdata")
+	return fmt.Sprintf("%s%s", path, stem)
 }
