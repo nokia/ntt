@@ -74,7 +74,7 @@ func (suite *Suite) Environ() ([]string, error) {
 // to look for variables.
 func (suite *Suite) AddEnvFiles(files ...string) {
 	for i := range files {
-		suite.envFiles = append(suite.envFiles, suite.File(files[i]))
+		suite.envFiles = append(suite.envFiles, fs.Open(files[i]))
 	}
 }
 

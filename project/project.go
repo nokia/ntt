@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project/manifest"
 	"gopkg.in/yaml.v2"
 )
@@ -49,6 +51,19 @@ func Files(p Project) ([]string, error) {
 	return files, nil
 }
 
+// FindAllFiles returns all .ttcn3 files including auxiliary files from
+// k3 installation
+func FindAllFiles(p Project) []string {
+	files, _ := Files(p)
+	// Use auxilliaryFiles from K3 to locate file
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		for _, file := range fs.FindTTCN3Files(dir) {
+			files = append(files, file)
+		}
+	}
+	return files
+}
+
 // ContainsFile returns true, when path is managed by Project.
 func ContainsFile(p Project, path string) bool {
 	// The same file may be referenced by URI or by path. To normalize it
@@ -73,11 +88,17 @@ func Open(path string) (Project, error) {
 }
 
 type project struct {
-	root     string
+	root string
+
+	// Module handling (maps module names to paths)
+	modulesMu sync.Mutex
+	modules   map[string]string
+
 	Manifest manifest.Config
 }
 
 func (p *project) Update() error {
+	p.modules = nil
 	if file := filepath.Join(p.root, manifest.Name); isRegular(file) {
 		log.Debugf("%s: update configuration using manifest %q", p.String(), file)
 		return p.readManifest(file)
@@ -217,6 +238,31 @@ func (p *project) Imports() ([]string, error) {
 	return imports, errs
 }
 
+// FindModule tries to find a .ttcn3 based on its module name.
+func (p *project) FindModule(name string) (string, error) {
+
+	p.modulesMu.Lock()
+	defer p.modulesMu.Unlock()
+
+	if p.modules == nil {
+		p.modules = make(map[string]string)
+		for _, file := range FindAllFiles(p) {
+			name := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
+			p.modules[name] = file
+		}
+	}
+	if file, ok := p.modules[name]; ok {
+		return file, nil
+	}
+
+	// Use NTT_CACHE to locate file
+	if f := fs.Open(name + ".ttcn3").Path(); isRegular(f) {
+		p.modules[name] = f
+		return f, nil
+	}
+
+	return "", fmt.Errorf("No such module %q", name)
+}
 func (p *project) expand(s string) string {
 	// TODO(5nord) implement expansion with variables section
 	return s

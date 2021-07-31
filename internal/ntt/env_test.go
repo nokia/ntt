@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +42,7 @@ func TestEnvFile(t *testing.T) {
 	// Basic tests if prefix mapping works with environment files.
 
 	// K3 prefix is _not_ replaced with NTT prefix.
-	suite.File("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"`))
+	fs.Open("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"`))
 	s, err := suite.Getenv("NTT_FNORD")
 	assert.Nil(t, err)
 	assert.Equal(t, "var1", s)
@@ -49,26 +50,26 @@ func TestEnvFile(t *testing.T) {
 	assert.Equal(t, "", s)
 
 	// NTT prefix is replaced with K3 prefix.
-	suite.File("ntt.env").SetBytes([]byte(`K3_FNORD="var2"`))
+	fs.Open("ntt.env").SetBytes([]byte(`K3_FNORD="var2"`))
 	s, _ = suite.Getenv("NTT_FNORD")
 	assert.Equal(t, "var2", s)
 	s, _ = suite.Getenv("K3_FNORD")
 	assert.Equal(t, "var2", s)
 
-	suite.File("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"
+	fs.Open("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"
 	K3_FNORD="var2"`))
 	s, _ = suite.Getenv("NTT_FNORD")
 	assert.Equal(t, "var1", s)
 	s, _ = suite.Getenv("K3_FNORD")
 	assert.Equal(t, "var2", s)
 
-	suite.File("k3.env").SetBytes([]byte(`NTT_FNORD="var3"`))
+	fs.Open("k3.env").SetBytes([]byte(`NTT_FNORD="var3"`))
 	s, _ = suite.Getenv("NTT_FNORD")
 	assert.Equal(t, "var3", s)
 	s, _ = suite.Getenv("K3_FNORD")
 	assert.Equal(t, "var2", s)
 
-	suite.File("k3.env").SetBytes([]byte(`K3_FNORD="var3"`))
+	fs.Open("k3.env").SetBytes([]byte(`K3_FNORD="var3"`))
 	s, _ = suite.Getenv("NTT_FNORD")
 	assert.Equal(t, "var3", s)
 	s, _ = suite.Getenv("K3_FNORD")
@@ -77,7 +78,7 @@ func TestEnvFile(t *testing.T) {
 	// Test if os environment overwrites environment files.
 	suite = &ntt.Suite{}
 	suite.AddEnvFiles("ntt.env")
-	suite.File("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"`))
+	fs.Open("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"`))
 	os.Setenv("K3_FNORD", "var2")
 	s, err = suite.Getenv("NTT_FNORD")
 	os.Unsetenv("K3_FNORD")
@@ -94,7 +95,7 @@ func TestEnvFile(t *testing.T) {
 	// Test if types are converted to strings nicely.
 	suite = &ntt.Suite{}
 	suite.AddEnvFiles("ntt.env")
-	suite.File("ntt.env").SetBytes([]byte(`NTT_FLOAT=23.5`))
+	fs.Open("ntt.env").SetBytes([]byte(`NTT_FLOAT=23.5`))
 	s, err = suite.Getenv("NTT_FLOAT")
 	assert.Nil(t, err)
 	assert.Equal(t, "23.5", s)
@@ -103,7 +104,7 @@ func TestEnvFile(t *testing.T) {
 	// Various expansion tests.
 	suite = &ntt.Suite{}
 	suite.AddEnvFiles("ntt.env")
-	suite.File("ntt.env").SetBytes([]byte(`
+	fs.Open("ntt.env").SetBytes([]byte(`
 		# Undefined reference gives an error.
 		NTT_A="${NTT_UNDEFINED}"
 
@@ -135,7 +136,7 @@ func TestEnvFile(t *testing.T) {
 func TestVariables(t *testing.T) {
 	suite := &ntt.Suite{}
 	suite.SetRoot(".")
-	conf := suite.File("package.yml")
+	conf := fs.Open("package.yml")
 	conf.SetBytes([]byte(`
                 variables:
                   "FOO": "foo"

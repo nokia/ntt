@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/nokia/ntt/internal/fs"
@@ -59,57 +57,6 @@ func (suite *Suite) Id() (int, error) {
 	return suite.id, nil
 }
 
-// File returns a new file struct for reading.
-//
-// Environment variable NTT_CACHE will be used to find path, if path is a single
-// file-name without leading directory.
-func (suite *Suite) File(path string) *fs.File {
-	if !strings.HasPrefix(path, "file://") {
-		if ok, _ := fileExists(path); !ok {
-			if s := suite.searchCacheForFile(path); s != "" {
-				path = s
-			}
-		}
-	}
-
-	return fs.Open(path)
-}
-
-// searchCacheForFile searches for a file in every directory specified by
-// environment variable NTT_CACHE.
-//
-// If found, the directory with joined file name will be returned.
-//
-// searchCacheForFile will return an empty string:
-
-//  * if the file could not be found
-//  * if NTT_CACHE is empty
-//  * if file-string has a directory prefix.
-//
-// Purpose and behaviour of this function are similar to GNU Make's VPATH. It
-// is used to prevent re-built of generated files.
-func (suite *Suite) searchCacheForFile(file string) string {
-
-	if file == "." || file == ".." {
-		return ""
-	}
-
-	if dirPrefix, _ := filepath.Split(file); dirPrefix != "" {
-		return ""
-	}
-
-	if cache, _ := suite.Getenv("NTT_CACHE"); cache != "" {
-		for _, dir := range strings.Split(cache, ":") {
-			file := filepath.Join(dir, file)
-			if _, err := os.Stat(file); err == nil {
-				return file
-			}
-		}
-	}
-
-	return ""
-}
-
 func (suite *Suite) Root() string {
 	return suite.root
 }
@@ -125,7 +72,7 @@ func (suite *Suite) SetRoot(folder string) {
 }
 
 func (suite *Suite) LatestResults() (*results.DB, error) {
-	b, err := suite.File("test_results.json").Bytes()
+	b, err := fs.Open("test_results.json").Bytes()
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

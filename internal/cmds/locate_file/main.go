@@ -3,7 +3,7 @@ package locate_file
 import (
 	"fmt"
 
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/spf13/cobra"
 )
 
@@ -17,14 +17,9 @@ var (
 )
 
 func locate(cmd *cobra.Command, args []string) error {
-	sources, files := splitArgs(args, cmd.ArgsLenAtDash())
-	suite, err := ntt.NewFromArgs(sources...)
-	if err != nil {
-		return err
-	}
-
+	_, files := splitArgs(args, cmd.ArgsLenAtDash())
 	for _, path := range files {
-		if f := suite.File(path); f != nil {
+		if f := fs.Open(path); f != nil {
 			fmt.Println(f.Path())
 		}
 	}

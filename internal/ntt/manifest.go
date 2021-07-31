@@ -257,7 +257,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 		return nil, err
 	}
 	if env != "" {
-		return suite.File(env), nil
+		return fs.Open(env), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -274,7 +274,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 			path = filepath.Clean(filepath.Join(fs.Path(suite.root), path))
 		}
 
-		return suite.File(path), nil
+		return fs.Open(path), nil
 	}
 
 	// Construct default name
@@ -292,7 +292,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 			return nil, err
 		}
 		if ok {
-			return suite.File(hook), nil
+			return fs.Open(hook), nil
 		}
 	}
 
@@ -308,7 +308,7 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 			return nil, err
 		}
 		if ok {
-			return suite.File(hook), nil
+			return fs.Open(hook), nil
 		}
 
 	}
@@ -360,7 +360,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	}
 
 	if env != "" && filepath.IsAbs(env) {
-		return suite.File(env), nil
+		return fs.Open(env), nil
 	}
 	// first get the path to the root of the parameters file(s)
 	if paramDir, err := suite.ParametersDir(); err == nil {
@@ -372,11 +372,11 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	if pDir != "" {
 		if env != "" {
 			path := filepath.Clean(filepath.Join(pDir, env))
-			return suite.File(path), nil
+			return fs.Open(path), nil
 		}
 
 	} else if env != "" {
-		return suite.File(env), nil
+		return fs.Open(env), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -397,7 +397,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 				path = filepath.Clean(filepath.Join(fs.Path(suite.root), path))
 			}
 		}
-		return suite.File(path), nil
+		return fs.Open(path), nil
 	}
 
 	// Construct default name
@@ -420,7 +420,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 			return nil, err
 		}
 		if ok {
-			return suite.File(path), nil
+			return fs.Open(path), nil
 		}
 	}
 
@@ -436,7 +436,7 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 			return nil, err
 		}
 		if ok {
-			return suite.File(path), nil
+			return fs.Open(path), nil
 		}
 
 	}
@@ -484,7 +484,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		return nil, nil
 	}
 
-	f := suite.File(filepath.Join(fs.Path(suite.root), "package.yml"))
+	f := fs.Open(filepath.Join(fs.Path(suite.root), "package.yml"))
 	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
@@ -541,7 +541,7 @@ func (suite *Suite) FindModule(name string) (string, error) {
 	}
 
 	// Use NTT_CACHE to locate file
-	f := suite.File(name + ".ttcn3")
+	f := fs.Open(name + ".ttcn3")
 	if _, err := f.Bytes(); err == nil {
 		suite.modules[name] = f.Path()
 		return f.Path(), nil
