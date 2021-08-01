@@ -101,7 +101,7 @@ func Pos(n ast.Node) string {
 	if n == nil {
 		return ""
 	}
-	return fmt.Sprintf("[%d-%d)", n.Pos(), n.End())
+	return fmt.Sprintf("[%d-%d)", n.Pos()-1, n.End()-1)
 }
 
 func Indent() string {
