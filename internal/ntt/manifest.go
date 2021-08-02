@@ -58,7 +58,6 @@ func (suite *Suite) Imports() ([]string, error) {
 	if suite.p == nil {
 		suite.p = &project.Project{}
 	}
-	suite.p.Update()
 	return suite.p.Imports()
 }
 
@@ -68,10 +67,6 @@ func (suite *Suite) AddSources(files ...string) {
 		suite.p = &project.Project{}
 	}
 	suite.p.Manifest.Sources = append(suite.p.Manifest.Sources, files...)
-}
-
-func (suite *Suite) P() *project.Project {
-	return suite.p
 }
 
 // Name returns the name of the test suite. Or err != nil if the name could not
@@ -85,7 +80,6 @@ func (suite *Suite) Name() (string, error) {
 	if suite.p == nil {
 		suite.p = &project.Project{}
 	}
-	suite.p.Update()
 	return suite.p.Name(), nil
 }
 
