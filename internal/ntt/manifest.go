@@ -297,6 +297,11 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	return nil, nil
 }
 
+// Files returns all TTCN-3 source files used by Suite.
+func (suite *Suite) Files() ([]string, error) {
+	return project.Files(suite)
+}
+
 func fileExists(path string) (bool, error) {
 
 	info, err := os.Stat(path)
