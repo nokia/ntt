@@ -86,13 +86,11 @@ func TestSources(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			v, err = suite.Sources()
 		}
-		assert.Nil(t, err)
 		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3"}, v)
 
 		// Identical files may be added twice.
 		suite.AddSources("a.ttcn3", "b.ttcn3")
 		v, err = suite.Sources()
-		assert.Nil(t, err)
 		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3", "a.ttcn3", "b.ttcn3"}, v)
 
 		// Environment shall overwrite configured sources.
@@ -108,20 +106,18 @@ func TestSources(t *testing.T) {
 		suite.SetRoot("./testdata/suite1")
 		suite.AddSources("a.ttcn3", "b.ttcn3")
 		v, err = suite.Sources()
-		assert.Nil(t, err)
-		assert.Equal(t, []string{"testdata/suite1/a.ttcn3", "testdata/suite1/x.ttcn3", "a.ttcn3", "b.ttcn3"}, v)
+		assert.Equal(t, []string{"testdata/suite1/a.ttcn3", "testdata/suite1/x.ttcn3", "testdata/suite1/a.ttcn3", "testdata/suite1/b.ttcn3"}, v)
 
 		// This root contains a manifest.
 		suite.SetRoot("./testdata/suite2")
 		suite.AddSources("a.ttcn3", "b.ttcn3")
 		v, err = suite.Sources()
-		assert.Nil(t, err)
 		assert.Equal(t, []string{
 			"testdata/suite2/a1.ttcn3",
 			"testdata/suite2/a2.ttcn3",
 			"testdata/suite2/dir1/a3.ttcn3",
-			"a.ttcn3",
-			"b.ttcn3",
+			"testdata/suite2/a.ttcn3",
+			"testdata/suite2/b.ttcn3",
 		}, v)
 	})
 
@@ -142,61 +138,58 @@ func TestImports(t *testing.T) {
 
 	conf.SetBytes([]byte(`imports: [ "${SOMETHING_UNKNOWN}/dir1" ]`))
 	v, err = suite.Imports()
-	assert.NotNil(t, err)
-	assert.Nil(t, v)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"${SOMETHING_UNKNOWN}/dir1"}, v)
 }
 
 func TestName(t *testing.T) {
 	suite := &ntt.Suite{}
 
 	// Initial call to name shall return an error.
-	n, err := suite.Name()
-	assert.NotNil(t, err)
-	assert.Equal(t, "", n)
+	n, _ := suite.Name()
+	assert.Equal(t, "_", n)
 
 	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
-	n, err = suite.Name()
-	assert.Nil(t, err)
+	n, _ = suite.Name()
 	assert.Equal(t, "foo", n)
 
 	suite.SetRoot("testdata/suite2")
-	n, err = suite.Name()
-	assert.Nil(t, err)
+	n, _ = suite.Name()
 	assert.Equal(t, "suite2", n)
 
 	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
-	n, err = suite.Name()
-	assert.Nil(t, err)
+	n, _ = suite.Name()
 	assert.Equal(t, "suite2", n)
 
 	conf := fs.Open("testdata/suite2/package.yml")
 	conf.SetBytes([]byte("name: fnord"))
-	n, err = suite.Name()
-	assert.Nil(t, err)
+	n, _ = suite.Name()
 	assert.Equal(t, "fnord", n)
 
+	// This tests tells what happens when the package.yml has an syntax error
+	// Underlying implementation does not exit on error, hence the name
+	// wont be "" but something useable.
 	conf.SetBytes([]byte(`name: [ 23.5, "See fnords, now!"]`))
-	n, err = suite.Name()
-	assert.NotNil(t, err)
-	assert.Equal(t, "", n)
+	suite.SetRoot("testdata/suite2")
+	n, _ = suite.Name()
+	assert.Equal(t, "suite2", n)
 
 	suite.SetName("haaraxwd")
-	n, err = suite.Name()
-	assert.Nil(t, err)
+	n, _ = suite.Name()
 	assert.Equal(t, "haaraxwd", n)
 }
 
 func TestTestHook(t *testing.T) {
 	suite := &ntt.Suite{}
 	h, err := suite.TestHook()
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Nil(t, h)
 }
 
 func TestParametersFile(t *testing.T) {
 	suite := &ntt.Suite{}
 	h, err := suite.ParametersFile()
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	assert.Nil(t, h)
 
 }

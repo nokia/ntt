@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -46,136 +45,33 @@ func (suite *Suite) Timeout() (float64, error) {
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (suite *Suite) Sources() ([]string, error) {
-	var ret []string
-
-	// Environment variable overwrite everything.
-	env, err := suite.Getenv("NTT_SOURCES")
-	if err != nil {
-		return nil, err
+	if suite.p == nil {
+		suite.p = &project.Project{}
 	}
-	if env != "" {
-		for _, x := range strings.Fields(env) {
-			ret = append(ret, x)
-		}
-		return ret, nil
-	}
-
-	// If there's a parseable package.yml, try that one.
-	m, err := suite.parseManifest()
-	if err != nil {
-		return nil, err
-	}
-	if m != nil && len(m.Sources) > 0 && suite.root != "" {
-		for i := range m.Sources {
-			// Substitute environment variables
-			src, err := suite.Expand(m.Sources[i])
-			if err != nil {
-				return nil, err
-			}
-
-			// Make paths which are relative to manifest, relative to CWD.
-			if !filepath.IsAbs(src) && src[0] != '$' {
-				src = filepath.Clean(filepath.Join(fs.Path(suite.root), src))
-			}
-
-			// Directories need expansion into single files.
-			info, err := os.Stat(src)
-			if err != nil {
-				return nil, err
-			}
-			switch {
-			case info.IsDir():
-				files := fs.FindTTCN3Files(src)
-				if len(files) == 0 {
-					return nil, fmt.Errorf("Could not find ttcn3 source files in directory %q", src)
-				}
-				for i := range files {
-					ret = append(ret, files[i])
-				}
-
-			case info.Mode().IsRegular() && fs.HasTTCN3Extension(src):
-				ret = append(ret, src)
-
-			default:
-				return nil, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", src)
-			}
-
-		}
-		return append(ret, suite.sources...), nil
-	}
-
-	// If there's only a root folder, look for .ttcn3 files
-	if suite.root != "" {
-		files := fs.FindTTCN3Files(fs.Path(suite.root))
-		for _, f := range files {
-			ret = append(ret, f)
-		}
-		return append(ret, suite.sources...), nil
-
-	}
-
-	// Last resort is sources list, explicitly curated by AddSources-calls.
-	return suite.sources, nil
+	return suite.p.Sources()
 }
 
 // Imports returns the list of imported packages required to compile a Suite.
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (suite *Suite) Imports() ([]string, error) {
-	var ret []string
-
-	// Environment variable overwrite everything.
-	env, err := suite.Getenv("NTT_IMPORTS")
-	if err != nil {
-		return nil, err
+	if suite.p == nil {
+		suite.p = &project.Project{}
 	}
-	if env != "" {
-		for _, x := range strings.Fields(env) {
-			ret = append(ret, x)
-		}
-		return ret, nil
-	}
-
-	// If there's a parseable package.yml, try that one.
-	m, err := suite.parseManifest()
-	if err != nil {
-		return nil, err
-	}
-	if m != nil && len(m.Imports) > 0 && suite.root != "" {
-		for i := range m.Imports {
-			// Substitute environment variables
-			path, err := suite.Expand(m.Imports[i])
-			if err != nil {
-				return nil, err
-			}
-
-			// Make paths which are relative to manifest, relative to CWD.
-			if !filepath.IsAbs(path) && path[0] != '$' {
-				path = filepath.Clean(filepath.Join(fs.Path(suite.root), path))
-			}
-
-			ret = append(ret, path)
-
-		}
-		return append(ret, suite.imports...), nil
-	}
-
-	// Last resort is imports list, explicitly curated by AddImports-calls.
-	return suite.imports, nil
+	suite.p.Update()
+	return suite.p.Imports()
 }
 
 // AddSources appends files... to the known sources list.
 func (suite *Suite) AddSources(files ...string) {
-	for i := range files {
-		suite.sources = append(suite.sources, files[i])
+	if suite.p == nil {
+		suite.p = &project.Project{}
 	}
+	suite.p.Manifest.Sources = append(suite.p.Manifest.Sources, files...)
 }
 
-// AddImports appends folders.. to the known imports list.
-func (suite *Suite) AddImports(folders ...string) {
-	for i := range folders {
-		suite.imports = append(suite.imports, folders[i])
-	}
+func (suite *Suite) P() *project.Project {
+	return suite.p
 }
 
 // Name returns the name of the test suite. Or err != nil if the name could not
@@ -186,53 +82,16 @@ func (suite *Suite) AddImports(folders ...string) {
 // suite has a root folder, its base-name will be used. Last resort is the
 // first source .ttcn3 without extension.
 func (suite *Suite) Name() (string, error) {
-	if suite.name != "" {
-		return suite.name, nil
+	if suite.p == nil {
+		suite.p = &project.Project{}
 	}
-
-	env, err := suite.Getenv("NTT_NAME")
-	if err != nil {
-		return "", err
-	}
-	if env != "" {
-		return env, nil
-	}
-
-	// If there's a parseable package.yml, try that one.
-	m, err := suite.parseManifest()
-	if err != nil {
-		return "", err
-	}
-	if m != nil && m.Name != "" {
-		return suite.Expand(m.Name)
-	}
-
-	// If there's a root dir, use its name.
-	if suite.root != "" {
-		return filepath.Base(suite.root), nil
-	}
-
-	// As last resort, try to find a name in source files.
-	srcs, err := suite.Sources()
-	if err != nil {
-		return "", err
-	}
-	if len(srcs) > 0 {
-		n, err := filepath.Abs(fs.Path(srcs[0]))
-		if err != nil {
-			return "", err
-		}
-		n = filepath.Base(n)
-		n = strings.TrimSuffix(n, filepath.Ext(n))
-		return n, nil
-	}
-
-	return "", fmt.Errorf("Could not determine a suite name")
+	suite.p.Update()
+	return suite.p.Name(), nil
 }
 
 // SetName will set the suites name.
 func (suite *Suite) SetName(name string) {
-	suite.name = name
+	suite.p.Manifest.Name = name
 }
 
 // Variables will return a string map containing the variables-sections of the
@@ -488,7 +347,6 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
-		log.Debugln(err.Error())
 		// If there's not package.yml, it's okay, too.
 		if os.IsNotExist(err) {
 			return nil, nil

@@ -12,11 +12,15 @@ import (
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
+	"github.com/nokia/ntt/project"
 )
 
 // Suite represents a TTCN-3 test suite.
 type Suite struct {
 	id int // A unique session id
+
+	// Project will replace the manifest implementation piece by piece
+	p *project.Project
 
 	// Module handling (maps module names to paths)
 	modulesMu sync.Mutex
@@ -69,6 +73,12 @@ func (suite *Suite) SetRoot(folder string) {
 	suite.root = folder
 	suite.sources = nil
 	log.Debug(fmt.Sprintf("New root folder is %q", folder))
+
+	p, err := project.Open(folder)
+	if err != nil {
+		log.Debug(fmt.Sprintf("project: could not open folder: %s", err.Error()))
+	}
+	suite.p = p
 }
 
 func (suite *Suite) LatestResults() (*results.DB, error) {

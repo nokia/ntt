@@ -33,22 +33,25 @@ type Interface interface {
 // Files returns all available .ttcn3 files. It will not return intermediate .ttcn3 files.
 // On error Files will return an error.
 func Files(p Interface) ([]string, error) {
+	var errs *multierror.Error
 	files, err := p.Sources()
 	if err != nil {
-		return nil, err
+		errs = multierror.Append(errs, err)
 	}
 
 	dirs, err := p.Imports()
 	if err != nil {
-		return nil, err
+		errs = multierror.Append(errs, err)
 	}
 
 	for _, dir := range dirs {
 		f := fs.FindTTCN3Files(dir)
 		files = append(files, f...)
 	}
-
-	return files, nil
+	if errs.ErrorOrNil() == nil {
+		return files, nil
+	}
+	return files, multierror.Flatten(errs)
 }
 
 // FindAllFiles returns all .ttcn3 files including auxiliary files from
@@ -79,7 +82,7 @@ func ContainsFile(p Interface, path string) bool {
 	return false
 }
 
-func Open(path string) (Interface, error) {
+func Open(path string) (*Project, error) {
 	p := Project{
 		root: path,
 	}
@@ -98,12 +101,14 @@ type Project struct {
 }
 
 func (p *Project) Update() error {
-	p.modules = nil
+
+	p.modules = nil // Clear module cache
+
 	if file := filepath.Join(p.root, manifest.Name); isRegular(file) {
-		log.Debugf("%s: update configuration using manifest %q", p.String(), file)
+		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
 		return p.readManifest(file)
 	}
-	log.Debugf("%s: update configuration using available folders", p.String())
+	log.Debugf("%s: update configuration using available folders\n", p.String())
 	p.readFilesystem()
 	return nil
 }
@@ -281,8 +286,8 @@ func (p *Project) readFilesystem() {
 		if err == nil && info.IsDir() {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
 			if len(files) > 0 {
-				log.Debugf("adding sources: %q", path)
-				p.Manifest.Sources = append(p.Manifest.Sources, files...)
+				log.Debugf("adding sources: %q\n", path)
+				p.Manifest.Sources = append(p.Manifest.Sources, rel(p.Root(), files...)...)
 			}
 		}
 		return nil
@@ -293,7 +298,7 @@ func (p *Project) readFilesystem() {
 		if err == nil && info.IsDir() {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
 			if len(files) > 0 {
-				log.Debugf("adding import: %q", path)
+				log.Debugf("adding import: %q\n", path)
 				p.Manifest.Imports = append(p.Manifest.Imports, path)
 			}
 		}
@@ -309,4 +314,19 @@ func (p *Project) readFilesystem() {
 			filepath.Walk(filepath.Join(p.root, "../../../../"), addImports)
 		}
 	}
+}
+
+func rel(base string, paths ...string) []string {
+	if len(paths) == 0 {
+		return nil
+	}
+	ret := make([]string, len(paths))
+	for i, path := range paths {
+		if r, err := filepath.Rel(base, path); err == nil {
+			ret[i] = r
+		} else {
+			ret[i] = path
+		}
+	}
+	return ret
 }
