@@ -226,7 +226,7 @@ function(add_ttcn3_suite TGT)
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
 
-    __ntt_add_db_entry("${NTT_DB}" "${WORKING_DIRECTORY}" "${CMAKE_CURRENT_LIST_DIR}")
+    __ntt_add_db_entry("${NTT_DB}" "${_WORKING_DIRECTORY}" "${CMAKE_CURRENT_LIST_DIR}")
 endfunction()
 
 function(protobuf_generate_ttcn3 TGT)
