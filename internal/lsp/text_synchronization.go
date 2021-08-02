@@ -3,6 +3,7 @@ package lsp
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -10,7 +11,7 @@ import (
 )
 
 func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	if params.TextDocument.LanguageID != "ttcn3" {
+	if !strings.HasPrefix(strings.ToLower(params.TextDocument.LanguageID), "ttcn") {
 		return nil
 	}
 
@@ -22,7 +23,7 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	// Every file should be owned by at least one suite to provide proper
 	// language support.
 	if len(s.Owners(uri)) == 0 {
-		log.Debugf("File %q does not belong to any known test suite", uri)
+		log.Debugf("File %q does not belong to any known test suite\n", uri)
 		s.AddFolder(filepath.Dir(fs.Open(string(uri.SpanURI())).Path()))
 	}
 	s.Diagnose(uri)

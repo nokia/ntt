@@ -311,7 +311,7 @@ func (p *Project) readFilesystem() {
 	}
 	for _, dir := range commonDirs {
 		if path := filepath.Join(p.root, dir); isDir(path) {
-			filepath.Walk(filepath.Join(p.root, "../../../../"), addImports)
+			filepath.Walk(path, addImports)
 		}
 	}
 }

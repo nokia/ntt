@@ -68,11 +68,6 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	s.stateMu.Lock()
 	s.state = serverInitialized
 	s.stateMu.Unlock()
-
-	for _, folder := range s.pendingFolders {
-		s.AddFolder(folder.URI)
-	}
-
 	return nil
 }
 

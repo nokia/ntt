@@ -8,6 +8,7 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/nokia/ntt/internal/fs"
@@ -25,7 +26,9 @@ func NewServer(stream jsonrpc2.Stream) *Server {
 }
 
 func (s *Server) Serve(ctx context.Context) error {
-	log.SetGlobalLogger(s)
+	if env := os.Getenv("NTT_DEBUG"); env == "" {
+		log.SetGlobalLogger(s)
+	}
 	s.client = protocol.ClientDispatcher(s.conn)
 	ctx = protocol.WithClient(ctx, s.client)
 	handler := protocol.ServerHandler(s, jsonrpc2.MethodNotFound)

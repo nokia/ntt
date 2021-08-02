@@ -33,6 +33,14 @@ func Discover(path string) []string {
 		return true
 	})
 
+	walkUp(path, func(path string) bool {
+		if tests := glob(path + "/testcases/*"); len(tests) > 0 {
+			list = append(list, path)
+			return false
+		}
+		return true
+	})
+
 	// Remove duplicate entries
 	result := make([]string, 0, len(list))
 	visited := make(map[string]bool)

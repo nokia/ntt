@@ -75,5 +75,9 @@ func init() {
 	if s := os.Getenv("NTT_DEBUG"); s != "" {
 		lvl = DebugLevel
 	}
-
+	if s := os.Getenv("NTT_DEBUG_FILE"); s != "" {
+		if file, err := os.Create(s); err == nil {
+			SetGlobalLogger(&ConsoleLogger{Out: file})
+		}
+	}
 }
