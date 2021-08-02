@@ -17,8 +17,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Project describes a TTCN-3 project.
-type Project interface {
+// Interface describes a TTCN-3 project.
+type Interface interface {
 	// Root is the test suite root folder. It is usually the folder where the manifest is.
 	Root() string
 
@@ -32,7 +32,7 @@ type Project interface {
 
 // Files returns all available .ttcn3 files. It will not return intermediate .ttcn3 files.
 // On error Files will return an error.
-func Files(p Project) ([]string, error) {
+func Files(p Interface) ([]string, error) {
 	files, err := p.Sources()
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func Files(p Project) ([]string, error) {
 
 // FindAllFiles returns all .ttcn3 files including auxiliary files from
 // k3 installation
-func FindAllFiles(p Project) []string {
+func FindAllFiles(p Interface) []string {
 	files, _ := Files(p)
 	// Use auxilliaryFiles from K3 to locate file
 	for _, dir := range k3.FindAuxiliaryDirectories() {
@@ -64,8 +64,8 @@ func FindAllFiles(p Project) []string {
 	return files
 }
 
-// ContainsFile returns true, when path is managed by Project.
-func ContainsFile(p Project, path string) bool {
+// ContainsFile returns true, when path is managed by Interface.
+func ContainsFile(p Interface, path string) bool {
 	// The same file may be referenced by URI or by path. To normalize it
 	// we convert everything into URIs.
 	uri := fs.URI(path)
@@ -79,15 +79,15 @@ func ContainsFile(p Project, path string) bool {
 	return false
 }
 
-func Open(path string) (Project, error) {
-	p := project{
+func Open(path string) (Interface, error) {
+	p := Project{
 		root: path,
 	}
 
 	return &p, p.Update()
 }
 
-type project struct {
+type Project struct {
 	root string
 
 	// Module handling (maps module names to paths)
@@ -97,7 +97,7 @@ type project struct {
 	Manifest manifest.Config
 }
 
-func (p *project) Update() error {
+func (p *Project) Update() error {
 	p.modules = nil
 	if file := filepath.Join(p.root, manifest.Name); isRegular(file) {
 		log.Debugf("%s: update configuration using manifest %q", p.String(), file)
@@ -108,16 +108,16 @@ func (p *project) Update() error {
 	return nil
 }
 
-func (p *project) String() string {
+func (p *Project) String() string {
 	return p.root
 }
 
 // Root directory is ttcn3 suite.
-func (p *project) Root() string {
+func (p *Project) Root() string {
 	return p.root
 }
 
-func (p *project) Name() string {
+func (p *Project) Name() string {
 	if env := getenv("NTT_NAME"); env != "" {
 		return env
 	}
@@ -137,7 +137,7 @@ func (p *project) Name() string {
 	return "_"
 }
 
-func (p *project) TestHook() string {
+func (p *Project) TestHook() string {
 	if env := getenv("NTT_TEST_HOOK"); env != "" {
 		return env
 	}
@@ -156,7 +156,7 @@ func (p *project) TestHook() string {
 	return ""
 }
 
-func (p *project) ParametersFile() string {
+func (p *Project) ParametersFile() string {
 	if env := getenv("NTT_PARAMETERS_FILE"); env != "" {
 		return fix(p.ParametersDir(), env)
 	}
@@ -169,7 +169,7 @@ func (p *project) ParametersFile() string {
 	return ""
 }
 
-func (p *project) ParametersDir() string {
+func (p *Project) ParametersDir() string {
 	if env := getenv("NTT_PARAMETERS_DIR"); env != "" {
 		return env
 	}
@@ -188,7 +188,7 @@ func (p *project) ParametersDir() string {
 }
 
 // Sources returns all TTCN-3 source files.
-func (p *project) Sources() ([]string, error) {
+func (p *Project) Sources() ([]string, error) {
 	var errs error
 
 	if env := getenv("NTT_SOURCES"); env != "" {
@@ -224,7 +224,7 @@ func (p *project) Sources() ([]string, error) {
 	return srcs, errs
 }
 
-func (p *project) Imports() ([]string, error) {
+func (p *Project) Imports() ([]string, error) {
 	var errs error
 
 	if env := getenv("NTT_IMPORTS"); env != "" {
@@ -239,7 +239,7 @@ func (p *project) Imports() ([]string, error) {
 }
 
 // FindModule tries to find a .ttcn3 based on its module name.
-func (p *project) FindModule(name string) (string, error) {
+func (p *Project) FindModule(name string) (string, error) {
 
 	p.modulesMu.Lock()
 	defer p.modulesMu.Unlock()
@@ -263,12 +263,12 @@ func (p *project) FindModule(name string) (string, error) {
 
 	return "", fmt.Errorf("No such module %q", name)
 }
-func (p *project) expand(s string) string {
+func (p *Project) expand(s string) string {
 	// TODO(5nord) implement expansion with variables section
 	return s
 }
 
-func (p *project) readManifest(file string) error {
+func (p *Project) readManifest(file string) error {
 	b, err := fs.Open(file).Bytes()
 	if err != nil {
 		return err
@@ -276,7 +276,7 @@ func (p *project) readManifest(file string) error {
 	return yaml.UnmarshalStrict(b, &p.Manifest)
 }
 
-func (p *project) readFilesystem() {
+func (p *Project) readFilesystem() {
 	addSources := func(path string, info os.FileInfo, err error) error {
 		if err == nil && info.IsDir() {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
