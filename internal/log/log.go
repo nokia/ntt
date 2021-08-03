@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+
+	"github.com/nokia/ntt/internal/env"
 )
 
 type Level int
@@ -69,13 +71,10 @@ func Tracef(format string, v ...interface{}) { std.Output(TraceLevel, fmt.Sprint
 func Traceln(v ...interface{})               { std.Output(TraceLevel, fmt.Sprintln(v...)) }
 
 func init() {
-	if s := os.Getenv("K3_DEBUG"); s != "" {
+	if s := env.Getenv("NTT_DEBUG"); s != "" {
 		lvl = DebugLevel
 	}
-	if s := os.Getenv("NTT_DEBUG"); s != "" {
-		lvl = DebugLevel
-	}
-	if s := os.Getenv("NTT_DEBUG_FILE"); s != "" {
+	if s := env.Getenv("NTT_DEBUG_FILE"); s != "" {
 		if file, err := os.Create(s); err == nil {
 			SetGlobalLogger(&ConsoleLogger{Out: file})
 		}

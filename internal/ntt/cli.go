@@ -65,6 +65,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 )
 
@@ -76,10 +77,7 @@ import (
 func NewFromArgs(args ...string) (*Suite, error) {
 	switch len(args) {
 	case 0:
-		if source_dir := os.Getenv("NTT_SOURCE_DIR"); source_dir != "" {
-			return NewFromDirectory(source_dir)
-		}
-		if source_dir := os.Getenv("K3_SOURCE_DIR"); source_dir != "" {
+		if source_dir := env.Getenv("NTT_SOURCE_DIR"); source_dir != "" {
 			return NewFromDirectory(source_dir)
 		}
 		return NewFromDirectory(".")

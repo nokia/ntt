@@ -8,11 +8,11 @@ package lsp
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"unicode"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
@@ -29,7 +29,7 @@ func NewServer(stream jsonrpc2.Stream) *Server {
 
 func (s *Server) Serve(ctx context.Context) error {
 	// Ignore client settings when NTT_DEBUG is enabled
-	if env := os.Getenv("NTT_DEBUG"); env == "" {
+	if env := env.Getenv("NTT_DEBUG"); env == "" {
 		log.SetGlobalLogger(s)
 	}
 	s.client = protocol.ClientDispatcher(s.conn)
