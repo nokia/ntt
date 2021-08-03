@@ -14,7 +14,7 @@ func (s *Server) setTrace(ctx context.Context, params *protocol.SetTraceParams) 
 }
 
 func setTrace(s string) {
-	if env := os.Getenv("NTT_DEBUG"); env != "" {
+	if env := os.Getenv("NTT_DEBUG") + os.Getenv("K3_DEBUG"); env != "" {
 		log.SetGlobalLevel(log.DebugLevel)
 		return
 	}
