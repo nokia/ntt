@@ -88,7 +88,7 @@ func ContainsFile(p Interface, path string) bool {
 }
 
 // Fingerprint calculates a sum to identify a test suite based on its modules.
-func Fingerprint(p Project) string {
+func Fingerprint(p Interface) string {
 	var inputs []string
 	files, _ := Files(p)
 	for _, file := range files {

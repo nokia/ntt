@@ -2,8 +2,8 @@ package lsp
 
 import (
 	"context"
-	"os"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
@@ -14,7 +14,8 @@ func (s *Server) setTrace(ctx context.Context, params *protocol.SetTraceParams) 
 }
 
 func setTrace(s string) {
-	if env := os.Getenv("NTT_DEBUG") + os.Getenv("K3_DEBUG"); env != "" {
+	// Ignore client settings when NTT_DEBUG is enabled
+	if env := env.Getenv("NTT_DEBUG"); env != "" {
 		log.SetGlobalLevel(log.DebugLevel)
 		return
 	}
