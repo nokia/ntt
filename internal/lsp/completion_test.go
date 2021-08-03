@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp"
@@ -38,11 +39,11 @@ func buildSuite(t *testing.T, strs ...string) *ntt.Suite {
 	suite := &ntt.Suite{}
 	for i, s := range strs {
 		name := fmt.Sprintf("%s_Module_%d.ttcn3", t.Name(), i)
-		//file := suite.File(name)
+		//file := fs.Open(name)
 		//file.SetBytes([]byte(s))
 		suite.AddSources(name)
 		srcs, _ := suite.Sources()
-		fh := suite.File(srcs[len(srcs)-1])
+		fh := fs.Open(srcs[len(srcs)-1])
 		fh.SetBytes([]byte(s))
 	}
 	return suite

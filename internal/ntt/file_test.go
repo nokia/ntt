@@ -3,7 +3,7 @@ package ntt_test
 import (
 	"testing"
 
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,22 +12,21 @@ import (
 //
 // This test checks if content of files and file names are handled correctly.
 func TestFiles(t *testing.T) {
-	suite := &ntt.Suite{}
 
-	f1 := suite.File("../ntt/ntt_test.go")
-	f2 := suite.File("../../internal/ntt/ntt_test.go")
+	f1 := fs.Open("../ntt/ntt_test.go")
+	f2 := fs.Open("../../internal/ntt/ntt_test.go")
 	assert.NotNil(t, f1)
 	assert.NotNil(t, f2)
 	assert.Equal(t, f1, f2)
 
-	f1 = suite.File("../ntt/does_not_exist")
-	f2 = suite.File("../../internal/ntt/does_not_exist")
+	f1 = fs.Open("../ntt/does_not_exist")
+	f2 = fs.Open("../../internal/ntt/does_not_exist")
 	assert.NotNil(t, f1)
 	assert.NotNil(t, f2)
 	assert.Equal(t, f1, f2)
 
-	f1 = suite.File("../ntt/ntt_test.go")
-	f2 = suite.File("../ntt/does_not_exist")
+	f1 = fs.Open("../ntt/ntt_test.go")
+	f2 = fs.Open("../ntt/does_not_exist")
 	assert.NotNil(t, f1)
 	assert.NotNil(t, f2)
 	assert.NotEqual(t, f1, f2)
@@ -35,8 +34,7 @@ func TestFiles(t *testing.T) {
 
 func TestFileContent(t *testing.T) {
 	t.Run("DiskRead", func(t *testing.T) {
-		suite := &ntt.Suite{}
-		f1 := suite.File("../ntt/ntt_test.go")
+		f1 := fs.Open("../ntt/ntt_test.go")
 		b1, err := f1.Bytes()
 		assert.Nil(t, err)
 		if len(b1) >= 16 {
@@ -47,8 +45,7 @@ func TestFileContent(t *testing.T) {
 	})
 
 	t.Run("DiskRead2", func(t *testing.T) {
-		suite := &ntt.Suite{}
-		f1 := suite.File("../ntt/ntt_test.go")
+		f1 := fs.Open("../ntt/ntt_test.go")
 		f1.SetBytes([]byte("fnord"))
 		b1, err := f1.Bytes()
 		assert.Nil(t, err)
@@ -56,8 +53,7 @@ func TestFileContent(t *testing.T) {
 	})
 
 	t.Run("DiskRead3", func(t *testing.T) {
-		suite := &ntt.Suite{}
-		f1 := suite.File("../ntt/does_not_exist")
+		f1 := fs.Open("../ntt/does_not_exist")
 		_, err := f1.Bytes()
 		assert.NotNil(t, err)
 		f1.SetBytes([]byte("fnord"))
@@ -67,15 +63,13 @@ func TestFileContent(t *testing.T) {
 	})
 
 	t.Run("DiskReadError", func(t *testing.T) {
-		suite := &ntt.Suite{}
-		f1 := suite.File("../ntt")
+		f1 := fs.Open("../ntt")
 		_, err := f1.Bytes()
 		assert.NotNil(t, err)
 	})
 
 	t.Run("DiskReadError2", func(t *testing.T) {
-		suite := &ntt.Suite{}
-		f1 := suite.File("../ntt/does_not_exist")
+		f1 := fs.Open("../ntt/does_not_exist")
 		f1.Reset()
 		_, err := f1.Bytes()
 		assert.NotNil(t, err)

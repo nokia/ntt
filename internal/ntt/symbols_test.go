@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +13,7 @@ func buildSuite(t *testing.T, strs ...string) *ntt.Suite {
 	suite := &ntt.Suite{}
 	for i, s := range strs {
 		name := fmt.Sprintf("%s_Module_%d.ttcn3", t.Name(), i)
-		file := suite.File(name)
+		file := fs.Open(name)
 		file.SetBytes([]byte(s))
 	}
 	return suite
