@@ -17,7 +17,6 @@ type Store struct {
 
 // Open a file and add it to the store.
 func (s *Store) Open(path string) *File {
-
 	if !strings.HasPrefix(path, "file://") {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			if alt := searchCacheForFile(path); alt != "" {
@@ -25,7 +24,6 @@ func (s *Store) Open(path string) *File {
 			}
 		}
 	}
-
 	uri := URI(path)
 
 	s.filesMu.Lock()
