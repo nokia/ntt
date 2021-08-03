@@ -12,8 +12,8 @@ import (
 //
 // This test checks if content of files and file names are handled correctly.
 func TestFiles(t *testing.T) {
-	f1 := fs.Open("../fs/files_test.go")
-	f2 := fs.Open("../../internal/fs/files_test.go")
+	f1 := fs.Open("../fs/file_test.go")
+	f2 := fs.Open("../../internal/fs/file_test.go")
 	assert.NotNil(t, f1)
 	assert.NotNil(t, f2)
 	assert.Equal(t, f1, f2)
@@ -24,7 +24,7 @@ func TestFiles(t *testing.T) {
 	assert.NotNil(t, f2)
 	assert.Equal(t, f1, f2)
 
-	f1 = fs.Open("../fs/files_test.go")
+	f1 = fs.Open("../fs/file_test.go")
 	f2 = fs.Open("../fs/does_not_exist")
 	assert.NotNil(t, f1)
 	assert.NotNil(t, f2)
@@ -33,18 +33,18 @@ func TestFiles(t *testing.T) {
 
 func TestFileContent(t *testing.T) {
 	t.Run("DiskRead", func(t *testing.T) {
-		f1 := fs.Open("../fs/files_test.go")
+		f1 := fs.Open("../fs/file_test.go")
 		b1, err := f1.Bytes()
 		assert.Nil(t, err)
 		if len(b1) >= 16 {
-			assert.Equal(t, []byte("package fs_test"), b1[:16])
+			assert.Equal(t, []byte("package fs_test"), b1[:15])
 		} else {
 			t.Errorf("length of b1 < 16")
 		}
 	})
 
 	t.Run("DiskRead2", func(t *testing.T) {
-		f1 := fs.Open("../fs/files_test.go")
+		f1 := fs.Open("../fs/file_test.go")
 		f1.SetBytes([]byte("fnord"))
 		b1, err := f1.Bytes()
 		assert.Nil(t, err)
