@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gosimple/slug"
 )
 
 // FindTTCN3Files returns a list of TTCN-3 source files (.ttcn3, .ttcn).
@@ -72,6 +74,84 @@ func FindK3EnvInCurrPath(dir string) string {
 		path = filepath.Dir(path)
 	}
 	return ""
+}
+
+// Rel makes paths relative to base, when not absolute already. Use it when
+// when you want to make a path relative to a test suite manifest.
+func Rel(base string, paths ...string) []string {
+	if len(paths) == 0 {
+		return nil
+	}
+	ret := make([]string, len(paths))
+	for i, path := range paths {
+		if r, err := filepath.Rel(base, path); err == nil {
+			ret[i] = r
+		} else {
+			ret[i] = path
+		}
+	}
+	return ret
+}
+
+// Real makes a path, which is relativ to base, to a real path.
+func Real(base, path string) string {
+	if filepath.IsAbs(path) || path[0] == '$' {
+		return path
+	}
+	return filepath.Join(base, path)
+}
+
+// Glob is a wrapper for filepath.Glob, but ignoring any errors.
+func Glob(s string) []string {
+	found, _ := filepath.Glob(s)
+	return found
+}
+
+// Slugify generates a slug from unicode string.
+func Slugify(s string) string {
+	return strings.ReplaceAll(slug.Make(s), "-", "_")
+}
+
+// Stems strips directory and extension from a string.
+func Stem(s string) string {
+	base := filepath.Base(s)
+	ext := filepath.Ext(s)
+	return strings.TrimSuffix(base, ext)
+}
+
+// WalkUp traverses a path towards file system root.
+func WalkUp(path string, f func(path string) bool) {
+	for {
+		if !f(path) {
+			break
+		}
+		if abs, _ := filepath.Abs(path); abs == "/" {
+			break
+		}
+		path = filepath.Clean(filepath.Join(path, ".."))
+	}
+}
+
+// IsRegulart returns true if path exists and is a regular file.
+func IsRegular(path string) bool {
+	if p, err := filepath.EvalSymlinks(path); err == nil {
+		path = p
+	}
+	if info, err := os.Stat(path); err == nil {
+		return info.Mode().IsRegular()
+	}
+	return false
+}
+
+// IsDir returns true if path exists and is a directory.
+func IsDir(path string) bool {
+	if p, err := filepath.EvalSymlinks(path); err == nil {
+		path = p
+	}
+	if info, err := os.Stat(path); err == nil {
+		return info.IsDir()
+	}
+	return false
 }
 
 func findFiles(dir string, matcher func(name string) bool) []string {
