@@ -34,6 +34,12 @@ func slugify(s string) string {
 	return strings.ReplaceAll(slug.Make(s), "-", "_")
 }
 
+func stem(s string) string {
+	base := filepath.Base(s)
+	ext := filepath.Ext(s)
+	return strings.TrimSuffix(base, ext)
+}
+
 func walkUp(path string, f func(path string) bool) {
 	for {
 		if !f(path) {

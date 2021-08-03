@@ -3,6 +3,7 @@
 package project
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,6 +81,15 @@ func ContainsFile(p Interface, path string) bool {
 		}
 	}
 	return false
+}
+
+func Fingerprint(p *Project) string {
+	var inputs []string
+	files, _ := Files(p)
+	for _, file := range files {
+		inputs = append(inputs, stem(file))
+	}
+	return fmt.Sprintf("project_%x", sha1.Sum([]byte(fmt.Sprint(inputs))))
 }
 
 func Open(path string) (*Project, error) {
