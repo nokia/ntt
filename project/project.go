@@ -174,7 +174,11 @@ func (p *Project) Imports() ([]string, error) {
 
 	var imports []string
 	for _, dir := range p.Manifest.Imports {
-		imports = append(imports, fs.Real(p.Root(), p.expand(dir)))
+		dir := fs.Real(p.Root(), p.expand(dir))
+		if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+			errs = multierror.Append(errs, fmt.Errorf("%q must be a directory", dir))
+		}
+		imports = append(imports, dir)
 	}
 	return imports, errs
 }
