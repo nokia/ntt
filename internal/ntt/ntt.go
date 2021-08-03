@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"sync"
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
@@ -13,24 +12,20 @@ import (
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
+	"github.com/nokia/ntt/project"
 )
 
 // Suite represents a TTCN-3 test suite.
 type Suite struct {
 	id int // A unique session id
 
-	// Module handling (maps module names to paths)
-	modulesMu sync.Mutex
-	modules   map[string]string
+	p *project.Project
 
 	// Environent handling
 	envFiles []*fs.File
 
 	// Manifest stuff
 	name     string
-	root     string
-	sources  []string
-	imports  []string
 	testHook *fs.File
 
 	// Memoization
@@ -59,7 +54,7 @@ func (suite *Suite) Id() (int, error) {
 }
 
 func (suite *Suite) Root() string {
-	return suite.root
+	return suite.p.Root()
 }
 
 // SetRoot set the root folder for Suite.
@@ -67,9 +62,11 @@ func (suite *Suite) Root() string {
 // The root folder is the main-package, which may contain a manifest file
 // (`package.yml`)
 func (suite *Suite) SetRoot(folder string) {
-	suite.root = folder
-	suite.sources = nil
-	log.Debug(fmt.Sprintf("New root folder is %q", folder))
+	p, err := project.Open(folder)
+	if err != nil {
+		log.Verbosef(fmt.Sprintf("error opening project: %s", err.Error()))
+	}
+	suite.p = p
 }
 
 func (suite *Suite) LatestResults() (*results.DB, error) {
