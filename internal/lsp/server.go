@@ -8,7 +8,10 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -25,7 +28,10 @@ func NewServer(stream jsonrpc2.Stream) *Server {
 }
 
 func (s *Server) Serve(ctx context.Context) error {
-	log.SetGlobalLogger(s)
+	// Ignore client settings when NTT_DEBUG is enabled
+	if env := os.Getenv("NTT_DEBUG"); env == "" {
+		log.SetGlobalLogger(s)
+	}
 	s.client = protocol.ClientDispatcher(s.conn)
 	ctx = protocol.WithClient(ctx, s.client)
 	handler := protocol.ServerHandler(s, jsonrpc2.MethodNotFound)
@@ -101,7 +107,7 @@ func (s *Server) Log(ctx context.Context, msg string) {
 
 func (s *Server) Output(level log.Level, msg string) error {
 	if level <= log.GlobalLevel() {
-		s.Log(context.TODO(), msg)
+		s.Log(context.TODO(), strings.TrimRightFunc(msg, unicode.IsSpace))
 	}
 	return nil
 }
