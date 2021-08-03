@@ -17,7 +17,7 @@ func FindTTCN3Files(dir string) []string {
 
 // HasTTCN3Extension returns true if file has suffix .ttcn3 or .ttcn
 func HasTTCN3Extension(file string) bool {
-	return withExtension(".ttcn3", ".ttcn")(file)
+	return withExtension(".ttcn3", ".ttcn", ".ttcnpp")(file)
 }
 
 // FindASN1Files returns a list of ASN.1 files (.asn, asn1).
