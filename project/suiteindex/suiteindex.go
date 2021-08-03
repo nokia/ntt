@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/nokia/ntt/internal/fs"
 )
 
 const Name = "ttcn3_suites.json"
@@ -34,18 +36,11 @@ func ReadFile(file string) (Config, error) {
 	base := filepath.Dir(file)
 	for i := range c.Suites {
 		if c.Suites[i].RootDir != "" {
-			c.Suites[i].RootDir = fix(base, c.Suites[i].RootDir)
+			c.Suites[i].RootDir = fs.Real(base, c.Suites[i].RootDir)
 		}
 		if c.Suites[i].SourceDir != "" {
-			c.Suites[i].SourceDir = fix(base, c.Suites[i].SourceDir)
+			c.Suites[i].SourceDir = fs.Real(base, c.Suites[i].SourceDir)
 		}
 	}
 	return c, nil
-}
-
-func fix(base, path string) string {
-	if filepath.IsAbs(path) {
-		return path
-	}
-	return filepath.Join(base, path)
 }

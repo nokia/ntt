@@ -3,6 +3,7 @@ package project
 import (
 	"path/filepath"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/project/manifest"
 	"github.com/nokia/ntt/project/suiteindex"
 )
@@ -16,25 +17,25 @@ func Discover(path string) []string {
 
 	var list []string
 
-	walkUp(path, func(path string) bool {
+	fs.WalkUp(path, func(path string) bool {
 		// Check source directories
-		if file := filepath.Join(path, manifest.Name); isRegular(file) {
+		if file := filepath.Join(path, manifest.Name); fs.IsRegular(file) {
 			list = append(list, path)
 		}
 		list = append(list, readSuites(filepath.Join(path, suiteindex.Name))...)
 
 		// Check build directories
-		for _, file := range glob(path + "/*build*/" + suiteindex.Name) {
+		for _, file := range fs.Glob(path + "/*build*/" + suiteindex.Name) {
 			list = append(list, readSuites(file)...)
 		}
-		for _, file := range glob(path + "/build/native/*/sct/" + suiteindex.Name) {
+		for _, file := range fs.Glob(path + "/build/native/*/sct/" + suiteindex.Name) {
 			list = append(list, readSuites(file)...)
 		}
 		return true
 	})
 
-	walkUp(path, func(path string) bool {
-		if tests := glob(path + "/testcases/*"); len(tests) > 0 {
+	fs.WalkUp(path, func(path string) bool {
+		if tests := fs.Glob(path + "/testcases/*"); len(tests) > 0 {
 			list = append(list, path)
 			return false
 		}
@@ -63,7 +64,7 @@ func readSuites(file string) []string {
 
 	for _, suite := range si.Suites {
 		if suite.RootDir != "" {
-			if file := filepath.Join(suite.RootDir, manifest.Name); isRegular(file) {
+			if file := filepath.Join(suite.RootDir, manifest.Name); fs.IsRegular(file) {
 				list = append(list, suite.RootDir)
 			}
 		}

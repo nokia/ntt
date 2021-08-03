@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
@@ -87,7 +88,7 @@ func Fingerprint(p *Project) string {
 	var inputs []string
 	files, _ := Files(p)
 	for _, file := range files {
-		inputs = append(inputs, stem(file))
+		inputs = append(inputs, fs.Stem(file))
 	}
 	return fmt.Sprintf("project_%x", sha1.Sum([]byte(fmt.Sprint(inputs))))
 }
@@ -114,7 +115,7 @@ func (p *Project) Update() error {
 
 	p.modules = nil // Clear module cache
 
-	if file := filepath.Join(p.root, manifest.Name); isRegular(file) {
+	if file := filepath.Join(p.root, manifest.Name); fs.IsRegular(file) {
 		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
 		return p.readManifest(file)
 	}
@@ -133,38 +134,38 @@ func (p *Project) Root() string {
 }
 
 func (p *Project) Name() string {
-	if env := getenv("NTT_NAME"); env != "" {
+	if env := env.Getenv("NTT_NAME"); env != "" {
 		return env
 	}
 	if p.Manifest.Name != "" {
 		return p.expand(p.Manifest.Name)
 	}
 	if p.root != "" {
-		return slugify(filepath.Base(p.root))
+		return fs.Slugify(filepath.Base(p.root))
 	}
 	if files, _ := Files(p); len(files) > 0 {
 		file := files[0]
 		if abs, err := filepath.Abs(file); err == nil {
-			return slugify(strings.TrimSuffix(filepath.Base(abs), filepath.Ext(abs)))
+			return fs.Slugify(fs.Stem(abs))
 		}
-		return slugify(filepath.Base(file))
+		return fs.Slugify(filepath.Base(file))
 	}
 	return "_"
 }
 
 func (p *Project) TestHook() string {
-	if env := getenv("NTT_TEST_HOOK"); env != "" {
+	if env := env.Getenv("NTT_TEST_HOOK"); env != "" {
 		return env
 	}
 	if p.Manifest.TestHook != "" {
-		return fix(p.Root(), p.expand(p.Manifest.TestHook))
+		return fs.Real(p.Root(), p.expand(p.Manifest.TestHook))
 	}
-	if hook := fix(p.Root(), p.Name()+".control"); isRegular(hook) {
+	if hook := fs.Real(p.Root(), p.Name()+".control"); fs.IsRegular(hook) {
 		return hook
 	}
 	if files, _ := Files(p); len(files) > 0 {
 		dir := filepath.Dir(files[0])
-		if hook := filepath.Join(dir, p.Name()+".control"); isRegular(hook) {
+		if hook := filepath.Join(dir, p.Name()+".control"); fs.IsRegular(hook) {
 			return hook
 		}
 	}
@@ -172,24 +173,24 @@ func (p *Project) TestHook() string {
 }
 
 func (p *Project) ParametersFile() string {
-	if env := getenv("NTT_PARAMETERS_FILE"); env != "" {
-		return fix(p.ParametersDir(), env)
+	if env := env.Getenv("NTT_PARAMETERS_FILE"); env != "" {
+		return fs.Real(p.ParametersDir(), env)
 	}
 	if p.Manifest.ParametersFile != "" {
-		return fix(p.ParametersDir(), p.expand(p.Manifest.ParametersFile))
+		return fs.Real(p.ParametersDir(), p.expand(p.Manifest.ParametersFile))
 	}
-	if file := fix(p.ParametersDir(), p.Name()+".parameters"); isRegular(file) {
+	if file := fs.Real(p.ParametersDir(), p.Name()+".parameters"); fs.IsRegular(file) {
 		return file
 	}
 	return ""
 }
 
 func (p *Project) ParametersDir() string {
-	if env := getenv("NTT_PARAMETERS_DIR"); env != "" {
+	if env := env.Getenv("NTT_PARAMETERS_DIR"); env != "" {
 		return env
 	}
 	if p.Manifest.ParametersDir != "" {
-		return fix(p.Root(), p.expand(p.Manifest.ParametersDir))
+		return fs.Real(p.Root(), p.expand(p.Manifest.ParametersDir))
 	}
 	if p.Root() != "" {
 		return p.Root()
@@ -206,13 +207,13 @@ func (p *Project) ParametersDir() string {
 func (p *Project) Sources() ([]string, error) {
 	var errs error
 
-	if env := getenv("NTT_SOURCES"); env != "" {
+	if env := env.Getenv("NTT_SOURCES"); env != "" {
 		return strings.Fields(env), nil
 	}
 
 	var srcs []string
 	for _, src := range p.Manifest.Sources {
-		src := fix(p.Root(), p.expand(src))
+		src := fs.Real(p.Root(), p.expand(src))
 
 		info, err := os.Stat(src)
 		switch {
@@ -242,13 +243,13 @@ func (p *Project) Sources() ([]string, error) {
 func (p *Project) Imports() ([]string, error) {
 	var errs error
 
-	if env := getenv("NTT_IMPORTS"); env != "" {
+	if env := env.Getenv("NTT_IMPORTS"); env != "" {
 		return strings.Fields(env), nil
 	}
 
 	var imports []string
 	for _, dir := range p.Manifest.Imports {
-		imports = append(imports, fix(p.Root(), p.expand(dir)))
+		imports = append(imports, fs.Real(p.Root(), p.expand(dir)))
 	}
 	return imports, errs
 }
@@ -262,7 +263,7 @@ func (p *Project) FindModule(name string) (string, error) {
 	if p.modules == nil {
 		p.modules = make(map[string]string)
 		for _, file := range FindAllFiles(p) {
-			name := strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))
+			name := fs.Stem(file)
 			p.modules[name] = file
 		}
 	}
@@ -271,7 +272,7 @@ func (p *Project) FindModule(name string) (string, error) {
 	}
 
 	// Use NTT_CACHE to locate file
-	if f := fs.Open(name + ".ttcn3").Path(); isRegular(f) {
+	if f := fs.Open(name + ".ttcn3").Path(); fs.IsRegular(f) {
 		p.modules[name] = f
 		return f, nil
 	}
@@ -320,7 +321,7 @@ func (p *Project) readFilesystem() {
 		"../../../../Common",
 	}
 	for _, dir := range commonDirs {
-		if path := filepath.Join(p.root, dir); isDir(path) {
+		if path := filepath.Join(p.root, dir); fs.IsDir(path) {
 			filepath.Walk(path, addImports)
 		}
 	}
