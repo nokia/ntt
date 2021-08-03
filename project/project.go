@@ -17,9 +17,6 @@ import (
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project/manifest"
 	"gopkg.in/yaml.v2"
-
-	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/k3"
 )
 
 // Interface describes a TTCN-3 project.
@@ -98,13 +95,18 @@ func Fingerprint(p Interface) string {
 }
 
 func Open(path string) (*Project, error) {
-	p := Project{
-		root: path,
+	p := Project{root: path}
+
+	if file := filepath.Join(p.root, manifest.Name); fs.IsRegular(file) {
+		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
+		return &p, p.readManifest(file)
 	}
 
-	return &p, p.Update()
+	log.Debugf("%s: update configuration using available folders\n", p.String())
+	return &p, p.readFilesystem()
 }
 
+// A Project implements the behaviour expected from ntt ttcn3 suites.
 type Project struct {
 	root string
 
@@ -115,19 +117,7 @@ type Project struct {
 	Manifest manifest.Config
 }
 
-func (p *Project) Update() error {
-
-	p.modules = nil // Clear module cache
-
-	if file := filepath.Join(p.root, manifest.Name); fs.IsRegular(file) {
-		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
-		return p.readManifest(file)
-	}
-	log.Debugf("%s: update configuration using available folders\n", p.String())
-	p.readFilesystem()
-	return nil
-}
-
+// String returns a simple string representation
 func (p *Project) String() string {
 	return p.root
 }
@@ -253,7 +243,11 @@ func (p *Project) Imports() ([]string, error) {
 
 	var imports []string
 	for _, dir := range p.Manifest.Imports {
-		imports = append(imports, fs.Real(p.Root(), p.expand(dir)))
+		dir := fs.Real(p.Root(), p.expand(dir))
+		if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+			errs = multierror.Append(errs, fmt.Errorf("%q must be a directory", dir))
+		}
+		imports = append(imports, dir)
 	}
 	return imports, errs
 }
@@ -283,9 +277,19 @@ func (p *Project) FindModule(name string) (string, error) {
 
 	return "", fmt.Errorf("No such module %q", name)
 }
+
 func (p *Project) expand(s string) string {
-	// TODO(5nord) implement expansion with variables section
-	return s
+	mapper := func(name string) string {
+		if s, ok := env.LookupEnv(name); ok {
+			return s
+		}
+		if s, ok := p.Manifest.Variables[name]; ok {
+			return s
+		}
+		return fmt.Sprintf("${UNKNOWN:%s}", name)
+	}
+
+	return os.Expand(s, mapper)
 }
 
 func (p *Project) readManifest(file string) error {
@@ -296,7 +300,7 @@ func (p *Project) readManifest(file string) error {
 	return yaml.UnmarshalStrict(b, &p.Manifest)
 }
 
-func (p *Project) readFilesystem() {
+func (p *Project) readFilesystem() error {
 	addSources := func(path string, info os.FileInfo, err error) error {
 		if err == nil && info.IsDir() {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
@@ -329,4 +333,5 @@ func (p *Project) readFilesystem() {
 			filepath.Walk(path, addImports)
 		}
 	}
+	return nil
 }

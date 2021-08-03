@@ -1,0 +1,5 @@
+variables:
+  "FNORD": ".."
+
+sources:
+  - ${FNORD}/a.ttcn3
