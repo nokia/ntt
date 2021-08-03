@@ -30,7 +30,7 @@ func TestProjects(t *testing.T) {
 	os.Unsetenv("NTT_SOURCES")
 
 	// Invalid package.yml
-	assert.Equal(t, nil, files(open("testdata/project/suite4")))
+	assert.Nil(t, files(open("testdata/project/suite4")))
 }
 
 func open(root string) project.Interface {
