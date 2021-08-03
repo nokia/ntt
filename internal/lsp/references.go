@@ -9,6 +9,7 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/project"
 )
 
 func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string) []protocol.Location {
@@ -37,7 +38,7 @@ func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string)
 }
 func newAllIdsWithSameName(suite *ntt.Suite, idName string) []protocol.Location {
 	var complList []protocol.Location = nil
-	if files := suite.FindAllFiles(); len(files) != 0 {
+	if files := project.FindAllFiles(suite); len(files) != 0 {
 		complList = make([]protocol.Location, 0, len(files))
 		for _, f := range files {
 			complList = append(complList, newAllIdsWithSameNameFromFile(suite, f, idName)...)
