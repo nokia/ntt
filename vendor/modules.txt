@@ -22,6 +22,8 @@ github.com/spf13/cobra
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.6.1
 github.com/stretchr/testify/assert
+# github.com/subosito/gotenv v1.2.0
+github.com/subosito/gotenv
 # golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20200413165638-669c56c373c4
