@@ -1,10 +1,11 @@
 package project
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
 	"path/filepath"
+
+	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/project/manifest"
+	"github.com/nokia/ntt/project/suiteindex"
 )
 
 // Discover walks towards the file system root and collects
@@ -16,18 +17,18 @@ func Discover(path string) []string {
 
 	var list []string
 
-	walkUp(path, func(path string) bool {
+	fs.WalkUp(path, func(path string) bool {
 		// Check source directories
-		if file := filepath.Join(path, "package.yml"); isRegular(file) {
+		if file := filepath.Join(path, manifest.Name); fs.IsRegular(file) {
 			list = append(list, path)
 		}
-		list = append(list, readSuites(filepath.Join(path, "ttcn3_suites.json"))...)
+		list = append(list, readSuites(filepath.Join(path, suiteindex.Name))...)
 
 		// Check build directories
-		for _, file := range glob(path + "/*build*/ttcn3_suites.json") {
+		for _, file := range fs.Glob(path + "/*build*/" + suiteindex.Name) {
 			list = append(list, readSuites(file)...)
 		}
-		for _, file := range glob(path + "/build/native/*/sct/ttcn3_suites.json") {
+		for _, file := range fs.Glob(path + "/build/native/*/sct/" + suiteindex.Name) {
 			list = append(list, readSuites(file)...)
 		}
 		return true
@@ -45,64 +46,21 @@ func Discover(path string) []string {
 	return result
 }
 
-func glob(s string) []string {
-	found, _ := filepath.Glob(s)
-	return found
-}
-
 func readSuites(file string) []string {
-	b, err := ioutil.ReadFile(file)
+	var list []string
+
+	si, err := suiteindex.ReadFile(file)
 	if err != nil {
 		return nil
 	}
 
-	var (
-		data Build
-		list []string
-	)
-
-	if err := json.Unmarshal(b, &data); err != nil {
-		return nil
-	}
-
-	for _, suite := range data.Suites {
-		if suite.RootDir == "" {
-			continue
-		}
-		if !filepath.IsAbs(suite.RootDir) {
-			suite.RootDir = filepath.Join(filepath.Dir(file), suite.RootDir)
-		}
-
-		if file := filepath.Join(suite.RootDir, "package.yml"); isRegular(file) {
-			list = append(list, suite.RootDir)
+	for _, suite := range si.Suites {
+		if suite.RootDir != "" {
+			if file := filepath.Join(suite.RootDir, manifest.Name); fs.IsRegular(file) {
+				list = append(list, suite.RootDir)
+			}
 		}
 	}
 
 	return list
-}
-
-func walkUp(path string, f func(path string) bool) {
-	for {
-		if !f(path) {
-			break
-		}
-
-		if abs, _ := filepath.Abs(path); abs == "/" {
-			break
-		}
-
-		path = filepath.Clean(filepath.Join(path, ".."))
-	}
-}
-
-func isRegular(path string) bool {
-	if p, err := filepath.EvalSymlinks(path); err == nil {
-		path = p
-	}
-
-	if info, err := os.Stat(path); err == nil {
-		return !info.IsDir()
-	}
-
-	return false
 }
