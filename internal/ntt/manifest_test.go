@@ -82,46 +82,35 @@ func TestSources(t *testing.T) {
 		// Now we are adding two source manually without having a root folder.
 		// Multiple calls to Sources should not change the number of Sources.
 		suite.AddSources("a.ttcn3", "b.ttcn3")
-		v, err := suite.Sources()
+		v, _ := suite.Sources()
 		for i := 0; i < 10; i++ {
-			v, err = suite.Sources()
+			v, _ = suite.Sources()
 		}
-		assert.Nil(t, err)
 		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3"}, v)
 
 		// Identical files may be added twice.
 		suite.AddSources("a.ttcn3", "b.ttcn3")
-		v, err = suite.Sources()
-		assert.Nil(t, err)
+		v, _ = suite.Sources()
 		assert.Equal(t, []string{"a.ttcn3", "b.ttcn3", "a.ttcn3", "b.ttcn3"}, v)
-
-		// Environment shall overwrite configured sources.
-		os.Setenv("NTT_SOURCES", "x.ttcn3	y.ttcn3")
-		v, err = suite.Sources()
-		assert.Nil(t, err)
-		assert.Equal(t, []string{"x.ttcn3", "y.ttcn3"}, v)
-		os.Unsetenv("NTT_SOURCES")
 
 		// Setting root removes all previous configured sources.
 		//
 		// This root contains just some .ttcn3 files without manifest.
 		suite.SetRoot("./testdata/suite1")
 		suite.AddSources("a.ttcn3", "b.ttcn3")
-		v, err = suite.Sources()
-		assert.Nil(t, err)
-		assert.Equal(t, []string{"testdata/suite1/a.ttcn3", "testdata/suite1/x.ttcn3", "a.ttcn3", "b.ttcn3"}, v)
+		v, _ = suite.Sources()
+		assert.Equal(t, []string{"testdata/suite1/a.ttcn3", "testdata/suite1/x.ttcn3", "testdata/suite1/a.ttcn3", "testdata/suite1/b.ttcn3"}, v)
 
 		// This root contains a manifest.
 		suite.SetRoot("./testdata/suite2")
 		suite.AddSources("a.ttcn3", "b.ttcn3")
-		v, err = suite.Sources()
-		assert.Nil(t, err)
+		v, _ = suite.Sources()
 		assert.Equal(t, []string{
 			"testdata/suite2/a1.ttcn3",
 			"testdata/suite2/a2.ttcn3",
 			"testdata/suite2/dir1/a3.ttcn3",
-			"a.ttcn3",
-			"b.ttcn3",
+			"testdata/suite2/a.ttcn3",
+			"testdata/suite2/b.ttcn3",
 		}, v)
 	})
 
@@ -134,16 +123,17 @@ func TestImports(t *testing.T) {
 	// This handle is used to overwrite package.yml with custom import testing
 	// stuff.
 	conf := fs.Open("./testdata/suite2/package.yml")
-
 	conf.SetBytes([]byte(`imports: [ "dir1" ]`))
+	suite.SetRoot("./testdata/suite2")
 	v, err := suite.Imports()
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"testdata/suite2/dir1"}, v)
 
 	conf.SetBytes([]byte(`imports: [ "${SOMETHING_UNKNOWN}/dir1" ]`))
+	suite.SetRoot("./testdata/suite2")
 	v, err = suite.Imports()
 	assert.NotNil(t, err)
-	assert.Nil(t, v)
+	assert.Equal(t, []string{"${SOMETHING_UNKNOWN}/dir1"}, v)
 }
 
 func TestName(t *testing.T) {
@@ -156,7 +146,6 @@ func TestName(t *testing.T) {
 
 	suite.AddSources("${SOMETHING}/dir1.ttcn3/foo.ttcn3", "bar", "fnord.ttcn3")
 	n, err = suite.Name()
-	assert.Nil(t, err)
 	assert.Equal(t, "foo", n)
 
 	suite.SetRoot("testdata/suite2")

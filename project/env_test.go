@@ -1,4 +1,4 @@
-package ntt_test
+package project_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 )
@@ -14,9 +14,9 @@ import (
 // Verify unknown variable lead to an error
 func TestSuiteUnknownVar(t *testing.T) {
 	clearEnv()
-	suite := &ntt.Suite{}
-	s, err := suite.Getenv("NTT_FNORD")
-	if _, ok := err.(*ntt.NoSuchVariableError); !ok {
+	p := &project.Project{}
+	s, err := p.Getenv("NTT_FNORD")
+	if _, ok := err.(*project.NoSuchVariableError); !ok {
 		assert.Fail(t, "Expected NoSuchVariableError")
 	}
 	assert.Equal(t, "", s)
@@ -25,8 +25,8 @@ func TestSuiteUnknownVar(t *testing.T) {
 // Verify known variables do not lead to an error
 func TestSuiteKnownVar(t *testing.T) {
 	clearEnv()
-	suite := &ntt.Suite{}
-	s, err := suite.Getenv("NTT_NAME")
+	p := &project.Project{}
+	s, err := p.Getenv("NTT_NAME")
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
@@ -34,9 +34,9 @@ func TestSuiteKnownVar(t *testing.T) {
 // Verify empty environment variables do not lead to an error.
 func TestSuiteEmpty(t *testing.T) {
 	clearEnv()
-	suite := &ntt.Suite{}
+	p := &project.Project{}
 	os.Setenv("K3_FNORD", "")
-	s, err := suite.Getenv("NTT_FNORD")
+	s, err := p.Getenv("NTT_FNORD")
 	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
@@ -45,82 +45,111 @@ type Vars map[string]string
 
 // Verify simple access.
 func TestVarsSimple(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_SIMPLE": "simple",
 	})
-	v, err := suite.Getenv("NTT_SIMPLE")
+	v, err := p.Getenv("NTT_SIMPLE")
 	assert.Nil(t, err)
 	assert.Equal(t, "simple", v)
 }
 
 // Verify environment overwrites variables
 func TestVarsEnvOverwrites(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_SIMPLE": "simple",
 	})
 	os.Setenv("NTT_SIMPLE", "fromEnv")
-	v, err := suite.Getenv("NTT_SIMPLE")
+	v, err := p.Getenv("NTT_SIMPLE")
 	assert.Nil(t, err)
 	assert.Equal(t, "fromEnv", v)
 }
 
 // Verify variables expand transitively (with ErrUnknownVariable)
 func TestExpandTransitive(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_A": "$NTT_B",
 		"NTT_B": "$NTT_C",
 	})
-	v, err := suite.Getenv("NTT_A")
+	v, err := p.Getenv("NTT_A")
 	assert.NotNil(t, err)
 	assert.Equal(t, "", v)
 }
 
 // Verify variables expand transitively (from environment)
 func TestExpandTransitive2(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_A": "$NTT_B",
 		"NTT_B": "$NTT_C",
 	})
 	os.Setenv("NTT_C", "fromEnv")
-	v, err := suite.Getenv("NTT_A")
+	v, err := p.Getenv("NTT_A")
 	assert.Nil(t, err)
 	assert.Equal(t, "fromEnv", v)
 }
 
 // Verify environment variables do not expand.
 func TestExpandEnv(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_A": "$NTT_B",
 		"NTT_B": "fromVars",
 	})
 	os.Setenv("NTT_A", "$NTT_B")
-	v, err := suite.Getenv("NTT_A")
+	v, err := p.Getenv("NTT_A")
 	assert.Nil(t, err)
 	assert.Equal(t, "$NTT_B", v)
 }
 
 // Verify recursion does not cause trouble
 func TestExpandRecursive(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_A": "$NTT_A",
 	})
-	v, err := suite.Getenv("NTT_A")
+	v, err := p.Getenv("NTT_A")
 	assert.Nil(t, err)
 	assert.Equal(t, "", v)
 }
 
 // Verify indirect recursion does not cause trouble
 func TestExpandRecursive2(t *testing.T) {
-	suite := suiteWithVars(Vars{
+	p := projectWithVars(Vars{
 		"NTT_A": "$NTT_B",
 		"NTT_B": "$NTT_A",
 	})
-	v, err := suite.Getenv("NTT_A")
+	v, err := p.Getenv("NTT_A")
 	assert.Nil(t, err)
 	assert.Equal(t, "", v)
 }
 
-func suiteWithVars(vars map[string]string) *ntt.Suite {
+// The purpose of this test is to clarify what happens, when undeclared variables are used inside manifest.
+func TestExpandManifest(t *testing.T) {
+	var manifest struct {
+		Sources   []string
+		Variables Vars
+	}
+	manifest.Variables = Vars{"NTT_A": "."}
+	manifest.Sources = []string{
+		"$NTT_A/project.go",
+		"$NTT_X/project.go",
+		"${NTT_X}./project.go",
+		"${NTT_ENV}/project.go",
+	}
+	b, err := yaml.Marshal(manifest)
+	if err != nil {
+		panic(err)
+	}
+	clearEnv()
+	os.Setenv("NTT_ENV", "fromEnv")
+	fs.SetContent("package.yml", b)
+	p, err := project.Open(".")
+	if err != nil {
+		panic(err)
+	}
+	srcs, err := p.Sources()
+	assert.NotNil(t, err)
+	assert.Equal(t, []string{"project.go", "$NTT_X/project.go", "${NTT_X}./project.go", "fromEnv/project.go"}, srcs)
+}
+
+func projectWithVars(vars map[string]string) *project.Project {
 	var manifest struct {
 		Variables map[string]string
 	}
@@ -132,9 +161,11 @@ func suiteWithVars(vars map[string]string) *ntt.Suite {
 	}
 	clearEnv()
 	fs.SetContent("package.yml", b)
-	suite := &ntt.Suite{}
-	suite.SetRoot(".")
-	return suite
+	p, err := project.Open(".")
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 func clearEnv(files ...string) {

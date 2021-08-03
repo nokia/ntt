@@ -32,6 +32,12 @@ type Suite struct {
 	store memoize.Store
 }
 
+func (suite *Suite) lazyInit() {
+	if suite.p == nil {
+		suite.p = &project.Project{}
+	}
+}
+
 // Id returns the unique session id (aka NTT_SESSION_ID). This ID is the smallest
 // integer available on this machine.
 func (suite *Suite) Id() (int, error) {
@@ -54,7 +60,10 @@ func (suite *Suite) Id() (int, error) {
 }
 
 func (suite *Suite) Root() string {
-	return suite.p.Root()
+	if suite.p != nil {
+		return suite.p.Root()
+	}
+	return ""
 }
 
 // SetRoot set the root folder for Suite.

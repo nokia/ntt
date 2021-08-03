@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/project"
@@ -20,11 +21,7 @@ import (
 // The error will be != nil if timeout could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (suite *Suite) Timeout() (float64, error) {
-	s, err := suite.Getenv("NTT_TIMEOUT")
-	if err != nil {
-		return 0, err
-	}
-	if s != "" {
+	if s := env.Getenv("NTT_TIMEOUT"); s != "" {
 		f, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return 0, err
@@ -45,6 +42,7 @@ func (suite *Suite) Timeout() (float64, error) {
 // The error will be != nil if input sources could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (suite *Suite) Sources() ([]string, error) {
+	suite.lazyInit()
 	return suite.p.Sources()
 }
 
@@ -52,11 +50,13 @@ func (suite *Suite) Sources() ([]string, error) {
 // The error will be != nil if imports could not be determined correctly. For
 // example, when `package.yml` had syntax errors.
 func (suite *Suite) Imports() ([]string, error) {
+	suite.lazyInit()
 	return suite.p.Imports()
 }
 
 // AddSources appends files... to the known sources list.
 func (suite *Suite) AddSources(files ...string) {
+	suite.lazyInit()
 	suite.p.Manifest.Sources = append(suite.p.Manifest.Sources, files...)
 }
 
@@ -72,12 +72,8 @@ func (suite *Suite) Name() (string, error) {
 		return suite.name, nil
 	}
 
-	env, err := suite.Getenv("NTT_NAME")
-	if err != nil {
-		return "", err
-	}
-	if env != "" {
-		return env, nil
+	if s := env.Getenv("NTT_NAME"); s != "" {
+		return s, nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -95,11 +91,7 @@ func (suite *Suite) Name() (string, error) {
 	}
 
 	// As last resort, try to find a name in source files.
-	srcs, err := suite.Sources()
-	if err != nil {
-		return "", err
-	}
-	if len(srcs) > 0 {
+	if srcs, _ := suite.Sources(); len(srcs) > 0 {
 		n, err := filepath.Abs(fs.Path(srcs[0]))
 		if err != nil {
 			return "", err
@@ -134,12 +126,8 @@ func (suite *Suite) Variables() (map[string]string, error) {
 // will return nil. If an error occurred, like a parse error, then error is set
 // appropriately.
 func (suite *Suite) TestHook() (*fs.File, error) {
-	env, err := suite.Getenv("NTT_TEST_HOOK")
-	if err != nil {
-		return nil, err
-	}
-	if env != "" {
-		return fs.Open(env), nil
+	if s := env.Getenv("NTT_TEST_HOOK"); s != "" {
+		return fs.Open(s), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -202,12 +190,8 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 // * parameters_dir field from manifest
 // * suites root path.
 func (suite *Suite) ParametersDir() (string, error) {
-	if env, err := suite.Getenv("NTT_PARAMETERS_DIR"); err == nil {
-		if env != "" {
-			return env, nil
-		}
-	} else {
-		return "", err
+	if s := env.Getenv("NTT_PARAMETERS_DIR"); s != "" {
+		return s, nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -236,13 +220,9 @@ func (suite *Suite) ParametersDir() (string, error) {
 // appropriately.
 func (suite *Suite) ParametersFile() (*fs.File, error) {
 	var pDir string = ""
-	env, err := suite.Getenv("NTT_PARAMETERS_FILE")
-	if err != nil {
-		return nil, err
-	}
-
-	if env != "" && filepath.IsAbs(env) {
-		return fs.Open(env), nil
+	s := env.Getenv("NTT_PARAMETERS_FILE")
+	if s != "" && filepath.IsAbs(s) {
+		return fs.Open(s), nil
 	}
 	// first get the path to the root of the parameters file(s)
 	if paramDir, err := suite.ParametersDir(); err == nil {
@@ -252,13 +232,13 @@ func (suite *Suite) ParametersFile() (*fs.File, error) {
 	}
 
 	if pDir != "" {
-		if env != "" {
-			path := filepath.Clean(filepath.Join(pDir, env))
+		if s != "" {
+			path := filepath.Clean(filepath.Join(pDir, s))
 			return fs.Open(path), nil
 		}
 
-	} else if env != "" {
-		return fs.Open(env), nil
+	} else if s != "" {
+		return fs.Open(s), nil
 	}
 
 	// If there's a parseable package.yml, try that one.
@@ -403,5 +383,6 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 
 // FindModule tries to find a .ttcn3 based on its module name.
 func (suite *Suite) FindModule(name string) (string, error) {
+	suite.lazyInit()
 	return suite.p.FindModule(name)
 }
