@@ -125,7 +125,7 @@ func (suite *Suite) SetRoot(folder string) {
 }
 
 func (suite *Suite) LatestResults() (*results.DB, error) {
-	b, err := suite.File("test_results.json").Bytes()
+	b, err := fs.Open("test_results.json").Bytes()
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

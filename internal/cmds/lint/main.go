@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
@@ -195,7 +196,7 @@ func lint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	c := suite.File(".ntt-lint.yml")
+	c := fs.Open(".ntt-lint.yml")
 	b, err := c.Bytes()
 	if err != nil {
 		log.Verbose(err.Error())

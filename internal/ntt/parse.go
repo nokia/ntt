@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
@@ -90,7 +91,7 @@ func (suite *Suite) ParseWithAllErrors(file string) *ParseInfo {
 }
 
 func (suite *Suite) parse(file string, moder parser.Mode) *ParseInfo {
-	f := suite.File(file)
+	f := fs.Open(file)
 	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
 		data := ParseInfo{}
 

@@ -51,7 +51,7 @@ func TestTimeout(t *testing.T) {
 		assert.Zero(t, v)
 
 		suite.SetRoot(".")
-		f := suite.File("./package.yml")
+		f := fs.Open("./package.yml")
 		f.SetBytes([]byte(`timeout: 23.5`))
 		v, err = suite.Timeout()
 		assert.Nil(t, err)
@@ -133,7 +133,7 @@ func TestImports(t *testing.T) {
 
 	// This handle is used to overwrite package.yml with custom import testing
 	// stuff.
-	conf := suite.File("./testdata/suite2/package.yml")
+	conf := fs.Open("./testdata/suite2/package.yml")
 
 	conf.SetBytes([]byte(`imports: [ "dir1" ]`))
 	v, err := suite.Imports()
@@ -169,7 +169,7 @@ func TestName(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "suite2", n)
 
-	conf := suite.File("testdata/suite2/package.yml")
+	conf := fs.Open("testdata/suite2/package.yml")
 	conf.SetBytes([]byte("name: fnord"))
 	n, err = suite.Name()
 	assert.Nil(t, err)
