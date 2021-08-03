@@ -2,6 +2,7 @@ package fs_test
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -25,4 +26,11 @@ func TestBytesFromURL(t *testing.T) {
 	b, err := f.Bytes()
 	assert.Nil(t, err)
 	assert.Equal(t, expected, b)
+}
+
+func TestCaching(t *testing.T) {
+	assert.Equal(t, "package.yml", fs.Open("package.yml").Path())
+
+	os.Setenv("NTT_CACHE", "testdata/cache")
+	assert.Equal(t, "testdata/cache/package.yml", fs.Open("package.yml").Path())
 }
