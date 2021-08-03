@@ -10,8 +10,8 @@ import (
 	"github.com/nokia/ntt/k3"
 )
 
-// Project describes a TTCN-3 project.
-type Project interface {
+// Interface describes a TTCN-3 project.
+type Interface interface {
 	// Root is the test suite root folder. It is usually the folder where the manifest is.
 	Root() string
 
@@ -25,7 +25,7 @@ type Project interface {
 
 // Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
 // On error Files will return an error.
-func Files(p Project) ([]string, error) {
+func Files(p Interface) ([]string, error) {
 	files, err := p.Sources()
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func Files(p Project) ([]string, error) {
 
 // FindAllFiles returns all .ttcn3 files including auxiliary files from
 // k3 installation
-func FindAllFiles(p Project) []string {
+func FindAllFiles(p Interface) []string {
 	files, _ := Files(p)
 	// Use auxilliaryFiles from K3 to locate file
 	for _, dir := range k3.FindAuxiliaryDirectories() {
@@ -57,8 +57,9 @@ func FindAllFiles(p Project) []string {
 	return files
 }
 
-// ContainsFile returns true, when path is managed by Project.
-func ContainsFile(p Project, path string) bool {
+// ContainsFile returns true, when path is managed by Interface.
+func ContainsFile(p Interface, path string) bool {
+
 	// The same file may be referenced by URI or by path. To normalize it
 	// we convert everything into URIs.
 	uri := fs.URI(path)
