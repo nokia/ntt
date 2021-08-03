@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/project"
 )
 
 func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
@@ -24,7 +25,10 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	// language support.
 	if len(s.Owners(uri)) == 0 {
 		log.Debugf("File %q does not belong to any known test suite\n", uri)
-		s.AddFolder(filepath.Dir(fs.Open(string(uri.SpanURI())).Path()))
+		dir := filepath.Dir(fs.Open(string(uri.SpanURI())).Path())
+		for _, suite := range project.Discover(dir) {
+			s.AddFolder(suite)
+		}
 	}
 	s.Diagnose(uri)
 	return nil
