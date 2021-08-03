@@ -18,13 +18,21 @@ func Load() {
 // Lookup key in process environment. Is key begins with "NTT_" also lookup key
 // with "K3_" prefix.
 func Getenv(key string) string {
-	if env := os.Getenv(key); env != "" {
+	if env, ok := LookupEnv(key); ok {
 		return env
 	}
-	if strings.HasPrefix(key, "NTT") {
-		return os.Getenv(strings.Replace(key, "NTT", "K3", 1))
-	}
 	return ""
+}
+
+// LookupEnv is like Getenv, but returns a true boolean when key exists
+func LookupEnv(key string) (string, bool) {
+	if env, ok := os.LookupEnv(key); ok {
+		return env, ok
+	}
+	if strings.HasPrefix(key, "NTT") {
+		return os.LookupEnv(strings.Replace(key, "NTT", "K3", 1))
+	}
+	return "", false
 }
 
 // FromCache works similar to GNU Makes VPATH functionality: Paths without directory portion will be looked up alternate directory specified by NTT_CACHE environment variable.
