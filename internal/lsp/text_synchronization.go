@@ -3,6 +3,7 @@ package lsp
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -10,7 +11,7 @@ import (
 )
 
 func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
-	if params.TextDocument.LanguageID != "ttcn3" {
+	if !strings.HasPrefix(strings.ToLower(params.TextDocument.LanguageID), "ttcn") {
 		return nil
 	}
 
