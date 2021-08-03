@@ -13,6 +13,7 @@ import (
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/project"
 )
 
 var (
@@ -258,7 +259,7 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 
 func moduleNameListFromSuite(suite *ntt.Suite, ownModName string, sortPref string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
-	if files := suite.FindAllFiles(); len(files) > 0 {
+	if files := project.FindAllFiles(suite); len(files) > 0 {
 		list = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			fileName := filepath.Base(f)
@@ -316,7 +317,7 @@ func newAllPortTypesFromModule(suite *ntt.Suite, modName string, sortPref string
 
 func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files := suite.FindAllFiles(); len(files) > 0 {
+	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
@@ -330,7 +331,7 @@ func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.Completi
 
 func newAllPortTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
 	var portList []protocol.CompletionItem = nil
-	if files := suite.FindAllFiles(); len(files) > 0 {
+	if files := project.FindAllFiles(suite); len(files) > 0 {
 		portList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
@@ -348,7 +349,7 @@ func newAllPortTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionI
 
 func newAllTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files := suite.FindAllFiles(); len(files) > 0 {
+	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
@@ -367,7 +368,7 @@ func newAllTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem 
 
 func newAllValueDecls(suite *ntt.Suite, kind token.Kind) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files := suite.FindAllFiles(); len(files) > 0 {
+	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)

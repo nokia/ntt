@@ -17,6 +17,9 @@ import (
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project/manifest"
 	"gopkg.in/yaml.v2"
+
+	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/k3"
 )
 
 // Interface describes a TTCN-3 project.
@@ -84,7 +87,8 @@ func ContainsFile(p Interface, path string) bool {
 	return false
 }
 
-func Fingerprint(p *Project) string {
+// Fingerprint calculates a sum to identify a test suite based on its modules.
+func Fingerprint(p Project) string {
 	var inputs []string
 	files, _ := Files(p)
 	for _, file := range files {
@@ -298,7 +302,7 @@ func (p *Project) readFilesystem() {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
 			if len(files) > 0 {
 				log.Debugf("adding sources: %q\n", path)
-				p.Manifest.Sources = append(p.Manifest.Sources, rel(p.Root(), files...)...)
+				p.Manifest.Sources = append(p.Manifest.Sources, fs.Rel(p.Root(), files...)...)
 			}
 		}
 		return nil
@@ -325,19 +329,4 @@ func (p *Project) readFilesystem() {
 			filepath.Walk(path, addImports)
 		}
 	}
-}
-
-func rel(base string, paths ...string) []string {
-	if len(paths) == 0 {
-		return nil
-	}
-	ret := make([]string, len(paths))
-	for i, path := range paths {
-		if r, err := filepath.Rel(base, path); err == nil {
-			ret[i] = r
-		} else {
-			ret[i] = path
-		}
-	}
-	return ret
 }
