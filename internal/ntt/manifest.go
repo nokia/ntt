@@ -10,7 +10,6 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"gopkg.in/yaml.v2"
 )
@@ -514,19 +513,6 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	return &data.manifest, data.err
 }
 
-// FindAllFiles returns all .ttcn3 files including auxiliary files from
-// k3 installation
-func (suite *Suite) FindAllFiles() []string {
-	files, _ := project.Files(suite)
-	// Use auxilliaryFiles from K3 to locate file
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		for _, file := range fs.FindTTCN3Files(dir) {
-			files = append(files, file)
-		}
-	}
-	return files
-}
-
 // FindModule tries to find a .ttcn3 based on its module name.
 func (suite *Suite) FindModule(name string) (string, error) {
 
@@ -547,7 +533,7 @@ func (suite *Suite) FindModule(name string) (string, error) {
 		return f.Path(), nil
 	}
 
-	for _, file := range suite.FindAllFiles() {
+	for _, file := range project.FindAllFiles(suite) {
 		if filepath.Base(file) == name+".ttcn3" {
 			suite.modules[name] = file
 			return file, nil

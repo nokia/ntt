@@ -2,7 +2,13 @@
 // implementing various heuristics.
 package project
 
-import "github.com/nokia/ntt/internal/fs"
+import (
+	"crypto/sha1"
+	"fmt"
+
+	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/k3"
+)
 
 // Interface describes a TTCN-3 project.
 type Interface interface {
@@ -38,8 +44,22 @@ func Files(p Interface) ([]string, error) {
 	return files, nil
 }
 
+// FindAllFiles returns all .ttcn3 files including auxiliary files from
+// k3 installation
+func FindAllFiles(p Interface) []string {
+	files, _ := Files(p)
+	// Use auxilliaryFiles from K3 to locate file
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		for _, file := range fs.FindTTCN3Files(dir) {
+			files = append(files, file)
+		}
+	}
+	return files
+}
+
 // ContainsFile returns true, when path is managed by Interface.
 func ContainsFile(p Interface, path string) bool {
+
 	// The same file may be referenced by URI or by path. To normalize it
 	// we convert everything into URIs.
 	uri := fs.URI(path)
@@ -51,4 +71,14 @@ func ContainsFile(p Interface, path string) bool {
 		}
 	}
 	return false
+}
+
+// Fingerprint calculates a sum to identify a test suite based on its modules.
+func Fingerprint(p Project) string {
+	var inputs []string
+	files, _ := Files(p)
+	for _, file := range files {
+		inputs = append(inputs, fs.Stem(file))
+	}
+	return fmt.Sprintf("project_%x", sha1.Sum([]byte(fmt.Sprint(inputs))))
 }
