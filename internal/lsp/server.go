@@ -9,7 +9,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
+	"unicode"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -104,7 +106,7 @@ func (s *Server) Log(ctx context.Context, msg string) {
 
 func (s *Server) Output(level log.Level, msg string) error {
 	if level <= log.GlobalLevel() {
-		s.Log(context.TODO(), msg)
+		s.Log(context.TODO(), strings.TrimRightFunc(msg, unicode.IsSpace))
 	}
 	return nil
 }

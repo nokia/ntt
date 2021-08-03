@@ -24,7 +24,7 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	// Every file should be owned by at least one suite to provide proper
 	// language support.
 	if len(s.Owners(uri)) == 0 {
-		log.Debugf("File %q does not belong to any known test suite\n", uri)
+		log.Verbosef("File %q does not belong to any known test suite\nScanning...\n", uri)
 		dir := filepath.Dir(fs.Open(string(uri.SpanURI())).Path())
 		for _, suite := range project.Discover(dir) {
 			s.AddFolder(suite)

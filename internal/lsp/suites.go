@@ -57,7 +57,7 @@ func (s *Suites) AddFolder(root string) {
 		s.roots = make(map[string]*ntt.Suite)
 	}
 
-	log.Debugf("Adding %q to list of known test suites\n", root)
+	log.Verbose("Add %q to list of known test suites\n", root)
 	suite := &ntt.Suite{}
 	suite.SetRoot(root)
 	s.roots[root] = suite
