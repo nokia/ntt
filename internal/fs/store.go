@@ -3,7 +3,7 @@ package fs
 import (
 	"sync"
 
-	"github.com/nokia/ntt/internal/env"
+	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/span"
 )
 
@@ -15,7 +15,7 @@ type Store struct {
 
 // Open a file and add it to the store.
 func (s *Store) Open(path string) *File {
-	path = env.FromCache(path)
+	path = cache.Lookup(path)
 
 	uri := URI(path)
 

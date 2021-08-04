@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/env"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -29,17 +28,4 @@ func TestCache(t *testing.T) {
 		t.Errorf("Want: NTT_FOO=%q, Got: NTT_FOO=%q", "bar", env)
 	}
 
-}
-
-func TestFromCache(t *testing.T) {
-	os.Setenv("NTT_CACHE", "testdata/cache")
-	assert.Equal(t, "./file", env.FromCache("./file"))
-	assert.Equal(t, "./env.go", env.FromCache("./env.go"))
-
-	assert.Equal(t, "file", env.FromCache("file"))
-	assert.Equal(t, "file://env.go", env.FromCache("file://env.go"))
-	assert.Equal(t, ".", env.FromCache("."))
-	assert.Equal(t, "..", env.FromCache(".."))
-	assert.Equal(t, "env.go", env.FromCache("env.go"))
-	assert.Equal(t, "testdata/cache/other.go", env.FromCache("other.go"))
 }
