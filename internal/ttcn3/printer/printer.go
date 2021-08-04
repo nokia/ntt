@@ -34,6 +34,7 @@ type printer struct {
 }
 
 func (p *printer) print(v interface{}) {
+	fmt.Fprint(p.w, "module M {}\n")
 	switch n := v.(type) {
 	case whiteSpace:
 		switch n {
