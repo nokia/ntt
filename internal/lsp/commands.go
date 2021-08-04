@@ -102,7 +102,14 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 	}
 	cmd = exec.Command("ntt", opts...)
 
+	// disable compilers colorised output
+	k3cFlags := env.Getenv("K3CFLAGS_EXT")
+	if k3cFlags != "" {
+		os.Unsetenv("K3CFLAGS_EXT")
+	}
+	k3cFlags += " --diagnostics-color=never"
 	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "K3CFLAGS_EXT="+k3cFlags)
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
 	if nttCache != "" {
 		cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
@@ -118,15 +125,8 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 		if cmd.ProcessState.ExitCode() >= 0 {
 			// run ntt report
 			cmd := exec.Command("ntt", "report", pathToManifest)
-			// disable compilers colorised output
-			k3cFlags := env.Getenv("K3CFLAGS_EXT")
-			if k3cFlags != "" {
-				os.Unsetenv("K3CFLAGS_EXT")
-			}
-			k3cFlags += " --diagnostics-color=never"
-			cmd.Env = os.Environ()
+
 			cmd.Env = append(cmd.Env, "NTT_COLORS=never")
-			cmd.Env = append(cmd.Env, "K3CFLAGS_EXT="+k3cFlags)
 			if nttCache != "" {
 				cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
 			}
