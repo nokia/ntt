@@ -29,7 +29,7 @@ func NewServer(stream jsonrpc2.Stream) *Server {
 
 func (s *Server) Serve(ctx context.Context) error {
 	// Ignore client settings when NTT_DEBUG is enabled
-	if env := env.Getenv("NTT_DEBUG"); env == "" {
+	if env := env.Getenv("NTT_DEBUG_FILE"); env == "" {
 		log.SetGlobalLogger(s)
 	}
 	s.client = protocol.ClientDispatcher(s.conn)
