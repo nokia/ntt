@@ -1,13 +1,11 @@
 package ntt
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/nokia/ntt/internal/fs"
-	"github.com/pelletier/go-toml"
+	"github.com/hashicorp/go-multierror"
+	"github.com/nokia/ntt/internal/env"
 )
 
 type NoSuchVariableError struct {
@@ -39,43 +37,31 @@ var knownVars = map[string]bool{
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
 func (suite *Suite) Environ() ([]string, error) {
+	var errs error
+
 	allKeys := make(map[string]struct{})
 
-	if vars, _ := suite.Variables(); vars != nil {
-		for k := range vars {
-			allKeys[k] = struct{}{}
-		}
+	vars, err := suite.Variables()
+	if err != nil {
+		errs = multierror.Append(errs, err)
 	}
-	for i := range suite.envFiles {
-		tree, err := suite.parseEnvFile(suite.envFiles[i])
-		if err != nil {
-			return nil, err
-		}
-		if tree == nil {
-			continue
-		}
-		for _, k := range tree.Keys() {
-			allKeys[k] = struct{}{}
-		}
+	for k := range vars {
+		allKeys[k] = struct{}{}
+	}
+
+	for k := range env.Parse() {
+		allKeys[k] = struct{}{}
 	}
 
 	ret := make([]string, 0, len(allKeys))
 	for k := range allKeys {
 		v, err := suite.Getenv(k)
 		if err != nil {
-			return nil, err
+			errs = multierror.Append(errs, err)
 		}
 		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
 	}
 	return ret, nil
-}
-
-// AddEnvFiles adds the TOML formatted files to the list of environment files
-// to look for variables.
-func (suite *Suite) AddEnvFiles(files ...string) {
-	for i := range files {
-		suite.envFiles = append(suite.envFiles, fs.Open(files[i]))
-	}
 }
 
 // Expand expands string v using Suite.Getenv
@@ -83,168 +69,50 @@ func (suite *Suite) Expand(v string) (string, error) {
 	return suite.expand(v, make(map[string]string))
 }
 
-// Expand expands string v using Suite.Getenv
+func (suite *Suite) Getenv(v string) (string, error) {
+	return suite.getenv(v, make(map[string]string))
+}
+
 func (suite *Suite) expand(v string, visited map[string]string) (string, error) {
-	var gerr error
+	var errs error
 	mapper := func(name string) string {
 		v, err := suite.getenv(name, visited)
-		if err != nil && gerr == nil {
-			gerr = err
+		if err != nil {
+			errs = multierror.Append(errs, &NoSuchVariableError{Name: name})
 		}
 		return v
 	}
-
-	return os.Expand(v, mapper), gerr
-}
-
-// Getenv retrieves the value of the environment variable named by the key. It
-// returns the value, which will be empty if the variable is not present.
-// Getenv will return an error object for critical errors, like IO or syntax
-// errors in env files.
-//
-//
-// Getenv looks for the key in the process environment first. If not found, it
-// searches for key in all env files and finally it tries the variables-section
-// in the manifest, if any.
-//
-// If key starts with "NTT" and could not be found, Getenv will replace the
-// prefix with "K3" to help with migrating old scripts. For example, when
-// looking for "NTT_FOO" following lookups will happen:
-//
-//         os.Getenv("NTT_FOO") os.Getenv("K3_FOO")
-//         suite.lookupEnvFile("$PWD/ntt.env", "NTT_FOO")
-//         suite.lookupEnvFile("$PWD/ntt.env", "K3_FOO")
-//         suite.lookupEnvFile("$PWD/k3.env", "NTT_FOO")
-//         suite.lookupEnvFile("$PWD/k3.env", "K3_FOO")
-//
-//
-func (suite *Suite) Getenv(key string) (string, error) {
-	return suite.getenv(key, make(map[string]string))
+	return os.Expand(v, mapper), errs
 }
 
 func (suite *Suite) getenv(key string, visited map[string]string) (string, error) {
-	if s, ok := visited[key]; ok {
-		return s, nil
+	if v, ok := visited[key]; ok {
+		return v, nil
 	}
-
-	if env, ok := suite.lookupProcessEnv(key); ok {
-		visited[key] = env
-		return env, nil
-	}
-
 	visited[key] = ""
 
-	for i := len(suite.envFiles); i > 0; i-- {
-		v, err := suite.lookupEnvFile(suite.envFiles[i-1], key)
-		if err == nil {
-			s, err := suite.expand(v, visited)
-			visited[key] = s
-			return s, err
-		} else if _, ok := err.(*NoSuchVariableError); !ok {
-			return "", err
-		}
+	if v, ok := env.LookupEnv(key); ok {
+		visited[key] = v
+		return v, nil
+	}
+	vars, err := suite.Variables()
+	if err != nil {
+		return "", err
 	}
 
 	// We must not look for NTT_CACHE in variables sections of package.yml,
 	// because this would create an endless loop.
 	if key != "NTT_CACHE" && key != "K3_CACHE" {
-		v, err := suite.Variables()
-		if err != nil {
-			return "", err
-		}
-		if v != nil {
-			if s, ok := v[key]; ok {
-				s, err := suite.expand(s, visited)
-				visited[key] = s
-				return s, err
-			}
+		if v, ok := vars[key]; ok {
+			v, err := suite.expand(v, visited)
+			visited[key] = v
+			return v, err
 		}
 	}
 
-	if suite.isKnown(key) {
+	if knownVars[key] {
 		return "", nil
 	}
 
 	return "", &NoSuchVariableError{Name: key}
-}
-
-// Lookup key in process environment
-func (suite *Suite) lookupProcessEnv(key string) (string, bool) {
-	if env, ok := os.LookupEnv(key); ok {
-		return env, true
-	}
-
-	if len(key) >= 3 && key[:3] == "NTT" {
-		key = "K3" + strings.TrimPrefix(key, "NTT")
-		return os.LookupEnv(key)
-	}
-
-	return "", false
-}
-
-// Lookup key in environment file
-func (suite *Suite) lookupEnvFile(file *fs.File, key string) (string, error) {
-	tree, err := suite.parseEnvFile(file)
-	if err != nil {
-		return "", err
-	}
-
-	if tree == nil {
-		return "", &NoSuchVariableError{Name: key}
-	}
-
-	if v := tree.Get(key); v != nil {
-		return fmt.Sprint(v), nil
-	}
-
-	// Try K3 prefix.
-	if len(key) >= 3 && key[:3] == "NTT" {
-		key = "K3" + strings.TrimPrefix(key, "NTT")
-		if v := tree.Get(key); v != nil {
-			return fmt.Sprint(v), nil
-		}
-	}
-
-	return "", &NoSuchVariableError{Name: key}
-}
-
-func (suite *Suite) parseEnvFile(f *fs.File) (*toml.Tree, error) {
-
-	type envData struct {
-		tree *toml.Tree
-		err  error
-	}
-
-	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
-		data := envData{}
-
-		b, err := f.Bytes()
-		if err != nil {
-			// It's okay if this file does not exist.
-			if os.IsNotExist(err) {
-				data.tree, data.err = nil, nil
-				return &data
-			}
-		}
-
-		data.tree, data.err = toml.LoadBytes(b)
-		return &data
-	})
-
-	v := f.Handle.Get(context.TODO())
-	data := v.(*envData)
-
-	return data.tree, data.err
-}
-
-func (suite *Suite) isKnown(key string) bool {
-	if knownVars[key] {
-		return true
-	}
-
-	if len(key) >= 3 && key[:3] == "NTT" {
-		key = "K3" + strings.TrimPrefix(key, "NTT")
-	}
-
-	return knownVars[key]
 }

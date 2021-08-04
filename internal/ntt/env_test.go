@@ -2,164 +2,169 @@ package ntt_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
-func TestEnvEmpty(t *testing.T) {
-	defer os.Unsetenv("NTT_FNORD")
-
+// Verify unknown variable lead to an error
+func TestSuiteUnknownVar(t *testing.T) {
+	clearEnv()
 	suite := &ntt.Suite{}
-	s, _ := suite.Getenv("NTT_FNORD")
+	s, err := suite.Getenv("NTT_FNORD")
+	if _, ok := err.(*ntt.NoSuchVariableError); !ok {
+		assert.Fail(t, "Expected NoSuchVariableError")
+	}
 	assert.Equal(t, "", s)
 }
 
-func TestEnvSimple(t *testing.T) {
-	defer os.Unsetenv("NTT_FNORD")
-	os.Setenv("NTT_FNORD", "23.5")
-
+// Verify known variables do not lead to an error
+func TestSuiteKnownVar(t *testing.T) {
+	clearEnv()
 	suite := &ntt.Suite{}
-	s, _ := suite.Getenv("NTT_FNORD")
-	assert.Equal(t, "23.5", s)
+	s, err := suite.Getenv("NTT_NAME")
+	assert.Nil(t, err)
+	assert.Equal(t, "", s)
 }
 
-func TestEnvK3(t *testing.T) {
-	defer os.Unsetenv("K3FNORD")
-	os.Setenv("K3FNORD", "23.5")
-
+// Verify empty environment variables do not lead to an error.
+func TestSuiteEmpty(t *testing.T) {
+	clearEnv()
 	suite := &ntt.Suite{}
-	s, _ := suite.Getenv("NTTFNORD")
-	assert.Equal(t, "23.5", s)
-}
-
-func TestEnvFile(t *testing.T) {
-	suite := &ntt.Suite{}
-	suite.AddEnvFiles("ntt.env", "k3.env")
-
-	// Basic tests if prefix mapping works with environment files.
-
-	// K3 prefix is _not_ replaced with NTT prefix.
-	fs.Open("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"`))
+	os.Setenv("K3_FNORD", "")
 	s, err := suite.Getenv("NTT_FNORD")
 	assert.Nil(t, err)
-	assert.Equal(t, "var1", s)
-	s, _ = suite.Getenv("K3_FNORD")
-	assert.Equal(t, "", s)
-
-	// NTT prefix is replaced with K3 prefix.
-	fs.Open("ntt.env").SetBytes([]byte(`K3_FNORD="var2"`))
-	s, _ = suite.Getenv("NTT_FNORD")
-	assert.Equal(t, "var2", s)
-	s, _ = suite.Getenv("K3_FNORD")
-	assert.Equal(t, "var2", s)
-
-	fs.Open("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"
-	K3_FNORD="var2"`))
-	s, _ = suite.Getenv("NTT_FNORD")
-	assert.Equal(t, "var1", s)
-	s, _ = suite.Getenv("K3_FNORD")
-	assert.Equal(t, "var2", s)
-
-	fs.Open("k3.env").SetBytes([]byte(`NTT_FNORD="var3"`))
-	s, _ = suite.Getenv("NTT_FNORD")
-	assert.Equal(t, "var3", s)
-	s, _ = suite.Getenv("K3_FNORD")
-	assert.Equal(t, "var2", s)
-
-	fs.Open("k3.env").SetBytes([]byte(`K3_FNORD="var3"`))
-	s, _ = suite.Getenv("NTT_FNORD")
-	assert.Equal(t, "var3", s)
-	s, _ = suite.Getenv("K3_FNORD")
-	assert.Equal(t, "var3", s)
-
-	// Test if os environment overwrites environment files.
-	suite = &ntt.Suite{}
-	suite.AddEnvFiles("ntt.env")
-	fs.Open("ntt.env").SetBytes([]byte(`NTT_FNORD="var1"`))
-	os.Setenv("K3_FNORD", "var2")
-	s, err = suite.Getenv("NTT_FNORD")
-	os.Unsetenv("K3_FNORD")
-	assert.Nil(t, err)
-	assert.Equal(t, "var2", s)
-
-	// Also test empty environment variables
-	os.Setenv("K3_FNORD", "")
-	s, err = suite.Getenv("NTT_FNORD")
-	os.Unsetenv("K3_FNORD")
-	assert.Nil(t, err)
-	assert.Equal(t, "", s)
-
-	// Test if types are converted to strings nicely.
-	suite = &ntt.Suite{}
-	suite.AddEnvFiles("ntt.env")
-	fs.Open("ntt.env").SetBytes([]byte(`NTT_FLOAT=23.5`))
-	s, err = suite.Getenv("NTT_FLOAT")
-	assert.Nil(t, err)
-	assert.Equal(t, "23.5", s)
-	// TODO(5nord) Also test collections
-
-	// Various expansion tests.
-	suite = &ntt.Suite{}
-	suite.AddEnvFiles("ntt.env")
-	fs.Open("ntt.env").SetBytes([]byte(`
-		# Undefined reference gives an error.
-		NTT_A="${NTT_UNDEFINED}"
-
-		# Multiple keys may be defined later.
-		NTT_B="${NTT_C} ${NTT_C}"
-		NTT_C=23.5
-
-		# Direct recursion should not break ntt. NTT_D will be replaced with an empty string.
-		NTT_D="${NTT_D}"
-
-		# Indirect recursion shouldn't either.
-		NTT_E="${NTT_F}"
-		NTT_F="${NTT_E}"
-	`))
-
-	s, err = suite.Getenv("NTT_A")
-	assert.NotNil(t, err)
-	assert.Equal(t, "", s)
-
-	s, err = suite.Getenv("NTT_B")
-	assert.Nil(t, err)
-	assert.Equal(t, "23.5 23.5", s)
-
-	s, err = suite.Getenv("NTT_D")
-	assert.Nil(t, err)
 	assert.Equal(t, "", s)
 }
 
-func TestVariables(t *testing.T) {
+type Vars map[string]string
+
+// Verify simple access.
+func TestVarsSimple(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_SIMPLE": "simple",
+	})
+	v, err := suite.Getenv("NTT_SIMPLE")
+	assert.Nil(t, err)
+	assert.Equal(t, "simple", v)
+}
+
+// Verify environment overwrites variables
+func TestVarsEnvOverwrites(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_SIMPLE": "simple",
+	})
+	os.Setenv("NTT_SIMPLE", "fromEnv")
+	v, err := suite.Getenv("NTT_SIMPLE")
+	assert.Nil(t, err)
+	assert.Equal(t, "fromEnv", v)
+}
+
+// Verify variables expand transitively (with ErrUnknownVariable)
+func TestExpandTransitive(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_A": "$NTT_B",
+		"NTT_B": "$NTT_C",
+	})
+	v, err := suite.Getenv("NTT_A")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", v)
+}
+
+// Verify variables expand transitively (from environment)
+func TestExpandTransitive2(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_A": "$NTT_B",
+		"NTT_B": "$NTT_C",
+	})
+	os.Setenv("NTT_C", "fromEnv")
+	v, err := suite.Getenv("NTT_A")
+	assert.Nil(t, err)
+	assert.Equal(t, "fromEnv", v)
+}
+
+// Verify environment variables do not expand.
+func TestExpandEnv(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_A": "$NTT_B",
+		"NTT_B": "fromVars",
+	})
+	os.Setenv("NTT_A", "$NTT_B")
+	v, err := suite.Getenv("NTT_A")
+	assert.Nil(t, err)
+	assert.Equal(t, "$NTT_B", v)
+}
+
+// Verify recursion does not cause trouble
+func TestExpandRecursive(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_A": "$NTT_A",
+	})
+	v, err := suite.Getenv("NTT_A")
+	assert.Nil(t, err)
+	assert.Equal(t, "", v)
+}
+
+// Verify indirect recursion does not cause trouble
+func TestExpandRecursive2(t *testing.T) {
+	suite := suiteWithVars(Vars{
+		"NTT_A": "$NTT_B",
+		"NTT_B": "$NTT_A",
+	})
+	v, err := suite.Getenv("NTT_A")
+	assert.Nil(t, err)
+	assert.Equal(t, "", v)
+}
+
+func suiteWithVars(vars map[string]string) *ntt.Suite {
+	var manifest struct {
+		Variables map[string]string
+	}
+	manifest.Variables = vars
+
+	b, err := yaml.Marshal(manifest)
+	if err != nil {
+		panic(err)
+	}
+	clearEnv()
+	setContent("package.yml", string(b))
 	suite := &ntt.Suite{}
 	suite.SetRoot(".")
-	conf := fs.Open("package.yml")
-	conf.SetBytes([]byte(`
-                variables:
-                  "FOO": "foo"
-                  "BAR": "$bar"
-                  "bar": "$NTT_FNORD"`))
+	return suite
+}
 
-	v, err := suite.Getenv("FOO")
-	assert.Nil(t, err)
-	assert.Equal(t, "foo", v)
+func setContent(file string, content string) {
+	fs.Open(file).SetBytes([]byte(content))
+}
 
-	// Verify environment overwrites variables-section
-	os.Setenv("FOO", "xxx")
-	v, err = suite.Getenv("FOO")
-	assert.Nil(t, err)
-	assert.Equal(t, "xxx", v)
+func clearEnv(files ...string) {
+	if len(files) == 0 {
+		files = []string{"ntt.env", "k3.env"}
+	}
+	for _, file := range files {
+		fs.Open(file).SetBytes(nil)
+	}
 
-	// Verify expands works for variables-section
-	v, err = suite.Getenv("BAR")
-	assert.NotNil(t, err)
+	for _, e := range os.Environ() {
+		if fields := strings.Split(e, "="); len(fields) == 0 {
+			key := fields[0]
+			if strings.HasPrefix(key, "K3") || strings.HasPrefix(key, "NTT") {
+				os.Unsetenv(key)
+			}
+		}
+	}
 
-	os.Setenv("NTT_FNORD", "fnord")
-	v, err = suite.Getenv("BAR")
-	assert.Nil(t, err)
-	assert.Equal(t, "fnord", v)
-
+	os.Unsetenv("K3_FNORD")
+	os.Unsetenv("NTT_FNORD")
+	os.Unsetenv("NTT_FLOAT")
+	os.Unsetenv("NTT_A")
+	os.Unsetenv("NTT_B")
+	os.Unsetenv("NTT_C")
+	os.Unsetenv("NTT_D")
+	os.Unsetenv("NTT_E")
+	os.Unsetenv("NTT_F")
 }

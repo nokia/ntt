@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/memoize"
@@ -40,7 +41,7 @@ type Suite struct {
 // integer available on this machine.
 func (suite *Suite) Id() (int, error) {
 	if suite.id == 0 {
-		if s, _ := suite.lookupProcessEnv("NTT_SESSION_ID)"); s != "" {
+		if s, ok := env.LookupEnv("NTT_SESSION_ID)"); ok {
 			id, err := strconv.ParseUint(s, 10, 32)
 			if err != nil {
 				return 0, err
@@ -85,6 +86,8 @@ func (suite *Suite) LatestResults() (*results.DB, error) {
 }
 
 func init() {
+	env.Load()
+
 	// TODO(5nord) We still have to figure how this sharedDir could be handled
 	// more elegantly, maybe even with support for Windows.
 	//
