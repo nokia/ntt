@@ -16,7 +16,7 @@ type Env gotenv.Env
 
 // Load environment files ntt.env and k3.env
 func Load(files ...string) {
-	for k, v := range Parse(files...)
+	for k, v := range Parse(files...) {
 		if _, ok := os.LookupEnv(k); !ok {
 			os.Setenv(k, v)
 		}
@@ -41,6 +41,9 @@ func Parse(files ...string) Env {
 		}
 		for k, v := range e {
 			if _, ok := env[k]; !ok {
+				if env == nil {
+					env = make(map[string]string)
+				}
 				env[k] = v
 			}
 		}
