@@ -1,11 +1,12 @@
 package env
 
 import (
-	"net/url"
+	"bytes"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/nokia/ntt/internal/cache"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/subosito/gotenv"
 )
@@ -31,11 +32,13 @@ func Parse(files ...string) Env {
 
 	var env Env
 	for _, path := range Files {
-		f, err := os.Open(FromCache(path))
+		f := fs.Open(cache.Lookup(path))
+		b, err := f.Bytes()
 		if err != nil {
 			log.Debugf("open env: %s\n", err.Error())
+			continue
 		}
-		e, err := gotenv.StrictParse(f)
+		e, err := gotenv.StrictParse(bytes.NewReader(b))
 		if err != nil {
 			log.Verbosef("error parsing %q: %s\n", path, err.Error())
 		}
@@ -69,34 +72,4 @@ func LookupEnv(key string) (string, bool) {
 		return os.LookupEnv(strings.Replace(key, "NTT", "K3", 1))
 	}
 	return "", false
-}
-
-// FromCache works similar to GNU Makes VPATH functionality: Paths without directory portion will be looked up alternate directory specified by NTT_CACHE environment variable.
-func FromCache(path string) string {
-	// Skip URLs
-	if u, _ := url.Parse(path); u.Scheme != "" {
-		return path
-
-	}
-
-	// Skip existing paths
-	if _, err := os.Stat(path); err == nil {
-		return path
-	}
-
-	// Skip paths with directory portion
-	if dir, _ := filepath.Split(path); dir != "" {
-		return path
-	}
-
-	if cache := Getenv("NTT_CACHE"); cache != "" {
-		for _, dir := range strings.Split(cache, ":") {
-			path := filepath.Join(dir, path)
-			if _, err := os.Stat(path); err == nil {
-				return path
-			}
-		}
-	}
-
-	return path
 }
