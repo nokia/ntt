@@ -46,7 +46,8 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 // AddFolder tries to find determine a got root folder for folder and add it to
 // the list of know suites.
 func (s *Suites) AddFolder(folder string) {
-	root := s.FindRoot(folder)
+	// TODO(5nord) Enable FindFolder discovery
+	root := folder
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
