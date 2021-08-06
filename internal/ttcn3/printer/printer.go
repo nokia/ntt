@@ -33,28 +33,20 @@ type printer struct {
 	err    error
 }
 
-func (p *printer) print(v interface{}) {
-	switch n := v.(type) {
-	case whiteSpace:
-		switch n {
-		case indent:
-			p.indent++
-		case unindent:
-			p.indent--
+func (p *printer) print(values ...interface{}) {
+	for _, v := range values {
+		switch n := v.(type) {
+		case whiteSpace:
+			switch n {
+			case indent:
+				p.indent++
+			case unindent:
+				p.indent--
+			default:
+				fmt.Fprint(p.w, n)
+			}
 		default:
-			fmt.Fprint(p.w, n)
+			fmt.Fprint(p.w, v)
 		}
-	case ast.Node:
-		ast.Apply(n, p.enter, p.exit)
-	default:
-		panic(fmt.Sprintf("type ast.Node expected, but %+v has type %T", v, v))
 	}
-}
-
-func (p *printer) enter(c *ast.Cursor) bool {
-	return true
-}
-
-func (p *printer) exit(c *ast.Cursor) bool {
-	return true
 }
