@@ -3,11 +3,13 @@ package dump
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/printer"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
@@ -27,13 +29,23 @@ var (
 			files, _ := project.Files(suite)
 			for _, file := range files {
 				info := suite.Parse(file)
-				dump(reflect.ValueOf(info.Module), "Root: ")
+				if ttcn3 {
+					printer.Print(os.Stdout, info.FileSet, info.Module)
+				} else {
+					dump(reflect.ValueOf(info.Module), "Root: ")
+				}
 			}
 
 			return nil
 		},
 	}
+
+	ttcn3 = false
 )
+
+func init() {
+	Command.PersistentFlags().BoolVarP(&ttcn3, "ttcn3", "", false, "formatted TTCN-3 output")
+}
 
 func dump(v reflect.Value, f string) {
 	if !v.IsValid() || v.IsZero() {
