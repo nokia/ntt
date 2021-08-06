@@ -47,3 +47,13 @@ func URI(path string) span.URI {
 	}
 	return span.URIFromPath(path)
 }
+
+// Content returns the content of (virtual) file specified by path.
+func Content(path string) ([]byte, error) {
+	return Open(path).Bytes()
+}
+
+// SetContent of (virtual) file specified by path.
+func SetContent(path string, b []byte) {
+	Open(path).SetBytes(b)
+}

@@ -131,14 +131,10 @@ func suiteWithVars(vars map[string]string) *ntt.Suite {
 		panic(err)
 	}
 	clearEnv()
-	setContent("package.yml", string(b))
+	fs.SetContent("package.yml", b)
 	suite := &ntt.Suite{}
 	suite.SetRoot(".")
 	return suite
-}
-
-func setContent(file string, content string) {
-	fs.Open(file).SetBytes([]byte(content))
 }
 
 func clearEnv(files ...string) {
@@ -150,21 +146,11 @@ func clearEnv(files ...string) {
 	}
 
 	for _, e := range os.Environ() {
-		if fields := strings.Split(e, "="); len(fields) == 0 {
+		if fields := strings.Split(e, "="); len(fields) > 0 {
 			key := fields[0]
 			if strings.HasPrefix(key, "K3") || strings.HasPrefix(key, "NTT") {
 				os.Unsetenv(key)
 			}
 		}
 	}
-
-	os.Unsetenv("K3_FNORD")
-	os.Unsetenv("NTT_FNORD")
-	os.Unsetenv("NTT_FLOAT")
-	os.Unsetenv("NTT_A")
-	os.Unsetenv("NTT_B")
-	os.Unsetenv("NTT_C")
-	os.Unsetenv("NTT_D")
-	os.Unsetenv("NTT_E")
-	os.Unsetenv("NTT_F")
 }
