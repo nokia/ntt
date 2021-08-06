@@ -45,6 +45,34 @@ func (p *printer) print(values ...interface{}) {
 			default:
 				fmt.Fprint(p.w, n)
 			}
+
+		case *ast.Module:
+			if n == nil {
+				return
+			}
+
+			p.print(n.Tok, " ")
+			p.print(n.Name, " ")
+			p.print(n.Language)
+			p.print(n.LBrace)
+			//p.print(n.Defs)
+			p.print(n.RBrace)
+			//p.print(n.With)
+
+		case *ast.LanguageSpec:
+			if n == nil {
+				return
+			}
+			p.print(n.Tok, " ")
+			for i := range n.List {
+				p.print(n.List[i], ", ")
+			}
+
+		case ast.Token:
+			if n.IsValid() {
+				p.print(n.String())
+			}
+
 		default:
 			fmt.Fprint(p.w, v)
 		}
