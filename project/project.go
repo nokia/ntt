@@ -94,6 +94,85 @@ func Fingerprint(p Interface) string {
 	return fmt.Sprintf("project_%x", sha1.Sum([]byte(fmt.Sprint(inputs))))
 }
 
+// ExpandVar expands variables references inside a string using environment
+// variables first and then a provided variables map second. If a reference
+// could not expanded, the variable reference will stay inside the string and
+// an an error will be returned.
+func ExpandVar(s string, vars map[string]string) (string, error) {
+	return expandVar(s, vars, make(map[string]string))
+}
+
+func expandVar(s string, vars map[string]string, visited map[string]string) (string, error) {
+	var errs error
+	mapper := func(name string) string {
+		s, err := getVar(name, vars, visited)
+		if err != nil {
+			errs = multierror.Append(errs, &NoSuchVariableError{Name: name})
+		}
+		return s
+	}
+	return os.Expand(s, mapper), errs
+}
+
+// GetVar returns a variable. Variable references in vars are expanded.
+// Environment variables are not.
+func GetVar(name string, vars map[string]string) (string, error) {
+	return getVar(name, vars, make(map[string]string))
+}
+
+func getVar(name string, vars map[string]string, visited map[string]string) (string, error) {
+	if v, ok := visited[name]; ok {
+		return v, nil
+	}
+	visited[name] = ""
+
+	if v, ok := env.LookupEnv(name); ok {
+		visited[name] = v
+		return v, nil
+	}
+
+	// We must not look for NTT_CACHE in variables sections of package.yml,
+	// because this would create an endless loop.
+	if name != "NTT_CACHE" && name != "K3_CACHE" {
+		if v, ok := vars[name]; ok {
+			v, err := expandVar(v, vars, visited)
+			visited[name] = v
+			return v, err
+		}
+	}
+
+	if knownVars[name] {
+		return "", nil
+	}
+
+	return "", &NoSuchVariableError{Name: name}
+}
+
+// Variables return all declared variables, in the form "key=value".
+func Variables(vars map[string]string) ([]string, error) {
+	var errs error
+
+	allKeys := make(map[string]bool)
+
+	for k := range vars {
+		allKeys[k] = true
+	}
+
+	for k := range env.Parse() {
+		allKeys[k] = true
+	}
+
+	ret := make([]string, 0, len(allKeys))
+	for k := range allKeys {
+		v, err := GetVar(k, vars)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+	}
+	return ret, nil
+}
+
 func Open(path string) (*Project, error) {
 	p := Project{root: path}
 
@@ -257,75 +336,16 @@ func (p *Project) findFilesRecursive() error {
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
 func (p *Project) Environ() ([]string, error) {
-	var errs error
-
-	allKeys := make(map[string]struct{})
-
-	for k := range p.Manifest.Variables {
-		allKeys[k] = struct{}{}
-	}
-
-	for k := range env.Parse() {
-		allKeys[k] = struct{}{}
-	}
-
-	ret := make([]string, 0, len(allKeys))
-	for k := range allKeys {
-		v, err := p.Getenv(k)
-		if err != nil {
-			errs = multierror.Append(errs, err)
-		}
-		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
-	}
-	return ret, nil
+	return Variables(p.Manifest.Variables)
 }
 
 // Expand expands string v using Project.Getenv
 func (p *Project) Expand(v string) (string, error) {
-	return p.expand(v, make(map[string]string))
+	return expandVar(v, p.Manifest.Variables, make(map[string]string))
 }
 
 func (p *Project) Getenv(v string) (string, error) {
-	return p.getenv(v, make(map[string]string))
-}
-
-func (p *Project) expand(v string, visited map[string]string) (string, error) {
-	var errs error
-	mapper := func(name string) string {
-		v, err := p.getenv(name, visited)
-		if err != nil {
-			errs = multierror.Append(errs, &NoSuchVariableError{Name: name})
-		}
-		return v
-	}
-	return os.Expand(v, mapper), errs
-}
-
-func (p *Project) getenv(key string, visited map[string]string) (string, error) {
-	if v, ok := visited[key]; ok {
-		return v, nil
-	}
-	visited[key] = ""
-
-	if v, ok := env.LookupEnv(key); ok {
-		visited[key] = v
-		return v, nil
-	}
-	// We must not look for NTT_CACHE in variables sections of package.yml,
-	// because this would create an endless loop.
-	if key != "NTT_CACHE" && key != "K3_CACHE" {
-		if v, ok := p.Manifest.Variables[key]; ok {
-			v, err := p.expand(v, visited)
-			visited[key] = v
-			return v, err
-		}
-	}
-
-	if knownVars[key] {
-		return "", nil
-	}
-
-	return "", &NoSuchVariableError{Name: key}
+	return getVar(v, p.Manifest.Variables, make(map[string]string))
 }
 
 func (p *Project) evalPath(path string) (string, error) {
