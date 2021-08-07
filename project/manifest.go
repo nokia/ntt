@@ -1,8 +1,8 @@
-package manifest
+package project
 
-const Name = "package.yml"
+const ManifestFile = "package.yml"
 
-type Config struct {
+type Manifest struct {
 	// Static configuration
 	Name      string
 	Sources   []string

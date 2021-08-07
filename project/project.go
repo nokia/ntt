@@ -15,7 +15,6 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/project/manifest"
 	"gopkg.in/yaml.v2"
 )
 
@@ -99,7 +98,7 @@ func Open(path string) (*Project, error) {
 	p := Project{root: path}
 
 	// Try reading the manifest
-	file := filepath.Join(p.root, manifest.Name)
+	file := filepath.Join(p.root, ManifestFile)
 	if b, err := fs.Content(file); err == nil {
 		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
 		return &p, yaml.UnmarshalStrict(b, &p.Manifest)
@@ -120,7 +119,7 @@ type Project struct {
 	modulesMu sync.Mutex
 	modules   map[string]string
 
-	Manifest manifest.Config
+	Manifest Manifest
 }
 
 // String returns a simple string representation
