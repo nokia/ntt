@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/project/manifest"
 	"github.com/nokia/ntt/project/suiteindex"
 )
 
@@ -19,7 +18,7 @@ func Discover(path string) []string {
 
 	fs.WalkUp(path, func(path string) bool {
 		// Check source directories
-		if file := filepath.Join(path, manifest.Name); fs.IsRegular(file) {
+		if file := filepath.Join(path, ManifestFile); fs.IsRegular(file) {
 			list = append(list, path)
 		}
 		list = append(list, readSuites(filepath.Join(path, suiteindex.Name))...)
@@ -64,7 +63,7 @@ func readSuites(file string) []string {
 
 	for _, suite := range si.Suites {
 		if suite.RootDir != "" {
-			if file := filepath.Join(suite.RootDir, manifest.Name); fs.IsRegular(file) {
+			if file := filepath.Join(suite.RootDir, ManifestFile); fs.IsRegular(file) {
 				list = append(list, suite.RootDir)
 			}
 		}

@@ -134,8 +134,6 @@ find_package_handle_standard_args(NTT
 
 mark_as_advanced(NTT_EXECUTABLE)
 
-set(NTT_DB "${CMAKE_BINARY_DIR}/ttcn3_suites.json")
-
 function(add_ttcn3_suite TGT)
     set("ARGS_PREFIX" "")
     set("ARGS_OPTIONS" "")
@@ -226,7 +224,7 @@ function(add_ttcn3_suite TGT)
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
 
-    __ntt_add_db_entry("${NTT_DB}" "${_WORKING_DIRECTORY}" "${CMAKE_CURRENT_LIST_DIR}")
+    __ntt_add_db_entry("${CMAKE_BINARY_DIR}/ttcn3_suites.json" "${_WORKING_DIRECTORY}" "${CMAKE_CURRENT_LIST_DIR}")
 endfunction()
 
 function(protobuf_generate_ttcn3 TGT)
@@ -271,7 +269,7 @@ function(__ntt_add_db_entry JSON_FILE ROOT_DIR SOURCE_DIR)
     endif()
 
     # Remove closing brackets
-    file(READ ${JSON_FILE} CONTENTS)
+    file(READ "${JSON_FILE}" CONTENTS)
     string(REGEX REPLACE "]}$" "" STRIPPED "${CONTENTS}")
     file(WRITE "${JSON_FILE}" "${STRIPPED}")
 

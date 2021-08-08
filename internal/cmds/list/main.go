@@ -188,7 +188,7 @@ func newBasket(name string, args []string) (basket, error) {
 func loadBaskets(suite *ntt.Suite) error {
 	env, err := suite.Getenv("NTT_LIST_BASKETS")
 	if err != nil || env == "" {
-		if _, ok := err.(*ntt.NoSuchVariableError); ok {
+		if _, ok := err.(*project.NoSuchVariableError); ok {
 			return nil
 		}
 		return err
@@ -202,7 +202,7 @@ func loadBaskets(suite *ntt.Suite) error {
 		flags, err := suite.Getenv("NTT_LIST_BASKETS_" + name)
 		args := strings.Fields(flags)
 		if err != nil {
-			if _, ok := err.(*ntt.NoSuchVariableError); !ok {
+			if _, ok := err.(*project.NoSuchVariableError); !ok {
 				return err
 			}
 			args = []string{"-R", "@" + name}

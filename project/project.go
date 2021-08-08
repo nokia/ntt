@@ -15,7 +15,6 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/project/manifest"
 	"gopkg.in/yaml.v2"
 )
 
@@ -94,19 +93,103 @@ func Fingerprint(p Interface) string {
 	return fmt.Sprintf("project_%x", sha1.Sum([]byte(fmt.Sprint(inputs))))
 }
 
+// ExpandVar expands variables references inside a string using environment
+// variables first and then a provided variables map second. If a reference
+// could not expanded, the variable reference will stay inside the string and
+// an an error will be returned.
+func ExpandVar(s string, vars map[string]string) (string, error) {
+	return expandVar(s, vars, make(map[string]string))
+}
+
+func expandVar(s string, vars map[string]string, visited map[string]string) (string, error) {
+	var errs error
+	mapper := func(name string) string {
+		s, err := getVar(name, vars, visited)
+		if err != nil {
+			errs = multierror.Append(errs, &NoSuchVariableError{Name: name})
+		}
+		return s
+	}
+	return os.Expand(s, mapper), errs
+}
+
+// GetVar returns a variable. Variable references in vars are expanded.
+// Environment variables are not.
+func GetVar(name string, vars map[string]string) (string, error) {
+	return getVar(name, vars, make(map[string]string))
+}
+
+func getVar(name string, vars map[string]string, visited map[string]string) (string, error) {
+	if v, ok := visited[name]; ok {
+		return v, nil
+	}
+	visited[name] = ""
+
+	if v, ok := env.LookupEnv(name); ok {
+		visited[name] = v
+		return v, nil
+	}
+
+	// We must not look for NTT_CACHE in variables sections of package.yml,
+	// because this would create an endless loop.
+	if name != "NTT_CACHE" && name != "K3_CACHE" {
+		if v, ok := vars[name]; ok {
+			v, err := expandVar(v, vars, visited)
+			visited[name] = v
+			return v, err
+		}
+	}
+
+	if knownVars[name] {
+		return "", nil
+	}
+
+	return "", &NoSuchVariableError{Name: name}
+}
+
+// Variables return all declared variables, in the form "key=value".
+func Variables(vars map[string]string) ([]string, error) {
+	var errs error
+
+	allKeys := make(map[string]bool)
+
+	for k := range vars {
+		allKeys[k] = true
+	}
+
+	for k := range env.Parse() {
+		allKeys[k] = true
+	}
+
+	ret := make([]string, 0, len(allKeys))
+	for k := range allKeys {
+		v, err := GetVar(k, vars)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+	}
+	return ret, nil
+}
+
 func Open(path string) (*Project, error) {
 	p := Project{root: path}
 
-	if file := filepath.Join(p.root, manifest.Name); fs.IsRegular(file) {
+	// Try reading the manifest
+	file := filepath.Join(p.root, ManifestFile)
+	if b, err := fs.Content(file); err == nil {
 		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
-		return &p, p.readManifest(file)
+		return &p, yaml.UnmarshalStrict(b, &p.Manifest)
 	}
 
+	// Fall back to recursive scanning
 	log.Debugf("%s: update configuration using available folders\n", p.String())
-	return &p, p.readFilesystem()
+	return &p, p.findFilesRecursive()
 }
 
-// A Project implements the behaviour expected from ntt ttcn3 suites.
+// A Project provides meta information about a TTCN-3 test suite. Meta
+// information like: Location of configuration and source files, dependency
+// list, default values, ...
 type Project struct {
 	root string
 
@@ -114,7 +197,7 @@ type Project struct {
 	modulesMu sync.Mutex
 	modules   map[string]string
 
-	Manifest manifest.Config
+	Manifest Manifest
 }
 
 // String returns a simple string representation
@@ -132,7 +215,8 @@ func (p *Project) Name() string {
 		return env
 	}
 	if p.Manifest.Name != "" {
-		return p.expand(p.Manifest.Name)
+		name, _ := ExpandVar(p.Manifest.Name, p.Manifest.Variables)
+		return name
 	}
 	if p.root != "" {
 		return fs.Slugify(filepath.Base(p.root))
@@ -152,7 +236,8 @@ func (p *Project) TestHook() string {
 		return env
 	}
 	if p.Manifest.TestHook != "" {
-		return fs.Real(p.Root(), p.expand(p.Manifest.TestHook))
+		path, _ := ExpandVar(p.Manifest.TestHook, p.Manifest.Variables)
+		return fs.Real(p.Root(), path)
 	}
 	if hook := fs.Real(p.Root(), p.Name()+".control"); fs.IsRegular(hook) {
 		return hook
@@ -171,7 +256,8 @@ func (p *Project) ParametersFile() string {
 		return fs.Real(p.ParametersDir(), env)
 	}
 	if p.Manifest.ParametersFile != "" {
-		return fs.Real(p.ParametersDir(), p.expand(p.Manifest.ParametersFile))
+		file, _ := ExpandVar(p.Manifest.ParametersFile, p.Manifest.Variables)
+		return fs.Real(p.ParametersDir(), file)
 	}
 	if file := fs.Real(p.ParametersDir(), p.Name()+".parameters"); fs.IsRegular(file) {
 		return file
@@ -184,7 +270,8 @@ func (p *Project) ParametersDir() string {
 		return env
 	}
 	if p.Manifest.ParametersDir != "" {
-		return fs.Real(p.Root(), p.expand(p.Manifest.ParametersDir))
+		dir, _ := ExpandVar(p.Manifest.ParametersDir, p.Manifest.Variables)
+		return fs.Real(p.Root(), dir)
 	}
 	if p.Root() != "" {
 		return p.Root()
@@ -207,7 +294,10 @@ func (p *Project) Sources() ([]string, error) {
 
 	var srcs []string
 	for _, src := range p.Manifest.Sources {
-		src := fs.Real(p.Root(), p.expand(src))
+		src, err := p.evalPath(src)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
 
 		info, err := os.Stat(src)
 		switch {
@@ -243,7 +333,10 @@ func (p *Project) Imports() ([]string, error) {
 
 	var imports []string
 	for _, dir := range p.Manifest.Imports {
-		dir := fs.Real(p.Root(), p.expand(dir))
+		dir, err := p.evalPath(dir)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
 		if info, err := os.Stat(dir); err != nil || !info.IsDir() {
 			errs = multierror.Append(errs, fmt.Errorf("%q must be a directory", dir))
 		}
@@ -278,29 +371,7 @@ func (p *Project) FindModule(name string) (string, error) {
 	return "", fmt.Errorf("No such module %q", name)
 }
 
-func (p *Project) expand(s string) string {
-	mapper := func(name string) string {
-		if s, ok := env.LookupEnv(name); ok {
-			return s
-		}
-		if s, ok := p.Manifest.Variables[name]; ok {
-			return s
-		}
-		return fmt.Sprintf("${UNKNOWN:%s}", name)
-	}
-
-	return os.Expand(s, mapper)
-}
-
-func (p *Project) readManifest(file string) error {
-	b, err := fs.Open(file).Bytes()
-	if err != nil {
-		return err
-	}
-	return yaml.UnmarshalStrict(b, &p.Manifest)
-}
-
-func (p *Project) readFilesystem() error {
+func (p *Project) findFilesRecursive() error {
 	addSources := func(path string, info os.FileInfo, err error) error {
 		if err == nil && info.IsDir() {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
@@ -334,4 +405,53 @@ func (p *Project) readFilesystem() error {
 		}
 	}
 	return nil
+}
+
+// Environ returns a copy of strings representing the environment, in the form "key=value".
+func (p *Project) Environ() ([]string, error) {
+	return Variables(p.Manifest.Variables)
+}
+
+// Expand expands string v using Project.Getenv
+func (p *Project) Expand(v string) (string, error) {
+	return expandVar(v, p.Manifest.Variables, make(map[string]string))
+}
+
+func (p *Project) Getenv(v string) (string, error) {
+	return getVar(v, p.Manifest.Variables, make(map[string]string))
+}
+
+func (p *Project) evalPath(path string) (string, error) {
+	subst, err := p.Expand(path)
+	if err == nil {
+		path = subst
+	}
+	return fs.Real(p.Root(), path), err
+}
+
+type NoSuchVariableError struct {
+	Name string
+}
+
+func (e *NoSuchVariableError) Error() string {
+	return e.Name + ": variable not defined"
+}
+
+var knownVars = map[string]bool{
+	"CXXFLAGS":            true,
+	"K3CFLAGS":            true,
+	"K3RFLAGS":            true,
+	"LDFLAGS":             true,
+	"LD_LIBRARY_PATH":     true,
+	"PATH":                true,
+	"NTT_DATADIR":         true,
+	"NTT_IMPORTS":         true,
+	"NTT_NAME":            true,
+	"NTT_PARAMETERS_DIR":  true,
+	"NTT_PARAMETERS_FILE": true,
+	"NTT_SOURCES":         true,
+	"NTT_SOURCE_DIR":      true,
+	"NTT_TEST_HOOK":       true,
+	"NTT_TIMEOUT":         true,
+	"NTT_VARIABLES":       true,
 }

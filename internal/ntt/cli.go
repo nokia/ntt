@@ -110,7 +110,6 @@ func NewFromFiles(files ...string) (*Suite, error) {
 	}
 
 	suite := &Suite{}
-	suite.AddEnvFiles("ntt.env", "k3.env")
 	suite.AddSources(files...)
 	return suite, nil
 }
@@ -133,7 +132,6 @@ func NewFromDirectory(dir string) (*Suite, error) {
 	}
 
 	suite := &Suite{}
-	suite.AddEnvFiles("ntt.env", "k3.env")
 	suite.SetRoot(dir)
 	return suite, nil
 }

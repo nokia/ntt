@@ -43,8 +43,11 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 	return ret
 }
 
-// AddFolder adds a test suite root to the list of know suites.
-func (s *Suites) AddFolder(root string) {
+// AddFolder tries to find determine a got root folder for folder and add it to
+// the list of know suites.
+func (s *Suites) AddFolder(folder string) {
+	root := folder
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

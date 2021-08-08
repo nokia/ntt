@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"sync"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/memoize"
@@ -22,29 +22,28 @@ type Suite struct {
 	// Project will replace the manifest implementation piece by piece
 	p *project.Project
 
-	// Module handling (maps module names to paths)
-	modulesMu sync.Mutex
-	modules   map[string]string
-
 	// Environent handling
 	envFiles []*fs.File
 
 	// Manifest stuff
 	name     string
-	root     string
-	sources  []string
-	imports  []string
 	testHook *fs.File
 
 	// Memoization
 	store memoize.Store
 }
 
+func (suite *Suite) lazyInit() {
+	if suite.p == nil {
+		suite.p = &project.Project{}
+	}
+}
+
 // Id returns the unique session id (aka NTT_SESSION_ID). This ID is the smallest
 // integer available on this machine.
 func (suite *Suite) Id() (int, error) {
 	if suite.id == 0 {
-		if s, _ := suite.lookupProcessEnv("NTT_SESSION_ID)"); s != "" {
+		if s, ok := env.LookupEnv("NTT_SESSION_ID)"); ok {
 			id, err := strconv.ParseUint(s, 10, 32)
 			if err != nil {
 				return 0, err
@@ -62,7 +61,10 @@ func (suite *Suite) Id() (int, error) {
 }
 
 func (suite *Suite) Root() string {
-	return suite.root
+	if suite.p != nil {
+		return suite.p.Root()
+	}
+	return ""
 }
 
 // SetRoot set the root folder for Suite.
@@ -70,8 +72,6 @@ func (suite *Suite) Root() string {
 // The root folder is the main-package, which may contain a manifest file
 // (`package.yml`)
 func (suite *Suite) SetRoot(folder string) {
-	suite.root = folder
-	suite.sources = nil
 	log.Debug(fmt.Sprintf("New root folder is %q", folder))
 
 	p, err := project.Open(folder)
@@ -95,6 +95,8 @@ func (suite *Suite) LatestResults() (*results.DB, error) {
 }
 
 func init() {
+	env.Load()
+
 	// TODO(5nord) We still have to figure how this sharedDir could be handled
 	// more elegantly, maybe even with support for Windows.
 	//
