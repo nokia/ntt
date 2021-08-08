@@ -33,6 +33,17 @@ func Discover(path string) []string {
 		return true
 	})
 
+	// If we could not find any manifest, try guess a root directory based on known naming schemes.
+	if len(list) == 0 {
+		fs.WalkUp(path, func(path string) bool {
+			if tests := fs.Glob(path + "/testcases/*"); len(tests) > 0 {
+				list = append(list, path)
+				return false
+			}
+			return true
+		})
+	}
+
 	// Remove duplicate entries
 	result := make([]string, 0, len(list))
 	visited := make(map[string]bool)
