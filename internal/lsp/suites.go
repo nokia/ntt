@@ -43,17 +43,15 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 	return ret
 }
 
-// AddFolder tries to find determine a got root folder for folder and add it to
+// AddSuite add a TTCN-3 test suite to the list of known suites.
 // the list of know suites.
-func (s *Suites) AddFolder(folder string) {
-	// TODO(5nord) Enable FindFolder discovery
-	root := folder
-
+func (s *Suites) AddSuite(root string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// Folder is already known.
 	if _, found := s.roots[root]; found {
+		log.Printf("%q is already known\n", root)
 		return
 	}
 
@@ -61,23 +59,8 @@ func (s *Suites) AddFolder(folder string) {
 		s.roots = make(map[string]*ntt.Suite)
 	}
 
-	log.Verbosef("Adding %q to list of known test suites", root)
+	log.Printf("Adding %q to list of known test suites\n", root)
 	suite := &ntt.Suite{}
 	suite.SetRoot(root)
 	s.roots[root] = suite
-}
-
-// FindRoot takes a folder and uses various heuristics to determine its root folder.
-func (s *Suites) FindRoot(folder string) string {
-	log.Debugf("Scanning %q for valid test suites", folder)
-	roots := project.Discover(folder)
-	if len(roots) > 0 {
-		if len(roots) > 1 {
-			log.Debugf("Found multiple candidates for folder: %+v", roots)
-		}
-		folder = roots[0]
-	}
-
-	log.Debugf("Using %q", folder)
-	return folder
 }
