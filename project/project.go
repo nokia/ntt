@@ -312,7 +312,7 @@ func (p *Project) findFilesRecursive() error {
 	filepath.Walk(p.root, addSources)
 
 	addImports := func(path string, info os.FileInfo, err error) error {
-		if err == nil && info.IsDir() {
+		if err == nil && fs.IsDir(path) {
 			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
 			if len(files) > 0 {
 				log.Debugf("adding import: %q\n", path)
@@ -324,12 +324,17 @@ func (p *Project) findFilesRecursive() error {
 	commonDirs := []string{
 		"../../../sct",
 		"../../../../sct",
+		"../Common",
 		"../../../../Common",
 	}
 	for _, dir := range commonDirs {
-		if path := filepath.Join(p.root, dir); fs.IsDir(path) {
-			filepath.Walk(path, addImports)
+		path := filepath.Join(p.root, dir)
+
+		if eval, err := filepath.EvalSymlinks(path); err == nil {
+			path = eval
 		}
+
+		filepath.Walk(path, addImports)
 	}
 	return nil
 }

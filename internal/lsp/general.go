@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/project"
 	errors "golang.org/x/xerrors"
 )
 
@@ -70,7 +71,10 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	s.stateMu.Unlock()
 
 	for _, folder := range s.pendingFolders {
-		s.AddFolder(folder.URI)
+		log.Printf("Scanning %q for possible TTCN-3 suites\n", folder.URI)
+		for _, root := range project.Discover(folder.URI) {
+			s.AddSuite(root)
+		}
 	}
 
 	return nil

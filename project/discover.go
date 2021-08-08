@@ -14,6 +14,9 @@ import (
 // in future releases.
 func Discover(path string) []string {
 
+	// Convert possible URIs to proper file system paths.
+	path = fs.Path(path)
+
 	var list []string
 
 	fs.WalkUp(path, func(path string) bool {

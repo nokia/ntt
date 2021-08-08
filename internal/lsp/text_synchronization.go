@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/project"
 )
 
 func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
@@ -23,8 +24,18 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 	// Every file should be owned by at least one suite to provide proper
 	// language support.
 	if len(s.Owners(uri)) == 0 {
-		log.Verbosef("File %q does not belong to any known test suite", uri)
-		s.AddFolder(filepath.Dir(fs.Open(string(uri.SpanURI())).Path()))
+		log.Printf("File %q does not belong to any known test suite\n", uri)
+		dir := filepath.Dir(fs.Open(string(uri.SpanURI())).Path())
+		log.Printf("Scanning %q for possible TTCN-3 suites\n", dir)
+		if roots := project.Discover(dir); len(roots) > 0 {
+			for _, root := range roots {
+				s.AddSuite(root)
+			}
+		} else {
+			log.Printf("Could not find a good candidate. Trying %q recursively and hope for the best.\n", dir)
+			s.AddSuite(dir)
+		}
+
 	}
 	s.Diagnose(uri)
 	return nil
