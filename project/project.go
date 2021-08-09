@@ -324,7 +324,9 @@ func (p *Project) findFilesRecursive() error {
 	commonDirs := []string{
 		"../../../sct",
 		"../../../../sct",
+		"../common",
 		"../Common",
+		"../library",
 		"../../../../Common",
 	}
 	for _, dir := range commonDirs {
