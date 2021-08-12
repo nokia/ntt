@@ -462,7 +462,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.RestrictionSpec)
+			p.print(&n.RestrictionSpec)
 			p.print(n.Modif)
 			p.print(n.Type)
 			p.print(n.Name)
@@ -602,6 +602,21 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.MapTok)
 			p.print(n.ParamTok)
 			p.print(n.Params)
+
+		case *ast.ComponentTypeDecl:
+			if n == nil {
+				return
+			}
+			p.print(n.TypeTok)
+			p.print(n.CompTok)
+			p.print(n.Name)
+			p.print(n.TypePars)
+			p.print(n.ExtendsTok)
+			for i := range n.Extends {
+				p.print(n.Extends[i], ", ")
+			}
+			p.print(n.Body)
+			p.print(n.With)
 
 		case *ast.Module:
 			if n == nil {
