@@ -33,7 +33,10 @@ type printer struct {
 	err    error
 }
 
+var lastPrintNewLine = false
+
 func (p *printer) print(values ...interface{}) {
+
 	for _, v := range values {
 		switch n := v.(type) {
 		case whiteSpace:
@@ -786,11 +789,38 @@ func (p *printer) print(values ...interface{}) {
 
 		case ast.Token:
 			if n.IsValid() {
+				if n.Pos() != 1 {
+					if n.String() == "{" || n.String() == "}" { // if Token is "{" or "}"
+						p.print("\n")
+						if n.String() == "}" {
+							p.print(unindent)
+						}
+					} else {
+						p.print(" ")
+					}
+				}
 				p.print(n.String())
+				if n.String() == "{" { // if Token is "{"
+					p.print("\n")
+					p.print(indent)
+				}
+				if n.String() == "}" { // if Token is "}"
+					p.print("\n")
+				}
 			}
 
 		default:
+
+			if lastPrintNewLine {
+				for i := 0; i < p.indent; i++ {
+					fmt.Print("	")
+				}
+				lastPrintNewLine = false
+			}
 			fmt.Fprint(p.w, v)
+			if n == "\n" {
+				lastPrintNewLine = true
+			}
 		}
 	}
 }
