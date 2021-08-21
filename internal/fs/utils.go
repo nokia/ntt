@@ -1,18 +1,77 @@
 package fs
 
 import (
+	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gosimple/slug"
+	"github.com/hashicorp/go-multierror"
 )
 
 // FindTTCN3Files returns a list of TTCN-3 source files (.ttcn3, .ttcn).
-// FindTTCN3Files will return a nil slice on any error.
 func FindTTCN3Files(dir string) []string {
 	return findFiles(dir, HasTTCN3Extension)
+}
+
+// FindTTCN3FilesRecursive returns a list TTCN-3 source files available in directory sub-tree.
+func FindTTCN3FilesRecursive(dir string) []string {
+	var ret []string
+	filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+		if err == nil && info.Mode().IsRegular() && HasTTCN3Extension(path) {
+			ret = append(ret, path)
+		}
+		return nil
+	})
+	return ret
+}
+
+// FindTTCN3DirectoriesRecursive returns a list of directories containing TTCN-3 source files.
+func FindTTCN3DirectoriesRecursive(dir string) []string {
+	var ret []string
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err == nil && IsDir(path) && len(FindTTCN3Files(path)) > 0 {
+			ret = append(ret, path)
+		}
+		return nil
+	})
+	return ret
+}
+
+// TTCN3Files returns all TTCN3 files from input list.
+func TTCN3Files(paths ...string) ([]string, error) {
+	var (
+		errs error
+		ret  []string
+	)
+
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		switch {
+		case err != nil:
+			errs = multierror.Append(errs, err)
+			ret = append(ret, path)
+
+		case info.IsDir():
+			files := FindTTCN3Files(path)
+			if len(files) == 0 {
+				errs = multierror.Append(errs, fmt.Errorf("Could not find any ttcn3 source files in directory %q", path))
+			}
+			ret = append(ret, files...)
+
+		case info.Mode().IsRegular() && HasTTCN3Extension(path):
+			ret = append(ret, path)
+
+		default:
+			errs = multierror.Append(errs, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", path))
+			ret = append(ret, path)
+		}
+
+	}
+	return ret, errs
 }
 
 // HasTTCN3Extension returns true if file has suffix .ttcn3 or .ttcn
