@@ -213,39 +213,25 @@ func (p *Project) Root() string {
 
 // Sources returns all TTCN-3 source files.
 func (p *Project) Sources() ([]string, error) {
-	var errs error
-
 	if env := env.Getenv("NTT_SOURCES"); env != "" {
 		return strings.Fields(env), nil
 	}
 
-	var srcs []string
+	var (
+		srcs []string
+		errs error
+	)
+
 	for _, src := range p.Manifest.Sources {
 		src, err := p.evalPath(src)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
-
-		info, err := os.Stat(src)
-		switch {
-		case err != nil:
+		files, err := fs.TTCN3Files(src)
+		if err != nil {
 			errs = multierror.Append(errs, err)
-			srcs = append(srcs, src)
-
-		case info.IsDir():
-			files := fs.FindTTCN3Files(src)
-			if len(files) == 0 {
-				errs = multierror.Append(errs, fmt.Errorf("Could not find any ttcn3 source files in directory %q", src))
-			}
-			srcs = append(srcs, files...)
-
-		case info.Mode().IsRegular() && fs.HasTTCN3Extension(src):
-			srcs = append(srcs, src)
-
-		default:
-			errs = multierror.Append(errs, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", src))
-			srcs = append(srcs, src)
 		}
+		srcs = append(srcs, files...)
 
 	}
 	return srcs, errs
@@ -299,28 +285,9 @@ func (p *Project) FindModule(name string) (string, error) {
 }
 
 func (p *Project) findFilesRecursive() error {
-	addSources := func(path string, info os.FileInfo, err error) error {
-		if err == nil && info.IsDir() {
-			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
-			if len(files) > 0 {
-				log.Debugf("adding sources: %q\n", path)
-				p.Manifest.Sources = append(p.Manifest.Sources, fs.Rel(p.Root(), files...)...)
-			}
-		}
-		return nil
-	}
-	filepath.Walk(p.root, addSources)
+	p.Manifest.Sources = fs.Rel(p.root, fs.FindTTCN3FilesRecursive(p.root)...)
+	log.Debugf("Found %d source files for %q\n", len(p.Manifest.Sources), p.root)
 
-	addImports := func(path string, info os.FileInfo, err error) error {
-		if err == nil && fs.IsDir(path) {
-			files, _ := filepath.Glob(filepath.Join(path, "*.ttcn*"))
-			if len(files) > 0 {
-				log.Debugf("adding import: %q\n", path)
-				p.Manifest.Imports = append(p.Manifest.Imports, path)
-			}
-		}
-		return nil
-	}
 	commonDirs := []string{
 		"../../../sct",
 		"../../../../sct",
@@ -336,7 +303,10 @@ func (p *Project) findFilesRecursive() error {
 			path = eval
 		}
 
-		filepath.Walk(path, addImports)
+		for _, dir := range fs.FindTTCN3DirectoriesRecursive(path) {
+			p.Manifest.Imports = append(p.Manifest.Imports, dir)
+			log.Debugf("Found import %q\n", dir)
+		}
 	}
 	return nil
 }
