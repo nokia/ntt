@@ -27,16 +27,16 @@ func Print(w io.Writer, fset *loc.FileSet, n ast.Node) error {
 }
 
 type printer struct {
-	w               io.Writer
-	fset            *loc.FileSet
-	indent          int
-	lineStart       bool
-	ignoreNextSpace bool
-	err             error
+	w                io.Writer
+	fset             *loc.FileSet
+	indent           int
+	lineStart        bool
+	ignoreNextSpace  bool
+	printNewlineNext bool
+	err              error
 }
 
 func (p *printer) print(values ...interface{}) {
-
 	for _, v := range values {
 		switch n := v.(type) {
 		case whiteSpace:
@@ -81,9 +81,9 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.LBrace, "\n", indent)
+			p.print(n.LBrace, indent)
 			p.print(n.List)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(unindent, n.RBrace)
 
 		case *ast.UnaryExpr:
 			if n == nil {
@@ -236,17 +236,21 @@ func (p *printer) print(values ...interface{}) {
 			}
 			p.print(n.X)
 			p.print(n.ExceptTok)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.List)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			sep := ";"
+			if !n.LBrace.IsValid() {
+				sep = ","
+			}
+			p.printSlice(sep, n.List...)
+			p.print(unindent, n.RBrace)
 
 		case *ast.BlockStmt:
 			if n == nil {
 				return
 			}
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.Stmts)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice(";", n.Stmts...)
+			p.print(unindent, n.RBrace)
 
 		case *ast.DeclStmt:
 			if n == nil {
@@ -336,9 +340,9 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Tok)
 			p.print(n.Union)
 			p.print(n.Tag)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.Body)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice("", n.Body...)
+			p.print(unindent, n.RBrace)
 
 		case *ast.CaseClause:
 			if n == nil {
@@ -366,7 +370,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.DefaultTok)
 			p.print(n.Type)
 			p.print(n.Name)
-			p.print(n.ArrayDef)
+			p.printSlice("", n.ArrayDef...)
 			p.print(n.TypePars)
 			p.print(n.ValueConstraint)
 			p.print(n.LengthConstraint)
@@ -383,9 +387,9 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.Kind)
-			p.print(n.LBrace, "\n", indent)
+			p.print(n.LBrace, indent)
 			p.print(n.Fields)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(unindent, n.RBrace)
 
 		case *ast.ListSpec:
 			if n == nil {
@@ -401,9 +405,9 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.Tok)
-			p.print(n.LBrace, "\n", indent)
+			p.print(n.LBrace, indent)
 			p.print(n.Enums)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(unindent, n.RBrace)
 
 		case *ast.BehaviourSpec:
 			if n == nil {
@@ -431,7 +435,7 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.Name)
-			p.print(n.ArrayDef)
+			p.printSlice("", n.ArrayDef...)
 			p.print(n.AssignTok)
 			p.print(n.Value)
 
@@ -456,9 +460,9 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.Tok)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.Decls)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice(";", n.Decls...)
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.FuncDecl:
@@ -508,9 +512,9 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Kind)
 			p.print(n.Name)
 			p.print(n.TypePars)
-			p.print(n.LBrace, "\n", indent)
+			p.print(n.LBrace, indent)
 			p.print(n.Fields)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.EnumTypeDecl:
@@ -521,9 +525,9 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.EnumTok)
 			p.print(n.Name)
 			p.print(n.TypePars)
-			p.print(n.LBrace, "\n", indent)
+			p.print(n.LBrace, indent)
 			p.print(n.Enums)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.BehaviourTypeDecl:
@@ -550,9 +554,9 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.TypePars)
 			p.print(n.Kind)
 			p.print(n.Realtime)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.Attrs)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice(";", n.Attrs...)
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.PortAttribute:
@@ -590,9 +594,9 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Tok)
 			p.print(n.Name)
 			p.print(n.Language)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.Defs)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice(";", n.Defs...)
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.ModuleDef:
@@ -618,9 +622,9 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.FromTok)
 			p.print(n.Module)
 			p.print(n.Language)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.List)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice(";", n.List...)
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.GroupDecl:
@@ -630,9 +634,9 @@ func (p *printer) print(values ...interface{}) {
 
 			p.print(n.Tok)
 			p.print(n.Name)
-			p.print(n.LBrace, "\n", indent)
-			p.print(n.Defs)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(n.LBrace, indent)
+			p.printSlice(";", n.Defs...)
+			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
 		case *ast.FriendDecl:
@@ -708,7 +712,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Modif)
 			p.print(n.Type)
 			p.print(n.Name)
-			p.print(n.ArrayDef)
+			p.printSlice("", n.ArrayDef...)
 			p.print(n.AssignTok)
 			p.print(n.Value)
 
@@ -717,9 +721,9 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.Tok)
-			p.print(n.LBrace, "\n", indent)
+			p.print(n.LBrace, indent)
 			p.print(n.List)
-			p.print(unindent, n.RBrace, "\n")
+			p.print(unindent, n.RBrace)
 
 		case *ast.WithStmt:
 			if n == nil {
@@ -728,114 +732,36 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Kind)
 			p.print(n.Override)
 			p.print(n.LParen)
-			p.print(n.List)
+			p.printSlice(";", n.List...)
 			p.print(n.RParen)
 			p.print(n.Value)
 
 		case []*ast.CaseClause:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice("", n...)
 		case []*ast.DefKindExpr:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []*ast.Field:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []*ast.FormalPar:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []*ast.ModuleDef:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(";", n...)
 		case []*ast.ParenExpr:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []*ast.ValueDecl:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(";", n...)
 		case []*ast.WithStmt:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(";", n...)
 		case []ast.Decl:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []ast.Expr:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []ast.Node:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 		case []ast.Stmt:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(";", n...)
 		case []ast.Token:
-			sep := ","
-			for i, item := range n {
-				p.print(item)
-				if sep != "," || i < len(n)-1 {
-					p.print(sep)
-				}
-			}
+			p.printSlice(",", n...)
 
 		case ast.Token:
 			if n.IsValid() {
@@ -862,9 +788,33 @@ func (p *printer) print(values ...interface{}) {
 			default:
 				fmt.Fprint(p.w, " ")
 			}
+			if p.printNewlineNext && n != ";" {
+				p.printNewlineNext = false
+				p.print("\n")
+				p.print(n)
+				return
+			}
 			fmt.Fprint(p.w, n)
-			if n == "\n" {
+			switch {
+			case n == "\n":
 				p.lineStart = true
+				p.printNewlineNext = false
+			case n == "{", n == "}":
+				p.printNewlineNext = true
+			default:
+				p.printNewlineNext = false
+			}
+		}
+	}
+}
+
+func (p *printer) printSlice(seperator string, items ...interface{}) {
+	for i, item := range items {
+		p.print(item)
+		if seperator != "," || i < len(items)-1 {
+			p.print(seperator)
+			if seperator != "," {
+				p.print("\n")
 			}
 		}
 	}
