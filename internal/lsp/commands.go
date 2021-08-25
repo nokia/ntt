@@ -55,8 +55,7 @@ func NewCommand(pos loc.Position, title string, command string, args ...interfac
 // getenvFromSuite invokes ntt show command to retrieve
 // environment variables from the provided suite
 func getenvFromSuite(nttCache string, pathToManifest string, evName string) string {
-	cmd := exec.Command("ntt", "show", pathToManifest, "--", evName)
-	cmd.Env = os.Environ()
+	cmd := nttCommand("show", pathToManifest, "--", evName)
 	if nttCache != "" {
 		cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
 	}
@@ -96,19 +95,16 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 	nttDebug = getenvFromSuite(nttCache, pathToManifest, "NTT_DEBUG")
 	log.Debug(fmt.Sprintf("NTT_CACHE=%q\nNTT_DEBUG=%q", nttCache, nttDebug))
 
-	var opts = []string{"run", pathToManifest, "-j1", "--results-file=test_results.json", "--no-summary"}
+	var opts = []string{"-j1", "--results-file=test_results.json", "--no-summary"}
 	if nttDebug == "all" {
 		opts = append(opts, "--debug")
 	}
-	cmd = exec.Command("ntt", opts...)
 
 	// disable compilers colorised output
 	k3cFlags := env.Getenv("K3CFLAGS_EXT")
-	if k3cFlags != "" {
-		os.Unsetenv("K3CFLAGS_EXT")
-	}
+	os.Unsetenv("K3CFLAGS_EXT")
 	k3cFlags += " --diagnostics-color=never"
-	cmd.Env = os.Environ()
+	cmd = nttCommand("run", pathToManifest, opts...)
 	cmd.Env = append(cmd.Env, "K3CFLAGS_EXT="+k3cFlags)
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
 	if nttCache != "" {
@@ -124,8 +120,7 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 		s.Log(context.TODO(), cmd.ProcessState.String())
 		if cmd.ProcessState.ExitCode() >= 0 {
 			// run ntt report
-			cmd := exec.Command("ntt", "report", pathToManifest)
-
+			cmd := nttCommand("report", pathToManifest)
 			cmd.Env = append(cmd.Env, "NTT_COLORS=never")
 			if nttCache != "" {
 				cmd.Env = append(cmd.Env, "NTT_CACHE="+nttCache)
@@ -143,4 +138,22 @@ func cmdTest(s *Server, testId string, fileUri string) error {
 		s.Log(context.TODO(), err.Error())
 	}
 	return err
+}
+
+func nttCommand(name string, root string, opts ...string) *exec.Cmd {
+	args := []string{name, root}
+	args = append(args, opts...)
+	cmd := exec.Command(findExecutable(), args...)
+	cmd.Env = os.Environ()
+	return cmd
+}
+
+func findExecutable() string {
+	if exe, err := exec.LookPath("ntt"); err == nil {
+		return exe
+	}
+	if exe, err := os.Executable(); err == nil {
+		return exe
+	}
+	return "ntt"
 }
