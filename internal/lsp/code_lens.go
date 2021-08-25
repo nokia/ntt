@@ -33,14 +33,15 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 				if n.Kind.Kind != token.TESTCASE {
 					return false
 				}
-				id := ast.Name(tree.Module.Name) + "." + ast.Name(n.Name)
-				if cmd, err := NewCommand(tree.Position(n.Pos()), "run test", "ntt.test", param{ID: id, URI: string(file.SpanURI())}); err == nil {
+				params := nttTestParams{
+					ID:  ast.Name(tree.Module.Name) + "." + ast.Name(n.Name),
+					URI: string(file.SpanURI()),
+				}
+				if cmd, err := NewCommand(tree.Position(n.Pos()), "run test", "ntt.test", params); err == nil {
 					result = append(result, cmd)
 				}
-				return false
-			default:
-				return false
 			}
+			return false
 		})
 	}
 
