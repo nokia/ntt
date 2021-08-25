@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/nokia/ntt/internal/log"
@@ -27,6 +28,15 @@ import (
 type Suites struct {
 	mu    sync.Mutex
 	roots map[string]*ntt.Suite
+}
+
+// FirstSuite returns the first test suite owning the file or an error if not
+// owning suite was found.
+func (s *Suites) FirstSuite(uri string) (*ntt.Suite, error) {
+	if suites := s.Owners(protocol.DocumentURI(uri)); len(suites) > 0 {
+		return suites[0], nil
+	}
+	return nil, fmt.Errorf("File %q seem not to belong to any test suite. Skipping execution.", uri)
 }
 
 // Owners returns all Suites that require the opened file.
