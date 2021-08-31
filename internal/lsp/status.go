@@ -24,7 +24,7 @@ Process ID : {{ .PID }}
 
 {{range .Suites}}
 Root Folder: {{ .Root }}
-Known Files: {{ range .Files}}
+Known Files: {{ range files .}}
 	- {{.}}{{end}}
 
 {{end}}
@@ -35,6 +35,13 @@ type Status struct {
 	Version    string
 	PID        int
 	Suites     []*ntt.Suite
+}
+
+var funcMap = template.FuncMap{
+	"files": func(suite *ntt.Suite) []string {
+		f, _ := suite.Files()
+		return f
+	},
 }
 
 func NewStatus(suites []*ntt.Suite) *Status {
@@ -54,14 +61,15 @@ func NewStatus(suites []*ntt.Suite) *Status {
 }
 
 func (s *Server) status(ctx context.Context) (interface{}, error) {
-	t := template.Must(template.New("ntt.status").Parse(statusTemplate))
+	t := template.Must(template.New("ntt.status").Funcs(funcMap).Parse(statusTemplate))
 	var suites []*ntt.Suite
 	for _, s := range s.roots {
 		suites = append(suites, s)
 	}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, NewStatus(suites)); err != nil {
-		panic(err.Error())
+		s.Log(context.TODO(), "An error occured during collecting status information. This is probably a ntt bug:")
+		s.Log(context.TODO(), err.Error())
 	}
 	s.Log(ctx, buf.String())
 	return nil, nil
