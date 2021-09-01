@@ -117,7 +117,7 @@ func nttCommand(suite *ntt.Suite, name string, opts ...string) *exec.Cmd {
 		"SCT_K3_SERVER": "ON",
 		"NTT_COLORS":    "never",
 		"NTT_CACHE":     strings.Join(cacheDirs(suite), ":"),
-		"K3C_FLAGS_EXT": k3cFlags(suite),
+		"K3CFLAGS":      k3cFlags(suite),
 	} {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
@@ -151,14 +151,14 @@ func cacheDirs(suite *ntt.Suite) []string {
 	return dirs
 }
 
-// k3cFlags expand k3.env variable K3CFLAGS_EXT with a flag to
+// k3cFlags expand k3.env variable K3CFLAGS with a flag to
 // disable color output.
 //
 // VSCode Ouput channel has only poor support for ANSI color sequences.
 // It's best we disable colors all together.
 func k3cFlags(suite *ntt.Suite) string {
 	flags := "--diagnostics-color=never"
-	if ext, _ := suite.Getenv("K3CFLAGS_EXT"); ext != "" {
+	if ext, _ := suite.Getenv("K3CFLAGS"); ext != "" {
 		flags = ext + " " + flags
 	}
 	return flags
