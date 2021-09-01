@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/project/suiteindex"
 )
 
@@ -22,6 +23,7 @@ func Discover(path string) []string {
 	fs.WalkUp(path, func(path string) bool {
 		// Check source directories
 		if file := filepath.Join(path, ManifestFile); fs.IsRegular(file) {
+			log.Debugf("discovered manifest: %q\n", file)
 			list = append(list, path)
 		}
 		list = append(list, readSuites(filepath.Join(path, suiteindex.Name))...)
@@ -40,6 +42,7 @@ func Discover(path string) []string {
 	if len(list) == 0 {
 		fs.WalkUp(path, func(path string) bool {
 			if tests := fs.Glob(path + "/testcases/*"); len(tests) > 0 {
+				log.Debugf("discovered testcases folder in %q\n", path)
 				list = append(list, path)
 				return false
 			}
@@ -67,11 +70,11 @@ func readSuites(file string) []string {
 		return nil
 	}
 
+	log.Debugf("reading suites from index file: %q\n", file)
 	for _, suite := range si.Suites {
 		if suite.RootDir != "" {
-			if file := filepath.Join(suite.RootDir, ManifestFile); fs.IsRegular(file) {
-				list = append(list, suite.RootDir)
-			}
+			log.Debugf("using root_dir: %q\n", suite.RootDir)
+			list = append(list, suite.RootDir)
 		}
 	}
 
