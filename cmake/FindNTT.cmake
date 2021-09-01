@@ -134,6 +134,8 @@ find_package_handle_standard_args(NTT
 
 mark_as_advanced(NTT_EXECUTABLE)
 
+file(REMOVE "${CMAKE_BINARY_DIR}/ttcn3_suites.json")
+
 function(add_ttcn3_suite TGT)
     set("ARGS_PREFIX" "")
     set("ARGS_OPTIONS" "")
