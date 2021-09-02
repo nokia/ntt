@@ -113,7 +113,7 @@ cwd             : %s
 	}
 
 	// Display nice artifact overview for convenient navigation
-	logDir := "./logs/" + testID + "-0"
+	logDir := cmd.Dir + "/logs/" + testID + "-0"
 	s.Log(context.TODO(), fmt.Sprintf(`
 Content of log directory %q:
 ===============================================================================
