@@ -96,6 +96,8 @@ cwd             : %s
 	}
 	s.Log(context.TODO(), build_cmd.ProcessState.String())
 
+	// clean logs from all previous runs of actual test
+	removeLogsForTest(s, filepath.Join(cmd.Dir, "logs"), testID)
 	// run test
 	s.Log(context.TODO(), "running ...\n")
 	out, err = cmd.CombinedOutput()
@@ -116,7 +118,7 @@ cwd             : %s
 	}
 
 	// Display nice artifact overview for convenient navigation
-	logDir := cmd.Dir + "/logs/" + testID + "-0"
+	logDir := filepath.Join(cmd.Dir, "logs", testID+"-0")
 	s.Log(context.TODO(), fmt.Sprintf(`
 Content of log directory %q:
 ===============================================================================
@@ -145,6 +147,16 @@ func nttCommand(suite *ntt.Suite, name string, opts ...string) *exec.Cmd {
 	cmd.Dir = filepath.Join(fs.Path(suite.Root()), "ntt.test")
 	os.Mkdir(cmd.Dir, 0755)
 	return cmd
+}
+
+// remove log files from previous runs
+func removeLogsForTest(s *Server, baseDir string, tcName string) {
+	files, _ := filepath.Glob(filepath.Join(baseDir, tcName+"-*"))
+	for _, f := range files {
+		if err := os.RemoveAll(f); err != nil {
+			s.Log(context.TODO(), fmt.Sprintf("error removing %q: %s", f, err.Error()))
+		}
+	}
 }
 
 // suiteArgs returns the suite arguments require to execute ntt commands. Which
