@@ -86,21 +86,24 @@ cwd             : %s
 		testID, build_cmd.String(), cmd.String(), cmd.Dir))
 
 	// compile test
+	s.Log(context.TODO(), "compiling ...\n")
 	out, err := build_cmd.CombinedOutput()
 	s.Log(context.TODO(), string(out))
-	s.Log(context.TODO(), build_cmd.ProcessState.String())
 
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
 		return err
 	}
+	s.Log(context.TODO(), build_cmd.ProcessState.String())
 
 	// run test
+	s.Log(context.TODO(), "running ...\n")
 	out, err = cmd.CombinedOutput()
 	s.Log(context.TODO(), string(out))
-	s.Log(context.TODO(), cmd.ProcessState.String())
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
+	} else {
+		s.Log(context.TODO(), cmd.ProcessState.String())
 	}
 
 	// Continue anyway to execute ntt report
