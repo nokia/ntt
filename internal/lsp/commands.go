@@ -64,6 +64,12 @@ func nttTest(s *Server, fileURI string, testID string) error {
 		return err
 	}
 
+	// Execute ntt build backend (k3-build)
+	build_cmd := nttCommand(suite, "build")
+	if s := env.Getenv("NTT_DEBUG"); s != "" {
+		build_cmd.Args = append(build_cmd.Args, "-vvvvv")
+	}
+
 	// Execute ntt run backend (k3s)
 	cmd := nttCommand(suite, "run", "-j1", "--results-file=test_results.json", "--no-summary")
 	if s := env.Getenv("NTT_DEBUG"); s != "" {
@@ -72,20 +78,37 @@ func nttTest(s *Server, fileURI string, testID string) error {
 	cmd.Stdin = strings.NewReader(testID + "\n")
 	s.Log(context.TODO(), fmt.Sprintf(`
 ===============================================================================
-Executing test : %q
-with command   : %s
-cwd            : %s
+Executing test  : %q
+compile command : %s
+run command     : %s
+cwd             : %s
 ===============================================================================`,
-		testID, cmd.String(), cmd.Dir))
-	out, err := cmd.CombinedOutput()
+		testID, build_cmd.String(), cmd.String(), cmd.Dir))
+
+	// compile test
+	s.Log(context.TODO(), "compiling ...\n")
+	out, err := build_cmd.CombinedOutput()
 	s.Log(context.TODO(), string(out))
-	s.Log(context.TODO(), cmd.ProcessState.String())
+
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
 		return err
 	}
+	s.Log(context.TODO(), build_cmd.ProcessState.String())
 
-	// Execute ntt report
+	// clean logs from all previous runs of actual test
+	removeLogsForTest(s, filepath.Join(cmd.Dir, "logs"), testID)
+	// run test
+	s.Log(context.TODO(), "running ...\n")
+	out, err = cmd.CombinedOutput()
+	s.Log(context.TODO(), string(out))
+	if err != nil {
+		s.Log(context.TODO(), err.Error())
+	} else {
+		s.Log(context.TODO(), cmd.ProcessState.String())
+	}
+
+	// Continue anyway to execute ntt report
 	cmd = nttCommand(suite, "report")
 	out, err = cmd.CombinedOutput()
 	s.Log(context.TODO(), string(out))
@@ -95,7 +118,7 @@ cwd            : %s
 	}
 
 	// Display nice artifact overview for convenient navigation
-	logDir := "./logs/" + testID + "-0"
+	logDir := filepath.Join(cmd.Dir, "logs", testID+"-0")
 	s.Log(context.TODO(), fmt.Sprintf(`
 Content of log directory %q:
 ===============================================================================
@@ -126,6 +149,16 @@ func nttCommand(suite *ntt.Suite, name string, opts ...string) *exec.Cmd {
 	return cmd
 }
 
+// remove log files from previous runs
+func removeLogsForTest(s *Server, baseDir string, tcName string) {
+	files, _ := filepath.Glob(filepath.Join(baseDir, tcName+"-*"))
+	for _, f := range files {
+		if err := os.RemoveAll(f); err != nil {
+			s.Log(context.TODO(), fmt.Sprintf("error removing %q: %s", f, err.Error()))
+		}
+	}
+}
+
 // suiteArgs returns the suite arguments require to execute ntt commands. Which
 // is either the test suite root folder or a list of TTCN-3 files.
 func suiteArgs(suite *ntt.Suite) []string {
@@ -135,7 +168,7 @@ func suiteArgs(suite *ntt.Suite) []string {
 	return project.FindAllFiles(suite)
 }
 
-// cacheDirs returns a directories of interest. Such as parameters dir or build dir.
+// cacheDirs returns directories of interest. Such as parameters dir or build dir.
 func cacheDirs(suite *ntt.Suite) []string {
 	dirs := strings.Split(env.Getenv("NTT_CACHE"), ":")
 
