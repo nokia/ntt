@@ -2,7 +2,6 @@ package fs
 
 import (
 	"fmt"
-	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,7 +19,7 @@ func FindTTCN3Files(dir string) []string {
 // FindTTCN3FilesRecursive returns a list TTCN-3 source files available in directory sub-tree.
 func FindTTCN3FilesRecursive(dir string) []string {
 	var ret []string
-	filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err == nil && info.Mode().IsRegular() && HasTTCN3Extension(path) {
 			ret = append(ret, path)
 		}
