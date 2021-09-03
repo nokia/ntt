@@ -3,7 +3,6 @@ package printer_test
 import (
 	"bytes"
 	"fmt"
-	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -65,7 +64,7 @@ func TestPrinter(t *testing.T) {
 // Load tests from disk
 func tests(path string) []Test {
 	var tests []Test
-	filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 
 		// Ignore file system errors
 		if err != nil {
