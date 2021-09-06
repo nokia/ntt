@@ -124,7 +124,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 			}
 
 			if err := parseFiles(cmd, suite); err != nil {
-				return err
+				fmt.Fprintln(os.Stderr, err.Error())
 			}
 
 			return loadBaskets(suite)
@@ -230,10 +230,6 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 		srcs, err = project.Files(suite)
 	}
 
-	if err != nil {
-		return err
-	}
-
 	var wg sync.WaitGroup
 	wg.Add(len(srcs))
 	infos = make([]*ntt.ParseInfo, len(srcs))
@@ -244,7 +240,7 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 		}(i, src)
 	}
 	wg.Wait()
-	return nil
+	return err
 }
 
 func listTests(cmd *cobra.Command, args []string) error {
