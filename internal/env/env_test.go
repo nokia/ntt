@@ -157,6 +157,18 @@ func TestEnvExpansionEnv(t *testing.T) {
 	assert.Equal(t, "fromEnv", env.Getenv("NTT_B"))
 }
 
+// Environment files are evaluted line by line. Line order matters.
+func TestEnvExpansionEnv2(t *testing.T) {
+	clearEnv()
+	os.Setenv("NTT_A", "fromEnv")
+	setContent("ntt.env", `
+		NTT_A=a
+		NTT_B=$NTT_A
+	`)
+	env.Load()
+	assert.Equal(t, "fromEnv", env.Getenv("NTT_B"))
+}
+
 // Unknown variables are substituted with empty string.
 func TestEnvExpansionUnknown(t *testing.T) {
 	clearEnv()
