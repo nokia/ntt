@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/moosq/gotenv"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/subosito/gotenv"
 )
 
 var Files = []string{"ntt.env", "k3.env"}
