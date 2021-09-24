@@ -121,7 +121,7 @@ func HasCExtension(file string) bool {
 // FindK3EnvInCurrPath returns the path of the directory containing k3.env
 func FindK3EnvInCurrPath(dir string) string {
 	path := dir
-	for len(path) > 0 {
+	for !IsFsRoot(path) {
 		for _, file := range []string{"k3.env", "ntt.env"} {
 			info, _ := os.Stat(filepath.Join(path, file))
 			if info != nil {
@@ -132,6 +132,16 @@ func FindK3EnvInCurrPath(dir string) string {
 		path = filepath.Dir(path)
 	}
 	return ""
+}
+
+// IsFsRoot returns true if the supplied path coincides with
+// the filesystem root
+func IsFsRoot(path string) bool {
+	root := "/"
+	if vol := filepath.VolumeName(path); vol != "" {
+		root = vol
+	}
+	return path == root
 }
 
 // Rel makes paths relative to base, when not absolute already. Use it when
