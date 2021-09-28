@@ -5,14 +5,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/nokia/ntt/internal/span"
 )
 
 // Lookup works similar to GNU Makes VPATH functionality: Paths without directory portion will be looked up alternate directory specified by NTT_CACHE environment variable.
 func Lookup(path string) string {
 	// Skip URLs
+	path = string(span.URINormalizeAuthority(path))
 	if u, _ := url.Parse(path); u.Scheme != "" {
 		return path
-
 	}
 
 	// Skip existing paths
