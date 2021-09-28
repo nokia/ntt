@@ -79,6 +79,18 @@ func URIFromURI(s string) URI {
 	return URI(u.String())
 }
 
+// vscode URIs with 'untitled' scheme is using %2B instead of +
+// inside the authority string, which does not conform to RFC3986.
+// Remove as soon as this issue is fixed:
+// https://github.com/microsoft/vscode/issues/133955
+func URINormalizeAuthority(s string) URI {
+	if !strings.HasPrefix(s, "untitled://") {
+		return URI(s)
+	}
+	parts := strings.SplitAfter(s[len("untitled://"):], "/")
+	return URI("untitled://" + strings.ReplaceAll(parts[0], "%2B", "+") + strings.Join(parts[1:], ""))
+}
+
 func CompareURI(a, b URI) int {
 	if equalURI(a, b) {
 		return 0

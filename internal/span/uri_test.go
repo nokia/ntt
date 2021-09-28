@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the NOTICE file.
 
+//go:build !windows
 // +build !windows
 
 package span_test
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/span"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestURI tests the conversion between URIs and filenames. The test cases
@@ -113,4 +115,13 @@ func TestURIFromURI(t *testing.T) {
 			t.Errorf("Filename(%q): got %q, expected %q", got, gotFilename, test.wantFile)
 		}
 	}
+}
+
+func TestURINormalizeAuthority(t *testing.T) {
+	assert.Equal(t, span.URINormalizeAuthority("untitled://ssh-remote%2B127.0.0.1/home/foo.ttcn3"), span.URI("untitled://ssh-remote+127.0.0.1/home/foo.ttcn3"))
+	assert.Equal(t, span.URINormalizeAuthority("untitled://ssh-remote%2B127.0.0.1"), span.URI("untitled://ssh-remote+127.0.0.1"))
+	assert.Equal(t, span.URINormalizeAuthority("untitled://ssh-remote%2B127.0.0.1/"), span.URI("untitled://ssh-remote+127.0.0.1/"))
+	assert.Equal(t, span.URINormalizeAuthority("untitled://ssh-remote+127.0.0.1/home/foo.ttcn3"), span.URI("untitled://ssh-remote+127.0.0.1/home/foo.ttcn3"))
+	assert.Equal(t, span.URINormalizeAuthority("untitled://ssh-remote%2Bw%C3%BCrmchen.de/home/foo.ttcn3"), span.URI("untitled://ssh-remote+w%C3%BCrmchen.de/home/foo.ttcn3"))
+	assert.Equal(t, span.URINormalizeAuthority("file:///C:/Go/src/bob.go"), span.URI("file:///C:/Go/src/bob.go"))
 }

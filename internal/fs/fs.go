@@ -41,6 +41,7 @@ func Path(s string) string {
 
 // URI turns paths into URIs
 func URI(path string) span.URI {
+	path = string(span.URINormalizeAuthority(path))
 	if u, _ := url.Parse(path); u.Scheme != "" {
 		// VSCode tends to overquote URIs. URIFromURI normalizes them a little.
 		return span.URIFromURI(path)
