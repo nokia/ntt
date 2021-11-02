@@ -10,8 +10,8 @@ import (
 	"syscall"
 
 	"github.com/nokia/ntt/internal/errors"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/internal/session"
+	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
 
 	"github.com/nokia/ntt/internal/cmds/dump"
@@ -50,6 +50,9 @@ var (
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+				if _, ok := os.LookupEnv("NTT_ENABLE_REPL"); ok {
+					return repl()
+				}
 				cmd.Help()
 				return nil
 			}
