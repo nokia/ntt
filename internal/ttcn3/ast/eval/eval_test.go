@@ -20,6 +20,8 @@ func TestInt(t *testing.T) {
 		{"10", 10},
 		{"-10", -10},
 		{"+10", 10},
+		{"1+2*3", 7},
+		{"(1+2)*3", 9},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
@@ -45,6 +47,17 @@ func TestBool(t *testing.T) {
 		{"not false", true},
 		{"not not false", false},
 		{"not not not false", true},
+		{"1<1", false},
+		{"1<=1", true},
+		{"1<2", true},
+		{"1==1", true},
+		{"1==2", false},
+		{"1!=1", false},
+		{"1!=2", true},
+		{"2-1 < 2", true},
+		{"2+1==1+2", true},
+		{"true==false", false},
+		{"true!=false", true},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
@@ -56,6 +69,7 @@ func TestBool(t *testing.T) {
 	}
 
 }
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
