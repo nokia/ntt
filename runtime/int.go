@@ -6,6 +6,8 @@ type Int struct{ *big.Int }
 
 func (i Int) Inspect() string { return i.String() }
 
+func (i Int) Value() *big.Int { return i.Int }
+
 func NewInt(s string) Int {
 	return Int{parseInt(s, 10)}
 }
