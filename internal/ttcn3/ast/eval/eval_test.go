@@ -15,7 +15,11 @@ func TestInt(t *testing.T) {
 		expected int64
 	}{
 		{"0", 0},
+		{"-0", 0},
+		{"+0", 0},
 		{"10", 10},
+		{"-10", -10},
+		{"+10", 10},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
@@ -35,6 +39,12 @@ func TestBool(t *testing.T) {
 	}{
 		{"true", true},
 		{"false", false},
+		{"not true", false},
+		{"not not true", true},
+		{"not not not true", false},
+		{"not false", true},
+		{"not not false", false},
+		{"not not not false", true},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
