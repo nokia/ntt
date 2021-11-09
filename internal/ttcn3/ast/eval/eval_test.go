@@ -76,7 +76,7 @@ func TestIfStmt(t *testing.T) {
 	}{
 		{"if (true) { 10 }", 10},
 		{"if (false) { 10 }", nil},
-		{"if (1) { 10 }", 10},
+		{"if (1) { 10 }", nil},
 		{"if (1 < 2) { 10 }", 10},
 		{"if (1 > 2) { 10 }", nil},
 		{"if (1 > 2) { 10 } else { 20 }", 20},

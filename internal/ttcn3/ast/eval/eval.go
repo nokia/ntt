@@ -22,6 +22,31 @@ func Eval(n ast.Node, env *runtime.Env) runtime.Object {
 		if len(n.List) == 1 {
 			return Eval(n.List[0], env)
 		}
+	case *ast.BlockStmt:
+		var result runtime.Object
+		for _, stmt := range n.Stmts {
+			result = Eval(stmt, env)
+		}
+		return result
+
+	case *ast.ExprStmt:
+		return Eval(n.Expr, env)
+
+	case *ast.IfStmt:
+		val := Eval(n.Cond, env)
+		if val == nil {
+			break
+		}
+		b, ok := val.(runtime.Bool)
+		if !ok {
+			break
+		}
+		if b {
+			return Eval(n.Then, env)
+		} else {
+			return Eval(n.Else, env)
+		}
+
 	}
 	return nil
 }
