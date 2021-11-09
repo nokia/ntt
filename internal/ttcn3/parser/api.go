@@ -16,6 +16,7 @@ import (
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/token"
 )
 
 // A Mode value is a set of flags (or 0).
@@ -134,7 +135,17 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes []ast.Nod
 
 	// parse source
 	p.init(fset, filename, text, 0)
-	return p.parse(), nil
+	for {
+		nodes = append(nodes, p.parse())
+		if p.tok == token.COMMA || p.tok == token.SEMICOLON {
+			p.consumeTrivia(nodes[len(nodes)-1].LastTok())
+			break
+		}
+		if p.tok == token.EOF {
+			break
+		}
+	}
+	return nodes, nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;

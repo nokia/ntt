@@ -69,6 +69,32 @@ func TestBool(t *testing.T) {
 	}
 
 }
+func TestIfStmt(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"if (true) { 10 }", 10},
+		{"if (false) { 10 }", nil},
+		{"if (1) { 10 }", nil},
+		{"if (1 < 2) { 10 }", 10},
+		{"if (1 > 2) { 10 }", nil},
+		{"if (1 > 2) { 10 } else { 20 }", 20},
+		{"if (1 < 2) { 10 } else { 20 }", 10},
+	}
+
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		switch expected := tt.expected.(type) {
+		case int:
+			testInt(t, val, int64(expected))
+		default:
+			if val != nil {
+				t.Errorf("object is not nil. got=%T (%+v)", val, val)
+			}
+		}
+	}
+}
 
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()

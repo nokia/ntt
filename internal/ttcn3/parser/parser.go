@@ -496,15 +496,11 @@ var operandStart = map[token.Kind]bool{
 }
 
 // parse is a generic entry point
-func (p *parser) parse() []ast.Node {
+func (p *parser) parse() ast.Node {
 	switch p.tok {
 	case token.MODULE:
-		list := p.parseModuleList()
-		nodes := make([]ast.Node, len(list))
-		for i, d := range list {
-			nodes[i] = d
-		}
-		return nodes
+		return p.parseModule()
+
 	case token.CONTROL,
 		token.EXTERNAL,
 		token.FRIEND,
@@ -519,18 +515,32 @@ func (p *parser) parse() []ast.Node {
 		token.ALTSTEP,
 		token.CONST,
 		token.PRIVATE,
-		token.PUBLIC,
-		token.TESTCASE:
-		nodes := []ast.Node{p.parseModuleDef()}
-		p.expect(token.EOF)
-		return nodes
-	default:
-		list := p.parseExprList()
-		nodes := make([]ast.Node, len(list))
-		for i, d := range list {
-			nodes[i] = d
+		token.PUBLIC:
+		return p.parseModuleDef()
+
+	case token.TIMER, token.PORT,
+		token.REPEAT, token.BREAK, token.CONTINUE,
+		token.LABEL,
+		token.GOTO,
+		token.RETURN,
+		token.SELECT,
+		token.ALT, token.INTERLEAVE,
+		token.LBRACK,
+		token.FOR,
+		token.WHILE,
+		token.DO,
+		token.IF,
+		token.LBRACE,
+		token.IDENT, token.ANYKW, token.ALL, token.MAP, token.UNMAP, token.MTC:
+		return p.parseStmt()
+
+	case token.TESTCASE:
+		if p.peek(1).Kind == token.DOT {
+			return p.parseStmt()
 		}
-		return nodes
+		return p.parseModuleDef()
+	default:
+		return p.parseExpr()
 	}
 }
 
@@ -2301,6 +2311,13 @@ func (p *parser) parseStmt() ast.Stmt {
 			return call
 		}
 		return x
+	// Interpret simple literal expressions like integers or strings as statement.
+	// This exception was added to help implementing ast-evaluator code like this:
+	//
+	//       if (1 > 2) { 10 } else { 20 }
+	//
+	case token.INT, token.FLOAT, token.STRING, token.BSTRING, token.TRUE, token.FALSE, token.PASS, token.FAIL, token.NONE, token.INCONC, token.ERROR:
+		return p.parseSimpleStmt()
 	default:
 		p.errorExpected(p.pos(1), "statement")
 		p.advance(stmtStart)
