@@ -496,15 +496,11 @@ var operandStart = map[token.Kind]bool{
 }
 
 // parse is a generic entry point
-func (p *parser) parse() []ast.Node {
+func (p *parser) parse() ast.Node {
 	switch p.tok {
 	case token.MODULE:
-		list := p.parseModuleList()
-		nodes := make([]ast.Node, len(list))
-		for i, d := range list {
-			nodes[i] = d
-		}
-		return nodes
+		return p.parseModule()
+
 	case token.CONTROL,
 		token.EXTERNAL,
 		token.FRIEND,
@@ -519,18 +515,32 @@ func (p *parser) parse() []ast.Node {
 		token.ALTSTEP,
 		token.CONST,
 		token.PRIVATE,
-		token.PUBLIC,
-		token.TESTCASE:
-		nodes := []ast.Node{p.parseModuleDef()}
-		p.expect(token.EOF)
-		return nodes
-	default:
-		list := p.parseExprList()
-		nodes := make([]ast.Node, len(list))
-		for i, d := range list {
-			nodes[i] = d
+		token.PUBLIC:
+		return p.parseModuleDef()
+
+	case token.TIMER, token.PORT,
+		token.REPEAT, token.BREAK, token.CONTINUE,
+		token.LABEL,
+		token.GOTO,
+		token.RETURN,
+		token.SELECT,
+		token.ALT, token.INTERLEAVE,
+		token.LBRACK,
+		token.FOR,
+		token.WHILE,
+		token.DO,
+		token.IF,
+		token.LBRACE,
+		token.IDENT, token.ANYKW, token.ALL, token.MAP, token.UNMAP, token.MTC:
+		return p.parseStmt()
+
+	case token.TESTCASE:
+		if p.peek(1).Kind == token.DOT {
+			return p.parseStmt()
 		}
-		return nodes
+		return p.parseModuleDef()
+	default:
+		return p.parseExpr()
 	}
 }
 
