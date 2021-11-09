@@ -2311,6 +2311,13 @@ func (p *parser) parseStmt() ast.Stmt {
 			return call
 		}
 		return x
+	// Interpret simple literal expressions like integers or strings as statement.
+	// This exception was added to help implementing ast-evaluator code like this:
+	//
+	//       if (1 > 2) { 10 } else { 20 }
+	//
+	case token.INT, token.FLOAT, token.STRING, token.BSTRING, token.TRUE, token.FALSE, token.PASS, token.FAIL, token.NONE, token.INCONC, token.ERROR:
+		return p.parseSimpleStmt()
 	default:
 		p.errorExpected(p.pos(1), "statement")
 		p.advance(stmtStart)
