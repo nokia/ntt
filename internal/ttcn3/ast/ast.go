@@ -131,6 +131,29 @@ func NewTrivia(pos loc.Pos, kind token.Kind, val string) Trivia {
 	return Trivia{Terminal{pos, kind, val}}
 }
 
+type NodeList []Node
+
+func (n NodeList) Pos() loc.Pos {
+	if len(n) == 0 {
+		return loc.NoPos
+	}
+	return n[0].Pos()
+}
+
+func (n NodeList) End() loc.Pos {
+	if tok := n.LastTok(); n != nil {
+		return tok.End()
+	}
+	return loc.NoPos
+}
+
+func (n NodeList) LastTok() *Token {
+	if len(n) == 0 {
+		return nil
+	}
+	return n[len(n)-1].LastTok()
+}
+
 type (
 	// Ident represents an identifier.
 	Ident struct {

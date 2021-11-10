@@ -23,19 +23,13 @@ func repl() error {
 		}
 
 		fset := loc.NewFileSet()
-		nodes, err := parser.Parse(fset, "<stdin>", s.Text())
+		root, err := parser.Parse(fset, "<stdin>", s.Text())
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
 		}
-		for _, n := range nodes {
-			if n == nil {
-				continue
-			}
-			if result := eval.Eval(n, env); result != nil {
-				fmt.Println(result.Inspect())
-
-			}
+		if result := eval.Eval(root, env); result != nil {
+			fmt.Println(result.Inspect())
 		}
 	}
 	return nil

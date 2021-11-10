@@ -69,6 +69,7 @@ func TestBool(t *testing.T) {
 	}
 
 }
+
 func TestIfStmt(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -96,16 +97,31 @@ func TestIfStmt(t *testing.T) {
 	}
 }
 
+func TestReturnStmt(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"return 1;", 1},
+		{"return 2; 9", 2},
+		{"return 3*4;9", 12},
+		{"9; return 5*6; 9", 30},
+		{"if (true) { if (true) { return 7 } return 9 }", 7},
+	}
+
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
 	if err != nil {
 		t.Fatalf("testEval: %s", err.Error())
 	}
-	if len(nodes) != 1 {
-		t.Fatalf("testEval: Multiple nodes have been returned, but only one is supported.")
-	}
-	return eval.Eval(nodes[0], runtime.NewEnv())
+	return eval.Eval(nodes, runtime.NewEnv())
 }
 
 func testInt(t *testing.T, obj runtime.Object, expected int64) bool {
