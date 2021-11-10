@@ -9,11 +9,7 @@ import (
 )
 
 func Eval(n ast.Node, env *runtime.Env) runtime.Object {
-	val := eval(n, env)
-	if ret, ok := val.(*runtime.ReturnValue); ok {
-		return ret.Value
-	}
-	return val
+	return unwrap(eval(n, env))
 }
 
 func eval(n ast.Node, env *runtime.Env) runtime.Object {
@@ -22,8 +18,8 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		var result runtime.Object
 		for _, stmt := range n {
 			result = eval(stmt, env)
-			if ret, ok := result.(*runtime.ReturnValue); ok {
-				return ret
+			if needBreak(result) {
+				return result
 			}
 		}
 		return result
@@ -44,8 +40,8 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		var result runtime.Object
 		for _, stmt := range n.Stmts {
 			result = eval(stmt, env)
-			if ret, ok := result.(*runtime.ReturnValue); ok {
-				return ret
+			if needBreak(result) {
+				return result
 			}
 		}
 		return result
@@ -55,25 +51,35 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 
 	case *ast.IfStmt:
 		val := eval(n.Cond, env)
-		if val == nil {
-			break
+		if runtime.IsError(val) {
+			return val
 		}
+
 		b, ok := val.(runtime.Bool)
 		if !ok {
-			break
+			return runtime.Errorf("boolean expression expected. Got %s (%s)", val.Type(), val.Inspect())
 		}
-		if b {
+
+		switch {
+		case b == true:
 			return eval(n.Then, env)
-		} else {
+
+		case n.Else != nil:
 			return eval(n.Else, env)
+
+		default:
+			return nil
 		}
 
 	case *ast.ReturnStmt:
-		result := eval(n.Result, env)
-		return &runtime.ReturnValue{Value: result}
-
+		val := eval(n.Result, env)
+		if runtime.IsError(val) {
+			return val
+		}
+		return &runtime.ReturnValue{Value: val}
 	}
-	return nil
+
+	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
 }
 
 func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
@@ -85,7 +91,7 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 	case token.FALSE:
 		return runtime.NewBool(false)
 	}
-	return nil
+	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
 }
 
 func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
@@ -104,7 +110,8 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 			return !b
 		}
 	}
-	return nil
+
+	return runtime.Errorf("unknown operator: %s%s", n.Op.Kind, val.Inspect())
 }
 
 func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
@@ -112,173 +119,107 @@ func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
 	x := eval(n.X, env)
 	y := eval(n.Y, env)
 
+	switch {
+	case x.Type() == runtime.INTEGER && y.Type() == runtime.INTEGER:
+		return evalArithBinary(x.(runtime.Int), y.(runtime.Int), op, env)
+	case x.Type() == runtime.BOOL && y.Type() == runtime.BOOL:
+		return evalBoolBinary(bool(x.(runtime.Bool)), bool(y.(runtime.Bool)), op, env)
+	case x.Type() != y.Type():
+		return runtime.Errorf("type mismatch: %s %s %s", x.Type(), op, y.Type())
+	}
+
+	return runtime.Errorf("unknown operator: %s %s %s", x.Inspect(), op, y.Inspect())
+}
+
+func evalBoolBinary(x bool, y bool, op token.Kind, env *runtime.Env) runtime.Object {
+	switch op {
+	case token.EQ:
+		return runtime.NewBool(x == y)
+	case token.NE:
+		return runtime.NewBool(x != y)
+	case token.AND:
+		return runtime.NewBool(x && y)
+	case token.OR:
+		return runtime.NewBool(x || y)
+	case token.XOR:
+		return runtime.NewBool(x && !y || !x && y)
+	}
+
+	return runtime.Errorf("unknown operator: boolean %s boolean", op)
+}
+
+func evalArithBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env) runtime.Object {
 	switch op {
 	case token.ADD:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		return runtime.Int{Int: new(big.Int).Add(x.Int, y.Int)}
 
 	case token.SUB:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		return runtime.Int{Int: new(big.Int).Sub(x.Int, y.Int)}
 
 	case token.MUL:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		return runtime.Int{Int: new(big.Int).Mul(x.Int, y.Int)}
 
 	case token.DIV:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		return runtime.Int{Int: new(big.Int).Div(x.Int, y.Int)}
 
 	case token.REM:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		return runtime.Int{Int: new(big.Int).Rem(x.Int, y.Int)}
 
 	case token.MOD:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		return runtime.Int{Int: new(big.Int).Mod(x.Int, y.Int)}
 
 	case token.LT:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		if x.Cmp(y.Int) < 0 {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.LE:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		if x.Cmp(y.Int) <= 0 {
 			return runtime.NewBool(true)
 		}
 
 	case token.GT:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		if x.Cmp(y.Int) > 0 {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.GE:
-		x, ok := x.(runtime.Int)
-		if !ok {
-			return nil
-		}
-		y, ok := y.(runtime.Int)
-		if !ok {
-			return nil
-		}
 		if x.Cmp(y.Int) >= 0 {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.EQ:
-		switch x := x.(type) {
-		case runtime.Int:
-			y, ok := y.(runtime.Int)
-			if !ok {
-				return nil
-			}
-			if x.Cmp(y.Int) == 0 {
-				return runtime.NewBool(true)
-			}
-			return runtime.NewBool(false)
-
-		case runtime.Bool:
-			y, ok := y.(runtime.Bool)
-			if !ok {
-				return nil
-			}
-			if x == y {
-				return runtime.NewBool(true)
-			}
-			return runtime.NewBool(false)
+		if x.Cmp(y.Int) == 0 {
+			return runtime.NewBool(true)
 		}
+		return runtime.NewBool(false)
 
 	case token.NE:
-		switch x := x.(type) {
-		case runtime.Int:
-			y, ok := y.(runtime.Int)
-			if !ok {
-				return nil
-			}
-			if x.Cmp(y.Int) != 0 {
-				return runtime.NewBool(true)
-			}
-			return runtime.NewBool(false)
-
-		case runtime.Bool:
-			y, ok := y.(runtime.Bool)
-			if !ok {
-				return nil
-			}
-			if x != y {
-				return runtime.NewBool(true)
-			}
-			return runtime.NewBool(false)
+		if x.Cmp(y.Int) != 0 {
+			return runtime.NewBool(true)
 		}
+		return runtime.NewBool(false)
 	}
-	return nil
+	return runtime.Errorf("unknown operator: integer %s integer", op)
+}
+
+func needBreak(v interface{}) bool {
+	switch v.(type) {
+	case *runtime.ReturnValue:
+		return true
+	case *runtime.Error:
+		return true
+	default:
+		return false
+	}
+}
+
+func unwrap(obj runtime.Object) runtime.Object {
+	if ret, ok := obj.(*runtime.ReturnValue); ok {
+		return ret.Value
+	}
+	return obj
 }

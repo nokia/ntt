@@ -77,7 +77,6 @@ func TestIfStmt(t *testing.T) {
 	}{
 		{"if (true) { 10 }", 10},
 		{"if (false) { 10 }", nil},
-		{"if (1) { 10 }", nil},
 		{"if (1 < 2) { 10 }", 10},
 		{"if (1 > 2) { 10 }", nil},
 		{"if (1 > 2) { 10 } else { 20 }", 20},
@@ -115,6 +114,30 @@ func TestReturnStmt(t *testing.T) {
 	}
 }
 
+func TestErrors(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"if(1){}", "boolean expression expected. Got integer (1)"},
+		{"-true", "unknown operator: -true"},
+		{"true==1", "type mismatch: boolean == integer"},
+		{"true+true", "unknown operator: boolean + boolean"},
+		{"1&1", "unknown operator: integer & integer"},
+	}
+
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		err, ok := val.(*runtime.Error)
+		if !ok {
+			t.Errorf("no error object returned. got=%T (%+v)", val, val)
+			continue
+		}
+		if err.Message != tt.expected {
+			t.Errorf("wrong error message. got=%q, want=%q", err.Message, tt.expected)
+		}
+	}
+}
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)

@@ -4,7 +4,8 @@ import "math/big"
 
 type Int struct{ *big.Int }
 
-func (i Int) Inspect() string { return i.String() }
+func (i Int) Type() ObjectType { return INTEGER }
+func (i Int) Inspect() string  { return i.String() }
 
 func (i Int) Value() *big.Int { return i.Int }
 
