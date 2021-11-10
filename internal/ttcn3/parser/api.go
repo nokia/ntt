@@ -109,7 +109,7 @@ func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (ast.Expr, e
 	return p.parseExpr(), nil
 }
 
-func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes []ast.Node, err error) {
+func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeList, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
 	}
@@ -135,14 +135,10 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes []ast.Nod
 
 	// parse source
 	p.init(fset, filename, text, 0)
-	for {
+	for p.tok != token.EOF {
 		nodes = append(nodes, p.parse())
 		if p.tok == token.COMMA || p.tok == token.SEMICOLON {
 			p.consumeTrivia(nodes[len(nodes)-1].LastTok())
-			break
-		}
-		if p.tok == token.EOF {
-			break
 		}
 	}
 	return nodes, nil

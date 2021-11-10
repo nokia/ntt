@@ -9,7 +9,25 @@ import (
 )
 
 func Eval(n ast.Node, env *runtime.Env) runtime.Object {
+	val := eval(n, env)
+	if ret, ok := val.(*runtime.ReturnValue); ok {
+		return ret.Value
+	}
+	return val
+}
+
+func eval(n ast.Node, env *runtime.Env) runtime.Object {
 	switch n := n.(type) {
+	case ast.NodeList:
+		var result runtime.Object
+		for _, stmt := range n {
+			result = eval(stmt, env)
+			if ret, ok := result.(*runtime.ReturnValue); ok {
+				return ret
+			}
+		}
+		return result
+
 	case *ast.ValueLiteral:
 		return evalLiteral(n, env)
 	case *ast.UnaryExpr:
@@ -20,20 +38,23 @@ func Eval(n ast.Node, env *runtime.Env) runtime.Object {
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`.
 		// For now, we assume it's an arithmetic expression, when there's only one child.
 		if len(n.List) == 1 {
-			return Eval(n.List[0], env)
+			return eval(n.List[0], env)
 		}
 	case *ast.BlockStmt:
 		var result runtime.Object
 		for _, stmt := range n.Stmts {
-			result = Eval(stmt, env)
+			result = eval(stmt, env)
+			if ret, ok := result.(*runtime.ReturnValue); ok {
+				return ret
+			}
 		}
 		return result
 
 	case *ast.ExprStmt:
-		return Eval(n.Expr, env)
+		return eval(n.Expr, env)
 
 	case *ast.IfStmt:
-		val := Eval(n.Cond, env)
+		val := eval(n.Cond, env)
 		if val == nil {
 			break
 		}
@@ -42,10 +63,14 @@ func Eval(n ast.Node, env *runtime.Env) runtime.Object {
 			break
 		}
 		if b {
-			return Eval(n.Then, env)
+			return eval(n.Then, env)
 		} else {
-			return Eval(n.Else, env)
+			return eval(n.Else, env)
 		}
+
+	case *ast.ReturnStmt:
+		result := eval(n.Result, env)
+		return &runtime.ReturnValue{Value: result}
 
 	}
 	return nil
@@ -64,7 +89,7 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 }
 
 func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
-	val := Eval(n.X, env)
+	val := eval(n.X, env)
 	switch n.Op.Kind {
 	case token.ADD:
 		if _, ok := val.(runtime.Int); ok {
@@ -84,8 +109,8 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 
 func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
 	op := n.Op.Kind
-	x := Eval(n.X, env)
-	y := Eval(n.Y, env)
+	x := eval(n.X, env)
+	y := eval(n.Y, env)
 
 	switch op {
 	case token.ADD:
