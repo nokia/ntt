@@ -124,6 +124,7 @@ func TestErrors(t *testing.T) {
 		{"true==1", "type mismatch: boolean == integer"},
 		{"true+true", "unknown operator: boolean + boolean"},
 		{"1&1", "unknown operator: integer & integer"},
+		{"x", "identifier not found: x"},
 	}
 
 	for _, tt := range tests {
@@ -138,6 +139,23 @@ func TestErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestVars(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"var integer x := 5; x", 5},
+		{"var integer x := 5*5; x", 25},
+		{"var integer x := 23; var integer y := x; y", 23},
+		{"var integer x := 8; var integer y := x; var integer z := x+y+3; z", 19},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
