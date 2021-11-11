@@ -14,6 +14,27 @@ func Eval(n ast.Node, env *runtime.Env) runtime.Object {
 
 func eval(n ast.Node, env *runtime.Env) runtime.Object {
 	switch n := n.(type) {
+	case *ast.ModuleDef:
+		return eval(n.Def, env)
+
+	case *ast.ValueDecl:
+		var result runtime.Object
+		for _, decl := range n.Decls {
+			result = eval(decl, env)
+			if runtime.IsError(result) {
+				return result
+			}
+		}
+		return result
+
+	case *ast.Declarator:
+		val := eval(n.Value, env)
+		if runtime.IsError(val) {
+			return val
+		}
+		env.Set(n.Name.String(), val)
+		return nil
+
 	case ast.NodeList:
 		var result runtime.Object
 		for _, stmt := range n {
@@ -23,6 +44,13 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 			}
 		}
 		return result
+
+	case *ast.Ident:
+		name := n.String()
+		if val, ok := env.Get(name); ok {
+			return val
+		}
+		return runtime.Errorf("identifier not found: %s", name)
 
 	case *ast.ValueLiteral:
 		return evalLiteral(n, env)
