@@ -13,7 +13,7 @@ import (
 
 func repl() error {
 
-	env := runtime.NewEnv()
+	env := runtime.NewEnv(nil)
 	s := bufio.NewScanner(os.Stdin)
 	fmt.Printf("ntt %s (%s, %s)\n", version, commit, date)
 	for {

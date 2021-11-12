@@ -179,7 +179,7 @@ func testEval(t *testing.T, input string) runtime.Object {
 	if err != nil {
 		t.Fatalf("testEval: %s", err.Error())
 	}
-	return eval.Eval(nodes, runtime.NewEnv())
+	return eval.Eval(nodes, runtime.NewEnv(nil))
 }
 
 func testInt(t *testing.T, obj runtime.Object, expected int64) bool {
