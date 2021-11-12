@@ -1,11 +1,15 @@
 package runtime
 
 type Env struct {
+	outer *Env
 	store map[string]Object
 }
 
 func (env *Env) Get(name string) (Object, bool) {
 	val, ok := env.store[name]
+	if !ok && env.outer != nil {
+		val, ok = env.outer.Get(name)
+	}
 	return val, ok
 }
 
@@ -14,8 +18,9 @@ func (env *Env) Set(name string, val Object) Object {
 	return val
 }
 
-func NewEnv() *Env {
+func NewEnv(outer *Env) *Env {
 	return &Env{
+		outer: outer,
 		store: make(map[string]Object),
 	}
 }

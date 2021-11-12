@@ -13,4 +13,5 @@ const (
 	RETURN_VALUE             = "return value"
 	INTEGER                  = "integer"
 	BOOL                     = "boolean"
+	FUNCTION                 = "function"
 )

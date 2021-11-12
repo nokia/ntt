@@ -105,6 +105,28 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 			return val
 		}
 		return &runtime.ReturnValue{Value: val}
+
+	case *ast.FuncDecl:
+		f := &runtime.Function{
+			Env:    env,
+			Params: n.Params,
+			Body:   n.Body,
+		}
+		env.Set(n.Name.String(), f)
+		return nil
+
+	case *ast.CallExpr:
+		f := eval(n.Fun, env)
+		if runtime.IsError(f) {
+			return f
+		}
+
+		args := evalExprList(n.Args.List, env)
+		if len(args) == 1 && runtime.IsError(args[0]) {
+			return args[0]
+		}
+
+		return apply(f, args)
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
@@ -232,6 +254,33 @@ func evalArithBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.E
 		return runtime.NewBool(false)
 	}
 	return runtime.Errorf("unknown operator: integer %s integer", op)
+}
+
+func evalExprList(exprs []ast.Expr, env *runtime.Env) []runtime.Object {
+	var result []runtime.Object
+	for _, e := range exprs {
+		val := eval(e, env)
+		if runtime.IsError(val) {
+			return []runtime.Object{val}
+		}
+		result = append(result, val)
+	}
+	return result
+}
+
+func apply(obj runtime.Object, args []runtime.Object) runtime.Object {
+	fn, ok := obj.(*runtime.Function)
+	if !ok {
+		return runtime.Errorf("not a function: %s (%s)", obj.Type(), obj.Inspect())
+	}
+
+	fenv := runtime.NewEnv(fn.Env)
+	for i, param := range fn.Params.List {
+		fenv.Set(param.Name.String(), args[i])
+	}
+
+	return unwrap(eval(fn.Body, fenv))
+
 }
 
 func needBreak(v interface{}) bool {
