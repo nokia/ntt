@@ -139,7 +139,7 @@ func FindK3EnvInCurrPath(dir string) string {
 func IsFsRoot(path string) bool {
 	root := "/"
 	if vol := filepath.VolumeName(path); vol != "" {
-		root = vol
+		root = vol + "\\"
 	}
 	return path == root
 }
@@ -193,7 +193,8 @@ func WalkUp(path string, f func(path string) bool) {
 		if !f(path) {
 			break
 		}
-		if abs, _ := filepath.Abs(path); abs == "/" {
+		abs, _ := filepath.Abs(path)
+		if IsFsRoot(abs) {
 			break
 		}
 		path = filepath.Clean(filepath.Join(path, ".."))
