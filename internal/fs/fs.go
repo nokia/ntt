@@ -3,6 +3,7 @@ package fs
 
 import (
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/nokia/ntt/internal/span"
@@ -43,6 +44,10 @@ func Path(s string) string {
 func URI(path string) span.URI {
 	path = string(span.URINormalizeAuthority(path))
 	if u, _ := url.Parse(path); u.Scheme != "" {
+		if vol := filepath.VolumeName(path); vol != "" {
+			// this is a windows path
+			return span.URIFromPath(path)
+		}
 		// VSCode tends to overquote URIs. URIFromURI normalizes them a little.
 		return span.URIFromURI(path)
 	}
