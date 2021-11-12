@@ -105,6 +105,15 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 			return val
 		}
 		return &runtime.ReturnValue{Value: val}
+
+	case *ast.FuncDecl:
+		f := &runtime.Function{
+			Env:    env,
+			Params: n.Params,
+			Body:   n.Body,
+		}
+		env.Set(n.Name.String(), f)
+		return nil
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
