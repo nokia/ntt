@@ -156,6 +156,23 @@ func TestVars(t *testing.T) {
 	}
 }
 
+func TestFunc(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"function f(integer x) { x }; f(5)", 5},
+		{"function f(integer x) { return x }; f(6)", 6},
+		{"function add(integer x, integer y) { return x+y }; add(1,2)", 3},
+		{"function add(integer x, integer y) { return x+y }; add(1,add(2,4))", 7},
+	}
+
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
