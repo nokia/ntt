@@ -136,6 +136,8 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 	switch n.Tok.Kind {
 	case token.INT:
 		return runtime.NewInt(n.Tok.Lit)
+	case token.FLOAT:
+		return runtime.NewFloat(n.Tok.Lit)
 	case token.TRUE:
 		return runtime.NewBool(true)
 	case token.FALSE:
@@ -148,12 +150,20 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 	val := eval(n.X, env)
 	switch n.Op.Kind {
 	case token.ADD:
-		if _, ok := val.(runtime.Int); ok {
+		switch val := val.(type) {
+		case runtime.Int:
 			return val
+		case runtime.Float:
+			return val
+
 		}
 	case token.SUB:
-		if x, ok := val.(runtime.Int); ok {
-			return runtime.Int{Int: x.Neg(x.Value())}
+		switch val := val.(type) {
+		case runtime.Int:
+			return runtime.Int{Int: val.Neg(val.Int)}
+		case runtime.Float:
+			return runtime.Float{Float: val.Neg(val.Float)}
+
 		}
 	case token.NOT:
 		if b, ok := val.(runtime.Bool); ok {
@@ -171,7 +181,9 @@ func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
 
 	switch {
 	case x.Type() == runtime.INTEGER && y.Type() == runtime.INTEGER:
-		return evalArithBinary(x.(runtime.Int), y.(runtime.Int), op, env)
+		return evalIntBinary(x.(runtime.Int), y.(runtime.Int), op, env)
+	case x.Type() == runtime.FLOAT && y.Type() == runtime.FLOAT:
+		return evalFloatBinary(x.(runtime.Float), y.(runtime.Float), op, env)
 	case x.Type() == runtime.BOOL && y.Type() == runtime.BOOL:
 		return evalBoolBinary(bool(x.(runtime.Bool)), bool(y.(runtime.Bool)), op, env)
 	case x.Type() != y.Type():
@@ -198,7 +210,7 @@ func evalBoolBinary(x bool, y bool, op token.Kind, env *runtime.Env) runtime.Obj
 	return runtime.Errorf("unknown operator: boolean %s boolean", op)
 }
 
-func evalArithBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env) runtime.Object {
+func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env) runtime.Object {
 	switch op {
 	case token.ADD:
 		return runtime.Int{Int: new(big.Int).Add(x.Int, y.Int)}
@@ -254,6 +266,58 @@ func evalArithBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.E
 		return runtime.NewBool(false)
 	}
 	return runtime.Errorf("unknown operator: integer %s integer", op)
+}
+
+func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env *runtime.Env) runtime.Object {
+	switch op {
+	case token.ADD:
+		return runtime.Float{Float: new(big.Float).Add(x.Float, y.Float)}
+
+	case token.SUB:
+		return runtime.Float{Float: new(big.Float).Sub(x.Float, y.Float)}
+
+	case token.MUL:
+		return runtime.Float{Float: new(big.Float).Mul(x.Float, y.Float)}
+
+	case token.DIV:
+		return runtime.Float{Float: new(big.Float).Quo(x.Float, y.Float)}
+
+	case token.LT:
+		if x.Cmp(y.Float) < 0 {
+			return runtime.NewBool(true)
+		}
+		return runtime.NewBool(false)
+
+	case token.LE:
+		if x.Cmp(y.Float) <= 0 {
+			return runtime.NewBool(true)
+		}
+
+	case token.GT:
+		if x.Cmp(y.Float) > 0 {
+			return runtime.NewBool(true)
+		}
+		return runtime.NewBool(false)
+
+	case token.GE:
+		if x.Cmp(y.Float) >= 0 {
+			return runtime.NewBool(true)
+		}
+		return runtime.NewBool(false)
+
+	case token.EQ:
+		if x.Cmp(y.Float) == 0 {
+			return runtime.NewBool(true)
+		}
+		return runtime.NewBool(false)
+
+	case token.NE:
+		if x.Cmp(y.Float) != 0 {
+			return runtime.NewBool(true)
+		}
+		return runtime.NewBool(false)
+	}
+	return runtime.Errorf("unknown operator: float %s float", op)
 }
 
 func evalExprList(exprs []ast.Expr, env *runtime.Env) []runtime.Object {

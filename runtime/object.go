@@ -12,6 +12,7 @@ const (
 	RUNTIME_ERROR            = "runtime error"
 	RETURN_VALUE             = "return value"
 	INTEGER                  = "integer"
+	FLOAT                    = "float"
 	BOOL                     = "boolean"
 	FUNCTION                 = "function"
 )
