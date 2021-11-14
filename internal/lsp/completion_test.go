@@ -782,6 +782,26 @@ func TestPortTypeInsideComponent(t *testing.T) {
 		{Label: "TestPortTypeInsideComponent_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestPortTypeInsideComponent_Module_1"}}, filterContentOfAuxModules(list))
 }
 
+func TestInsideBehavBody(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2() {
+			f//
+		};
+	}`, `module TestInsideBehavBody_Module_1
+      {
+		  function f3() {}
+		  altstep a1() runs on C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 63)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideBehavBody_Module_0.f1"},
+		{Label: "f2", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideBehavBody_Module_0.f2"},
+		{Label: "f3", Kind: protocol.FunctionCompletion, SortText: " 2f3", Detail: "TestInsideBehavBody_Module_1.f3"}}, filterContentOfAuxModules(list))
+}
+
 // TODO: fixing this issue requires more effort.
 /*
 func TestSyntaxErrorProvokingInvalidPos(t *testing.T) {

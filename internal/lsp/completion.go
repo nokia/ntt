@@ -194,6 +194,32 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	return complList
 }
 
+func newAllBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+	var sortPref string
+
+	if files := project.FindAllFiles(suite); len(files) > 0 {
+		complList := make([]protocol.CompletionItem, 0, len(files)*2)
+
+		for _, f := range files {
+			fileName := filepath.Base(f)
+			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
+			if fileName != mname {
+				sortPref = " 2"
+			} else {
+				sortPref = " 1"
+			}
+			items := getAllBehavioursFromModule(suite, kind, fileName)
+			for _, v := range items {
+				complList = append(complList, protocol.CompletionItem{Label: v,
+					Kind: protocol.FunctionCompletion, SortText: sortPref + v,
+					Detail: fileName + "." + v})
+			}
+		}
+		return complList
+	}
+	return nil
+}
+
 func newValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind, withDetail bool) []protocol.CompletionItem {
 	items := getAllValueDeclsFromModule(suite, mname, kind)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
@@ -380,6 +406,20 @@ func newAllValueDecls(suite *ntt.Suite, kind token.Kind) []protocol.CompletionIt
 	return complList
 }
 
+func isBehaviourBodyScope(nodes []ast.Node) bool {
+	insideBehav := false
+	for _, node := range nodes {
+		switch node.(type) {
+		case *ast.FuncDecl:
+			insideBehav = true
+		case *ast.BlockStmt:
+			if insideBehav {
+				return true
+			}
+		}
+	}
+	return false
+}
 func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
@@ -457,6 +497,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				} else if scndNode.Name == nil {
 					list = newAllTypes(suite, ownModName)
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+				}
+			case *ast.ExprStmt:
+				if isBehaviourBodyScope(nodes) {
+					list = newAllBehaviours(suite, token.FUNCTION, ownModName)
 				}
 			}
 		}
