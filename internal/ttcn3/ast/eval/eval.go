@@ -142,6 +142,16 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 		return runtime.NewBool(true)
 	case token.FALSE:
 		return runtime.NewBool(false)
+	case token.NONE:
+		return runtime.NoneVerdict
+	case token.PASS:
+		return runtime.PassVerdict
+	case token.INCONC:
+		return runtime.InconcVerdict
+	case token.FAIL:
+		return runtime.FailVerdict
+	case token.ERROR:
+		return runtime.ErrorVerdict
 	}
 	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
 }
