@@ -194,13 +194,14 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	return complList
 }
 
-func newAllBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, mname string) []protocol.CompletionItem {
 	var sortPref string
 
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList := make([]protocol.CompletionItem, 0, len(files)*2)
 
 		for _, f := range files {
+			var items []string
 			fileName := filepath.Base(f)
 			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
 			if fileName != mname {
@@ -208,11 +209,13 @@ func newAllBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protoco
 			} else {
 				sortPref = " 1"
 			}
-			items := getAllBehavioursFromModule(suite, kind, fileName)
+			for _, kind := range kinds {
+				items = append(items, getAllBehavioursFromModule(suite, kind, fileName)...)
+			}
 			for _, v := range items {
-				complList = append(complList, protocol.CompletionItem{Label: v,
+				complList = append(complList, protocol.CompletionItem{Label: v + "()",
 					Kind: protocol.FunctionCompletion, SortText: sortPref + v,
-					Detail: fileName + "." + v})
+					Detail: fileName + "." + v + "()"})
 			}
 		}
 		return complList
@@ -500,7 +503,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				}
 			case *ast.ExprStmt:
 				if isBehaviourBodyScope(nodes) {
-					list = newAllBehaviours(suite, token.FUNCTION, ownModName)
+					list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
 				}
 			}
 		}
@@ -565,6 +568,10 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 				}
 			}
+		}
+	case *ast.BlockStmt:
+		if isBehaviourBodyScope(nodes) {
+			list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
 		}
 	default:
 		log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))

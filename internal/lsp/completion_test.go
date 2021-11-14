@@ -797,9 +797,51 @@ func TestInsideBehavBody(t *testing.T) {
 
 	list := completionAt(t, suite, 63)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideBehavBody_Module_0.f1"},
-		{Label: "f2", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideBehavBody_Module_0.f2"},
-		{Label: "f3", Kind: protocol.FunctionCompletion, SortText: " 2f3", Detail: "TestInsideBehavBody_Module_1.f3"}}, filterContentOfAuxModules(list))
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideBehavBody_Module_0.f1()"},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideBehavBody_Module_0.f2()"},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", Detail: "TestInsideBehavBody_Module_1.f3()"},
+		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", Detail: "TestInsideBehavBody_Module_1.a1()"}}, filterContentOfAuxModules(list))
+}
+
+func TestInsideTcBody(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		testcase tc1() {
+			f//
+		};
+	}`, `module TestInsideTcBody_Module_1
+      {
+		  function f3() {}
+		  altstep a1() runs on C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 64)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBody_Module_0.f1()"},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", Detail: "TestInsideTcBody_Module_1.f3()"},
+		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", Detail: "TestInsideTcBody_Module_1.a1()"}}, filterContentOfAuxModules(list))
+}
+
+func TestInsideTcBodyCtrlSpc(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		testcase tc1() {
+			//
+		};
+	}`, `module TestInsideTcBodyCtrlSpc_Module_1
+      {
+		  function f3() {}
+		  altstep a1() runs on C0 {}
+	  }`)
+
+	list := completionAt(t, suite, 63)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBodyCtrlSpc_Module_0.f1()"},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", Detail: "TestInsideTcBodyCtrlSpc_Module_1.f3()"},
+		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", Detail: "TestInsideTcBodyCtrlSpc_Module_1.a1()"}},
+		filterContentOfAuxModules(list))
 }
 
 // TODO: fixing this issue requires more effort.
