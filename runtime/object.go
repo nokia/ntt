@@ -15,4 +15,5 @@ const (
 	FLOAT                    = "float"
 	BOOL                     = "boolean"
 	FUNCTION                 = "function"
+	VERDICT                  = "verdict"
 )
