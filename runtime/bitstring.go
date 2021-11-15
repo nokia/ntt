@@ -26,13 +26,13 @@ const (
 	Octett      = 8
 )
 
-type BinaryString struct {
+type Bitstring struct {
 	Value *big.Int
 	Unit  Unit
 }
 
-func (b *BinaryString) Type() ObjectType { return BINARY_STRING }
-func (b *BinaryString) Inspect() string {
+func (b *Bitstring) Type() ObjectType { return BITSTRING }
+func (b *Bitstring) Inspect() string {
 	switch b.Unit {
 	case Bit:
 		return fmt.Sprintf("'%b'B", b.Value)
@@ -43,7 +43,7 @@ func (b *BinaryString) Inspect() string {
 	}
 }
 
-func NewBinaryString(s string) (*BinaryString, error) {
+func NewBitstring(s string) (*Bitstring, error) {
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
 	}
@@ -69,9 +69,9 @@ func NewBinaryString(s string) (*BinaryString, error) {
 	s = strings.Map(removeWhitespaces, s[1:len(s)-2])
 
 	if i, ok := new(big.Int).SetString(s, unit.Base()); ok {
-		return &BinaryString{Value: i, Unit: unit}, nil
+		return &Bitstring{Value: i, Unit: unit}, nil
 	}
 
-	// TODO(5nord) parse BinaryString templates (e.g. '01*1'B)
+	// TODO(5nord) parse Bitstring templates (e.g. '01*1'B)
 	return nil, ErrSyntax
 }

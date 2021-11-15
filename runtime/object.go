@@ -18,7 +18,7 @@ const (
 	FLOAT                    = "float"
 	BOOL                     = "boolean"
 	STRING                   = "string"
-	BINARY_STRING            = "binary string"
+	BITSTRING                = "bitstring"
 	FUNCTION                 = "function"
 	VERDICT                  = "verdict"
 )
