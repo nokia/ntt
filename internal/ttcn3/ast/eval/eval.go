@@ -17,6 +17,9 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 	case *ast.ModuleDef:
 		return eval(n.Def, env)
 
+	case *ast.DeclStmt:
+		return eval(n.Decl, env)
+
 	case *ast.ValueDecl:
 		var result runtime.Object
 		for _, decl := range n.Decls {
@@ -163,6 +166,38 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 			}
 		}
 		return result
+
+	case *ast.ForStmt:
+		if n.Init != nil {
+			val := eval(n.Init, env)
+			if runtime.IsError(val) {
+				return val
+			}
+		}
+
+		var result runtime.Object
+		for {
+			cond, err := evalBoolExpr(n.Cond, env)
+			if runtime.IsError(err) {
+				return err
+			}
+			if cond == false {
+				break
+			}
+
+			result = eval(n.Body, env)
+			if runtime.IsError(result) {
+				break
+			}
+
+			result = eval(n.Post, env)
+			if runtime.IsError(result) {
+				break
+			}
+
+		}
+		return result
+
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)

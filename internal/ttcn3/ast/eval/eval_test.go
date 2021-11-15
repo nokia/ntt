@@ -195,6 +195,8 @@ func TestLoop(t *testing.T) {
 		{"while(false){1}; 2", 2},
 		{"var integer i := 0; while (i<3) {i := i + 1}; i", 3},
 		{"var integer i := 1; do { i := 4 } while (false); i", 4},
+		{"var integer i; for (i := 0; i < 3; i := i + 1) {}; i", 3},
+		{"var integer x; for (var integer i := 0; i < 3; i := i + 1) {x:=i}; x", 2},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
