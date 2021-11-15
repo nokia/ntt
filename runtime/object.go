@@ -1,5 +1,7 @@
 package runtime
 
+import "errors"
+
 type Object interface {
 	Inspect() string
 	Type() ObjectType
@@ -16,9 +18,12 @@ const (
 	FLOAT                    = "float"
 	BOOL                     = "boolean"
 	STRING                   = "string"
+	BINARY_STRING            = "binary string"
 	FUNCTION                 = "function"
 	VERDICT                  = "verdict"
 )
+
+var ErrSyntax = errors.New("invalid syntax")
 
 var (
 	Undefined = &undefined{}
