@@ -226,6 +226,29 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestBinaryString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"'011'b", "'11'B"},
+		{"not4b '01'b", "'10'B"},
+		{"'0011'b and4b '0101'b", "'1'B"},
+		{"'0011'b or4b  '0101'b", "'111'B"},
+		{"'0011'b xor4b '0101'b", "'110'B"},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		str, ok := val.(*runtime.BinaryString)
+		if !ok {
+			t.Errorf("object is not runtime.BinaryString. got=%T (%+v)", val, val)
+			continue
+		}
+		if str.Inspect() != tt.expected {
+			t.Errorf("object has wrong value. got=%s, want=%s", str.Inspect(), tt.expected)
+		}
+	}
+}
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
