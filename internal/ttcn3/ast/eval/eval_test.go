@@ -187,6 +187,20 @@ func TestAssignment(t *testing.T) {
 	}
 }
 
+func TestLoop(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"while(false){1}; 2", 2},
+		{"var integer i := 0; while (i<3) {i := i + 1}; i", 3},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)

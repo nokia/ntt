@@ -84,14 +84,9 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		return eval(n.Expr, env)
 
 	case *ast.IfStmt:
-		val := eval(n.Cond, env)
-		if runtime.IsError(val) {
-			return val
-		}
-
-		b, ok := val.(runtime.Bool)
-		if !ok {
-			return runtime.Errorf("boolean expression expected. Got %s (%s)", val.Type(), val.Inspect())
+		b, err := evalBoolExpr(n.Cond, env)
+		if runtime.IsError(err) {
+			return err
 		}
 
 		switch {
@@ -133,6 +128,24 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		}
 
 		return apply(f, args)
+
+	case *ast.WhileStmt:
+		var result runtime.Object
+		for {
+			cond, err := evalBoolExpr(n.Cond, env)
+			if runtime.IsError(err) {
+				return err
+			}
+			if cond == false {
+				break
+			}
+			result = eval(n.Body, env)
+			if runtime.IsError(result) {
+				break
+			}
+		}
+		return result
+
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
@@ -334,6 +347,20 @@ func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env *runti
 		return runtime.NewBool(false)
 	}
 	return runtime.Errorf("unknown operator: float %s float", op)
+}
+
+func evalBoolExpr(n ast.Expr, env *runtime.Env) (bool, runtime.Object) {
+	val := eval(n, env)
+	if runtime.IsError(val) {
+		return false, val
+	}
+
+	if b, ok := val.(runtime.Bool); ok {
+		return b == true, nil
+	}
+
+	return false, runtime.Errorf("boolean expression expected. Got %s (%s)", val.Type(), val.Inspect())
+
 }
 
 func evalExprList(exprs []ast.Expr, env *runtime.Env) []runtime.Object {
