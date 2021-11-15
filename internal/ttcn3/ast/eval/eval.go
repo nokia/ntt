@@ -223,6 +223,12 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 		return runtime.FailVerdict
 	case token.ERROR:
 		return runtime.ErrorVerdict
+	case token.STRING:
+		s, err := token.Unquote(n.Tok.Lit)
+		if err != nil {
+			return runtime.Errorf("%s", err.Error())
+		}
+		return &runtime.String{Value: s}
 	}
 	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
 }
@@ -258,37 +264,33 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
 	op := n.Op.Kind
 	x := eval(n.X, env)
+	if runtime.IsError(x) {
+		return x
+	}
+
 	y := eval(n.Y, env)
+	if runtime.IsError(y) {
+		return y
+	}
 
 	switch {
 	case x.Type() == runtime.INTEGER && y.Type() == runtime.INTEGER:
 		return evalIntBinary(x.(runtime.Int), y.(runtime.Int), op, env)
+
 	case x.Type() == runtime.FLOAT && y.Type() == runtime.FLOAT:
 		return evalFloatBinary(x.(runtime.Float), y.(runtime.Float), op, env)
+
 	case x.Type() == runtime.BOOL && y.Type() == runtime.BOOL:
 		return evalBoolBinary(bool(x.(runtime.Bool)), bool(y.(runtime.Bool)), op, env)
+
+	case x.Type() == runtime.STRING && y.Type() == runtime.STRING:
+		return evalStringBinary(x.(*runtime.String).Value, y.(*runtime.String).Value, op, env)
+
 	case x.Type() != y.Type():
 		return runtime.Errorf("type mismatch: %s %s %s", x.Type(), op, y.Type())
 	}
 
 	return runtime.Errorf("unknown operator: %s %s %s", x.Inspect(), op, y.Inspect())
-}
-
-func evalBoolBinary(x bool, y bool, op token.Kind, env *runtime.Env) runtime.Object {
-	switch op {
-	case token.EQ:
-		return runtime.NewBool(x == y)
-	case token.NE:
-		return runtime.NewBool(x != y)
-	case token.AND:
-		return runtime.NewBool(x && y)
-	case token.OR:
-		return runtime.NewBool(x || y)
-	case token.XOR:
-		return runtime.NewBool(x && !y || !x && y)
-	}
-
-	return runtime.Errorf("unknown operator: boolean %s boolean", op)
 }
 
 func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env) runtime.Object {
@@ -401,6 +403,30 @@ func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env *runti
 	return runtime.Errorf("unknown operator: float %s float", op)
 }
 
+func evalBoolBinary(x bool, y bool, op token.Kind, env *runtime.Env) runtime.Object {
+	switch op {
+	case token.EQ:
+		return runtime.NewBool(x == y)
+	case token.NE:
+		return runtime.NewBool(x != y)
+	case token.AND:
+		return runtime.NewBool(x && y)
+	case token.OR:
+		return runtime.NewBool(x || y)
+	case token.XOR:
+		return runtime.NewBool(x && !y || !x && y)
+	}
+
+	return runtime.Errorf("unknown operator: boolean %s boolean", op)
+}
+
+func evalStringBinary(x string, y string, op token.Kind, env *runtime.Env) runtime.Object {
+	if op == token.CONCAT {
+		return &runtime.String{Value: x + y}
+	}
+	return runtime.Errorf("unknown operator: charstring %s charstring", op)
+
+}
 func evalBoolExpr(n ast.Expr, env *runtime.Env) (bool, runtime.Object) {
 	val := eval(n, env)
 	if runtime.IsError(val) {

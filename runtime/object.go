@@ -15,6 +15,7 @@ const (
 	INTEGER                  = "integer"
 	FLOAT                    = "float"
 	BOOL                     = "boolean"
+	STRING                   = "string"
 	FUNCTION                 = "function"
 	VERDICT                  = "verdict"
 )

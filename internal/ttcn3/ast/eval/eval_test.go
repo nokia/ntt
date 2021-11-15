@@ -124,6 +124,7 @@ func TestErrors(t *testing.T) {
 		{"true==1", "type mismatch: boolean == integer"},
 		{"true+true", "unknown operator: boolean + boolean"},
 		{"1&1", "unknown operator: integer & integer"},
+		{`"a"+"b"`, "unknown operator: charstring + charstring"},
 		{"x", "identifier not found: x"},
 	}
 
@@ -201,6 +202,27 @@ func TestLoop(t *testing.T) {
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
 		testInt(t, val, tt.expected)
+	}
+}
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"Hello Wörld!"`, `Hello Wörld!`},
+		{`"Hello" & " " & "World"`, `Hello World`},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		str, ok := val.(*runtime.String)
+		if !ok {
+			t.Errorf("object is not runtime.String. got=%T (%+v)", val, val)
+			continue
+		}
+		if str.Value != tt.expected {
+			t.Errorf("object has wrong value. got=%s, want=%s", str.Value, tt.expected)
+		}
 	}
 }
 
