@@ -28,9 +28,12 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		return result
 
 	case *ast.Declarator:
-		val := eval(n.Value, env)
-		if runtime.IsError(val) {
-			return val
+		var val runtime.Object = runtime.Undefined
+		if n.Value != nil {
+			val = eval(n.Value, env)
+			if runtime.IsError(val) {
+				return val
+			}
 		}
 		env.Set(n.Name.String(), val)
 		return nil
@@ -75,6 +78,9 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		return result
 
 	case *ast.ExprStmt:
+		if n, ok := n.Expr.(*ast.BinaryExpr); ok && n.Op.Kind == token.ASSIGN {
+			return evalAssign(n.X, n.Y, env)
+		}
 		return eval(n.Expr, env)
 
 	case *ast.IfStmt:
@@ -340,6 +346,25 @@ func evalExprList(exprs []ast.Expr, env *runtime.Env) []runtime.Object {
 		result = append(result, val)
 	}
 	return result
+}
+
+func evalAssign(lhs ast.Expr, rhs ast.Expr, env *runtime.Env) runtime.Object {
+	val := eval(rhs, env)
+	if runtime.IsError(val) {
+		return val
+	}
+
+	id, ok := lhs.(*ast.Ident)
+	if !ok {
+		return runtime.Errorf("expected an identifier. not supported: %T (%+v)", lhs, lhs)
+	}
+
+	if _, ok := env.Get(id.String()); ok {
+		env.Set(id.String(), val)
+		return nil
+	}
+
+	return runtime.Errorf("identifier not found: %s", id.String())
 }
 
 func apply(obj runtime.Object, args []runtime.Object) runtime.Object {
