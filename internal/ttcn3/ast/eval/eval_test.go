@@ -249,6 +249,36 @@ func TestBitstring(t *testing.T) {
 		}
 	}
 }
+
+func TestBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`lengthof("")`, 0},
+		{`lengthof("fnord")`, 5},
+		{`lengthof(1)`, "integer arguments not supported"},
+		{`lengthof("hello", "world")`, "wrong number of arguments. got=2, want=1"},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		switch expected := tt.expected.(type) {
+		case int:
+			testInt(t, val, int64(expected))
+		case string:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Message != expected {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Message, expected)
+			}
+		}
+	}
+
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
