@@ -3,7 +3,10 @@
 //
 package token
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // Kind is the set of lexical tokens of the Go programming language.
 type Kind int
@@ -435,6 +438,15 @@ func Lookup(ident string) Kind {
 		return tok
 	}
 	return IDENT
+}
+
+// Unquote interprets s as a quoted TTCN-3 string literal,
+// returning the string value that s quotes.
+func Unquote(s string) (string, error) {
+	if len(s) < 2 {
+		return s, strconv.ErrSyntax
+	}
+	return strconv.Unquote(`"` + strings.ReplaceAll(s[1:len(s)-1], `""`, `\"`) + `"`)
 }
 
 // Predicates
