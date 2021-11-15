@@ -226,7 +226,7 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestBinaryString(t *testing.T) {
+func TestBitstring(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected string
@@ -239,9 +239,9 @@ func TestBinaryString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
-		str, ok := val.(*runtime.BinaryString)
+		str, ok := val.(*runtime.Bitstring)
 		if !ok {
-			t.Errorf("object is not runtime.BinaryString. got=%T (%+v)", val, val)
+			t.Errorf("object is not runtime.Bitstring. got=%T (%+v)", val, val)
 			continue
 		}
 		if str.Inspect() != tt.expected {

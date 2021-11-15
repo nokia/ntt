@@ -230,7 +230,7 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 		}
 		return &runtime.String{Value: s}
 	case token.BSTRING:
-		b, err := runtime.NewBinaryString(n.Tok.Lit)
+		b, err := runtime.NewBitstring(n.Tok.Lit)
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
@@ -266,8 +266,8 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 			return !b
 		}
 	case token.NOT4B:
-		if b, ok := val.(*runtime.BinaryString); ok {
-			return &runtime.BinaryString{Value: new(big.Int).Abs(new(big.Int).Not(b.Value)), Unit: b.Unit}
+		if b, ok := val.(*runtime.Bitstring); ok {
+			return &runtime.Bitstring{Value: new(big.Int).Abs(new(big.Int).Not(b.Value)), Unit: b.Unit}
 		}
 	}
 
@@ -299,8 +299,8 @@ func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
 	case x.Type() == runtime.STRING && y.Type() == runtime.STRING:
 		return evalStringBinary(x.(*runtime.String).Value, y.(*runtime.String).Value, op, env)
 
-	case x.Type() == runtime.BINARY_STRING && y.Type() == runtime.BINARY_STRING:
-		return evalBinaryStringBinary(x.(*runtime.BinaryString), y.(*runtime.BinaryString), op, env)
+	case x.Type() == runtime.BITSTRING && y.Type() == runtime.BITSTRING:
+		return evalBitstringBinary(x.(*runtime.Bitstring), y.(*runtime.Bitstring), op, env)
 
 	case x.Type() != y.Type():
 		return runtime.Errorf("type mismatch: %s %s %s", x.Type(), op, y.Type())
@@ -444,16 +444,16 @@ func evalStringBinary(x string, y string, op token.Kind, env *runtime.Env) runti
 
 }
 
-func evalBinaryStringBinary(x *runtime.BinaryString, y *runtime.BinaryString, op token.Kind, env *runtime.Env) runtime.Object {
+func evalBitstringBinary(x *runtime.Bitstring, y *runtime.Bitstring, op token.Kind, env *runtime.Env) runtime.Object {
 	switch op {
 	case token.AND4B:
-		return &runtime.BinaryString{Value: new(big.Int).And(x.Value, y.Value), Unit: x.Unit}
+		return &runtime.Bitstring{Value: new(big.Int).And(x.Value, y.Value), Unit: x.Unit}
 
 	case token.OR4B:
-		return &runtime.BinaryString{Value: new(big.Int).Or(x.Value, y.Value), Unit: x.Unit}
+		return &runtime.Bitstring{Value: new(big.Int).Or(x.Value, y.Value), Unit: x.Unit}
 
 	case token.XOR4B:
-		return &runtime.BinaryString{Value: new(big.Int).Xor(x.Value, y.Value), Unit: x.Unit}
+		return &runtime.Bitstring{Value: new(big.Int).Xor(x.Value, y.Value), Unit: x.Unit}
 
 	case token.EQ:
 		if x.Value.Cmp(y.Value) == 0 {
@@ -467,7 +467,7 @@ func evalBinaryStringBinary(x *runtime.BinaryString, y *runtime.BinaryString, op
 		}
 		return runtime.NewBool(false)
 	}
-	return runtime.Errorf("unknown operator: binary string %s binary string", op)
+	return runtime.Errorf("unknown operator: bitstring %s bitstring", op)
 }
 
 func evalBoolExpr(n ast.Expr, env *runtime.Env) (bool, runtime.Object) {
