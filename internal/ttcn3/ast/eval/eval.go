@@ -146,6 +146,23 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		}
 		return result
 
+	case *ast.DoWhileStmt:
+		var result runtime.Object
+		for {
+			result = eval(n.Body, env)
+			if runtime.IsError(result) {
+				break
+			}
+
+			cond, err := evalBoolExpr(n.Cond, env)
+			if runtime.IsError(err) {
+				return err
+			}
+			if cond == false {
+				break
+			}
+		}
+		return result
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
