@@ -173,6 +173,20 @@ func TestFunc(t *testing.T) {
 	}
 }
 
+func TestAssignment(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"var integer i; i := 2; i", 2},
+		{"var integer i := 2; i := i + 1; i", 3},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
