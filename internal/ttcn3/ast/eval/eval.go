@@ -56,6 +56,9 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		if val, ok := env.Get(name); ok {
 			return val
 		}
+		if builtin, ok := runtime.Builtins[name]; ok {
+			return builtin
+		}
 		return runtime.Errorf("identifier not found: %s", name)
 
 	case *ast.ValueLiteral:
@@ -516,17 +519,20 @@ func evalAssign(lhs ast.Expr, rhs ast.Expr, env *runtime.Env) runtime.Object {
 }
 
 func apply(obj runtime.Object, args []runtime.Object) runtime.Object {
-	fn, ok := obj.(*runtime.Function)
-	if !ok {
+	switch fn := obj.(type) {
+	case *runtime.Function:
+		fenv := runtime.NewEnv(fn.Env)
+		for i, param := range fn.Params.List {
+			fenv.Set(param.Name.String(), args[i])
+		}
+		return unwrap(eval(fn.Body, fenv))
+
+	case *runtime.Builtin:
+		return fn.Fn(args...)
+
+	default:
 		return runtime.Errorf("not a function: %s (%s)", obj.Type(), obj.Inspect())
 	}
-
-	fenv := runtime.NewEnv(fn.Env)
-	for i, param := range fn.Params.List {
-		fenv.Set(param.Name.String(), args[i])
-	}
-
-	return unwrap(eval(fn.Body, fenv))
 
 }
 
