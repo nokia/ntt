@@ -276,7 +276,43 @@ func TestBuiltinFunction(t *testing.T) {
 			}
 		}
 	}
+}
 
+func TestList(t *testing.T) {
+	input := "var integer a[3] := {1, 1+1, 3}; a"
+	val := testEval(t, input)
+	l, ok := val.(*runtime.List)
+	if !ok {
+		t.Errorf("object is not runtime.List. got=%T (%+v)", val, val)
+		return
+	}
+	testInt(t, l.Elements[0], 1)
+	testInt(t, l.Elements[1], 2)
+	testInt(t, l.Elements[2], 3)
+}
+
+func TestIndexExpr(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"var integer a[3] := {1, 1+1, 3}; a[0] + a[1] + a[2]", 6},
+		{"var integer a[3] := {1, 1+1, 3}; a[3]", nil},
+		{"var integer a[3] := {1, 1+1, 3}; a[-1]", nil},
+		{"var integer a[3] := {1, 1+1, 3}; var integer i := 2; a[i]", 3},
+		{"var integer x := {2,4,8}[1]; x", 4},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		expected, ok := tt.expected.(int)
+		if ok {
+			testInt(t, val, int64(expected))
+		} else {
+			if val != runtime.Undefined {
+				t.Errorf("object is not undefined. got=%T (%+v)", val, val)
+			}
+		}
+	}
 }
 
 func testEval(t *testing.T, input string) runtime.Object {
