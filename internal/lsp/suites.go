@@ -59,11 +59,8 @@ func (s *Suites) AddSuite(root string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Folder is already known.
-	if _, found := s.roots[root]; found {
-		log.Printf("%q is already known\n", root)
-		return
-	}
+	// Although the folder is known, it might be necessary to re-read it due to
+	// a newly saved File
 
 	if s.roots == nil {
 		s.roots = make(map[string]*ntt.Suite)

@@ -124,6 +124,7 @@ func TestErrors(t *testing.T) {
 		{"true==1", "type mismatch: boolean == integer"},
 		{"true+true", "unknown operator: boolean + boolean"},
 		{"1&1", "unknown operator: integer & integer"},
+		{`"a"+"b"`, "unknown operator: charstring + charstring"},
 		{"x", "identifier not found: x"},
 	}
 
@@ -170,6 +171,147 @@ func TestFunc(t *testing.T) {
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
 		testInt(t, val, tt.expected)
+	}
+}
+
+func TestAssignment(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"var integer i; i := 2; i", 2},
+		{"var integer i := 2; i := i + 1; i", 3},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
+func TestLoop(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"while(false){1}; 2", 2},
+		{"var integer i := 0; while (i<3) {i := i + 1}; i", 3},
+		{"var integer i := 1; do { i := 4 } while (false); i", 4},
+		{"var integer i; for (i := 0; i < 3; i := i + 1) {}; i", 3},
+		{"var integer x; for (var integer i := 0; i < 3; i := i + 1) {x:=i}; x", 2},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testInt(t, val, tt.expected)
+	}
+}
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`"Hello Wörld!"`, `Hello Wörld!`},
+		{`"Hello" & " " & "World"`, `Hello World`},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		str, ok := val.(*runtime.String)
+		if !ok {
+			t.Errorf("object is not runtime.String. got=%T (%+v)", val, val)
+			continue
+		}
+		if str.Value != tt.expected {
+			t.Errorf("object has wrong value. got=%s, want=%s", str.Value, tt.expected)
+		}
+	}
+}
+
+func TestBitstring(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"'011'b", "'11'B"},
+		{"not4b '01'b", "'10'B"},
+		{"'0011'b and4b '0101'b", "'1'B"},
+		{"'0011'b or4b  '0101'b", "'111'B"},
+		{"'0011'b xor4b '0101'b", "'110'B"},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		str, ok := val.(*runtime.Bitstring)
+		if !ok {
+			t.Errorf("object is not runtime.Bitstring. got=%T (%+v)", val, val)
+			continue
+		}
+		if str.Inspect() != tt.expected {
+			t.Errorf("object has wrong value. got=%s, want=%s", str.Inspect(), tt.expected)
+		}
+	}
+}
+
+func TestBuiltinFunction(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`lengthof("")`, 0},
+		{`lengthof("fnord")`, 5},
+		{`lengthof(1)`, "integer arguments not supported"},
+		{`lengthof("hello", "world")`, "wrong number of arguments. got=2, want=1"},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		switch expected := tt.expected.(type) {
+		case int:
+			testInt(t, val, int64(expected))
+		case string:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Message != expected {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Message, expected)
+			}
+		}
+	}
+}
+
+func TestList(t *testing.T) {
+	input := "var integer a[3] := {1, 1+1, 3}; a"
+	val := testEval(t, input)
+	l, ok := val.(*runtime.List)
+	if !ok {
+		t.Errorf("object is not runtime.List. got=%T (%+v)", val, val)
+		return
+	}
+	testInt(t, l.Elements[0], 1)
+	testInt(t, l.Elements[1], 2)
+	testInt(t, l.Elements[2], 3)
+}
+
+func TestIndexExpr(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{"var integer a[3] := {1, 1+1, 3}; a[0] + a[1] + a[2]", 6},
+		{"var integer a[3] := {1, 1+1, 3}; a[3]", nil},
+		{"var integer a[3] := {1, 1+1, 3}; a[-1]", nil},
+		{"var integer a[3] := {1, 1+1, 3}; var integer i := 2; a[i]", 3},
+		{"var integer x := {2,4,8}[1]; x", 4},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		expected, ok := tt.expected.(int)
+		if ok {
+			testInt(t, val, int64(expected))
+		} else {
+			if val != runtime.Undefined {
+				t.Errorf("object is not undefined. got=%T (%+v)", val, val)
+			}
+		}
 	}
 }
 
