@@ -61,12 +61,43 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		}
 		return runtime.Errorf("identifier not found: %s", name)
 
+	case *ast.CompositeLiteral:
+		objs := evalExprList(n.List, env)
+		if len(objs) == 1 && runtime.IsError(objs[0]) {
+			return objs[0]
+		}
+
+		return &runtime.List{Elements: objs}
+
 	case *ast.ValueLiteral:
 		return evalLiteral(n, env)
+
 	case *ast.UnaryExpr:
 		return evalUnary(n, env)
+
 	case *ast.BinaryExpr:
 		return evalBinary(n, env)
+
+	case *ast.IndexExpr:
+		left := eval(n.X, env)
+		if runtime.IsError(left) {
+			return left
+		}
+		index := eval(n.Index, env)
+		if runtime.IsError(index) {
+			return index
+		}
+		switch {
+		case left.Type() == runtime.LIST && index.Type() == runtime.INTEGER:
+			list := left.(*runtime.List)
+			i := index.(runtime.Int).Int64()
+			if i < 0 || i >= int64(len(list.Elements)) {
+				return runtime.Undefined
+			}
+			return list.Elements[i]
+		}
+		return runtime.Errorf("index operator not supported: %s", left.Type())
+
 	case *ast.ParenExpr:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`.
 		// For now, we assume it's an arithmetic expression, when there's only one child.

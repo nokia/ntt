@@ -20,6 +20,7 @@ const (
 	STRING                   = "string"
 	BITSTRING                = "bitstring"
 	FUNCTION                 = "function"
+	LIST                     = "list"
 	BUILTIN_OBJ              = "builtin function"
 	VERDICT                  = "verdict"
 )
