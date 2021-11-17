@@ -24,6 +24,20 @@ var (
 	predefinedTypes           = []string{"anytype ", "bitstring ", "boolean ", "charstring ", "default ", "float ", "hexstring ", "integer ", "octetstring ", "universal charstring ", "verdicttype "}
 )
 
+func newPredefinedFunctions() []protocol.CompletionItem {
+	complList := make([]protocol.CompletionItem, 0, len(predefinedFunctions))
+	for _, v := range predefinedFunctions {
+		markup := protocol.MarkupContent{Kind: "markdown", Value: v.Documentation}
+		complList = append(complList, protocol.CompletionItem{
+			Label: v.Label, Kind: protocol.FunctionCompletion,
+			Detail:           v.Signature,
+			InsertTextFormat: v.TextFormat,
+			InsertText:       v.InsertText,
+			Documentation:    markup})
+	}
+	return complList
+}
+
 func newImportkinds() []protocol.CompletionItem {
 	complList := make([]protocol.CompletionItem, 0, len(importKinds))
 	for _, v := range importKinds {
@@ -504,6 +518,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 			case *ast.ExprStmt:
 				if isBehaviourBodyScope(nodes) {
 					list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
+					list = append(list, newPredefinedFunctions()...)
 				}
 			}
 		}
@@ -572,6 +587,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 	case *ast.BlockStmt:
 		if isBehaviourBodyScope(nodes) {
 			list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
+			list = append(list, newPredefinedFunctions()...)
 		}
 	default:
 		log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
