@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"math/big"
 	"strconv"
 	"strings"
@@ -32,6 +33,7 @@ const (
 	BITSTRING     ObjectType = "bitstring"
 	FUNCTION      ObjectType = "function"
 	LIST          ObjectType = "list"
+	MAP           ObjectType = "map"
 	BUILTIN_OBJ   ObjectType = "builtin function"
 	VERDICT       ObjectType = "verdict"
 
@@ -113,6 +115,16 @@ func (b Bool) Equal(obj Object) bool {
 	return false
 }
 
+func (b Bool) hashKey() hashKey {
+	var value uint64
+	if b {
+		value = 1
+	} else {
+		value = 0
+	}
+	return hashKey{Type: b.Type(), Value: value}
+}
+
 func NewBool(b bool) Bool {
 	return Bool(b)
 }
@@ -150,6 +162,12 @@ func (i Int) Equal(obj Object) bool {
 	return false
 }
 
+func (i Int) hashKey() hashKey {
+	h := fnv.New64a()
+	h.Write(i.Bytes())
+	return hashKey{Type: i.Type(), Value: h.Sum64()}
+}
+
 func NewInt(s string) Int {
 	i := &big.Int{}
 	i.SetString(s, 10)
@@ -168,6 +186,12 @@ func (s *String) Equal(obj Object) bool {
 		return s.Value == other.Value
 	}
 	return false
+}
+
+func (s *String) hashKey() hashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+	return hashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
 type Bitstring struct {
@@ -192,6 +216,12 @@ func (b *Bitstring) Equal(obj Object) bool {
 		return b.Value.Cmp(other.Value) == 0
 	}
 	return false
+}
+
+func (b *Bitstring) hashKey() hashKey {
+	h := fnv.New64a()
+	h.Write(b.Value.Bytes())
+	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
 func NewBitstring(s string) (*Bitstring, error) {
@@ -245,22 +275,10 @@ func (l *List) Inspect() string {
 }
 
 func (l *List) Equal(obj Object) bool {
-	other, ok := obj.(*List)
-	if !ok {
-		return false
+	if other, ok := obj.(*List); ok {
+		return EqualObjects(l.Elements, other.Elements)
 	}
-
-	if len(l.Elements) != len(other.Elements) {
-		return false
-	}
-
-	for i := range l.Elements {
-		if !l.Elements[i].Equal(other.Elements[i]) {
-			return false
-		}
-	}
-
-	return true
+	return false
 }
 
 type Function struct {
@@ -316,6 +334,26 @@ func (v Verdict) Equal(obj Object) bool {
 	return false
 }
 
+func (v Verdict) hashKey() hashKey {
+	var value uint64
+	switch v {
+	case NoneVerdict:
+		value = 0
+	case PassVerdict:
+		value = 1
+	case InconcVerdict:
+		value = 2
+	case FailVerdict:
+		value = 3
+	case ErrorVerdict:
+		value = 4
+	default:
+		panic(Errorf("unknown verdict"))
+	}
+	return hashKey{Type: v.Type(), Value: value}
+
+}
+
 type Builtin struct {
 	Fn func(args ...Object) Object
 }
@@ -327,4 +365,111 @@ func (b *Builtin) Equal(obj Object) bool {
 		return b == other
 	}
 	return false
+}
+
+// Map is a map of objects.
+type Map struct {
+	pairs map[hashKey][]pair
+}
+
+type hashable interface {
+	hashKey() hashKey
+}
+
+type hashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+type pair struct {
+	Key   Object
+	Value Object
+}
+
+// Get returns the value for the given key.
+func (m *Map) Get(key Object) (Object, bool) {
+	k, ok := key.(hashable)
+	if !ok {
+		return Errorf("%s is not hashable", key.Type()), false
+	}
+
+	for _, p := range m.pairs[k.hashKey()] {
+		if p.Key.Equal(key) {
+			return p.Value, true
+		}
+	}
+	return nil, false
+}
+
+func (m *Map) Set(key Object, val Object) Object {
+	k, ok := key.(hashable)
+	if !ok {
+		return Errorf("%s is not hashable", key.Type())
+	}
+	h := k.hashKey()
+	m.pairs[h] = append(m.pairs[h], pair{Key: key, Value: val})
+	return val
+}
+
+func (m *Map) Type() ObjectType { return MAP }
+func (m *Map) Inspect() string {
+	var buf bytes.Buffer
+	pairs := []string{}
+	for _, bucket := range m.pairs {
+		for _, pair := range bucket {
+			pairs = append(pairs, fmt.Sprintf("[%s] := %s", pair.Key.Inspect(), pair.Value.Inspect()))
+		}
+	}
+	buf.WriteString("{")
+	buf.WriteString(strings.Join(pairs, ", "))
+	buf.WriteString("}")
+
+	return buf.String()
+}
+
+func (m *Map) Equal(obj Object) bool {
+	other, ok := obj.(*Map)
+	if !ok {
+		return false
+	}
+	if len(m.pairs) != len(other.pairs) {
+		return false
+	}
+
+	for k, a := range m.pairs {
+		b, ok := other.pairs[k]
+		if !ok {
+			return false
+		}
+		if len(a) != len(b) {
+			return false
+		}
+
+		for i, v := range a {
+			if !v.Value.Equal(b[i].Value) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func NewMap() *Map {
+	return &Map{pairs: make(map[hashKey][]pair)}
+}
+
+// EqualObjects compares two Object slices for equality.
+func EqualObjects(a, b []Object) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if !v.Equal(b[i]) {
+			return false
+		}
+	}
+
+	return true
 }
