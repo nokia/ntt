@@ -71,8 +71,8 @@ var predefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:          "float2int(...)",
 		InsertText:     "float2int(${1:invalue})$0",
-		Signature:      "float2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __float2int__ function ",
+		Signature:      "float2int(in float invalue) return integer",
+		Documentation:  "## (TTCN-3)\nThe __float2int__ function converts a __float__ value into an __integer__ value by removing the fractional part of the argument and returning the resulting __integer__. Error causes are:\n*invalue is __infinity__, __-infinity__ or not_a_number.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
