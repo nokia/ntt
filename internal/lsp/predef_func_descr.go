@@ -310,88 +310,361 @@ a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "substr(...)",
-		InsertText:     "substr(${1:invalue})$0",
-		Signature:      "substr(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __substr__ function ",
+		Label:      "substr(...)",
+		InsertText: "substr(${1:inpar}, ${2:index}, ${3:count})$0",
+		Signature:  `substr(in template (present) any inpar, in integer index, in integer count) return input_string_or_sequence_type`,
+		Documentation: `## (TTCN-3)
+This function returns a substring or subsequence from a value that is of a binary string type (__bitstring__,
+__hexstring__, __octetstring__), a character string type (__charstring__, __universal charstring__), or a sequence
+type (__record of__, __set of__ or array). If _inpar_ is a literal (i.e. type is not explicitly given) the corresponding type
+shall be retrieved from the value contents. The type of the substring or subsequence returned is the root type of the input
+parameter. The starting point of substring or subsequence to return is defined by the second parameter (_index_).
+Indexing starts from zero. The third input parameter (_count_) defines the length of the substring or subsequence to be
+returned. The units of length for string types are as defined in table 4 of the TTCN-3 core language specification. For sequence types, the
+unit of length is element.
+
+Please note that the root types of arrays is __record of__, therefore if _inpar_ is an array the returned type
+is __record of__. This, in some cases, may lead to different indexing in _inpar_ and in the returned value.
+
+When used on templates of character string types, specific values and patterns that contain literal characters and the
+following metacharacters: "?", "*" are allowed in _inpar_ and the function shall return the character representation of
+the matching mechanisms. When _inpar_ is a template of binary string or sequence type or is an array, only the specific
+value combined templates whose elements are specific values, and AnyElement matching mechanisms or combined
+templates are allowed and the substring or subsequence to be returned shall not contain AnyElement or combined
+template.
+
+In addition to the general error causes in clause 16.1.2, error causes are:
+
+* _index_ is less than zero;
+* _count_ is less than zero;
+* _index_ + _count___ is greater than __lengthof__(_inpar_);
+* _inpar_ is a template of a character string type and contains a matching mechanism other than a specific value
+or pattern; or if the pattern contains other metacharacters than "?", "*";
+* _inpar_ is a template of a binary string or sequence type or array and it contains other matching mechanism as
+specific value or combined template; or if the elements of combined template are any other matching
+mechanisms than specific values, and AnyElement or combined templates;
+* _inpar_ is a template of a binary string or sequence type or array and the substring or subsequence to be
+returned contains the AnyElement matching mechanism or combined templates;
+* the template passed to the _inpar_ parameter is not of type bitstring, hexstring, octetstring,
+charstring, universal charstring, __record of__, __set of__, or array.
+
+Examples:
+
+	substr('00100110'B, 3, 4) // returns '0011'B
+	substr('ABCDEF'H, 2, 3) // returns 'CDE'H
+	substr('01AB23CD'O, 1, 2) // returns 'AB23'O
+	substr("My name is JJ", 11, 2) // returns "JJ"
+	substr({ 4, 5, 6 }, 1, 2) // returns {5, 6}`,
+		NrOfParameters: 3,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "replace(...)",
+		InsertText: "replace(${1:inpar}, (${2:index}, (${3:len}, (${4:repl})$0",
+		Signature:  `replace(in any inpar, in integer index, in integer len, in any repl) return any_string_or_sequence type`,
+		Documentation: `## (TTCN-3)
+This function replaces the substring or subsequence of value _inpar_ at index _index_ of length _len_ with the string or
+sequence value _repl_ and returns the resulting string or sequence. _inpar_ shall not be modified. If _len_ is 0 the string
+or sequence _repl_ is inserted. If _index_ is 0, _repl_ is inserted at the beginning of _inpar_. If _index_ is
+__lengthof(_inpar_), _repl_ is inserted at the end of _inpar_. If _inpar_ is a literal (i.e. type is not explicitly given) the
+corresponding type shall be retrieved from the value contents. _inpar_ and _repl_, and the returned string or sequence
+shall be of the same root type. The function replace can be applied to _bitstring_, _hexstring_, _octetstring_, or
+any character string, __record of__, __set of__, or arrays. Note that indexing in strings starts from zero.
+
+Please note that the root types of arrays is __record of__, therefore if _inpar_ or _repl_ or both are an
+array, the returned type is __record of__. This, in some cases, may lead to different indexing in _inpar_
+and/or _repl_ and in the returned value.
+
+In addition to the general error causes in clause 16.1.2, error causes are:
+* _inpar_ or _repl_ are not of string, __record of__, __set of__, or array type;
+* _inpar_ and _repl_ are of different root type;
+* _index_ is less than 0 or greater than __lengthof(_inpar_);
+* _len_ is less than 0 or greater than __lengthof(_inpar_);
+* _index_+_len_ is greater than __lengthof(_inpar_).
+
+Examples:
+
+	replace ('00000110'B, 1, 3, '111'B) // returns '01110110'B
+	replace ('ABCDEF'H, 0, 2, '123'H) // returns '123CDEF'H
+	replace ('01AB23CD'O, 2, 1, 'FF96'O) // returns '01ABFF96CD'O
+	replace ("My name is JJ", 11, 1, "xx") // returns "My name is xxJ"
+	replace ("My name is JJ", 11, 0, "xx") // returns "My name is xxJJ"
+	replace ("My name is JJ", 2, 2, "x") // returns "Myxame is JJ",
+	replace ("My name is JJ", 12, 2, "xx") // produces test case error
+	replace ("My name is JJ", 13, 2, "xx") // produces test case error
+	replace ("My name is JJ", 13, 0, "xx") // returns "My name is JJxx"`,
+		NrOfParameters: 4,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "encvalue(...)",
+		InsertText: "encvalue(${1:inpar}, ${2:encoding_info}, ${3:dynamic_encoding})$0",
+		Signature:  `encvalue(in template (value) any inpar, in universal charstring encoding_info := "", in universal charstring dynamic_encoding := "") return bitstring`,
+		Documentation: `## (TTCN-3)
+The __encvalue__ function encodes a value or template into a bitstring. When the actual parameter that is passed to
+_inpar_ is a template, it shall resolve to a specific value (the same restrictions apply as for the argument of the send
+statement). The returned bitstring represents the encoded value of _inpar_, however, the TTCN-3 test system need not
+make any check on its correctness. The optional _encoding_info_ parameter is used for passing additional encoding
+information to the codec and, if it is omitted, no additional information is sent to the codec.
+
+The optional _dynamic_encoding_ parameter is used for dynamic selection of encode attribute of the _inpar_ value
+for this single __encvalue__ call. The rules for dynamic selection of the encode attribute are described in clause 27.9 of the TTCN-3 core language specification.
+
+In addition to the general error causes in clause 16.1.2, error causes are:
+
+* Encoding fails due to a runtime system problem (i.e. no encoding function exists for the actual type of
+_inpar_).`,
+		NrOfParameters: 3,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "decvalue(...)",
+		InsertText: "decvalue(${1:encoded_value}, ${2:decoded_value}, ${3:decoding_info}, ${4:dynamic_encoding})$0",
+		Signature:  `decvalue(inout bitstring encoded_value, out any decoded_value, in universal charstring decoding_info := "", in universal charstring dynamic_encoding := "") return integer`,
+		Documentation: `## (TTCN-3)
+The __decvalue__ function decodes a bitstring into a value. The test system shall suppose that the bitstring
+_encoded_value_ represents an encoded instance of the actual type of _decoded_value_. The optional
+_decoding_info_ parameter is used for passing additional decoding information to the codec and, if it is omitted, no
+additional information is sent to the codec.
+
+The optional _dynamic_encoding_ parameter is used for dynamic selection of encode attribute of the
+_decoded_value_ parameter for this single __decvalue__ call. The rules for dynamic selection of the encode attribute
+are described in clause 27.9 of the TTCN-3 core language specification.
+
+If the decoding was successful, then the used bits are removed from the parameter _encoded_value_, the rest is
+returned (in the parameter _encoded_value_), and the decoded value is returned in the parameter _decoded_value_.  
+If the decoding was unsuccessful, the actual parameters for _encoded_value_ and _decoded_value_ are not
+changed. The function shall return an integer value to indicate success or failure of the decoding below:
+
+* The return value 0 indicates that decoding was successful.
+* The return value 1 indicates an unspecified cause of decoding failure. This value is also returned if the
+_encoded_value_ parameter contains an unitialized value.
+* The return value 2 indicates that decoding could not be completed as _encoded_value_ did not contain
+enough bits.`,
+		NrOfParameters: 4,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "encvalue_unichar(...)",
+		InsertText: "encvalue_unichar(${1:inpar}, ${2:string_serialization}, ${3:encoding_info}, ${4:dynamic_encoding})$0",
+		Signature:  `encvalue_unichar(in template (value) any inpar, in charstring string_serialization := "UTF-8", in universal charstring encoding_info := "", in universal charstring dynamic_encoding := "") return universal charstring`,
+		Documentation: `## (TTCN-3)
+The __encvalue_unichar__ function encodes a value or template into a universal charstring. When the actual
+parameter that is passed to _inpar_ is a template, it shall resolve to a specific value (the same restrictions apply as for
+the argument of the send statement). The returned universal charstring represents the encoded value of _inpar_,
+however, the TTCN-3 test system need not make any check on its correctness. If the optional _string_serialization_
+parameter is omitted, the default value "UTF-8" is used. The optional _encoding_info_ parameter is used for passing
+additional encoding information to the codec and, if it is omitted, no additional information is sent to the codec.
+
+The optional _dynamic_encoding_ parameter is used for dynamic selection of encode attribute of the _inpar_ value
+for this single __encvalue_unichar__ call. The rules for dynamic selection of the encode attribute are described in
+clause 27.9 of the TTCN-3 core language specification.
+
+The following values (see ISO/IEC 10646 [2]) are allowed as _string_serialization_ actual parameters (for the description
+of the UCS encoding scheme see clause 27.5):
+* "UTF-8"
+* "UTF-16"
+* "UTF-16LE"
+* "UTF-16BE"
+* "UTF-32"
+* "UTF-32LE"
+* "UTF-32BE"
+
+The serialized bitstring shall not include the optional signature (see clause 10 of ISO/IEC 10646 [2], also known as byte
+order mark).
+
+In case of "UTF-16" and "UTF-32" big-endian ordering shall be used (as described in clauses 10.4 and 10.7 of
+ISO/IEC 10646 [2]).
+
+The specific semantics of this function are explained by the following TTCN-3 definition:
+
+	function encvalue_unichar(in template(value) any inpar,
+	            in charstring enc
+	            in universal charstring encoding_info := "",
+	            in universal charstring dynamic_encoding := "") return universal charstring {
+		return oct2unichar(bit2oct(encvalue(inpar, encoding_info, dynamic_encoding)), enc);
+	}`,
+		NrOfParameters: 4,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "decvalue_unichar(...)",
+		InsertText: "decvalue_unichar(${1:encoded_value}, ${2:decoded_value}, ${3:string_serialization}, ${4:decoding_info}, ${5:dynamic_encoding},)$0",
+		Signature:  `decvalue_unichar(inout universal charstring encoded_value, out any decoded_value, in charstring string_serialization:= "UTF-8", in universal charstring decoding_info := "", in universal charstring dynamic_encoding := "") return integer`,
+		Documentation: `## (TTCN-3)
+The __decvalue_unichar__ function decodes (part of) a universal charstring into a value. The test system shall
+suppose that a prefix of the universal charstring _encoded_value_ represents an encoded instance of the actual type of
+_decoded_value_. The optional _decoding_info_ parameter is used for passing additional decoding information to
+the codec and, if it is omitted, no additional information is sent to the codec.
+
+The optional _dynamic_encoding_ parameter is used for dynamic selection of encode attribute of the
+_decoded_value_ parameter for this single __decvalue_unichar__ call. The rules for dynamic selection of the
+encode attribute are described in clause 27.9.
+
+If the decoding was successful, then the characters used for decoding are removed from the parameter
+_encoded_value_, the rest is returned (in the parameter _encoded_value_), and the decoded value is returned in the
+parameter _decoded_value_. If the decoding was unsuccessful, the actual parameters for _encoded_value_ and
+_decoded_value_ are not changed. The function shall return an integer value to indicate success or failure of the
+decoding below:
+
+* The return value 0 indicates that decoding was successful.
+* The return value 1 indicates an unspecified cause of decoding failure. This value is also returned if the
+_encoded_value_ parameter contains an unitialized value.
+* The return value 2 indicates that decoding could not be completed as _encoded_value_ did not contain
+enough bits.
+
+If the optional _string_serialization_ parameter is omitted, the default value "UTF-8" is used.
+
+The following values (see ISO/IEC 10646 [2]) are allowed as _string_serialization_ actual parameters (for the description
+of the UCS encoding scheme see clause 27.5 of TTCN-3 core language specification):
+
+* "UTF-8"
+* "UTF-16"
+* "UTF-16LE"
+* "UTF-16BE"
+* "UTF-32"
+* "UTF-32LE"
+* "UTF-32BE"
+
+The serialized bitstring shall not include the optional signature (see clause 10 of ISO/IEC 10646 [2], also known as byte
+order mark).
+
+In case of "UTF-16" and "UTF-32" big-endian ordering shall be used (as described in clauses 10.4 and 10.7 of
+ISO/IEC 10646 [2]).  
+The semantics of the function can be explained by the following TTCN-3 function:
+
+	function decvalue_unichar (
+	            inout universal charstring encoded_value,
+	            out any decoded_value,
+	            in charstring string_encoding := "UTF-8",
+	            in universal charstring decoding_info := "",
+	            in universal charstring dynamic_encoding := "") return integer {
+		var bitstring v_str = oct2bit(unichar2oct(encoded_value, string_encoding));
+		var integer v_result := decvalue(v_str, decoded_value, decoding_info, dynamic_encoding);
+		if (v_result == 0) { // success
+			encoded_value := oct2unichar(bit2oct(v_str), string_encoding);
+		}
+		return v_result;
+	}`,
+		NrOfParameters: 5,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "encvalue_o(...)",
+		InsertText: "encvalue_o(${1:inpar}, ${2:encoding_info}, ${3:dynamic_encoding}, ${4:bit_length})$0",
+		Signature:  `encvalue_o(in template (value) any inpar, in universal charstring encoding_info := "", in universal charstring dynamic_encoding := "", out integer bit_length) return octetstring`,
+		Documentation: `## (TTCN-3)
+The __encvalue_o__ function encodes a value or template into an octetstring. When the actual parameter that is passed
+to _inpar_ is a template, it shall resolve to a specific value (the same restrictions apply as for the argument of the send
+statement). The returned octetstring represents the encoded value of _inpar_, however, the TTCN-3 test system need not
+make any check on its correctness. In case the encoded message is not octet-based and has a bit length not divisable by
+8, the encoded message will be left-aligned in the returned octetstring and the least significant (8 - (bit length mod 8))
+bits in the least significant octet will be 0. The bit length can be assigned to a variable by usage of the formal out
+parameter _bit_length_. The optional _encoding_info_ parameter is used for passing additional encoding
+information to the codec and, if it is omitted, no additional information is sent to the codec.
+
+The optional _dynamic_encoding_ parameter is used for dynamic selection of encode attribute of the _inpar_ value
+for this single __encvalue_o__ call. The rules for dynamic selection of the encode attribute are described in clause 27.9.
+
+In addition to the general error causes in clause 16.1.2 of the TTCN-3 core language specification, error causes are:
+* Encoding fails due to a runtime system problem (i.e. no encoding function exists for the actual type of
+_inpar_).`,
+		NrOfParameters: 4,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "decvalue_o(...)",
+		InsertText: "decvalue_o(${1:encoded_value}, ${2:decoded_value}, ${3:decoding_info}, ${4:dynamic_encoding})$0",
+		Signature: `decvalue_o(inout octetstring encoded_value,
+out any decoded_value,
+in universal charstring decoding_info := "",
+in universal charstring dynamic_encoding := "") return integer`,
+		Documentation: `## (TTCN-3)
+The __decvalue_o__ function decodes an octetstring into a value. The test system shall suppose that the octetstring
+_encoded_value_ represents an encoded instance of the actual type of _decoded_value_. The optional
+_decoding_info_ parameter is used for passing additional decoding information to the codec and, if it is omitted, no
+additional information is sent to the codec.
+
+The optional _dynamic_encoding_ parameter is used for dynamic selection of __encode__ attribute of the
+decoded_value parameter for this single __decvalue_o__ call. The rules for dynamic selection of the __encode__
+attribute are described in clause 27.9 of the TTCN-3 core language specification.
+
+If the decoding was successful, then the used octets are removed from the parameter _encoded_value_, the rest is
+returned (in the parameter _encoded_value_), and the decoded value is returned in the parameter _decoded_value_.
+If the decoding was unsuccessful, the actual parameters for _encoded_value_ and _decoded_value_ are not
+changed. The function shall return an integer value to indicate success or failure of the decoding below:
+
+* The return value 0 indicates that decoding was successful.
+* The return value 1 indicates an unspecified cause of decoding failure. This value is also returned if the
+_encoded_value_ parameter contains an unitialized value.
+* The return value 2 indicates that decoding could not be completed as _encoded_value_ did not contain
+enough octets.
+`,
+		NrOfParameters: 4,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "get_stringencoding(...)",
+		InsertText: "get_stringencoding(${1:encoded_value})$0",
+		Signature:  "get_stringencoding(in octettstring encoded_value) return octettstring",
+		Documentation: `## (TTCN-3)
+The __get_stringencoding__ function analyses the encoded_value and returns the UCS encoding scheme according to
+clause 10 of ISO/IEC 10646 [2] (see also clause 27.5 of the TTCN-3 core language specification). The identified encoding scheme, or the
+value "<unknown>", if the type of encoding cannot be determined unanimously, shall be returned as a character string.
+
+The initial octet sequence (also known as byte order mark, BOM), when present, allows identifying the
+encoding scheme unanimously. When it is not present, other symptoms may be used to identify the
+encoding scheme unanimously; for example, only UTF-8 may have odd number of octets and bit
+distribution according to table 2 of clause 9.1 of ISO/IEC 10646 [2].
+
+Example:
+
+    match ( get_stringencoding('6869C3BA7A'O),charstring:"UTF-8") // true
+    //(the octetstring contains the UTF-8 encoding of the character sequence "hiúz")
+`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "replace(...)",
-		InsertText:     "replace(${1:invalue})$0",
-		Signature:      "replace(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __replace__ function ",
+		Label:      "remove_bom(...)",
+		InsertText: "remove_bom(${1:encoded_value})$0",
+		Signature:  "remove_bom(in octettstring encoded_value) return octettstring",
+		Documentation: `## (TTCN-3)
+The __remove_bom__ function removes the optional FEFF ZERO WIDTH NO-BREAK SPACE sequence that may be
+present at the beginning of a stream of serialized (encoded) universal character strings to indicate the order of the octets
+within the encoding form, as defined in clause 10 of ISO/IEC 10646 [2]. If no FEFF ZERO WIDTH NO-BREAK
+SPACE sequence present in the _encoded_value_ parameter, the function shall return the value of the parameter
+without change.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "encvalue(...)",
-		InsertText:     "encvalue(${1:invalue})$0",
-		Signature:      "encvalue(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __encvalue__ function ",
+		Label:      "rnd(...)",
+		InsertText: "rnd(${1:seed})$0",
+		Signature:  "rnd([in float seed]) return float",
+		Documentation: `## (TTCN-3)
+The __rnd__ function returns a (pseudo) random number less than 1 but greater or equal to 0. The random number
+generator is initialized per test component and for the control part by means of an optional seed value (a numerical float
+value). If no new seed is provided, the last generated number will be used as seed for the next random number. Without
+a previous initialization a value calculated from the system time will be used as seed value when __rnd__ is used the first
+time in a test component or the control part.
+
+Each time the __rnd__ function is initialized with the same seed value, it shall repeat the same sequence of random
+numbers.
+
+For the purpose of keeping parallel testing deterministic, each test component, as well as the control part
+has its own random seed. This allows for better reproducibility of test executions. Thus, the __rnd__ function
+will always use the seed of the component or control part which calls it.
+
+To produce a random integers in a given range, the following formula can be used:
+
+    float2int(int2float(upperbound - lowerbound +1)*rnd()) + lowerbound
+    // Here, upperbound and lowerbound denote highest and lowest number in range.
+
+`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "decvalue(...)",
-		InsertText:     "decvalue(${1:invalue})$0",
-		Signature:      "decvalue(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __decvalue__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "encvalue_unichar(...)",
-		InsertText:     "encvalue_unichar(${1:invalue})$0",
-		Signature:      "encvalue_unichar(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __encvalue_unichar__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "decvalue_unichar(...)",
-		InsertText:     "decvalue_unichar(${1:invalue})$0",
-		Signature:      "decvalue_unichar(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __decvalue_unichar__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "encvalue_o(...)",
-		InsertText:     "encvalue_o(${1:invalue})$0",
-		Signature:      "encvalue_o(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __encvalue_o__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "decvalue_o(...)",
-		InsertText:     "decvalue_o(${1:invalue})$0",
-		Signature:      "decvalue_o(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __decvalue_o__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "get_stringencoding(...)",
-		InsertText:     "get_stringencoding(${1:invalue})$0",
-		Signature:      "get_stringencoding(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __get_stringencoding__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "remove_bom(...)",
-		InsertText:     "remove_bom(${1:invalue})$0",
-		Signature:      "remove_bom(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __remove_bom__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "rnd(...)",
-		InsertText:     "rnd(${1:invalue})$0",
-		Signature:      "rnd(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __rnd__ function ",
-		NrOfParameters: 1,
-		TextFormat:     protocol.SnippetTextFormat},
-	{
-		Label:          "testcasename(...)",
-		InsertText:     "testcasename(${1:invalue})$0",
-		Signature:      "testcasename(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __testcasename__ function ",
-		NrOfParameters: 1,
+		Label:      "testcasename()",
+		InsertText: "testcasename()$0",
+		Signature:  "testcasename() return charstring",
+		Documentation: `## (TTCN-3)
+The __testcasename__ function shall return the unqualified name of the actually executing test case.
+
+When the function __testcasename__ is called if the control part is being executed but no testcase, it shall return the
+empty string.`,
+
+		NrOfParameters: 0,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:      "hostid(...)",
