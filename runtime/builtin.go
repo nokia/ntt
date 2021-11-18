@@ -1,8 +1,10 @@
 package runtime
 
 import (
+	"fmt"
 	"math/big"
 	"math/rand"
+	"strings"
 )
 
 var Builtins = map[string]*Builtin{
@@ -52,7 +54,15 @@ var Builtins = map[string]*Builtin{
 		}
 		i, _ := f.Int(nil)
 		return Int{Int: i}
+	}},
 
+	"log": {Fn: func(args ...Object) Object {
+		var ss []string
+		for _, arg := range args {
+			ss = append(ss, arg.Inspect())
+		}
+		fmt.Println(strings.Join(ss, " "))
+		return nil
 	}},
 }
 
