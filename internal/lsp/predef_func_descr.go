@@ -153,31 +153,44 @@ The resulting __charstring__ has the same length as the __bitstring__ and contai
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "hex2int(...)",
-		InsertText:     "hex2int(${1:invalue})$0",
-		Signature:      "hex2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __hex2int__ function ",
+		Label:      "hex2int(...)",
+		InsertText: "hex2int(${1:invalue})$0",
+		Signature:  "hex2int(in hexstring invalue) return integer",
+		Documentation: `## (TTCN-3)
+The __hex2int__ function  converts a single __hexstring__ value to a single __integer__ value.
+For the purposes of this conversion, a __hexstring__ shall be interpreted as a positive base 16 __integer__ value. The
+rightmost hexadecimal digit is least significant, the leftmost hexadecimal digit is the most significant.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "hex2bit(...)",
-		InsertText:     "hex2bit(${1:invalue})$0",
-		Signature:      "hex2bit(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __hex2bit__ function ",
+		Label:      "hex2bit(...)",
+		InsertText: "hex2bit(${1:invalue})$0",
+		Signature:  "hex2bit(in hexstring invalue) return bitstring",
+		Documentation: `## (TTCN-3)
+The __hex2bit__ function converts a single __hexstring__ value to a single __bitstring__. The resulting __bitstring__
+ represents the same value as the __hexstring__.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "hex2oct(...)",
-		InsertText:     "hex2oct(${1:invalue})$0",
-		Signature:      "hex2oct(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __hex2oct__ function ",
+		Label:      "hex2oct(...)",
+		InsertText: "hex2oct(${1:invalue})$0",
+		Signature:  "hex2oct(in hexstring invalue) return octetstring",
+		Documentation: `## (TTCN-3)
+The __hex2oct__ function This function converts a single __hexstring__ value to a single __octetstring__.
+The resulting __octetstring__ represents the same value as the __hexstring__.
+For the purpose of this conversion, a __hexstring__ shall be converted into a __octetstring__, where the
+__octetstring__ contains the same sequence of hex digits as the __hexstring__ when the length of the __hexstring__
+modulo 2 is 0. Otherwise, the resulting __octetstring__ contains 0 as leftmost hex digit followed by the same sequence
+of hex digits as in the __hexstring__. `,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "hex2str(...)",
-		InsertText:     "hex2str(${1:invalue})$0",
-		Signature:      "hex2str(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __hex2str__ function ",
+		Label:      "hex2str(...)",
+		InsertText: "hex2str(${1:invalue})$0",
+		Signature:  "hex2str(in hexstring invalue) return charstring",
+		Documentation: `## (TTCN-3)
+The __hex2str__ function converts a single __hexstring__ value to a single __charstring__. The resulting __charstring__
+has the same length as the __hexstring__ and contains only the characters '0' to '9'and 'A' to 'F'.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
