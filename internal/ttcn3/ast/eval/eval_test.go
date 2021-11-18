@@ -315,11 +315,34 @@ func TestIndexExpr(t *testing.T) {
 	}
 }
 
+func TestEqual(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{`1==1`, true},
+		{`2==1`, false},
+		{`"one"=="one"`, true},
+		{`"one"=="two"`, false},
+		{`true==true`, true},
+		{`false==false`, true},
+		{`var RoI a:={1}, b:={1}; a==b`, true},
+		{`var RoI a:={1,2}, b:={2,1}; a==b`, false},
+		{`var RoI a:={}, b:={2,1}; a==b`, false},
+		{`var RoI a:={}, b:={}; a==b`, true},
+	}
+
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testBool(t, val, tt.expected)
+	}
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, err := parser.Parse(fset, "<stdin>", input)
 	if err != nil {
-		t.Fatalf("testEval: %s", err.Error())
+		t.Fatalf("%s\n %s", input, err.Error())
 	}
 	return eval.Eval(nodes, runtime.NewEnv(nil))
 }

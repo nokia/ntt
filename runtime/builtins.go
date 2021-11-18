@@ -68,10 +68,3 @@ var Builtins = map[string]*Builtin{
 		return nil
 	}},
 }
-
-type Builtin struct {
-	Fn func(args ...Object) Object
-}
-
-func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
-func (b *Builtin) Inspect() string  { return "builtin function" }

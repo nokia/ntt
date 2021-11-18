@@ -15,6 +15,7 @@ import (
 type Object interface {
 	Inspect() string
 	Type() ObjectType
+	Equal(Object) bool
 }
 
 type ObjectType string
@@ -68,6 +69,13 @@ type undefined struct{}
 func (u *undefined) Inspect() string  { return "undefined" }
 func (u *undefined) Type() ObjectType { return UNDEFINED }
 
+func (u *undefined) Equal(obj Object) bool {
+	if _, ok := obj.(*undefined); ok {
+		return true
+	}
+	return false
+}
+
 type Error struct {
 	Message string
 }
@@ -75,6 +83,13 @@ type Error struct {
 func (e *Error) Error() string    { return e.Message }
 func (e *Error) Type() ObjectType { return RUNTIME_ERROR }
 func (e *Error) Inspect() string  { return fmt.Sprintf("Error: %s", e.Error()) }
+
+func (e *Error) Equal(obj Object) bool {
+	if other, ok := obj.(*Error); ok {
+		return e.Message == other.Message
+	}
+	return false
+}
 
 func Errorf(format string, a ...interface{}) *Error {
 	return &Error{Message: fmt.Sprintf(format, a...)}
@@ -91,6 +106,13 @@ func (b Bool) Type() ObjectType { return BOOL }
 func (b Bool) Inspect() string  { return fmt.Sprintf("%t", b) }
 func (b Bool) Bool() bool       { return bool(b) }
 
+func (b Bool) Equal(obj Object) bool {
+	if other, ok := obj.(Bool); ok {
+		return b == other
+	}
+	return false
+}
+
 func NewBool(b bool) Bool {
 	return Bool(b)
 }
@@ -99,6 +121,13 @@ type Float float64
 
 func (f Float) Type() ObjectType { return FLOAT }
 func (f Float) Inspect() string  { return fmt.Sprint(float64(f)) }
+
+func (f Float) Equal(obj Object) bool {
+	if other, ok := obj.(Float); ok {
+		return f == other
+	}
+	return false
+}
 
 func NewFloat(s string) Float {
 	f, err := strconv.ParseFloat(s, 64)
@@ -114,6 +143,13 @@ func (i Int) Type() ObjectType { return INTEGER }
 func (i Int) Inspect() string  { return i.String() }
 func (i Int) Value() *big.Int  { return i.Int }
 
+func (i Int) Equal(obj Object) bool {
+	if other, ok := obj.(Int); ok {
+		return i.Cmp(other.Int) == 0
+	}
+	return false
+}
+
 func NewInt(s string) Int {
 	i := &big.Int{}
 	i.SetString(s, 10)
@@ -126,6 +162,13 @@ type String struct {
 
 func (s *String) Type() ObjectType { return STRING }
 func (s *String) Inspect() string  { return s.Value }
+
+func (s *String) Equal(obj Object) bool {
+	if other, ok := obj.(*String); ok {
+		return s.Value == other.Value
+	}
+	return false
+}
 
 type Bitstring struct {
 	Value *big.Int
@@ -142,6 +185,13 @@ func (b *Bitstring) Inspect() string {
 	default:
 		return fmt.Sprintf("'%h'H", b.Value)
 	}
+}
+
+func (b *Bitstring) Equal(obj Object) bool {
+	if other, ok := obj.(*Bitstring); ok {
+		return b.Value.Cmp(other.Value) == 0
+	}
+	return false
 }
 
 func NewBitstring(s string) (*Bitstring, error) {
@@ -194,6 +244,25 @@ func (l *List) Inspect() string {
 	return "{" + strings.Join(ss, ", ") + "}"
 }
 
+func (l *List) Equal(obj Object) bool {
+	other, ok := obj.(*List)
+	if !ok {
+		return false
+	}
+
+	if len(l.Elements) != len(other.Elements) {
+		return false
+	}
+
+	for i := range l.Elements {
+		if !l.Elements[i].Equal(other.Elements[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
 type Function struct {
 	Params *ast.FormalPars
 	Body   *ast.BlockStmt
@@ -214,6 +283,14 @@ func (f *Function) Inspect() string {
 	return buf.String()
 }
 
+func (f *Function) Equal(obj Object) bool {
+	if other, ok := obj.(*Function); ok {
+		// TODO(5nord) When are to functions equal?
+		return *f == *other
+	}
+	return false
+}
+
 type ReturnValue struct {
 	Value Object
 }
@@ -221,7 +298,33 @@ type ReturnValue struct {
 func (r *ReturnValue) Type() ObjectType { return RETURN_VALUE }
 func (r *ReturnValue) Inspect() string  { return r.Value.Inspect() }
 
+func (r *ReturnValue) Equal(obj Object) bool {
+	if other, ok := obj.(*ReturnValue); ok {
+		return r.Value.Equal(other.Value)
+	}
+	return false
+}
+
 type Verdict string
 
 func (v Verdict) Type() ObjectType { return VERDICT }
 func (v Verdict) Inspect() string  { return string(v) }
+func (v Verdict) Equal(obj Object) bool {
+	if other, ok := obj.(Verdict); ok {
+		return v == other
+	}
+	return false
+}
+
+type Builtin struct {
+	Fn func(args ...Object) Object
+}
+
+func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
+func (b *Builtin) Inspect() string  { return "builtin function" }
+func (b *Builtin) Equal(obj Object) bool {
+	if other, ok := obj.(*Builtin); ok {
+		return b == other
+	}
+	return false
+}
