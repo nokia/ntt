@@ -292,7 +292,7 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 		case runtime.Int:
 			return runtime.Int{Int: val.Neg(val.Int)}
 		case runtime.Float:
-			return runtime.Float{Float: val.Neg(val.Float)}
+			return -val
 
 		}
 	case token.NOT:
@@ -404,48 +404,48 @@ func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env
 func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env *runtime.Env) runtime.Object {
 	switch op {
 	case token.ADD:
-		return runtime.Float{Float: new(big.Float).Add(x.Float, y.Float)}
+		return runtime.Float(x + y)
 
 	case token.SUB:
-		return runtime.Float{Float: new(big.Float).Sub(x.Float, y.Float)}
+		return runtime.Float(x - y)
 
 	case token.MUL:
-		return runtime.Float{Float: new(big.Float).Mul(x.Float, y.Float)}
+		return runtime.Float(x * y)
 
 	case token.DIV:
-		return runtime.Float{Float: new(big.Float).Quo(x.Float, y.Float)}
+		return runtime.Float(x / y)
 
 	case token.LT:
-		if x.Cmp(y.Float) < 0 {
+		if x < y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.LE:
-		if x.Cmp(y.Float) <= 0 {
+		if x <= y {
 			return runtime.NewBool(true)
 		}
 
 	case token.GT:
-		if x.Cmp(y.Float) > 0 {
+		if x > y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.GE:
-		if x.Cmp(y.Float) >= 0 {
+		if x >= y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.EQ:
-		if x.Cmp(y.Float) == 0 {
+		if x == y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
 	case token.NE:
-		if x.Cmp(y.Float) != 0 {
+		if x != y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)

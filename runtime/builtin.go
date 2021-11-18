@@ -28,7 +28,7 @@ var Builtins = map[string]*Builtin{
 			return Errorf("wrong number of arguments. got=%d, want=0", len(args))
 		}
 
-		return Float{Float: big.NewFloat(rand.Float64())}
+		return Float(rand.Float64())
 	}},
 
 	"int2float": {Fn: func(args ...Object) Object {
@@ -40,7 +40,9 @@ var Builtins = map[string]*Builtin{
 		if !ok {
 			return Errorf("%s arguments not supported", args[0].Type())
 		}
-		return Float{Float: new(big.Float).SetInt(i.Int)}
+
+		f, _ := new(big.Float).SetInt(i.Int).Float64()
+		return Float(f)
 	}},
 
 	"float2int": {Fn: func(args ...Object) Object {
@@ -52,7 +54,8 @@ var Builtins = map[string]*Builtin{
 		if !ok {
 			return Errorf("%s arguments not supported", args[0].Type())
 		}
-		i, _ := f.Int(nil)
+
+		i, _ := new(big.Float).SetFloat64(float64(f)).Int(nil)
 		return Int{Int: i}
 	}},
 

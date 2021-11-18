@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -94,14 +95,17 @@ func NewBool(b bool) Bool {
 	return Bool(b)
 }
 
-type Float struct{ *big.Float }
+type Float float64
 
 func (f Float) Type() ObjectType { return FLOAT }
-func (f Float) Inspect() string  { return f.String() }
+func (f Float) Inspect() string  { return fmt.Sprint(float64(f)) }
 
 func NewFloat(s string) Float {
-	f, _ := new(big.Float).SetString(s)
-	return Float{Float: f}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		panic(err.Error())
+	}
+	return Float(f)
 }
 
 type Int struct{ *big.Int }
