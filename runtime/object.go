@@ -20,28 +20,28 @@ type ObjectType string
 
 const (
 	UNKNOWN       ObjectType = "unknown"
-	UNDEFINED                = "undefined"
-	RUNTIME_ERROR            = "runtime error"
-	RETURN_VALUE             = "return value"
-	INTEGER                  = "integer"
-	FLOAT                    = "float"
-	BOOL                     = "boolean"
-	STRING                   = "string"
-	BITSTRING                = "bitstring"
-	FUNCTION                 = "function"
-	LIST                     = "list"
-	BUILTIN_OBJ              = "builtin function"
-	VERDICT                  = "verdict"
+	UNDEFINED     ObjectType = "undefined"
+	RUNTIME_ERROR ObjectType = "runtime error"
+	RETURN_VALUE  ObjectType = "return value"
+	INTEGER       ObjectType = "integer"
+	FLOAT         ObjectType = "float"
+	BOOL          ObjectType = "boolean"
+	STRING        ObjectType = "string"
+	BITSTRING     ObjectType = "bitstring"
+	FUNCTION      ObjectType = "function"
+	LIST          ObjectType = "list"
+	BUILTIN_OBJ   ObjectType = "builtin function"
+	VERDICT       ObjectType = "verdict"
 
 	Bit    Unit = 1
-	Hex         = 4
-	Octett      = 8
+	Hex    Unit = 4
+	Octett Unit = 8
 
 	NoneVerdict   Verdict = "none"
-	PassVerdict           = "pass"
-	InconcVerdict         = "inconc"
-	FailVerdict           = "fail"
-	ErrorVerdict          = "error"
+	PassVerdict   Verdict = "pass"
+	InconcVerdict Verdict = "inconc"
+	FailVerdict   Verdict = "fail"
+	ErrorVerdict  Verdict = "error"
 )
 
 type Unit int
