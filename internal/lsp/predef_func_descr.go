@@ -460,6 +460,7 @@ In all other cases the function returns __false__.
 		Label:      "regexp(...)",
 		InsertText: "regexp${1}(${2:inpar}, ${3:expression}, ${4:groupno})$0",
 		Signature: `regexp [@nocase] (
+
 in template (value) any_character_string_type inpar,
 in template (present) any_character_string_type expression,
 in integer groupno
@@ -482,7 +483,12 @@ by 1 and the whole substring matched by the expression is referenced by 0.
 	{
 		Label:      "substr(...)",
 		InsertText: "substr(${1:inpar}, ${2:index}, ${3:count})$0",
-		Signature:  `substr(in template (present) any inpar, in integer index, in integer count) return input_string_or_sequence_type`,
+		Signature: `substr(
+
+in template (present) any inpar,
+in integer index,
+in integer count
+) return input_string_or_sequence_type`,
 		Documentation: `## (TTCN-3)
 This function returns a substring or subsequence from a value that is of a binary string type (__bitstring__,
 __hexstring__, __octetstring__), a character string type (__charstring__, __universal charstring__), or a sequence
