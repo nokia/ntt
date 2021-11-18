@@ -114,31 +114,42 @@ a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "bit2int(...)",
-		InsertText:     "bit2int(${1:invalue})$0",
-		Signature:      "bit2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __bit2int__ function ",
+		Label:      "bit2int(...)",
+		InsertText: "bit2int(${1:invalue})$0",
+		Signature:  "bit2int(in bitstring invalue) return integer",
+		Documentation: `## (TTCN-3)
+The __bit2int__ function This function converts a single __bitstring__ value to a single __integer__ value.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "bit2hex(...)",
-		InsertText:     "bit2hex(${1:invalue})$0",
-		Signature:      "bit2hex(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __bit2hex__ function ",
+		Label:      "bit2hex(...)",
+		InsertText: "bit2hex(${1:invalue})$0",
+		Signature:  "bit2hex(in bitstring invalue) return hexstring",
+		Documentation: `## (TTCN-3)
+The __bit2hex__ function converts a single __bitstring__ value to a single __hexstring__. The resulting __hexstring__
+represents the same value as the __bitstring__. For the purpose of this conversion, a __bitstring__ shall be converted into a
+__hexstring__, where the __bitstring__ is divided into groups of four bits beginning with the rightmost bit.
+When the leftmost group of bits does contain less than 4 bits, this group is filled with _'0'B_ from the left until it contains
+exactly 4 bits and is converted afterwards. The consecutive order of hex digits in the resulting __hexstring__ is the same as
+the order of groups of 4 bits in the __bitstring__`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "bit2oct(...)",
-		InsertText:     "bit2oct(${1:invalue})$0",
-		Signature:      "bit2oct(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __bit2oct__ function ",
+		Label:      "bit2oct(...)",
+		InsertText: "bit2oct(${1:invalue})$0",
+		Signature:  "bit2oct(in bitstring invalue) return octetstring",
+		Documentation: `## (TTCN-3)
+The __bit2oct__ function converts a single __bitstring__ value to a single __octetstring__. The resulting __octetstring__
+represents the same value as the __bitstring__. For the conversion the following holds: * bit2oct(value)=hex2oct(bit2hex(value)).`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "bit2str(...)",
-		InsertText:     "bit2str(${1:invalue})$0",
-		Signature:      "bit2str(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __bit2str__ function ",
+		Label:      "bit2str(...)",
+		InsertText: "bit2str(${1:invalue})$0",
+		Signature:  "bit2str(in bitstring invalue) return charstring",
+		Documentation: `## (TTCN-3)
+The __bit2str__ function converts a single __bitstring__ value to a single __charstring__.
+The resulting __charstring__ has the same length as the __bitstring__ and contains only the __characters__ '0' and '1'.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
