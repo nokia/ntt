@@ -319,18 +319,31 @@ In addition to the general error causes in clause 16.1.2, error causes are:
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "enum2int(...)",
-		InsertText:     "enum2int(${1:invalue})$0",
-		Signature:      "enum2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __enum2int__ function ",
+		Label:      "enum2int(...)",
+		InsertText: "enum2int(${1:invalue})$0",
+		Signature:  "enum2int(in Enumerated_type inpar) return integer",
+		Documentation: `## (TTCN-3)
+The __enum2int__ function accepts an enumerated value and returns the integer value associated to the enumerated value.
+The actual parameter passed to inpar always shall be a typed object.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "any2unistr(...)",
-		InsertText:     "any2unistr(${1:invalue})$0",
-		Signature:      "any2unistr(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __any2unistr__ function ",
-		NrOfParameters: 1,
+		Label:      "any2unistr(...)",
+		InsertText: "any2unistr(${1:invalue})$0",
+		Signature:  "any2unistr(in template any_type invalue, in universal charstring format := \"\") return universal charstring",
+		Documentation: `## (TTCN-3)
+The __any2unistr__ function converts the content of a value or template to a single __universal charstring__. The resulting
+__universal charstring__ is the same as the string produced by the __log__ operation containing the same operand as
+the one passed to the __any2unistr__ function. The value or template passed as a parameter to the __any2unichar__
+function may be uninitialized, partially or completely initialized.
+The optional format parameter is used for dynamic selection of how the resulting __universal charstring__
+should be produced from the provided invalue.
+* "": the resulting universal charstring is the same as the string produced by the __log__ operation for the same
+operand.
+* "canonical": unbound fields are represented in the output as "-", the fields and members of structured types are represented recursively
+in assignment notation.
+* <custom string>: tool specific output`,
+		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "lengthof(...)",
