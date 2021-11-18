@@ -194,46 +194,76 @@ has the same length as the __hexstring__ and contains only the characters '0' to
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "oct2int(...)",
-		InsertText:     "oct2int(${1:invalue})$0",
-		Signature:      "oct2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __oct2int__ function ",
+		Label:      "oct2int(...)",
+		InsertText: "oct2int(${1:invalue})$0",
+		Signature:  "oct2int(in octetstring invalue) return integer",
+		Documentation: `## (TTCN-3)
+The __oct2int__ function converts a single __octetstring__ value to a single __integer__ value.
+For the purposes of this conversion, an __octetstring__ shall be interpreted as a positive base 16 integer value. The
+rightmost hexadecimal digit is least significant, the leftmost hexadecimal digit is the most significant. The number of
+hexadecimal digits provided shall be multiples of 2 since one octet is composed of two hexadecimal digits. The
+hexadecimal digits 0 to F represent the decimal values 0 to 15 respectively.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "oct2bit(...)",
-		InsertText:     "oct2bit(${1:invalue})$0",
-		Signature:      "oct2bit(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __oct2bit__ function ",
+		Label:      "oct2bit(...)",
+		InsertText: "oct2bit(${1:invalue})$0",
+		Signature:  "oct2bit(in octetstring invalue) return bitstring",
+		Documentation: `## (TTCN-3)
+The __oct2bit__ function converts a single __octetstring__ value to a single __bitstring__.
+The resulting __bitstring__ represents the same value as the octetstring.
+For the conversion the following holds:
+* oct2bit(value)=hex2bit(oct2hex(value))`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "oct2hex(...)",
-		InsertText:     "oct2hex(${1:invalue})$0",
-		Signature:      "oct2hex(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __oct2hex__ function ",
+		Label:      "oct2hex(...)",
+		InsertText: "oct2hex(${1:invalue})$0",
+		Signature:  "oct2hex(in octetstring invalue) return hexstring",
+		Documentation: `## (TTCN-3)
+The __oct2hex__ function converts a single __octetstring__ value to a single __hexstring__.
+The resulting __hexstring__ represents the same value as the __octetstring__.
+For the purpose of this conversion, a __octetstring__ shall be converted into a __hexstring__ containing the same
+sequence of hex digits as the __octetstring__.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "oct2str(...)",
-		InsertText:     "oct2str(${1:invalue})$0",
-		Signature:      "oct2str(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __oct2str__ function ",
+		Label:      "oct2str(...)",
+		InsertText: "oct2str(${1:invalue})$0",
+		Signature:  "oct2str(in octetstring invalue) return charstring",
+		Documentation: `## (TTCN-3)
+The __oct2str__ function converts an __octetstring__ invalue to an __charstring__ representing the string equivalent of the
+input value. The resulting __charstring__ shall have double the length as the incoming __octetstring__.
+For the purpose of this conversion each hex digit of invalue is converted into a character '0', '1', '2', '3', '4', '5', '6', '7',
+'8', '9', 'A', 'B', 'C', 'D', 'E' or 'F' echoing the value of the hex digit. The consecutive order of __characters__
+in the resulting __charstring__ is the same as the order of hex digits in the __octetstring__.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "oct2char(...)",
-		InsertText:     "oct2char(${1:invalue})$0",
-		Signature:      "oct2char(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __oct2char__ function ",
+		Label:      "oct2char(...)",
+		InsertText: "oct2char(${1:invalue})$0",
+		Signature:  "oct2char(in octetstring invalue) return charstring",
+		Documentation: `## (TTCN-3)
+The __oct2char__ function converts an __octetstring__ invalue to a __charstring__. The input parameter invalue shall not
+contain octet values higher than __7F__. The resulting __charstring__ shall have the same length as the input
+__octetstring__. The octets are interpreted as Recommendation _ITU-T T.50 [4]_ codes (according to the IRV) and the
+resulting characters are appended to the returned value.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "oct2unichar(...)",
-		InsertText:     "oct2unichar(${1:invalue})$0",
-		Signature:      "oct2unichar(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __oct2unichar__ function ",
-		NrOfParameters: 1,
+		Label:      "oct2unichar(...)",
+		InsertText: "oct2unichar(${1:invalue})$0",
+		Signature:  "oct2unichar(in octetstring invalue, in charstring string_encoding := \"UTF-8\") return universal charstring",
+		Documentation: `## (TTCN-3)
+The __oct2unichar__ function converts an __octetstring__ invalue to a __universal charstring__ by use of the given
+string_encoding. The octets are interpreted as mandated by the standardized mapping associated with the given
+string_encoding and the resulting characters are appended to the returned value. If the optional string_encoding
+parameter is omitted, the default value "UTF-8".
+The following values (see _ISO/IEC 10646 [2]_) are allowed as string_encoding actual parameters (for the description of
+the codepoints see clause 27.5):
+
+a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"__ f) __"UTF-32LE"__ g) __"UTF-32BE"__`,
+		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "str2int(...)",
