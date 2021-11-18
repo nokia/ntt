@@ -346,59 +346,137 @@ in assignment notation.
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "lengthof(...)",
-		InsertText:     "lengthof(${1:invalue})$0",
-		Signature:      "lengthof(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __lengthof__ function ",
+		Label:      "lengthof(...)",
+		InsertText: "lengthof(${1:invalue})$0",
+		Signature:  "lengthof(in template (present) any_string_or_list_type inpar) return integer",
+		Documentation: `## (TTCN-3)
+The __lengthof__ function returns the length of a value or template that is of type __bitstring__, __hexstring__,
+__octetstring__, __charstring__, __universal charstring__, __record of__, __set of__, or __array__.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "sizeof(...)",
-		InsertText:     "sizeof(${1:invalue})$0",
-		Signature:      "sizeof(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __sizeof__ function ",
+		Label:      "sizeof(...)",
+		InsertText: "sizeof(${1:invalue})$0",
+		Signature:  "sizeof(in template (present) any_record_set_type inpar) return integer",
+		Documentation: `## (TTCN-3)
+The __sizeof__ function returns the actual number of elements of a value or template of a __record__ or __set__ type (see note).
+The function __sizeof__ is applicable to templates of __record__ and __set__ types. The function is applicable only if
+the __sizeof__ function gives the same result on all values that match the template.
+
+NOTE: Only elements of the TTCN-3 object, which is the parameter of the function are calculated; i.e. no
+elements of nested types/values are taken into account at determining the return value.
+
+Error causes are:
+* when inpar is a template and it can match values of different sizes.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "ispresent(...)",
-		InsertText:     "ispresent(${1:invalue})$0",
-		Signature:      "ispresent(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __ispresent__ function ",
+		Label:      "ispresent(...)",
+		InsertText: "ispresent(${1:invalue})$0",
+		Signature:  "ispresent(in template any_ type inpar) return boolean",
+		Documentation: `## (TTCN-3)
+The __ispresent__ function is allowed for templates of all data types and returns:
+* the value __true__ if the data object reference fulfils the (present) template restriction as described in clause 15.8;
+* the value __false__ otherwise.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "ischosen(...)",
-		InsertText:     "ischosen(${1:invalue})$0",
-		Signature:      "ischosen(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __ischosen__ function ",
+		Label:      "ischosen(...)",
+		InsertText: "ischosen(${1:invalue})$0",
+		Signature:  "ischosen(in template any_union_type_field inpar) return boolean",
+		Documentation: `## (TTCN-3)
+The __ischosen__ function is allowed for templates of all data types that are a union-field-reference or a type alternative of an
+anytype. This function returns:
+* the value __true__ if and only if the data object reference specifies the variant of the union type or the type
+alternative of the anytype that is actually selected for the given data object;
+* in all other cases __false__.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "isvalue(...)",
-		InsertText:     "isvalue(${1:invalue})$0",
-		Signature:      "isvalue(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __isvalue__ function ",
+		Label:      "isvalue(...)",
+		InsertText: "isvalue(${1:invalue})$0",
+		Signature:  "isvalue(in template any_type inpar) return boolean",
+		Documentation: `## (TTCN-3)
+The __isvalue__ function is allowed for templates of all data types, component and address types and default values. The function
+shall return __true__, if inpar is completely initialized and resolves to a specific value. If inpar is of __record__
+or __set__ type, omitted optional fields shall be considered as initialized, i.e. the function shall also return __true__ if optional fields of
+inpar are set to omit. The function shall return __false__ otherwise.
+
+The __null__ value assigned to default and component references shall be considered as concrete values.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "isbound(...)",
-		InsertText:     "isbound(${1:invalue})$0",
-		Signature:      "isbound(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __isbound__ function ",
+		Label:      "isbound(...)",
+		InsertText: "isbound(${1:invalue})$0",
+		Signature:  "isbound(in template any_type inpar) return boolean",
+		Documentation: `## (TTCN-3)
+The __isbound__ function is allowed for templates of all data types. The function shall return __true__, if inpar is at least partially
+initialized. If inpar is of a __record__ or __set__ type, omitted optional fields shall be considered as initialized, i.e. the
+function shall also return __true__ if at least one optional field of inpar is set to omit. The function shall return __false__
+otherwise. Inaccessible fields (e.g. non-selected alternatives of __union__ types, subfields of omitted __record__ and __set__ types
+or subfields of non-selected __union__ fields) shall be considered as uninitialized, i.e. __isbound__ shall return for them __false__.
+The __null__ value assigned to default and component references shall be considered as concrete values.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "istemplatekind(...)",
-		InsertText:     "istemplatekind(${1:invalue})$0",
-		Signature:      "istemplatekind(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __istemplatekind__ function ",
-		NrOfParameters: 1,
+		Label:      "istemplatekind(...)",
+		InsertText: "istemplatekind(${1:invalue}, ${2:kind})$0",
+		Signature:  "istemplatekind (in template any_type invalue, in charstring kind) return boolean",
+		Documentation: `## (TTCN-3)
+The __istemplatekind__ function allows to examine if a template contains a certain kind of the matching mechanisms.
+If the matching mechanism kind enquired is matching a _specific value_, a _matching mechanism instead of
+values_ or matching _character pattern_, the function shall return __true__ if the content of the
+invalue parameter is of the same kind.
+
+If the matching mechanism kind enquired is a matching mechanism _inside values_, the function shall
+return __true__ if the template in the invalue parameter contains this kind of matching mechanism on the first level of
+nesting.
+If the matching mechanism kind enquired is a matching attribute, the function shall return __true__ if the
+template in the invalue parameter has this kind of matching attribute attached to it directly (i.e. it doesn't count if the
+attribute is attached to a field of invalue at any level of nesting).
+In all other cases the function returns __false__.
+
+| Value of kind parameter | Searched matching mechanism |
+| ----------------------- | --------------------------- |
+| "list"                  | Template list               |
+| "complement" | Complemented template list |
+| "AnyValue", "?" | Any value |
+| "AnyValueOrNone", "*" | Any value or none |
+| "range" | Value range |
+| "superset" | SuperSet |
+| "subset" | SubSet |
+| "omit" | Omit |
+| "decmatch" |Matching decoded content |
+| "AnyElement" | Any element |
+| "AnyElementsOrNone" | Any number of elements or none |
+| "permutation" | Permutation |
+| "length" | Length restriction |
+| "ifpresent" | The IfPresent indicator |
+| "pattern" | Matching character pattern |
+`,
+		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "regexp(...)",
-		InsertText:     "regexp(${1:invalue})$0",
-		Signature:      "regexp(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __regexp__ function ",
+		Label:      "regexp(...)",
+		InsertText: "regexp${1}(${2:inpar}, ${3:expression}, ${4:groupno})$0",
+		Signature: `regexp [@nocase] (
+in template (value) any_character_string_type inpar,
+in template (present) any_character_string_type expression,
+in integer groupno
+) return any_character_string_type`,
+		Documentation: `## (TTCN-3)
+The __regexp__ function first matches the parameter inpar (or in case inpar is a template, its value equivalent) against the
+expression in the second parameter. If the __@nocase__ modifier is present, this and all subsequent matchings
+shall be done in a case-insensitive way. If this matching is unsuccessful, an empty string shall be returned.
+If this matching is successful, the substring of inpar shall be returned, which matched the groupno-s group of
+expression during the matching. Group numbers are assigned by the order of occurrences of the opening bracket of
+a group and counted starting from 0 by step 1.
+
+_NOTE_: This function differs from other well-known regular expression matching implementations in that:
+1. It shall match the whole inpar string instead of only a substring.
+2. It starts counting groups from 0, while in some other implementations the first group is referenced
+by 1 and the whole substring matched by the expression is referenced by 0.
+`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
