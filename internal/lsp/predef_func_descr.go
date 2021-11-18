@@ -78,30 +78,40 @@ var predefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:          "char2int(...)",
 		InsertText:     "char2int(${1:invalue})$0",
-		Signature:      "char2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __char2int__ function ",
+		Signature:      "char2int(in charstring invalue) return integer",
+		Documentation:  "## (TTCN-3)\nThe __char2int__ function converts a single-character-length __charstring__ value into an __integer__ value in the range of 0 to 127. The __integer__ value describes the 8-bit encoding of the character. Error causes are:\n* length of invalue does not equal 1.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "char2oct(...)",
 		InsertText:     "char2oct(${1:invalue})$0",
-		Signature:      "char2oct(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __char2oct__ function ",
+		Signature:      "char2oct(in charstring invalue) return octetstring",
+		Documentation:  "## (TTCN-3)\nThe __char2oct__ function converts a __charstring__ invalue to an __octetstring__. Each octet of the octetstring will contain the Recommendation _ITU-T T.50 [4]_ codes (according to the IRV) of the appropriate characters of invalue.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "unichar2int(...)",
-		InsertText:     "unichar2int(${1:invalue})$0",
-		Signature:      "unichar2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __unichar2int__ function ",
+		Label:      "unichar2int(...)",
+		InsertText: "unichar2int(${1:invalue})$0",
+		Signature:  "unichar2int(in universal charstring invalue) return integer",
+		Documentation: `## (TTCN-3)
+The __unichar2int__ function converts a single-character-length __universal charstring__ value into an __integer__ value in the
+range of 0 to 2147483647. The __integer__ value describes the 32-bit encoding of the character. Error causes are:
+* length of invalue does not equal 1.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "unichar2oct(...)",
-		InsertText:     "unichar2oct(${1:invalue})$0",
-		Signature:      "unichar2oct(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __unichar2oct__ function ",
-		NrOfParameters: 1,
+		Label:      "unichar2oct(...)",
+		InsertText: "unichar2oct(${1:invalue})$0",
+		Signature:  "unichar2oct(in universal charstring invalue, in charstring string_encoding := \"UTF-8\") return octetstring",
+		Documentation: `## (TTCN-3)
+The __unichar2oct__ function This function converts a universal charstring invalue to an octetstring. Each octet of the octetstring
+will contain the octets mandated by mapping the characters of invalue using the standardized mapping associated with
+the given string_encoding in the same order as the characters appear in inpar. If the optional string_encoding parameter
+is omitted, the default value "UTF-8".
+The following values (see _ISO/IEC 10646 [2]_) are allowed as string_encoding actual parameter:
+
+a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"__ f) __"UTF-32LE"__ g) __"UTF-32BE"__`,
+		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "bit2int(...)",
