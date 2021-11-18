@@ -266,31 +266,56 @@ a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "str2int(...)",
-		InsertText:     "str2int(${1:invalue})$0",
-		Signature:      "str2int(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __str2int__ function ",
+		Label:      "str2int(...)",
+		InsertText: "str2int(${1:invalue})$0",
+		Signature:  "str2int(in charstring invalue) return integer",
+		Documentation: `## (TTCN-3)
+The __str2int__ function converts a __charstring__ representing an __integer__ value to the equivalent integer.
+Error causes are:
+* invalue contains characters other than "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" and "-".
+* invalue contains the character "-" at another position than the leftmost one.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "str2hex(...)",
-		InsertText:     "str2hex(${1:invalue})$0",
-		Signature:      "str2hex(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __str2hex__ function ",
+		Label:      "str2hex(...)",
+		InsertText: "str2hex(${1:invalue})$0",
+		Signature:  "str2hex(in charstring invalue) return hexstring",
+		Documentation: `## (TTCN-3)
+The __str2hex__ function converts a string of the type __charstring__ to a __hexstring__. The string invalue shall contain the
+"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e" "f", "A", "B", "C", "D", "E" or "F" graphical
+characters only. Each character of invalue shall be converted to the corresponding hexadecimal digit. The resulting
+hexstring will have the same length as the incoming charstring.
+Error cause is:
+* invalue contains characters other than specified above.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "str2oct(...)",
-		InsertText:     "str2oct(${1:invalue})$0",
-		Signature:      "str2oct(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __str2oct__ function ",
+		Label:      "str2oct(...)",
+		InsertText: "str2oct(${1:invalue})$0",
+		Signature:  "str2oct(in charstring invalue) return octetstring",
+		Documentation: `## (TTCN-3)
+The __str2oct__ function converts a string of the type __charstring__ to an __octetstring__. The string invalue shall contain
+the "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e" "f", "A", "B", "C", "D", "E" or "F" graphical
+characters only. When the string invalue contains even number characters the resulting octetstring contains 0
+as leftmost character followed by the same sequence of characters as in the charstring.
+lengthof (see clause C.2.1 for the resulting octetstring) will return half of lengthof of the incoming
+charstring. In addition to the general error causes in clause 16.1.2, error causes is:
+* invalue contains characters other than specified above.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "str2float(...)",
-		InsertText:     "str2float(${1:invalue})$0",
-		Signature:      "str2float(in integer invalue) return charstring",
-		Documentation:  "## (TTCN-3)\nThe __str2float__ function ",
+		Label:      "str2float(...)",
+		InsertText: "str2float(${1:invalue})$0",
+		Signature:  "str2float(in charstring invalue) return float",
+		Documentation: `## (TTCN-3)
+The __str2float__ function converts a __charstring__ comprising a number into a __float__ value. The format of the number in the
+__charstring__ shall follow rules of plain ttcn-3 float values with the following exceptions:
+* leading zeros are allowed;
+* leading "+" sign before positive values is allowed;
+* "-0.0" is allowed;
+* no numbers after the dot in the decimal notation are allowed.
+In addition to the general error causes in clause 16.1.2, error causes are:
+* the format of invalue is different than defined above.`,
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
