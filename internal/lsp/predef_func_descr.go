@@ -477,7 +477,7 @@ _NOTE_: This function differs from other well-known regular expression matching 
 2. It starts counting groups from 0, while in some other implementations the first group is referenced
 by 1 and the whole substring matched by the expression is referenced by 0.
 `,
-		NrOfParameters: 1,
+		NrOfParameters: 3,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:      "substr(...)",
@@ -599,7 +599,7 @@ _decoded_value_ parameter for this single __decvalue__ call. The rules for dynam
 are described in clause 27.9 of the TTCN-3 core language specification.
 
 If the decoding was successful, then the used bits are removed from the parameter _encoded_value_, the rest is
-returned (in the parameter _encoded_value_), and the decoded value is returned in the parameter _decoded_value_.  
+returned (in the parameter _encoded_value_), and the decoded value is returned in the parameter _decoded_value_.
 If the decoding was unsuccessful, the actual parameters for _encoded_value_ and _decoded_value_ are not
 changed. The function shall return an integer value to indicate success or failure of the decoding below:
 
@@ -695,7 +695,7 @@ The serialized bitstring shall not include the optional signature (see clause 10
 order mark).
 
 In case of "UTF-16" and "UTF-32" big-endian ordering shall be used (as described in clauses 10.4 and 10.7 of
-ISO/IEC 10646 [2]).  
+ISO/IEC 10646 [2]).
 The semantics of the function can be explained by the following TTCN-3 function:
 
 	function decvalue_unichar (
