@@ -25,8 +25,8 @@ var (
 )
 
 func newPredefinedFunctions() []protocol.CompletionItem {
-	complList := make([]protocol.CompletionItem, 0, len(predefinedFunctions))
-	for _, v := range predefinedFunctions {
+	complList := make([]protocol.CompletionItem, 0, len(PredefinedFunctions))
+	for _, v := range PredefinedFunctions {
 		markup := protocol.MarkupContent{Kind: "markdown", Value: v.Documentation}
 		complList = append(complList, protocol.CompletionItem{
 			Label: v.Label, Kind: protocol.FunctionCompletion,

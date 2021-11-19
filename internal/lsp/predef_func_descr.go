@@ -11,7 +11,7 @@ type PredefFunctionDetails struct {
 	TextFormat     protocol.InsertTextFormat
 }
 
-var predefinedFunctions = []PredefFunctionDetails{
+var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:          "int2char(...)",
 		InsertText:     "int2char(${1:invalue})$0",
