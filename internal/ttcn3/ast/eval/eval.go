@@ -170,28 +170,32 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		return apply(f, args)
 
 	case *ast.WhileStmt:
-		var result runtime.Object
 		for {
 			cond, err := evalBoolExpr(n.Cond, env)
 			if runtime.IsError(err) {
 				return err
 			}
 			if cond == false {
-				break
+				return nil
 			}
-			result = eval(n.Body, env)
-			if runtime.IsError(result) {
-				break
+
+			result := eval(n.Body, env)
+			switch {
+			case runtime.IsError(result):
+				return result
+			case result == runtime.Break:
+				return nil
 			}
 		}
-		return result
 
 	case *ast.DoWhileStmt:
-		var result runtime.Object
 		for {
-			result = eval(n.Body, env)
-			if runtime.IsError(result) {
-				break
+			result := eval(n.Body, env)
+			switch {
+			case runtime.IsError(result):
+				return result
+			case result == runtime.Break:
+				return nil
 			}
 
 			cond, err := evalBoolExpr(n.Cond, env)
@@ -199,10 +203,9 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 				return err
 			}
 			if cond == false {
-				break
+				return nil
 			}
 		}
-		return result
 
 	case *ast.ForStmt:
 		if n.Init != nil {
@@ -212,29 +215,41 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 			}
 		}
 
-		var result runtime.Object
 		for {
 			cond, err := evalBoolExpr(n.Cond, env)
 			if runtime.IsError(err) {
 				return err
 			}
 			if cond == false {
-				break
+				return nil
 			}
 
-			result = eval(n.Body, env)
-			if runtime.IsError(result) {
-				break
+			result := eval(n.Body, env)
+			switch {
+			case runtime.IsError(result):
+				return result
+			case result == runtime.Break:
+				return nil
 			}
 
 			result = eval(n.Post, env)
 			if runtime.IsError(result) {
-				break
+				return result
 			}
 
 		}
-		return result
 
+	case *ast.BranchStmt:
+		switch n.Tok.Kind {
+		case token.BREAK:
+			return runtime.Break
+		case token.CONTINUE:
+			return runtime.Continue
+		case token.LABEL:
+			return nil
+		case token.GOTO:
+			return runtime.Errorf("goto statement not implemented")
+		}
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
@@ -607,13 +622,17 @@ func needBreak(v interface{}) bool {
 	case *runtime.Error:
 		return true
 	default:
-		return false
+		return v == runtime.Break || v == runtime.Continue
 	}
 }
 
 func unwrap(obj runtime.Object) runtime.Object {
 	if ret, ok := obj.(*runtime.ReturnValue); ok {
 		return ret.Value
+	}
+
+	if obj == runtime.Break || obj == runtime.Continue {
+		return runtime.Errorf("break or continue statements not allowed outside loops")
 	}
 	return obj
 }

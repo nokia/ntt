@@ -22,20 +22,22 @@ type Object interface {
 type ObjectType string
 
 const (
-	UNKNOWN       ObjectType = "unknown"
-	UNDEFINED     ObjectType = "undefined"
-	RUNTIME_ERROR ObjectType = "runtime error"
-	RETURN_VALUE  ObjectType = "return value"
-	INTEGER       ObjectType = "integer"
-	FLOAT         ObjectType = "float"
-	BOOL          ObjectType = "boolean"
-	STRING        ObjectType = "string"
-	BITSTRING     ObjectType = "bitstring"
-	FUNCTION      ObjectType = "function"
-	LIST          ObjectType = "list"
-	MAP           ObjectType = "map"
-	BUILTIN_OBJ   ObjectType = "builtin function"
-	VERDICT       ObjectType = "verdict"
+	UNKNOWN      ObjectType = "unknown object"
+	UNDEFINED    ObjectType = "undefined value"
+	ERROR        ObjectType = "runtime error"
+	BREAK        ObjectType = "break event"
+	CONTINUE     ObjectType = "continue event"
+	RETURN_VALUE ObjectType = "return value"
+	INTEGER      ObjectType = "integer"
+	FLOAT        ObjectType = "float"
+	BOOL         ObjectType = "boolean"
+	STRING       ObjectType = "string"
+	BITSTRING    ObjectType = "bitstring"
+	FUNCTION     ObjectType = "function"
+	LIST         ObjectType = "list"
+	MAP          ObjectType = "map"
+	BUILTIN_OBJ  ObjectType = "builtin function"
+	VERDICT      ObjectType = "verdict"
 
 	Bit    Unit = 1
 	Hex    Unit = 4
@@ -63,17 +65,21 @@ func (u Unit) Base() int {
 
 var (
 	ErrSyntax = errors.New("invalid syntax")
-	Undefined = &undefined{}
+	Undefined = &singelton{typ: UNDEFINED}
+	Break     = &singelton{typ: BREAK}
+	Continue  = &singelton{typ: CONTINUE}
 )
 
-type undefined struct{}
+type singelton struct {
+	typ ObjectType
+}
 
-func (u *undefined) Inspect() string  { return "undefined" }
-func (u *undefined) Type() ObjectType { return UNDEFINED }
+func (s *singelton) Inspect() string  { return string(s.typ) }
+func (s *singelton) Type() ObjectType { return s.typ }
 
-func (u *undefined) Equal(obj Object) bool {
-	if _, ok := obj.(*undefined); ok {
-		return true
+func (s *singelton) Equal(obj Object) bool {
+	if other, ok := obj.(*singelton); ok {
+		return s.typ == other.typ
 	}
 	return false
 }
@@ -83,7 +89,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string    { return e.Message }
-func (e *Error) Type() ObjectType { return RUNTIME_ERROR }
+func (e *Error) Type() ObjectType { return ERROR }
 func (e *Error) Inspect() string  { return fmt.Sprintf("Error: %s", e.Error()) }
 
 func (e *Error) Equal(obj Object) bool {
