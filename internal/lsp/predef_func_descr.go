@@ -917,4 +917,38 @@ empty string.`,
 ) return charstring`,
 		Documentation: "## (TTCN-3)\nThe __hostid__ function shall return the host id of the test component or module control executing the hostid function	in form of a character string. The in parameter idkind allows to specify the expected id format to be returned.	Predefined _idkind_ values are:\n* \"Ipv4orIPv6\": The contents of the returned character string is an Ipv4 address. If no Ipv4 address, but an	Ipv6 address is available, a character string representation of the Ipv6 address is returned.\n* \"Ipv4\": The contents of the returned character string shall be an Ipv4 address.\n* \"Ipv6\": The contents of the returned characterstring shall be an Ipv6 address.",
 		NrOfParameters: 1,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "match(...)",
+		InsertText: "match(${1:expression}, ${2:templateInstance})$0",
+		Signature: `match(
+	in expression,
+	in template instance
+) return boolean`,
+		Documentation: `## (TTCN-3)
+The __match__ operation returns a __boolean__ value. It matches an expression, which shall denote a value or a field of a value
+against a template instance. Types of the expression and the template instance shall be compatible (see clause 6.3). The
+return value of the match operation indicates whether the expression matches the specified template instance. In the
+special case, matching a non-optional value expression (e.g. a value variable or non-optional field of a value) with a
+template instance that matches an omitted field (i.e. one of the matching mechanisms Omit, AnyValueOrNone,
+IfPresent) shall be allowed and shall be treated as if the value expression were an optional field. Thus, matching a value
+expression against a template instance which evaluates to the omit matching mechanism shall return false.`,
+		NrOfParameters: 2,
+		TextFormat:     protocol.SnippetTextFormat},
+	{
+		Label:      "setverdict(...)",
+		InsertText: "setverdict(${1:verdict})$0",
+		Signature: `setverdict(
+	in expression
+	{, in charstring|templateInstance reason})`,
+		Documentation: `## (TTCN-3)
+The value of the local verdict is changed with the __setverdict__ operation.
+* The first parameter is either an expression or a literal providing one of the values:
+__pass__, __fail__, __inconc__ or __none__
+* The optional parameters allow to provide information that explain the reasons for assigning the verdict. This
+information is composed to a string and stored in an implicit __charstring__ variable. On termination of the test
+component, the actual local verdict is logged together with the implicit __charstring__ variable. Since the optional
+parameters can be seen as log information, the same rules and restrictions as for the parameters of the __log__ statement
+apply`,
+		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat}}
