@@ -20,37 +20,50 @@ var PredefinedFunctions = []PredefFunctionDetails{
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "int2unichar(...)",
-		InsertText:     "int2unichar(${1:invalue})$0",
-		Signature:      "int2unichar(in integer invalue) return universal charstring",
+		Label:      "int2unichar(...)",
+		InsertText: "int2unichar(${1:invalue})$0",
+		Signature: `int2unichar(
+	in integer invalue
+) return universal charstring`,
 		Documentation:  "## (TTCN-3)\nThe __int2unichar__ function n converts an __integer__ value in the range of 0 to 2147483647 (32-bit encoding) into a single-character-length __universal charstring__ value. The __integer__ value describes the 32-bit encoding of the character.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "int2bit(...)",
-		InsertText:     "int2bit(${1:invalue}, ${2:length})$0",
-		Signature:      "int2bit(in integer invalue, in integer length) return bitstring",
+		Label:      "int2bit(...)",
+		InsertText: "int2bit(${1:invalue}, ${2:length})$0",
+		Signature: `int2bit(
+	in integer invalue,
+	in integer length
+) return bitstring`,
 		Documentation:  "## (TTCN-3)\nThe __int2bit__ function converts a single __integer__ value to a single __bitstring__ value. The resulting string is length bits long. Error causes are:\n* invalue is less than zero;\n* the conversion yields a return value with more bits than specified by length.",
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "int2enum(...)",
-		InsertText:     "int2enum(${1:invalue}, ${2:outpar})$0",
-		Signature:      "int2enum ( in integer inpar, out Enumerated_type outpar)",
+		Label:      "int2enum(...)",
+		InsertText: "int2enum(${1:invalue}, ${2:outpar})$0",
+		Signature: `int2enum(
+	in integer inpar,
+	out Enumerated_type outpar)`,
 		Documentation:  "## (TTCN-3)\nThe __int2enum__ function converts an integer value into an enumerated value of a given enumerated type. The integer value shall be provided as in parameter and the result of the conversion shall be stored in an out parameter. The type of the out parameter determines the type into which the in parameter is converted.",
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "int2hex(...)",
-		InsertText:     "int2hex(${1:invalue},${2:length})$0",
-		Signature:      "int2hex(in integer invalue, in integer length) return hexstring",
+		Label:      "int2hex(...)",
+		InsertText: "int2hex(${1:invalue},${2:length})$0",
+		Signature: `int2hex(
+	in integer invalue,
+	in integer length
+) return hexstring`,
 		Documentation:  "## (TTCN-3)\nThe __int2hex__ function converts a single __integer__ value to a single __hexstring__ value. The resulting string is length hexadecimal digits long. Error causes are:\n* invalue is less than zero;\n* the conversion yields a return value with more hexadecimal characters than specified by length.",
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
-		Label:          "int2oct(...)",
-		InsertText:     "int2oct(${1:invalue},${2:length})$0",
-		Signature:      "int2oct(in integer invalue, in integer length) return octetstring",
+		Label:      "int2oct(...)",
+		InsertText: "int2oct(${1:invalue},${2:length})$0",
+		Signature: `int2oct(
+	in integer invalue,
+	in integer length
+) return octetstring`,
 		Documentation:  "## (TTCN-3)\nThe __int2oct__ function converts a single __integer__ value to a single __octetstring__ value. The resulting string is length octets long. Error causes are:\n* invalue is less than zero;\n* the conversion yields a return value with more octets than specified by length.",
 		NrOfParameters: 2,
 		TextFormat:     protocol.SnippetTextFormat},
@@ -92,7 +105,9 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:      "unichar2int(...)",
 		InsertText: "unichar2int(${1:invalue})$0",
-		Signature:  "unichar2int(in universal charstring invalue) return integer",
+		Signature: `unichar2int(
+	in universal charstring invalue
+) return integer`,
 		Documentation: `## (TTCN-3)
 The __unichar2int__ function converts a single-character-length __universal charstring__ value into an __integer__ value in the
 range of 0 to 2147483647. The __integer__ value describes the 32-bit encoding of the character. Error causes are:
@@ -102,7 +117,10 @@ range of 0 to 2147483647. The __integer__ value describes the 32-bit encoding of
 	{
 		Label:      "unichar2oct(...)",
 		InsertText: "unichar2oct(${1:invalue})$0",
-		Signature:  "unichar2oct(in universal charstring invalue, in charstring string_encoding := \"UTF-8\") return octetstring",
+		Signature: `unichar2oct(
+	in universal charstring invalue,
+	in charstring string_encoding := "UTF-8"
+) return octetstring`,
 		Documentation: `## (TTCN-3)
 The __unichar2oct__ function This function converts a universal charstring invalue to an octetstring. Each octet of the octetstring
 will contain the octets mandated by mapping the characters of invalue using the standardized mapping associated with
@@ -253,7 +271,10 @@ resulting characters are appended to the returned value.`,
 	{
 		Label:      "oct2unichar(...)",
 		InsertText: "oct2unichar(${1:invalue})$0",
-		Signature:  "oct2unichar(in octetstring invalue, in charstring string_encoding := \"UTF-8\") return universal charstring",
+		Signature: `oct2unichar(
+	in octetstring invalue,
+	in charstring string_encoding := "UTF-8"
+) return universal charstring`,
 		Documentation: `## (TTCN-3)
 The __oct2unichar__ function converts an __octetstring__ invalue to a __universal charstring__ by use of the given
 string_encoding. The octets are interpreted as mandated by the standardized mapping associated with the given
@@ -330,7 +351,10 @@ The actual parameter passed to inpar always shall be a typed object.`,
 	{
 		Label:      "any2unistr(...)",
 		InsertText: "any2unistr(${1:invalue})$0",
-		Signature:  "any2unistr(in template any_type invalue, in universal charstring format := \"\") return universal charstring",
+		Signature: `any2unistr(
+	in template any_type invalue,
+	in universal charstring format := ""
+) return universal charstring`,
 		Documentation: `## (TTCN-3)
 The __any2unistr__ function converts the content of a value or template to a single __universal charstring__. The resulting
 __universal charstring__ is the same as the string produced by the __log__ operation containing the same operand as
@@ -348,7 +372,9 @@ in assignment notation.
 	{
 		Label:      "lengthof(...)",
 		InsertText: "lengthof(${1:invalue})$0",
-		Signature:  "lengthof(in template (present) any_string_or_list_type inpar) return integer",
+		Signature: `lengthof(
+	in template (present) any_string_or_list_type inpar
+) return integer`,
 		Documentation: `## (TTCN-3)
 The __lengthof__ function returns the length of a value or template that is of type __bitstring__, __hexstring__,
 __octetstring__, __charstring__, __universal charstring__, __record of__, __set of__, or __array__.`,
@@ -357,7 +383,9 @@ __octetstring__, __charstring__, __universal charstring__, __record of__, __set 
 	{
 		Label:      "sizeof(...)",
 		InsertText: "sizeof(${1:invalue})$0",
-		Signature:  "sizeof(in template (present) any_record_set_type inpar) return integer",
+		Signature: `sizeof(
+	in template (present) any_record_set_type inpar
+) return integer`,
 		Documentation: `## (TTCN-3)
 The __sizeof__ function returns the actual number of elements of a value or template of a __record__ or __set__ type (see note).
 The function __sizeof__ is applicable to templates of __record__ and __set__ types. The function is applicable only if
@@ -383,7 +411,9 @@ The __ispresent__ function is allowed for templates of all data types and return
 	{
 		Label:      "ischosen(...)",
 		InsertText: "ischosen(${1:invalue})$0",
-		Signature:  "ischosen(in template any_union_type_field inpar) return boolean",
+		Signature: `ischosen(
+	in template any_union_type_field inpar
+) return boolean`,
 		Documentation: `## (TTCN-3)
 The __ischosen__ function is allowed for templates of all data types that are a union-field-reference or a type alternative of an
 anytype. This function returns:
@@ -421,7 +451,10 @@ The __null__ value assigned to default and component references shall be conside
 	{
 		Label:      "istemplatekind(...)",
 		InsertText: "istemplatekind(${1:invalue}, ${2:kind})$0",
-		Signature:  "istemplatekind (in template any_type invalue, in charstring kind) return boolean",
+		Signature: `istemplatekind (
+	in template any_type invalue,
+	in charstring kind
+) return boolean`,
 		Documentation: `## (TTCN-3)
 The __istemplatekind__ function allows to examine if a template contains a certain kind of the matching mechanisms.
 If the matching mechanism kind enquired is matching a _specific value_, a _matching mechanism instead of
@@ -460,10 +493,9 @@ In all other cases the function returns __false__.
 		Label:      "regexp(...)",
 		InsertText: "regexp${1}(${2:inpar}, ${3:expression}, ${4:groupno})$0",
 		Signature: `regexp [@nocase] (
-
-in template (value) any_character_string_type inpar,
-in template (present) any_character_string_type expression,
-in integer groupno
+	in template (value) any_character_string_type inpar,
+	in template (present) any_character_string_type expression,
+	in integer groupno
 ) return any_character_string_type`,
 		Documentation: `## (TTCN-3)
 The __regexp__ function first matches the parameter inpar (or in case inpar is a template, its value equivalent) against the
@@ -484,10 +516,9 @@ by 1 and the whole substring matched by the expression is referenced by 0.
 		Label:      "substr(...)",
 		InsertText: "substr(${1:inpar}, ${2:index}, ${3:count})$0",
 		Signature: `substr(
-
-in template (present) any inpar,
-in integer index,
-in integer count
+	in template (present) any inpar,
+	in integer index,
+	in integer count
 ) return input_string_or_sequence_type`,
 		Documentation: `## (TTCN-3)
 This function returns a substring or subsequence from a value that is of a binary string type (__bitstring__,
@@ -536,7 +567,12 @@ Examples:
 	{
 		Label:      "replace(...)",
 		InsertText: "replace(${1:inpar}, (${2:index}, (${3:len}, (${4:repl})$0",
-		Signature:  `replace(in any inpar, in integer index, in integer len, in any repl) return any_string_or_sequence type`,
+		Signature: `replace(
+	in any inpar,
+	in integer index,
+	in integer len,
+	in any repl
+) return any_string_or_sequence type`,
 		Documentation: `## (TTCN-3)
 This function replaces the substring or subsequence of value _inpar_ at index _index_ of length _len_ with the string or
 sequence value _repl_ and returns the resulting string or sequence. _inpar_ shall not be modified. If _len_ is 0 the string
@@ -573,7 +609,11 @@ Examples:
 	{
 		Label:      "encvalue(...)",
 		InsertText: "encvalue(${1:inpar}, ${2:encoding_info}, ${3:dynamic_encoding})$0",
-		Signature:  `encvalue(in template (value) any inpar, in universal charstring encoding_info := "", in universal charstring dynamic_encoding := "") return bitstring`,
+		Signature: `encvalue(
+	in template (value) any inpar,
+	in universal charstring encoding_info := "",
+	in universal charstring dynamic_encoding := ""
+) return bitstring`,
 		Documentation: `## (TTCN-3)
 The __encvalue__ function encodes a value or template into a bitstring. When the actual parameter that is passed to
 _inpar_ is a template, it shall resolve to a specific value (the same restrictions apply as for the argument of the send
@@ -593,7 +633,12 @@ _inpar_).`,
 	{
 		Label:      "decvalue(...)",
 		InsertText: "decvalue(${1:encoded_value}, ${2:decoded_value}, ${3:decoding_info}, ${4:dynamic_encoding})$0",
-		Signature:  `decvalue(inout bitstring encoded_value, out any decoded_value, in universal charstring decoding_info := "", in universal charstring dynamic_encoding := "") return integer`,
+		Signature: `decvalue(
+	inout bitstring encoded_value,
+	out any decoded_value,
+	in universal charstring decoding_info := "",
+	in universal charstring dynamic_encoding := ""
+) return integer`,
 		Documentation: `## (TTCN-3)
 The __decvalue__ function decodes a bitstring into a value. The test system shall suppose that the bitstring
 _encoded_value_ represents an encoded instance of the actual type of _decoded_value_. The optional
@@ -619,7 +664,12 @@ enough bits.`,
 	{
 		Label:      "encvalue_unichar(...)",
 		InsertText: "encvalue_unichar(${1:inpar}, ${2:string_serialization}, ${3:encoding_info}, ${4:dynamic_encoding})$0",
-		Signature:  `encvalue_unichar(in template (value) any inpar, in charstring string_serialization := "UTF-8", in universal charstring encoding_info := "", in universal charstring dynamic_encoding := "") return universal charstring`,
+		Signature: `encvalue_unichar(
+	in template (value) any inpar,
+	in charstring string_serialization := "UTF-8",
+	in universal charstring encoding_info := "",
+	in universal charstring dynamic_encoding := ""
+) return universal charstring`,
 		Documentation: `## (TTCN-3)
 The __encvalue_unichar__ function encodes a value or template into a universal charstring. When the actual
 parameter that is passed to _inpar_ is a template, it shall resolve to a specific value (the same restrictions apply as for
@@ -661,7 +711,13 @@ The specific semantics of this function are explained by the following TTCN-3 de
 	{
 		Label:      "decvalue_unichar(...)",
 		InsertText: "decvalue_unichar(${1:encoded_value}, ${2:decoded_value}, ${3:string_serialization}, ${4:decoding_info}, ${5:dynamic_encoding},)$0",
-		Signature:  `decvalue_unichar(inout universal charstring encoded_value, out any decoded_value, in charstring string_serialization:= "UTF-8", in universal charstring decoding_info := "", in universal charstring dynamic_encoding := "") return integer`,
+		Signature: `decvalue_unichar(
+	inout universal charstring encoded_value,
+	out any decoded_value,
+	in charstring string_serialization:= "UTF-8",
+	in universal charstring decoding_info := "",
+	in universal charstring dynamic_encoding := ""
+) return integer`,
 		Documentation: `## (TTCN-3)
 The __decvalue_unichar__ function decodes (part of) a universal charstring into a value. The test system shall
 suppose that a prefix of the universal charstring _encoded_value_ represents an encoded instance of the actual type of
@@ -722,7 +778,12 @@ The semantics of the function can be explained by the following TTCN-3 function:
 	{
 		Label:      "encvalue_o(...)",
 		InsertText: "encvalue_o(${1:inpar}, ${2:encoding_info}, ${3:dynamic_encoding}, ${4:bit_length})$0",
-		Signature:  `encvalue_o(in template (value) any inpar, in universal charstring encoding_info := "", in universal charstring dynamic_encoding := "", out integer bit_length) return octetstring`,
+		Signature: `encvalue_o(
+	in template (value) any inpar,
+	in universal charstring encoding_info := "",
+	in universal charstring dynamic_encoding := "",
+	out integer bit_length
+) return octetstring`,
 		Documentation: `## (TTCN-3)
 The __encvalue_o__ function encodes a value or template into an octetstring. When the actual parameter that is passed
 to _inpar_ is a template, it shall resolve to a specific value (the same restrictions apply as for the argument of the send
@@ -744,10 +805,12 @@ _inpar_).`,
 	{
 		Label:      "decvalue_o(...)",
 		InsertText: "decvalue_o(${1:encoded_value}, ${2:decoded_value}, ${3:decoding_info}, ${4:dynamic_encoding})$0",
-		Signature: `decvalue_o(inout octetstring encoded_value,
-out any decoded_value,
-in universal charstring decoding_info := "",
-in universal charstring dynamic_encoding := "") return integer`,
+		Signature: `decvalue_o(
+    inout octetstring encoded_value,
+    out any decoded_value,
+    in universal charstring decoding_info := "",
+    in universal charstring dynamic_encoding := ""
+) return integer`,
 		Documentation: `## (TTCN-3)
 The __decvalue_o__ function decodes an octetstring into a value. The test system shall suppose that the octetstring
 _encoded_value_ represents an encoded instance of the actual type of _decoded_value_. The optional
@@ -774,7 +837,9 @@ enough octets.
 	{
 		Label:      "get_stringencoding(...)",
 		InsertText: "get_stringencoding(${1:encoded_value})$0",
-		Signature:  "get_stringencoding(in octettstring encoded_value) return octettstring",
+		Signature: `get_stringencoding(
+	in octettstring encoded_value
+) return octettstring`,
 		Documentation: `## (TTCN-3)
 The __get_stringencoding__ function analyses the encoded_value and returns the UCS encoding scheme according to
 clause 10 of ISO/IEC 10646 [2] (see also clause 27.5 of the TTCN-3 core language specification). The identified encoding scheme, or the
@@ -795,7 +860,9 @@ Example:
 	{
 		Label:      "remove_bom(...)",
 		InsertText: "remove_bom(${1:encoded_value})$0",
-		Signature:  "remove_bom(in octettstring encoded_value) return octettstring",
+		Signature: `remove_bom(
+	in octettstring encoded_value
+) return octettstring`,
 		Documentation: `## (TTCN-3)
 The __remove_bom__ function removes the optional FEFF ZERO WIDTH NO-BREAK SPACE sequence that may be
 present at the beginning of a stream of serialized (encoded) universal character strings to indicate the order of the octets
@@ -845,7 +912,9 @@ empty string.`,
 	{
 		Label:      "hostid(...)",
 		InsertText: "hostid($1)$0",
-		Signature:  "hostid(in charstring idkind := \"Ipv4orIPv6\") return charstring",
+		Signature: `hostid(
+	in charstring idkind := "Ipv4orIPv6"
+) return charstring`,
 		Documentation: "## (TTCN-3)\nThe __hostid__ function shall return the host id of the test component or module control executing the hostid function	in form of a character string. The in parameter idkind allows to specify the expected id format to be returned.	Predefined _idkind_ values are:\n* \"Ipv4orIPv6\": The contents of the returned character string is an Ipv4 address. If no Ipv4 address, but an	Ipv6 address is available, a character string representation of the Ipv6 address is returned.\n* \"Ipv4\": The contents of the returned character string shall be an Ipv4 address.\n* \"Ipv6\": The contents of the returned characterstring shall be an Ipv6 address.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat}}
