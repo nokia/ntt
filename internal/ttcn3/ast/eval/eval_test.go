@@ -126,6 +126,9 @@ func TestErrors(t *testing.T) {
 		{"1&1", "unknown operator: integer & integer"},
 		{`"a"+"b"`, "unknown operator: charstring + charstring"},
 		{"x", "identifier not found: x"},
+		{"goto L10", "goto statement not implemented"},
+		{"break", "break or continue statements not allowed outside loops"},
+		{"continue", "break or continue statements not allowed outside loops"},
 	}
 
 	for _, tt := range tests {
@@ -193,11 +196,16 @@ func TestLoop(t *testing.T) {
 		input    string
 		expected int64
 	}{
-		{"while(false){1}; 2", 2},
+		{"var integer i := 2; while(false){i:=1};i", 2},
 		{"var integer i := 0; while (i<3) {i := i + 1}; i", 3},
 		{"var integer i := 1; do { i := 4 } while (false); i", 4},
 		{"var integer i; for (i := 0; i < 3; i := i + 1) {}; i", 3},
 		{"var integer x; for (var integer i := 0; i < 3; i := i + 1) {x:=i}; x", 2},
+		{"var integer i := 5; while(true) { break; i := 2}; i", 5},
+		{"var integer i := 1; while(true) { while(true) { break; i := 2} i:= 6; break}; i", 6},
+		{"var integer x := 7; for (var integer i := 0; i< 3; i:= i + 1) {continue; x:=i}; x", 7},
+		{"var integer x := 9; do { continue } while(false); x", 9},
+		{"var integer i; for ( i:= 0; true; i := i + 1) {break}; i", 0},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
