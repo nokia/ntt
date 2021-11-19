@@ -13,6 +13,10 @@ func Eval(n ast.Node, env *runtime.Env) runtime.Object {
 }
 
 func eval(n ast.Node, env *runtime.Env) runtime.Object {
+	if n == nil {
+		return nil
+	}
+
 	switch n := n.(type) {
 	case *ast.ModuleDef:
 		return eval(n.Def, env)
@@ -62,12 +66,7 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 		return runtime.Errorf("identifier not found: %s", name)
 
 	case *ast.CompositeLiteral:
-		objs := evalExprList(n.List, env)
-		if len(objs) == 1 && runtime.IsError(objs[0]) {
-			return objs[0]
-		}
-
-		return &runtime.List{Elements: objs}
+		return evalComposite(n, env)
 
 	case *ast.ValueLiteral:
 		return evalLiteral(n, env)
@@ -95,6 +94,10 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 				return runtime.Undefined
 			}
 			return list.Elements[i]
+		case left.Type() == runtime.MAP:
+			m := left.(*runtime.Map)
+			val, _ := m.Get(index)
+			return val
 		}
 		return runtime.Errorf("index operator not supported: %s", left.Type())
 
@@ -271,6 +274,68 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 		return b
 	}
 	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
+}
+
+func evalComposite(n *ast.CompositeLiteral, env *runtime.Env) runtime.Object {
+	// An empty composite literal will evaluate as List.
+	if len(n.List) == 0 {
+		return evalValueList(n.List, env)
+	}
+
+	// The first element tells us, if we expect a value list or an assignment list.
+	if first, ok := n.List[0].(*ast.BinaryExpr); ok && first.Op.Kind == token.ASSIGN {
+		return evalAssignmentList(n.List, env)
+	}
+
+	return evalValueList(n.List, env)
+}
+
+func evalValueList(s []ast.Expr, env *runtime.Env) runtime.Object {
+	objs := evalExprList(s, env)
+	if len(objs) == 1 && runtime.IsError(objs[0]) {
+		return objs[0]
+	}
+	return &runtime.List{Elements: objs}
+}
+
+func evalAssignmentList(exprs []ast.Expr, env *runtime.Env) runtime.Object {
+	m := runtime.NewMap()
+
+	for _, expr := range exprs {
+
+		n, ok := expr.(*ast.BinaryExpr)
+		if !ok || n.Op.Kind != token.ASSIGN {
+			return runtime.Errorf("missing key/value. got=%T", n)
+		}
+
+		val := eval(n.Y, env)
+		if runtime.IsError(val) {
+			return val
+		}
+
+		key := evalKeyExpr(n.X, env)
+		if runtime.IsError(key) {
+			return key
+		}
+
+		if ret := m.Set(key, val); runtime.IsError(ret) {
+			return ret
+		}
+
+	}
+	return m
+}
+
+func evalKeyExpr(n ast.Expr, env *runtime.Env) runtime.Object {
+	switch n := n.(type) {
+	case *ast.Ident:
+		return eval(n, env)
+	case *ast.IndexExpr:
+		if n.X == nil {
+			return eval(n.Index, env)
+		}
+	}
+	return runtime.Errorf("syntax error. Expecting a key expression. got=%T", n)
 }
 
 func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
