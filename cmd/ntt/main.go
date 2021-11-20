@@ -20,6 +20,7 @@ import (
 	"github.com/nokia/ntt/internal/cmds/list"
 	"github.com/nokia/ntt/internal/cmds/locate_file"
 	"github.com/nokia/ntt/internal/cmds/report"
+	"github.com/nokia/ntt/internal/cmds/run"
 	"github.com/nokia/ntt/internal/cmds/tags"
 )
 
@@ -98,6 +99,9 @@ func init() {
 	rootCmd.AddCommand(list.Command)
 	rootCmd.AddCommand(tags.Command)
 	rootCmd.AddCommand(report.Command)
+	if _, ok := os.LookupEnv("NTT_ENABLE_REPL"); ok {
+		rootCmd.AddCommand(run.Command)
+	}
 
 }
 
