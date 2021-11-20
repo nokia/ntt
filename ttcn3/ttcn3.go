@@ -26,7 +26,16 @@ var (
 type Tree struct {
 	fset *loc.FileSet
 	mods []*ast.Module
-	err  error
+	Err  error
+}
+
+// Modules returns the list of modules in the syntax tree.
+func (t *Tree) Modules() ast.NodeList {
+	nodes := make(ast.NodeList, len(t.mods))
+	for i, m := range t.mods {
+		nodes[i] = m
+	}
+	return nodes
 }
 
 // ParseFile parses a file and returns a syntax tree.
@@ -35,7 +44,7 @@ func ParseFile(path string) *Tree {
 	f.Handle = cache.Bind(f.ID(), func(ctx context.Context) interface{} {
 		b, err := f.Bytes()
 		if err != nil {
-			return &Tree{err: err}
+			return &Tree{Err: err}
 		}
 
 		parseLimit <- struct{}{}
@@ -43,7 +52,7 @@ func ParseFile(path string) *Tree {
 
 		fset := loc.NewFileSet()
 		mods, err := parser.ParseModules(fset, path, b, parser.AllErrors)
-		return &Tree{fset: fset, mods: mods, err: err}
+		return &Tree{fset: fset, mods: mods, Err: err}
 	})
 
 	return f.Handle.Get(context.TODO()).(*Tree)
