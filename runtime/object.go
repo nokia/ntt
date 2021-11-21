@@ -35,6 +35,7 @@ const (
 	BITSTRING    ObjectType = "bitstring"
 	FUNCTION     ObjectType = "function"
 	LIST         ObjectType = "list"
+	RECORD       ObjectType = "record"
 	MAP          ObjectType = "map"
 	BUILTIN_OBJ  ObjectType = "builtin function"
 	VERDICT      ObjectType = "verdict"
@@ -290,7 +291,7 @@ func (l *List) Equal(obj Object) bool {
 type Function struct {
 	Params *ast.FormalPars
 	Body   *ast.BlockStmt
-	Env    *Env
+	Env    Scope
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION }
@@ -373,11 +374,6 @@ func (b *Builtin) Equal(obj Object) bool {
 	return false
 }
 
-// Map is a map of objects.
-type Map struct {
-	pairs map[hashKey][]pair
-}
-
 type hashable interface {
 	hashKey() hashKey
 }
@@ -390,6 +386,11 @@ type hashKey struct {
 type pair struct {
 	Key   Object
 	Value Object
+}
+
+// Map is a map of objects.
+type Map struct {
+	pairs map[hashKey][]pair
 }
 
 // Get returns the value for the given key.
@@ -463,6 +464,61 @@ func (m *Map) Equal(obj Object) bool {
 
 func NewMap() *Map {
 	return &Map{pairs: make(map[hashKey][]pair)}
+}
+
+// TODO(5nord) For simplicity we reuse the Map implementation. We should implement proper record semantics later.
+type Record struct {
+	fields map[string]Object
+}
+
+func (r *Record) Get(name string) (Object, bool) {
+	val, ok := r.fields[name]
+	return val, ok
+}
+
+func (r *Record) Set(name string, val Object) Object {
+	r.fields[name] = val
+	return nil
+}
+
+func (r *Record) Type() ObjectType { return RECORD }
+func (r *Record) Inspect() string {
+	var buf bytes.Buffer
+	fields := []string{}
+	for key, val := range r.fields {
+		fields = append(fields, fmt.Sprintf("%s := %s", key, val.Inspect()))
+	}
+	buf.WriteString("{")
+	buf.WriteString(strings.Join(fields, ", "))
+	buf.WriteString("}")
+
+	return buf.String()
+}
+
+func (r *Record) Equal(obj Object) bool {
+	other, ok := obj.(*Record)
+	if !ok {
+		return false
+	}
+	if len(r.fields) != len(other.fields) {
+		return false
+	}
+
+	for k, a := range r.fields {
+		b, ok := other.fields[k]
+		if !ok {
+			return false
+		}
+		if !a.Equal(b) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func NewRecord() *Record {
+	return &Record{fields: make(map[string]Object)}
 }
 
 // EqualObjects compares two Object slices for equality.

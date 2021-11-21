@@ -310,6 +310,7 @@ func TestIndexExpr(t *testing.T) {
 		{"var integer a[3] := {1, 1+1, 3}; var integer i := 2; a[i]", 3},
 		{"var integer x := {2,4,8}[1]; x", 4},
 		{`var integer m := { ["foo"] := 23, [ 1+2 ] := 5}; m["foo"] + m[3]`, 28},
+		{`var integer r := { x := 2, y := 3}; r.x+r.y`, 5},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)

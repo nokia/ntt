@@ -8,11 +8,11 @@ import (
 	"github.com/nokia/ntt/runtime"
 )
 
-func Eval(n ast.Node, env *runtime.Env) runtime.Object {
+func Eval(n ast.Node, env runtime.Scope) runtime.Object {
 	return unwrap(eval(n, env))
 }
 
-func eval(n ast.Node, env *runtime.Env) runtime.Object {
+func eval(n ast.Node, env runtime.Scope) runtime.Object {
 	if n == nil {
 		return nil
 	}
@@ -77,11 +77,25 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 	case *ast.BinaryExpr:
 		return evalBinary(n, env)
 
+	case *ast.SelectorExpr:
+		left := eval(n.X, env)
+		if runtime.IsError(left) {
+			return left
+		}
+
+		env, ok := left.(runtime.Scope)
+		if !ok {
+			return runtime.Errorf("%s is not allowed for %s", ".", left.Type())
+		}
+
+		return eval(n.Sel, env)
+
 	case *ast.IndexExpr:
 		left := eval(n.X, env)
 		if runtime.IsError(left) {
 			return left
 		}
+
 		index := eval(n.Index, env)
 		if runtime.IsError(index) {
 			return index
@@ -255,7 +269,7 @@ func eval(n ast.Node, env *runtime.Env) runtime.Object {
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
 }
 
-func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
+func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 	switch n.Tok.Kind {
 	case token.INT:
 		return runtime.NewInt(n.Tok.Lit)
@@ -291,7 +305,7 @@ func evalLiteral(n *ast.ValueLiteral, env *runtime.Env) runtime.Object {
 	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
 }
 
-func evalComposite(n *ast.CompositeLiteral, env *runtime.Env) runtime.Object {
+func evalComposite(n *ast.CompositeLiteral, env runtime.Scope) runtime.Object {
 	// An empty composite literal will evaluate as List.
 	if len(n.List) == 0 {
 		return evalValueList(n.List, env)
@@ -299,13 +313,17 @@ func evalComposite(n *ast.CompositeLiteral, env *runtime.Env) runtime.Object {
 
 	// The first element tells us, if we expect a value list or an assignment list.
 	if first, ok := n.List[0].(*ast.BinaryExpr); ok && first.Op.Kind == token.ASSIGN {
-		return evalAssignmentList(n.List, env)
+		if _, ok := first.X.(*ast.Ident); ok {
+			return evalRecordAssignmentList(n.List, env)
+		} else {
+			return evalMapAssignmentList(n.List, env)
+		}
 	}
 
 	return evalValueList(n.List, env)
 }
 
-func evalValueList(s []ast.Expr, env *runtime.Env) runtime.Object {
+func evalValueList(s []ast.Expr, env runtime.Scope) runtime.Object {
 	objs := evalExprList(s, env)
 	if len(objs) == 1 && runtime.IsError(objs[0]) {
 		return objs[0]
@@ -313,7 +331,7 @@ func evalValueList(s []ast.Expr, env *runtime.Env) runtime.Object {
 	return &runtime.List{Elements: objs}
 }
 
-func evalAssignmentList(exprs []ast.Expr, env *runtime.Env) runtime.Object {
+func evalMapAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {
 	m := runtime.NewMap()
 
 	for _, expr := range exprs {
@@ -341,10 +359,8 @@ func evalAssignmentList(exprs []ast.Expr, env *runtime.Env) runtime.Object {
 	return m
 }
 
-func evalKeyExpr(n ast.Expr, env *runtime.Env) runtime.Object {
+func evalKeyExpr(n ast.Expr, env runtime.Scope) runtime.Object {
 	switch n := n.(type) {
-	case *ast.Ident:
-		return eval(n, env)
 	case *ast.IndexExpr:
 		if n.X == nil {
 			return eval(n.Index, env)
@@ -353,7 +369,30 @@ func evalKeyExpr(n ast.Expr, env *runtime.Env) runtime.Object {
 	return runtime.Errorf("syntax error. Expecting a key expression. got=%T", n)
 }
 
-func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
+func evalRecordAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {
+	r := runtime.NewRecord()
+
+	for _, expr := range exprs {
+
+		n, ok := expr.(*ast.BinaryExpr)
+		if !ok || n.Op.Kind != token.ASSIGN {
+			return runtime.Errorf("missing key/value. got=%T", n)
+		}
+
+		val := eval(n.Y, env)
+		if runtime.IsError(val) {
+			return val
+		}
+
+		if ret := r.Set(n.X.(*ast.Ident).String(), val); runtime.IsError(ret) {
+			return ret
+		}
+
+	}
+	return r
+}
+
+func evalUnary(n *ast.UnaryExpr, env runtime.Scope) runtime.Object {
 	val := eval(n.X, env)
 	if runtime.IsError(val) {
 		return val
@@ -388,7 +427,7 @@ func evalUnary(n *ast.UnaryExpr, env *runtime.Env) runtime.Object {
 	return runtime.Errorf("unknown operator: %s%s", n.Op.Kind, val.Inspect())
 }
 
-func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
+func evalBinary(n *ast.BinaryExpr, env runtime.Scope) runtime.Object {
 	op := n.Op.Kind
 	x := eval(n.X, env)
 	if runtime.IsError(x) {
@@ -430,7 +469,7 @@ func evalBinary(n *ast.BinaryExpr, env *runtime.Env) runtime.Object {
 	return runtime.Errorf("unknown operator: %s %s %s", x.Inspect(), op, y.Inspect())
 }
 
-func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env) runtime.Object {
+func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env runtime.Scope) runtime.Object {
 	switch op {
 	case token.ADD:
 		return runtime.Int{Int: new(big.Int).Add(x.Int, y.Int)}
@@ -476,7 +515,7 @@ func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env *runtime.Env
 	return runtime.Errorf("unknown operator: integer %s integer", op)
 }
 
-func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env *runtime.Env) runtime.Object {
+func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env runtime.Scope) runtime.Object {
 	switch op {
 	case token.ADD:
 		return runtime.Float(x + y)
@@ -516,7 +555,7 @@ func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env *runti
 	return runtime.Errorf("unknown operator: float %s float", op)
 }
 
-func evalBoolBinary(x bool, y bool, op token.Kind, env *runtime.Env) runtime.Object {
+func evalBoolBinary(x bool, y bool, op token.Kind, env runtime.Scope) runtime.Object {
 	switch op {
 	case token.AND:
 		return runtime.NewBool(x && y)
@@ -529,7 +568,7 @@ func evalBoolBinary(x bool, y bool, op token.Kind, env *runtime.Env) runtime.Obj
 	return runtime.Errorf("unknown operator: boolean %s boolean", op)
 }
 
-func evalStringBinary(x string, y string, op token.Kind, env *runtime.Env) runtime.Object {
+func evalStringBinary(x string, y string, op token.Kind, env runtime.Scope) runtime.Object {
 	if op == token.CONCAT {
 		return &runtime.String{Value: x + y}
 	}
@@ -537,7 +576,7 @@ func evalStringBinary(x string, y string, op token.Kind, env *runtime.Env) runti
 
 }
 
-func evalBitstringBinary(x *runtime.Bitstring, y *runtime.Bitstring, op token.Kind, env *runtime.Env) runtime.Object {
+func evalBitstringBinary(x *runtime.Bitstring, y *runtime.Bitstring, op token.Kind, env runtime.Scope) runtime.Object {
 	switch op {
 	case token.AND4B:
 		return &runtime.Bitstring{Value: new(big.Int).And(x.Value, y.Value), Unit: x.Unit}
@@ -552,7 +591,7 @@ func evalBitstringBinary(x *runtime.Bitstring, y *runtime.Bitstring, op token.Ki
 	return runtime.Errorf("unknown operator: bitstring %s bitstring", op)
 }
 
-func evalBoolExpr(n ast.Expr, env *runtime.Env) (bool, runtime.Object) {
+func evalBoolExpr(n ast.Expr, env runtime.Scope) (bool, runtime.Object) {
 	val := eval(n, env)
 	if runtime.IsError(val) {
 		return false, val
@@ -566,7 +605,7 @@ func evalBoolExpr(n ast.Expr, env *runtime.Env) (bool, runtime.Object) {
 
 }
 
-func evalExprList(exprs []ast.Expr, env *runtime.Env) []runtime.Object {
+func evalExprList(exprs []ast.Expr, env runtime.Scope) []runtime.Object {
 	var result []runtime.Object
 	for _, e := range exprs {
 		val := eval(e, env)
@@ -578,7 +617,7 @@ func evalExprList(exprs []ast.Expr, env *runtime.Env) []runtime.Object {
 	return result
 }
 
-func evalAssign(lhs ast.Expr, rhs ast.Expr, env *runtime.Env) runtime.Object {
+func evalAssign(lhs ast.Expr, rhs ast.Expr, env runtime.Scope) runtime.Object {
 	val := eval(rhs, env)
 	if runtime.IsError(val) {
 		return val
