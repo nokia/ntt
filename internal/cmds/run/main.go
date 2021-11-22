@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/nokia/ntt/internal/ttcn3/types"
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3"
@@ -23,6 +24,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 	files, err := parse(args...)
 	if err != nil {
+		return err
+	}
+
+	if err := check(files...); err != nil {
 		return err
 	}
 
@@ -57,6 +62,20 @@ func parse(files ...string) ([]*ttcn3.Tree, error) {
 	}
 
 	return result, err
+}
+
+func check(files ...*ttcn3.Tree) error {
+	errs := &multierror.Error{}
+	info := &types.Info{
+		Error: func(err error) {
+			errs = multierror.Append(errs, err)
+		},
+	}
+	for _, file := range files {
+		info.Fset = file.Fset
+		info.CollectInfo(file.Modules())
+	}
+	return errs.ErrorOrNil()
 }
 
 // load TTCN-3 files by executing them.

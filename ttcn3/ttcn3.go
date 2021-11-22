@@ -24,7 +24,7 @@ var (
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
-	fset *loc.FileSet
+	Fset *loc.FileSet
 	mods []*ast.Module
 	Err  error
 }
@@ -52,7 +52,7 @@ func ParseFile(path string) *Tree {
 
 		fset := loc.NewFileSet()
 		mods, err := parser.ParseModules(fset, path, b, parser.AllErrors)
-		return &Tree{fset: fset, mods: mods, Err: err}
+		return &Tree{Fset: fset, mods: mods, Err: err}
 	})
 
 	return f.Handle.Get(context.TODO()).(*Tree)
