@@ -4,7 +4,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
-func (info *Info) Define(m *ast.Module) {
+func (info *Info) Define(n ast.Node) {
 	info.currScope = nil
 	if info.Scopes == nil {
 		info.Scopes = make(map[*ast.Ident]Scope)
@@ -12,7 +12,7 @@ func (info *Info) Define(m *ast.Module) {
 	if info.Modules == nil {
 		info.Modules = make(map[string]*Module)
 	}
-	info.descent(m)
+	info.descent(n)
 }
 
 // descent inserts all declarations into their enclosing scope. It also tracks
@@ -20,6 +20,11 @@ func (info *Info) Define(m *ast.Module) {
 func (info *Info) descent(n ast.Node) {
 	ast.Apply(n, func(c *ast.Cursor) bool {
 		switch n := c.Node().(type) {
+		case ast.NodeList:
+			for _, n := range n {
+				info.descent(n)
+			}
+			return true
 
 		case *ast.Ident:
 			info.Scopes[n] = info.currScope
