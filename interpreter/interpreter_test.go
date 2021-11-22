@@ -1,11 +1,11 @@
-package eval_test
+package interpreter_test
 
 import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast/eval"
 	"github.com/nokia/ntt/internal/ttcn3/parser"
+	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 )
 
@@ -380,7 +380,7 @@ func testEval(t *testing.T, input string) runtime.Object {
 	if err != nil {
 		t.Fatalf("%s\n %s", input, err.Error())
 	}
-	return eval.Eval(nodes, runtime.NewEnv(nil))
+	return interpreter.Eval(nodes, runtime.NewEnv(nil))
 }
 
 func testInt(t *testing.T, obj runtime.Object, expected int64) bool {

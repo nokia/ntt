@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast/eval"
 	"github.com/nokia/ntt/internal/ttcn3/parser"
+	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 )
 
@@ -28,7 +28,7 @@ func repl() error {
 			fmt.Println(err.Error())
 			continue
 		}
-		if result := eval.Eval(root, env); result != nil {
+		if result := interpreter.Eval(root, env); result != nil {
 			fmt.Println(result.Inspect())
 		}
 	}

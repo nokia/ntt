@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/nokia/ntt/internal/ttcn3/ast/eval"
+	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
@@ -63,7 +63,7 @@ func parse(files ...string) ([]*ttcn3.Tree, error) {
 func load(env *runtime.Env, files ...*ttcn3.Tree) error {
 	var err error
 	for _, file := range files {
-		result := eval.Eval(file.Modules(), env)
+		result := interpreter.Eval(file.Modules(), env)
 		if rerr, ok := result.(*runtime.Error); ok {
 			err = multierror.Append(err, rerr)
 		}
