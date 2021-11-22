@@ -37,6 +37,14 @@ func (info *Info) error(err error) {
 	info.Error(err)
 }
 
+func (info *Info) invalidTypeError(n ast.Node, actual Type, expected Type) {
+	info.error(&InvalidTypeError{
+		Pos:      info.Fset.Position(n.Pos()),
+		Actual:   actual,
+		Expected: expected,
+	})
+}
+
 func (info *Info) unknownIdentifierError(n ast.Node) {
 	info.error(&UnknownIdentifierError{
 		Pos:  info.Fset.Position(n.Pos()),

@@ -20,6 +20,8 @@ func (info *Info) exit(c *ast.Cursor) bool {
 	switch n := c.Node().(type) {
 	case *ast.ValueLiteral:
 		info.collectLiteral(n)
+	case *ast.UnaryExpr:
+		info.collectUnaryExpr(n)
 	}
 
 	return true
@@ -53,5 +55,23 @@ func (info *Info) collectLiteral(n *ast.ValueLiteral) {
 
 	default:
 		panic("unhandled literal")
+	}
+}
+
+func (info *Info) collectUnaryExpr(n *ast.UnaryExpr) {
+	switch n.Op.Kind {
+	case token.NOT:
+		info.assertType(n.X, Typ[Boolean])
+
+	case token.ADD, token.SUB:
+		info.assertType(n.X, Typ[Integer])
+	}
+
+	info.Types[n] = info.Types[n.X]
+}
+
+func (info *Info) assertType(n ast.Expr, expected Type) {
+	if actual := info.Types[n]; actual != expected {
+		info.invalidTypeError(n, actual, expected)
 	}
 }
