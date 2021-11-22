@@ -868,6 +868,96 @@ func TestInsideTcBodyCtrlSpc(t *testing.T) {
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
+func TestInsideTcBodyInsideIf(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2(integer pi) return boolean {}
+		testcase tc1() {
+			if(f/**/)
+		};
+	}`)
+
+	list := completionAt(t, suite, 107)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBodyInsideIf_Module_0.f1()"},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideTcBodyInsideIf_Module_0.f2()"}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestInsideTcBodyInsideExpr(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2(integer pi) return boolean {}
+		testcase tc1() {
+			var integer i := 2 * f//
+		};
+	}`)
+
+	list := completionAt(t, suite, 125)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBodyInsideExpr_Module_0.f1()"},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideTcBodyInsideExpr_Module_0.f2()"}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestInsideTcBodyInsideSend(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2(integer pi) return boolean {}
+		testcase tc1() {
+			p.send(f/**/)
+		};
+	}`)
+
+	list := completionAt(t, suite, 111)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBodyInsideSend_Module_0.f1()"},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideTcBodyInsideSend_Module_0.f2()"}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestInsideTcBodyAsFuncParam(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2(integer pi) return boolean {}
+		testcase tc1() {
+			f1(f//);
+		};
+	}`)
+
+	list := completionAt(t, suite, 107)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBodyAsFuncParam_Module_0.f1()"},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideTcBodyAsFuncParam_Module_0.f2()"}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestInsideTcBodyInsideStart(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2(integer pi) runs on C1 {}
+		function f3(integer pi) return boolean {}
+		function f4(integer pi) return float {}
+		testcase tc1() {
+			// allow only funcs with runs on(behaviour)
+			// or return value (accepts float for timer)
+			ptcOrTimer.start(f/**/)
+		};
+	}`)
+
+	list := completionAt(t, suite, 298)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideTcBodyInsideStart_Module_0.f2()"},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", Detail: "TestInsideTcBodyInsideStart_Module_0.f3()"},
+		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", Detail: "TestInsideTcBodyInsideStart_Module_0.f4()"}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
 // TODO: fixing this issue requires more effort.
 /*
 func TestSyntaxErrorProvokingInvalidPos(t *testing.T) {
