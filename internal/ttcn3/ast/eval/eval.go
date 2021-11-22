@@ -18,8 +18,27 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 	}
 
 	switch n := n.(type) {
+	case *ast.Module:
+		for _, d := range n.Defs {
+			if ret := eval(d, env); runtime.IsError(ret) {
+				return ret
+			}
+		}
+		return nil
+
+	case *ast.GroupDecl:
+		for _, d := range n.Defs {
+			if ret := eval(d, env); runtime.IsError(ret) {
+				return ret
+			}
+		}
+		return nil
+
 	case *ast.ModuleDef:
 		return eval(n.Def, env)
+
+	case *ast.ControlPart:
+		return eval(n.Body, env)
 
 	case *ast.DeclStmt:
 		return eval(n.Decl, env)
