@@ -547,6 +547,10 @@ func Walk(v Visitor, node Node) {
 		walkNodeList(v, n.List)
 		Walk(v, n.Value)
 
+	case NodeList:
+		for _, n := range n {
+			Walk(v, n)
+		}
 	default:
 		panic(fmt.Sprintf("ast.Walk: unexpected node type %T", n))
 	}

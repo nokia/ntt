@@ -509,6 +509,10 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 	case *WithStmt:
 		a.applyList(n, "List")
 		a.apply(n, "Value", nil, n.Value)
+	case NodeList:
+		for i := range n {
+			a.apply(n, "Node", nil, n[i])
+		}
 	default:
 		panic(fmt.Sprintf("Apply: unexpected node type %T", n))
 	}
