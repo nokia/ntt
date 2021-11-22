@@ -33,3 +33,12 @@ type NoFieldError struct {
 func (err *NoFieldError) Error() string {
 	return fmt.Sprintf("type %q has no field or method %q", err.Type, err.Field)
 }
+
+type InvalidTypeError struct {
+	Actual, Expected Type
+	Pos              loc.Position
+}
+
+func (err *InvalidTypeError) Error() string {
+	return fmt.Sprintf("invalid type %q, expected %q", err.Actual, err.Expected)
+}
