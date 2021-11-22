@@ -1,4 +1,4 @@
-package eval
+package interpreter
 
 import (
 	"math/big"
