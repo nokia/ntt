@@ -23,21 +23,17 @@ func (info *Info) enter(c *ast.Cursor) bool {
 func (info *Info) exit(c *ast.Cursor) bool {
 	switch n := c.Node().(type) {
 	case *ast.ValueLiteral:
-		info.collectLiteral(n)
+		t, ok := literalTypes[n.Tok.Kind]
+		if !ok {
+			panic("unhandled literal")
+		}
+		info.Types[n] = t
 
 	case *ast.UnaryExpr:
 		info.Types[n] = info.expressionType(n.Op.Kind, n.X)
 	}
 
 	return true
-}
-
-func (info *Info) collectLiteral(n *ast.ValueLiteral) {
-	if t, ok := literalTypes[n.Tok.Kind]; ok {
-		info.Types[n] = t
-		return
-	}
-	panic("unhandled literal")
 }
 
 // expressionType returns the type of an expression, checking compatibility of
