@@ -931,8 +931,10 @@ func TestInsideTcBodyAsFuncParam(t *testing.T) {
 
 	list := completionAt(t, suite, 107)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideTcBodyAsFuncParam_Module_0.f1()"},
-		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideTcBodyAsFuncParam_Module_0.f2()"}},
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()",
+			Detail: "TestInsideTcBodyAsFuncParam_Module_0.f1()", Documentation: ""},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
+			Detail: "TestInsideTcBodyAsFuncParam_Module_0.f2()", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
