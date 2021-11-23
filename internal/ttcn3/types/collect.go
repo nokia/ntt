@@ -31,6 +31,10 @@ func (info *Info) exit(c *ast.Cursor) bool {
 
 	case *ast.UnaryExpr:
 		info.Types[n] = info.expressionType(n.Op.Kind, n.X)
+
+	case *ast.BinaryExpr:
+		info.Types[n] = info.expressionType(n.Op.Kind, n.X, n.Y)
+
 	}
 
 	return true
