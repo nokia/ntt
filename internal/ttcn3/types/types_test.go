@@ -23,7 +23,7 @@ func TestTypes(t *testing.T) {
 		{"+1", types.Typ[types.Integer]},
 		{"-1", types.Typ[types.Integer]},
 		{"not true", types.Typ[types.Boolean]},
-		{"- true", `invalid type "boolean", expected "integer"`},
+		{"- true", `invalid type "boolean", expected "numerical"`},
 	}
 	for _, tt := range tests {
 		testType(t, tt.input, tt.expected)
@@ -68,7 +68,7 @@ func testType(t *testing.T, input string, expected interface{}) {
 		if errs.ErrorOrNil() != nil {
 			t.Errorf("unexpected error: %s", errs)
 		}
-		if info.Types[actual] != expected {
+		if !types.Compatible(expected, info.Types[actual]) {
 			t.Errorf("expected type %v, got %v", expected, info.Types[actual])
 		}
 
