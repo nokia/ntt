@@ -16,14 +16,32 @@ func TestTypes(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
+		// Literals
 		{"1", types.Typ[types.Integer]},
 		{"1.0", types.Typ[types.Float]},
 		{"true", types.Typ[types.Boolean]},
 		{"false", types.Typ[types.Boolean]},
+
+		// Unary Expressions
 		{"+1", types.Typ[types.Integer]},
 		{"-1", types.Typ[types.Integer]},
 		{"not true", types.Typ[types.Boolean]},
 		{"- true", `invalid type "boolean", expected "numerical"`},
+
+		// Binary Expressions
+		{"1 + 1", types.Typ[types.Integer]},
+		{"1 + 2 + 3", types.Typ[types.Integer]},
+		{"1 - true", `invalid type "boolean", expected "numerical"`},
+
+		// Type promotion
+		{"1 + 2 + 3.0", types.Typ[types.Float]},
+		{"1.0 + 2 + 3", types.Typ[types.Float]},
+
+		// Error propagation
+		{"false and not 0", `invalid type "integer", expected "boolean"`},
+		{"false and not 0", types.Typ[types.Invalid]},
+		{"1 + 2 * -false", types.Typ[types.Invalid]},
+		{"1 and 1", `invalid type "integer", expected "boolean"`},
 	}
 	for _, tt := range tests {
 		testType(t, tt.input, tt.expected)
@@ -65,8 +83,8 @@ func testType(t *testing.T, input string, expected interface{}) {
 	info.CollectInfo(nodes)
 	switch expected := expected.(type) {
 	case types.Type:
-		if errs.ErrorOrNil() != nil {
-			t.Errorf("unexpected error: %s", errs)
+		if errs.ErrorOrNil() != nil && expected != types.Typ[types.Invalid] {
+			t.Errorf("unexpected error: %s. Input was: %s", errs, input)
 		}
 		if !types.Compatible(expected, info.Types[actual]) {
 			t.Errorf("expected type %v, got %v", expected, info.Types[actual])
