@@ -249,7 +249,26 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
 }
+func newAllBehavioursFromModule(suite *ntt.Suite, kinds []token.Kind, mname string, sortPref string) []protocol.CompletionItem {
 
+	complList := make([]protocol.CompletionItem, 0, 10)
+	var items []*FunctionDetails
+
+	for _, kind := range kinds {
+		items = append(items, getAllBehavioursFromModule(suite, kind, mname)...)
+	}
+	for _, v := range items {
+		insertText := v.Label + "()"
+		if v.HasParameters {
+			insertText = v.Label + "($1)$0"
+		}
+		complList = append(complList, protocol.CompletionItem{Label: v.Label + "()",
+			InsertText: insertText,
+			Kind:       protocol.FunctionCompletion, SortText: sortPref + v.Label,
+			Detail: v.Signature, Documentation: v.Documentation, InsertTextFormat: v.TextFormat})
+	}
+	return complList
+}
 func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, mname string) []protocol.CompletionItem {
 	var sortPref string
 
@@ -257,7 +276,6 @@ func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, mname string) []prot
 		complList := make([]protocol.CompletionItem, 0, len(files)*2)
 
 		for _, f := range files {
-			var items []*FunctionDetails
 			fileName := filepath.Base(f)
 			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
 			if fileName != mname {
@@ -265,19 +283,7 @@ func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, mname string) []prot
 			} else {
 				sortPref = " 1"
 			}
-			for _, kind := range kinds {
-				items = append(items, getAllBehavioursFromModule(suite, kind, fileName)...)
-			}
-			for _, v := range items {
-				insertText := v.Label + "()"
-				if v.HasParameters {
-					insertText = v.Label + "($1)$0"
-				}
-				complList = append(complList, protocol.CompletionItem{Label: v.Label + "()",
-					InsertText: insertText,
-					Kind:       protocol.FunctionCompletion, SortText: sortPref + v.Label,
-					Detail: v.Signature, Documentation: v.Documentation, InsertTextFormat: v.TextFormat})
-			}
+			complList = append(complList, newAllBehavioursFromModule(suite, kinds, fileName, sortPref)...)
 		}
 		return complList
 	}
@@ -491,8 +497,17 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 		return make([]protocol.CompletionItem, 0)
 	}
 	if isBehaviourBodyScope(nodes) {
-		list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
-		list = append(list, newPredefinedFunctions()...)
+
+		switch n := nodes[l-2].(type) {
+		case *ast.SelectorExpr:
+			if n.X != nil {
+				list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, n.X.LastTok().String(), " 1")
+			}
+		default:
+			list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
+			list = append(list, newPredefinedFunctions()...)
+			list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+		}
 	} else {
 		switch nodet := nodes[l-1].(type) {
 		case *ast.Ident:
