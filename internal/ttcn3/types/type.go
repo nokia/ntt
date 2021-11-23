@@ -9,6 +9,39 @@ type Type interface {
 	String() string
 }
 
+func Compatible(a, b Type) bool {
+	switch {
+	case isAnyOf(Typ[Invalid], a, b):
+		// Invalid types are compatible with all types. This is necessary to
+		// propagate errors and prevent spurious type mismatches.
+		return true
+
+	case isAnyOf(Typ[Numerical], a, b):
+		return isAnyOf(a, Typ[Integer], Typ[Float]) || isAnyOf(b, Typ[Integer], Typ[Float])
+
+	case isAnyOf(Typ[String], a, b):
+		return isAnyOf(a, Typ[Charstring], Typ[UniversalCharstring], Typ[Bitstring], Typ[Hexstring], Typ[Octetstring]) ||
+			isAnyOf(b, Typ[Charstring], Typ[UniversalCharstring], Typ[Bitstring], Typ[Hexstring], Typ[Octetstring])
+	}
+
+	//
+	// If the root types are not the same, they are not compatible.
+	if a.Underlying() != b.Underlying() {
+		return false
+	}
+
+	return true
+}
+
+func isAnyOf(t Type, ts ...Type) bool {
+	for _, t2 := range ts {
+		if t == t2 {
+			return true
+		}
+	}
+	return false
+}
+
 type Kind int
 
 const (
