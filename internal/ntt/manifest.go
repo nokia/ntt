@@ -355,7 +355,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		return nil, nil
 	}
 
-	f := fs.Open(filepath.Join(fs.Path(suite.Root()), "package.yml"))
+	f := fs.Open(fs.Path(suite.Root()) + "/package.yml")
 	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
