@@ -28,6 +28,15 @@ type FunctionDetails struct {
 	TextFormat    protocol.InsertTextFormat
 }
 
+type BehavAttrib int
+
+// The list of behaviours.
+const (
+	NONE        BehavAttrib = iota //neither return nor runs on spec
+	WITH_RETURN                    // only retrurn spec
+	WITH_RUNSON                    // only runs on spec
+)
+
 var (
 	moduleDefKw               = []string{"import from ", "type ", "const ", "modulepar ", "template ", "function ", "external function ", "altstep ", "testcase ", "control ", "signature "}
 	importAfterModName        = []string{"all [except {}];", "{}"}
@@ -104,7 +113,7 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 
 					list = append(list, &FunctionDetails{
 						Label:         node.Name.String(),
-						HasRunsOn:     (node.Mtc != nil),
+						HasRunsOn:     (node.RunsOn != nil),
 						HasReturn:     (node.Return != nil),
 						Signature:     sig.String(),
 						Documentation: tok.Comments(),
@@ -249,7 +258,7 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
 }
-func newAllBehavioursFromModule(suite *ntt.Suite, kinds []token.Kind, mname string, sortPref string) []protocol.CompletionItem {
+func newAllBehavioursFromModule(suite *ntt.Suite, kinds []token.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
 
 	complList := make([]protocol.CompletionItem, 0, 10)
 	var items []*FunctionDetails
@@ -262,14 +271,27 @@ func newAllBehavioursFromModule(suite *ntt.Suite, kinds []token.Kind, mname stri
 		if v.HasParameters {
 			insertText = v.Label + "($1)$0"
 		}
-		complList = append(complList, protocol.CompletionItem{Label: v.Label + "()",
-			InsertText: insertText,
-			Kind:       protocol.FunctionCompletion, SortText: sortPref + v.Label,
-			Detail: v.Signature, Documentation: v.Documentation, InsertTextFormat: v.TextFormat})
+		isSelected := false
+		for _, attrib := range attribs {
+			switch attrib {
+			case NONE:
+				isSelected = isSelected || !(v.HasReturn || v.HasRunsOn)
+			case WITH_RETURN:
+				isSelected = isSelected || v.HasReturn
+			case WITH_RUNSON:
+				isSelected = isSelected || v.HasRunsOn
+			}
+		}
+		if isSelected {
+			complList = append(complList, protocol.CompletionItem{Label: v.Label + "()",
+				InsertText: insertText,
+				Kind:       protocol.FunctionCompletion, SortText: sortPref + v.Label,
+				Detail: v.Signature, Documentation: v.Documentation, InsertTextFormat: v.TextFormat})
+		}
 	}
 	return complList
 }
-func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, mname string) []protocol.CompletionItem {
+func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
 	var sortPref string
 
 	if files := project.FindAllFiles(suite); len(files) > 0 {
@@ -283,7 +305,7 @@ func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, mname string) []prot
 			} else {
 				sortPref = " 1"
 			}
-			complList = append(complList, newAllBehavioursFromModule(suite, kinds, fileName, sortPref)...)
+			complList = append(complList, newAllBehavioursFromModule(suite, kinds, attribs, fileName, sortPref)...)
 		}
 		return complList
 	}
@@ -490,6 +512,33 @@ func isBehaviourBodyScope(nodes []ast.Node) bool {
 	}
 	return false
 }
+
+func isStartId(n ast.Expr) bool {
+	if id, ok := n.(*ast.Ident); ok {
+		return id.Tok.Lit == "start"
+	}
+	return false
+}
+
+func isStartOpArgument(nodes []ast.Node) bool {
+	firstParenExpr := false
+	for i := len(nodes) - 1; i >= 0; i-- {
+		if _, ok := nodes[i].(*ast.ParenExpr); ok {
+			if i >= 1 {
+				if n, ok := nodes[i-1].(*ast.CallExpr); ok {
+					if fun, ok := n.Fun.(*ast.SelectorExpr); ok {
+						return isStartId(fun.Sel)
+					}
+				}
+			}
+			continue
+		}
+		if firstParenExpr {
+
+		}
+	}
+	return false
+}
 func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
@@ -501,12 +550,20 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 		switch n := nodes[l-2].(type) {
 		case *ast.SelectorExpr:
 			if n.X != nil {
-				list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, n.X.LastTok().String(), " 1")
+				list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
+					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
 			}
 		default:
-			list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP}, ownModName)
-			list = append(list, newPredefinedFunctions()...)
-			list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			if isStartOpArgument(nodes) {
+				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+					[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, ownModName)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			} else {
+				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
+					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			}
 		}
 	} else {
 		switch nodet := nodes[l-1].(type) {
