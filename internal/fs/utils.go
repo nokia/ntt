@@ -177,6 +177,7 @@ func Glob(s string) []string {
 
 // Slugify generates a slug from unicode string.
 func Slugify(s string) string {
+	slug.Lowercase = false
 	return strings.ReplaceAll(slug.Make(s), "-", "_")
 }
 
