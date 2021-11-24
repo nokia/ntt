@@ -87,7 +87,11 @@ func (suite *Suite) Name() (string, error) {
 
 	// If there's a root dir, use its name.
 	if root := suite.Root(); root != "" {
-		return filepath.Base(root), nil
+		abs, err := filepath.Abs(root)
+		if err != nil {
+			return "", err
+		}
+		return fs.Slugify(filepath.Base(abs)), nil
 	}
 
 	// As last resort, try to find a name in source files.
@@ -98,7 +102,7 @@ func (suite *Suite) Name() (string, error) {
 		}
 		n = filepath.Base(n)
 		n = strings.TrimSuffix(n, filepath.Ext(n))
-		return n, nil
+		return fs.Slugify(n), nil
 	}
 
 	return "", fmt.Errorf("Could not determine a suite name")
