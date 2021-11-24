@@ -819,10 +819,15 @@ func TestInsideBehavBody(t *testing.T) {
 
 	list := completionAt(t, suite, 63)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", Detail: "TestInsideBehavBody_Module_0.f1()"},
-		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", Detail: "TestInsideBehavBody_Module_0.f2()"},
-		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", Detail: "TestInsideBehavBody_Module_1.f3()"},
-		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", Detail: "TestInsideBehavBody_Module_1.a1()"}},
+		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideBehavBody_Module_0.f1()", Documentation: ""},
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideBehavBody_Module_0.f2()", Documentation: ""},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideBehavBody_Module_1.f3()", Documentation: ""},
+		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "altstep TestInsideBehavBody_Module_1.a1()\n  runs on C0", Documentation: ""},
+		{Label: "TestInsideBehavBody_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestInsideBehavBody_Module_1"}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
@@ -846,7 +851,8 @@ func TestInsideTcBody(t *testing.T) {
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBody_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "altstep TestInsideTcBody_Module_1.a1()\n  runs on C0", Documentation: ""}},
+			Detail: "altstep TestInsideTcBody_Module_1.a1()\n  runs on C0", Documentation: ""},
+		{Label: "TestInsideTcBody_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestInsideTcBody_Module_1"}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
@@ -870,7 +876,8 @@ func TestInsideTcBodyCtrlSpc(t *testing.T) {
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyCtrlSpc_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "altstep TestInsideTcBodyCtrlSpc_Module_1.a1()\n  runs on C0", Documentation: ""}},
+			Detail: "altstep TestInsideTcBodyCtrlSpc_Module_1.a1()\n  runs on C0", Documentation: ""},
+		{Label: "TestInsideTcBodyCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestInsideTcBodyCtrlSpc_Module_1"}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
@@ -887,9 +894,9 @@ func TestInsideTcBodyInsideIf(t *testing.T) {
 	list := completionAt(t, suite, 97)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "TestInsideTcBodyInsideIf_Module_0.f1()", Documentation: ""},
+			Detail: "function TestInsideTcBodyInsideIf_Module_0.f1()", Documentation: ""},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "TestInsideTcBodyInsideIf_Module_0.f2()\n  return boolean", Documentation: ""}},
+			Detail: "function TestInsideTcBodyInsideIf_Module_0.f2()\n  return boolean", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
