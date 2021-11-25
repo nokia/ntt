@@ -893,8 +893,6 @@ func TestInsideTcBodyInsideIf(t *testing.T) {
 
 	list := completionAt(t, suite, 97)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideIf_Module_0.f1()", Documentation: ""},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyInsideIf_Module_0.f2()\n  return boolean", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
@@ -914,8 +912,6 @@ func TestInsideTcBodyInsideExpr(t *testing.T) {
 
 	list := completionAt(t, suite, 159)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideExpr_Module_0.f1()", Documentation: "// f1:\n// function without return value\n"},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyInsideExpr_Module_0.f2()\n  return boolean", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
@@ -933,8 +929,6 @@ func TestInsideTcBodyInsideSend(t *testing.T) {
 
 	list := completionAt(t, suite, 116)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideSend_Module_0.f1()", Documentation: ""},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
 			Detail: "function TestInsideTcBodyInsideSend_Module_0.f2( integer pi := 314)\n  return boolean", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
@@ -952,8 +946,6 @@ func TestInsideTcBodyAsFuncParam(t *testing.T) {
 
 	list := completionAt(t, suite, 107)
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyAsFuncParam_Module_0.f1()", Documentation: ""},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
 			Detail: "function TestInsideTcBodyAsFuncParam_Module_0.f2( integer pi)\n  return boolean", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
@@ -981,6 +973,28 @@ func TestInsideTcBodyInsideStart(t *testing.T) {
 			Detail: "function TestInsideTcBodyInsideStart_Module_0.f3()\n  return boolean", Documentation: ""},
 		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyInsideStart_Module_0.f4()\n  return float", Documentation: ""}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestInsideTcBodyNestedInsideStart(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2() runs on C1 {}
+		function f3() return boolean {}
+		function f4() runs on C1 return boolean {}
+		testcase tc1() {
+			// allow only funcs with return value (accepts float for timer)
+			ptcOrTimer.start(somefunc(f/**/))
+		};
+	}`)
+
+	list := completionAt(t, suite, 262)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyNestedInsideStart_Module_0.f3()\n  return boolean", Documentation: ""},
+		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyNestedInsideStart_Module_0.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
