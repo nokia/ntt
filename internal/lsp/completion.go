@@ -520,11 +520,17 @@ func isStartId(n ast.Expr) bool {
 	return false
 }
 
-func isInsideExpression(nodes []ast.Node) bool {
+func isInsideExpression(nodes []ast.Node, fromModuleDot bool) bool {
 	i := len(nodes)
 	if i > 1 {
 		i--
 		if _, ok := nodes[i].(*ast.Ident); ok {
+			i--
+		}
+		if fromModuleDot {
+			if i == 0 {
+				return false
+			}
 			i--
 		}
 		switch nodes[i].(type) {
@@ -568,8 +574,17 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 		switch n := nodes[l-2].(type) {
 		case *ast.SelectorExpr:
 			if n.X != nil {
-				list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
-					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
+				switch {
+				case isStartOpArgument(nodes):
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
+				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN}, n.X.LastTok().String(), " 1")
+				default:
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
+						[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
+				}
 			}
 		default:
 			switch {
@@ -578,7 +593,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			case isInsideExpression(nodes): // less restrictive than isStartOpArgument
+			case isInsideExpression(nodes, false): // less restrictive than isStartOpArgument
 				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
 					[]BehavAttrib{WITH_RETURN}, ownModName)
 				list = append(list, newPredefinedFunctions()...)

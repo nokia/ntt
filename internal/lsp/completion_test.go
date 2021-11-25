@@ -898,6 +898,30 @@ func TestInsideTcBodyInsideIf(t *testing.T) {
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
+func TestInsideTcBodyModuleDotInsideIf(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		testcase tc1() {
+			if(TestInsideTcBodyModuleDotInsideIf_Module_1.f/**/)
+		};
+	}`, `module TestInsideTcBodyModuleDotInsideIf_Module_1
+	{
+		function f1() {}
+		function f2() return boolean {}
+		function f3() runs on C0 return integer {}
+		function f4() runs on C0 {}
+		altstep a1() runs on C0 {}
+	}`)
+
+	list := completionAt(t, suite, 87)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyModuleDotInsideIf_Module_1.f2()\n  return boolean", Documentation: ""},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyModuleDotInsideIf_Module_1.f3()\n   runs on C0\n  return integer", Documentation: ""}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
 func TestInsideTcBodyInsideExpr(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
@@ -948,6 +972,34 @@ func TestInsideTcBodyAsFuncParam(t *testing.T) {
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
 			Detail: "function TestInsideTcBodyAsFuncParam_Module_0.f2( integer pi)\n  return boolean", Documentation: ""}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestInsideTcBodyModuleDotInsideStart(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		testcase tc1() {
+			// allow only funcs with runs on(behaviour)
+			// or return value (accepts float for timer)
+			ptcOrTimer.start(TestInsideTcBodyModuleDotInsideStart_Module_1.f/**/)
+		};
+	}`, `module TestInsideTcBodyModuleDotInsideStart_Module_1
+	{
+		function f1() {}
+		function f2() return boolean {}
+		function f3() runs on C0 return integer {}
+		function f4() runs on C0 {}
+		altstep a1() runs on C0 {}
+	}`)
+
+	list := completionAt(t, suite, 199)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyModuleDotInsideStart_Module_1.f2()\n  return boolean", Documentation: ""},
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyModuleDotInsideStart_Module_1.f3()\n  runs on C0\n  return integer", Documentation: ""},
+		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestInsideTcBodyModuleDotInsideStart_Module_1.f4()\n  runs on C0", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
