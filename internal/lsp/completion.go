@@ -97,10 +97,6 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 					if hasParams {
 						textFormat = protocol.SnippetTextFormat
 					}
-					if node.Return != nil {
-						sig.WriteString("\n  ")
-						printer.Print(&sig, syntax.FileSet, node.Return)
-					}
 					if node.RunsOn != nil {
 						sig.WriteString("\n  ")
 						printer.Print(&sig, syntax.FileSet, node.RunsOn)
@@ -108,6 +104,10 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 					if node.System != nil {
 						sig.WriteString("\n  ")
 						printer.Print(&sig, syntax.FileSet, node.System)
+					}
+					if node.Return != nil {
+						sig.WriteString("\n  ")
+						printer.Print(&sig, syntax.FileSet, node.Return)
 					}
 					tok := ast.FirstToken(node)
 
