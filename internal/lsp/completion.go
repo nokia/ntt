@@ -520,21 +520,39 @@ func isStartId(n ast.Expr) bool {
 	return false
 }
 
+func isInsideExpression(nodes []ast.Node) bool {
+	i := len(nodes)
+	if i > 1 {
+		i--
+		if _, ok := nodes[i].(*ast.Ident); ok {
+			i--
+		}
+		switch nodes[i].(type) {
+		case *ast.SelectorExpr:
+			return false
+		case *ast.ExprStmt:
+			return false
+		case *ast.BlockStmt:
+			return false
+		default:
+			return true
+		}
+	}
+	return false
+}
+
 func isStartOpArgument(nodes []ast.Node) bool {
-	firstParenExpr := false
 	for i := len(nodes) - 1; i >= 0; i-- {
 		if _, ok := nodes[i].(*ast.ParenExpr); ok {
 			if i >= 1 {
 				if n, ok := nodes[i-1].(*ast.CallExpr); ok {
 					if fun, ok := n.Fun.(*ast.SelectorExpr); ok {
 						return isStartId(fun.Sel)
+					} else {
+						return false
 					}
 				}
 			}
-			continue
-		}
-		if firstParenExpr {
-
 		}
 	}
 	return false
@@ -554,11 +572,18 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
 			}
 		default:
-			if isStartOpArgument(nodes) {
+			switch {
+			case isStartOpArgument(nodes):
 				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
 					[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			} else {
+			case isInsideExpression(nodes): // less restrictive than isStartOpArgument
+				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			default:
 				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
 					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
