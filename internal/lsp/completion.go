@@ -527,14 +527,29 @@ func isControlBodyScope(nodes []ast.Node) bool {
 	return false
 }
 
-func isGlobalConstDeclScope(nodes []ast.Node) bool {
+func isConstDeclScope(nodes []ast.Node) bool {
 	for i := len(nodes) - 1; i > 0; i-- {
-		switch nodes[i].(type) {
-		case *ast.ValueDecl:
+		if _, ok := nodes[i].(*ast.ValueDecl); ok {
 			if _, ok := nodes[i-1].(*ast.ModuleDef); ok {
 				return true
 			}
-		case *ast.TemplateDecl:
+		}
+	}
+	return false
+}
+
+func getConstDeclNode(nodes []ast.Node) *ast.ValueDecl {
+	for _, n := range nodes {
+		if val, ok := n.(*ast.ValueDecl); ok {
+			return val
+		}
+	}
+	return nil
+}
+
+func isTemplateDeclScope(nodes []ast.Node) bool {
+	for i := len(nodes) - 1; i > 0; i-- {
+		if _, ok := nodes[i].(*ast.TemplateDecl); ok {
 			if _, ok := nodes[i-1].(*ast.ModuleDef); ok {
 				return true
 			}
@@ -551,6 +566,7 @@ func getTemplateDeclNode(nodes []ast.Node) *ast.TemplateDecl {
 	}
 	return nil
 }
+
 func isStartId(n ast.Expr) bool {
 	if id, ok := n.(*ast.Ident); ok {
 		return id.Tok.Lit == "start"
@@ -670,7 +686,33 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			}
 		}
-	case isGlobalConstDeclScope(nodes):
+	case isConstDeclScope(nodes):
+		if nodec := getConstDeclNode(nodes); nodec != nil {
+			scndNode, _ := nodes[l-2].(*ast.SelectorExpr)
+
+			if nodec.Type == nil || (nodec.Type != nil && (nodec.Type.Pos() > pos)) {
+				if scndNode != nil && scndNode.X != nil {
+					// NOTE: the parser produces a wrong ast under certain circumstances
+					// see: func TestTemplateModuleDotType(t *testing.T)
+					list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
+				} else {
+					list = newAllTypes(suite, ownModName)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+				}
+			} else {
+				switch {
+				case scndNode != nil && scndNode.X != nil:
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
+				default:
+					list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN}, ownModName)
+					list = append(list, newPredefinedFunctions()...)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+				}
+			}
+		}
+	case isTemplateDeclScope(nodes):
 		if nodet := getTemplateDeclNode(nodes); nodet != nil {
 			scndNode, _ := nodes[l-2].(*ast.SelectorExpr)
 
@@ -691,7 +733,6 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 				}
 			} else {
-				//case *ast.ErrorNode:
 				switch {
 				case scndNode != nil && scndNode.X != nil:
 					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},

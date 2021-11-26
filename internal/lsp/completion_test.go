@@ -1050,6 +1050,46 @@ func TestInsideTcBodyNestedInsideStart(t *testing.T) {
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 
+func TestFuncComplInsideConstDecl(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2() runs on C1 {}
+		function f3() return boolean {}
+		function f4() runs on C1 return boolean {}
+		const integer ci := //
+		testcase tc1() {
+		};
+	}`)
+
+	list := completionAt(t, suite, 168)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestFuncComplInsideConstDecl_Module_0.f3()\n  return boolean", Documentation: ""},
+		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestFuncComplInsideConstDecl_Module_0.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
+func TestFuncComplInsideConstDeclBody(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		function f1() {}
+		function f2() runs on C1 {}
+		function f3() return boolean {}
+		function f4() runs on C1 return boolean {}
+		const R ci := {f1 := /**/}
+	}`)
+
+	list := completionAt(t, suite, 169)
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestFuncComplInsideConstDeclBody_Module_0.f3()\n  return boolean", Documentation: ""},
+		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
+			Detail: "function TestFuncComplInsideConstDeclBody_Module_0.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
+		removeContentOfAuxModules(removePredefinedFunctions(list)))
+}
+
 // TODO: fixing this issue requires more effort.
 /*
 func TestSyntaxErrorProvokingInvalidPos(t *testing.T) {
