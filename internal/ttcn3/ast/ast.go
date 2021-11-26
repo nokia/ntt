@@ -810,7 +810,7 @@ type (
 		TemplateRestriction *RestrictionSpec
 		Modif               Token // "@lazy", "@fuzzy" or nil
 		Type                Expr
-		Decls               []Decl
+		Decls               []*Declarator
 		With                *WithSpec
 	}
 
@@ -1414,7 +1414,7 @@ type (
 		Kind     Token
 		Override Token
 		LParen   Token
-		List     []Node
+		List     []Expr
 		RParen   Token
 		Value    Expr
 	}

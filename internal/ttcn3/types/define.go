@@ -24,7 +24,7 @@ func (info *Info) descent(n ast.Node) {
 			for _, n := range n {
 				info.descent(n)
 			}
-			return true
+			return false
 
 		case *ast.Ident:
 			info.Scopes[n] = info.currScope
