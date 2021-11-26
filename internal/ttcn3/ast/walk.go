@@ -544,7 +544,7 @@ func Walk(v Visitor, node Node) {
 		walkWithStmtList(v, n.List)
 
 	case *WithStmt:
-		walkNodeList(v, n.List)
+		walkExprList(v, n.List)
 		Walk(v, n.Value)
 
 	case NodeList:
@@ -614,7 +614,7 @@ func walkNodeList(v Visitor, list []Node) {
 	}
 }
 
-func walkDeclList(v Visitor, list []Decl) {
+func walkDeclList(v Visitor, list []*Declarator) {
 	for _, n := range list {
 		Walk(v, n)
 	}

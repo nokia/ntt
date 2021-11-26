@@ -1955,7 +1955,7 @@ func (p *parser) parseRestrictionSpec() *ast.RestrictionSpec {
 	}
 }
 
-func (p *parser) parseDeclList() (list []ast.Decl) {
+func (p *parser) parseDeclList() (list []*ast.Declarator) {
 	if p.trace {
 		defer un(trace(p, "DeclList"))
 	}
