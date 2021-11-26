@@ -724,7 +724,7 @@ func TestTemplateModuleDotType(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 94)
+	list := completionAt(t, suite, 93)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "R ", Kind: protocol.StructCompletion, Detail: "TestTemplateModuleDotType_Module_1.R"}}, removeContentOfAuxModules(list))
 }
@@ -918,7 +918,7 @@ func TestInsideTcBodyModuleDotInsideIf(t *testing.T) {
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyModuleDotInsideIf_Module_1.f2()\n  return boolean", Documentation: ""},
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyModuleDotInsideIf_Module_1.f3()\n   runs on C0\n  return integer", Documentation: ""}},
+			Detail: "function TestInsideTcBodyModuleDotInsideIf_Module_1.f3()\n  runs on C0\n  return integer", Documentation: ""}},
 		removeContentOfAuxModules(removePredefinedFunctions(list)))
 }
 

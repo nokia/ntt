@@ -512,7 +512,45 @@ func isBehaviourBodyScope(nodes []ast.Node) bool {
 	}
 	return false
 }
+func isControlBodyScope(nodes []ast.Node) bool {
+	insideControl := false
+	for _, node := range nodes {
+		switch node.(type) {
+		case *ast.ControlPart:
+			insideControl = true
+		case *ast.BlockStmt:
+			if insideControl {
+				return true
+			}
+		}
+	}
+	return false
+}
 
+func isGlobalConstDeclScope(nodes []ast.Node) bool {
+	for i := len(nodes) - 1; i > 0; i-- {
+		switch nodes[i].(type) {
+		case *ast.ValueDecl:
+			if _, ok := nodes[i-1].(*ast.ModuleDef); ok {
+				return true
+			}
+		case *ast.TemplateDecl:
+			if _, ok := nodes[i-1].(*ast.ModuleDef); ok {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func getTemplateDeclNode(nodes []ast.Node) *ast.TemplateDecl {
+	for _, n := range nodes {
+		if templ, ok := n.(*ast.TemplateDecl); ok {
+			return templ
+		}
+	}
+	return nil
+}
 func isStartId(n ast.Expr) bool {
 	if id, ok := n.(*ast.Ident); ok {
 		return id.Tok.Lit == "start"
@@ -569,8 +607,8 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 	if nodes == nil || l == 0 {
 		return make([]protocol.CompletionItem, 0)
 	}
-	if isBehaviourBodyScope(nodes) {
-
+	switch {
+	case isBehaviourBodyScope(nodes):
 		switch n := nodes[l-2].(type) {
 		case *ast.SelectorExpr:
 			if n.X != nil {
@@ -605,7 +643,68 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			}
 		}
-	} else {
+	case isControlBodyScope(nodes):
+		switch n := nodes[l-2].(type) {
+		case *ast.SelectorExpr:
+			if n.X != nil {
+				switch {
+				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN}, n.X.LastTok().String(), " 1")
+				default:
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{NONE, WITH_RETURN}, n.X.LastTok().String(), " 1")
+				}
+			}
+		default:
+			switch {
+			case isInsideExpression(nodes, false): // less restrictive than isStartOpArgument
+				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			default:
+				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			}
+		}
+	case isGlobalConstDeclScope(nodes):
+		if nodet := getTemplateDeclNode(nodes); nodet != nil {
+			scndNode, _ := nodes[l-2].(*ast.SelectorExpr)
+
+			if nodet.ModifiesTok.LastTok().IsValid() && nodet.AssignTok.Pos() > pos {
+				if scndNode != nil && scndNode.X != nil {
+					list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), nodet.TemplateTok.Kind, false)
+				} else {
+					list = newAllValueDecls(suite, token.TEMPLATE)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
+				}
+			} else if nodet.Type == nil || nodet.Name == nil || (nodet.Name != nil && (nodet.Name.Pos() > pos)) {
+				if scndNode != nil && scndNode.X != nil {
+					// NOTE: the parser produces a wrong ast under certain circumstances
+					// see: func TestTemplateModuleDotType(t *testing.T)
+					list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
+				} else {
+					list = newAllTypes(suite, ownModName)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+				}
+			} else {
+				//case *ast.ErrorNode:
+				switch {
+				case scndNode != nil && scndNode.X != nil:
+					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
+				default:
+					list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+						[]BehavAttrib{WITH_RETURN}, ownModName)
+					list = append(list, newPredefinedFunctions()...)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+				}
+			}
+		}
+	default:
 		switch nodet := nodes[l-1].(type) {
 		case *ast.Ident:
 			if _, ok := nodes[0].(*ast.Module); l == 2 && ok {
@@ -651,17 +750,9 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 				case *ast.SelectorExpr:
 					if scndNode.X != nil {
-						switch thrdNode := nodes[l-3].(type) {
+						switch nodes[l-3].(type) {
 						case *ast.RunsOnSpec, *ast.SystemSpec, *ast.ComponentTypeDecl:
 							list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String(), " 1")
-						case *ast.TemplateDecl:
-							if thrdNode.ModifiesTok.IsValid() {
-								list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), thrdNode.TemplateTok.Kind, false)
-							} else /*if thrdNode.Name == nil */ {
-								// NOTE: the parser produces a wrong ast under certain circumstances
-								// see: func TestTemplateModuleDotType(t *testing.T)
-								list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
-							}
 						}
 					}
 				case *ast.ComponentTypeDecl:
@@ -669,14 +760,6 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 					if scndNode.ExtendsTok.LastTok().IsValid() && scndNode.Body.LBrace.Pos() > pos {
 						list = newAllComponentTypes(suite, " 1")
 						list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
-					}
-				case *ast.TemplateDecl:
-					if scndNode.ModifiesTok.LastTok().IsValid() && scndNode.AssignTok.Pos() > pos {
-						list = newAllValueDecls(suite, token.TEMPLATE)
-						list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
-					} else if scndNode.Name == nil {
-						list = newAllTypes(suite, ownModName)
-						list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 					}
 				}
 			}
@@ -701,14 +784,6 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 		case *ast.RunsOnSpec, *ast.SystemSpec:
 			list = newAllComponentTypes(suite, " 1")
 			list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
-		case *ast.TemplateDecl:
-			if nodet.ModifiesTok.LastTok().IsValid() && nodet.AssignTok.Pos() > pos {
-				list = newAllValueDecls(suite, token.TEMPLATE)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
-			} else if nodet.Type == nil || nodet.Name == nil {
-				list = newAllTypes(suite, ownModName)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			}
 		case *ast.ErrorNode:
 			// i.e. user started typing => ast.Ident might be detected instead of a kw
 			if l > 1 {
@@ -726,11 +801,6 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 							list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
 						}
 					}
-				case *ast.TemplateDecl:
-					if scndNode.Type == nil || scndNode.Name == nil {
-						list = newAllTypes(suite, ownModName)
-						list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-					}
 				}
 			}
 		case *ast.Declarator:
@@ -744,7 +814,6 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 			}
 		default:
 			log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
-
 		}
 	}
 	return list
