@@ -815,6 +815,10 @@ func (p *printer) print(values ...interface{}) {
 			}
 
 		default:
+			if n == nil {
+				return
+			}
+
 			switch {
 			case p.lineStart && n != "\n":
 				for i := 0; i < p.indent; i++ {
