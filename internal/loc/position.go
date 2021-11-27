@@ -219,7 +219,7 @@ func (f *File) LineStart(line int) Pos {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 	if line > len(f.lines) {
-		panic("illegal line number")
+		panic(fmt.Sprintf("illegal line number for file %q. got=%d, max=%d", f.Name(), line, len(f.lines)))
 	}
 	return Pos(f.base + f.lines[line-1])
 }
