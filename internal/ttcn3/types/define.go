@@ -1,6 +1,8 @@
 package types
 
 import (
+	"reflect"
+
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
@@ -19,6 +21,13 @@ func (info *Info) Define(n ast.Node) {
 // the scopes of referencing identifiers.
 func (info *Info) descent(n ast.Node, scp Scope) {
 	ast.Inspect(n, func(n ast.Node) bool {
+		// convert typed nil into untyped nil
+		if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
+			n = nil
+		}
+		if n == nil {
+			return false
+		}
 		switch n := n.(type) {
 		case ast.NodeList:
 			for _, n := range n {
@@ -54,7 +63,7 @@ func (info *Info) descent(n ast.Node, scp Scope) {
 			for i := range n.Defs {
 				info.descent(n.Defs[i], info.currScope)
 			}
-			if n.With == nil {
+			if n.With != nil {
 				info.descent(n.With, info.currScope)
 			}
 
