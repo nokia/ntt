@@ -1,6 +1,8 @@
 package types
 
 import (
+	"reflect"
+
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
@@ -12,17 +14,24 @@ func (info *Info) Define(n ast.Node) {
 	if info.Modules == nil {
 		info.Modules = make(map[string]*Module)
 	}
-	info.descent(n)
+	info.descent(n, nil)
 }
 
 // descent inserts all declarations into their enclosing scope. It also tracks
 // the scopes of referencing identifiers.
-func (info *Info) descent(n ast.Node) {
-	ast.Apply(n, func(c *ast.Cursor) bool {
-		switch n := c.Node().(type) {
+func (info *Info) descent(n ast.Node, scp Scope) {
+	ast.Inspect(n, func(n ast.Node) bool {
+		// convert typed nil into untyped nil
+		if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
+			n = nil
+		}
+		if n == nil {
+			return false
+		}
+		switch n := n.(type) {
 		case ast.NodeList:
 			for _, n := range n {
-				info.descent(n)
+				info.descent(n, info.currScope)
 			}
 			return false
 
@@ -33,17 +42,17 @@ func (info *Info) descent(n ast.Node) {
 		case *ast.BlockStmt:
 			info.currScope = NewLocalScope(n, info.currScope)
 			for i := range n.Stmts {
-				info.descent(n.Stmts[i])
+				info.descent(n.Stmts[i], info.currScope)
 			}
 			info.currScope = info.currScope.(*LocalScope).parent
 			return false
 
 		case *ast.ForStmt:
 			info.currScope = NewLocalScope(n, info.currScope)
-			info.descent(n.Init)
-			info.descent(n.Cond)
-			info.descent(n.Post)
-			info.descent(n.Body)
+			info.descent(n.Init, info.currScope)
+			info.descent(n.Cond, info.currScope)
+			info.descent(n.Post, info.currScope)
+			info.descent(n.Body, info.currScope)
 			info.currScope = info.currScope.(*LocalScope).parent
 			return false
 
@@ -52,10 +61,10 @@ func (info *Info) descent(n ast.Node) {
 			info.Modules[n.Name.String()] = info.currMod
 			info.currScope = info.currMod
 			for i := range n.Defs {
-				info.descent(n.Defs[i])
+				info.descent(n.Defs[i], info.currScope)
 			}
-			if n.With == nil {
-				info.descent(n.With)
+			if n.With != nil {
+				info.descent(n.With, info.currScope)
 			}
 
 			info.currScope = nil
@@ -73,10 +82,10 @@ func (info *Info) descent(n ast.Node) {
 			info.currMod.Imports = append(info.currMod.Imports, n.Module.String())
 
 			if n.Module != nil {
-				info.descent(n.Module)
+				info.descent(n.Module, info.currScope)
 			}
 			for i := range n.List {
-				info.descent(n.List[i])
+				info.descent(n.List[i], info.currScope)
 			}
 			return false
 
@@ -85,9 +94,9 @@ func (info *Info) descent(n ast.Node) {
 			info.insert(v)
 
 			for i := range n.ArrayDef {
-				info.descent(n.ArrayDef[i])
+				info.descent(n.ArrayDef[i], info.currScope)
 			}
-			info.descent(n.Value)
+			info.descent(n.Value, info.currScope)
 			return false
 
 		case *ast.TemplateDecl:
@@ -95,16 +104,16 @@ func (info *Info) descent(n ast.Node) {
 			info.insert(sym)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
-				info.descent(n.TypePars)
+				info.descent(n.TypePars, info.currScope)
 			}
-			info.descent(n.Type)
-			info.descent(n.Base)
+			info.descent(n.Type, info.currScope)
+			info.descent(n.Base, info.currScope)
 			if n.Params != nil {
 				info.currScope = NewLocalScope(n.Params, info.currScope)
-				info.descent(n.Params)
+				info.descent(n.Params, info.currScope)
 			}
-			info.descent(n.Value)
-			info.descent(n.With)
+			info.descent(n.Value, info.currScope)
+			info.descent(n.With, info.currScope)
 
 			if n.Params != nil {
 				info.currScope = info.currScope.(*LocalScope).parent
@@ -120,18 +129,18 @@ func (info *Info) descent(n ast.Node) {
 			info.insert(sym)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
-				info.descent(n.TypePars)
+				info.descent(n.TypePars, info.currScope)
 			}
-			info.descent(n.RunsOn)
-			info.descent(n.Mtc)
-			info.descent(n.System)
-			info.descent(n.Return)
+			info.descent(n.RunsOn, info.currScope)
+			info.descent(n.Mtc, info.currScope)
+			info.descent(n.System, info.currScope)
+			info.descent(n.Return, info.currScope)
 			if n.Params != nil {
 				info.currScope = NewLocalScope(n.Params, info.currScope)
-				info.descent(n.Params)
+				info.descent(n.Params, info.currScope)
 			}
-			info.descent(n.Body)
-			info.descent(n.With)
+			info.descent(n.Body, info.currScope)
+			info.descent(n.With, info.currScope)
 
 			if n.Params != nil {
 				info.currScope = info.currScope.(*LocalScope).parent
@@ -151,7 +160,7 @@ func (info *Info) descent(n ast.Node) {
 			info.currScope = s
 
 			for i := range n.Fields {
-				info.descent(n.Fields[i])
+				info.descent(n.Fields[i], info.currScope)
 			}
 
 			info.currScope = name.Parent()
@@ -181,8 +190,8 @@ func (info *Info) descent(n ast.Node) {
 				}
 			}
 
-			if n.With == nil {
-				info.descent(n.With)
+			if n.With != nil {
+				info.descent(n.With, info.currScope)
 			}
 			return false
 
@@ -191,54 +200,54 @@ func (info *Info) descent(n ast.Node) {
 			info.insert(c)
 			if n.TypePars != nil {
 				info.currScope = NewLocalScope(n.TypePars, info.currScope)
-				info.descent(n.TypePars)
+				info.descent(n.TypePars, info.currScope)
 			}
 			if n.Extends != nil {
 				for i := range n.Extends {
-					info.descent(n.Extends[i])
+					info.descent(n.Extends[i], info.currScope)
 				}
 			}
 
 			info.currScope = c
-			info.descent(n.Body)
+			info.descent(n.Body, info.currScope)
 			info.currScope = c.parent
 			return false
 
 		case *ast.Field:
 			v := NewVar(n.Name, ast.Name(n.Name))
 			info.insert(v)
-			info.descent(n.TypePars)
+			info.descent(n.TypePars, info.currScope)
 
 			for i := range n.ArrayDef {
-				info.descent(n.ArrayDef[i])
+				info.descent(n.ArrayDef[i], info.currScope)
 			}
-			info.descent(n.Type)
-			info.descent(n.ValueConstraint)
-			info.descent(n.LengthConstraint)
+			info.descent(n.Type, info.currScope)
+			info.descent(n.ValueConstraint, info.currScope)
+			info.descent(n.LengthConstraint, info.currScope)
 			return false
 
 		case *ast.FormalPar:
-			info.descent(n.Type)
+			info.descent(n.Type, info.currScope)
 			v := NewVar(n.Name, ast.Name(n.Name))
 
 			info.insert(v)
 			for i := range n.ArrayDef {
-				info.descent(n.ArrayDef[i])
+				info.descent(n.ArrayDef[i], info.currScope)
 			}
-			info.descent(n.Value)
+			info.descent(n.Value, info.currScope)
 
 			return false
 
 		case *ast.PortMapAttribute:
 			info.currScope = NewLocalScope(n, info.currScope)
-			info.descent(n.Params)
+			info.descent(n.Params, info.currScope)
 			info.currScope = info.currScope.(*LocalScope).parent
 			return false
 
 		default:
 			return true
 		}
-	}, nil)
+	})
 }
 
 // insert object into current scope.
