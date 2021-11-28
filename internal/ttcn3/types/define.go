@@ -18,8 +18,8 @@ func (info *Info) Define(n ast.Node) {
 // descent inserts all declarations into their enclosing scope. It also tracks
 // the scopes of referencing identifiers.
 func (info *Info) descent(n ast.Node, scp Scope) {
-	ast.Apply(n, func(c *ast.Cursor) bool {
-		switch n := c.Node().(type) {
+	ast.Inspect(n, func(n ast.Node) bool {
+		switch n := n.(type) {
 		case ast.NodeList:
 			for _, n := range n {
 				info.descent(n, info.currScope)
@@ -238,7 +238,7 @@ func (info *Info) descent(n ast.Node, scp Scope) {
 		default:
 			return true
 		}
-	}, nil)
+	})
 }
 
 // insert object into current scope.
