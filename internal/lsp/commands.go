@@ -66,12 +66,16 @@ func nttTest(s *Server, fileURI string, testID string) error {
 
 	// Execute ntt build backend (k3-build)
 	build_cmd := nttCommand(suite, "build")
-	if s := env.Getenv("NTT_DEBUG"); s != "" {
-		build_cmd.Args = append(build_cmd.Args, "-vvvvv")
+	if str := env.Getenv("NTT_DEBUG"); str != "" {
+		if str == "all" {
+			build_cmd.Args = append(build_cmd.Args, "-vvvvv")
+		} else {
+			build_cmd.Args = append(build_cmd.Args, "-v")
+		}
 	}
 
 	// Execute ntt run backend (k3s)
-	cmd := nttCommand(suite, "run", "-j1", "--results-file=test_results.json", "--no-summary")
+	cmd := nttCommand(suite, "run", "-j1", "--results-file=test_results.json", "--no-summary", "--no-color")
 	if s := env.Getenv("NTT_DEBUG"); s != "" {
 		cmd.Args = append(cmd.Args, "--debug")
 	}
