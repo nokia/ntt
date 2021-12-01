@@ -54,10 +54,18 @@ func (b *Basic) String() string {
 type Ref struct {
 	Expr ast.Expr // The expression that refers to the object.
 
-	ctx Scope  // The context ( == scope) of the reference.
-	obj Object // The object referenced by the reference.
+	Scp Scope  // The context ( == scope) of the reference.
+	Obj Object // The object referenced by the reference.
 }
 
 func (r *Ref) EnclosingScope() Scope { // NOTE: bad name for this interface
-	return r.ctx
+	return r.Scp
+}
+
+func (r *Ref) CompatibleTo(other Type) bool {
+	panic("not implemented")
+}
+
+func (r *Ref) Underlying() Type {
+	panic("not implemented")
 }

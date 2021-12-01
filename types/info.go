@@ -7,7 +7,9 @@ import (
 )
 
 type Info struct {
-	fset *loc.FileSet
+	fset   *loc.FileSet
+	Types  map[ast.Expr]Type
+	Scopes map[ast.Node]Scope
 }
 
 func (info *Info) Position(pos loc.Pos) loc.Position {
@@ -57,8 +59,37 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 	return &NodeNotImplementedError{Node: n}
 }
 
-func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
+func (info *Info) TypeOf(n ast.Expr, scp Scope) Type {
+	if typ, ok := info.Types[n]; ok {
+		return typ
+	}
+
+	switch n := n.(type) {
+	case ast.Expr:
+		// We shortcut resolving for predefined types.
+		if typ, ok := predefinedTypes[ast.Name(n)]; ok {
+			return typ
+		}
+		return &Ref{
+			Expr: n,
+			Scp:  scp,
+		}
+	}
+
+	info.trackScopes(n, scp)
 	return nil
+}
+
+func (info *Info) trackScopes(n ast.Node, scp Scope) {
+	if info.Scopes == nil {
+		info.Scopes = make(map[ast.Node]Scope)
+	}
+	ast.Inspect(n, func(n ast.Node) bool {
+		if id, ok := n.(*ast.Ident); ok {
+			info.Scopes[id] = scp
+		}
+		return true
+	})
 }
 
 func insertNodes(n []ast.Node, scp Scope, info *Info) *multierror.Error {
