@@ -26,6 +26,22 @@ func TestValueDecl(t *testing.T) {
 	}
 }
 
+func TestTemplateDecl(t *testing.T) {
+	input := `var template integer x := y, y[x] := z; template x z(integer p) := p`
+
+	scp, _, err := makeScope(t, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	x := scp.Var("x")
+	if x.Type != types.Integer {
+		t.Errorf("x.Type is not integer. got=%T", x.Type)
+	}
+
+	scp.Var("z")
+}
+
 func TestModule(t *testing.T) {
 	input := `
 		// A sningle TTCN-3 input is allowed to have multiple modules.
