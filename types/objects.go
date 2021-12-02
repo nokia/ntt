@@ -54,6 +54,24 @@ func (m *Module) Names() []string {
 	return names
 }
 
+type NamedType struct {
+	Name  string
+	Type  Type
+	Scope Scope
+}
+
+func (n *NamedType) EnclosingScope() Scope {
+	return n.Scope
+}
+
+func (n *NamedType) Underlying() Type {
+	return n.Type.Underlying()
+}
+
+func (n *NamedType) CompatibleTo(other Type) bool {
+	return n.Type.CompatibleTo(other)
+}
+
 // Var represents a variable.
 type Var struct {
 	Name  string

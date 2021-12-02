@@ -8,18 +8,21 @@ import (
 
 type Info struct {
 	fset   *loc.FileSet
-	Types  map[ast.Expr]Type
+	Types  map[ast.Node]Type
 	Scopes map[ast.Node]Scope
 }
 
-// TypeOf returns the type of the given expression. The given scope is stored
+// TypeOf returns the type of the given expression/typespec. The given scope is stored
 // to resolve type references later.
-func (info *Info) TypeOf(n ast.Expr, scp Scope) Type {
+func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 	if typ, ok := info.Types[n]; ok {
 		return typ
 	}
 
 	switch n := n.(type) {
+	case *ast.RefSpec:
+		return info.TypeOf(n.X, scp)
+
 	case ast.Expr:
 		// We shortcut resolving for predefined types.
 		if typ, ok := predefinedTypes[ast.Name(n)]; ok {
@@ -80,7 +83,10 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 		return insertValueDecl(n, scp, info).ErrorOrNil()
 
 	case *ast.TemplateDecl:
-		return insertTemplateDecl(n, scp, info).ErrorOrNil()
+		return insertTemplateDecl(n, scp, info)
+
+	case *ast.SubTypeDecl:
+		return insertSubTypeDecl(n.Field, scp, info)
 
 	case ast.NodeList:
 		return insertNodes(n, scp, info).ErrorOrNil()
@@ -126,9 +132,8 @@ func insertValueDecl(n *ast.ValueDecl, scp Scope, info *Info) *multierror.Error 
 }
 
 func insertDeclarator(n *ast.Declarator, typ Type, scp Scope, info *Info) error {
-	name := n.Name.String()
 	info.trackScopes(n.Value, scp)
-
+	name := n.Name.String()
 	obj := &Var{
 		Name:  name,
 		Type:  makeArray(n.ArrayDef, typ, scp, info),
@@ -140,9 +145,9 @@ func insertDeclarator(n *ast.Declarator, typ Type, scp Scope, info *Info) error 
 	return insert(name, obj, scp)
 }
 
-func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) *multierror.Error {
-	name := n.Name.String()
+func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) error {
 	info.trackScopes(n.Value, scp)
+	name := n.Name.String()
 	obj := &Var{
 		Name:  name,
 		Type:  info.TypeOf(n.Type, scp),
@@ -151,7 +156,24 @@ func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) *multierror.
 		end:   info.position(n.Name.End()),
 	}
 
-	return multierror.Append(insert(name, obj, scp))
+	return insert(name, obj, scp)
+}
+
+func insertSubTypeDecl(n *ast.Field, scp Scope, info *Info) error {
+	if n.ValueConstraint != nil {
+		info.trackScopes(n.ValueConstraint, scp)
+	}
+	if n.LengthConstraint != nil {
+		info.trackScopes(n.LengthConstraint, scp)
+	}
+
+	name := n.Name.String()
+	obj := &NamedType{
+		Name:  name,
+		Type:  makeArray(n.ArrayDef, info.TypeOf(n.Type, scp), scp, info),
+		Scope: scp,
+	}
+	return insert(name, obj, scp)
 }
 
 // trackScopes tracks the scopes of the given node and its children. The scope
