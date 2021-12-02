@@ -79,6 +79,9 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 	case *ast.ValueDecl:
 		return insertValueDecl(n, scp, info).ErrorOrNil()
 
+	case *ast.TemplateDecl:
+		return insertTemplateDecl(n, scp, info).ErrorOrNil()
+
 	case ast.NodeList:
 		return insertNodes(n, scp, info).ErrorOrNil()
 
@@ -124,19 +127,31 @@ func insertValueDecl(n *ast.ValueDecl, scp Scope, info *Info) *multierror.Error 
 
 func insertDeclarator(n *ast.Declarator, typ Type, scp Scope, info *Info) error {
 	name := n.Name.String()
-	if n.ArrayDef != nil {
-		typ = makeArray(n.ArrayDef, typ, scp, info)
-	}
+	info.trackScopes(n.Value, scp)
 
 	obj := &Var{
 		Name:  name,
-		Type:  typ,
+		Type:  makeArray(n.ArrayDef, typ, scp, info),
 		Scope: scp,
 		begin: info.position(n.Name.Pos()),
 		end:   info.position(n.Name.End()),
 	}
 
 	return insert(name, obj, scp)
+}
+
+func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) *multierror.Error {
+	name := n.Name.String()
+	info.trackScopes(n.Value, scp)
+	obj := &Var{
+		Name:  name,
+		Type:  info.TypeOf(n.Type, scp),
+		Scope: scp,
+		begin: info.position(n.Name.Pos()),
+		end:   info.position(n.Name.End()),
+	}
+
+	return multierror.Append(insert(name, obj, scp))
 }
 
 // trackScopes tracks the scopes of the given node and its children. The scope
@@ -171,6 +186,10 @@ func insert(name string, obj Object, scp Scope) error {
 
 // makeArray creates an array type from the given array definition and element type.
 func makeArray(n []*ast.ParenExpr, typ Type, scp Scope, info *Info) Type {
+	if len(n) == 0 {
+		return typ
+	}
+
 	// TODO(5nord) implement list types
 	return typ
 }
