@@ -47,7 +47,28 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 
 	switch n := n.(type) {
 	case *ast.Module:
-		return insertModuleDefs(n.Defs, scp, info).ErrorOrNil()
+		var (
+			mod *Module
+			err error
+		)
+
+		// Check if the module is already defined.
+		if obj := scp.Lookup(n.Name.String()); obj != nil {
+			switch obj := obj.(type) {
+			case *Module:
+				mod = obj
+			default:
+				return &RedefinitionError{Name: n.Name.String(), OldPos: begin(obj), NewPos: begin(mod)}
+			}
+		} else {
+
+			mod = &Module{
+				Name: n.Name.String(),
+			}
+			err = insert(mod.Name, mod, scp)
+		}
+
+		return multierror.Append(err, insertModuleDefs(n.Defs, mod, info)).ErrorOrNil()
 
 	case *ast.GroupDecl:
 		return insertModuleDefs(n.Defs, scp, info).ErrorOrNil()
