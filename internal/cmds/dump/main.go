@@ -11,6 +11,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 	"github.com/nokia/ntt/internal/ttcn3/printer"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
 )
 
@@ -28,11 +29,11 @@ var (
 
 			files, _ := project.Files(suite)
 			for _, file := range files {
-				info := suite.Parse(file)
-				if ttcn3 {
-					printer.Print(os.Stdout, info.FileSet, info.Module)
+				tree := ttcn3.ParseFile(file)
+				if useTTCN3 {
+					printer.Print(os.Stdout, tree.FileSet, tree.Root)
 				} else {
-					dump(reflect.ValueOf(info.Module), "Root: ")
+					dump(reflect.ValueOf(tree.Root), "Root: ")
 				}
 			}
 
@@ -40,11 +41,11 @@ var (
 		},
 	}
 
-	ttcn3 = false
+	useTTCN3 = false
 )
 
 func init() {
-	Command.PersistentFlags().BoolVarP(&ttcn3, "ttcn3", "", false, "formatted TTCN-3 output")
+	Command.PersistentFlags().BoolVarP(&useTTCN3, "ttcn3", "", false, "formatted TTCN-3 output")
 }
 
 func dump(v reflect.Value, f string) {

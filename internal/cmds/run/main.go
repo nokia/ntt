@@ -72,8 +72,8 @@ func check(files ...*ttcn3.Tree) error {
 		},
 	}
 	for _, file := range files {
-		info.Fset = file.Fset
-		info.CollectInfo(file.Modules())
+		info.Fset = file.FileSet
+		info.CollectInfo(file.Root)
 	}
 	return errs.ErrorOrNil()
 }
@@ -82,7 +82,7 @@ func check(files ...*ttcn3.Tree) error {
 func load(env *runtime.Env, files ...*ttcn3.Tree) error {
 	var err error
 	for _, file := range files {
-		result := interpreter.Eval(file.Modules(), env)
+		result := interpreter.Eval(file.Root, env)
 		if rerr, ok := result.(*runtime.Error); ok {
 			err = multierror.Append(err, rerr)
 		}

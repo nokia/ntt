@@ -24,18 +24,9 @@ var (
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
-	Fset *loc.FileSet
-	mods []*ast.Module
-	Err  error
-}
-
-// Modules returns the list of modules in the syntax tree.
-func (t *Tree) Modules() ast.NodeList {
-	nodes := make(ast.NodeList, len(t.mods))
-	for i, m := range t.mods {
-		nodes[i] = m
-	}
-	return nodes
+	FileSet *loc.FileSet
+	Root    ast.NodeList
+	Err     error
 }
 
 // ParseFile parses a file and returns a syntax tree.
@@ -51,8 +42,8 @@ func ParseFile(path string) *Tree {
 		defer func() { <-parseLimit }()
 
 		fset := loc.NewFileSet()
-		mods, err := parser.ParseModules(fset, path, b, parser.AllErrors)
-		return &Tree{Fset: fset, mods: mods, Err: err}
+		root, err := parser.Parse(fset, path, b)
+		return &Tree{FileSet: fset, Root: root, Err: err}
 	})
 
 	return f.Handle.Get(context.TODO()).(*Tree)
