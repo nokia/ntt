@@ -15,6 +15,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -227,30 +228,34 @@ func lint(cmd *cobra.Command, args []string) error {
 				return
 			}
 
-			mod := suite.Parse(files[i])
-			if mod == nil || mod.Module == nil {
+			tree := ttcn3.ParseFile(files[i])
+			if len(tree.Root) == 0 {
+				return
+			}
+			mod, ok := tree.Root[0].(*ast.Module)
+			if !ok {
 				return
 			}
 
-			if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Module.Name)) {
+			if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Name)) {
 				return
 			}
 
 			stack := make([]ast.Node, 1, 64)
 			cc := make(map[ast.Node]int)
-			ccID := ast.Node(mod.Module)
+			ccID := ast.Node(mod)
 
 			caseElse := make(map[ast.Node]int)
 			var selectID *ast.SelectStmt
 
-			ast.Inspect(mod.Module, func(n ast.Node) bool {
+			ast.Inspect(mod, func(n ast.Node) bool {
 				if n == nil {
 					stack = stack[:len(stack)-1]
 					return false
 				}
 
 				stack = append(stack, n)
-				fset := mod.FileSet
+				fset := tree.FileSet
 
 				switch n := n.(type) {
 				case *ast.Ident:
@@ -349,7 +354,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.ImportDecl:
 					checkBraces(fset, n.LBrace, n.RBrace)
-					checkImport(fset, n, mod.Module)
+					checkImport(fset, n, mod)
 				case *ast.GroupDecl:
 					checkBraces(fset, n.LBrace, n.RBrace)
 				case *ast.WithSpec:
@@ -361,7 +366,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 				case *ast.ModuleDef:
 					// Reset ID for counting cyclomatic complexity.
-					ccID = mod.Module
+					ccID = mod
 
 				case *ast.BinaryExpr:
 					if n.Op.Kind == token.AND || n.Op.Kind == token.OR {
@@ -400,8 +405,8 @@ func lint(cmd *cobra.Command, args []string) error {
 				return true
 			})
 
-			checkComplexity(mod.FileSet, cc)
-			checkCaseElse(mod.FileSet, caseElse)
+			checkComplexity(tree.FileSet, cc)
+			checkCaseElse(tree.FileSet, caseElse)
 		}(i)
 	}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/doc"
 	"github.com/nokia/ntt/internal/ttcn3/token"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -147,7 +148,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 
 	showTags = false
 	verbose  = false
-	infos    []*ntt.ParseInfo
+	trees    []*ttcn3.Tree
 
 	baskets = []basket{{name: "default"}}
 )
@@ -232,11 +233,11 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 
 	var wg sync.WaitGroup
 	wg.Add(len(srcs))
-	infos = make([]*ntt.ParseInfo, len(srcs))
+	trees = make([]*ttcn3.Tree, len(srcs))
 	for i, src := range srcs {
 		go func(i int, src string) {
 			defer wg.Done()
-			infos[i] = suite.Parse(src)
+			trees[i] = ttcn3.ParseFile(src)
 		}(i, src)
 	}
 	wg.Wait()
@@ -244,11 +245,13 @@ func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
 }
 
 func listTests(cmd *cobra.Command, args []string) error {
-	for _, info := range infos {
-		if info.Err != nil {
-			return info.Err
+	for _, tree := range trees {
+		if tree.Err != nil {
+			return tree.Err
 		}
-		ast.Inspect(info.Module, func(n ast.Node) bool {
+
+		var module string
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				return false
 			}
@@ -258,13 +261,18 @@ func listTests(cmd *cobra.Command, args []string) error {
 					break
 				}
 
-				name := info.Module.Name.String() + "." + n.Name.String()
+				name := module + "." + n.Name.String()
 				tags := doc.FindAllTags(n.Kind.Comments())
 				if match(name, tags) {
-					printItem(info.FileSet, n.Pos(), tags, name)
+					printItem(tree.FileSet, n.Pos(), tags, name)
 				}
 
-			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+			case *ast.Module:
+				module = n.Name.String()
+				return true
+			case *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			case ast.NodeList:
 				return true
 			}
 			return false
@@ -274,25 +282,34 @@ func listTests(cmd *cobra.Command, args []string) error {
 }
 
 func listModules(cmd *cobra.Command, args []string) error {
-	for _, info := range infos {
-		if info.Err != nil {
-			return info.Err
+	for _, tree := range trees {
+		if tree.Err != nil {
+			return tree.Err
 		}
-		name := info.Module.Name.String()
-		tags := doc.FindAllTags(info.Module.Tok.Comments())
+		if len(tree.Root) == 0 {
+			continue
+		}
+		mod, ok := tree.Root[0].(*ast.Module)
+		if !ok {
+			continue
+		}
+
+		name := mod.Name.String()
+		tags := doc.FindAllTags(mod.Tok.Comments())
 		if match(name, tags) {
-			printItem(info.FileSet, info.Module.Pos(), tags, name)
+			printItem(tree.FileSet, mod.Pos(), tags, name)
 		}
 	}
 	return nil
 }
 
 func listImports(cmd *cobra.Command, args []string) error {
-	for _, info := range infos {
-		if info.Err != nil {
-			return info.Err
+	for _, tree := range trees {
+		if tree.Err != nil {
+			return tree.Err
 		}
-		ast.Inspect(info.Module, func(n ast.Node) bool {
+		var module string
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				return false
 			}
@@ -301,10 +318,15 @@ func listImports(cmd *cobra.Command, args []string) error {
 				name := n.Module.String()
 				tags := doc.FindAllTags(n.ImportTok.Comments())
 				if match(name, tags) {
-					printItem(info.FileSet, n.Pos(), tags, info.Module.Name.String(), name)
+					printItem(tree.FileSet, n.Pos(), tags, module, name)
 				}
 
-			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+			case *ast.Module:
+				module = n.Name.String()
+				return true
+			case *ast.ModuleDef, *ast.GroupDecl:
+				return true
+			case ast.NodeList:
 				return true
 			}
 			return false
@@ -314,23 +336,28 @@ func listImports(cmd *cobra.Command, args []string) error {
 }
 
 func listControls(cmd *cobra.Command, args []string) error {
-	for _, info := range infos {
-		if info.Err != nil {
-			return info.Err
+	for _, tree := range trees {
+		if tree.Err != nil {
+			return tree.Err
 		}
-		ast.Inspect(info.Module, func(n ast.Node) bool {
+		var module string
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				return false
 			}
 			switch n := n.(type) {
 			case *ast.ControlPart:
-				name := info.Module.Name.String() + ".control"
+				name := module + ".control"
 				tags := doc.FindAllTags(n.Tok.Comments())
 				if match(name, tags) {
-					printItem(info.FileSet, n.Pos(), tags, name)
+					printItem(tree.FileSet, n.Pos(), tags, name)
 				}
 
-			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl:
+			case *ast.Module:
+				module = n.Name.String()
+				return true
+
+			case *ast.ModuleDef, *ast.GroupDecl:
 				return true
 			}
 			return false
@@ -340,11 +367,12 @@ func listControls(cmd *cobra.Command, args []string) error {
 }
 
 func listModulePars(cmd *cobra.Command, args []string) error {
-	for _, info := range infos {
-		if info.Err != nil {
-			return info.Err
+	for _, tree := range trees {
+		if tree.Err != nil {
+			return tree.Err
 		}
-		ast.Inspect(info.Module, func(n ast.Node) bool {
+		var module string
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				return false
 			}
@@ -357,14 +385,18 @@ func listModulePars(cmd *cobra.Command, args []string) error {
 				return false
 
 			case *ast.Declarator:
-				name := info.Module.Name.String() + "." + n.Name.String()
+				name := module + "." + n.Name.String()
 				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
 				if !match(name, tags) {
 					return false
 				}
-				printItem(info.FileSet, n.Pos(), tags, name)
+				printItem(tree.FileSet, n.Pos(), tags, name)
 
-			case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
+			case *ast.Module:
+				module = n.Name.String()
+				return true
+
+			case *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
 				return true
 			}
 			return false
