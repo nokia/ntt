@@ -72,6 +72,91 @@ func (n *NamedType) CompatibleTo(other Type) bool {
 	return n.Type.CompatibleTo(other)
 }
 
+type Struct struct {
+	Scope Scope
+
+	begin, end loc.Position
+	fields     []pair
+	names      map[string]pair
+}
+
+func (s *Struct) EnclosingScope() Scope {
+	return s.Scope
+}
+
+// Insert inserts an object into the scope.
+func (s *Struct) Insert(name string, obj Object) Object {
+	if s.names == nil {
+		s.names = make(map[string]pair)
+	}
+	if alt, ok := s.names[name]; ok {
+		return alt.obj
+	}
+
+	s.names[name] = pair{name, obj}
+	s.fields = append(s.fields, pair{name, obj})
+	return obj
+}
+
+// Lookup returns the object with the given name in the scope.
+func (s *Struct) Lookup(name string) Object {
+	if p, ok := s.names[name]; ok {
+		return p.obj
+	}
+	return nil
+}
+
+// Names returns the names of all objects in the scope using the order of insertion.
+func (s *Struct) Names() []string {
+	names := make([]string, len(s.fields))
+	for i, p := range s.fields {
+		names[i] = p.name
+	}
+	return names
+}
+
+func (s *Struct) Underlying() Type {
+	return s
+}
+
+func (s *Struct) CompatibleTo(other Type) bool {
+	panic("not implemented")
+}
+
+func (s *Struct) Begin() loc.Position {
+	return s.begin
+}
+
+func (s *Struct) End() loc.Position {
+	return s.end
+}
+
+type List struct {
+	ElemType   Type
+	Scope      Scope
+	begin, end loc.Position
+}
+
+func (l *List) EnclosingScope() Scope {
+	return l.Scope
+}
+
+func (l *List) Underlying() Type {
+	return l
+}
+
+func (l *List) CompatibleTo(other Type) bool {
+	panic("not implemented")
+}
+
+func (l *List) Begin() loc.Position {
+	return l.begin
+}
+
+func (l *List) End() loc.Position {
+	return l.end
+}
+
 // Var represents a variable.
 type Var struct {
 	Name  string

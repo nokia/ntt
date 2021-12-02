@@ -20,6 +20,11 @@ func TestValueDecl(t *testing.T) {
 		t.Errorf("x.Type is not integer. got=%T", x.Type)
 	}
 
+	y := scp.Var("y")
+	if _, ok := y.Type.(*types.List); !ok {
+		t.Errorf("y.Type is not an array. got=%T", x.Type)
+	}
+
 	z := scp.Var("z")
 	if _, ok := z.Type.(*types.Ref); !ok {
 		t.Errorf("z.Type is not integer. got=%T", z.Type)
@@ -50,6 +55,39 @@ func TestSubType(t *testing.T) {
 	typ := scp.Type("int").(*types.NamedType)
 	assert.Equal(t, "int", typ.Name)
 	assert.Equal(t, types.Integer, typ.Type)
+}
+
+func TestNestedTypes(t *testing.T) {
+	input := `
+		type integer x[-1]
+		type record { integer x, integer y } r
+		type record of record { integer x, integer y } r2[23]`
+
+	scp, _, _ := makeScope(t, input)
+
+	typ := scp.Type("x").(*types.NamedType)
+	if l, ok := typ.Type.(*types.List); ok {
+		assert.Equal(t, types.Integer, l.ElemType)
+	} else {
+		t.Errorf("x is not a list type. got=%T", typ)
+	}
+
+	typ = scp.Type("r").(*types.NamedType)
+	if s, ok := typ.Type.(*types.Struct); ok {
+		assert.Equal(t, []string{"x", "y"}, s.Names())
+	} else {
+		t.Errorf("x is not a struct type. got=%T", typ)
+	}
+
+	typ = scp.Type("r2").(*types.NamedType)
+	if l, ok := typ.Type.(*types.List); ok {
+		if _, ok := l.ElemType.(*types.List); !ok {
+			t.Errorf("element type of r2 is not a list type. got=%T", l.ElemType)
+		}
+	} else {
+		t.Errorf("x is not a list type. got=%T", typ)
+	}
+
 }
 
 func TestModule(t *testing.T) {

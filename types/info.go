@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
@@ -23,19 +25,41 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 	case *ast.RefSpec:
 		return info.TypeOf(n.X, scp)
 
+	case *ast.StructSpec:
+		obj := &Struct{
+			Scope: scp,
+			begin: info.position(ast.FirstToken(n).Pos()),
+			end:   info.position(n.RBrace.End()),
+		}
+		for _, fld := range n.Fields {
+			insertNamedType(fld, obj, info)
+		}
+		return obj
+
+	case *ast.ListSpec:
+		if n.Length != nil {
+			info.trackScopes(n.Length, scp)
+		}
+		return &List{
+			ElemType: info.TypeOf(n.ElemType, scp),
+			Scope:    scp,
+			begin:    info.position(ast.FirstToken(n).Pos()),
+			end:      info.position(n.ElemType.End()),
+		}
+
 	case ast.Expr:
 		// We shortcut resolving for predefined types.
 		if typ, ok := predefinedTypes[ast.Name(n)]; ok {
 			return typ
 		}
+		info.trackScopes(n, scp)
 		return &Ref{
 			Expr: n,
 			Scp:  scp,
 		}
 	}
 
-	info.trackScopes(n, scp)
-	return nil
+	panic(fmt.Sprintf("unhandled type %T", n))
 }
 
 // InsertTree inserts the given syntax tree n into the given parent scope scp.
@@ -86,7 +110,7 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 		return insertTemplateDecl(n, scp, info)
 
 	case *ast.SubTypeDecl:
-		return insertSubTypeDecl(n.Field, scp, info)
+		return insertNamedType(n.Field, scp, info)
 
 	case ast.NodeList:
 		return insertNodes(n, scp, info).ErrorOrNil()
@@ -159,7 +183,7 @@ func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) error {
 	return insert(name, obj, scp)
 }
 
-func insertSubTypeDecl(n *ast.Field, scp Scope, info *Info) error {
+func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 	if n.ValueConstraint != nil {
 		info.trackScopes(n.ValueConstraint, scp)
 	}
@@ -212,8 +236,10 @@ func makeArray(n []*ast.ParenExpr, typ Type, scp Scope, info *Info) Type {
 		return typ
 	}
 
-	// TODO(5nord) implement list types
-	return typ
+	return &List{
+		ElemType: typ,
+		Scope:    scp,
+	}
 }
 
 // begin returns the begin position of the given object.
