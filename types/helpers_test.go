@@ -92,6 +92,15 @@ func (scp *orderedScope) Var(name string) *types.Var {
 	return nil
 }
 
+func (scp *orderedScope) Type(name string) types.Type {
+	obj := scp.Lookup(name)
+	if typ, ok := obj.(types.Type); ok {
+		return typ
+	}
+	scp.t.Fatalf("object is not a type. got=%T", obj)
+	return nil
+}
+
 type pair struct {
 	name string
 	obj  types.Object

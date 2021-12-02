@@ -40,6 +40,16 @@ func TestTemplateDecl(t *testing.T) {
 	}
 
 	scp.Var("z")
+
+}
+
+func TestSubType(t *testing.T) {
+	input := `type integer int; var int x`
+
+	scp, _, _ := makeScope(t, input)
+	typ := scp.Type("int").(*types.NamedType)
+	assert.Equal(t, "int", typ.Name)
+	assert.Equal(t, types.Integer, typ.Type)
 }
 
 func TestModule(t *testing.T) {
@@ -60,10 +70,10 @@ func TestModule(t *testing.T) {
 	scp, _, _ := makeScope(t, input)
 
 	m := scp.Module("m")
-	assert.Equal(t, m.Names(), []string{"x", "y"})
+	assert.Equal(t, []string{"x", "y"}, m.Names())
 
 	m2 := scp.Module("m2")
-	assert.Equal(t, m2.Names(), []string{"x"})
+	assert.Equal(t, []string{"x"}, m2.Names())
 
 	m3 := scp.Lookup("m3")
 	if _, ok := m3.(*types.Var); !ok {
