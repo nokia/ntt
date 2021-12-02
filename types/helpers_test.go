@@ -9,8 +9,6 @@ import (
 )
 
 func makeScope(t *testing.T, input string) (*orderedScope, *types.Info, error) {
-	t.Helper()
-
 	fset := loc.NewFileSet()
 	root, err := parser.Parse(fset, "", input)
 	if err != nil {
@@ -32,7 +30,6 @@ func (scp *orderedScope) Lookup(name string) types.Object {
 	if p, ok := scp.names[name]; ok {
 		return p.obj
 	}
-	scp.t.Fatalf("%scp: not found", name)
 	return nil
 }
 
@@ -75,6 +72,24 @@ func (scp *orderedScope) Objects() []types.Object {
 		objs = append(objs, p.obj)
 	}
 	return objs
+}
+
+func (scp *orderedScope) Module(name string) *types.Module {
+	obj := scp.Lookup(name)
+	if m, ok := obj.(*types.Module); ok {
+		return m
+	}
+	scp.t.Fatalf("object is not a module. got=%T", obj)
+	return nil
+}
+
+func (scp *orderedScope) Var(name string) *types.Var {
+	obj := scp.Lookup(name)
+	if v, ok := obj.(*types.Var); ok {
+		return v
+	}
+	scp.t.Fatalf("object is not a variable. got=%T", obj)
+	return nil
 }
 
 type pair struct {

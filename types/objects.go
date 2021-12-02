@@ -5,6 +5,55 @@ import (
 	"github.com/nokia/ntt/internal/ttcn3/ast"
 )
 
+type pair struct {
+	name string
+	obj  Object
+}
+
+// Module represents a TTCN-3 module.
+type Module struct {
+	Name  string
+	Scope Scope
+	pairs []pair
+	names map[string]pair
+}
+
+// EnclsosingScope returns the parent (== global) scope of the module
+func (m *Module) EnclosingScope() Scope {
+	return m.Scope
+}
+
+// Insert inserts an object into the scope.
+func (m *Module) Insert(name string, obj Object) Object {
+	if m.names == nil {
+		m.names = make(map[string]pair)
+	}
+	if alt, ok := m.names[name]; ok {
+		return alt.obj
+	}
+
+	m.names[name] = pair{name, obj}
+	m.pairs = append(m.pairs, pair{name, obj})
+	return obj
+}
+
+// Lookup returns the object with the given name in the scope.
+func (m *Module) Lookup(name string) Object {
+	if p, ok := m.names[name]; ok {
+		return p.obj
+	}
+	return nil
+}
+
+// Names returns the names of all objects in the scope using the order of insertion.
+func (m *Module) Names() []string {
+	names := make([]string, len(m.pairs))
+	for i, p := range m.pairs {
+		names[i] = p.name
+	}
+	return names
+}
+
 // Var represents a variable.
 type Var struct {
 	Name  string
