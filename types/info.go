@@ -255,11 +255,14 @@ func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 }
 
 func insertEnum(n ast.Expr, s *Struct, info *Info) error {
+	if c, ok := n.(*ast.CallExpr); ok {
+		info.trackScopes(c.Args, s)
+	}
+
 	name := ast.Name(n)
 	if name == "" {
 		return fmt.Errorf("cannot use %T as enum name", n)
 	}
-
 	obj := &Var{
 		Name:  name,
 		Type:  s,

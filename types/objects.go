@@ -162,7 +162,6 @@ func (l *List) End() loc.Position {
 // Var represents a variable.
 type Var struct {
 	Name  string
-	Val   ast.Expr
 	Type  Type
 	Scope Scope
 
