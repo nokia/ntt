@@ -71,6 +71,14 @@ func TestRecord(t *testing.T) {
 	}
 }
 
+func TestUnion(t *testing.T) {
+	input := `type union U { integer x }`
+	scp, _, _ := makeScope(t, input)
+	if _, ok := scp.NamedType("U").(*types.Struct); !ok {
+		t.Fatalf("U is not a struct type. got=%T", scp.NamedType("U"))
+	}
+}
+
 func TestEnum(t *testing.T) {
 	input := `
 		type enumerated A { E1, E2, E3, E4 }
