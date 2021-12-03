@@ -29,12 +29,22 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 		obj := &Struct{
 			Scope: scp,
 			begin: info.position(ast.FirstToken(n).Pos()),
-			end:   info.position(n.RBrace.End()),
+			end:   info.position(n.End()),
 		}
 		for _, fld := range n.Fields {
 			insertNamedType(fld, obj, info)
 		}
 		return obj
+
+	case *ast.EnumSpec:
+		obj := &Struct{
+			Scope: scp,
+			begin: info.position(ast.FirstToken(n).Pos()),
+			end:   info.position(n.End()),
+		}
+		for _, e := range n.Enums {
+			insertEnum(e, obj, info)
+		}
 
 	case *ast.ListSpec:
 		if n.Length != nil {
@@ -44,7 +54,7 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 			ElemType: info.TypeOf(n.ElemType, scp),
 			Scope:    scp,
 			begin:    info.position(ast.FirstToken(n).Pos()),
-			end:      info.position(n.ElemType.End()),
+			end:      info.position(n.End()),
 		}
 
 	case ast.Expr:
@@ -114,6 +124,9 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 
 	case *ast.StructTypeDecl:
 		return insertStructTypeDecl(n, scp, info)
+
+	case *ast.EnumTypeDecl:
+		return insertEnumTypeDecl(n, scp, info)
 
 	case ast.NodeList:
 		return insertNodes(n, scp, info).ErrorOrNil()
@@ -204,6 +217,26 @@ func insertStructTypeDecl(n *ast.StructTypeDecl, scp Scope, info *Info) error {
 
 	return insert(name, obj, scp)
 }
+
+func insertEnumTypeDecl(n *ast.EnumTypeDecl, scp Scope, info *Info) error {
+	typ := &Struct{
+		Scope: scp,
+		begin: info.position(ast.FirstToken(n).Pos()),
+		end:   info.position(n.End()),
+	}
+	for _, e := range n.Enums {
+		insertEnum(e, typ, info)
+	}
+
+	name := n.Name.String()
+	obj := &NamedType{
+		Name: name,
+		Type: typ,
+	}
+
+	return insert(name, obj, scp)
+}
+
 func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 	if n.ValueConstraint != nil {
 		info.trackScopes(n.ValueConstraint, scp)
@@ -219,6 +252,26 @@ func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 		Scope: scp,
 	}
 	return insert(name, obj, scp)
+}
+
+func insertEnum(n ast.Expr, s *Struct, info *Info) error {
+	if c, ok := n.(*ast.CallExpr); ok {
+		info.trackScopes(c.Args, s)
+	}
+
+	name := ast.Name(n)
+	if name == "" {
+		return fmt.Errorf("cannot use %T as enum name", n)
+	}
+	obj := &Var{
+		Name:  name,
+		Type:  s,
+		Scope: s,
+		begin: info.position(n.Pos()),
+		end:   info.position(n.End()),
+	}
+
+	return insert(name, obj, s)
 }
 
 // trackScopes tracks the scopes of the given node and its children. The scope

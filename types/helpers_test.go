@@ -101,6 +101,15 @@ func (scp *orderedScope) Type(name string) types.Type {
 	return nil
 }
 
+func (scp *orderedScope) NamedType(name string) types.Type {
+	typ := scp.Type(name)
+	if nt, ok := typ.(*types.NamedType); ok {
+		return nt.Type
+	}
+	scp.t.Fatalf("object is not a named type. got=%T", typ)
+	return nil
+}
+
 type pair struct {
 	name string
 	obj  types.Object
