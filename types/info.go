@@ -36,6 +36,16 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 		}
 		return obj
 
+	case *ast.EnumSpec:
+		obj := &Struct{
+			Scope: scp,
+			begin: info.position(ast.FirstToken(n).Pos()),
+			end:   info.position(n.End()),
+		}
+		for _, e := range n.Enums {
+			insertEnum(e, obj, info)
+		}
+
 	case *ast.ListSpec:
 		if n.Length != nil {
 			info.trackScopes(n.Length, scp)
@@ -45,15 +55,6 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 			Scope:    scp,
 			begin:    info.position(ast.FirstToken(n).Pos()),
 			end:      info.position(n.End()),
-		}
-	case *ast.EnumSpec:
-		obj := &Struct{
-			Scope: scp,
-			begin: info.position(ast.FirstToken(n).Pos()),
-			end:   info.position(n.End()),
-		}
-		for _, e := range n.Enums {
-			insertEnum(e, obj, info)
 		}
 
 	case ast.Expr:
@@ -213,6 +214,7 @@ func insertStructTypeDecl(n *ast.StructTypeDecl, scp Scope, info *Info) error {
 
 	return insert(name, obj, scp)
 }
+
 func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 	if n.ValueConstraint != nil {
 		info.trackScopes(n.ValueConstraint, scp)
@@ -230,8 +232,21 @@ func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 	return insert(name, obj, scp)
 }
 
-func insertEnum(n ast.Expr, scp Scope, info *Info) error {
-	return nil
+func insertEnum(n ast.Expr, s *Struct, info *Info) error {
+	name := ast.Name(n)
+	if name == "" {
+		return fmt.Errorf("cannot use %T as enum name", n)
+	}
+
+	obj := &Var{
+		Name:  name,
+		Type:  s,
+		Scope: s,
+		begin: info.position(n.Pos()),
+		end:   info.position(n.End()),
+	}
+
+	return insert(name, obj, s)
 }
 
 // trackScopes tracks the scopes of the given node and its children. The scope

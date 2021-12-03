@@ -72,6 +72,7 @@ func (n *NamedType) CompatibleTo(other Type) bool {
 	return n.Type.CompatibleTo(other)
 }
 
+// Struct represents a structured type, such as record, set, union or enumerated.
 type Struct struct {
 	Kind  Kind
 	Scope Scope
@@ -161,6 +162,7 @@ func (l *List) End() loc.Position {
 // Var represents a variable.
 type Var struct {
 	Name  string
+	Val   ast.Expr
 	Type  Type
 	Scope Scope
 
