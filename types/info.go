@@ -112,6 +112,9 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 	case *ast.SubTypeDecl:
 		return insertNamedType(n.Field, scp, info)
 
+	case *ast.StructTypeDecl:
+		return insertStructTypeDecl(n, scp, info)
+
 	case ast.NodeList:
 		return insertNodes(n, scp, info).ErrorOrNil()
 
@@ -183,6 +186,24 @@ func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) error {
 	return insert(name, obj, scp)
 }
 
+func insertStructTypeDecl(n *ast.StructTypeDecl, scp Scope, info *Info) error {
+	typ := &Struct{
+		Scope: scp,
+		begin: info.position(ast.FirstToken(n).Pos()),
+		end:   info.position(n.End()),
+	}
+	for _, fld := range n.Fields {
+		insertNamedType(fld, typ, info)
+	}
+
+	name := n.Name.String()
+	obj := &NamedType{
+		Name: name,
+		Type: typ,
+	}
+
+	return insert(name, obj, scp)
+}
 func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 	if n.ValueConstraint != nil {
 		info.trackScopes(n.ValueConstraint, scp)

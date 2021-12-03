@@ -57,6 +57,22 @@ func TestSubType(t *testing.T) {
 	assert.Equal(t, types.Integer, typ.Type)
 }
 
+func TestRecord(t *testing.T) {
+	input := `type record R { record { integer x } x }`
+
+	scp, _, _ := makeScope(t, input)
+	typ := scp.Type("R").(*types.NamedType)
+	R, ok := typ.Type.(*types.Struct)
+	if !ok {
+		t.Fatalf("R is not a struct type. got=%T", typ)
+	}
+
+	x := R.Lookup("x").(*types.NamedType)
+	if _, ok := x.Type.(*types.Struct); !ok {
+		t.Fatalf("R.x is not a struct type. got=%T", x.Type)
+	}
+}
+
 func TestNestedTypes(t *testing.T) {
 	input := `
 		type integer x[-1]
