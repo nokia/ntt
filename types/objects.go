@@ -73,6 +73,7 @@ func (n *NamedType) CompatibleTo(other Type) bool {
 }
 
 type Struct struct {
+	Kind  Kind
 	Scope Scope
 
 	begin, end loc.Position

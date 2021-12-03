@@ -29,7 +29,7 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 		obj := &Struct{
 			Scope: scp,
 			begin: info.position(ast.FirstToken(n).Pos()),
-			end:   info.position(n.RBrace.End()),
+			end:   info.position(n.End()),
 		}
 		for _, fld := range n.Fields {
 			insertNamedType(fld, obj, info)
@@ -44,7 +44,16 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 			ElemType: info.TypeOf(n.ElemType, scp),
 			Scope:    scp,
 			begin:    info.position(ast.FirstToken(n).Pos()),
-			end:      info.position(n.ElemType.End()),
+			end:      info.position(n.End()),
+		}
+	case *ast.EnumSpec:
+		obj := &Struct{
+			Scope: scp,
+			begin: info.position(ast.FirstToken(n).Pos()),
+			end:   info.position(n.End()),
+		}
+		for _, e := range n.Enums {
+			insertEnum(e, obj, info)
 		}
 
 	case ast.Expr:
@@ -219,6 +228,10 @@ func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 		Scope: scp,
 	}
 	return insert(name, obj, scp)
+}
+
+func insertEnum(n ast.Expr, scp Scope, info *Info) error {
+	return nil
 }
 
 // trackScopes tracks the scopes of the given node and its children. The scope

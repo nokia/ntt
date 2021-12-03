@@ -52,9 +52,7 @@ func TestSubType(t *testing.T) {
 	input := `type integer int; var int x`
 
 	scp, _, _ := makeScope(t, input)
-	typ := scp.Type("int").(*types.NamedType)
-	assert.Equal(t, "int", typ.Name)
-	assert.Equal(t, types.Integer, typ.Type)
+	assert.Equal(t, types.Integer, scp.NamedType("int"))
 }
 
 func TestRecord(t *testing.T) {
@@ -70,6 +68,39 @@ func TestRecord(t *testing.T) {
 	x := R.Lookup("x").(*types.NamedType)
 	if _, ok := x.Type.(*types.Struct); !ok {
 		t.Fatalf("R.x is not a struct type. got=%T", x.Type)
+	}
+}
+
+func TestEnum(t *testing.T) {
+	input := `
+		type enumerated A { E1, E2, E3, E4 }
+		type enumerated B { E1, E2, E3, E4 }
+
+		type record   E1 { integer E2 }
+		const E1      E2 := { E2 := 23 }
+		const integer E3 := 23;
+		const A       E4 := E1; // not allowed, because constant is of type A`
+	scp, _, _ := makeScope(t, input)
+	if _, ok := scp.NamedType("A").(*types.Struct); !ok {
+		t.Errorf("A is not a enumerated type. got=%T", scp.NamedType("A"))
+	}
+}
+
+func TestScopes(t *testing.T) {
+	_ = []struct {
+		input  string
+		reject bool
+	}{
+		// Standards states that every identifier must be unique in scope hierarchy.
+		// All bellow tests should be rejected, actually.
+		{input: `type enumerated X { X }`},
+		{input: `type record X { integer X }`},
+		{input: `type record X { record { integer X } x }`},
+		{input: `type record X { enumerated { X } x }`},
+		{input: `type integer X; type enumerated A { X }`, reject: false}, // allowed by standard example.
+		{input: `type integer X; type record A { integer X }`},
+		{input: `type integer X; function A() { var integer X }`, reject: true}, // forbidden by standard
+		{input: `type integer X; function A(integer X) { }`},
 	}
 }
 
