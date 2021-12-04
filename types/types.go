@@ -23,6 +23,7 @@ const (
 	RecordOfType   Kind = "record of"
 	SetOfType      Kind = "set of"
 	ArrayType      Kind = "array of"
+	TypeReference  Kind = "type reference"
 )
 
 // Kind returns the kind of the object.

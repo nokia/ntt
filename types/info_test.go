@@ -21,13 +21,13 @@ func TestValueDecl(t *testing.T) {
 	}
 
 	y := scp.Var("y")
-	if _, ok := y.Type.(*types.List); !ok {
+	if y.Type.Kind() != types.ArrayType {
 		t.Errorf("y.Type is not an array. got=%T", x.Type)
 	}
 
 	z := scp.Var("z")
-	if _, ok := z.Type.(*types.Ref); !ok {
-		t.Errorf("z.Type is not integer. got=%T", z.Type)
+	if z.Type.Kind() != types.TypeReference {
+		t.Errorf("z.Type is not a type reference. got=%T", z.Type)
 	}
 }
 
@@ -45,7 +45,6 @@ func TestTemplateDecl(t *testing.T) {
 	}
 
 	scp.Var("z")
-
 }
 
 func TestSubType(t *testing.T) {
@@ -56,26 +55,26 @@ func TestSubType(t *testing.T) {
 }
 
 func TestRecord(t *testing.T) {
-	input := `type record R { record { integer x } x }`
+	input := `type record R { set { integer x } x }`
 
 	scp, _, _ := makeScope(t, input)
-	typ := scp.Type("R").(*types.NamedType)
-	R, ok := typ.Type.(*types.Struct)
-	if !ok {
-		t.Fatalf("R is not a struct type. got=%T", typ)
+	R := scp.NamedType("R")
+	if R.Kind() != types.RecordType {
+		t.Fatalf("R is not a record type. got=%T", R)
 	}
 
-	x := R.Lookup("x").(*types.NamedType)
-	if _, ok := x.Type.(*types.Struct); !ok {
-		t.Fatalf("R.x is not a struct type. got=%T", x.Type)
+	x := R.(types.Scope).Lookup("x").(*types.NamedType)
+	if x.Type.Kind() != types.SetType {
+		t.Fatalf("R.x is not a set type. got=%T", x.Type)
 	}
 }
 
 func TestUnion(t *testing.T) {
 	input := `type union U { integer x }`
 	scp, _, _ := makeScope(t, input)
-	if _, ok := scp.NamedType("U").(*types.Struct); !ok {
-		t.Fatalf("U is not a struct type. got=%T", scp.NamedType("U"))
+	U := scp.NamedType("U")
+	if U.Kind() != types.UnionType {
+		t.Fatalf("U is not a struct type. got=%T", U)
 	}
 }
 
@@ -89,8 +88,9 @@ func TestEnum(t *testing.T) {
 		const integer E3 := 23;
 		const A       E4 := E1; // not allowed, because constant is of type A`
 	scp, _, _ := makeScope(t, input)
-	if _, ok := scp.NamedType("A").(*types.Struct); !ok {
-		t.Errorf("A is not a enumerated type. got=%T", scp.NamedType("A"))
+	A := scp.NamedType("A")
+	if A.Kind() != types.EnumeratedType {
+		t.Errorf("A is not a enumerated type. got=%T", A)
 	}
 }
 
@@ -116,33 +116,28 @@ func TestNestedTypes(t *testing.T) {
 	input := `
 		type integer x[-1]
 		type record { integer x, integer y } r
-		type record of record { integer x, integer y } r2[23]`
+		type record of union { integer x, integer y } r2[23]`
 
 	scp, _, _ := makeScope(t, input)
 
-	typ := scp.Type("x").(*types.NamedType)
-	if l, ok := typ.Type.(*types.List); ok {
-		assert.Equal(t, types.Integer, l.ElemType)
-	} else {
-		t.Errorf("x is not a list type. got=%T", typ)
+	x := scp.NamedType("x")
+	if x.Kind() != types.ArrayType {
+		t.Errorf("x is not an array. got=%T", x)
 	}
+	assert.Equal(t, types.Integer, x.(*types.List).ElemType)
 
-	typ = scp.Type("r").(*types.NamedType)
-	if s, ok := typ.Type.(*types.Struct); ok {
-		assert.Equal(t, []string{"x", "y"}, s.Names())
-	} else {
-		t.Errorf("x is not a struct type. got=%T", typ)
+	r := scp.NamedType("r")
+	if r.Kind() != types.RecordType {
+		t.Errorf("x is not a record type. got=%T", r)
 	}
+	assert.Equal(t, []string{"x", "y"}, r.(types.Scope).Names())
 
-	typ = scp.Type("r2").(*types.NamedType)
-	if l, ok := typ.Type.(*types.List); ok {
-		if _, ok := l.ElemType.(*types.List); !ok {
-			t.Errorf("element type of r2 is not a list type. got=%T", l.ElemType)
-		}
-	} else {
-		t.Errorf("x is not a list type. got=%T", typ)
+	r2 := scp.NamedType("r2")
+	if r2.Kind() != types.ArrayType {
+		t.Errorf("r2 is not an array. got=%T", r2)
 	}
-
+	assert.Equal(t, types.RecordOfType, r2.(*types.List).ElemType.Kind())
+	assert.Equal(t, types.UnionType, r2.(*types.List).ElemType.(*types.List).ElemType.Kind())
 }
 
 func TestModule(t *testing.T) {

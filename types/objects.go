@@ -222,5 +222,8 @@ func (r *Ref) CompatibleTo(other Type) bool {
 }
 
 func (r *Ref) Kind() Kind {
-	panic("not implemented")
+	if t, ok := r.Obj.(Type); ok {
+		return t.Kind()
+	}
+	return TypeReference
 }
