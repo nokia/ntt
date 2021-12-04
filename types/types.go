@@ -9,11 +9,21 @@ import (
 )
 
 var (
-	Integer = &Basic{Kind: IntegerType}
+	Integer = &Basic{kind: IntegerType}
 )
 
 const (
-	IntegerType Kind = "integer"
+	UnknownType    Kind = "unknown type"
+	IntegerType    Kind = "integer"
+	UnionType      Kind = "union"
+	EnumeratedType Kind = "enumerated"
+	SetType        Kind = "set"
+	RecordType     Kind = "record"
+	BooleanType    Kind = "boolean"
+	RecordOfType   Kind = "record of"
+	SetOfType      Kind = "set of"
+	ArrayType      Kind = "array of"
+	TypeReference  Kind = "type reference"
 )
 
 // Kind returns the kind of the object.
@@ -43,8 +53,7 @@ type Scope interface {
 type Type interface {
 	Object
 
-	// Underlying returns the underlying (== root) type of the type.
-	Underlying() Type
+	Kind() Kind
 
 	// Compatible returns true if the type is compatible with the given type.
 	CompatibleTo(other Type) bool

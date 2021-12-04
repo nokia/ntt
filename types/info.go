@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/internal/ttcn3/token"
 )
 
 type Info struct {
@@ -28,6 +29,7 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 	case *ast.StructSpec:
 		obj := &Struct{
 			Scope: scp,
+			kind:  structKind(n.Kind.Kind),
 			begin: info.position(ast.FirstToken(n).Pos()),
 			end:   info.position(n.End()),
 		}
@@ -38,6 +40,7 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 
 	case *ast.EnumSpec:
 		obj := &Struct{
+			kind:  EnumeratedType,
 			Scope: scp,
 			begin: info.position(ast.FirstToken(n).Pos()),
 			end:   info.position(n.End()),
@@ -53,6 +56,7 @@ func (info *Info) TypeOf(n ast.Node, scp Scope) Type {
 		return &List{
 			ElemType: info.TypeOf(n.ElemType, scp),
 			Scope:    scp,
+			kind:     listKind(n.Kind.Kind),
 			begin:    info.position(ast.FirstToken(n).Pos()),
 			end:      info.position(n.End()),
 		}
@@ -176,7 +180,7 @@ func insertDeclarator(n *ast.Declarator, typ Type, scp Scope, info *Info) error 
 	name := n.Name.String()
 	obj := &Var{
 		Name:  name,
-		Type:  makeArray(n.ArrayDef, typ, scp, info),
+		Type:  wrapArray(n.ArrayDef, typ, scp, info),
 		Scope: scp,
 		begin: info.position(n.Name.Pos()),
 		end:   info.position(n.Name.End()),
@@ -201,6 +205,7 @@ func insertTemplateDecl(n *ast.TemplateDecl, scp Scope, info *Info) error {
 
 func insertStructTypeDecl(n *ast.StructTypeDecl, scp Scope, info *Info) error {
 	typ := &Struct{
+		kind:  structKind(n.Kind.Kind),
 		Scope: scp,
 		begin: info.position(ast.FirstToken(n).Pos()),
 		end:   info.position(n.End()),
@@ -220,6 +225,7 @@ func insertStructTypeDecl(n *ast.StructTypeDecl, scp Scope, info *Info) error {
 
 func insertEnumTypeDecl(n *ast.EnumTypeDecl, scp Scope, info *Info) error {
 	typ := &Struct{
+		kind:  EnumeratedType,
 		Scope: scp,
 		begin: info.position(ast.FirstToken(n).Pos()),
 		end:   info.position(n.End()),
@@ -248,7 +254,7 @@ func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
 	name := n.Name.String()
 	obj := &NamedType{
 		Name:  name,
-		Type:  makeArray(n.ArrayDef, info.TypeOf(n.Type, scp), scp, info),
+		Type:  wrapArray(n.ArrayDef, info.TypeOf(n.Type, scp), scp, info),
 		Scope: scp,
 	}
 	return insert(name, obj, scp)
@@ -304,15 +310,42 @@ func insert(name string, obj Object, scp Scope) error {
 	return nil
 }
 
-// makeArray creates an array type from the given array definition and element type.
-func makeArray(n []*ast.ParenExpr, typ Type, scp Scope, info *Info) Type {
+// wrapArray creates an array type from the given array definition and element type.
+func wrapArray(n []*ast.ParenExpr, typ Type, scp Scope, info *Info) Type {
 	if len(n) == 0 {
 		return typ
 	}
 
 	return &List{
+		kind:     ArrayType,
 		ElemType: typ,
 		Scope:    scp,
+	}
+}
+
+func structKind(tok token.Kind) Kind {
+	switch tok {
+	case token.RECORD:
+		return RecordType
+	case token.SET:
+		return SetType
+	case token.UNION:
+		return UnionType
+	case token.ENUMERATED:
+		return EnumeratedType
+	default:
+		return UnknownType
+	}
+}
+
+func listKind(tok token.Kind) Kind {
+	switch tok {
+	case token.RECORD:
+		return RecordOfType
+	case token.SET:
+		return SetOfType
+	default:
+		return UnknownType
 	}
 }
 

@@ -64,8 +64,8 @@ func (n *NamedType) EnclosingScope() Scope {
 	return n.Scope
 }
 
-func (n *NamedType) Underlying() Type {
-	return n.Type.Underlying()
+func (n *NamedType) Kind() Kind {
+	return n.Type.Kind()
 }
 
 func (n *NamedType) CompatibleTo(other Type) bool {
@@ -74,7 +74,7 @@ func (n *NamedType) CompatibleTo(other Type) bool {
 
 // Struct represents a structured type, such as record, set, union or enumerated.
 type Struct struct {
-	Kind  Kind
+	kind  Kind
 	Scope Scope
 
 	begin, end loc.Position
@@ -117,8 +117,8 @@ func (s *Struct) Names() []string {
 	return names
 }
 
-func (s *Struct) Underlying() Type {
-	return s
+func (s *Struct) Kind() Kind {
+	return s.kind
 }
 
 func (s *Struct) CompatibleTo(other Type) bool {
@@ -134,6 +134,7 @@ func (s *Struct) End() loc.Position {
 }
 
 type List struct {
+	kind       Kind
 	ElemType   Type
 	Scope      Scope
 	begin, end loc.Position
@@ -143,8 +144,8 @@ func (l *List) EnclosingScope() Scope {
 	return l.Scope
 }
 
-func (l *List) Underlying() Type {
-	return l
+func (l *List) Kind() Kind {
+	return l.kind
 }
 
 func (l *List) CompatibleTo(other Type) bool {
@@ -182,7 +183,7 @@ func (v *Var) EnclosingScope() Scope {
 
 // Basic represents a basic TTCN-3 type, such as integer, boolean, ...
 type Basic struct {
-	Kind Kind
+	kind Kind
 }
 
 func (b *Basic) EnclosingScope() Scope {
@@ -191,17 +192,17 @@ func (b *Basic) EnclosingScope() Scope {
 
 func (b *Basic) CompatibleTo(other Type) bool {
 	if other, ok := other.(*Basic); ok {
-		return b.Kind == other.Kind
+		return b.kind == other.kind
 	}
 	return false
 }
 
-func (b *Basic) Underlying() Type {
-	return b
+func (b *Basic) Kind() Kind {
+	return b.kind
 }
 
 func (b *Basic) String() string {
-	return string(b.Kind)
+	return string(b.kind)
 }
 
 // Ref is a reference to an object.
@@ -220,6 +221,9 @@ func (r *Ref) CompatibleTo(other Type) bool {
 	panic("not implemented")
 }
 
-func (r *Ref) Underlying() Type {
-	panic("not implemented")
+func (r *Ref) Kind() Kind {
+	if t, ok := r.Obj.(Type); ok {
+		return t.Kind()
+	}
+	return TypeReference
 }
