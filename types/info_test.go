@@ -140,6 +140,43 @@ func TestNestedTypes(t *testing.T) {
 	assert.Equal(t, types.UnionType, r2.(*types.List).ElemType.(*types.List).ElemType.Kind())
 }
 
+func TestComponents(t *testing.T) {
+	t.Skip("Test requires extending component references to be resolved")
+	input := `
+		type component A {
+			var integer x
+			var integer y
+		}
+
+		type component B extends A {
+			var boolean x
+		}
+
+		type component C extends A {
+			var boolean y
+		}
+
+		type component D extends B, C {
+		}
+`
+	scp, _, _ := makeScope(t, input)
+	scp.Component("A")
+	scp.Component("B")
+	scp.Component("C")
+	D := scp.Component("D")
+	x, ok := D.Lookup("x").(*types.Var)
+	if !ok {
+		t.Fatalf("D.x is not a var. got=%T", D.Lookup("x"))
+	}
+	assert.Equal(t, types.Boolean, x.Type)
+
+	y, ok := D.Lookup("y").(*types.Var)
+	if !ok {
+		t.Fatalf("D.y is not a var. got=%T", y)
+	}
+	assert.Equal(t, types.Integer, y.Type)
+}
+
 func TestModule(t *testing.T) {
 	input := `
 		// A sningle TTCN-3 input is allowed to have multiple modules.

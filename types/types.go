@@ -10,6 +10,7 @@ import (
 
 var (
 	Integer = &Basic{kind: IntegerType}
+	Boolean = &Basic{kind: BooleanType}
 )
 
 const (
@@ -23,6 +24,7 @@ const (
 	RecordOfType   Kind = "record of"
 	SetOfType      Kind = "set of"
 	ArrayType      Kind = "array of"
+	ComponentType  Kind = "component"
 	TypeReference  Kind = "type reference"
 )
 

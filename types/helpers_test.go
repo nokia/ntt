@@ -110,6 +110,15 @@ func (scp *orderedScope) NamedType(name string) types.Type {
 	return nil
 }
 
+func (scp *orderedScope) Component(name string) *types.Component {
+	typ := scp.NamedType(name)
+	if c, ok := typ.(*types.Component); ok {
+		return c
+	}
+	scp.t.Fatalf("object is not a component. got=%T", typ)
+	return nil
+}
+
 type pair struct {
 	name string
 	obj  types.Object

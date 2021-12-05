@@ -160,6 +160,73 @@ func (l *List) End() loc.Position {
 	return l.end
 }
 
+// Component represents a component type.
+type Component struct {
+	kind    Kind
+	Scope   Scope
+	Extends []*Component
+
+	begin, end loc.Position
+	fields     []pair
+	names      map[string]pair
+}
+
+func (c *Component) EnclosingScope() Scope {
+	return c.Scope
+}
+
+// Insert inserts an object into the scope.
+func (c *Component) Insert(name string, obj Object) Object {
+	if c.names == nil {
+		c.names = make(map[string]pair)
+	}
+	if alt, ok := c.names[name]; ok {
+		return alt.obj
+	}
+
+	c.names[name] = pair{name, obj}
+	c.fields = append(c.fields, pair{name, obj})
+	return obj
+}
+
+// Lookup returns the object with the given name in the scope.
+func (c *Component) Lookup(name string) Object {
+	if p, ok := c.names[name]; ok {
+		return p.obj
+	}
+	for _, e := range c.Extends {
+		if obj := e.Lookup(name); obj != nil {
+			return obj
+		}
+	}
+	return nil
+}
+
+// Names returns the names of all objects in the scope using the order of insertion.
+func (c *Component) Names() []string {
+	names := make([]string, len(c.fields))
+	for i, p := range c.fields {
+		names[i] = p.name
+	}
+	return names
+}
+
+func (c *Component) Kind() Kind {
+	return c.kind
+}
+
+func (c *Component) CompatibleTo(other Type) bool {
+	panic("not implemented")
+}
+
+func (c *Component) Begin() loc.Position {
+	return c.begin
+}
+
+func (c *Component) End() loc.Position {
+	return c.end
+}
+
 // Var represents a variable.
 type Var struct {
 	Name  string

@@ -132,6 +132,9 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 	case *ast.EnumTypeDecl:
 		return insertEnumTypeDecl(n, scp, info)
 
+	case *ast.ComponentTypeDecl:
+		return insertComponentTypeDecl(n, scp, info)
+
 	case ast.NodeList:
 		return insertNodes(n, scp, info).ErrorOrNil()
 
@@ -241,6 +244,27 @@ func insertEnumTypeDecl(n *ast.EnumTypeDecl, scp Scope, info *Info) error {
 	}
 
 	return insert(name, obj, scp)
+}
+
+func insertComponentTypeDecl(n *ast.ComponentTypeDecl, scp Scope, info *Info) error {
+	comp := &Component{
+		Scope: scp,
+		begin: info.position(ast.FirstToken(n).Pos()),
+		end:   info.position(n.End()),
+	}
+
+	var errs *multierror.Error
+	for _, stmt := range n.Body.Stmts {
+		errs = multierror.Append(errs, info.InsertTree(stmt, comp))
+	}
+
+	name := n.Name.String()
+	obj := &NamedType{
+		Name: name,
+		Type: comp,
+	}
+
+	return multierror.Append(errs, insert(name, obj, scp)).ErrorOrNil()
 }
 
 func insertNamedType(n *ast.Field, scp Scope, info *Info) error {
