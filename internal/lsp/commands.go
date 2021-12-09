@@ -76,7 +76,7 @@ Running test %s in %q`, testID, suite.Root())
 
 	err = r.Run(s, testID)
 
-	// Show a directory listing of the artifacts.
+	// Show a directory listing of the artifacts (independently of any test errors)
 	logDir := r.LogDir(testID)
 	if files := fs.Abs(fs.FindFilesRecursive(logDir)...); len(files) > 0 {
 		s.Log(context.Background(), fmt.Sprintf(`
