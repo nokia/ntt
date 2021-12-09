@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -35,12 +36,7 @@ func (r *Runner) Run(w io.Writer, testID string) error {
 
 	out, err := cmd.CombinedOutput()
 	w.Write(out)
-	if err != nil {
-		w.Write([]byte(err.Error()))
-	}
-	w.Write([]byte(cmd.ProcessState.String()))
-
-	return r.report(w, testID)
+	return multierror.Append(err, r.report(w, testID)).ErrorOrNil()
 }
 
 func (r *Runner) report(w io.Writer, testID string) error {
@@ -49,10 +45,6 @@ func (r *Runner) report(w io.Writer, testID string) error {
 	cmd := nttCommand(r.p, "report")
 	out, err := cmd.CombinedOutput()
 	w.Write(out)
-	if err != nil {
-		w.Write([]byte(err.Error()))
-	}
-
 	return err
 }
 
@@ -152,7 +144,7 @@ func nttExecutable() string {
 // nttArgs returns the project root directory. If the project has no root
 // directory nttArgs will return a list of all project source files.
 func nttArgs(p project.Interface) []string {
-	if root := p.Root(); root == "" {
+	if root := p.Root(); root != "" {
 		return []string{root}
 	}
 
