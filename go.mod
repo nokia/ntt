@@ -3,6 +3,7 @@ module github.com/nokia/ntt
 go 1.13
 
 require (
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/golang/protobuf v1.4.2
 	github.com/gosimple/slug v1.10.0
 	github.com/hashicorp/go-multierror v1.0.0

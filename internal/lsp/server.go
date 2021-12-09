@@ -12,6 +12,7 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/acarl005/stripansi"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -101,7 +102,7 @@ func (s *Server) Info(ctx context.Context, msg string) {
 func (s *Server) Log(ctx context.Context, msg string) {
 	s.client.LogMessage(ctx, &protocol.LogMessageParams{
 		Type:    protocol.Log,
-		Message: msg,
+		Message: stripansi.Strip(msg),
 	})
 }
 
@@ -110,6 +111,13 @@ func (s *Server) Output(level log.Level, msg string) error {
 		s.Log(context.TODO(), strings.TrimRightFunc(msg, unicode.IsSpace))
 	}
 	return nil
+}
+
+func (s *Server) Write(p []byte) (n int, err error) {
+	str := string(p)
+	s.Log(context.Background(), str)
+	return len(str), nil
+
 }
 
 func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParams) error {

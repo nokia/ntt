@@ -3,6 +3,7 @@ package report
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"os"
 	"regexp"
 	"sort"
@@ -105,15 +106,15 @@ Additional commands
 
 
 Summary template:
-` + summaryTemplate + `
+` + SummaryTemplate + `
 
 
 JUnit template:
-` + junitTemplate + `
+` + JUnitTemplate + `
 
 
 JSON template:
-` + jsonTemplate + `
+` + JSONTemplate + `
 
 
 `,
@@ -129,7 +130,7 @@ JSON template:
 )
 
 const (
-	summaryTemplate = `{{bold}}==================================  Summary  =================================={{off}}
+	SummaryTemplate = `{{bold}}==================================  Summary  =================================={{off}}
 {{range .Tests.NotPassed}}{{ printf "%-10s %s" .Verdict .Name  | colorize }}
 {{else}}{{if eq (len .Tests) 0}}{{orange}}{{bold}}WARNING: No matching test cases found!{{off}}
 {{else}}{{green}}all tests have passed{{off}}
@@ -149,7 +150,7 @@ const (
 {{bold}}==============================================================================={{off}}
 `
 
-	junitTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+	JUnitTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>{{range .Modules}}
 
 <testsuite name="{{.Name}}" tests="{{len .FixedTests}}" failures="{{len .FixedTests.Failed}}" errors="" time="{{.FixedTests.Total.Seconds}}">
@@ -163,7 +164,7 @@ const (
 {{end}}</testsuites>
 `
 
-	jsonTemplate = `{
+	JSONTemplate = `{
   "name"          : "{{.Name}}",
   "timestamp"     : {{.Runs.First.Begin.Unix}},
   "cores"         : {{.Cores}},
@@ -203,32 +204,32 @@ func report(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	switch {
+	case useJSON:
+		templateText = JSONTemplate
+	case useJUnit:
+		templateText = JUnitTemplate
+	}
+
+	if templateText == "" {
+		templateText = SummaryTemplate
+	}
+
+	return ReportTemplate(os.Stdout, suite, templateText)
+}
+
+func ReportTemplate(w io.Writer, suite *ntt.Suite, text string) error {
 	report, err := NewReport(suite)
 	if err != nil {
 		return err
 	}
 
-	if templateText == "" {
-		templateText = summaryTemplate
-	}
-
-	switch {
-	case useJSON:
-		return reportTemplate(report, jsonTemplate)
-	case useJUnit:
-		return reportTemplate(report, junitTemplate)
-	default:
-		return reportTemplate(report, templateText)
-	}
-}
-
-func reportTemplate(report *Report, text string) error {
 	tmpl, err := template.New("ntt-report-template").Funcs(funcMap).Parse(text)
 	if err != nil {
 		return err
 	}
 
-	return tmpl.Execute(os.Stdout, report)
+	return tmpl.Execute(w, report)
 }
 
 var funcMap = template.FuncMap{
@@ -242,6 +243,7 @@ var funcMap = template.FuncMap{
 		if env := os.Getenv("NTT_COLORS"); env == "never" {
 			return ""
 		}
+
 		return "[31;1m"
 	},
 	"orange": func() string {
