@@ -115,6 +115,7 @@ func nttWorkingDir(p project.Interface) (string, error) {
 // variables and working directory.
 func nttCommand(p project.Interface, cmdName string, opts ...string) *exec.Cmd {
 	cmd := exec.Command(nttExecutable())
+	cmd.Env = nttEnv(p)
 
 	// ntt commands have a common format:
 	//     ntt <cmdName> [<args>] [<opts>]
@@ -161,6 +162,8 @@ func nttArgs(p project.Interface) []string {
 
 // nttEnv returns the magic environment variables required to use ntt with
 // Nokia component tests.
+// nttEnv also copies os.Environ for variables like PATH and LD_LIBRARY_PATH
+// required by various scripts and C++ applications.
 func nttEnv(p project.Interface) []string {
 
 	// SCTs use environment variable `NTT_CACHE` to find various required
