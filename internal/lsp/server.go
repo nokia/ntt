@@ -12,6 +12,7 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/acarl005/stripansi"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -101,7 +102,7 @@ func (s *Server) Info(ctx context.Context, msg string) {
 func (s *Server) Log(ctx context.Context, msg string) {
 	s.client.LogMessage(ctx, &protocol.LogMessageParams{
 		Type:    protocol.Log,
-		Message: msg,
+		Message: stripansi.Strip(msg),
 	})
 }
 
