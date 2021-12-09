@@ -98,14 +98,14 @@ func New(w io.Writer, p project.Interface) (*Runner, error) {
 // nttWorkingDir returns a working directory for ntt artifacts.
 func nttWorkingDir(p project.Interface) (string, error) {
 
-	root := filepath.Join(fs.Path(p.Root()), "ntt.test")
-	log.Debugf("Working directory: %s", root)
-	if err := os.MkdirAll(root, 0755); err != nil {
-		return root, nil
+	dir := filepath.Join(fs.Path(p.Root()), "ntt.test")
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.Debugf("Creating directory %q failed: %s", dir, err.Error())
+		dir, err = ioutil.TempDir("", "ntt-run-")
 	}
 
-	dir, err := ioutil.TempDir("", "ntt-run-")
-	log.Debugf("Creating directory failed. Using %q", dir)
+	log.Debugf("Using working directory %q", dir)
 	return dir, err
 }
 
