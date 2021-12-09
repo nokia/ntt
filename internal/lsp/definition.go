@@ -32,7 +32,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 		}
 	}
 
-	return locs, nil
+	return unifyLocs(locs), nil
 }
 
 func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {
@@ -67,6 +67,19 @@ func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location
 				ret = append(ret, location(tree.Position(t.Pos())))
 			}
 		}
+	}
+	return ret
+}
+
+func unifyLocs(locs []protocol.Location) []protocol.Location {
+	m := make(map[protocol.Location]bool)
+	for _, loc := range locs {
+		m[loc] = true
+	}
+
+	ret := make([]protocol.Location, len(m))
+	for loc := range m {
+		ret = append(ret, loc)
 	}
 	return ret
 }

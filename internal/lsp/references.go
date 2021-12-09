@@ -69,5 +69,5 @@ func (s *Server) references(ctx context.Context, params *protocol.ReferenceParam
 		elapsed := time.Since(start)
 		log.Debug(fmt.Sprintf("References took %s. IdentifierInfo: %#v", elapsed, id.String()))
 	}
-	return locs, nil
+	return unifyLocs(locs), nil
 }
