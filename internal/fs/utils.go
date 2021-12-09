@@ -95,21 +95,13 @@ func FindCFiles(dir string) []string {
 
 // FindFilesRecursive returns a list files from the whole directory subtree.
 func FindFilesRecursive(dir string) []string {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return []string{}
-	}
-
 	var sources []string
-	for _, file := range files {
-		if file.Mode().IsRegular() {
-			fname := file.Name()
-			fname, _ = filepath.Abs(filepath.Join(dir, fname))
-			sources = append(sources, ":"+fname)
-		} else if file.Mode().IsDir() {
-			sources = append(sources, FindFilesRecursive(filepath.Join(dir, file.Name()))...)
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err == nil && info.Mode().IsRegular() {
+			sources = append(sources, path)
 		}
-	}
+		return nil
+	})
 	return sources
 }
 
@@ -142,6 +134,18 @@ func IsFsRoot(path string) bool {
 		root = vol + "\\"
 	}
 	return path == root
+}
+
+// Abs makes paths absolute, when not absolute already.
+func Abs(paths ...string) []string {
+	if len(paths) == 0 {
+		return nil
+	}
+	ret := make([]string, len(paths))
+	for i, path := range paths {
+		ret[i], _ = filepath.Abs(path)
+	}
+	return ret
 }
 
 // Rel makes paths relative to base, when not absolute already. Use it when

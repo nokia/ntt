@@ -112,6 +112,13 @@ func (s *Server) Output(level log.Level, msg string) error {
 	return nil
 }
 
+func (s *Server) Write(p []byte) (n int, err error) {
+	str := string(p)
+	s.Log(context.Background(), str)
+	return len(str), nil
+
+}
+
 func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParams) error {
 	return nil
 }
