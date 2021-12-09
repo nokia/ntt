@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -70,7 +71,7 @@ func (r *Runner) LogDir(testID string) string {
 }
 
 // New returns a new Runner for executing TTCN-3 tests with k3s backend.
-func New(p project.Interface) (*Runner, error) {
+func New(w io.Writer, p project.Interface) (*Runner, error) {
 
 	// Find a nice working directory to put logs and other artifacts in it.
 	dir, err := nttWorkingDir(p)
@@ -82,13 +83,10 @@ func New(p project.Interface) (*Runner, error) {
 	cmd := nttCommand(p, "build")
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
-	log.Debugf("%s\n%s", cmd, string(out))
+	w.Write([]byte(cmd.String()))
+	w.Write(out)
 	if err != nil {
-		return nil, &BuildError{
-			Command: cmd,
-			Output:  string(out),
-			Err:     err,
-		}
+		return nil, &BuildError{Cmd: cmd, Err: err}
 	}
 
 	return &Runner{
@@ -178,11 +176,14 @@ func nttEnv(p project.Interface) []string {
 }
 
 type BuildError struct {
-	Command *exec.Cmd
-	Output  string
-	Err     error
+	Cmd *exec.Cmd
+	Err error
 }
 
 func (e *BuildError) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("%s: %s", e.Cmd.String(), e.Err)
+}
+
+func (e *BuildError) Unwrap() error {
+	return e.Err
 }

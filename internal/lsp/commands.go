@@ -62,13 +62,17 @@ func nttTest(s *Server, fileURI string, testID string) error {
 
 	log.Printf(`
 ===============================================================================
-Running test %s in %q`, testID, suite.Root())
+Compiling test %s in %q`, testID, suite.Root())
 
-	r, err := runner.New(suite)
+	r, err := runner.New(s, suite)
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
 		return err
 	}
+
+	log.Printf(`
+===============================================================================
+Running test %s in %q`, testID, suite.Root())
 
 	err = r.Run(s, testID)
 
