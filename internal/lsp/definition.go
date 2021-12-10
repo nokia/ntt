@@ -77,7 +77,7 @@ func unifyLocs(locs []protocol.Location) []protocol.Location {
 		m[loc] = true
 	}
 
-	ret := make([]protocol.Location, len(m))
+	ret := make([]protocol.Location, 0, len(m))
 	for loc := range m {
 		ret = append(ret, loc)
 	}
