@@ -9,7 +9,7 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/runner"
+	"github.com/nokia/ntt/runner/k3s"
 )
 
 // NewCommand returns a CodeLens command.
@@ -64,7 +64,7 @@ func nttTest(s *Server, fileURI string, testID string) error {
 ===============================================================================
 Compiling test %s in %q`, testID, suite.Root())
 
-	r, err := runner.New(s, suite)
+	r, err := k3s.New(s, suite)
 	if err != nil {
 		s.Log(context.TODO(), err.Error())
 		return err
