@@ -3,7 +3,7 @@ package ntt
 import (
 	"context"
 
-	"github.com/nokia/ntt/internal/ttcn3/types"
+	"github.com/nokia/ntt/ttcn3/types"
 )
 
 // Symbols returns the symbol table from a syntax tree.

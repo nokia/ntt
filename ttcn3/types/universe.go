@@ -2,7 +2,7 @@ package types
 
 import (
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 var Universe scope

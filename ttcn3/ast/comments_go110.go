@@ -1,16 +1,16 @@
-// +build !go1.10
+// +build go1.10
 
 package ast
 
 import (
-	"bytes"
 	"fmt"
+	"strings"
 
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 func joinComments(trivs []Trivia) string {
-	var b bytes.Buffer
+	var b strings.Builder
 	b.Grow(1024)
 
 	for _, triv := range trivs {

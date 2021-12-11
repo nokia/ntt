@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/nokia/ntt/internal/ttcn3/types"
+	"github.com/nokia/ntt/ttcn3/types"
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3"

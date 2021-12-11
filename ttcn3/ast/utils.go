@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // First returns the first valid token of a syntax tree

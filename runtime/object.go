@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 type Object interface {

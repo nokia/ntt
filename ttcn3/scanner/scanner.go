@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // An ErrorHandler may be provided to Scanner.Init. If a syntax error is

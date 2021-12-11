@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
