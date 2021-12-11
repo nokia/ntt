@@ -2,7 +2,7 @@ package types
 
 import (
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 // Info holds various information about TTCN-3 symbols and types.

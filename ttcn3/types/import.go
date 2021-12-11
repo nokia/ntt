@@ -1,6 +1,6 @@
 package types
 
-import "github.com/nokia/ntt/internal/ttcn3/ast"
+import "github.com/nokia/ntt/ttcn3/ast"
 
 // Import describes the view to an imported module.
 type Import struct {

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // All node types implement the Node interface.

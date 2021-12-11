@@ -3,7 +3,7 @@ package ntt
 import (
 	"context"
 
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 // Tags will return all named nodes (defintions, enums, ...) from a file.

@@ -3,7 +3,7 @@ package types
 import (
 	"reflect"
 
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 func (info *Info) Define(n ast.Node) {

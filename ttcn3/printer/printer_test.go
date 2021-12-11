@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/parser"
-	"github.com/nokia/ntt/internal/ttcn3/printer"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/pmezard/go-difflib/difflib"
 )
 

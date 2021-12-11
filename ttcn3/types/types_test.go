@@ -6,9 +6,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/parser"
-	"github.com/nokia/ntt/internal/ttcn3/types"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/types"
 )
 
 func TestTypes(t *testing.T) {

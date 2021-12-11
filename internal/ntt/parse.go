@@ -9,8 +9,8 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/memoize"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/parser"
 )
 
 // Limits the number of parallel parser calls per process.

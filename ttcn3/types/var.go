@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/nokia/ntt/internal/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 // Var describes an object, which can hold an value. This could be a local

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/parser"
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 )

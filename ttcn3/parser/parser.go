@@ -7,9 +7,9 @@ import (
 
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/scanner"
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/scanner"
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // The parser structure holds the parser's internal state.

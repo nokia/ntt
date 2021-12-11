@@ -15,8 +15,8 @@ import (
 	"io/ioutil"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // A Mode value is a set of flags (or 0).

@@ -10,9 +10,9 @@ import (
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/internal/ttcn3/ast"
-	"github.com/nokia/ntt/internal/ttcn3/doc"
-	"github.com/nokia/ntt/internal/ttcn3/token"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/doc"
+	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
