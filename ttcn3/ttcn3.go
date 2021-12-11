@@ -29,6 +29,16 @@ type Tree struct {
 	Err     error
 }
 
+// Parse parses a string and returns a syntax tree.
+func Parse(src string) *Tree {
+	parseLimit <- struct{}{}
+	defer func() { <-parseLimit }()
+
+	fset := loc.NewFileSet()
+	root, err := parser.Parse(fset, "", src)
+	return &Tree{FileSet: fset, Root: root, Err: err}
+}
+
 // ParseFile parses a file and returns a syntax tree.
 func ParseFile(path string) *Tree {
 	f := fs.Open(path)
