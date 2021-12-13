@@ -17,6 +17,9 @@ service Control {
 
 	// Subscribe returns a stream of events, such as execution results.
 	rpc Subscribe(SubscribeRequest) returns (stream Event) {}
+
+	// RegisterProject registers a project with the control service.
+	rpc RegisterProject(RegisterProjectRequest) returns (RegisterProjectResponse) {}
 }
 
 message RunTestRequest {
@@ -31,6 +34,9 @@ message RunTestRequest {
 
 	// Module parameters to be used for the test case.
 	repeated Parameter module_parameters = 3;
+
+	// The project ID the test case belongs to.
+	string project_id = 5;
 }
 
 message RunTestResponse {
@@ -42,6 +48,26 @@ message SubscribeRequest {
 }
 
 message Event {
+	string ID = 1;
+}
+
+message RegisterProjectRequest {
+
+	// Project name.
+	string name = 2;
+
+	// Root directory of the project.
+	string root_dir = 3;
+
+	// Sources of the project.
+	repeated string sources = 4;
+
+	// Dependencies of the project.
+	repeated string dependencies = 5;
+}
+
+message RegisterProjectResponse {
+	// Project ID.
 	string ID = 1;
 }
 
