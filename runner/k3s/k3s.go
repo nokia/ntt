@@ -31,6 +31,7 @@ func (r *Runner) Run(w io.Writer, testID string) error {
 
 	// Execute test (k3s backend)
 	cmd := nttCommand(r.p, "run", "-j1", "--results-file=test_results.json", "--no-summary")
+	cmd.Dir = r.Dir
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
 	cmd.Stdin = strings.NewReader(testID + "\n")
 
@@ -43,6 +44,7 @@ func (r *Runner) report(w io.Writer, testID string) error {
 
 	// Display a nice summary
 	cmd := nttCommand(r.p, "report")
+	cmd.Dir = r.Dir
 	out, err := cmd.CombinedOutput()
 	w.Write(out)
 	return err
