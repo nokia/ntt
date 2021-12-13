@@ -24,6 +24,8 @@ type ControlClient interface {
 	RunTest(ctx context.Context, in *RunTestRequest, opts ...grpc.CallOption) (*RunTestResponse, error)
 	// Subscribe returns a stream of events, such as execution results.
 	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Control_SubscribeClient, error)
+	// RegisterProject registers a project with the control service.
+	RegisterProject(ctx context.Context, in *RegisterProjectRequest, opts ...grpc.CallOption) (*RegisterProjectResponse, error)
 }
 
 type controlClient struct {
@@ -75,6 +77,15 @@ func (x *controlSubscribeClient) Recv() (*Event, error) {
 	return m, nil
 }
 
+func (c *controlClient) RegisterProject(ctx context.Context, in *RegisterProjectRequest, opts ...grpc.CallOption) (*RegisterProjectResponse, error) {
+	out := new(RegisterProjectResponse)
+	err := c.cc.Invoke(ctx, "/ntt.Control/RegisterProject", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ControlServer is the server API for Control service.
 // All implementations must embed UnimplementedControlServer
 // for forward compatibility
@@ -85,6 +96,8 @@ type ControlServer interface {
 	RunTest(context.Context, *RunTestRequest) (*RunTestResponse, error)
 	// Subscribe returns a stream of events, such as execution results.
 	Subscribe(*SubscribeRequest, Control_SubscribeServer) error
+	// RegisterProject registers a project with the control service.
+	RegisterProject(context.Context, *RegisterProjectRequest) (*RegisterProjectResponse, error)
 	mustEmbedUnimplementedControlServer()
 }
 
@@ -97,6 +110,9 @@ func (UnimplementedControlServer) RunTest(context.Context, *RunTestRequest) (*Ru
 }
 func (UnimplementedControlServer) Subscribe(*SubscribeRequest, Control_SubscribeServer) error {
 	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
+}
+func (UnimplementedControlServer) RegisterProject(context.Context, *RegisterProjectRequest) (*RegisterProjectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterProject not implemented")
 }
 func (UnimplementedControlServer) mustEmbedUnimplementedControlServer() {}
 
@@ -150,6 +166,24 @@ func (x *controlSubscribeServer) Send(m *Event) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Control_RegisterProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlServer).RegisterProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ntt.Control/RegisterProject",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlServer).RegisterProject(ctx, req.(*RegisterProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Control_ServiceDesc is the grpc.ServiceDesc for Control service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -160,6 +194,10 @@ var Control_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunTest",
 			Handler:    _Control_RunTest_Handler,
+		},
+		{
+			MethodName: "RegisterProject",
+			Handler:    _Control_RegisterProject_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -54,3 +54,8 @@ func (ctrl *Controller) Subscribe(*pb.SubscribeRequest, pb.Control_SubscribeServ
 	// TODO(5nord): How broadcast to all subscribers?
 	return nil
 }
+
+func (ctrl *Controller) RegisterProject(ctx context.Context, req *pb.RegisterProjectRequest) (*pb.RegisterProjectResponse, error) {
+	// TODO(5nord): Implement
+	return nil, nil
+}
