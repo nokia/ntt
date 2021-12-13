@@ -1,0 +1,47 @@
+syntax = "proto3";
+option go_package = "github.com/nokia/ntt/protobuf";
+package ntt;
+
+import "parameter.proto";
+
+// Test control service provides a set of operations to control and monitor the
+// test execution.
+//
+// Control service is roughly equivalent to ETSI Test Controller and Management
+// Interface (TCI-TM)
+service Control {
+	// RunTest executes a test case or control flow. It will return the ID
+	// of the execution. The ID can be used to retrieve the results or to
+	// cancel the execution.
+	rpc RunTest(RunTestRequest) returns (RunTestResponse) {}
+
+	// Subscribe returns a stream of events, such as execution results.
+	rpc Subscribe(SubscribeRequest) returns (stream Event) {}
+}
+
+message RunTestRequest {
+	// Full qualified test case name or control function name.
+	string name = 1;
+
+	// Test case timeout in seconds.
+	float timeout = 4;
+
+	// Test case parameters.
+	repeated Parameter parameters = 2;
+
+	// Module parameters to be used for the test case.
+	repeated Parameter module_parameters = 3;
+}
+
+message RunTestResponse {
+	// Execution ID.
+	string ID = 1;
+}
+
+message SubscribeRequest {
+}
+
+message Event {
+	string ID = 1;
+}
+
