@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/nokia/ntt/project"
 	pb "github.com/nokia/ntt/protobuf"
+	"github.com/nokia/ntt/runner/k3s"
 )
 
 // The Test Controller provides a set of operations to control and monitor the
@@ -16,12 +18,19 @@ import (
 // The Controller is the equivalent to the ETSI Test Controller and Management
 // Interface (TCI-TM)
 type Controller struct {
+	// Log is the logger used by the controller.
+	Log func(string)
+
 	// gRPC requirement to have forward compatible implementations.
 	pb.UnimplementedControlServer
 
 	// Running tests
 	tests   map[string]test
 	testsMu sync.Mutex
+
+	// Projects
+	projects   map[string]project.Interface
+	projectsMu sync.Mutex
 }
 
 // A test that is being run.
@@ -31,16 +40,58 @@ type test struct {
 	r   Runner             // The backend that is running this test.
 }
 
-func (ctrl *Controller) RunTest(ctx context.Context, req *pb.RunTestRequest) (*pb.RunTestResponse, error) {
-	ctrl.testsMu.Lock()
-	defer ctrl.testsMu.Unlock()
+// A project is a collection of test files.
+type proj struct {
+	id      string
+	name    string
+	root    string
+	sources []string
+	imports []string
+}
 
-	// TODO(5nord): Create Runner where to get the suite from?
+func (p *proj) Root() string {
+	return p.root
+}
+
+func (p *proj) Sources() ([]string, error) {
+	return p.sources, nil
+}
+
+func (p *proj) Imports() ([]string, error) {
+	return p.imports, nil
+}
+
+// Writer interface for passing logs from backends to the user.
+func (ctrl *Controller) Write(p []byte) (int, error) {
+	s := string(p)
+	if ctrl.Log != nil {
+		ctrl.Log(s)
+	}
+	return len(s), nil
+}
+
+func (ctrl *Controller) RunTest(ctx context.Context, req *pb.RunTestRequest) (*pb.RunTestResponse, error) {
+
+	p, err := ctrl.getProject(req.ProjectId)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := k3s.New(ctrl, p)
+	if err != nil {
+		return nil, err
+	}
+
+	//r.Run(ctrl, req.GetName())
 
 	t := test{
 		id:  fmt.Sprint(len(ctrl.tests) + 1),
 		req: req,
+		r:   r,
 	}
+
+	ctrl.testsMu.Lock()
+	defer ctrl.testsMu.Unlock()
 
 	ctrl.tests[t.id] = t
 
@@ -50,12 +101,34 @@ func (ctrl *Controller) RunTest(ctx context.Context, req *pb.RunTestRequest) (*p
 }
 
 func (ctrl *Controller) Subscribe(*pb.SubscribeRequest, pb.Control_SubscribeServer) error {
-
 	// TODO(5nord): How broadcast to all subscribers?
 	return nil
 }
 
 func (ctrl *Controller) RegisterProject(ctx context.Context, req *pb.RegisterProjectRequest) (*pb.RegisterProjectResponse, error) {
-	// TODO(5nord): Implement
-	return nil, nil
+	ctrl.projectsMu.Lock()
+	defer ctrl.projectsMu.Unlock()
+
+	p := &proj{
+		id:      fmt.Sprint(len(ctrl.projects) + 1),
+		name:    req.GetName(),
+		root:    req.GetRootDir(),
+		sources: req.GetSources(),
+		imports: req.GetDependencies(),
+	}
+	ctrl.projects[p.id] = p
+	return &pb.RegisterProjectResponse{
+		ID: p.id,
+	}, nil
+}
+
+func (ctrl *Controller) getProject(id string) (project.Interface, error) {
+	ctrl.projectsMu.Lock()
+	defer ctrl.projectsMu.Unlock()
+
+	if p, ok := ctrl.projects[id]; ok {
+		return p, nil
+	}
+
+	return nil, fmt.Errorf("project %s not found", id)
 }

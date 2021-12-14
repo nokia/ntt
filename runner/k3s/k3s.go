@@ -21,7 +21,7 @@ type Runner struct {
 	p project.Interface
 
 	// Working directory
-	Dir string
+	dir string
 }
 
 func (r *Runner) Run(w io.Writer, testID string) error {
@@ -40,6 +40,10 @@ func (r *Runner) Run(w io.Writer, testID string) error {
 	return multierror.Append(err, r.report(w, testID)).ErrorOrNil()
 }
 
+func (r *Runner) Dir() string {
+	return r.dir
+}
+
 func (r *Runner) report(w io.Writer, testID string) error {
 
 	// Display a nice summary
@@ -52,7 +56,7 @@ func (r *Runner) report(w io.Writer, testID string) error {
 
 // clean removes all artifacts of testID from the working directory.
 func (r *Runner) clean(testID string) {
-	files, _ := filepath.Glob(filepath.Join(r.Dir, "logs", testID+"-*"))
+	files, _ := filepath.Glob(filepath.Join(r.Dir(), "logs", testID+"-*"))
 	for _, f := range files {
 		if err := os.RemoveAll(f); err != nil {
 			log.Debugf("Removing %q failed: %s", f, err)
@@ -61,7 +65,7 @@ func (r *Runner) clean(testID string) {
 }
 
 func (r *Runner) LogDir(testID string) string {
-	return filepath.Join(r.Dir, "logs", testID+"-0")
+	return filepath.Join(r.Dir(), "logs", testID+"-0")
 }
 
 // New returns a new Runner for executing TTCN-3 tests with k3s backend.
@@ -85,7 +89,7 @@ func New(w io.Writer, p project.Interface) (*Runner, error) {
 
 	return &Runner{
 		p:   p,
-		Dir: dir,
+		dir: dir,
 	}, nil
 }
 
@@ -110,6 +114,7 @@ func nttWorkingDir(p project.Interface) (string, error) {
 func nttCommand(p project.Interface, cmdName string, opts ...string) *exec.Cmd {
 	cmd := exec.Command(nttExecutable())
 	cmd.Env = nttEnv(p)
+	setPdeathsig(cmd)
 
 	// ntt commands have a common format:
 	//     ntt <cmdName> [<args>] [<opts>]
