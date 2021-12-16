@@ -43,12 +43,12 @@ func (s *Server) reportError(err error) {
 		diag := protocol.Diagnostic{
 			Range: protocol.Range{
 				Start: protocol.Position{
-					Line:      float64(err.Pos.Line - 1),
-					Character: float64(err.Pos.Column - 1),
+					Line:      uint32(err.Pos.Line - 1),
+					Character: uint32(err.Pos.Column - 1),
 				},
 				End: protocol.Position{
-					Line:      float64(err.Pos.Line - 1),
-					Character: float64(err.Pos.Column - 1),
+					Line:      uint32(err.Pos.Line - 1),
+					Character: uint32(err.Pos.Column - 1),
 				},
 			},
 			Severity: protocol.SeverityError,

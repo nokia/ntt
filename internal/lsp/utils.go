@@ -21,8 +21,8 @@ func location(pos loc.Position) protocol.Location {
 
 func position(line, column int) protocol.Position {
 	return protocol.Position{
-		Line:      float64(line - 1),
-		Character: float64(column - 1),
+		Line:      uint32(line - 1),
+		Character: uint32(column - 1),
 	}
 }
 

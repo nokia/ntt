@@ -19,8 +19,8 @@ var kindToStringMap = map[token.Kind]string{
 
 func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 	return protocol.Range{
-		Start: protocol.Position{Line: float64(begin.Line - 1), Character: float64(begin.Column - 1)},
-		End:   protocol.Position{Line: float64(end.Line - 1), Character: float64(end.Column - 1)}}
+		Start: protocol.Position{Line: uint32(begin.Line - 1), Character: uint32(begin.Column - 1)},
+		End:   protocol.Position{Line: uint32(end.Line - 1), Character: uint32(end.Column - 1)}}
 }
 
 func getComponentTypeDecl(syntax *ntt.ParseInfo, node *ast.ComponentTypeDecl) protocol.DocumentSymbol {

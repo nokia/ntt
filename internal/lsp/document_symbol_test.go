@@ -30,8 +30,8 @@ func setRange(syntax *ntt.ParseInfo, begin loc.Pos, end loc.Pos) protocol.Range 
 	b := syntax.Position(begin)
 	e := syntax.Position(end)
 	ret := protocol.Range{
-		Start: protocol.Position{Line: float64(b.Line - 1), Character: float64(b.Column)},
-		End:   protocol.Position{Line: float64(e.Line - 1), Character: float64(e.Column)}}
+		Start: protocol.Position{Line: uint32(b.Line - 1), Character: uint32(b.Column)},
+		End:   protocol.Position{Line: uint32(e.Line - 1), Character: uint32(e.Column)}}
 
 	return ret
 }
