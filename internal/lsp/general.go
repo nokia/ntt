@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"net"
 	"os"
 	"path"
 
@@ -9,7 +10,9 @@ import (
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/project"
+	pb "github.com/nokia/ntt/protobuf"
 	errors "golang.org/x/xerrors"
+	"google.golang.org/grpc"
 )
 
 func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
@@ -70,6 +73,19 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	s.state = serverInitialized
 	s.stateMu.Unlock()
 
+	conn, err := grpc.Dial("mem",
+		grpc.WithInsecure(),
+		grpc.WithBlock(),
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			return nil, nil
+		}))
+
+	if err != nil {
+		return err
+	}
+
+	s.ctrl = pb.NewControlClient(conn)
+
 	for _, folder := range s.pendingFolders {
 		log.Printf("Scanning %q for possible TTCN-3 suites\n", folder.URI)
 		for _, root := range project.Discover(folder.URI) {
@@ -81,6 +97,7 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 }
 
 func (s *Server) shutdown(ctx context.Context) error {
+
 	s.stateMu.Lock()
 	defer s.stateMu.Unlock()
 	if s.state < serverInitialized {

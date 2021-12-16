@@ -18,6 +18,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	pb "github.com/nokia/ntt/protobuf"
 	errors "golang.org/x/xerrors"
 )
 
@@ -83,6 +84,8 @@ type Server struct {
 
 	diagsMu sync.Mutex
 	diags   map[string][]protocol.Diagnostic
+
+	ctrl pb.ControlClient
 }
 
 func (s *Server) Fatal(ctx context.Context, msg string) {
