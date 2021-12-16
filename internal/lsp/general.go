@@ -55,8 +55,8 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 					IncludeText: false,
 				},
 			},
-			Workspace: protocol.WorkspaceGn{
-				WorkspaceFolders: protocol.WorkspaceFoldersGn{
+			Workspace: protocol.Workspace5Gn{
+				WorkspaceFolders: protocol.WorkspaceFolders4Gn{
 					Supported:           true,
 					ChangeNotifications: "workspace/didChangeWorkspaceFolders",
 				},
