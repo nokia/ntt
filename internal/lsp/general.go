@@ -55,6 +55,21 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 					IncludeText: false,
 				},
 			},
+			SemanticTokensProvider: protocol.SemanticTokensRegistrationOptions{
+
+				TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
+					DocumentSelector: protocol.DocumentSelector{
+						protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "*.ttcn3"},
+					},
+				},
+				SemanticTokensOptions: protocol.SemanticTokensOptions{
+					Legend: protocol.SemanticTokensLegend{
+						TokenTypes:     tokenTypes,
+						TokenModifiers: tokenModifiers,
+					},
+					Range: true,
+					Full:  true,
+				}},
 			Workspace: protocol.Workspace5Gn{
 				WorkspaceFolders: protocol.WorkspaceFolders4Gn{
 					Supported:           true,
@@ -62,6 +77,10 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 				},
 			},
 		},
+		ServerInfo: struct {
+			Name    string "json:\"name\""
+			Version string "json:\"version,omitempty\""
+		}{Name: "ntt", Version: "0.12.0"},
 	}, nil
 }
 

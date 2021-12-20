@@ -1739,7 +1739,7 @@ type DocumentRangeFormattingParams struct {
  *
  * The use of a string as a document filter is deprecated @since 3.16.0.
  */
-type DocumentSelector = []string /*string | DocumentFilter*/
+type DocumentSelector = []DocumentFilter /*string | DocumentFilter*/
 
 /**
  * Represents programming constructs like variables, classes, interfaces etc.
