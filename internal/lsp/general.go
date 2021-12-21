@@ -59,7 +59,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 
 				TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
 					DocumentSelector: protocol.DocumentSelector{
-						protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "*.ttcn3"},
+						protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
 					},
 				},
 				SemanticTokensOptions: protocol.SemanticTokensOptions{
