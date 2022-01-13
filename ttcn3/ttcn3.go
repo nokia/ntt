@@ -10,7 +10,6 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/memoize"
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/parser"
 )
 
@@ -21,13 +20,6 @@ var (
 	// Limits the number of parallel parser calls per process.
 	parseLimit = make(chan struct{}, runtime.NumCPU())
 )
-
-// Tree represents the TTCN-3 syntax tree, usually of a file.
-type Tree struct {
-	FileSet *loc.FileSet
-	Root    ast.NodeList
-	Err     error
-}
 
 // Parse parses a string and returns a syntax tree.
 func Parse(src string) *Tree {
