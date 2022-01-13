@@ -32,3 +32,37 @@ func TestFullModuleKwOnly(t *testing.T) {
 
 	assert.NotEqual(t, len(list.Data), 0)
 }
+
+func TestFullModuleKwTypeId(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type record MyRec {
+			integer i
+		}
+        type record length(0..2) of integer RoI;
+        type set MySet {
+			integer i
+		}
+        function f() return integer {}
+	  }`)
+
+	list := generateTokenList(t, suite)
+
+	assert.Equal(t, list.Data,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			2, 8, 4, uint32(lsp.Keyword), 0,
+			0, 5, 6, uint32(lsp.Keyword), 0,
+			0, 7, 5, uint32(lsp.Struct), 0,
+			3, 8, 4, uint32(lsp.Keyword), 0,
+			0, 5, 6, uint32(lsp.Keyword), 0,
+			0, 7, 6, uint32(lsp.Keyword), 0,
+			0, 13, 2, uint32(lsp.Keyword), 0,
+			0, 11, 3, uint32(lsp.Struct), 0,
+			1, 8, 4, uint32(lsp.Keyword), 0,
+			0, 5, 3, uint32(lsp.Keyword), 0,
+			0, 4, 5, uint32(lsp.Struct), 0,
+			3, 8, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Function), 0,
+			0, 4, 6, uint32(lsp.Keyword), 0})
+}

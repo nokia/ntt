@@ -116,7 +116,10 @@ func mergeSortTokenarrays(toka1 []uint32, toka2 []uint32) []uint32 {
 			res = append(res, tokGen.NewTuple(linet2, colt2, toka2[j+2], SemanticTokenType(toka2[j+3]), toka2[j+4])...)
 			j += recordLen
 			if j >= len(toka2) {
-				res = append(res, toka1[i:]...)
+				if i < len(toka1) {
+					res = append(res, tokGen.NewTuple(linet1, colt1, toka1[i+2], SemanticTokenType(toka1[i+3]), toka1[i+4])...)
+					res = append(res, toka1[i+recordLen:]...)
+				}
 				return res
 			}
 			linet2 += toka2[j]
@@ -129,7 +132,10 @@ func mergeSortTokenarrays(toka1 []uint32, toka2 []uint32) []uint32 {
 			res = append(res, tokGen.NewTuple(linet1, colt1, toka1[i+2], SemanticTokenType(toka1[i+3]), toka1[i+4])...)
 			i += recordLen
 			if i >= len(toka1) {
-				res = append(res, toka2[j:]...)
+				if j < len(toka2) {
+					res = append(res, tokGen.NewTuple(linet2, colt2, toka2[j+2], SemanticTokenType(toka2[j+3]), toka2[j+4])...)
+					res = append(res, toka2[j+recordLen:]...)
+				}
 				return res
 			}
 			linet1 += toka1[i]
@@ -177,10 +183,14 @@ func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) *protocol.SemanticTokens {
 	var tg TokenGen
 	d := make([]uint32, 0, 20)
+	nodeStack := make([]ast.Node, 0, 10)
+
 	ast.Inspect(syntax.Module, func(n ast.Node) bool {
 		if n == nil {
+			nodeStack = nodeStack[:len(nodeStack)-1]
 			return false
 		}
+		nodeStack = append(nodeStack, n)
 		begin := syntax.Position(n.Pos())
 		end := syntax.Position(n.LastTok().End())
 		switch node := n.(type) {
@@ -190,6 +200,27 @@ func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) 
 				end = syntax.Position(node.Name.End())
 				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc())...)
 				return false
+			}
+		case *ast.Field:
+			isSubType := false
+			for i := range nodeStack {
+				if _, ok := nodeStack[len(nodeStack)-i-1].(*ast.SubTypeDecl); ok {
+					isSubType = true
+				}
+			}
+			if isSubType {
+				if node.Name != nil {
+					begin = syntax.Position(node.Name.Pos())
+					end = syntax.Position(node.Name.End())
+					d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc())...)
+				}
+				return false
+			}
+		case *ast.FuncDecl:
+			if node.Name != nil {
+				begin = syntax.Position(node.Name.Pos())
+				end = syntax.Position(node.Name.End())
+				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc())...)
 			}
 		}
 		return true
