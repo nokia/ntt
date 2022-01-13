@@ -72,7 +72,7 @@ var tokenTypes = []string{
 var tokenModifiers = []string{
 	"declaration", "definition", "readonly", "static", "deprecated", "abstract", "async", "modification", "documentation", "defaultLibrary"}
 
-func (tg *TokenGen) NewTuple(line uint32, column uint32, length int, tokenType SemanticTokenType, modifier uint32) []uint32 {
+func (tg *TokenGen) NewTuple(line uint32, column uint32, length uint32, tokenType SemanticTokenType, modifier uint32) []uint32 {
 	var res_line, res_column uint32
 	if tg.PrevLine == line {
 		res_column = column - tg.PrevColumn
@@ -85,6 +85,61 @@ func (tg *TokenGen) NewTuple(line uint32, column uint32, length int, tokenType S
 	}
 	tg.PrevColumn = column
 	return []uint32{res_line, res_column, uint32(length), uint32(tokenType), modifier}
+}
+
+func isPosGt(line1 uint32, col1 uint32, line2 uint32, col2 uint32) bool {
+	if line1 > line2 {
+		return true
+	}
+	if line1 == line2 {
+		return col1 > col2
+	}
+	return false
+}
+
+func mergeSortTokenarrays(toka1 []uint32, toka2 []uint32) []uint32 {
+	const recordLen int = 5
+	if len(toka1) == 0 {
+		return toka2
+	}
+	if len(toka2) == 0 {
+		return toka1
+	}
+	res := make([]uint32, 0, len(toka1)+len(toka2))
+	linet1 := toka1[0]
+	colt1 := toka1[1]
+	tokGen := TokenGen{}
+	linet2 := toka2[0]
+	colt2 := toka2[1]
+	for i, j := 0, 0; ; {
+		if isPosGt(linet1, colt1, linet2, colt2) {
+			res = append(res, tokGen.NewTuple(linet2, colt2, toka2[j+2], SemanticTokenType(toka2[j+3]), toka2[j+4])...)
+			j += recordLen
+			if j >= len(toka2) {
+				res = append(res, toka1[i:]...)
+				return res
+			}
+			linet2 += toka2[j]
+			if toka2[j] == 0 {
+				colt2 += toka2[j+1]
+			} else {
+				colt2 = toka2[j+1]
+			}
+		} else {
+			res = append(res, tokGen.NewTuple(linet1, colt1, toka1[i+2], SemanticTokenType(toka1[i+3]), toka1[i+4])...)
+			i += recordLen
+			if i >= len(toka1) {
+				res = append(res, toka2[j:]...)
+				return res
+			}
+			linet1 += toka1[i]
+			if toka1[i] == 0 {
+				colt1 += toka1[i+1]
+			} else {
+				colt1 = toka1[i+1]
+			}
+		}
+	}
 }
 
 func modifierCalc(args ...SemanticTokenModifiers) uint32 {
@@ -112,7 +167,7 @@ func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 		if tok.IsKeyword() {
 			line := uint32(fs.Position(pos).Line - 1)
 			column := uint32(fs.Position(pos).Column - 1)
-			d = append(d, tg.NewTuple(line, column, len(lit), Keyword, modifierCalc())...)
+			d = append(d, tg.NewTuple(line, column, uint32(len(lit)), Keyword, modifierCalc())...)
 		}
 
 	}
@@ -120,6 +175,7 @@ func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 }
 
 func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) *protocol.SemanticTokens {
+	var tg TokenGen
 	d := make([]uint32, 0, 20)
 	ast.Inspect(syntax.Module, func(n ast.Node) bool {
 		if n == nil {
@@ -128,15 +184,17 @@ func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) 
 		begin := syntax.Position(n.Pos())
 		end := syntax.Position(n.LastTok().End())
 		switch node := n.(type) {
-		case *ast.Token:
-			if node.Kind.IsKeyword() {
-				d = append(d, uint32(begin.Line), uint32(begin.Column), uint32(end.Offset-begin.Offset), uint32(Keyword), modifierCalc())
+		case *ast.StructTypeDecl:
+			if node.Name != nil {
+				begin = syntax.Position(node.Name.Pos())
+				end = syntax.Position(node.Name.End())
+				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc())...)
 				return false
 			}
 		}
 		return true
 	})
-	d = append(d, NewSyntaxTokensFromCurrentModule(fileName)...)
+	d = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName), d)
 	ret := &protocol.SemanticTokens{Data: d}
 	return ret
 }
