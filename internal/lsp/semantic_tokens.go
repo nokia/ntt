@@ -198,7 +198,7 @@ func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) 
 			if node.Name != nil {
 				begin = syntax.Position(node.Name.Pos())
 				end = syntax.Position(node.Name.End())
-				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc())...)
+				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
 				return false
 			}
 		case *ast.Field:
@@ -212,7 +212,7 @@ func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) 
 				if node.Name != nil {
 					begin = syntax.Position(node.Name.Pos())
 					end = syntax.Position(node.Name.End())
-					d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc())...)
+					d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
 				}
 				return false
 			}
@@ -220,7 +220,7 @@ func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) 
 			if node.Name != nil {
 				begin = syntax.Position(node.Name.Pos())
 				end = syntax.Position(node.Name.End())
-				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc())...)
+				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc(definition))...)
 			}
 		}
 		return true
