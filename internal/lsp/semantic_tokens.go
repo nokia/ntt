@@ -16,11 +16,18 @@ import (
 )
 
 type SemanticTokenType uint32
-type SemanticTokenModifiers uint8
+type SemanticTokenModifiers uint32
 
 type TokenGen struct {
 	PrevLine   uint32
 	PrevColumn uint32
+}
+
+type SemTokVisitor struct {
+	syntax    *ntt.ParseInfo
+	Data      []uint32
+	tg        TokenGen
+	nodeStack []ast.Node
 }
 
 const (
@@ -53,6 +60,8 @@ const (
 )
 
 const (
+	// TODO: should be = 1 << iota.
+	// see: https://github.com/microsoft/vscode-languageserver-node/issues/885
 	declaration SemanticTokenModifiers = iota
 	definition
 	readonly
@@ -64,6 +73,20 @@ const (
 	documentation
 	defaultLibrary
 )
+
+var predefTypeMap map[string]bool = map[string]bool{
+	"anytype": true, "bitstring": true, "boolean": true, "charstring": true, "default": true, "float": true, "hexstring": true,
+	"integer": true, "octetstring": true, "universal charstring": true, "verdicttype": true}
+
+var libraryFuncMap map[string]bool = map[string]bool{
+	"int2char": true, "int2unichar": true, "int2bit": true, "int2enum": true, "int2hex": true, "int2oct": true, "int2str": true, "int2float": true,
+	"float2int": true, "char2int": true, "char2oct": true, "unichar2int": true, "unichar2oct": true, "bit2int": true, "bit2hex": true,
+	"bit2oct": true, "bit2str": true, "hex2int": true, "hex2bit": true, "hex2oct": true, "hex2str": true, "oct2int": true, "oct2bit": true,
+	"oct2hex": true, "oct2str": true, "oct2char": true, "oct2unichar": true, "str2int": true, "str2hex": true, "str2oct": true, "str2float": true,
+	"enum2int": true, "any2unistr": true, "lengthof": true, "sizeof": true, "ispresent": true, "ischosen": true, "isvalue": true, "isbound": true,
+	"istemplatekind": true, "regexp": true, "substr": true, "replace": true, "encvalue": true, "decvalue": true, "encvalue_unichar": true,
+	"decvalue_unichar": true, "encvalue_o": true, "decvalue_o": true, "get_stringencoding": true, "remove_bom": true, "rnd": true,
+	"testcasename": true, "hostid": true, "match": true, "setverdict": true, "log": true}
 
 var tokenTypes = []string{
 	"namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember",
@@ -170,7 +193,7 @@ func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 		if tok == token.EOF {
 			break
 		}
-		if tok.IsKeyword() {
+		if tok.IsKeyword() && tok != token.UNIVERSAL {
 			line := uint32(fs.Position(pos).Line - 1)
 			column := uint32(fs.Position(pos).Column - 1)
 			d = append(d, tg.NewTuple(line, column, uint32(len(lit)), Keyword, modifierCalc())...)
@@ -180,53 +203,147 @@ func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 	return d
 }
 
-func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) *protocol.SemanticTokens {
-	var tg TokenGen
-	d := make([]uint32, 0, 20)
-	nodeStack := make([]ast.Node, 0, 10)
-
-	ast.Inspect(syntax.Module, func(n ast.Node) bool {
-		if n == nil {
-			nodeStack = nodeStack[:len(nodeStack)-1]
+func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
+	if n == nil {
+		tokv.nodeStack = tokv.nodeStack[:len(tokv.nodeStack)-1]
+		return false
+	}
+	tokv.nodeStack = append(tokv.nodeStack, n)
+	begin := tokv.syntax.Position(n.Pos())
+	end := tokv.syntax.Position(n.LastTok().End())
+	switch node := n.(type) {
+	case *ast.StructTypeDecl:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
+			for _, field := range node.Fields {
+				ast.Inspect(field, tokv.VisitModuleDefs)
+			}
 			return false
 		}
-		nodeStack = append(nodeStack, n)
-		begin := syntax.Position(n.Pos())
-		end := syntax.Position(n.LastTok().End())
-		switch node := n.(type) {
-		case *ast.StructTypeDecl:
+	case *ast.Field:
+		isSubType := false
+		for i := range tokv.nodeStack {
+			if _, ok := tokv.nodeStack[len(tokv.nodeStack)-i-1].(*ast.SubTypeDecl); ok {
+				isSubType = true
+			}
+		}
+		if node.Type != nil {
+			ast.Inspect(node.Type, tokv.VisitModuleDefs)
+		}
+		if isSubType {
 			if node.Name != nil {
-				begin = syntax.Position(node.Name.Pos())
-				end = syntax.Position(node.Name.End())
-				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
-				return false
+				begin = tokv.syntax.Position(node.Name.Pos())
+				end = tokv.syntax.Position(node.Name.End())
+				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
 			}
-		case *ast.Field:
-			isSubType := false
-			for i := range nodeStack {
-				if _, ok := nodeStack[len(nodeStack)-i-1].(*ast.SubTypeDecl); ok {
-					isSubType = true
-				}
+			return false
+		}
+	case *ast.PortTypeDecl:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Interface, modifierCalc(definition))...)
+			for _, attr := range node.Attrs {
+				ast.Inspect(attr, tokv.VisitModuleDefs)
 			}
-			if isSubType {
-				if node.Name != nil {
-					begin = syntax.Position(node.Name.Pos())
-					end = syntax.Position(node.Name.End())
-					d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
-				}
-				return false
-			}
-		case *ast.FuncDecl:
-			if node.Name != nil {
-				begin = syntax.Position(node.Name.Pos())
-				end = syntax.Position(node.Name.End())
-				d = append(d, tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc(definition))...)
+		}
+		return false
+
+	case *ast.ComponentTypeDecl:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Class, modifierCalc(definition))...)
+			if node.Body != nil {
+				ast.Inspect(node.Body, tokv.VisitModuleDefs)
 			}
 		}
 		return true
-	})
-	d = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName), d)
-	ret := &protocol.SemanticTokens{Data: d}
+	case *ast.FuncDecl:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc(definition))...)
+		}
+		if node.Params != nil {
+			ast.Inspect(node.Params, tokv.getFormalPars)
+		}
+		if node.Return != nil {
+			ast.Inspect(node.Return, tokv.VisitModuleDefs)
+		}
+		if node.Body != nil {
+			ast.Inspect(node.Body, tokv.VisitModuleDefs)
+		}
+	case *ast.TemplateDecl:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, modifierCalc(declaration|readonly))...)
+		}
+		if node.Type != nil {
+			ast.Inspect(node.Type, tokv.VisitModuleDefs)
+		}
+		return false
+	case *ast.ValueDecl:
+		ast.Inspect(node.Type, tokv.VisitModuleDefs)
+		for _, decl := range node.Decls {
+			ast.Inspect(decl, tokv.VisitModuleDefs)
+		}
+		return false
+	case *ast.Declarator:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, modifierCalc(declaration|readonly))...)
+		}
+		return false
+	case *ast.Ident:
+		if _, ok := predefTypeMap[node.String()]; ok {
+			begin := tokv.syntax.Position(node.Pos())
+			end := tokv.syntax.Position(node.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, modifierCalc(defaultLibrary))...)
+		} else if _, ok := libraryFuncMap[node.String()]; ok {
+			begin := tokv.syntax.Position(node.Pos())
+			end := tokv.syntax.Position(node.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc(defaultLibrary))...)
+		}
+		return false
+	}
+	return true
+}
+
+func (tokv *SemTokVisitor) getFormalPars(nt ast.Node) bool {
+	switch fpars := nt.(type) {
+	case *ast.FormalPar:
+		if fpars.Type != nil {
+			ast.Inspect(fpars.Type, tokv.VisitModuleDefs)
+		}
+		if fpars.Name != nil {
+			begin := tokv.syntax.Position(fpars.Name.Pos())
+			end := tokv.syntax.Position(fpars.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, modifierCalc(declaration))...)
+		}
+		return false
+	}
+	return true
+}
+
+func NewSemTokVisitor(synt *ntt.ParseInfo) *SemTokVisitor {
+	return &SemTokVisitor{
+		syntax:    synt,
+		Data:      make([]uint32, 0, 20),
+		tg:        TokenGen{},
+		nodeStack: make([]ast.Node, 0, 10)}
+}
+
+func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, fileName string) *protocol.SemanticTokens {
+	stVisitor := NewSemTokVisitor(syntax)
+
+	ast.Inspect(syntax.Module, stVisitor.VisitModuleDefs)
+	stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName), stVisitor.Data)
+	ret := &protocol.SemanticTokens{Data: stVisitor.Data}
 	return ret
 }
 
