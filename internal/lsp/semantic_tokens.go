@@ -24,10 +24,12 @@ type TokenGen struct {
 }
 
 type SemTokVisitor struct {
-	syntax    *ntt.ParseInfo
-	Data      []uint32
-	tg        TokenGen
-	nodeStack []ast.Node
+	syntax      *ntt.ParseInfo
+	actualToken SemanticTokenType
+	actualModif SemanticTokenModifiers
+	Data        []uint32
+	tg          TokenGen
+	nodeStack   []ast.Node
 }
 
 const (
@@ -57,13 +59,13 @@ const (
 	Number
 	Regexp
 	Operator
+	// Not part of the LSP
+	None
 )
 
 const (
-	// TODO: should be = 1 << iota.
-	// see: https://github.com/microsoft/vscode-languageserver-node/issues/885
-	declaration SemanticTokenModifiers = iota
-	definition
+	Declaration SemanticTokenModifiers = 1 << iota
+	Definition
 	readonly
 	static
 	deprecated
@@ -71,7 +73,8 @@ const (
 	async
 	modification
 	documentation
-	defaultLibrary
+	DefaultLibrary
+	Undefined = 0
 )
 
 var predefTypeMap map[string]bool = map[string]bool{
@@ -171,14 +174,6 @@ func mergeSortTokenarrays(toka1 []uint32, toka2 []uint32) []uint32 {
 	}
 }
 
-func modifierCalc(args ...SemanticTokenModifiers) uint32 {
-	var ret uint32 = 0
-	for _, arg := range args {
-		ret |= 1 << uint32(arg)
-	}
-	return ret
-}
-
 func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 	scn := &scanner.Scanner{}
 	f := fs.Open(file)
@@ -196,66 +191,94 @@ func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
 		if tok.IsKeyword() && tok != token.UNIVERSAL {
 			line := uint32(fs.Position(pos).Line - 1)
 			column := uint32(fs.Position(pos).Column - 1)
-			d = append(d, tg.NewTuple(line, column, uint32(len(lit)), Keyword, modifierCalc())...)
+			d = append(d, tg.NewTuple(line, column, uint32(len(lit)), Keyword, 0)...)
 		}
 
 	}
 	return d
 }
 
+func (tokv *SemTokVisitor) pushNodeStack(n ast.Node) {
+	tokv.nodeStack = append(tokv.nodeStack, n)
+}
+
+func (tokv *SemTokVisitor) popNodeStack() {
+	tokv.nodeStack = tokv.nodeStack[:len(tokv.nodeStack)-1]
+}
+
 func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 	if n == nil {
-		tokv.nodeStack = tokv.nodeStack[:len(tokv.nodeStack)-1]
+		tokv.popNodeStack()
 		return false
 	}
-	tokv.nodeStack = append(tokv.nodeStack, n)
+	tokv.pushNodeStack(n)
 	begin := tokv.syntax.Position(n.Pos())
 	end := tokv.syntax.Position(n.LastTok().End())
 	switch node := n.(type) {
+	case *ast.Module:
+		if node.Name != nil {
+			begin = tokv.syntax.Position(node.Name.Pos())
+			end = tokv.syntax.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, uint32(Definition))...)
+		}
+		for _, def := range node.Defs {
+			ast.Inspect(def, tokv.VisitModuleDefs)
+		}
+		tokv.popNodeStack()
+		return false
 	case *ast.StructTypeDecl:
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, uint32(Definition))...)
 			for _, field := range node.Fields {
 				ast.Inspect(field, tokv.VisitModuleDefs)
 			}
+			tokv.popNodeStack()
 			return false
 		}
 	case *ast.Field:
+
 		isSubType := false
 		for i := range tokv.nodeStack {
 			if _, ok := tokv.nodeStack[len(tokv.nodeStack)-i-1].(*ast.SubTypeDecl); ok {
 				isSubType = true
+				break
 			}
 		}
 		if node.Type != nil {
+			tokv.actualToken = Type
+			tokv.actualModif = Undefined
 			ast.Inspect(node.Type, tokv.VisitModuleDefs)
+			tokv.actualToken = None
 		}
 		if isSubType {
 			if node.Name != nil {
 				begin = tokv.syntax.Position(node.Name.Pos())
 				end = tokv.syntax.Position(node.Name.End())
-				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, modifierCalc(definition))...)
+				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(Definition))...)
 			}
-			return false
 		}
+
+		tokv.popNodeStack()
+		return false
 	case *ast.PortTypeDecl:
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Interface, modifierCalc(definition))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Interface, uint32(Definition))...)
 			for _, attr := range node.Attrs {
 				ast.Inspect(attr, tokv.VisitModuleDefs)
 			}
 		}
+		tokv.popNodeStack()
 		return false
 
 	case *ast.ComponentTypeDecl:
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Class, modifierCalc(definition))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Class, uint32(Definition))...)
 			if node.Body != nil {
 				ast.Inspect(node.Body, tokv.VisitModuleDefs)
 			}
@@ -265,7 +288,7 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc(definition))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, uint32(Definition))...)
 		}
 		if node.Params != nil {
 			ast.Inspect(node.Params, tokv.getFormalPars)
@@ -280,35 +303,39 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, modifierCalc(declaration|readonly))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|readonly))...)
 		}
 		if node.Type != nil {
 			ast.Inspect(node.Type, tokv.VisitModuleDefs)
 		}
+		tokv.popNodeStack()
 		return false
 	case *ast.ValueDecl:
 		ast.Inspect(node.Type, tokv.VisitModuleDefs)
 		for _, decl := range node.Decls {
 			ast.Inspect(decl, tokv.VisitModuleDefs)
 		}
+		tokv.popNodeStack()
 		return false
 	case *ast.Declarator:
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, modifierCalc(declaration|readonly))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|readonly))...)
 		}
+		tokv.popNodeStack()
 		return false
 	case *ast.Ident:
+		begin := tokv.syntax.Position(node.Pos())
+		end := tokv.syntax.Position(node.End())
 		if _, ok := predefTypeMap[node.String()]; ok {
-			begin := tokv.syntax.Position(node.Pos())
-			end := tokv.syntax.Position(node.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, modifierCalc(defaultLibrary))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(DefaultLibrary))...)
 		} else if _, ok := libraryFuncMap[node.String()]; ok {
-			begin := tokv.syntax.Position(node.Pos())
-			end := tokv.syntax.Position(node.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, modifierCalc(defaultLibrary))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, uint32(DefaultLibrary))...)
+		} else if tokv.actualToken != None {
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
 		}
+		tokv.popNodeStack()
 		return false
 	}
 	return true
@@ -323,7 +350,7 @@ func (tokv *SemTokVisitor) getFormalPars(nt ast.Node) bool {
 		if fpars.Name != nil {
 			begin := tokv.syntax.Position(fpars.Name.Pos())
 			end := tokv.syntax.Position(fpars.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, modifierCalc(declaration))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Declaration))...)
 		}
 		return false
 	}
