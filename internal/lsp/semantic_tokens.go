@@ -66,7 +66,7 @@ const (
 const (
 	Declaration SemanticTokenModifiers = 1 << iota
 	Definition
-	readonly
+	Readonly
 	static
 	deprecated
 	abstract
@@ -300,13 +300,18 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			ast.Inspect(node.Body, tokv.VisitModuleDefs)
 		}
 	case *ast.TemplateDecl:
+		if node.Type != nil {
+			tokv.actualToken = Type
+			ast.Inspect(node.Type, tokv.VisitModuleDefs)
+			tokv.actualToken = Undefined
+		}
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|readonly))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|Readonly))...)
 		}
-		if node.Type != nil {
-			ast.Inspect(node.Type, tokv.VisitModuleDefs)
+		if node.Params != nil {
+			ast.Inspect(node.Params, tokv.getFormalPars)
 		}
 		tokv.popNodeStack()
 		return false
@@ -321,7 +326,7 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		if node.Name != nil {
 			begin = tokv.syntax.Position(node.Name.Pos())
 			end = tokv.syntax.Position(node.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|readonly))...)
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|Readonly))...)
 		}
 		tokv.popNodeStack()
 		return false
