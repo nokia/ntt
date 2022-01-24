@@ -316,7 +316,9 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		tokv.popNodeStack()
 		return false
 	case *ast.ValueDecl:
+		tokv.actualToken = Type
 		ast.Inspect(node.Type, tokv.VisitModuleDefs)
+		tokv.actualToken = Undefined
 		for _, decl := range node.Decls {
 			ast.Inspect(decl, tokv.VisitModuleDefs)
 		}
