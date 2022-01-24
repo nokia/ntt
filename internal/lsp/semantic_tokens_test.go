@@ -14,6 +14,8 @@ func generateTokenList(t *testing.T, suite *ntt.Suite) *protocol.SemanticTokens 
 
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	syntax := suite.ParseWithAllErrors(name)
+	//_, nodes := suite.Tags(name)
+	//log.Debug(fmt.Sprintf("SemanticTokens noeds %v.", nodes))
 	return lsp.NewSemanticTokensFromCurrentModule(syntax, name)
 }
 
@@ -83,7 +85,7 @@ func TestConstAndTemplDecl(t *testing.T) {
 
 	list := generateTokenList(t, suite)
 
-	assert.Equal(t, list.Data,
+	assert.Equal(t,
 		[]uint32{
 			0, 0, 6, uint32(lsp.Keyword), 0,
 			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
@@ -94,5 +96,18 @@ func TestConstAndTemplDecl(t *testing.T) {
 			0, 5, 6, uint32(lsp.Keyword), 0,
 			0, 7, 5, uint32(lsp.Struct), uint32(lsp.Definition),
 			1, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
-			2, 8, 5, uint32(lsp.Keyword), 0})
+			2, 8, 5, uint32(lsp.Keyword), 0,
+			0, 6, 5, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 6, 2, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			1, 2, 8, uint32(lsp.Keyword), 0,
+			0, 9, 5, uint32(lsp.Type), uint32(lsp.Undefined),
+			0, 6, 6, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			1, 2, 8, uint32(lsp.Keyword), 0,
+			0, 10, 5, uint32(lsp.Keyword), 0,
+			0, 7, 5, uint32(lsp.Type), uint32(lsp.Undefined),
+			0, 6, 6, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			0, 7, 8, uint32(lsp.Keyword), 0,
+			0, 9, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 3, uint32(lsp.Parameter), uint32(lsp.Declaration),
+		}, list.Data)
 }
