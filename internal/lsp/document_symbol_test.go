@@ -1,3 +1,5 @@
+// +build completion
+
 package lsp_test
 
 import (
