@@ -77,6 +77,8 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 		}
 	}
 
+	s.testCtrl = &TestController{}
+
 	return nil
 }
 
