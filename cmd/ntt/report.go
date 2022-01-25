@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -127,8 +126,8 @@ func NewReport(args []string) *Report {
 		r.AuxFiles = append(r.AuxFiles, fs.FindTTCN3Files(dir)...)
 	}
 
-	r.K3.Compiler = findK3Tool(r.suite, "mtc", "k3c")
-	r.K3.Runtime = findK3Tool(r.suite, "k3r")
+	r.K3.Compiler = k3.Compiler()
+	r.K3.Runtime = k3.Runtime()
 
 	r.OssInfo, _ = r.suite.Getenv("OSSINFO")
 	hint := filepath.Dir(r.K3.Runtime)
@@ -164,18 +163,6 @@ func NewReport(args []string) *Report {
 	}
 
 	return &r
-}
-
-func findK3Tool(suite *ntt.Suite, names ...string) string {
-	for _, name := range names {
-		if env, _ := suite.Getenv(strings.ToUpper(name)); env != "" {
-			name = env
-		}
-		if path, err := exec.LookPath(name); err == nil {
-			return path
-		}
-	}
-	return ""
 }
 
 func collectFolders(globs ...string) []string {
