@@ -78,7 +78,7 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	}
 
 	s.testCtrl = &TestController{}
-
+	s.testCtrl.Start()
 	return nil
 }
 
@@ -89,6 +89,7 @@ func (s *Server) shutdown(ctx context.Context) error {
 		log.Verbose("language server shutdown without initialization")
 	}
 	s.state = serverShutDown
+	s.testCtrl.Shutdown()
 	return nil
 }
 

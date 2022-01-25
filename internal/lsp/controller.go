@@ -6,18 +6,50 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/runner/k3s"
 )
 
 type TestController struct {
+	events chan Event
 }
 
-func (ctrl *TestController) IsRunning(p project.Interface, name string) bool {
+type Event struct {
+	Type string
+}
+
+func (c *TestController) Start() error {
+	c.events = make(chan Event)
+	go c.handleEvents()
+	return nil
+}
+
+func (c *TestController) Shutdown() error {
+	close(c.events)
+	return nil
+}
+
+func (c *TestController) handleEvents() {
+	for event := range c.events {
+		switch event.Type {
+		case "tcst":
+			log.Println("tcst")
+		case "tcfi":
+			log.Println("tcfi")
+		case "error":
+			log.Println("error")
+		case "log":
+			log.Println("log")
+		}
+	}
+}
+
+func (c *TestController) IsRunning(p project.Interface, name string) bool {
 	return false
 }
 
-func (ctrl *TestController) RunTest(p project.Interface, name string, logger io.Writer) error {
+func (c *TestController) RunTest(p project.Interface, name string, logger io.Writer) error {
 	fmt.Fprintf(logger, `
 ===============================================================================
 Compiling test %s in %q`, name, p.Root())
