@@ -99,7 +99,8 @@ func init() {
 	rootCmd.AddCommand(list.Command)
 	rootCmd.AddCommand(tags.Command)
 	rootCmd.AddCommand(report.Command)
-	if _, ok := os.LookupEnv("NTT_ENABLE_REPL"); ok {
+
+	if exe, _ := exec.LookPath("k3-run"); exe == "" || os.Getenv("K3_40_RUN_POLICY") != "old" {
 		rootCmd.AddCommand(run.Command)
 	}
 

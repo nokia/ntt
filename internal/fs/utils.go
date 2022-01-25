@@ -228,6 +228,10 @@ func IsDir(path string) bool {
 	return false
 }
 
+func ReplaceExt(path string, newExt string) string {
+	return strings.TrimSuffix(path, filepath.Ext(path)) + ".log"
+}
+
 func findFiles(dir string, matcher func(name string) bool) []string {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
