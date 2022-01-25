@@ -72,6 +72,8 @@ func (t *Test) Run() error {
 	cmd.Env = append(cmd.Env, t.ModulePars...)
 	cmd.Stdin = strings.NewReader(t.request())
 
+	setPdeathsig(cmd)
+
 	var stderr, stdout bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
