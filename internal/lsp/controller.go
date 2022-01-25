@@ -35,6 +35,7 @@ type pair struct {
 
 func (c *TestController) Start() error {
 	c.events = make(chan Event)
+	c.tests = make(map[pair]*Test)
 	go c.handleEvents()
 	return nil
 }
