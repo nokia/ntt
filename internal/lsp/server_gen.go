@@ -16,23 +16,19 @@ func (s *Server) CodeLens(ctx context.Context, params *protocol.CodeLensParams) 
 	return s.codeLens(ctx, params)
 }
 
-func (s *Server) CodeLensRefresh(context.Context) error {
-	return notImplemented("CodeLensRefresh")
-}
-
 func (s *Server) ColorPresentation(context.Context, *protocol.ColorPresentationParams) ([]protocol.ColorPresentation, error) {
 	return nil, notImplemented("ColorPresentation")
 }
 
-func (s *Server) Completion(ctx context.Context, params *protocol.CompletionParams) (*protocol.CompletionList, error) {
+func (s *Server) Completion(ctx context.Context, params *protocol.CompletionParams) (interface{}, error) {
 	return s.completion(ctx, params)
 }
 
-func (s *Server) Declaration(context.Context, *protocol.DeclarationParams) (protocol.Declaration, error) {
+func (s *Server) Declaration(context.Context, *protocol.DeclarationParams) (interface{}, error) {
 	return nil, notImplemented("Declaration")
 }
 
-func (s *Server) Definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
+func (s *Server) Definition(ctx context.Context, params *protocol.DefinitionParams) (interface{}, error) {
 	return s.definition(ctx, params)
 }
 
@@ -56,8 +52,20 @@ func (s *Server) DidClose(ctx context.Context, params *protocol.DidCloseTextDocu
 	return s.didClose(ctx, params)
 }
 
+func (s *Server) DidCreateFiles(context.Context, *protocol.CreateFilesParams) error {
+	return notImplemented("DidCreateFiles")
+}
+
+func (s *Server) DidDeleteFiles(context.Context, *protocol.DeleteFilesParams) error {
+	return notImplemented("DidDeleteFiles")
+}
+
 func (s *Server) DidOpen(ctx context.Context, params *protocol.DidOpenTextDocumentParams) error {
 	return s.didOpen(ctx, params)
+}
+
+func (s *Server) DidRenameFiles(context.Context, *protocol.RenameFilesParams) error {
+	return notImplemented("DidRenameFiles")
 }
 
 func (s *Server) DidSave(ctx context.Context, params *protocol.DidSaveTextDocumentParams) error {
@@ -100,7 +108,7 @@ func (s *Server) Hover(context.Context, *protocol.HoverParams) (*protocol.Hover,
 	return nil, notImplemented("Hover")
 }
 
-func (s *Server) Implementation(context.Context, *protocol.ImplementationParams) (protocol.Definition, error) {
+func (s *Server) Implementation(context.Context, *protocol.ImplementationParams) (interface{}, error) {
 	return nil, notImplemented("Implementation")
 }
 
@@ -116,8 +124,16 @@ func (s *Server) Initialized(ctx context.Context, params *protocol.InitializedPa
 	return s.initialized(ctx, params)
 }
 
+func (s *Server) LinkedEditingRange(context.Context, *protocol.LinkedEditingRangeParams) (*protocol.LinkedEditingRanges, error) {
+	return nil, notImplemented("LinkedEditingRange")
+}
+
 func (s *Server) LogTrace(context.Context, *protocol.LogTraceParams) error {
 	return notImplemented("LogTrace")
+}
+
+func (s *Server) Moniker(context.Context, *protocol.MonikerParams) ([]protocol.Moniker, error) {
+	return nil, notImplemented("Moniker")
 }
 
 func (s *Server) NonstandardRequest(ctx context.Context, method string, params interface{}) (interface{}, error) {
@@ -156,6 +172,10 @@ func (s *Server) Resolve(context.Context, *protocol.CompletionItem) (*protocol.C
 	return nil, notImplemented("Resolve")
 }
 
+func (s *Server) ResolveCodeAction(context.Context, *protocol.CodeAction) (*protocol.CodeAction, error) {
+	return nil, notImplemented("ResolveCodeAction")
+}
+
 func (s *Server) ResolveCodeLens(context.Context, *protocol.CodeLens) (*protocol.CodeLens, error) {
 	return nil, notImplemented("ResolveCodeLens")
 }
@@ -188,6 +208,10 @@ func (s *Server) SetTrace(ctx context.Context, params *protocol.SetTraceParams) 
 	return s.setTrace(ctx, params)
 }
 
+func (s *Server) ShowDocument(context.Context, *protocol.ShowDocumentParams) (*protocol.ShowDocumentResult, error) {
+	return nil, notImplemented("ShowDocument")
+}
+
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.shutdown(ctx)
 }
@@ -200,8 +224,20 @@ func (s *Server) Symbol(context.Context, *protocol.WorkspaceSymbolParams) ([]pro
 	return nil, notImplemented("Symbol")
 }
 
-func (s *Server) TypeDefinition(context.Context, *protocol.TypeDefinitionParams) (protocol.Definition, error) {
+func (s *Server) TypeDefinition(context.Context, *protocol.TypeDefinitionParams) (interface{}, error) {
 	return nil, notImplemented("TypeDefinition")
+}
+
+func (s *Server) WillCreateFiles(context.Context, *protocol.CreateFilesParams) (*protocol.WorkspaceEdit, error) {
+	return nil, notImplemented("WillCreateFiles")
+}
+
+func (s *Server) WillDeleteFiles(context.Context, *protocol.DeleteFilesParams) (*protocol.WorkspaceEdit, error) {
+	return nil, notImplemented("WillDeleteFiles")
+}
+
+func (s *Server) WillRenameFiles(context.Context, *protocol.RenameFilesParams) (*protocol.WorkspaceEdit, error) {
+	return nil, notImplemented("WillRenameFiles")
 }
 
 func (s *Server) WillSave(context.Context, *protocol.WillSaveTextDocumentParams) error {
@@ -214,44 +250,4 @@ func (s *Server) WillSaveWaitUntil(context.Context, *protocol.WillSaveTextDocume
 
 func (s *Server) WorkDoneProgressCancel(context.Context, *protocol.WorkDoneProgressCancelParams) error {
 	return notImplemented("WorkDoneProgressCancel")
-}
-
-func (s *Server) DidCreateFiles(context.Context, *protocol.CreateFilesParams) error {
-	return notImplemented("DidCreateFiles")
-}
-
-func (s *Server) DidRenameFiles(context.Context, *protocol.RenameFilesParams) error {
-	return notImplemented("DidRenameFiles")
-}
-
-func (s *Server) DidDeleteFiles(context.Context, *protocol.DeleteFilesParams) error {
-	return notImplemented("DidDeleteFiles")
-}
-
-func (s *Server) LinkedEditingRange(context.Context, *protocol.LinkedEditingRangeParams) (*protocol.LinkedEditingRanges, error) {
-	return nil, notImplemented("DidDeleteFiles")
-}
-
-func (s *Server) Moniker(context.Context, *protocol.MonikerParams) ([]protocol.Moniker, error) {
-	return nil, notImplemented("Moniker")
-}
-
-func (s *Server) ResolveCodeAction(context.Context, *protocol.CodeAction) (*protocol.CodeAction, error) {
-	return nil, notImplemented("ResolveCodeAction")
-}
-
-func (s *Server) ShowDocument(context.Context, *protocol.ShowDocumentParams) (*protocol.ShowDocumentResult, error) {
-	return nil, notImplemented("ShowDocument")
-}
-
-func (s *Server) WillCreateFiles(context.Context, *protocol.CreateFilesParams) (*protocol.WorkspaceEdit, error) {
-	return nil, notImplemented("WillCreateFiles")
-}
-
-func (s *Server) WillRenameFiles(context.Context, *protocol.RenameFilesParams) (*protocol.WorkspaceEdit, error) {
-	return nil, notImplemented("WillRenameFiles")
-}
-
-func (s *Server) WillDeleteFiles(context.Context, *protocol.DeleteFilesParams) (*protocol.WorkspaceEdit, error) {
-	return nil, notImplemented("WillDeleteFiles")
 }
