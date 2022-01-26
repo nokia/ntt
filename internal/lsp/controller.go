@@ -1,12 +1,15 @@
 package lsp
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/runner/k3s"
 )
@@ -15,6 +18,7 @@ type TestController struct {
 	events  chan Event
 	tests   map[pair]*Test
 	testsMu sync.Mutex
+	client  protocol.Client
 }
 
 type Event struct {
@@ -33,9 +37,10 @@ type pair struct {
 	p    project.Interface
 }
 
-func (c *TestController) Start() error {
+func (c *TestController) Start(client protocol.Client) error {
 	c.events = make(chan Event)
 	c.tests = make(map[pair]*Test)
+	c.client = client
 	go c.handleEvents()
 	return nil
 }
@@ -47,11 +52,13 @@ func (c *TestController) Shutdown() error {
 
 func (c *TestController) handleEvents() {
 	for event := range c.events {
+		log.Debugf("TestController: %+v", event)
 		switch event.Type {
 		case "tcfi", "error":
 			c.testsMu.Lock()
 			defer c.testsMu.Unlock()
 			delete(c.tests, event.Test.pair)
+			c.client.CodeLensRefresh(context.Background())
 		}
 	}
 }
@@ -79,6 +86,7 @@ func (c *TestController) RunTest(p project.Interface, name string, logger io.Wri
 	c.tests[pair{name, p}] = tst
 	c.testsMu.Unlock()
 
+	c.client.CodeLensRefresh(context.Background())
 	go func() {
 		fmt.Fprintf(logger, `
 ===============================================================================
