@@ -54,10 +54,16 @@ func (c *TestController) handleEvents() {
 	for event := range c.events {
 		log.Debugf("TestController: %+v", event)
 		switch event.Type {
+		case "tcst":
+			c.testsMu.Lock()
+			c.tests[event.Test.pair] = event.Test
+			c.testsMu.Unlock()
+			c.client.CodeLensRefresh(context.Background())
+
 		case "tcfi", "error":
 			c.testsMu.Lock()
-			defer c.testsMu.Unlock()
 			delete(c.tests, event.Test.pair)
+			c.testsMu.Unlock()
 			c.client.CodeLensRefresh(context.Background())
 		}
 	}
@@ -82,11 +88,8 @@ func (c *TestController) RunTest(p project.Interface, name string, logger io.Wri
 		logger: logger,
 	}
 
-	c.testsMu.Lock()
-	c.tests[pair{name, p}] = tst
-	c.testsMu.Unlock()
+	c.events <- Event{Type: "tcst", Test: tst}
 
-	c.client.CodeLensRefresh(context.Background())
 	go func() {
 		fmt.Fprintf(logger, `
 ===============================================================================
