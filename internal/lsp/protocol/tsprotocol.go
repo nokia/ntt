@@ -846,7 +846,7 @@ type CompletionItem struct {
 	/**
 	 * A human-readable string that represents a doc-comment.
 	 */
-	Documentation string/*string | MarkupContent*/ `json:"documentation,omitempty"`
+	Documentation interface{}/*string | MarkupContent*/ `json:"documentation,omitempty"`
 	/**
 	 * Indicates if this item is deprecated.
 	 * @deprecated Use `tags` instead.
