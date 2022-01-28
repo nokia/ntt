@@ -15,7 +15,6 @@ import (
 
 type Report struct {
 	Args           []string `json:"args"`
-	Err            error    `json:"error"`
 	Name           string   `json:"name"`
 	Timeout        float64  `json:"timeout"`
 	ParametersDir  string   `json:"parameters_dir"`
@@ -37,50 +36,58 @@ type Report struct {
 	} `json:"k3"`
 
 	suite *ntt.Suite
+	err   error
+}
+
+func (r *Report) Err() string {
+	if r.err != nil {
+		return r.err.Error()
+	}
+	return ""
 }
 
 func NewReport(args []string) *Report {
 	var err error = nil
 	r := Report{Args: args}
-	r.suite, r.Err = ntt.NewFromArgs(args...)
+	r.suite, r.err = ntt.NewFromArgs(args...)
 
-	if r.Err == nil {
-		r.Name, r.Err = r.suite.Name()
+	if r.err == nil {
+		r.Name, r.err = r.suite.Name()
 	}
 
-	if r.Err == nil {
-		r.Timeout, r.Err = r.suite.Timeout()
+	if r.err == nil {
+		r.Timeout, r.err = r.suite.Timeout()
 	}
 
 	r.ParametersDir, err = r.suite.ParametersDir()
 
-	if (r.Err == nil) && (err != nil) {
-		r.Err = err
+	if (r.err == nil) && (err != nil) {
+		r.err = err
 	}
 
 	r.ParametersFile, err = path(r.suite.ParametersFile())
 
-	if (r.Err == nil) && (err != nil) {
-		r.Err = err
+	if (r.err == nil) && (err != nil) {
+		r.err = err
 	}
 	r.TestHook, err = path(r.suite.TestHook())
-	if (r.Err == nil) && (err != nil) {
-		r.Err = err
+	if (r.err == nil) && (err != nil) {
+		r.err = err
 	}
 
 	r.DataDir, err = r.suite.Getenv("NTT_DATADIR")
-	if (r.Err == nil) && (err != nil) {
-		r.Err = err
+	if (r.err == nil) && (err != nil) {
+		r.err = err
 	}
 
 	if env, err := r.suite.Getenv("NTT_SESSION_ID"); err == nil {
 		r.SessionID, err = strconv.Atoi(env)
-		if (r.Err == nil) && (err != nil) {
-			r.Err = err
+		if (r.err == nil) && (err != nil) {
+			r.err = err
 		}
 	} else {
-		if r.Err == nil {
-			r.Err = err
+		if r.err == nil {
+			r.err = err
 		}
 	}
 
@@ -88,37 +95,37 @@ func NewReport(args []string) *Report {
 	if err == nil {
 		sort.Strings(r.Environ)
 	}
-	if (r.Err == nil) && (err != nil) {
-		r.Err = err
+	if (r.err == nil) && (err != nil) {
+		r.err = err
 	}
 
 	{
 		paths, err := r.suite.Sources()
 		r.Sources = paths
-		if (r.Err == nil) && (err != nil) {
-			r.Err = err
+		if (r.err == nil) && (err != nil) {
+			r.err = err
 		}
 	}
 
 	{
 		paths, err := r.suite.Imports()
 		r.Imports = paths
-		if (r.Err == nil) && (err != nil) {
-			r.Err = err
+		if (r.err == nil) && (err != nil) {
+			r.err = err
 		}
 	}
 
 	r.Files, err = project.Files(r.suite)
-	if (r.Err == nil) && (err != nil) {
-		r.Err = err
+	if (r.err == nil) && (err != nil) {
+		r.err = err
 	}
 
 	if root := r.suite.Root(); root != "" {
 		r.SourceDir = root
 		if path, err := filepath.Abs(r.SourceDir); err == nil {
 			r.SourceDir = path
-		} else if r.Err == nil {
-			r.Err = err
+		} else if r.err == nil {
+			r.err = err
 		}
 	}
 
