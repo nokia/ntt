@@ -1,9 +1,13 @@
+// Copyright 2019 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package protocol
 
 // Package protocol contains data types and code for LSP jsonrpcs
 // generated automatically from vscode-languageserver-node
 // commit: dae62de921d25964e8732411ca09e532dde992f5
-// last fetched Thu Dec 16 2021 13:57:49 GMT+0200 (Eastern European Standard Time)
+// last fetched Wed Jan 26 2022 12:00:59 GMT+0100 (Central European Standard Time)
 
 // Code generated (see typescript/README.md) DO NOT EDIT.
 
@@ -27,6 +31,7 @@ type Client interface {
 	RegisterCapability(context.Context, *RegistrationParams) error
 	UnregisterCapability(context.Context, *UnregistrationParams) error
 	ShowMessageRequest(context.Context, *ShowMessageRequestParams) (*MessageActionItem /*MessageActionItem | null*/, error)
+	CodeLensRefresh(context.Context) error
 	ApplyEdit(context.Context, *ApplyWorkspaceEditParams) (*ApplyWorkspaceEditResponse, error)
 }
 
@@ -108,6 +113,12 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		}
 		resp, err := client.ShowMessageRequest(ctx, &params)
 		return true, reply(ctx, resp, err)
+	case "workspace/codeLens/refresh": // req
+		if len(r.Params()) > 0 {
+			return true, reply(ctx, nil, errors.Errorf("%w: expected no params", jsonrpc2.ErrInvalidParams))
+		}
+		err := client.CodeLensRefresh(ctx)
+		return true, reply(ctx, nil, err)
 	case "workspace/applyEdit": // req
 		var params ApplyWorkspaceEditParams
 		if err := json.Unmarshal(r.Params(), &params); err != nil {
@@ -174,6 +185,10 @@ func (s *clientDispatcher) ShowMessageRequest(ctx context.Context, params *ShowM
 		return nil, err
 	}
 	return result, nil
+}
+
+func (s *clientDispatcher) CodeLensRefresh(ctx context.Context) error {
+	return Call(ctx, s.Conn, "workspace/codeLens/refresh", nil, nil)
 }
 
 func (s *clientDispatcher) ApplyEdit(ctx context.Context, params *ApplyWorkspaceEditParams) (*ApplyWorkspaceEditResponse, error) {

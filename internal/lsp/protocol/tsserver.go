@@ -1,9 +1,13 @@
+// Copyright 2019 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package protocol
 
 // Package protocol contains data types and code for LSP jsonrpcs
 // generated automatically from vscode-languageserver-node
 // commit: dae62de921d25964e8732411ca09e532dde992f5
-// last fetched Thu Dec 16 2021 13:57:49 GMT+0200 (Eastern European Standard Time)
+// last fetched Wed Jan 26 2022 12:00:59 GMT+0100 (Central European Standard Time)
 
 // Code generated (see typescript/README.md) DO NOT EDIT.
 
@@ -32,12 +36,12 @@ type Server interface {
 	DidChangeWatchedFiles(context.Context, *DidChangeWatchedFilesParams) error
 	SetTrace(context.Context, *SetTraceParams) error
 	LogTrace(context.Context, *LogTraceParams) error
-	Implementation(context.Context, *ImplementationParams) (Definition /* Definition | []DefinitionLink | float64*/, error)
-	TypeDefinition(context.Context, *TypeDefinitionParams) (Definition /* Definition | []DefinitionLink | float64*/, error)
+	Implementation(context.Context, *ImplementationParams) (interface{} /* Definition | []DefinitionLink | float64*/, error)
+	TypeDefinition(context.Context, *TypeDefinitionParams) (interface{} /* Definition | []DefinitionLink | float64*/, error)
 	DocumentColor(context.Context, *DocumentColorParams) ([]ColorInformation, error)
 	ColorPresentation(context.Context, *ColorPresentationParams) ([]ColorPresentation, error)
 	FoldingRange(context.Context, *FoldingRangeParams) ([]FoldingRange /*FoldingRange[] | null*/, error)
-	Declaration(context.Context, *DeclarationParams) (Declaration /* Declaration | []DeclarationLink | float64*/, error)
+	Declaration(context.Context, *DeclarationParams) (interface{} /* Declaration | []DeclarationLink | float64*/, error)
 	SelectionRange(context.Context, *SelectionRangeParams) ([]SelectionRange /*SelectionRange[] | null*/, error)
 	PrepareCallHierarchy(context.Context, *CallHierarchyPrepareParams) ([]CallHierarchyItem /*CallHierarchyItem[] | null*/, error)
 	IncomingCalls(context.Context, *CallHierarchyIncomingCallsParams) ([]CallHierarchyIncomingCall /*CallHierarchyIncomingCall[] | null*/, error)
@@ -55,11 +59,11 @@ type Server interface {
 	Initialize(context.Context, *ParamInitialize) (*InitializeResult, error)
 	Shutdown(context.Context) error
 	WillSaveWaitUntil(context.Context, *WillSaveTextDocumentParams) ([]TextEdit /*TextEdit[] | null*/, error)
-	Completion(context.Context, *CompletionParams) (*CompletionList /* []CompletionItem | CompletionList | float64*/, error)
+	Completion(context.Context, *CompletionParams) (interface{} /* []CompletionItem | CompletionList | float64*/, error)
 	Resolve(context.Context, *CompletionItem) (*CompletionItem, error)
 	Hover(context.Context, *HoverParams) (*Hover /*Hover | null*/, error)
 	SignatureHelp(context.Context, *SignatureHelpParams) (*SignatureHelp /*SignatureHelp | null*/, error)
-	Definition(context.Context, *DefinitionParams) (Definition /* Definition | []DefinitionLink | float64*/, error)
+	Definition(context.Context, *DefinitionParams) (interface{} /* Definition | []DefinitionLink | float64*/, error)
 	References(context.Context, *ReferenceParams) ([]Location /*Location[] | null*/, error)
 	DocumentHighlight(context.Context, *DocumentHighlightParams) ([]DocumentHighlight /*DocumentHighlight[] | null*/, error)
 	DocumentSymbol(context.Context, *DocumentSymbolParams) ([]interface{} /*SymbolInformation[] | DocumentSymbol[] | null*/, error)
@@ -68,7 +72,6 @@ type Server interface {
 	Symbol(context.Context, *WorkspaceSymbolParams) ([]SymbolInformation /*SymbolInformation[] | null*/, error)
 	CodeLens(context.Context, *CodeLensParams) ([]CodeLens /*CodeLens[] | null*/, error)
 	ResolveCodeLens(context.Context, *CodeLens) (*CodeLens, error)
-	CodeLensRefresh(context.Context) error
 	DocumentLink(context.Context, *DocumentLinkParams) ([]DocumentLink /*DocumentLink[] | null*/, error)
 	ResolveDocumentLink(context.Context, *DocumentLink) (*DocumentLink, error)
 	Formatting(context.Context, *DocumentFormattingParams) ([]TextEdit /*TextEdit[] | null*/, error)
@@ -440,12 +443,6 @@ func serverDispatch(ctx context.Context, server Server, reply jsonrpc2.Replier, 
 		}
 		resp, err := server.ResolveCodeLens(ctx, &params)
 		return true, reply(ctx, resp, err)
-	case "workspace/codeLens/refresh": // req
-		if len(r.Params()) > 0 {
-			return true, reply(ctx, nil, errors.Errorf("%w: expected no params", jsonrpc2.ErrInvalidParams))
-		}
-		err := server.CodeLensRefresh(ctx)
-		return true, reply(ctx, nil, err)
 	case "textDocument/documentLink": // req
 		var params DocumentLinkParams
 		if err := json.Unmarshal(r.Params(), &params); err != nil {
@@ -571,16 +568,16 @@ func (s *serverDispatcher) SetTrace(ctx context.Context, params *SetTraceParams)
 func (s *serverDispatcher) LogTrace(ctx context.Context, params *LogTraceParams) error {
 	return s.Conn.Notify(ctx, "$/logTrace", params)
 }
-func (s *serverDispatcher) Implementation(ctx context.Context, params *ImplementationParams) (Definition /* Definition | []DefinitionLink | float64*/, error) {
-	var result Definition /* Definition | []DefinitionLink | float64*/
+func (s *serverDispatcher) Implementation(ctx context.Context, params *ImplementationParams) (interface{} /* Definition | []DefinitionLink | float64*/, error) {
+	var result interface{} /* Definition | []DefinitionLink | float64*/
 	if err := Call(ctx, s.Conn, "textDocument/implementation", params, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (s *serverDispatcher) TypeDefinition(ctx context.Context, params *TypeDefinitionParams) (Definition /* Definition | []DefinitionLink | float64*/, error) {
-	var result Definition /* Definition | []DefinitionLink | float64*/
+func (s *serverDispatcher) TypeDefinition(ctx context.Context, params *TypeDefinitionParams) (interface{} /* Definition | []DefinitionLink | float64*/, error) {
+	var result interface{} /* Definition | []DefinitionLink | float64*/
 	if err := Call(ctx, s.Conn, "textDocument/typeDefinition", params, &result); err != nil {
 		return nil, err
 	}
@@ -611,8 +608,8 @@ func (s *serverDispatcher) FoldingRange(ctx context.Context, params *FoldingRang
 	return result, nil
 }
 
-func (s *serverDispatcher) Declaration(ctx context.Context, params *DeclarationParams) (Declaration /* Declaration | []DeclarationLink | float64*/, error) {
-	var result Declaration /* Declaration | []DeclarationLink | float64*/
+func (s *serverDispatcher) Declaration(ctx context.Context, params *DeclarationParams) (interface{} /* Declaration | []DeclarationLink | float64*/, error) {
+	var result interface{} /* Declaration | []DeclarationLink | float64*/
 	if err := Call(ctx, s.Conn, "textDocument/declaration", params, &result); err != nil {
 		return nil, err
 	}
@@ -747,8 +744,8 @@ func (s *serverDispatcher) WillSaveWaitUntil(ctx context.Context, params *WillSa
 	return result, nil
 }
 
-func (s *serverDispatcher) Completion(ctx context.Context, params *CompletionParams) (*CompletionList /* []CompletionItem | CompletionList | float64*/, error) {
-	var result *CompletionList /* []CompletionItem | CompletionList | float64*/
+func (s *serverDispatcher) Completion(ctx context.Context, params *CompletionParams) (interface{} /* []CompletionItem | CompletionList | float64*/, error) {
+	var result interface{} /* []CompletionItem | CompletionList | float64*/
 	if err := Call(ctx, s.Conn, "textDocument/completion", params, &result); err != nil {
 		return nil, err
 	}
@@ -779,8 +776,8 @@ func (s *serverDispatcher) SignatureHelp(ctx context.Context, params *SignatureH
 	return result, nil
 }
 
-func (s *serverDispatcher) Definition(ctx context.Context, params *DefinitionParams) (Definition /* Definition | []DefinitionLink | float64*/, error) {
-	var result Definition /* Definition | []DefinitionLink | float64*/
+func (s *serverDispatcher) Definition(ctx context.Context, params *DefinitionParams) (interface{} /* Definition | []DefinitionLink | float64*/, error) {
+	var result interface{} /* Definition | []DefinitionLink | float64*/
 	if err := Call(ctx, s.Conn, "textDocument/definition", params, &result); err != nil {
 		return nil, err
 	}
@@ -849,10 +846,6 @@ func (s *serverDispatcher) ResolveCodeLens(ctx context.Context, params *CodeLens
 		return nil, err
 	}
 	return result, nil
-}
-
-func (s *serverDispatcher) CodeLensRefresh(ctx context.Context) error {
-	return Call(ctx, s.Conn, "workspace/codeLens/refresh", nil, nil)
 }
 
 func (s *serverDispatcher) DocumentLink(ctx context.Context, params *DocumentLinkParams) ([]DocumentLink /*DocumentLink[] | null*/, error) {

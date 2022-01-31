@@ -83,6 +83,8 @@ type Server struct {
 
 	diagsMu sync.Mutex
 	diags   map[string][]protocol.Diagnostic
+
+	testCtrl *TestController
 }
 
 func (s *Server) Fatal(ctx context.Context, msg string) {

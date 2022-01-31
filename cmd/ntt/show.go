@@ -235,7 +235,10 @@ false
 		return err
 	}
 
-	return report.Err
+	if err := report.Err(); err != "" {
+		return fmt.Errorf("%s", err)
+	}
+	return nil
 }
 
 func printUserKeys(suite *ntt.Suite, keys []string) error {

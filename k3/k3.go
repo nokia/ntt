@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // Root returns the directory where K3 toolset is installed, by first looking
@@ -85,6 +86,33 @@ func FindAuxiliaryDirectories() []string {
 	return ret
 }
 
+func Compiler() string {
+	return findK3Tool("mtc", "k3c", "k3c.exe")
+}
+
+func Runtime() string {
+	return findK3Tool("k3r", "k3r.exe")
+}
+
+func findK3Tool(names ...string) string {
+	if len(names) == 0 {
+		return ""
+	}
+	for _, name := range names {
+		if env := os.Getenv(strings.ToUpper(name)); env != "" {
+			return env
+		}
+		if root := Root(); root != "" {
+			if exe, err := exec.LookPath(filepath.Join(root, name)); err == nil {
+				return exe
+			}
+		}
+		if exe, err := exec.LookPath(name); err == nil {
+			return exe
+		}
+	}
+	return names[0]
+}
 func parentDir(path string) string {
 	dir, _ := filepath.Abs(filepath.Join(filepath.Dir(path), ".."))
 	return dir

@@ -6,7 +6,6 @@ import (
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
@@ -20,30 +19,40 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 		file   = params.TextDocument.URI
 	)
 
-	for _, suite := range s.Owners(file) {
-		tree := suite.ParseWithAllErrors(string(file.SpanURI()))
-		if tree == nil || tree.Module == nil {
-			return nil, nil
-		}
-		ast.Inspect(tree.Module, func(n ast.Node) bool {
-			switch n := n.(type) {
-			case *ast.Module, *ast.ModuleDef:
-				return true
-			case *ast.FuncDecl:
-				if n.Kind.Kind != token.TESTCASE {
-					return false
-				}
-				params := nttTestParams{
-					ID:  ast.Name(tree.Module.Name) + "." + ast.Name(n.Name),
-					URI: string(file.SpanURI()),
-				}
-				if cmd, err := NewCommand(tree.Position(n.Pos()), "run test", "ntt.test", params); err == nil {
-					result = append(result, cmd)
-				}
-			}
-			return false
-		})
+	uri := string(file.SpanURI())
+
+	suite, err := s.FirstSuite(uri)
+	if err != nil {
+		return nil, err
 	}
+
+	tree := suite.ParseWithAllErrors(uri)
+	if tree == nil || tree.Module == nil {
+		return nil, nil
+	}
+	ast.Inspect(tree.Module, func(n ast.Node) bool {
+		switch n := n.(type) {
+		case *ast.Module, *ast.ModuleDef:
+			return true
+		case *ast.FuncDecl:
+			if !n.IsTest() {
+				return false
+			}
+			title := "run test"
+			params := nttTestParams{
+				ID:  ast.Name(tree.Module.Name) + "." + ast.Name(n.Name),
+				URI: uri,
+			}
+			if s.testCtrl.IsRunning(suite, params.ID) {
+				title = "test running..."
+				params.Stop = true
+			}
+			if cmd, err := NewCommand(tree.Position(n.Pos()), title, "ntt.test", params); err == nil {
+				result = append(result, cmd)
+			}
+		}
+		return false
+	})
 
 	sort.Slice(result, func(i, j int) bool {
 		a, b := result[i], result[j]
