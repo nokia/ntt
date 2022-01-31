@@ -15,13 +15,13 @@ import (
 )
 
 type TestController struct {
-	events  chan Event
-	tests   map[pair]*Test
-	testsMu sync.Mutex
-	client  protocol.Client
+	messages chan Message
+	tests    map[pair]*Test
+	testsMu  sync.Mutex
+	client   protocol.Client
 }
 
-type Event struct {
+type Message struct {
 	Type string
 	Test *Test
 }
@@ -38,7 +38,7 @@ type pair struct {
 }
 
 func (c *TestController) Start(client protocol.Client) error {
-	c.events = make(chan Event)
+	c.messages = make(chan Message)
 	c.tests = make(map[pair]*Test)
 	c.client = client
 	go c.handleEvents()
@@ -46,12 +46,12 @@ func (c *TestController) Start(client protocol.Client) error {
 }
 
 func (c *TestController) Shutdown() error {
-	close(c.events)
+	close(c.messages)
 	return nil
 }
 
 func (c *TestController) handleEvents() {
-	for event := range c.events {
+	for event := range c.messages {
 		log.Debugf("TestController: %+v", event)
 		switch event.Type {
 		case "tcst":
@@ -88,7 +88,7 @@ func (c *TestController) RunTest(p project.Interface, name string, logger io.Wri
 		logger: logger,
 	}
 
-	c.events <- Event{Type: "tcst", Test: tst}
+	c.messages <- Message{Type: "tcst", Test: tst}
 
 	go func() {
 		fmt.Fprintf(logger, `
@@ -98,7 +98,7 @@ Compiling test %s in %q`, name, p.Root())
 		r, err := k3s.New(logger, p)
 		if err != nil {
 			fmt.Fprintln(logger, err.Error())
-			c.events <- Event{Type: "error", Test: tst}
+			c.messages <- Message{Type: "error", Test: tst}
 			return
 		}
 
@@ -118,7 +118,7 @@ Content of log directory %q:
 				logDir, strings.Join(files, "\n"))
 		}
 
-		c.events <- Event{Type: "tcfi", Test: tst}
+		c.messages <- Message{Type: "tcfi", Test: tst}
 	}()
 
 	return nil
