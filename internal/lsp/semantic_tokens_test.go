@@ -53,20 +53,25 @@ func TestFullModuleKwTypeId(t *testing.T) {
 	assert.Equal(t, list.Data,
 		[]uint32{
 			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
 			2, 8, 4, uint32(lsp.Keyword), 0,
 			0, 5, 6, uint32(lsp.Keyword), 0,
-			0, 7, 5, uint32(lsp.Struct), 2,
-			3, 8, 4, uint32(lsp.Keyword), 0,
+			0, 7, 5, uint32(lsp.Struct), uint32(lsp.Definition),
+			1, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			2, 8, 4, uint32(lsp.Keyword), 0,
 			0, 5, 6, uint32(lsp.Keyword), 0,
 			0, 7, 6, uint32(lsp.Keyword), 0,
 			0, 13, 2, uint32(lsp.Keyword), 0,
-			0, 11, 3, uint32(lsp.Struct), 2,
+			0, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 3, uint32(lsp.Type), uint32(lsp.Definition),
 			1, 8, 4, uint32(lsp.Keyword), 0,
 			0, 5, 3, uint32(lsp.Keyword), 0,
-			0, 4, 5, uint32(lsp.Struct), 2,
-			3, 8, 8, uint32(lsp.Keyword), 0,
-			0, 9, 1, uint32(lsp.Function), 2,
-			0, 4, 6, uint32(lsp.Keyword), 0})
+			0, 4, 5, uint32(lsp.Struct), uint32(lsp.Definition),
+			1, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			2, 8, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Function), uint32(lsp.Definition),
+			0, 4, 6, uint32(lsp.Keyword), 0,
+			0, 7, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary)})
 }
 
 func TestConstAndTemplDecl(t *testing.T) {
