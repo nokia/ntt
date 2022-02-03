@@ -23,30 +23,33 @@ var (
 
 // Parse parses a string and returns a syntax tree.
 func Parse(src string) *Tree {
-	parseLimit <- struct{}{}
-	defer func() { <-parseLimit }()
-
-	fset := loc.NewFileSet()
-	root, err := parser.Parse(fset, "", src)
-	return &Tree{FileSet: fset, Root: root, Err: err}
+	return parse("", []byte(src))
 }
 
 // ParseFile parses a file and returns a syntax tree.
 func ParseFile(path string) *Tree {
 	f := fs.Open(path)
 	f.Handle = cache.Bind(f.ID(), func(ctx context.Context) interface{} {
-		b, err := f.Bytes()
-		if err != nil {
-			return &Tree{Err: err}
-		}
-
-		parseLimit <- struct{}{}
-		defer func() { <-parseLimit }()
-
-		fset := loc.NewFileSet()
-		root, err := parser.Parse(fset, path, b)
-		return &Tree{FileSet: fset, Root: root, Err: err}
+		return parse(path, nil)
 	})
 
 	return f.Handle.Get(context.TODO()).(*Tree)
+}
+
+func parse(path string, input []byte) *Tree {
+	// Without parseLimit we may end up with too many open files.
+	parseLimit <- struct{}{}
+	defer func() { <-parseLimit }()
+
+	if input == nil {
+		b, err := fs.Content(path)
+		if err != nil {
+			return &Tree{Err: err}
+		}
+		input = b
+	}
+
+	fset := loc.NewFileSet()
+	root, err := parser.Parse(fset, "", input)
+	return &Tree{FileSet: fset, Root: root, Err: err}
 }
