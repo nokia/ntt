@@ -17,21 +17,15 @@ type DB struct {
 	depsMu       sync.Mutex
 }
 
-func (db *DB) Clear() {
-	db.namesMu.Lock()
-	defer db.namesMu.Unlock()
-
-	db.depsMu.Lock()
-	defer db.depsMu.Unlock()
-
-	db.Names = nil
-	db.Dependencies = nil
-}
-
 // Index fi
 func (db *DB) Index(files ...string) {
-	db.Names = make(map[string][]string)
-	db.Dependencies = make(map[string][]string)
+	if db.Names == nil {
+		db.Names = make(map[string][]string)
+	}
+	if db.Dependencies == nil {
+		db.Dependencies = make(map[string][]string)
+	}
+
 	start := time.Now()
 	var wg sync.WaitGroup
 	wg.Add(len(files))
