@@ -26,9 +26,12 @@ func (db *DB) Index(files ...string) {
 		db.Dependencies = make(map[string][]string)
 	}
 
-	var mu sync.Mutex
+	var (
+		mu sync.Mutex
+		wg sync.WaitGroup
+	)
+
 	start := time.Now()
-	var wg sync.WaitGroup
 	wg.Add(len(files))
 	for _, path := range files {
 		go func(path string) {
