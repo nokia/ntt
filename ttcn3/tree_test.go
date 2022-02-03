@@ -1,15 +1,16 @@
-package ttcn3
+package ttcn3_test
 
 import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSliceAt(t *testing.T) {
-	tree := parse(`module M {
+	tree := testParse(`module M {
 function func<T>(T x) {
 	{
 		T
@@ -23,8 +24,8 @@ function func<T>(T x) {
 
 }
 
-func parse(src string) *Tree {
+func testParse(src string) *ttcn3.Tree {
 	file := "test://test.ttcn3"
-	fs.Open(file).SetBytes([]byte(src))
-	return ParseFile(file)
+	fs.SetContent(file, []byte(src))
+	return ttcn3.ParseFile(file)
 }
