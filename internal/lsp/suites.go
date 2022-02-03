@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 )
 
 // Suites implements the mapping between ttcn3 source files and multiple test
@@ -28,6 +29,8 @@ import (
 type Suites struct {
 	mu    sync.Mutex
 	roots map[string]*ntt.Suite
+
+	db ttcn3.DB
 }
 
 // FirstSuite returns the first test suite owning the file or an error if not
@@ -57,7 +60,6 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 // the list of know suites.
 func (s *Suites) AddSuite(root string) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	// Although the folder is known, it might be necessary to re-read it due to
 	// a newly saved File
@@ -70,4 +72,8 @@ func (s *Suites) AddSuite(root string) {
 	suite := &ntt.Suite{}
 	suite.SetRoot(root)
 	s.roots[root] = suite
+	files, _ := suite.Files()
+	s.mu.Unlock()
+
+	s.db.Index(files...)
 }
