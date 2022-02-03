@@ -353,7 +353,7 @@ func TestTypeParametrization(t *testing.T) {
 
 func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 	for _, tt := range tests {
-		err := anyParse(tt.input, f, testing.Verbose())
+		err := anyParse(tt.input, f)
 		if tt.expect == pass && err != nil {
 			t.Errorf("Parse(%#q):\n\t%v\n\n", tt.input, err)
 		}
@@ -363,14 +363,9 @@ func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 	}
 }
 
-func anyParse(input string, f func(p *parser), trace bool) error {
-	mode := Mode(Trace)
-	if !trace {
-		mode = 0
-	}
-
+func anyParse(input string, f func(p *parser)) error {
 	var p parser
-	p.init(loc.NewFileSet(), "", []byte(input), mode)
+	p.init(loc.NewFileSet(), "", []byte(input), Mode(0))
 	f(&p)
 	p.errors.Sort()
 	return p.errors.Err()

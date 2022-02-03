@@ -1,6 +1,8 @@
 package ttcn3
 
 import (
+	"reflect"
+
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
@@ -117,49 +119,42 @@ func (tree *Tree) Pos(line int, column int) loc.Pos {
 	return loc.Pos(int(tree.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
-func (tree *Tree) SliceAt(line, col int) []ast.Node {
-	pos := tree.Pos(line, col)
+func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	return slice(tree.Root, pos)
 }
 
 func slice(n ast.Node, pos loc.Pos) []ast.Node {
 	var (
 		path  []ast.Node
-		found bool
+		visit func(n ast.Node)
 	)
 
-	ast.Inspect(n, func(n ast.Node) bool {
-		if found {
-			return false
+	visit = func(n ast.Node) {
+		if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+			return
 		}
 
-		if n == nil {
-			path = path[:len(path)-1]
-			return false
+		if n, ok := n.(ast.NodeList); ok {
+			for _, n := range n {
+				visit(n)
+			}
+			return
 		}
 
-		path = append(path, n)
-
-		// We don't need to descend any deeper if we're not near desired
-		// position.
-		if n.End() < pos || pos < n.Pos() {
-			return false
+		if inside := n.Pos() <= pos && pos <= n.End(); inside {
+			path = append(path, n)
+			for _, child := range ast.Children(n) {
+				visit(child)
+			}
 		}
 
-		if n.Pos() <= pos && pos <= n.End() {
-			found = true
-		}
-
-		return !found
-	})
-
-	if len(path) == 0 {
-		return nil
 	}
+	visit(n)
 
 	// Reverse path so leaf is first element.
 	for i := 0; i < len(path)/2; i++ {
 		path[i], path[len(path)-1-i] = path[len(path)-1-i], path[i]
 	}
+
 	return path
 }

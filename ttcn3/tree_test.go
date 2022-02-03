@@ -1,10 +1,11 @@
 package ttcn3
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSliceAt(t *testing.T) {
@@ -16,10 +17,9 @@ function func<T>(T x) {
 }
 
 }`)
-	t1 := tree.SliceAt(4, 3)
-	for i := range t1.nodes {
-		fmt.Printf("--------->%#v\n\n\n", t1.nodes[i])
-	}
+
+	s := tree.SliceAt(tree.Pos(4, 3))
+	assert.Equal(t, "T", s[0].(ast.Token).Lit)
 
 }
 
