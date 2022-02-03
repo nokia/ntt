@@ -5,7 +5,7 @@ import (
 )
 
 // WalkModuleDefs calls fun for every module definition.
-func WalkModuleDefs(fun func(def Node) bool, nodes ...Node) {
+func WalkModuleDefs(fun func(def *ModuleDef) bool, nodes ...Node) {
 	for _, n := range nodes {
 		switch x := n.(type) {
 		case *Module:
@@ -17,14 +17,14 @@ func WalkModuleDefs(fun func(def Node) bool, nodes ...Node) {
 				WalkModuleDefs(fun, g)
 				return
 			}
-			if !fun(x.Def) {
+			if !fun(x) {
 				return
 			}
 		}
 	}
 }
 
-func walkModuleDefs(fun func(def Node) bool, defs ...*ModuleDef) {
+func walkModuleDefs(fun func(def *ModuleDef) bool, defs ...*ModuleDef) {
 	for _, d := range defs {
 		WalkModuleDefs(fun, d)
 	}
