@@ -1,6 +1,8 @@
 package ttcn3
 
 import (
+	"reflect"
+
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
@@ -104,4 +106,55 @@ func (t *Tree) ModulePars() []*ast.Declarator {
 		return false
 	})
 	return nodes
+}
+
+// Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
+// not been parsed yet, Pos will return loc.NoPos.
+func (tree *Tree) Pos(line int, column int) loc.Pos {
+	if tree.FileSet == nil {
+		return loc.NoPos
+	}
+
+	// We asume every FileSet has only one file, to make this work.
+	return loc.Pos(int(tree.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
+}
+
+func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
+	return slice(tree.Root, pos)
+}
+
+func slice(n ast.Node, pos loc.Pos) []ast.Node {
+	var (
+		path  []ast.Node
+		visit func(n ast.Node)
+	)
+
+	visit = func(n ast.Node) {
+		if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+			return
+		}
+
+		if n, ok := n.(ast.NodeList); ok {
+			for _, n := range n {
+				visit(n)
+			}
+			return
+		}
+
+		if inside := n.Pos() <= pos && pos <= n.End(); inside {
+			path = append(path, n)
+			for _, child := range ast.Children(n) {
+				visit(child)
+			}
+		}
+
+	}
+	visit(n)
+
+	// Reverse path so leaf is first element.
+	for i := 0; i < len(path)/2; i++ {
+		path[i], path[len(path)-1-i] = path[len(path)-1-i], path[i]
+	}
+
+	return path
 }
