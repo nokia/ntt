@@ -114,7 +114,8 @@ Running test %s in %q`, name, p.Root())
 			fmt.Fprintf(logger, `
 Content of log directory %q:
 ===============================================================================
-%s\n\n`,
+%s
+`,
 				logDir, strings.Join(files, "\n"))
 		}
 
