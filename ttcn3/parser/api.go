@@ -11,6 +11,7 @@ package parser
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -137,9 +138,16 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeL
 	p.init(fset, filename, text, 0)
 	for p.tok != token.EOF {
 		nodes = append(nodes, p.parse())
+
+		if p.tok != token.EOF && !topLevelTokens[p.tok] {
+			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))
+			break
+		}
+
 		if p.tok == token.COMMA || p.tok == token.SEMICOLON {
 			p.consumeTrivia(nodes[len(nodes)-1].LastTok())
 		}
+
 	}
 	return nodes, nil
 }

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -55,6 +56,10 @@ type parser struct {
 }
 
 func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode) {
+	if s := os.Getenv("NTT_DEBUG"); s == "trace" {
+		mode |= Trace
+	}
+
 	p.file = fset.AddFile(filename, -1, len(src))
 
 	eh := func(pos loc.Position, msg string) {
@@ -493,6 +498,51 @@ var operandStart = map[token.Kind]bool{
 	token.TRUE:      true,
 	token.UNIVERSAL: true,
 	token.UNMAP:     true,
+}
+
+var topLevelTokens = map[token.Kind]bool{
+	token.COMMA:      true,
+	token.SEMICOLON:  true,
+	token.MODULE:     true,
+	token.CONTROL:    true,
+	token.EXTERNAL:   true,
+	token.FRIEND:     true,
+	token.FUNCTION:   true,
+	token.GROUP:      true,
+	token.IMPORT:     true,
+	token.MODULEPAR:  true,
+	token.SIGNATURE:  true,
+	token.TEMPLATE:   true,
+	token.TYPE:       true,
+	token.VAR:        true,
+	token.ALTSTEP:    true,
+	token.CONST:      true,
+	token.PRIVATE:    true,
+	token.PUBLIC:     true,
+	token.TIMER:      true,
+	token.PORT:       true,
+	token.REPEAT:     true,
+	token.BREAK:      true,
+	token.CONTINUE:   true,
+	token.LABEL:      true,
+	token.GOTO:       true,
+	token.RETURN:     true,
+	token.SELECT:     true,
+	token.ALT:        true,
+	token.INTERLEAVE: true,
+	token.LBRACK:     true,
+	token.FOR:        true,
+	token.WHILE:      true,
+	token.DO:         true,
+	token.IF:         true,
+	token.LBRACE:     true,
+	token.IDENT:      true,
+	token.ANYKW:      true,
+	token.ALL:        true,
+	token.MAP:        true,
+	token.UNMAP:      true,
+	token.MTC:        true,
+	token.TESTCASE:   true,
 }
 
 // parse is a generic entry point
