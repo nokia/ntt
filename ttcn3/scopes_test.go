@@ -22,7 +22,7 @@ func TestScopes(t *testing.T) {
 			t.Errorf("%q: scope is nil", tt.input)
 			continue
 		}
-		if !equal(nameKeys(scp.Names), tt.names) {
+		if !equal(nameSlice(scp), tt.names) {
 			t.Errorf("Expected %d names, got %d", len(tt.names), len(scp.Names))
 		}
 	}
@@ -54,9 +54,9 @@ func equal(a, b []string) bool {
 	return true
 }
 
-func nameKeys(m map[string]*ast.Ident) []string {
-	s := make([]string, 0, len(m))
-	for k := range m {
+func nameSlice(scp *ttcn3.Scope) []string {
+	s := make([]string, 0, len(scp.Names))
+	for k := range scp.Names {
 		s = append(s, k)
 	}
 	return s
