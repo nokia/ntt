@@ -502,8 +502,8 @@ type (
 
 	// A BranchStmt represents a branch statement.
 	BranchStmt struct {
-		Tok   Token // REPEAT, BREAK, CONTINUE, LABEL, GOTO
-		Label Token // Label literal or nil
+		Tok   Token  // REPEAT, BREAK, CONTINUE, LABEL, GOTO
+		Label *Ident // Label literal or nil
 	}
 
 	// A ReturnStmt represents a return statement.
@@ -594,7 +594,7 @@ func (x *DeclStmt) LastTok() *Token  { return x.Decl.LastTok() }
 func (x *ExprStmt) LastTok() *Token  { return x.Expr.LastTok() }
 
 func (x *BranchStmt) LastTok() *Token {
-	if x.Label.LastTok().IsValid() {
+	if x.Label != nil {
 		return x.Label.LastTok()
 	}
 	return x.Tok.LastTok()

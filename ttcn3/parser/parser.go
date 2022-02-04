@@ -2309,9 +2309,9 @@ func (p *parser) parseStmt() ast.Stmt {
 	case token.REPEAT, token.BREAK, token.CONTINUE:
 		return &ast.BranchStmt{Tok: p.consume()}
 	case token.LABEL:
-		return &ast.BranchStmt{Tok: p.consume(), Label: p.expect(token.IDENT)}
+		return &ast.BranchStmt{Tok: p.consume(), Label: &ast.Ident{Tok: p.expect(token.IDENT)}}
 	case token.GOTO:
-		return &ast.BranchStmt{Tok: p.consume(), Label: p.expect(token.IDENT)}
+		return &ast.BranchStmt{Tok: p.consume(), Label: &ast.Ident{Tok: p.expect(token.IDENT)}}
 	case token.RETURN:
 		x := &ast.ReturnStmt{Tok: p.consume()}
 		if !stmtStart[p.tok] && p.tok != token.SEMICOLON && p.tok != token.RBRACE {
