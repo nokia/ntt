@@ -19,7 +19,7 @@ type DB struct {
 	Dependencies map[string]map[string]bool
 }
 
-func (db *DB) ResolveAt(file string, line int, col int) {
+func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 	start := time.Now()
 	log.Debugf("%s:%d:%d: Resolving...\n", file, line, col)
 	defer log.Debugf("%s:%d:%d: Resolve took %s\n", file, line, col, time.Since(start))
@@ -28,20 +28,22 @@ func (db *DB) ResolveAt(file string, line int, col int) {
 	name, stack := getResolveStack(tree, tree.Pos(line, col))
 	if name == "" {
 		log.Printf("%s:%d:%d: No symbol to resolve.\n", file, line, col)
-		return
+		return nil
 	}
 
+	var defs []*Definition
 	for len(stack) > 0 {
-		// Pop first element from the stack.
 		n := stack[0]
 		stack = stack[1:]
 
-		scope := NewScope(n)
-		if scope == nil {
-			continue
+		if scope := NewScope(n); scope != nil {
+			if def, ok := scope.Names[name]; ok {
+				defs = append(defs, def)
+			}
 		}
 
 	}
+	return defs
 }
 
 // Index parses TTCN-3 source files and adds names and dependencies to the database.
