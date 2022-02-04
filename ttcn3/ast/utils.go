@@ -227,6 +227,10 @@ func Name(n Node) string {
 			name += "." + Name(n.Sel)
 		}
 		return name
+	case *BranchStmt:
+		if n.Tok.Kind == token.LABEL {
+			return Name(n.Label)
+		}
 	case *CallExpr:
 		return Name(n.Fun)
 	case *LengthExpr:

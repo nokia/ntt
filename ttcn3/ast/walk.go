@@ -156,6 +156,7 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Expr)
 
 	case *BranchStmt:
+		Walk(v, n.Label)
 
 	case *ReturnStmt:
 		Walk(v, n.Result)

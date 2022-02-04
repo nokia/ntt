@@ -1,6 +1,7 @@
 package ttcn3
 
 import (
+	"log"
 	"reflect"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -115,8 +116,24 @@ func (tree *Tree) Pos(line int, column int) loc.Pos {
 		return loc.NoPos
 	}
 
-	// We asume every FileSet has only one file, to make this work.
+	// LineStart panics sometimes. We don't know why, yet. So we just log the
+	// error and return loc.NoPos to prevent the language server from crashing.
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Getting file position failed:", r)
+		}
+	}()
+
+	// We assume every FileSet has only one file, to make this work.
 	return loc.Pos(int(tree.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
+}
+
+// Position return a human readable position of the node.
+func (tree *Tree) Position(pos loc.Pos) loc.Position {
+	if tree.FileSet == nil {
+		return loc.Position{}
+	}
+	return tree.FileSet.Position(pos)
 }
 
 func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
