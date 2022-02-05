@@ -2,12 +2,15 @@ package ttcn3
 
 import (
 	"fmt"
+	"reflect"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
 type Scope struct {
+	ast.Node
 	Names map[string]*Definition
 }
 
@@ -17,12 +20,158 @@ type Definition struct {
 	Next *Definition
 }
 
+func (scp *Scope) Insert(id *ast.Ident) {
+	if scp.Names == nil {
+		scp.Names = make(map[string]*Definition)
+	}
+
+	name := id.String()
+	scp.Names[name] = &Definition{
+		Ident: id,
+		Next:  scp.Names[name],
+	}
+}
+
+func NewScope(n ast.Node) *Scope {
+	scp := &Scope{
+		Node: n,
+	}
+
+	switch n := n.(type) {
+	case *ast.TemplateDecl:
+		scp.add(n.TypePars)
+		scp.add(n.Params)
+
+	case *ast.FuncDecl:
+		scp.add(n.TypePars)
+		scp.add(n.Params)
+		scp.add(n.Body)
+
+	case *ast.SignatureDecl:
+		scp.add(n.TypePars)
+		scp.add(n.Params)
+
+	case *ast.SubTypeDecl:
+		scp.add(n.Field)
+
+	case *ast.StructTypeDecl:
+		scp.add(n.TypePars)
+		for _, n := range n.Fields {
+			scp.add(n)
+		}
+
+	case *ast.EnumTypeDecl:
+		scp.add(n.TypePars)
+		for _, n := range n.Enums {
+			scp.addEnum(n)
+		}
+
+	case *ast.BehaviourTypeDecl:
+		scp.add(n.TypePars)
+		scp.add(n.Params)
+
+	case *ast.PortTypeDecl:
+		scp.add(n.TypePars)
+
+	case *ast.PortMapAttribute:
+		scp.add(n.Params)
+
+	case *ast.ComponentTypeDecl:
+		scp.add(n.TypePars)
+		scp.add(n.Body)
+
+	case *ast.BlockStmt:
+		for _, stmt := range n.Stmts {
+			scp.add(stmt)
+		}
+
+	case *ast.AltStmt:
+		scp.add(n.Body)
+
+	case *ast.CallStmt:
+		scp.add(n.Body)
+
+	case *ast.ForStmt:
+		scp.add(n.Init)
+		scp.add(n.Body)
+
+	case *ast.WhileStmt:
+		scp.add(n.Body)
+
+	case *ast.DoWhileStmt:
+		scp.add(n.Body)
+
+	case *ast.IfStmt:
+		scp.add(n.Then)
+		scp.add(n.Else)
+
+	case *ast.CaseClause:
+		scp.add(n.Body)
+
+	case *ast.CommClause:
+		scp.add(n.Body)
+
+	case *ast.Field:
+		scp.add(n.TypePars)
+
+	case *ast.StructSpec:
+		for _, n := range n.Fields {
+			scp.add(n)
+		}
+
+	case *ast.EnumSpec:
+		for _, n := range n.Enums {
+			scp.addEnum(n)
+		}
+
+	case *ast.BehaviourSpec:
+		scp.add(n.Params)
+
+	case *ast.CompositeLiteral:
+		for _, n := range n.List {
+			scp.add(n)
+		}
+
+	case *ast.SelectorExpr:
+		// TODO(5nord) Don't forget
+		//n.X   Expr  // Preceding expression (might be nil)
+		//n.Sel Expr  // Literal, identifier or reference.
+
+	case *ast.Module:
+		for _, n := range n.Defs {
+			scp.add(n)
+		}
+
+	case *ast.ControlPart:
+		scp.add(n.Body)
+
+	default:
+		return nil
+	}
+	return scp
+}
+
+func (scp *Scope) addEnum(n ast.Node) {
+	switch n := n.(type) {
+	case *ast.CallExpr:
+		scp.add(n.Fun)
+	case *ast.Ident:
+		scp.add(n)
+	default:
+		log.Debugf("scopes.go: unknown enumeration syntax: %T", n)
+	}
+}
+
+// add adds definitions to the scope;
 func (scp *Scope) add(n ast.Node) error {
-	if n == nil {
+	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
 		return nil
 	}
 
 	switch n := n.(type) {
+	case *ast.ModuleDef:
+		scp.add(n.Def)
+
 	case *ast.TemplateDecl:
 		scp.Insert(n.Name)
 
@@ -41,9 +190,7 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.Insert(n.Name)
 
 	case *ast.SubTypeDecl:
-		if n.Field != nil {
-			scp.add(n.Field)
-		}
+		scp.add(n.Field)
 
 	case *ast.StructTypeDecl:
 		scp.Insert(n.Name)
@@ -81,7 +228,10 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.Insert(n.Module)
 
 	case *ast.GroupDecl:
-		// TODO(5nord) Add group names to scope
+		// GroupDecl are not added to the scope, but their members are.
+		for _, n := range n.Defs {
+			scp.add(n)
+		}
 
 	case *ast.FormalPars:
 		for _, n := range n.List {
@@ -98,30 +248,4 @@ func (scp *Scope) add(n ast.Node) error {
 	}
 
 	return fmt.Errorf("%T has not declaration", n)
-}
-
-func (scp *Scope) Insert(id *ast.Ident) {
-	if scp.Names == nil {
-		scp.Names = make(map[string]*Definition)
-	}
-
-	name := id.String()
-	scp.Names[name] = &Definition{
-		Ident: id,
-		Next:  scp.Names[name],
-	}
-}
-
-func NewScope(n ast.Node) *Scope {
-	scp := &Scope{}
-
-	switch n := n.(type) {
-	case *ast.BlockStmt:
-		for _, stmt := range n.Stmts {
-			scp.add(stmt)
-		}
-	default:
-		return nil
-	}
-	return scp
 }
