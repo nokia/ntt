@@ -110,7 +110,7 @@ func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (ast.Expr, e
 	return p.parseExpr(), nil
 }
 
-func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeList, err error) {
+func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeList, names map[string]bool, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
 	}
@@ -118,7 +118,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeL
 	// get source
 	text, err := readSource(filename, src)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var p parser
@@ -149,7 +149,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeL
 		}
 
 	}
-	return nodes, nil
+	return nodes, p.names, nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
