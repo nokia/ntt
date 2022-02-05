@@ -50,6 +50,6 @@ func parse(path string, input []byte) *Tree {
 	}
 
 	fset := loc.NewFileSet()
-	root, err := parser.Parse(fset, "", input)
-	return &Tree{FileSet: fset, Root: root, Err: err}
+	root, names, err := parser.Parse(fset, "", input)
+	return &Tree{FileSet: fset, Root: root, Names: names, Err: err}
 }

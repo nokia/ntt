@@ -65,25 +65,13 @@ func (db *DB) Index(files ...string) {
 	for _, path := range files {
 		go func(path string) {
 			defer wg.Done()
-
 			tree := ParseFile(path)
-			for _, m := range tree.Modules() {
-				ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
-					mu.Lock()
-					switch n := n.Def.(type) {
-					case *ast.ValueDecl:
-						for _, d := range n.Decls {
-							db.addDefinition(path, ast.Name(d))
-						}
-					case *ast.ImportDecl:
-						db.addDependency(ast.Name(m), ast.Name(n.Module))
-					default:
-						db.addDefinition(path, ast.Name(n))
-					}
-					mu.Unlock()
-					return true
-				}, m)
+			mu.Lock()
+			for k := range tree.Names {
+				db.addDefinition(path, k)
 			}
+			mu.Unlock()
+
 		}(path)
 	}
 	wg.Wait()

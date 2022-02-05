@@ -47,6 +47,8 @@ type parser struct {
 	ppSkip bool
 	ppDefs map[string]bool
 
+	names map[string]bool
+
 	// Error recovery
 	// (used to limit the number of calls to advance
 	// w/o making scanning progress - avoids potential endless
@@ -77,6 +79,8 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 	p.ppDefs = make(map[string]bool)
 	p.ppDefs["0"] = false
 	p.ppDefs["1"] = true
+
+	p.names = make(map[string]bool)
 
 	// fetch first token
 	p.peek(1)
@@ -1182,6 +1186,7 @@ func (p *parser) parseModule() *ast.Module {
 	m := new(ast.Module)
 	m.Tok = p.expect(token.MODULE)
 	m.Name = p.parseIdent()
+	p.names[ast.Name(m.Name)] = true
 
 	if p.tok == token.LANGUAGE {
 		m.Language = p.parseLanguageSpec()
@@ -1262,6 +1267,11 @@ func (p *parser) parseModuleDef() *ast.ModuleDef {
 		p.advance(stmtStart)
 		m.Def = &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
+
+	if name := ast.Name(m.Def); name != "" {
+		p.names[name] = true
+	}
+
 	return m
 }
 
@@ -1690,7 +1700,7 @@ func (p *parser) parseEnumTypeDecl() *ast.EnumTypeDecl {
 	}
 	x.LBrace = p.expect(token.LBRACE)
 	for p.tok != token.RBRACE && p.tok != token.EOF {
-		x.Enums = append(x.Enums, p.parseExpr())
+		x.Enums = append(x.Enums, p.parseEnum())
 		if p.tok != token.COMMA {
 			break
 		}
@@ -1698,6 +1708,14 @@ func (p *parser) parseEnumTypeDecl() *ast.EnumTypeDecl {
 	}
 	x.RBrace = p.expect(token.RBRACE)
 	x.With = p.parseWith()
+	return x
+}
+
+func (p *parser) parseEnum() ast.Expr {
+	x := p.parseExpr()
+	if name := ast.Name(x); name != "" {
+		p.names[name] = true
+	}
 	return x
 }
 
@@ -1834,7 +1852,7 @@ func (p *parser) parseEnumSpec() *ast.EnumSpec {
 	x.Tok = p.consume()
 	x.LBrace = p.expect(token.LBRACE)
 	for p.tok != token.RBRACE && p.tok != token.EOF {
-		x.Enums = append(x.Enums, p.parseExpr())
+		x.Enums = append(x.Enums, p.parseEnum())
 		if p.tok != token.COMMA {
 			break
 		}

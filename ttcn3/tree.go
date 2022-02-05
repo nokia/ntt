@@ -13,6 +13,7 @@ import (
 type Tree struct {
 	FileSet *loc.FileSet
 	Root    ast.NodeList
+	Names   map[string]bool
 	Err     error
 }
 
