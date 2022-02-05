@@ -50,7 +50,7 @@ func TestTypes(t *testing.T) {
 
 func testType(t *testing.T, input string, expected interface{}) {
 	fset := loc.NewFileSet()
-	nodes, err := parser.Parse(fset, "<test>", input)
+	nodes, _, err := parser.Parse(fset, "<test>", input)
 	if err != nil {
 		t.Fatalf("parse error: %s", err)
 	}
