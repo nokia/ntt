@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/parser"
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
+	"github.com/nokia/ntt/ttcn3/parser"
 )
 
 func TestInt(t *testing.T) {
@@ -376,7 +376,7 @@ func TestMapExpr(t *testing.T) {
 
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
-	nodes, err := parser.Parse(fset, "<stdin>", input)
+	nodes, _, err := parser.Parse(fset, "<stdin>", input)
 	if err != nil {
 		t.Fatalf("%s\n %s", input, err.Error())
 	}
