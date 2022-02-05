@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -42,9 +43,14 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 }
 
 func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDocumentParams) error {
-	f := fs.Open(string(params.TextDocument.URI.SpanURI()))
+	uri := string(params.TextDocument.URI.SpanURI())
+	f := fs.Open(uri)
 	for _, ch := range params.ContentChanges {
 		f.SetBytes([]byte(ch.Text))
+	}
+
+	if e := os.Getenv("_NTT_USE_DB"); e != "" {
+		s.db.Index(uri)
 	}
 	return nil
 }

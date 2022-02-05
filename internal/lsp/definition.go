@@ -3,6 +3,7 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
@@ -18,6 +19,10 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 		line = int(params.Position.Line) + 1
 		col  = int(params.Position.Character) + 1
 	)
+
+	if e := os.Getenv("_NTT_USE_DB"); e != "" {
+		return nil, nil
+	}
 
 	for _, suite := range s.Owners(file) {
 		start := time.Now()

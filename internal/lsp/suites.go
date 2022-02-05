@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/nokia/ntt/internal/log"
@@ -75,5 +76,7 @@ func (s *Suites) AddSuite(root string) {
 	files, _ := suite.Files()
 	s.mu.Unlock()
 
-	s.db.Index(files...)
+	if e := os.Getenv("_NTT_USE_DB"); e != "" {
+		s.db.Index(files...)
+	}
 }
