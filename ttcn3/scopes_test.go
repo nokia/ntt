@@ -17,7 +17,7 @@ func TestScopes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tree := ttcn3.Parse(tt.input)
-		scp := ttcn3.NewScope(unwrapFirst(tree.Root))
+		scp := ttcn3.NewScope(unwrapFirst(tree.Root), tree)
 		if scp == nil {
 			t.Errorf("%q: scope is nil", tt.input)
 			continue

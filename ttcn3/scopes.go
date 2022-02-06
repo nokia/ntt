@@ -11,12 +11,13 @@ import (
 
 type Scope struct {
 	ast.Node
+	Tree  *Tree
 	Names map[string]*Definition
 }
 
 type Definition struct {
 	*ast.Ident
-
+	Tree *Tree
 	Next *Definition
 }
 
@@ -28,13 +29,15 @@ func (scp *Scope) Insert(id *ast.Ident) {
 	name := id.String()
 	scp.Names[name] = &Definition{
 		Ident: id,
+		Tree:  scp.Tree,
 		Next:  scp.Names[name],
 	}
 }
 
-func NewScope(n ast.Node) *Scope {
+func NewScope(n ast.Node, tree *Tree) *Scope {
 	scp := &Scope{
 		Node: n,
+		Tree: tree,
 	}
 
 	switch n := n.(type) {
