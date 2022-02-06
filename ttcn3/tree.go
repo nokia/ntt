@@ -159,7 +159,7 @@ func slice(n ast.Node, pos loc.Pos) []ast.Node {
 			return
 		}
 
-		if inside := n.Pos() <= pos && pos <= n.End(); inside {
+		if inside := n.Pos() <= pos && pos < n.End(); inside {
 			path = append(path, n)
 			for _, child := range ast.Children(n) {
 				visit(child)
