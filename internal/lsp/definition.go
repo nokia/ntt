@@ -20,27 +20,40 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 		col  = int(params.Position.Character) + 1
 	)
 
-	if e := os.Getenv("_NTT_USE_DB"); e != "" {
-		return nil, nil
+	start := time.Now()
+	defer log.Debug(fmt.Sprintf("Goto Definition took %s.", time.Since(start)))
+
+	// Legacy Mode
+	if e := os.Getenv("_NTT_USE_DB"); e == "" {
+		return definitionsOld(s.Owners(file), string(file.SpanURI()), line, col), nil
 	}
 
+	// Fallback to cTags
 	for _, suite := range s.Owners(file) {
-		start := time.Now()
-		id, _ := suite.DefinitionAt(string(file.SpanURI()), line, col)
-		elapsed := time.Since(start)
-		log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
+		locs = append(locs, cTags(suite, string(file.SpanURI()), line, col)...)
+	}
+	return unifyLocs(locs), nil
 
+}
+
+func definitionsOld(suites []*ntt.Suite, file string, line, col int) []protocol.Location {
+	var locs []protocol.Location
+	for _, suite := range suites {
+		id, _ := suite.DefinitionAt(file, line, col)
+		log.Debugf("IdentifierInfo: %#v", id)
 		if id != nil && id.Def != nil {
 			locs = append(locs, location(id.Def.Position))
 		} else {
-			locs = append(locs, cTags(suite, string(file.SpanURI()), line, col)...)
+			locs = append(locs, cTags(suite, file, line, col)...)
 		}
 	}
-
-	return unifyLocs(locs), nil
+	return unifyLocs(locs)
 }
 
 func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {
+	stast := time.Now()
+	defer log.Debug(fmt.Sprintf("cTags fallback took %s", time.Since(stast)))
+
 	var ret []protocol.Location
 
 	tree := suite.Parse(file)
