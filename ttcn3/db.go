@@ -64,7 +64,7 @@ func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 	tree := ParseFile(file)
 	id, stack := getResolveStack(tree, tree.Pos(line, col))
 	if id == nil {
-		log.Debugf("%s:%d:%d: No symbol to resolve.\n", file, line, col)
+		log.Debugf("%s:%d:%d: No symbol to resolve. Stack: %v\n", file, line, col, nodes(stack))
 		return nil
 	}
 
@@ -156,7 +156,7 @@ func getResolveStack(tree *Tree, pos loc.Pos) (ast.Node, []ast.Node) {
 	// First two elements on the stack are expected to be the ID-Token and the
 	// Identifier node.
 	if s := tree.SliceAt(pos); len(s) >= 2 {
-		if tok, ok := s[0].(*ast.Token); ok && tok.Kind == token.IDENT {
+		if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
 			return s[1], s[2:]
 		}
 	}

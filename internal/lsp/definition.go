@@ -15,7 +15,7 @@ import (
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	var (
 		locs []protocol.Location
-		file = params.TextDocument.URI
+		file = string(params.TextDocument.URI.SpanURI())
 		line = int(params.Position.Line) + 1
 		col  = int(params.Position.Character) + 1
 	)
@@ -25,12 +25,19 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 	// Legacy Mode
 	if e := os.Getenv("_NTT_USE_DB"); e == "" {
-		return definitionsOld(s.Owners(file), string(file.SpanURI()), line, col), nil
+		return definitionsOld(s.Owners(params.TextDocument.URI), file, line, col), nil
+	}
+
+	if defs := s.db.ResolveAt(file, line, col); len(defs) > 0 {
+		for _, def := range defs {
+			locs = append(locs, location(def.Tree.Position(def.Ident.Pos())))
+		}
+		return unifyLocs(locs), nil
 	}
 
 	// Fallback to cTags
-	for _, suite := range s.Owners(file) {
-		locs = append(locs, cTags(suite, string(file.SpanURI()), line, col)...)
+	for _, suite := range s.Owners(params.TextDocument.URI) {
+		locs = append(locs, cTags(suite, file, line, col)...)
 	}
 	return unifyLocs(locs), nil
 
