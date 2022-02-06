@@ -14,6 +14,11 @@ import (
 type DB struct {
 	// Names is a map from symbol name to a list of files that contain the symbol.
 	Names map[string]map[string]bool
+
+	// Modules maps from module name to file path.
+	Modules map[string]map[string]bool
+
+	mu sync.Mutex
 }
 
 func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
@@ -48,28 +53,40 @@ func (db *DB) Index(files ...string) {
 	if db.Names == nil {
 		db.Names = make(map[string]map[string]bool)
 	}
+	if db.Modules == nil {
+		db.Modules = make(map[string]map[string]bool)
+	}
 
 	var (
-		mu sync.Mutex
-		wg sync.WaitGroup
+		wg    sync.WaitGroup
+		start = time.Now()
 	)
-
-	start := time.Now()
 	wg.Add(len(files))
 	for _, path := range files {
 		go func(path string) {
 			defer wg.Done()
 			tree := ParseFile(path)
-			mu.Lock()
+			db.mu.Lock()
+			for _, n := range tree.Modules() {
+				db.addModule(path, ast.Name(n))
+			}
+
 			for k := range tree.Names {
 				db.addDefinition(path, k)
 			}
-			mu.Unlock()
+			db.mu.Unlock()
 
 		}(path)
 	}
 	wg.Wait()
 	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), len(db.Names), len(files))
+}
+
+func (db *DB) addModule(file string, name string) {
+	if db.Modules[name] == nil {
+		db.Modules[name] = make(map[string]bool)
+	}
+	db.Modules[name][file] = true
 }
 
 func (db *DB) addDefinition(file string, name string) {
