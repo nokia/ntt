@@ -34,6 +34,8 @@ type nttTestParams struct {
 
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
 	switch params.Command {
+	case "ntt.debug.toggle":
+		return s.toggleDebug(ctx)
 	case "ntt.status":
 		return s.status(ctx)
 	case "ntt.test":

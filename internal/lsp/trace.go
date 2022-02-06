@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"os"
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/log"
@@ -27,4 +28,18 @@ func setTrace(s string) {
 		log.SetGlobalLevel(log.PrintLevel)
 	}
 	return
+}
+
+func (s *Server) toggleDebug(ctx context.Context) (interface{}, error) {
+	switch log.GlobalLevel() {
+	case log.PrintLevel:
+		os.Setenv("NTT_DEBUG", "1")
+		log.SetGlobalLevel(log.DebugLevel)
+		log.Println("Loglevel set to debug.")
+	default:
+		os.Unsetenv("NTT_DEBUG")
+		log.SetGlobalLevel(log.PrintLevel)
+		log.Println("Loglevel set to default.")
+	}
+	return nil, nil
 }
