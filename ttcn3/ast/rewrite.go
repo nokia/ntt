@@ -282,6 +282,7 @@ func (a *application) apply(parent Node, name string, iter *iterator, n Node) {
 		a.apply(n, "Expr", nil, n.Expr)
 
 	case *BranchStmt:
+		a.apply(n, "Label", nil, n.Label)
 
 	case *ReturnStmt:
 		a.apply(n, "Result", nil, n.Result)

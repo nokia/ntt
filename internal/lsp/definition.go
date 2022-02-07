@@ -3,6 +3,7 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
@@ -14,28 +15,54 @@ import (
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
 	var (
 		locs []protocol.Location
-		file = params.TextDocument.URI
+		file = string(params.TextDocument.URI.SpanURI())
 		line = int(params.Position.Line) + 1
 		col  = int(params.Position.Character) + 1
 	)
 
-	for _, suite := range s.Owners(file) {
-		start := time.Now()
-		id, _ := suite.DefinitionAt(string(file.SpanURI()), line, col)
-		elapsed := time.Since(start)
-		log.Debug(fmt.Sprintf("Goto Definition took %s. IdentifierInfo: %#v", elapsed, id))
+	start := time.Now()
+	defer log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
 
+	// Legacy Mode
+	if e := os.Getenv("_NTT_USE_DB"); e == "" {
+		return definitionsOld(s.Owners(params.TextDocument.URI), file, line, col), nil
+	}
+
+	if defs := s.db.ResolveAt(file, line, col); len(defs) > 0 {
+		for _, def := range defs {
+			pos := def.Tree.Position(def.Ident.Pos())
+			log.Debugf("Definition found at %s", pos)
+			locs = append(locs, location(pos))
+		}
+		return unifyLocs(locs), nil
+	}
+
+	// Fallback to cTags
+	for _, suite := range s.Owners(params.TextDocument.URI) {
+		locs = append(locs, cTags(suite, file, line, col)...)
+	}
+	return unifyLocs(locs), nil
+
+}
+
+func definitionsOld(suites []*ntt.Suite, file string, line, col int) []protocol.Location {
+	var locs []protocol.Location
+	for _, suite := range suites {
+		id, _ := suite.DefinitionAt(file, line, col)
+		log.Debugf("IdentifierInfo: %#v", id)
 		if id != nil && id.Def != nil {
 			locs = append(locs, location(id.Def.Position))
 		} else {
-			locs = append(locs, cTags(suite, string(file.SpanURI()), line, col)...)
+			locs = append(locs, cTags(suite, file, line, col)...)
 		}
 	}
-
-	return unifyLocs(locs), nil
+	return unifyLocs(locs)
 }
 
 func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {
+	stast := time.Now()
+	defer log.Debug(fmt.Sprintf("cTags fallback took %s", time.Since(stast)))
+
 	var ret []protocol.Location
 
 	tree := suite.Parse(file)
