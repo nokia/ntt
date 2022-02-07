@@ -73,15 +73,16 @@ func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 		return nil
 	}
 
+	var ret []*Definition
 	if defs := db.findLocals(ast.Name(id), tree, stack...); len(defs) > 0 {
-		return defs
+		ret = append(ret, defs...)
 	}
 
 	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
-		return db.findGlobals(ast.Name(id), mod)
+		ret = append(ret, db.findGlobals(ast.Name(id), mod)...)
 	}
 
-	return nil
+	return ret
 }
 
 func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definition {
