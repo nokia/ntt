@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/span"
 )
 
 func location(pos loc.Position) protocol.Location {
 	return protocol.Location{
-		URI: protocol.URIFromSpanURI(span.URIFromPath(pos.Filename)),
+		URI: protocol.URIFromSpanURI(fs.URI(pos.Filename)),
 		Range: protocol.Range{
 			Start: position(pos.Line, pos.Column),
 			End:   position(pos.Line, pos.Column),

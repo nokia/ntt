@@ -21,7 +21,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	)
 
 	start := time.Now()
-	defer log.Debug(fmt.Sprintf("Goto Definition took %s.", time.Since(start)))
+	defer log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
 
 	// Legacy Mode
 	if e := os.Getenv("_NTT_USE_DB"); e == "" {
@@ -30,7 +30,9 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 	if defs := s.db.ResolveAt(file, line, col); len(defs) > 0 {
 		for _, def := range defs {
-			locs = append(locs, location(def.Tree.Position(def.Ident.Pos())))
+			pos := def.Tree.Position(def.Ident.Pos())
+			log.Debugf("Definition found at %s", pos)
+			locs = append(locs, location(pos))
 		}
 		return unifyLocs(locs), nil
 	}
