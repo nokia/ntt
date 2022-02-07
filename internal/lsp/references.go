@@ -8,8 +8,8 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string) []protocol.Location {
@@ -36,7 +36,8 @@ func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string)
 	})
 	return list
 }
-func newAllIdsWithSameName(suite *ntt.Suite, idName string) []protocol.Location {
+
+func NewAllIdsWithSameName(suite *ntt.Suite, idName string) []protocol.Location {
 	var complList []protocol.Location = nil
 	if files := project.FindAllFiles(suite); len(files) != 0 {
 		complList = make([]protocol.Location, 0, len(files))
@@ -65,7 +66,7 @@ func (s *Server) references(ctx context.Context, params *protocol.ReferenceParam
 		if id == nil {
 			return nil, ntt.ErrNoIdentFound
 		}
-		locs = append(locs, newAllIdsWithSameName(suite, id.Tok.String())...)
+		locs = append(locs, NewAllIdsWithSameName(suite, id.Tok.String())...)
 		elapsed := time.Since(start)
 		log.Debug(fmt.Sprintf("References took %s. IdentifierInfo: %#v", elapsed, id.String()))
 	}
