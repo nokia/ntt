@@ -1,12 +1,22 @@
 package lsp_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/stretchr/testify/assert"
 )
+
+func StripPathFromURI(list []protocol.Location) []protocol.Location {
+	ret := make([]protocol.Location, 0, len(list))
+	for _, elem := range list {
+		fileName := elem.URI[strings.LastIndexByte(string(elem.URI), '/')+1:]
+		ret = append(ret, protocol.Location{URI: fileName, Range: elem.Range})
+	}
+	return ret
+}
 
 func TestFindAllTypeDefs(t *testing.T) {
 	suite := buildSuite(t, `module Test
@@ -29,16 +39,16 @@ func TestFindAllTypeDefs(t *testing.T) {
 	list := lsp.NewAllIdsWithSameName(suite, "Byte")
 
 	assert.Equal(t, []protocol.Location{
-		{URI: "file:///home/ut/ntt/internal/lsp/TestFindAllTypeDefs_Module_0.ttcn3",
+		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",
 			Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 15}, End: protocol.Position{Line: 2, Character: 15}}},
-		{URI: "file:///home/ut/ntt/internal/lsp/TestFindAllTypeDefs_Module_0.ttcn3",
+		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",
 			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 22}, End: protocol.Position{Line: 3, Character: 22}}},
-		{URI: "file:///home/ut/ntt/internal/lsp/TestFindAllTypeDefs_Module_0.ttcn3",
+		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",
 			Range: protocol.Range{Start: protocol.Position{Line: 4, Character: 7}, End: protocol.Position{Line: 4, Character: 7}}},
-		{URI: "file:///home/ut/ntt/internal/lsp/TestFindAllTypeDefs_Module_1.ttcn3",
+		{URI: "TestFindAllTypeDefs_Module_1.ttcn3",
 			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 12}, End: protocol.Position{Line: 3, Character: 12}}},
-		{URI: "file:///home/ut/ntt/internal/lsp/TestFindAllTypeDefs_Module_2.ttcn3",
+		{URI: "TestFindAllTypeDefs_Module_2.ttcn3",
 			Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 50}, End: protocol.Position{Line: 2, Character: 50}}},
-		{URI: "file:///home/ut/ntt/internal/lsp/TestFindAllTypeDefs_Module_2.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 8}, End: protocol.Position{Line: 3, Character: 8}}}}, list)
+		{URI: "TestFindAllTypeDefs_Module_2.ttcn3",
+			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 8}, End: protocol.Position{Line: 3, Character: 8}}}}, StripPathFromURI(list))
 }
