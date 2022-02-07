@@ -76,20 +76,13 @@ func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 		return nil
 	}
 
-	var ret []*Definition
-	if defs := db.findLocals(ast.Name(id), tree, stack...); len(defs) > 0 {
-		ret = append(ret, defs...)
-	}
-
-	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
-		ret = append(ret, db.findGlobals(ast.Name(id), mod)...)
-	}
-
-	return ret
+	return db.findDefinitions(ast.Name(id), tree, stack...)
 }
 
-func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definition {
+func (db *DB) findDefinitions(name string, tree *Tree, stack ...ast.Node) []*Definition {
 	var defs []*Definition
+
+	// resolve current module
 	for _, n := range stack {
 		if scope := NewScope(n, tree); scope != nil {
 			if def, ok := scope.Names[name]; ok {
@@ -103,6 +96,11 @@ func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definiti
 			}
 		}
 	}
+
+	// resolve imported modules
+	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+		defs = append(defs, db.findGlobals(name, mod)...)
+	}
 	return defs
 }
 
@@ -115,7 +113,7 @@ func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
 			if modules[ast.Name(mod)] {
-				if defs := db.findLocals(name, tree, mod); len(defs) > 0 {
+				if defs := db.findDefinitions(name, tree, mod); len(defs) > 0 {
 					result = append(result, defs...)
 				}
 			}
