@@ -173,9 +173,11 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 func (scp *Scope) addEnum(n ast.Node) {
 	switch n := n.(type) {
 	case *ast.CallExpr:
-		scp.add(n.Fun)
+		if n, ok := n.Fun.(*ast.Ident); ok {
+			scp.Insert(n)
+		}
 	case *ast.Ident:
-		scp.add(n)
+		scp.Insert(n)
 	default:
 		log.Debugf("scopes.go: unknown enumeration syntax: %T", n)
 	}
@@ -188,9 +190,6 @@ func (scp *Scope) add(n ast.Node) error {
 	}
 
 	switch n := n.(type) {
-	// Enumeration labels
-	case *ast.Ident:
-		scp.Insert(n)
 
 	case *ast.ModuleDef:
 		scp.add(n.Def)
