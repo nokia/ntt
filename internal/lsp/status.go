@@ -5,9 +5,11 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"text/template"
 
+	"github.com/dustin/go-humanize"
 	"github.com/nokia/ntt/internal/ntt"
 )
 
@@ -15,9 +17,10 @@ const statusTemplate = `
 
 === Language Server Status ===
 
-Executable : {{ .Executable }}
-Version    : {{ .Version }}
-Process ID : {{ .PID }}
+Executable   : {{ .Executable }}
+Version      : {{ .Version }}
+Process ID   : {{ .PID }}
+Memory cache : {{ memory }}
 
 
 === Session ===
@@ -41,6 +44,11 @@ var funcMap = template.FuncMap{
 	"files": func(suite *ntt.Suite) []string {
 		f, _ := suite.Files()
 		return f
+	},
+	"memory": func() string {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		return humanize.Bytes(m.Alloc)
 	},
 }
 
