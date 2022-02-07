@@ -1268,11 +1268,23 @@ func (p *parser) parseModuleDef() *ast.ModuleDef {
 		m.Def = &ast.ErrorNode{From: etok, To: p.peek(1)}
 	}
 
-	if name := ast.Name(m.Def); name != "" {
-		p.names[name] = true
+	if m.Def != nil {
+		p.addName(m.Def)
 	}
-
 	return m
+}
+
+func (p *parser) addName(n ast.Node) {
+	switch n := n.(type) {
+	case *ast.ValueDecl:
+		for _, n := range n.Decls {
+			p.addName(n)
+		}
+	default:
+		if name := ast.Name(n); name != "" {
+			p.names[name] = true
+		}
+	}
 }
 
 /*************************************************************************
