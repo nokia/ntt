@@ -89,7 +89,13 @@ func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definiti
 	for _, n := range stack {
 		if scope := NewScope(n, tree); scope != nil {
 			if def, ok := scope.Names[name]; ok {
-				defs = append(defs, def)
+				for {
+					defs = append(defs, def)
+					if def.Next == nil {
+						break
+					}
+					def = def.Next
+				}
 			}
 		}
 	}
@@ -105,7 +111,6 @@ func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
 			if modules[ast.Name(mod)] {
-				log.Debugf("XXX %v", file)
 				if defs := db.findLocals(name, tree, mod); len(defs) > 0 {
 					result = append(result, defs...)
 				}
