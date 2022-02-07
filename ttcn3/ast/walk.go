@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"reflect"
 )
 
 // WalkModuleDefs calls fun for every module definition.
@@ -647,5 +648,8 @@ func walkWithStmtList(v Visitor, list []*WithStmt) {
 // call of f(nil).
 //
 func Inspect(node Node, f func(Node) bool) {
+	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
+		return
+	}
 	Walk(inspector(f), node)
 }
