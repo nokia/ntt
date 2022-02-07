@@ -97,14 +97,15 @@ func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definiti
 }
 
 func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
-	imported := db.importMap(mod)
-	candidates := db.candidates(name, imported)
+	modules, files := db.importMaps(mod)
+	candidates := db.candidates(name, files)
 
 	var result []*Definition
 	for _, file := range candidates {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
-			if imported[ast.Name(mod)] {
+			if modules[ast.Name(mod)] {
+				log.Debugf("XXX %v", file)
 				if defs := db.findLocals(name, tree, mod); len(defs) > 0 {
 					result = append(result, defs...)
 				}
@@ -114,22 +115,28 @@ func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
 	return result
 }
 
-func (db *DB) importMap(n *ast.Module) map[string]bool {
-	imported := make(map[string]bool)
+func (db *DB) importMaps(n ast.Node) (mods, files map[string]bool) {
+	mods = make(map[string]bool)
+	files = make(map[string]bool)
 	ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
 		if n, ok := n.Def.(*ast.ImportDecl); ok {
-			imported[ast.Name(n.Module)] = true
+			name := ast.Name(n.Module)
+			mods[name] = true
+			for file := range db.Modules[name] {
+				files[file] = true
+			}
 		}
 		return true
 	}, n)
-	return imported
+	return mods, files
 }
 
 func (db *DB) candidates(name string, imported map[string]bool) []string {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+
 	var candidates []string
-	for file := range db.Modules[name] {
+	for file := range db.Names[name] {
 		if imported[file] {
 			candidates = append(candidates, file)
 		}
