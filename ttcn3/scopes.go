@@ -141,9 +141,25 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		//n.Sel Expr  // Literal, identifier or reference.
 
 	case *ast.Module:
-		for _, n := range n.Defs {
-			scp.add(n)
-		}
+		ast.Inspect(n, func(n ast.Node) bool {
+			switch n := n.(type) {
+			// Groups are not visible in the global scope.
+			case *ast.GroupDecl:
+
+			case *ast.ModuleDef:
+				scp.add(n.Def)
+			case *ast.EnumTypeDecl:
+				for _, n := range n.Enums {
+					scp.addEnum(n)
+				}
+			case *ast.EnumSpec:
+				for _, n := range n.Enums {
+					scp.addEnum(n)
+				}
+
+			}
+			return true
+		})
 
 	case *ast.ControlPart:
 		scp.add(n.Body)
@@ -172,6 +188,10 @@ func (scp *Scope) add(n ast.Node) error {
 	}
 
 	switch n := n.(type) {
+	// Enumeration labels
+	case *ast.Ident:
+		scp.Insert(n)
+
 	case *ast.ModuleDef:
 		scp.add(n.Def)
 

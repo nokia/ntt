@@ -32,6 +32,7 @@ func (db *DB) Index(files ...string) {
 	}
 
 	var (
+		syms  int
 		wg    sync.WaitGroup
 		start = time.Now()
 	)
@@ -42,10 +43,12 @@ func (db *DB) Index(files ...string) {
 			tree := ParseFile(path)
 			db.mu.Lock()
 			for _, n := range tree.Modules() {
+				syms++
 				db.addModule(path, ast.Name(n))
 			}
 
 			for k := range tree.Names {
+				syms++
 				db.addDefinition(path, k)
 			}
 			db.mu.Unlock()
@@ -53,7 +56,7 @@ func (db *DB) Index(files ...string) {
 		}(path)
 	}
 	wg.Wait()
-	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), len(db.Names), len(files))
+	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), syms, len(files))
 }
 
 func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
@@ -73,15 +76,16 @@ func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 		return nil
 	}
 
+	var ret []*Definition
 	if defs := db.findLocals(ast.Name(id), tree, stack...); len(defs) > 0 {
-		return defs
+		ret = append(ret, defs...)
 	}
 
 	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
-		return db.findGlobals(ast.Name(id), mod)
+		ret = append(ret, db.findGlobals(ast.Name(id), mod)...)
 	}
 
-	return nil
+	return ret
 }
 
 func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definition {
@@ -89,7 +93,13 @@ func (db *DB) findLocals(name string, tree *Tree, stack ...ast.Node) []*Definiti
 	for _, n := range stack {
 		if scope := NewScope(n, tree); scope != nil {
 			if def, ok := scope.Names[name]; ok {
-				defs = append(defs, def)
+				for {
+					defs = append(defs, def)
+					if def.Next == nil {
+						break
+					}
+					def = def.Next
+				}
 			}
 		}
 	}
@@ -105,7 +115,6 @@ func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
 			if modules[ast.Name(mod)] {
-				log.Debugf("XXX %v", file)
 				if defs := db.findLocals(name, tree, mod); len(defs) > 0 {
 					result = append(result, defs...)
 				}
