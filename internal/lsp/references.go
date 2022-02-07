@@ -8,8 +8,8 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string) []protocol.Location {
