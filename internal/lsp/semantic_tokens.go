@@ -394,7 +394,7 @@ func NewSemTokVisitor(synt *ntt.ParseInfo, modNameSet *map[string]struct{}) *Sem
 		nodeStack:  make([]ast.Node, 0, 10)}
 }
 
-func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, suite *ntt.Suite, fileName string) *protocol.SemanticTokens {
+func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, suite *ntt.Suite, fileName string, txtRange protocol.Range) *protocol.SemanticTokens {
 	stVisitor := NewSemTokVisitor(syntax, getModuleNameSetFromSuite(suite))
 
 	ast.Inspect(syntax.Module, stVisitor.VisitModuleDefs)
@@ -436,7 +436,45 @@ func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTo
 	if syntax.Module.Name == nil {
 		return nil, nil
 	}
+	txtRange := protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: 0, Character: 0}}
+	ret = NewSemanticTokensFromCurrentModule(syntax, suites[0], params.TextDocument.URI.SpanURI().Filename(), txtRange)
+	return ret, nil
+}
 
-	ret = NewSemanticTokensFromCurrentModule(syntax, suites[0], params.TextDocument.URI.SpanURI().Filename())
+func (s *Server) semanticTokensRange(ctx context.Context, params *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
+	var ret *protocol.SemanticTokens = nil
+	start := time.Now()
+	defer func() {
+		if err := recover(); err != nil {
+			// in case of a panic, just continue as this might be a common situation during typing
+			ret = nil
+			log.Debug(fmt.Sprintf("Info: %s.", err))
+		}
+	}()
+	defer func() {
+		elapsed := time.Since(start)
+		log.Debug(fmt.Sprintf("SemanticTokensRange took %s.", elapsed))
+	}()
+
+	suites := s.Owners(params.TextDocument.URI)
+	// a completely new and empty file belongs to no suites at all
+	if len(suites) == 0 {
+		return nil, nil
+	}
+	// NOTE: having the current file owned by more then one suite should not
+	// import from modules originating from both suites. This would
+	// in most ways end up with cyclic imports.
+	// Thus 'completion' shall collect items only from one suite.
+	// Decision: first suite
+	syntax := suites[0].ParseWithAllErrors(params.TextDocument.URI.SpanURI().Filename())
+	if syntax.Module == nil {
+		return nil, syntax.Err
+	}
+
+	if syntax.Module.Name == nil {
+		return nil, nil
+	}
+
+	ret = NewSemanticTokensFromCurrentModule(syntax, suites[0], params.TextDocument.URI.SpanURI().Filename(), params.Range)
 	return ret, nil
 }

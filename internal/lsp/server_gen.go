@@ -196,8 +196,8 @@ func (s *Server) SemanticTokensFullDelta(context.Context, *protocol.SemanticToke
 	return nil, notImplemented("SemanticTokensFullDelta")
 }
 
-func (s *Server) SemanticTokensRange(context.Context, *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
-	return nil, notImplemented("SemanticTokensRange")
+func (s *Server) SemanticTokensRange(ctx context.Context, params *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
+	return s.semanticTokensRange(ctx, params)
 }
 
 func (s *Server) SemanticTokensRefresh(context.Context) error {
