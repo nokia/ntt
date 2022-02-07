@@ -32,6 +32,7 @@ func (db *DB) Index(files ...string) {
 	}
 
 	var (
+		syms  int
 		wg    sync.WaitGroup
 		start = time.Now()
 	)
@@ -42,10 +43,12 @@ func (db *DB) Index(files ...string) {
 			tree := ParseFile(path)
 			db.mu.Lock()
 			for _, n := range tree.Modules() {
+				syms++
 				db.addModule(path, ast.Name(n))
 			}
 
 			for k := range tree.Names {
+				syms++
 				db.addDefinition(path, k)
 			}
 			db.mu.Unlock()
@@ -53,7 +56,7 @@ func (db *DB) Index(files ...string) {
 		}(path)
 	}
 	wg.Wait()
-	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), len(db.Names), len(files))
+	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), syms, len(files))
 }
 
 func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
