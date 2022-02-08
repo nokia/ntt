@@ -270,6 +270,10 @@ func Name(n Node) string {
 func Children(n Node) []Node {
 	var children []Node
 	switch n := n.(type) {
+	case NodeList:
+		for _, child := range n {
+			children = append(children, child)
+		}
 	case Token:
 	case *ErrorNode:
 		children = append(children, n.From)
