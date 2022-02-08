@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
+	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +32,8 @@ var (
 				tree := ttcn3.ParseFile(file)
 				if useTTCN3 {
 					printer.Print(os.Stdout, tree.FileSet, tree.Root)
+				} else if useDot {
+					dot(tree.Root)
 				} else {
 					dump(reflect.ValueOf(tree.Root), "Root: ")
 				}
@@ -42,10 +44,12 @@ var (
 	}
 
 	useTTCN3 = false
+	useDot   = false
 )
 
 func init() {
 	Command.PersistentFlags().BoolVarP(&useTTCN3, "ttcn3", "", false, "formatted TTCN-3 output")
+	Command.PersistentFlags().BoolVarP(&useDot, "dot", "", false, "graphviz output")
 }
 
 func dump(v reflect.Value, f string) {
