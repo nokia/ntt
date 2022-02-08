@@ -2,7 +2,6 @@ package lsp
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -49,9 +48,7 @@ func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDo
 		f.SetBytes([]byte(ch.Text))
 	}
 
-	if e := os.Getenv("_NTT_USE_DB"); e != "" {
-		s.db.Index(uri)
-	}
+	s.db.Index(uri)
 	return nil
 }
 
