@@ -3,6 +3,7 @@ package dump
 import (
 	"bufio"
 	"fmt"
+	"html"
 	"os"
 	"reflect"
 	"strings"
@@ -68,17 +69,21 @@ func nodeID(n ast.Node) string {
 }
 
 func nodeProps(n ast.Node) string {
-	label := func(n ast.Node) string {
-		if tok, ok := n.(ast.Token); ok {
-			if tok.Kind.IsLiteral() {
-				return fmt.Sprintf("%s", tok.Lit)
-			}
-			return fmt.Sprintf("%v", tok.Kind)
-		}
-		return strings.TrimPrefix(fmt.Sprintf("%T", n), "*ast.")
-	}
 	if tok, ok := n.(ast.Token); ok {
-		return fmt.Sprintf("[label=<<B>%s</B>>; shape=box; style=filled; fillcolor=lightgrey]", label(tok))
+		label := fmt.Sprintf("%v", tok.Kind)
+		if tok.Kind.IsLiteral() {
+			label = tok.Lit
+		}
+		return fmt.Sprintf("[label=<<B>%s</B>>; shape=box; style=filled; fillcolor=lightgrey]", escape(label))
 	}
-	return fmt.Sprintf("[label=\"%s\"]", label(n))
+	label := strings.TrimPrefix(fmt.Sprintf("%T", n), "*ast.")
+	return fmt.Sprintf("[label=\"%s\"]", label)
+}
+
+func escape(s string) string {
+	s = html.EscapeString(s)
+	s = strings.Replace(s, "[", " [", -1)
+	s = strings.Replace(s, "|", " |", -1)
+	s = strings.Replace(s, "]", " ]", -1)
+	return s
 }
