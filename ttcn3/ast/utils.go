@@ -168,7 +168,7 @@ func FirstToken(n Node) *Token {
 		}
 		return FirstToken(n.Def)
 	case *ControlPart:
-		return &n.Tok
+		return FirstToken(n.Name)
 	case *ImportDecl:
 		return &n.ImportTok
 	case *GroupDecl:
@@ -691,7 +691,7 @@ func Children(n Node) []Node {
 		children = append(children, n.Def)
 
 	case *ControlPart:
-		children = append(children, n.Tok)
+		children = append(children, n.Name)
 		children = append(children, n.Body)
 		children = append(children, n.With)
 

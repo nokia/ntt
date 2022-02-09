@@ -1025,7 +1025,7 @@ func (p *parser) parseIdent() *ast.Ident {
 	switch p.tok {
 	case token.UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case token.IDENT, token.ADDRESS, token.ALIVE, token.CHARSTRING:
+	case token.IDENT, token.ADDRESS, token.ALIVE, token.CHARSTRING, token.CONTROL:
 		return &ast.Ident{Tok: p.consume()}
 	default:
 		p.expect(token.IDENT) // use expect() error handling
@@ -1248,7 +1248,7 @@ func (p *parser) parseModuleDef() *ast.ModuleDef {
 	case token.FUNCTION, token.TESTCASE, token.ALTSTEP:
 		m.Def = p.parseFuncDecl()
 	case token.CONTROL:
-		m.Def = &ast.ControlPart{Tok: p.consume(), Body: p.parseBlockStmt(), With: p.parseWith()}
+		m.Def = &ast.ControlPart{Name: p.parseIdent(), Body: p.parseBlockStmt(), With: p.parseWith()}
 	case token.EXTERNAL:
 		switch p.peek(2).Kind {
 		case token.FUNCTION:

@@ -27,12 +27,14 @@ func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 		scp.Names = make(map[string]*Definition)
 	}
 
-	name := id.String()
-	scp.Names[name] = &Definition{
-		Ident: id,
-		Node:  n,
-		Tree:  scp.Tree,
-		Next:  scp.Names[name],
+	if id != nil {
+		name := id.String()
+		scp.Names[name] = &Definition{
+			Ident: id,
+			Node:  n,
+			Tree:  scp.Tree,
+			Next:  scp.Names[name],
+		}
 	}
 }
 
@@ -75,13 +77,11 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 
 	case *ast.SubTypeDecl:
 		if n.Field != nil {
-			scp.add(n.Field.Type)
-			scp.add(n.Field.TypePars)
+			scp.addField(n.Field)
 		}
 
 	case *ast.Field:
-		scp.add(n.Type)
-		scp.add(n.TypePars)
+		scp.addField(n)
 
 	case *ast.StructTypeDecl:
 		scp.add(n.TypePars)
@@ -151,16 +151,6 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	case *ast.BehaviourSpec:
 		scp.add(n.Params)
 
-	case *ast.CompositeLiteral:
-		for _, n := range n.List {
-			scp.add(n)
-		}
-
-	case *ast.SelectorExpr:
-		// TODO(5nord) Don't forget
-		//n.X   Expr  // Preceding expression (might be nil)
-		//n.Sel Expr  // Literal, identifier or reference.
-
 	case *ast.Module:
 		ast.Inspect(n, func(n ast.Node) bool {
 			switch n := n.(type) {
@@ -202,6 +192,11 @@ func (scp *Scope) addEnum(n ast.Node, e ast.Expr) {
 	default:
 		log.Debugf("scopes.go: unknown enumeration syntax: %T", n)
 	}
+}
+
+func (scp *Scope) addField(n *ast.Field) {
+	scp.add(n.Type)
+	scp.add(n.TypePars)
 }
 
 func (scp *Scope) addBody(n *ast.BlockStmt) {
@@ -267,7 +262,7 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.Insert(n, n.Name)
 
 	case *ast.ControlPart:
-		// TODO(5nord) Add control part names to scope
+		scp.Insert(n, n.Name)
 
 	case *ast.ImportDecl:
 		scp.Insert(n, n.Module)

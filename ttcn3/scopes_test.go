@@ -20,6 +20,26 @@ func TestScopes(t *testing.T) {
 		{`type record { int x } R<type T>`, []string{"x", "T"}},
 		{`type record { record { int y } x } R<type T>`, []string{"x", "T"}},
 		{`type record of record { int x } R`, []string{}},
+		{`signature S<type T>(int x) return A exception(B)`, []string{"T", "x"}},
+		{`type union U<type T>{ int x }`, []string{"T", "x"}},
+		{`type enumerated E<type T>{ E1, E2 }`, []string{"T", "E1", "E2"}},
+		{`type function F<type T>(int p) runs on C return X`, []string{"T", "p"}},
+		{`type port P<type T}> message { inout T; map param(int p)}`, []string{"T"}},
+		{`type component C<type T> extends D {var T x}`, []string{"T", "x"}},
+		{`for (var int i;true;i:=i+1) {var int x}`, []string{"i", "x"}},
+		{`while (true) {var int x}`, []string{"x"}},
+		{`do {var int x} while (true){`, []string{"x"}},
+		{`if (true) {var int x} else {var int y}`, []string{}},
+		{`
+			module M {
+				import from foo all;
+				friend module bar;
+				group G { group G2 {
+				var int x;
+				}}
+				control {};
+				type enumerated E<type T> {E1}
+			}`, []string{"foo", "x", "control", "E", "E1"}},
 	}
 
 	for _, tt := range tests {
