@@ -34,6 +34,8 @@ func (scp *Scope) Insert(id *ast.Ident) {
 	}
 }
 
+// NewScope builts and populares a new scope from the given syntax node.
+// NewScope returns nil if no valid scope could be built.
 func NewScope(n ast.Node, tree *Tree) *Scope {
 	scp := &Scope{
 		Node: n,
@@ -55,7 +57,14 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		scp.add(n.Params)
 
 	case *ast.SubTypeDecl:
-		scp.add(n.Field)
+		if n.Field != nil {
+			scp.add(n.Field.Type)
+			scp.add(n.Field.TypePars)
+		}
+
+	case *ast.Field:
+		scp.add(n.Type)
+		scp.add(n.TypePars)
 
 	case *ast.StructTypeDecl:
 		scp.add(n.TypePars)
@@ -111,9 +120,6 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 
 	case *ast.CommClause:
 		scp.addBody(n.Body)
-
-	case *ast.Field:
-		scp.add(n.TypePars)
 
 	case *ast.StructSpec:
 		for _, n := range n.Fields {
@@ -258,6 +264,10 @@ func (scp *Scope) add(n ast.Node) error {
 			scp.add(n)
 		}
 
+	case *ast.StructSpec:
+		for _, n := range n.Fields {
+			scp.add(n)
+		}
 	case *ast.FormalPars:
 		for _, n := range n.List {
 			scp.add(n)

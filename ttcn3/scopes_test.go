@@ -15,9 +15,13 @@ func TestScopes(t *testing.T) {
 	}{
 		{`{var int x := x}`, []string{"x"}},
 		{`{var int x := x; {var int y := x}}`, []string{"x"}},
-		{`template int t<type T>(int x) := 1`, []string{"x", "T"}},
+		{`template int t<type T>(int x) := 1`, []string{"T", "x"}},
 		{`function f<type T>(int p) {var int x}`, []string{"T", "p", "x"}},
+		{`type record { int x } R<type T>`, []string{"x", "T"}},
+		{`type record { record { int y } x } R<type T>`, []string{"x", "T"}},
+		{`type record of record { int x } R`, []string{}},
 	}
+
 	for _, tt := range tests {
 		tree := ttcn3.Parse(tt.input)
 		scp := ttcn3.NewScope(unwrapFirst(tree.Root), tree)
