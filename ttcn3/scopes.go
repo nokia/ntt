@@ -27,12 +27,14 @@ func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 		scp.Names = make(map[string]*Definition)
 	}
 
-	name := id.String()
-	scp.Names[name] = &Definition{
-		Ident: id,
-		Node:  n,
-		Tree:  scp.Tree,
-		Next:  scp.Names[name],
+	if id != nil {
+		name := id.String()
+		scp.Names[name] = &Definition{
+			Ident: id,
+			Node:  n,
+			Tree:  scp.Tree,
+			Next:  scp.Names[name],
+		}
 	}
 }
 
