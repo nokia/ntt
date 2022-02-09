@@ -7,6 +7,7 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
+// TestScope verifies that scopes are built and populated correctly.
 func TestScopes(t *testing.T) {
 	tests := []struct {
 		input string
@@ -15,6 +16,7 @@ func TestScopes(t *testing.T) {
 		{`{var int x := x}`, []string{"x"}},
 		{`{var int x := x; {var int y := x}}`, []string{"x"}},
 		{`template int t<type T>(int x) := 1`, []string{"x", "T"}},
+		{`function f<type T>(int p) {var int x}`, []string{"T", "p", "x"}},
 	}
 	for _, tt := range tests {
 		tree := ttcn3.Parse(tt.input)
@@ -23,8 +25,8 @@ func TestScopes(t *testing.T) {
 			t.Errorf("%q: scope is nil", tt.input)
 			continue
 		}
-		if !equal(nameSlice(scp), tt.names) {
-			t.Errorf("Expected %d names, got %d", len(tt.names), len(scp.Names))
+		if actual := nameSlice(scp); !equal(actual, tt.names) {
+			t.Errorf("%q: expected %v names, got %v", tt.input, tt.names, actual)
 		}
 	}
 }

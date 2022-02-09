@@ -48,7 +48,7 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	case *ast.FuncDecl:
 		scp.add(n.TypePars)
 		scp.add(n.Params)
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.SignatureDecl:
 		scp.add(n.TypePars)
@@ -81,38 +81,36 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 
 	case *ast.ComponentTypeDecl:
 		scp.add(n.TypePars)
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.BlockStmt:
-		for _, stmt := range n.Stmts {
-			scp.add(stmt)
-		}
+		scp.addBody(n)
 
 	case *ast.AltStmt:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.CallStmt:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.ForStmt:
 		scp.add(n.Init)
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.WhileStmt:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.DoWhileStmt:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.IfStmt:
 		scp.add(n.Then)
 		scp.add(n.Else)
 
 	case *ast.CaseClause:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.CommClause:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	case *ast.Field:
 		scp.add(n.TypePars)
@@ -162,7 +160,7 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		})
 
 	case *ast.ControlPart:
-		scp.add(n.Body)
+		scp.addBody(n.Body)
 
 	default:
 		return nil
@@ -183,12 +181,17 @@ func (scp *Scope) addEnum(n ast.Node) {
 	}
 }
 
+func (scp *Scope) addBody(n *ast.BlockStmt) {
+	for _, stmt := range n.Stmts {
+		scp.add(stmt)
+	}
+}
+
 // add adds definitions to the scope;
 func (scp *Scope) add(n ast.Node) error {
 	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
 		return nil
 	}
-
 	switch n := n.(type) {
 
 	case *ast.ModuleDef:
