@@ -22,7 +22,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	start := time.Now()
 	defer log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
 
-	if defs := s.db.LookupUp(file, line, col); len(defs) > 0 {
+	if defs := s.db.LookupAt(file, line, col); len(defs) > 0 {
 		for _, def := range defs {
 			pos := def.Tree.Position(def.Ident.Pos())
 			log.Debugf("Definition found at %s", pos)

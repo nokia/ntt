@@ -59,7 +59,7 @@ func (db *DB) Index(files ...string) {
 	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), syms, len(files))
 }
 
-func (db *DB) LookupUp(file string, line int, col int) []*Definition {
+func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	start := time.Now()
 	log.Debugf("%s:%d:%d: Lookup started...\n", file, line, col)
 	defer log.Debugf("%s:%d:%d: Lookup took %s\n", file, line, col, time.Since(start))
