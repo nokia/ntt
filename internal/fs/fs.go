@@ -43,7 +43,7 @@ func Path(s string) string {
 // URI turns paths into URIs
 func URI(path string) span.URI {
 	path = string(span.URINormalizeAuthority(path))
-	if u, _ := url.Parse(path); u.Scheme != "" {
+	if u, _ := url.Parse(path); u != nil && u.Scheme != "" {
 		if vol := filepath.VolumeName(path); vol != "" {
 			// this is a windows path
 			return span.URIFromPath(path)

@@ -13,7 +13,7 @@ import (
 func Lookup(path string) string {
 	// Skip URLs
 	path = string(span.URINormalizeAuthority(path))
-	if u, _ := url.Parse(path); u.Scheme != "" {
+	if u, _ := url.Parse(path); u != nil && u.Scheme != "" {
 		return path
 	}
 
