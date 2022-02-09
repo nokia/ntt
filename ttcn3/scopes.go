@@ -151,16 +151,6 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	case *ast.BehaviourSpec:
 		scp.add(n.Params)
 
-	case *ast.CompositeLiteral:
-		for _, n := range n.List {
-			scp.add(n)
-		}
-
-	case *ast.SelectorExpr:
-		// TODO(5nord) Don't forget
-		//n.X   Expr  // Preceding expression (might be nil)
-		//n.Sel Expr  // Literal, identifier or reference.
-
 	case *ast.Module:
 		ast.Inspect(n, func(n ast.Node) bool {
 			switch n := n.(type) {
