@@ -22,6 +22,11 @@ type Definition struct {
 	Next *Definition
 }
 
+type Type struct {
+	ast.Node
+	*Tree
+}
+
 func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 	if scp.Names == nil {
 		scp.Names = make(map[string]*Definition)
@@ -292,4 +297,45 @@ func (scp *Scope) add(n ast.Node) error {
 	}
 
 	return fmt.Errorf("%T is not a declaration", n)
+}
+
+func (d *Definition) Type() *Type {
+	switch n := d.Node.(type) {
+	case *ast.TemplateDecl:
+		return &Type{Node: n.Type, Tree: d.Tree}
+
+	case *ast.ValueDecl:
+		return &Type{Node: n.Type, Tree: d.Tree}
+
+	case *ast.FormalPar:
+		return &Type{Node: n.Type, Tree: d.Tree}
+
+	case *ast.SubTypeDecl:
+		if n.Field != nil {
+			return &Type{Node: n.Field.Type, Tree: d.Tree}
+		}
+
+	case *ast.FuncDecl:
+		if n.Return != nil {
+			return &Type{Node: n.Return.Type, Tree: d.Tree}
+		}
+
+	case *ast.SignatureDecl:
+		if n.Return != nil {
+			return &Type{Node: n.Return.Type, Tree: d.Tree}
+		}
+
+	case *ast.BehaviourSpec,
+		*ast.BehaviourTypeDecl,
+		*ast.ComponentTypeDecl,
+		*ast.EnumSpec,
+		*ast.EnumTypeDecl,
+		*ast.Field,
+		*ast.Module,
+		*ast.PortTypeDecl,
+		*ast.StructSpec,
+		*ast.StructTypeDecl:
+		return &Type{Node: n, Tree: d.Tree}
+	}
+	return nil
 }

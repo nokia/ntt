@@ -68,8 +68,18 @@ func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	n, stack := parentNodes(tree, tree.Pos(line, col))
 
 	switch {
-	case isFieldID(n, stack), isSelectorID(n, stack):
+	case isFieldID(n, stack):
 		log.Debugf("Field assignment not implemented. Stack: %v", nodes(stack))
+
+	case isSelectorID(n, stack):
+		var result []*Definition
+		n, stack := stack[0].(*ast.SelectorExpr), stack[1:]
+		for _, t := range db.findTypes(n.X, tree, stack...) {
+			defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
+			result = append(result, defs...)
+
+		}
+		return result
 
 	default:
 		if id, ok := n.(*ast.Ident); ok {
@@ -97,6 +107,39 @@ func (db *DB) findDefinitions(id *ast.Ident, tree *Tree, stack ...ast.Node) []*D
 	}
 
 	return defs
+}
+
+// findType returns all type definitions refered by expression n.
+func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Type {
+	var types []*Type
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		//for _, t := range db.findTypes(n.X, tree, stack...) {
+		//	defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
+		//	result = append(result, defs...)
+
+		//}
+	case *ast.IndexExpr:
+		return db.findTypes(n.X, tree, append(stack, n)...)
+	case *ast.CallExpr:
+		return db.findTypes(n.Fun, tree, append(stack, n)...)
+	case *ast.Ident:
+		for _, def := range db.findDefinitions(n, tree, stack...) {
+			if t := def.Type(); t != nil {
+				// Type references need further resolving.
+				if _, ok := t.Node.(ast.Expr); ok {
+					//types = append(types, findTypes()...)
+				} else {
+					types = append(types, t)
+				}
+			}
+		}
+
+	default:
+		// not supported
+	}
+
+	return types
 }
 
 // FindImportedDefinitions returns a list of modules that may contain the given symbol.
