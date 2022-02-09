@@ -23,6 +23,7 @@ func TestScopes(t *testing.T) {
 		{`signature S<type T>(int x) return A exception(B)`, []string{"T", "x"}},
 		{`type union U<type T>{ int x }`, []string{"T", "x"}},
 		{`type enumerated E<type T>{ E1, E2 }`, []string{"T", "E1", "E2"}},
+		{`type function F<type T>(int p) runs on C return X`, []string{"T", "p"}},
 	}
 
 	for _, tt := range tests {
