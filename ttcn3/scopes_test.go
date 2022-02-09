@@ -29,6 +29,7 @@ func TestScopes(t *testing.T) {
 		{`for (var int i;true;i:=i+1) {var int x}`, []string{"i", "x"}},
 		{`while (true) {var int x}`, []string{"x"}},
 		{`do {var int x} while (true){`, []string{"x"}},
+		{`if (true) {var int x} else {var int y}`, []string{}},
 	}
 
 	for _, tt := range tests {
