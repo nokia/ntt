@@ -7,6 +7,7 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
+// TestScope verifies that scopes are built and populated correctly.
 func TestScopes(t *testing.T) {
 	tests := []struct {
 		input string
@@ -14,7 +15,13 @@ func TestScopes(t *testing.T) {
 	}{
 		{`{var int x := x}`, []string{"x"}},
 		{`{var int x := x; {var int y := x}}`, []string{"x"}},
+		{`template int t<type T>(int x) := 1`, []string{"T", "x"}},
+		{`function f<type T>(int p) {var int x}`, []string{"T", "p", "x"}},
+		{`type record { int x } R<type T>`, []string{"x", "T"}},
+		{`type record { record { int y } x } R<type T>`, []string{"x", "T"}},
+		{`type record of record { int x } R`, []string{}},
 	}
+
 	for _, tt := range tests {
 		tree := ttcn3.Parse(tt.input)
 		scp := ttcn3.NewScope(unwrapFirst(tree.Root), tree)
@@ -22,18 +29,29 @@ func TestScopes(t *testing.T) {
 			t.Errorf("%q: scope is nil", tt.input)
 			continue
 		}
-		if !equal(nameSlice(scp), tt.names) {
-			t.Errorf("Expected %d names, got %d", len(tt.names), len(scp.Names))
+		if actual := nameSlice(scp); !equal(actual, tt.names) {
+			t.Errorf("%q: expected %v names, got %v", tt.input, tt.names, actual)
 		}
 	}
 }
 
 // Unwrap first node from NodeLists
 func unwrapFirst(n ast.Node) ast.Node {
-	if n, ok := n.(ast.NodeList); ok && len(n) > 0 {
-		return n[0]
+	switch n := n.(type) {
+	case ast.NodeList:
+		if len(n) == 0 {
+			return nil
+		}
+		return unwrapFirst(n[0])
+	case *ast.ExprStmt:
+		return unwrapFirst(n.Expr)
+	case *ast.DeclStmt:
+		return unwrapFirst(n.Decl)
+	case *ast.ModuleDef:
+		return unwrapFirst(n.Def)
+	default:
+		return n
 	}
-	return n
 }
 
 // equal returns true if a and b are equal, order is ignored.
