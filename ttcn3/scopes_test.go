@@ -25,6 +25,8 @@ func TestScopes(t *testing.T) {
 		{`type enumerated E<type T>{ E1, E2 }`, []string{"T", "E1", "E2"}},
 		{`type function F<type T>(int p) runs on C return X`, []string{"T", "p"}},
 		{`type port P<type T}> message { inout T; map param(int p)}`, []string{"T"}},
+		{`type component C<type T> extends D {var T x}`, []string{"T", "x"}},
+		{`for (var int i;true;i:=i+1) {var int x}`, []string{"i", "x"}},
 	}
 
 	for _, tt := range tests {
