@@ -14,6 +14,7 @@ func TestScopes(t *testing.T) {
 	}{
 		{`{var int x := x}`, []string{"x"}},
 		{`{var int x := x; {var int y := x}}`, []string{"x"}},
+		{`template int t<type T>(int x) := 1`, []string{"x", "T"}},
 	}
 	for _, tt := range tests {
 		tree := ttcn3.Parse(tt.input)
@@ -30,10 +31,21 @@ func TestScopes(t *testing.T) {
 
 // Unwrap first node from NodeLists
 func unwrapFirst(n ast.Node) ast.Node {
-	if n, ok := n.(ast.NodeList); ok && len(n) > 0 {
-		return n[0]
+	switch n := n.(type) {
+	case ast.NodeList:
+		if len(n) == 0 {
+			return nil
+		}
+		return unwrapFirst(n[0])
+	case *ast.ExprStmt:
+		return unwrapFirst(n.Expr)
+	case *ast.DeclStmt:
+		return unwrapFirst(n.Decl)
+	case *ast.ModuleDef:
+		return unwrapFirst(n.Def)
+	default:
+		return n
 	}
-	return n
 }
 
 // equal returns true if a and b are equal, order is ignored.
