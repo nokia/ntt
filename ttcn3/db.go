@@ -65,90 +65,75 @@ func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 	defer log.Debugf("%s:%d:%d: Resolve took %s\n", file, line, col, time.Since(start))
 
 	tree := ParseFile(file)
-	id, stack := getResolveStack(tree, tree.Pos(line, col))
-	if id == nil {
-		log.Debugf("%s:%d:%d: No symbol to resolve. Stack: %v\n", file, line, col, nodes(stack))
-		return nil
-	}
+	n, stack := parentNodes(tree, tree.Pos(line, col))
 
-	if isSelectorID(id, stack) || isFieldID(id, stack) {
-		log.Debugf("Resolve %v not implemented.", nodes(stack))
-		return nil
-	}
+	switch {
+	case isFieldID(n, stack), isSelectorID(n, stack):
+		log.Debugf("Field assignment not implemented. Stack: %v", nodes(stack))
 
-	return db.findDefinitions(ast.Name(id), tree, stack...)
-}
-
-func (db *DB) findDefinitions(name string, tree *Tree, stack ...ast.Node) []*Definition {
-	var defs []*Definition
-
-	// resolve current module
-	for _, n := range stack {
-		if scope := NewScope(n, tree); scope != nil {
-			if def, ok := scope.Names[name]; ok {
-				for {
-					defs = append(defs, def)
-					if def.Next == nil {
-						break
-					}
-					def = def.Next
-				}
-			}
+	default:
+		if id, ok := n.(*ast.Ident); ok {
+			return db.findDefinitions(id, tree, stack...)
 		}
 	}
 
-	// resolve imported modules
-	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
-		defs = append(defs, db.findGlobals(name, mod)...)
+	log.Debugf("%s:%d:%d: No symbol to resolve. Stack: %v\n", file, line, col, nodes(stack))
+	return nil
+}
+
+func (db *DB) findDefinitions(id *ast.Ident, tree *Tree, stack ...ast.Node) []*Definition {
+	var defs []*Definition
+
+	// Find definitions in current file by walking up the scopes.
+	for _, n := range stack {
+		defs = append(defs, NewScope(n, tree).Lookup(id.String())...)
 	}
+
+	// Find definitions in imported files.
+	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+		for _, m := range db.FindImportedDefinitions(id, mod) {
+			defs = append(defs, db.findDefinitions(id, m.Tree, m.Node)...)
+		}
+	}
+
 	return defs
 }
 
-func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
-	modules, files := db.importMaps(mod)
-	candidates := db.candidates(name, files)
-
-	var result []*Definition
-	for _, file := range candidates {
-		tree := ParseFile(file)
-		for _, mod := range tree.Modules() {
-			if modules[ast.Name(mod)] {
-				if defs := db.findDefinitions(name, tree, mod); len(defs) > 0 {
-					result = append(result, defs...)
-				}
-			}
-		}
-	}
-	return result
-}
-
-func (db *DB) importMaps(n ast.Node) (mods, files map[string]bool) {
-	mods = make(map[string]bool)
-	files = make(map[string]bool)
+// FindImportedDefinitions returns a list of modules that may contain the given symbol.
+func (db *DB) FindImportedDefinitions(id *ast.Ident, mod *ast.Module) []*Definition {
+	// Build import maps for current module.
+	importedModules := make(map[string]bool)
+	importedFiles := make(map[string]bool)
 	ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
 		if n, ok := n.Def.(*ast.ImportDecl); ok {
 			name := ast.Name(n.Module)
-			mods[name] = true
+			importedModules[name] = true
 			for file := range db.Modules[name] {
-				files[file] = true
+				importedFiles[file] = true
 			}
 		}
 		return true
-	}, n)
-	return mods, files
-}
+	}, mod)
 
-func (db *DB) candidates(name string, imported map[string]bool) []string {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
+	// Find all files that contain the symbol.
 	var candidates []string
-	for file := range db.Names[name] {
-		if imported[file] {
+	for file := range db.Names[id.String()] {
+		if importedFiles[file] {
 			candidates = append(candidates, file)
 		}
 	}
-	return candidates
+
+	// Parse all imported modules that contain the symbol.
+	var mods []*Definition
+	for _, file := range candidates {
+		tree := ParseFile(file)
+		for _, mod := range tree.Modules() {
+			if importedModules[ast.Name(mod)] {
+				mods = append(mods, &Definition{Ident: id, Node: mod, Tree: tree})
+			}
+		}
+	}
+	return mods
 }
 
 func (db *DB) addModule(file string, name string) {
@@ -165,13 +150,13 @@ func (db *DB) addDefinition(file string, name string) {
 	db.Names[name][file] = true
 }
 
-// getResolveStack returns the symbol name and the stack of nodes that lead to the symbol.
-func getResolveStack(tree *Tree, pos loc.Pos) (ast.Node, []ast.Node) {
+// parentNodes returns the symbol name and the stack of nodes that lead to the symbol.
+func parentNodes(tree *Tree, pos loc.Pos) (ast.Expr, []ast.Node) {
 	// First two elements on the stack are expected to be the ID-Token and the
 	// Identifier node.
 	if s := tree.SliceAt(pos); len(s) >= 2 {
 		if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
-			return s[1], s[2:]
+			return s[1].(ast.Expr), s[2:]
 		}
 	}
 

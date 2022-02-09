@@ -17,11 +17,12 @@ type Scope struct {
 
 type Definition struct {
 	*ast.Ident
+	Node ast.Node
 	Tree *Tree
 	Next *Definition
 }
 
-func (scp *Scope) Insert(id *ast.Ident) {
+func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 	if scp.Names == nil {
 		scp.Names = make(map[string]*Definition)
 	}
@@ -29,9 +30,25 @@ func (scp *Scope) Insert(id *ast.Ident) {
 	name := id.String()
 	scp.Names[name] = &Definition{
 		Ident: id,
+		Node:  n,
 		Tree:  scp.Tree,
 		Next:  scp.Names[name],
 	}
+}
+
+// Lookup returns a list of defintions for the given identifier.
+// Lookup may be called with nil as receiver.
+func (scp *Scope) Lookup(name string) []*Definition {
+	if scp == nil {
+		return nil
+	}
+	var defs []*Definition
+	def := scp.Names[name]
+	for def != nil {
+		defs = append(defs, def)
+		def = def.Next
+	}
+	return defs
 }
 
 // NewScope builts and populares a new scope from the given syntax node.
@@ -74,8 +91,8 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 
 	case *ast.EnumTypeDecl:
 		scp.add(n.TypePars)
-		for _, n := range n.Enums {
-			scp.addEnum(n)
+		for _, e := range n.Enums {
+			scp.addEnum(n, e)
 		}
 
 	case *ast.BehaviourTypeDecl:
@@ -127,8 +144,8 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		}
 
 	case *ast.EnumSpec:
-		for _, n := range n.Enums {
-			scp.addEnum(n)
+		for _, e := range n.Enums {
+			scp.addEnum(n, e)
 		}
 
 	case *ast.BehaviourSpec:
@@ -153,12 +170,12 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 			case *ast.ModuleDef:
 				scp.add(n.Def)
 			case *ast.EnumTypeDecl:
-				for _, n := range n.Enums {
-					scp.addEnum(n)
+				for _, e := range n.Enums {
+					scp.addEnum(n, e)
 				}
 			case *ast.EnumSpec:
-				for _, n := range n.Enums {
-					scp.addEnum(n)
+				for _, e := range n.Enums {
+					scp.addEnum(n, e)
 				}
 
 			}
@@ -174,14 +191,14 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	return scp
 }
 
-func (scp *Scope) addEnum(n ast.Node) {
-	switch n := n.(type) {
+func (scp *Scope) addEnum(n ast.Node, e ast.Expr) {
+	switch e := e.(type) {
 	case *ast.CallExpr:
-		if n, ok := n.Fun.(*ast.Ident); ok {
-			scp.Insert(n)
+		if e, ok := e.Fun.(*ast.Ident); ok {
+			scp.Insert(n, e)
 		}
 	case *ast.Ident:
-		scp.Insert(n)
+		scp.Insert(n, e)
 	default:
 		log.Debugf("scopes.go: unknown enumeration syntax: %T", n)
 	}
@@ -204,59 +221,56 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.add(n.Def)
 
 	case *ast.TemplateDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.ValueDecl:
-		for _, n := range n.Decls {
-			scp.add(n)
+		for _, d := range n.Decls {
+			scp.Insert(n, d.Name)
 		}
 
-	case *ast.Declarator:
-		scp.Insert(n.Name)
-
 	case *ast.FuncDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.SignatureDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.SubTypeDecl:
 		scp.add(n.Field)
 
 	case *ast.StructTypeDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.EnumTypeDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.BehaviourTypeDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.PortTypeDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.ComponentTypeDecl:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.DeclStmt:
 		scp.add(n.Decl)
 
 	case *ast.BranchStmt:
 		if n.Tok.Kind == token.LABEL {
-			scp.Insert(n.Label)
+			scp.Insert(n, n.Label)
 		}
 
 	case *ast.Field:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.Module:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 
 	case *ast.ControlPart:
 		// TODO(5nord) Add control part names to scope
 
 	case *ast.ImportDecl:
-		scp.Insert(n.Module)
+		scp.Insert(n, n.Module)
 
 	case *ast.GroupDecl:
 		// GroupDecl are not added to the scope, but their members are.
@@ -279,8 +293,8 @@ func (scp *Scope) add(n ast.Node) error {
 		}
 
 	case *ast.FormalPar:
-		scp.Insert(n.Name)
+		scp.Insert(n, n.Name)
 	}
 
-	return fmt.Errorf("%T has not declaration", n)
+	return fmt.Errorf("%T is not a declaration", n)
 }
