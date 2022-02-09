@@ -606,7 +606,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Tok)
+			p.print(n.Name)
 			p.print(n.Body)
 			p.print(n.With)
 

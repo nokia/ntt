@@ -262,7 +262,7 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.Insert(n, n.Name)
 
 	case *ast.ControlPart:
-		// TODO(5nord) Add control part names to scope
+		scp.Insert(n, n.Name)
 
 	case *ast.ImportDecl:
 		scp.Insert(n, n.Module)

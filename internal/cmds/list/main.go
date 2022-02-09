@@ -10,11 +10,11 @@ import (
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/nokia/ntt/ttcn3/token"
-	"github.com/nokia/ntt/project"
-	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -348,7 +348,7 @@ func listControls(cmd *cobra.Command, args []string) error {
 			switch n := n.(type) {
 			case *ast.ControlPart:
 				name := module + ".control"
-				tags := doc.FindAllTags(n.Tok.Comments())
+				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
 				if match(name, tags) {
 					printItem(tree.FileSet, n.Pos(), tags, name)
 				}

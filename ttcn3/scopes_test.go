@@ -30,6 +30,16 @@ func TestScopes(t *testing.T) {
 		{`while (true) {var int x}`, []string{"x"}},
 		{`do {var int x} while (true){`, []string{"x"}},
 		{`if (true) {var int x} else {var int y}`, []string{}},
+		{`
+			module M {
+				import from foo all;
+				friend module bar;
+				group G { group G2 {
+				var int x;
+				}}
+				control {};
+				type enumerated E<type T> {E1}
+			}`, []string{"foo", "x", "control", "E", "E1"}},
 	}
 
 	for _, tt := range tests {
