@@ -10,13 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func generateTokenList(t *testing.T, suite *ntt.Suite) *protocol.SemanticTokens {
+func SetRange(startLine uint32, startCol uint32, endLine uint32, endCol uint32) *protocol.Range {
+	return &protocol.Range{
+		Start: protocol.Position{Line: startLine, Character: startCol},
+		End:   protocol.Position{Line: endLine, Character: endCol}}
+}
+func DefaultRange(syntax *ntt.ParseInfo) *protocol.Range {
+	modEnd := syntax.Position(syntax.Module.End())
+	return &protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: uint32(modEnd.Line - 1), Character: uint32(modEnd.Column - 1)}}
+}
+func generateTokenList(t *testing.T, suite *ntt.Suite, rng *protocol.Range) *protocol.SemanticTokens {
 
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	syntax := suite.ParseWithAllErrors(name)
 	//_, nodes := suite.Tags(name)
 	//log.Debug(fmt.Sprintf("SemanticTokens nodes %v.", nodes))
-	return lsp.NewSemanticTokensFromCurrentModule(syntax, suite, name)
+	if rng == nil {
+		rng = DefaultRange(syntax)
+	}
+	//txtRange :=
+	return lsp.NewSemanticTokensFromCurrentModule(syntax, suite, name, *rng)
 }
 
 func TestFullModuleKwOnly(t *testing.T) {
@@ -30,7 +43,7 @@ func TestFullModuleKwOnly(t *testing.T) {
 		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_0.C0 system B0 return integer {}
 	}`)
 
-	list := generateTokenList(t, suite)
+	list := generateTokenList(t, suite, nil)
 
 	assert.NotEqual(t, len(list.Data), 0)
 }
@@ -48,9 +61,9 @@ func TestFullModuleKwTypeId(t *testing.T) {
         function f() return integer {}
 	  }`)
 
-	list := generateTokenList(t, suite)
+	list := generateTokenList(t, suite, nil)
 
-	assert.Equal(t, list.Data,
+	assert.Equal(t,
 		[]uint32{
 			0, 0, 6, uint32(lsp.Keyword), 0,
 			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
@@ -71,7 +84,7 @@ func TestFullModuleKwTypeId(t *testing.T) {
 			2, 8, 8, uint32(lsp.Keyword), 0,
 			0, 9, 1, uint32(lsp.Function), uint32(lsp.Definition),
 			0, 4, 6, uint32(lsp.Keyword), 0,
-			0, 7, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary)})
+			0, 7, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary)}, list.Data)
 }
 
 func TestConstAndTemplDecl(t *testing.T) {
@@ -88,7 +101,7 @@ func TestConstAndTemplDecl(t *testing.T) {
 		}
  	  }`)
 
-	list := generateTokenList(t, suite)
+	list := generateTokenList(t, suite, nil)
 
 	assert.Equal(t,
 		[]uint32{
@@ -132,7 +145,7 @@ func TestModuleIds(t *testing.T) {
 		type record MyRec {integer i};
 	}`)
 
-	list := generateTokenList(t, suite)
+	list := generateTokenList(t, suite, nil)
 
 	assert.Equal(t,
 		[]uint32{
@@ -156,4 +169,33 @@ func TestModuleIds(t *testing.T) {
 			0, 23, 5, uint32(lsp.Type), uint32(lsp.Undefined),
 			0, 6, 1, uint32(lsp.Variable), uint32(lsp.Declaration),
 		}, list.Data)
+}
+
+func TestDeltaModuleKwTypeId(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type record MyRec {
+			integer i
+		}
+        type record length(0..2) of integer RoI;
+        type set MySet {
+			integer i
+		}
+        function f() return integer {}
+	  }`)
+
+	list := generateTokenList(t, suite, SetRange(5, 8, 8, 3))
+
+	assert.Equal(t,
+		[]uint32{
+			5, 8, 4, uint32(lsp.Keyword), 0,
+			0, 5, 6, uint32(lsp.Keyword), 0,
+			0, 7, 6, uint32(lsp.Keyword), 0,
+			0, 13, 2, uint32(lsp.Keyword), 0,
+			0, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 3, uint32(lsp.Type), uint32(lsp.Definition),
+			1, 8, 4, uint32(lsp.Keyword), 0,
+			0, 5, 3, uint32(lsp.Keyword), 0,
+			0, 4, 5, uint32(lsp.Struct), uint32(lsp.Definition),
+			1, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary)}, list.Data)
 }

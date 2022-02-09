@@ -29,6 +29,8 @@ type SemTokVisitor struct {
 	actualModif SemanticTokenModifiers
 	Data        []uint32
 	tg          TokenGen
+	startOffs   loc.Pos
+	endOffs     loc.Pos
 	modNameSet  *map[string]struct{}
 	nodeStack   []ast.Node
 }
@@ -175,17 +177,29 @@ func mergeSortTokenarrays(toka1 []uint32, toka2 []uint32) []uint32 {
 	}
 }
 
-func NewSyntaxTokensFromCurrentModule(file string) []uint32 {
+func NewSyntaxTokensFromCurrentModule(file string, txtRange protocol.Range) []uint32 {
 	scn := &scanner.Scanner{}
 	f := fs.Open(file)
 	b, _ := f.Bytes()
 	fs := loc.NewFileSet()
+	locF := fs.AddFile(f.Path(), -1, len(b))
+	scn.Init(locF, b, nil)
 
-	scn.Init(fs.AddFile(f.Path(), -1, len(b)), b, nil)
 	d := make([]uint32, 0, 20)
 	var tg TokenGen
 	for {
 		pos, tok, lit := scn.Scan()
+		if (uint32(fs.Position(pos).Line) < txtRange.Start.Line+1) ||
+			(uint32(fs.Position(pos).Line) == txtRange.Start.Line+1) &&
+				(uint32(fs.Position(pos).Column) < txtRange.Start.Character+1) {
+			continue
+		}
+		if (uint32(fs.Position(pos).Line) > txtRange.End.Line+1) ||
+			(uint32(fs.Position(pos).Line) == txtRange.End.Line+1) &&
+				(uint32(fs.Position(pos).Column) > txtRange.End.Character+1) {
+			break
+		}
+
 		if tok == token.EOF {
 			break
 		}
@@ -212,7 +226,14 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		tokv.popNodeStack()
 		return false
 	}
+	if tokv.endOffs < n.Pos() {
+		return false // definitely stop recursing
+	}
 	tokv.pushNodeStack(n)
+	if tokv.startOffs > n.Pos() {
+		return true
+	}
+
 	begin := tokv.syntax.Position(n.Pos())
 	end := tokv.syntax.Position(n.LastTok().End())
 	switch node := n.(type) {
@@ -385,20 +406,22 @@ func (tokv *SemTokVisitor) getFormalPars(nt ast.Node) bool {
 	return true
 }
 
-func NewSemTokVisitor(synt *ntt.ParseInfo, modNameSet *map[string]struct{}) *SemTokVisitor {
+func NewSemTokVisitor(synt *ntt.ParseInfo, modNameSet *map[string]struct{}, txtRange protocol.Range) *SemTokVisitor {
 	return &SemTokVisitor{
 		syntax:     synt,
 		Data:       make([]uint32, 0, 20),
+		startOffs:  synt.Pos(int(txtRange.Start.Line+1), int(txtRange.Start.Character+1)),
+		endOffs:    synt.Pos(int(txtRange.End.Line+1), int(txtRange.End.Character+1)),
 		tg:         TokenGen{},
 		modNameSet: modNameSet,
 		nodeStack:  make([]ast.Node, 0, 10)}
 }
 
 func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, suite *ntt.Suite, fileName string, txtRange protocol.Range) *protocol.SemanticTokens {
-	stVisitor := NewSemTokVisitor(syntax, getModuleNameSetFromSuite(suite))
+	stVisitor := NewSemTokVisitor(syntax, getModuleNameSetFromSuite(suite), txtRange)
 
 	ast.Inspect(syntax.Module, stVisitor.VisitModuleDefs)
-	stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName), stVisitor.Data)
+	stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName, txtRange), stVisitor.Data)
 	ret := &protocol.SemanticTokens{Data: stVisitor.Data}
 	return ret
 }
@@ -436,7 +459,8 @@ func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTo
 	if syntax.Module.Name == nil {
 		return nil, nil
 	}
-	txtRange := protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: 0, Character: 0}}
+	modEnd := syntax.Position(syntax.Module.End())
+	txtRange := protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: uint32(modEnd.Line - 1), Character: uint32(modEnd.Column - 1)}}
 	ret = NewSemanticTokensFromCurrentModule(syntax, suites[0], params.TextDocument.URI.SpanURI().Filename(), txtRange)
 	return ret, nil
 }
