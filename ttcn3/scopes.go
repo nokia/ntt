@@ -75,13 +75,11 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 
 	case *ast.SubTypeDecl:
 		if n.Field != nil {
-			scp.add(n.Field.Type)
-			scp.add(n.Field.TypePars)
+			scp.addField(n.Field)
 		}
 
 	case *ast.Field:
-		scp.add(n.Type)
-		scp.add(n.TypePars)
+		scp.addField(n)
 
 	case *ast.StructTypeDecl:
 		scp.add(n.TypePars)
@@ -202,6 +200,11 @@ func (scp *Scope) addEnum(n ast.Node, e ast.Expr) {
 	default:
 		log.Debugf("scopes.go: unknown enumeration syntax: %T", n)
 	}
+}
+
+func (scp *Scope) addField(n *ast.Field) {
+	scp.add(n.Type)
+	scp.add(n.TypePars)
 }
 
 func (scp *Scope) addBody(n *ast.BlockStmt) {
