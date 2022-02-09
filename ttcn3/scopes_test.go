@@ -20,6 +20,7 @@ func TestScopes(t *testing.T) {
 		{`type record { int x } R<type T>`, []string{"x", "T"}},
 		{`type record { record { int y } x } R<type T>`, []string{"x", "T"}},
 		{`type record of record { int x } R`, []string{}},
+		{`signature S<type T>(int x) return A exception(B)`, []string{"T", "x"}},
 	}
 
 	for _, tt := range tests {
