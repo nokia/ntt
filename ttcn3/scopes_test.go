@@ -24,6 +24,7 @@ func TestScopes(t *testing.T) {
 		{`type union U<type T>{ int x }`, []string{"T", "x"}},
 		{`type enumerated E<type T>{ E1, E2 }`, []string{"T", "E1", "E2"}},
 		{`type function F<type T>(int p) runs on C return X`, []string{"T", "p"}},
+		{`type port P<type T}> message { inout T; map param(int p)}`, []string{"T"}},
 	}
 
 	for _, tt := range tests {
