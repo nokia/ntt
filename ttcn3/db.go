@@ -59,10 +59,10 @@ func (db *DB) Index(files ...string) {
 	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), syms, len(files))
 }
 
-func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
+func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	start := time.Now()
-	log.Debugf("%s:%d:%d: Resolving...\n", file, line, col)
-	defer log.Debugf("%s:%d:%d: Resolve took %s\n", file, line, col, time.Since(start))
+	log.Debugf("%s:%d:%d: Lookup started...\n", file, line, col)
+	defer log.Debugf("%s:%d:%d: Lookup took %s\n", file, line, col, time.Since(start))
 
 	tree := ParseFile(file)
 	n, stack := parentNodes(tree, tree.Pos(line, col))
@@ -77,7 +77,7 @@ func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
 		}
 	}
 
-	log.Debugf("%s:%d:%d: No symbol to resolve. Stack: %v\n", file, line, col, nodes(stack))
+	log.Debugf("%s:%d:%d: No symbol at cursor position. Stack: %v\n", file, line, col, nodes(stack))
 	return nil
 }
 
