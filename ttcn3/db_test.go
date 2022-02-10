@@ -118,6 +118,13 @@ func TestFindDefinitions(t *testing.T) {
 				module M1 {type ¶x y}`,
 			want: []string{},
 		},
+		{
+			name: "imports",
+			input: `module M2 {type integer x}
+				module M1 {type ¶x y}
+				module M1 {import from M2 all}`,
+			want: []string{},
+		},
 
 		//{`module M {import from y all; type integer ¶y`, []string{"y0", "y1"}},
 		//{`module x {type integer x} module x {var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
