@@ -99,45 +99,49 @@ func TestFindDefinitions(t *testing.T) {
 		{
 			name:  "simple",
 			input: `module M {var integer x := ¶x}`,
-			want:  []string{"x0"},
-		},
+			want:  []string{"x0"}},
 		{
 			name:  "duplicates",
 			input: `module x {type x ¶x}`,
-			want:  []string{"x0", "x2"},
-		},
+			want:  []string{"x0", "x2"}},
 		{
 			name: "multi",
 			input: `module M {type integer x}
 				module M {type x      ¶x}`,
-			want: []string{"x0", "x2"},
-		},
+			want: []string{"x0", "x2"}},
 		{
 			name: "imports",
 			input: `module M2 {type integer x}
 				module M1 {type ¶x y}`,
-			want: []string{},
-		},
+			want: []string{}},
 		{
 			name: "imports",
 			input: `module M2 {type integer x}
 				module M1 {type ¶x y}
 				module M1 {import from M2 all}`,
-			want: []string{},
-		},
+			want: []string{}},
 		{
 			name: "imports",
 			input: `module M2 {type integer x}
 				module M1 {type ¶x y; import from M2 all}`,
-			want: []string{"x0"},
-		},
-
-		// imports: recursfe + goto multifile imporet
-		//{`module M {import from y all; type integer ¶y`, []string{"y0", "y1"}},
-		//{`module x {type integer x} module x {var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
-
-		//{`module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2"}},
-		//{`module x {} module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
+			want: []string{"x0"}},
+		{
+			name:  "imports",
+			input: `module M1 {type ¶x integer; import from x all}`,
+			want:  []string{"x1"}},
+		{
+			name: "imports",
+			input: `module M1 {type ¶x integer}
+				module M1 {import from x all}`,
+			want: []string{}},
+		{
+			name:  "imports",
+			input: `module x {type ¶x integer; import from x all}`,
+			want:  []string{"x0", "x2"}},
+		{
+			name:  "imports",
+			input: `module x {} module x {import from x all; var integer x := ¶x}`,
+			want:  []string{"x0", "x1", "x2", "x3"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
