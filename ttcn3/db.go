@@ -78,11 +78,11 @@ func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	if isSelectorID(n, stack) {
 		n, stack = stack[0].(*ast.SelectorExpr), stack[1:]
 	}
-	return db.findDefinitions(n.(ast.Expr), tree, stack...)
+	return db.FindDefinitions(n.(ast.Expr), tree, stack...)
 
 }
 
-func (db *DB) findDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
 		return db.findTypes(n, tree, stack...)
@@ -93,17 +93,19 @@ func (db *DB) findDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Defi
 
 		// Find definitions in current file by walking up the scopes.
 		for _, n := range stack {
-			defs = append(defs, NewScope(n, tree).Lookup(id.String())...)
+			found := NewScope(n, tree).Lookup(id.String())
+			defs = append(defs, found...)
 		}
 
 		// Find definitions in imported files.
 		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
 			for _, m := range db.FindImportedDefinitions(ast.Name(id), ast.Name(mod)) {
-				defs = append(defs, db.findDefinitions(id, m.Tree, m.Node)...)
+				defs = append(defs, db.FindDefinitions(id, m.Tree, m.Node)...)
 			}
 		}
 
 		return defs
+
 	default:
 		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
 		return nil
@@ -138,7 +140,7 @@ func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition
 		return db.findTypes(n.Fun, tree, append(stack, n)...)
 
 	case *ast.Ident:
-		for _, def := range db.findDefinitions(n, tree, stack...) {
+		for _, def := range db.FindDefinitions(n, tree, stack...) {
 			if t := def.Type(); t != nil {
 				// Type references need further resolving.
 				if _, ok := t.Node.(ast.Expr); ok {

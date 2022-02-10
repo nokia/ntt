@@ -2,12 +2,17 @@ package ttcn3_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/token"
 )
+
+const CURSOR = "¶"
 
 var (
 	file1 = `
@@ -83,6 +88,78 @@ func TestFindImportedDefinitions(t *testing.T) {
 	})
 
 }
+
+func TestFindDefinitions(t *testing.T) {
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		{`{var integer x := ¶x}`, []string{"x0"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			testFindDefinition(t, tt.input, tt.want)
+		})
+	}
+}
+
+func testFindDefinition(t *testing.T, input string, expected []string) {
+	// extract cursor position
+	cursor := strings.Index(input, CURSOR)
+	input = strings.Replace(input, CURSOR, "", 1)
+
+	// parse
+	file := fmt.Sprintf("%s.ttcn3", t.Name())
+	fs.SetContent(file, []byte(input))
+	tree := ttcn3.ParseFile(file)
+	ids := idMap(tree.Root)
+
+	// index
+	db := ttcn3.DB{}
+	db.Index(file)
+
+	actual := []string{}
+	n, stack := parentNodes(tree, cursor)
+	for _, d := range db.FindDefinitions(n, tree, stack...) {
+		actual = append(actual, ids[d.Ident])
+	}
+
+	if !equal(actual, expected) {
+		t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", expected, actual)
+	}
+}
+func idMap(root ast.Node) map[*ast.Ident]string {
+	// build ID map
+	ids := make(map[*ast.Ident]string)
+	counter := make(map[string]int)
+	ast.Inspect(root, func(n ast.Node) bool {
+		if x, ok := n.(*ast.Ident); ok {
+			i := counter[x.String()]
+			counter[x.String()]++
+			ids[x] = fmt.Sprintf("%s%d", x.String(), i)
+		}
+		return true
+	})
+
+	return ids
+}
+func parentNodes(tree *ttcn3.Tree, cursor int) (n ast.Expr, s []ast.Node) {
+	s = tree.SliceAt(loc.Pos(cursor + 1))
+	if len(s) < 2 {
+		return nil, nil
+	}
+
+	if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
+		n, s = s[1].(ast.Expr), s[2:]
+	}
+	if len(s) > 0 {
+		if x, ok := s[0].(*ast.SelectorExpr); ok && n == x.Sel {
+			n, s = x, s[1:]
+		}
+	}
+	return n, s
+}
+
 func importedDefs(db *ttcn3.DB, id string, mod string) []string {
 	var s []string
 	for _, d := range db.FindImportedDefinitions(id, mod) {
