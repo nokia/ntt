@@ -150,6 +150,18 @@ func TestFindDefinitions(t *testing.T) {
 			name:  "dot",
 			input: `module M {var integer x := M.¶x}`,
 			want:  []string{"x0"}},
+		{
+			name:  "dot",
+			input: `module M {type record R {int x}; type R.¶x x}`,
+			want:  []string{"x0"}},
+		{
+			name:  "dot",
+			input: `module R {type record R {int x}; type R.¶x x}`,
+			want:  []string{"x0", "x2"}},
+		{
+			name:  "dot",
+			input: `module R {type record R {int x}; type R.R.¶x x}`,
+			want:  []string{"x0", "x2"}}, // Modules can reference themself R.R.R.R
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
