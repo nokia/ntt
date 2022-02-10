@@ -165,8 +165,9 @@ func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack
 		for _, def := range db.FindDefinitions(n, tree, stack...) {
 			if t := def.Type(); t != nil {
 				// Type references need further resolving.
-				if _, ok := t.Node.(ast.Expr); ok {
-					//types = append(types, findTypes()...)
+				if x, ok := t.Node.(ast.Expr); ok {
+					visited[x] = true
+					result = append(result, db.findTypes(visited, x, t.Tree, stack...)...)
 				} else {
 					result = append(result, t)
 				}
