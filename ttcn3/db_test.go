@@ -57,7 +57,8 @@ func TestFindImportedDefinitions(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		db := ttcn3.DB{}
-		if defs := db.FindImportedDefinitions("E", "M1"); len(defs) != 0 {
+		mod := moduleFrom("file1.ttcn3", "M1")
+		if defs := db.FindImportedDefinitions("E", mod); len(defs) != 0 {
 			t.Errorf("Expected 0 definitions, got %v", defs)
 		}
 	})
@@ -96,6 +97,8 @@ func TestFindDefinitions(t *testing.T) {
 	}{
 		{`{var integer x := ¶x}`, []string{"x0"}},
 		{`module x {var integer x := ¶x}`, []string{"x0", "x1"}},
+		{`module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x3"}},
+		//{`module x {} module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3", "x4"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
@@ -161,14 +164,25 @@ func parentNodes(tree *ttcn3.Tree, cursor int) (n ast.Expr, s []ast.Node) {
 	return n, s
 }
 
-func importedDefs(db *ttcn3.DB, id string, mod string) []string {
+func importedDefs(db *ttcn3.DB, id string, module string) []string {
 	var s []string
+	mod := moduleFrom("file1.ttcn3", module)
 	for _, d := range db.FindImportedDefinitions(id, mod) {
 		name := ast.Name(d.Node)
 		file := d.Tree.Position(d.Node.Pos()).Filename
 		s = append(s, fmt.Sprintf("%s:%s", name, file))
 	}
 	return s
+}
+
+func moduleFrom(file, module string) *ast.Module {
+	tree := ttcn3.ParseFile(file)
+	for _, m := range tree.Modules() {
+		if ast.Name(m) == module {
+			return m
+		}
+	}
+	return nil
 }
 
 func testMapsEqual(t *testing.T, a, b SliceMap) {

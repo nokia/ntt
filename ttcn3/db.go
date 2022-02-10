@@ -99,7 +99,7 @@ func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Defi
 
 		// Find definitions in imported files.
 		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
-			for _, m := range db.FindImportedDefinitions(ast.Name(id), ast.Name(mod)) {
+			for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
 				defs = append(defs, db.FindDefinitions(id, m.Tree, m.Node)...)
 			}
 		}
@@ -160,14 +160,15 @@ func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition
 // FindImportedDefinitions returns a list of modules that may contain the given
 // symbol. First parameter id specifies the symbol to look for and second
 // parameter module specifies where the imports come from.
-func (db *DB) FindImportedDefinitions(id, module string) []*Definition {
+func (db *DB) FindImportedDefinitions(id string, module *ast.Module) []*Definition {
+
 	importedModules := make(map[string]bool)
 	importedFiles := make(map[string]bool)
 
-	for file := range db.Modules[module] {
+	for file := range db.Modules[ast.Name(module)] {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
-			if ast.Name(mod) != module {
+			if ast.Name(mod) != ast.Name(module) {
 				continue
 			}
 			ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
@@ -196,7 +197,7 @@ func (db *DB) FindImportedDefinitions(id, module string) []*Definition {
 	for _, file := range candidates {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
-			if importedModules[ast.Name(mod)] {
+			if importedModules[ast.Name(mod)] && mod != module {
 				mods = append(mods, &Definition{Ident: mod.Name, Node: mod, Tree: tree})
 			}
 		}
