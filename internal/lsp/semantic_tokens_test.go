@@ -20,7 +20,7 @@ func DefaultRange(syntax *ntt.ParseInfo) *protocol.Range {
 	return &protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: uint32(modEnd.Line - 1), Character: uint32(modEnd.Column - 1)}}
 }
 func generateTokenList(t *testing.T, suite *ntt.Suite, rng *protocol.Range) *protocol.SemanticTokens {
-
+	lsp.EmitKeywords = true
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	syntax := suite.ParseWithAllErrors(name)
 	//_, nodes := suite.Tags(name)

@@ -80,6 +80,9 @@ const (
 	Undefined = 0
 )
 
+// decide on emitting keywords into the semantic token list
+var EmitKeywords bool = false
+
 var predefTypeMap map[string]bool = map[string]bool{
 	"anytype": true, "bitstring": true, "boolean": true, "charstring": true, "default": true, "float": true, "hexstring": true,
 	"integer": true, "octetstring": true, "universal charstring": true, "verdicttype": true}
@@ -421,7 +424,11 @@ func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, suite *ntt.Suite,
 	stVisitor := NewSemTokVisitor(syntax, getModuleNameSetFromSuite(suite), txtRange)
 
 	ast.Inspect(syntax.Module, stVisitor.VisitModuleDefs)
-	stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName, txtRange), stVisitor.Data)
+	if EmitKeywords {
+		stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName, txtRange), stVisitor.Data)
+	}
+	stVisitor.Data[0] -= txtRange.Start.Line
+	stVisitor.Data[1] -= txtRange.Start.Character
 	ret := &protocol.SemanticTokens{Data: stVisitor.Data}
 	return ret
 }
