@@ -199,3 +199,34 @@ func TestDeltaModuleKwTypeId(t *testing.T) {
 			0, 4, 5, uint32(lsp.Struct), uint32(lsp.Definition),
 			1, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary)}, list.Data)
 }
+
+func TestUniversalCharstring(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+        type record MyRec {
+			universal charstring  uch,
+			charstring ch
+		}
+		type universal charstring UcharT;
+		function f() return universal charstring {}
+	  }`)
+
+	list := generateTokenList(t, suite, nil)
+
+	assert.Equal(t,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
+			2, 8, 4, uint32(lsp.Keyword), 0,
+			0, 5, 6, uint32(lsp.Keyword), 0,
+			0, 7, 5, uint32(lsp.Struct), uint32(lsp.Definition),
+			1, 3, 20, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			1, 3, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			2, 2, 4, uint32(lsp.Keyword), 0,
+			0, 5, 20, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 21, 6, uint32(lsp.Type), uint32(lsp.Definition),
+			1, 2, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Function), uint32(lsp.Definition),
+			0, 4, 6, uint32(lsp.Keyword), 0,
+			0, 7, 20, uint32(lsp.Type), uint32(lsp.DefaultLibrary)}, list.Data)
+}

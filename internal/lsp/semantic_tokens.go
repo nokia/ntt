@@ -190,6 +190,7 @@ func NewSyntaxTokensFromCurrentModule(file string, txtRange protocol.Range) []ui
 
 	d := make([]uint32, 0, 20)
 	var tg TokenGen
+	prevTok := token.ILLEGAL
 	for {
 		pos, tok, lit := scn.Scan()
 		if (uint32(fs.Position(pos).Line) < txtRange.Start.Line+1) ||
@@ -206,12 +207,14 @@ func NewSyntaxTokensFromCurrentModule(file string, txtRange protocol.Range) []ui
 		if tok == token.EOF {
 			break
 		}
-		if tok.IsKeyword() && tok != token.UNIVERSAL {
-			line := uint32(fs.Position(pos).Line - 1)
-			column := uint32(fs.Position(pos).Column - 1)
-			d = append(d, tg.NewTuple(line, column, uint32(len(lit)), Keyword, 0)...)
+		if tok.IsKeyword() && (tok != token.UNIVERSAL && !(prevTok == token.UNIVERSAL && tok == token.CHARSTRING)) {
+			if tok != token.CHARSTRING {
+				line := uint32(fs.Position(pos).Line - 1)
+				column := uint32(fs.Position(pos).Column - 1)
+				d = append(d, tg.NewTuple(line, column, uint32(len(lit)), Keyword, 0)...)
+			}
 		}
-
+		prevTok = tok
 	}
 	return d
 }
@@ -366,9 +369,10 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		tokv.popNodeStack()
 		return false
 	case *ast.Ident:
-		if node.Tok.Kind == token.IDENT {
-			begin := tokv.syntax.Position(node.Pos())
-			end := tokv.syntax.Position(node.End())
+		begin := tokv.syntax.Position(node.Pos())
+		end := tokv.syntax.Position(node.End())
+		switch node.Tok.Kind {
+		case token.IDENT:
 			if _, ok := predefTypeMap[node.String()]; ok {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(DefaultLibrary))...)
 			} else if _, ok := libraryFuncMap[node.String()]; ok {
@@ -378,6 +382,12 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			} else if tokv.actualToken != None {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
 			}
+		case token.UNIVERSAL:
+			if node.Tok2.Kind == token.CHARSTRING {
+				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(DefaultLibrary))...)
+			}
+		case token.CHARSTRING:
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(DefaultLibrary))...)
 		}
 		tokv.popNodeStack()
 		return false
