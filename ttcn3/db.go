@@ -89,8 +89,7 @@ func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Defi
 func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		log.Debugf("Selector Expressions not supported yet")
-		return nil
+		return db.findTypes(visited, n, tree, stack...)
 
 	case *ast.Ident:
 		var defs []*Definition
@@ -104,6 +103,14 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 		}
 
 		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+			// TTCN-3 standard requires, that all global definition may have a module prefix.
+			if id.String() == ast.Name(mod) {
+				defs = append(defs, &Definition{
+					Ident: mod.Name,
+					Node:  mod,
+					Tree:  tree,
+				})
+			}
 			// Find defintions of files of the same module
 			for file := range db.Modules[ast.Name(mod)] {
 				tree := ParseFile(file)
@@ -135,13 +142,11 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 }
 
 // findType returns all type definitions refered by expression n.
-func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+	var result []*Definition
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-
-		var result []*Definition
-		n, stack := stack[0].(*ast.SelectorExpr), stack[1:]
-		for _, t := range db.findTypes(n.X, tree, stack...) {
+		for _, t := range db.findTypes(visited, n.X, tree, stack...) {
 			// Convert every found type definition to a scope and
 			// try looking up the field. Non-Scope types are ignored.
 			defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
@@ -149,16 +154,12 @@ func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition
 
 		}
 		return result
-		//for _, t := range db.findTypes(n.X, tree, stack...) {
-		//	defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
-		//	result = append(result, defs...)
 
-		//}
 	case *ast.IndexExpr:
-		return db.findTypes(n.X, tree, append(stack, n)...)
+		return db.findTypes(visited, n.X, tree, append(stack, n)...)
 
 	case *ast.CallExpr:
-		return db.findTypes(n.Fun, tree, append(stack, n)...)
+		return db.findTypes(visited, n.Fun, tree, append(stack, n)...)
 
 	case *ast.Ident:
 		for _, def := range db.FindDefinitions(n, tree, stack...) {
@@ -167,11 +168,11 @@ func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition
 				if _, ok := t.Node.(ast.Expr); ok {
 					//types = append(types, findTypes()...)
 				} else {
-					//types = append(types, t)
+					result = append(result, t)
 				}
 			}
 		}
-		return nil
+		return result
 	}
 
 	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)

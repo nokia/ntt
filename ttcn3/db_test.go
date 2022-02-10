@@ -141,7 +141,42 @@ func TestFindDefinitions(t *testing.T) {
 		{
 			name:  "imports",
 			input: `module x {} module x {import from x all; var integer x := ¶x}`,
-			want:  []string{"x0", "x1", "x2", "x3"}},
+			want:  []string{"x1", "x2", "x3"}},
+		{
+			name:  "dot",
+			input: `module M {var integer x := ¶M.x}`,
+			want:  []string{"M0"}},
+		{
+			name:  "dot",
+			input: `module M {var integer x := M.¶x}`,
+			want:  []string{"x0"}},
+		{
+			name:  "dot",
+			input: `module M {type record R {int x}; type R.¶x x}`,
+			want:  []string{"x0"}},
+		{
+			name:  "dot",
+			input: `module R {type record R {int x}; type R.¶x x}`,
+			want:  []string{"x0", "x2"}},
+		{
+			name:  "dot",
+			input: `module R {type record R {int x}; type R.R.¶x x}`,
+			want:  []string{"x0"}},
+		{
+			name: "dot imports",
+			input: `module M2 {type record R {int x}}
+				module M1 {type R.¶x x; import from M2 all}`,
+			want: []string{"x0"}},
+		{
+			name: "dot import",
+			input: `module M2 {type record R {int x}}
+				module R  {type M2.R.¶x x; import from M2 all}`,
+			want: []string{"x0"}},
+		{
+			name: "dot ambigious",
+			input: `module M2 {type record R {int x}}
+				module R  {type R.¶x x; import from M2 all}`,
+			want: []string{"x0", "x2"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
