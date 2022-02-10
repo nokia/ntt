@@ -245,6 +245,10 @@ func Name(n Node) string {
 		return Name(n.Name)
 	case *ComponentTypeDecl:
 		return Name(n.Name)
+	case *SubTypeDecl:
+		if n.Field != nil {
+			return Name(n.Field)
+		}
 	case *StructTypeDecl:
 		return Name(n.Name)
 	case *EnumTypeDecl:
@@ -263,6 +267,9 @@ func Name(n Node) string {
 		return Name(n.X)
 	case *SignatureDecl:
 		return Name(n.Name)
+	case *ModuleDef:
+		return Name(n.Def)
+
 	}
 	return ""
 }

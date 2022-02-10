@@ -125,7 +125,14 @@ func TestFindDefinitions(t *testing.T) {
 				module M1 {import from M2 all}`,
 			want: []string{},
 		},
+		{
+			name: "imports",
+			input: `module M2 {type integer x}
+				module M1 {type ¶x y; import from M2 all}`,
+			want: []string{"x0"},
+		},
 
+		// imports: recursfe + goto multifile imporet
 		//{`module M {import from y all; type integer ¶y`, []string{"y0", "y1"}},
 		//{`module x {type integer x} module x {var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
 
@@ -151,7 +158,7 @@ func testFindDefinition(t *testing.T, input string, expected []string) {
 	ids := idMap(tree.Root)
 
 	// index
-	db := ttcn3.DB{}
+	db := &ttcn3.DB{}
 	db.Index(file)
 
 	actual := []string{}
