@@ -89,7 +89,8 @@ func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Defi
 func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		return db.findTypes(n, tree, stack...)
+		log.Debugf("Selector Expressions not supported yet")
+		return nil
 
 	case *ast.Ident:
 		var defs []*Definition
