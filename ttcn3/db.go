@@ -83,6 +83,10 @@ func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 }
 
 func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+	return db.findDefinitions(make(map[ast.Node]bool), n, tree, stack...)
+}
+
+func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
 		return db.findTypes(n, tree, stack...)
@@ -93,12 +97,23 @@ func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Defi
 
 		// Find definitions in current file by walking up the scopes.
 		for _, n := range stack {
+			visited[n] = true
 			found := NewScope(n, tree).Lookup(id.String())
 			defs = append(defs, found...)
 		}
 
-		// Find definitions in imported files.
 		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+			// Find defintions in multi-file modules
+			for file := range db.Modules[ast.Name(mod)] {
+				tree := ParseFile(file)
+				for _, m := range tree.Modules() {
+					if !visited[m] {
+						defs = append(defs, db.findDefinitions(visited, id, tree, m)...)
+					}
+				}
+			}
+
+			// Find definitions in imported files.
 			for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
 				defs = append(defs, db.FindDefinitions(id, m.Tree, m.Node)...)
 			}
@@ -161,7 +176,6 @@ func (db *DB) findTypes(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition
 // symbol. First parameter id specifies the symbol to look for and second
 // parameter module specifies where the imports come from.
 func (db *DB) FindImportedDefinitions(id string, module *ast.Module) []*Definition {
-
 	importedModules := make(map[string]bool)
 	importedFiles := make(map[string]bool)
 
@@ -173,10 +187,11 @@ func (db *DB) FindImportedDefinitions(id string, module *ast.Module) []*Definiti
 			}
 			ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
 				if n, ok := n.Def.(*ast.ImportDecl); ok {
-					name := ast.Name(n.Module)
-					importedModules[name] = true
-					for file := range db.Modules[name] {
-						importedFiles[file] = true
+					if name := ast.Name(n.Module); name != ast.Name(module) {
+						importedModules[name] = true
+						for file := range db.Modules[name] {
+							importedFiles[file] = true
+						}
 					}
 				}
 				return true
@@ -197,7 +212,7 @@ func (db *DB) FindImportedDefinitions(id string, module *ast.Module) []*Definiti
 	for _, file := range candidates {
 		tree := ParseFile(file)
 		for _, mod := range tree.Modules() {
-			if importedModules[ast.Name(mod)] && mod != module {
+			if importedModules[ast.Name(mod)] && ast.Name(mod) != ast.Name(module) {
 				mods = append(mods, &Definition{Ident: mod.Name, Node: mod, Tree: tree})
 			}
 		}

@@ -95,13 +95,24 @@ func TestFindDefinitions(t *testing.T) {
 		input string
 		want  []string
 	}{
-		{`{var integer x := ¶x}`, []string{"x0"}},
+		// simple test
+		{`module M {var integer x := ¶x}`, []string{"x0"}},
+
+		// duplicate defintions
 		{`module x {var integer x := ¶x}`, []string{"x0", "x1"}},
-		{`module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x3"}},
-		//{`module x {} module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3", "x4"}},
+
+		// multi-file modules
+		{`module M {type integer x}
+		  module M {type x      ¶x}`, []string{"x0", "x2"}},
+
+		//{`module M {import from y all; type integer ¶y`, []string{"y0", "y1"}},
+		//{`module x {type integer x} module x {var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
+
+		//{`module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2"}},
+		//{`module x {} module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
+	for i, tt := range tests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			testFindDefinition(t, tt.input, tt.want)
 		})
 	}

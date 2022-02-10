@@ -17,8 +17,8 @@ type Scope struct {
 
 type Definition struct {
 	*ast.Ident
-	Node ast.Node
-	Tree *Tree
+	ast.Node
+	*Tree
 	Next *Definition
 }
 
