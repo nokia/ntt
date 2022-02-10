@@ -92,18 +92,32 @@ func TestFindImportedDefinitions(t *testing.T) {
 
 func TestFindDefinitions(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 		want  []string
 	}{
-		// simple test
-		{`module M {var integer x := ¶x}`, []string{"x0"}},
-
-		// duplicate defintions
-		{`module x {var integer x := ¶x}`, []string{"x0", "x1"}},
-
-		// multi-file modules
-		{`module M {type integer x}
-		  module M {type x      ¶x}`, []string{"x0", "x2"}},
+		{
+			name:  "simple",
+			input: `module M {var integer x := ¶x}`,
+			want:  []string{"x0"},
+		},
+		{
+			name:  "duplicates",
+			input: `module x {type x ¶x}`,
+			want:  []string{"x0", "x2"},
+		},
+		{
+			name: "multi",
+			input: `module M {type integer x}
+				module M {type x      ¶x}`,
+			want: []string{"x0", "x2"},
+		},
+		{
+			name: "imports",
+			input: `module M2 {type integer x}
+				module M1 {type ¶x y}`,
+			want: []string{},
+		},
 
 		//{`module M {import from y all; type integer ¶y`, []string{"y0", "y1"}},
 		//{`module x {type integer x} module x {var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
@@ -111,8 +125,8 @@ func TestFindDefinitions(t *testing.T) {
 		//{`module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2"}},
 		//{`module x {} module x {import from x all; var integer x := ¶x}`, []string{"x0", "x1", "x2", "x3"}},
 	}
-	for i, tt := range tests {
-		t.Run(fmt.Sprint(i), func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			testFindDefinition(t, tt.input, tt.want)
 		})
 	}
