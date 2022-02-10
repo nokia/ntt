@@ -17,8 +17,8 @@ type Scope struct {
 
 type Definition struct {
 	*ast.Ident
-	Node ast.Node
-	Tree *Tree
+	ast.Node
+	*Tree
 	Next *Definition
 }
 
@@ -152,6 +152,18 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		scp.add(n.Params)
 
 	case *ast.Module:
+		// Identifiers are stored in enclosing scopes, in general. For
+		// modules identifiers this is the "universe" scope.
+		//
+		// TTCN-3 standard requires that the module id is accessible
+		// from within the module itself. But if the use the universe
+		// scope for module id resultion, we could reference any module
+		// without import-statment.
+		//
+		// A simple solution for this issue is adding the module
+		// identifier in its own module scope.
+		scp.Insert(n, n.Name)
+
 		ast.Inspect(n, func(n ast.Node) bool {
 			switch n := n.(type) {
 			// Groups are not visible in the global scope.
@@ -292,4 +304,45 @@ func (scp *Scope) add(n ast.Node) error {
 	}
 
 	return fmt.Errorf("%T is not a declaration", n)
+}
+
+func (d *Definition) Type() *Definition {
+	switch n := d.Node.(type) {
+	case *ast.TemplateDecl:
+		return &Definition{Node: n.Type, Tree: d.Tree}
+
+	case *ast.ValueDecl:
+		return &Definition{Node: n.Type, Tree: d.Tree}
+
+	case *ast.FormalPar:
+		return &Definition{Node: n.Type, Tree: d.Tree}
+
+	case *ast.SubTypeDecl:
+		if n.Field != nil {
+			return &Definition{Node: n.Field.Type, Tree: d.Tree}
+		}
+
+	case *ast.FuncDecl:
+		if n.Return != nil {
+			return &Definition{Node: n.Return.Type, Tree: d.Tree}
+		}
+
+	case *ast.SignatureDecl:
+		if n.Return != nil {
+			return &Definition{Node: n.Return.Type, Tree: d.Tree}
+		}
+
+	case *ast.BehaviourSpec,
+		*ast.BehaviourTypeDecl,
+		*ast.ComponentTypeDecl,
+		*ast.EnumSpec,
+		*ast.EnumTypeDecl,
+		*ast.Field,
+		*ast.Module,
+		*ast.PortTypeDecl,
+		*ast.StructSpec,
+		*ast.StructTypeDecl:
+		return &Definition{Node: n, Tree: d.Tree}
+	}
+	return nil
 }
