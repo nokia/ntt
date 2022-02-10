@@ -95,6 +95,7 @@ func TestFindDefinitions(t *testing.T) {
 		want  []string
 	}{
 		{`{var integer x := ¶x}`, []string{"x0"}},
+		{`module x {var integer x := ¶x}`, []string{"x0", "x1"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

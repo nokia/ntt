@@ -152,6 +152,18 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		scp.add(n.Params)
 
 	case *ast.Module:
+		// Identifiers are stored in enclosing scopes, in general. For
+		// modules identifiers this is the "universe" scope.
+		//
+		// TTCN-3 standard requires that the module id is accessible
+		// from within the module itself. But if the use the universe
+		// scope for module id resultion, we could reference any module
+		// without import-statment.
+		//
+		// A simple solution for this issue is adding the module
+		// identifier in its own module scope.
+		scp.Insert(n, n.Name)
+
 		ast.Inspect(n, func(n ast.Node) bool {
 			switch n := n.(type) {
 			// Groups are not visible in the global scope.

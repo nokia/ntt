@@ -39,7 +39,7 @@ func TestScopes(t *testing.T) {
 				}}
 				control {};
 				type enumerated E<type T> {E1}
-			}`, []string{"foo", "x", "control", "E", "E1"}},
+			}`, []string{"M", "foo", "x", "control", "E", "E1"}},
 	}
 
 	for _, tt := range tests {
@@ -50,7 +50,7 @@ func TestScopes(t *testing.T) {
 			continue
 		}
 		if actual := nameSlice(scp); !equal(actual, tt.names) {
-			t.Errorf("%q: expected %v names, got %v", tt.input, tt.names, actual)
+			t.Errorf("%q: mismatch:\n\twant=%v\n\t got=%v", tt.input, tt.names, actual)
 		}
 	}
 }
