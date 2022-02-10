@@ -188,7 +188,7 @@ func TestDeltaModuleKwTypeId(t *testing.T) {
 
 	assert.Equal(t,
 		[]uint32{
-			5, 8, 4, uint32(lsp.Keyword), 0,
+			0, 0, 4, uint32(lsp.Keyword), 0,
 			0, 5, 6, uint32(lsp.Keyword), 0,
 			0, 7, 6, uint32(lsp.Keyword), 0,
 			0, 13, 2, uint32(lsp.Keyword), 0,
