@@ -107,7 +107,7 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 			for file := range db.Modules[ast.Name(mod)] {
 				tree := ParseFile(file)
 				for _, m := range tree.Modules() {
-					if !visited[m] {
+					if !visited[m] && ast.Name(m) == ast.Name(mod) {
 						defs = append(defs, db.findDefinitions(visited, id, tree, m)...)
 					}
 				}
