@@ -103,6 +103,14 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 		}
 
 		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+			// TTCN-3 standard requires, that all global definition may have a module prefix.
+			if id.String() == ast.Name(mod) {
+				defs = append(defs, &Definition{
+					Ident: mod.Name,
+					Node:  mod,
+					Tree:  tree,
+				})
+			}
 			// Find defintions of files of the same module
 			for file := range db.Modules[ast.Name(mod)] {
 				tree := ParseFile(file)

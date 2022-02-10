@@ -39,7 +39,7 @@ func TestScopes(t *testing.T) {
 				}}
 				control {};
 				type enumerated E<type T> {E1}
-			}`, []string{"M", "foo", "x", "control", "E", "E1"}},
+			}`, []string{"foo", "x", "control", "E", "E1"}},
 	}
 
 	for _, tt := range tests {
