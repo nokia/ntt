@@ -65,44 +65,49 @@ func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	defer log.Debugf("%s:%d:%d: Lookup took %s\n", file, line, col, time.Since(start))
 
 	tree := ParseFile(file)
-	n, stack := parentNodes(tree, tree.Pos(line, col))
+	n, parents := parentNodes(tree, tree.Pos(line, col))
 	if n == nil {
-		log.Debugf("%s:%d:%d: No symbol at cursor position. Stack: %v\n", file, line, col, nodes(stack))
+		log.Debugf("%s:%d:%d: No symbol at cursor position. Stack: %v\n", file, line, col, nodes(parents))
 	}
 
-	if isFieldID(n, stack) {
-		log.Debugf("Field assignment not implemented. Stack: %v", nodes(stack))
+	if isFieldID(n, parents) {
+		log.Debugf("Field assignment not implemented. Stack: %v", nodes(parents))
 		return nil
 	}
 
-	if isSelectorID(n, stack) {
-		n, stack = stack[0].(*ast.SelectorExpr), stack[1:]
+	if isSelectorID(n, parents) {
+		n, parents = parents[0].(*ast.SelectorExpr), parents[1:]
 	}
-	return db.FindDefinitions(n.(ast.Expr), tree, stack...)
+	return db.FindDefinitions(n.(ast.Expr), tree, parents...)
 
 }
 
-func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
-	return db.findDefinitions(make(map[ast.Node]bool), n, tree, stack...)
+func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
+	return db.findDefinitions(make(map[ast.Node]bool), n, tree, parents...)
 }
 
-func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
+	if len(parents) > 1 {
+		if _, ok := parents[len(parents)-1].(ast.NodeList); ok {
+			parents = parents[:len(parents)-1]
+		}
+	}
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		return db.findTypes(visited, n, tree, stack...)
+		return db.findTypes(visited, n, tree, parents...)
 
 	case *ast.Ident:
 		var defs []*Definition
 		id := n
 
 		// Find definitions in current file by walking up the scopes.
-		for _, n := range stack {
+		for _, n := range parents {
 			visited[n] = true
 			found := NewScope(n, tree).Lookup(id.String())
 			defs = append(defs, found...)
 		}
 
-		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+		if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
 			// TTCN-3 standard requires, that all global definition may have a module prefix.
 			if id.String() == ast.Name(mod) {
 				defs = append(defs, &Definition{
@@ -128,7 +133,7 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 
 			// Find definitions in imported files.
 			for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
-				defs = append(defs, db.FindDefinitions(id, m.Tree, m.Node)...)
+				defs = append(defs, db.findDefinitions(visited, id, m.Tree, m.Node)...)
 			}
 		}
 
@@ -142,41 +147,46 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 }
 
 // findType returns all type definitions refered by expression n.
-func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
+
 	var result []*Definition
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		for _, t := range db.findTypes(visited, n.X, tree, stack...) {
-			// Convert every found type definition to a scope and
-			// try looking up the field. Non-Scope types are ignored.
-			defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
-			result = append(result, defs...)
-
+		candidates := db.findTypes(visited, n.X, tree, parents...)
+		for _, c := range candidates {
+			for _, t := range db.typeOf(visited, c, parents...) {
+				if defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel)); len(defs) > 0 {
+					result = append(result, defs...)
+				}
+			}
 		}
 		return result
 
 	case *ast.IndexExpr:
-		return db.findTypes(visited, n.X, tree, append(stack, n)...)
+		return db.findTypes(visited, n.X, tree, append(parents, n)...)
 
 	case *ast.CallExpr:
-		return db.findTypes(visited, n.Fun, tree, append(stack, n)...)
+		return db.findTypes(visited, n.Fun, tree, append(parents, n)...)
 
 	case *ast.Ident:
-		for _, def := range db.FindDefinitions(n, tree, stack...) {
-			if t := def.Type(); t != nil {
-				// Type references need further resolving.
-				if _, ok := t.Node.(ast.Expr); ok {
-					//types = append(types, findTypes()...)
-				} else {
-					result = append(result, t)
-				}
-			}
-		}
+		result = db.findDefinitions(visited, n, tree, parents...)
 		return result
 	}
 
 	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	return nil
+}
+
+func (db *DB) typeOf(visited map[ast.Node]bool, def *Definition, parents ...ast.Node) []*Definition {
+	if t := def.Type(); t != nil {
+		def = t
+	}
+
+	if x, ok := def.Node.(ast.Expr); ok {
+		return db.findTypes(visited, x, def.Tree, parents...)
+	}
+
+	return []*Definition{def}
 }
 
 // FindImportedDefinitions returns a list of modules that may contain the given
@@ -241,7 +251,7 @@ func (db *DB) addDefinition(file string, name string) {
 
 // parentNodes returns the symbol name and the stack of nodes that lead to the symbol.
 func parentNodes(tree *Tree, pos loc.Pos) (ast.Expr, []ast.Node) {
-	// First two elements on the stack are expected to be the ID-Token and the
+	// First two elements on the parents are expected to be the ID-Token and the
 	// Identifier node.
 	if s := tree.SliceAt(pos); len(s) >= 2 {
 		if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
@@ -253,9 +263,9 @@ func parentNodes(tree *Tree, pos loc.Pos) (ast.Expr, []ast.Node) {
 }
 
 // A selector expression requires a different context to resolve a symbol.
-func isSelectorID(id ast.Node, stack []ast.Node) bool {
-	if len(stack) > 0 {
-		if x, ok := stack[0].(*ast.SelectorExpr); ok {
+func isSelectorID(id ast.Node, parents []ast.Node) bool {
+	if len(parents) > 0 {
+		if x, ok := parents[0].(*ast.SelectorExpr); ok {
 			return id == x.Sel
 		}
 	}
@@ -263,16 +273,16 @@ func isSelectorID(id ast.Node, stack []ast.Node) bool {
 }
 
 // isFieldID returns true if the ID is the left hand side of a field assignment.
-func isFieldID(n ast.Node, stack []ast.Node) bool {
-	if len(stack) < 2 {
+func isFieldID(n ast.Node, parents []ast.Node) bool {
+	if len(parents) < 2 {
 		return false
 	}
 
-	switch stack[1].(type) {
+	switch parents[1].(type) {
 	case *ast.CompositeLiteral:
 		return false
 	}
-	if x, ok := stack[0].(*ast.BinaryExpr); ok {
+	if x, ok := parents[0].(*ast.BinaryExpr); ok {
 		return n == x.X
 	}
 	return false
