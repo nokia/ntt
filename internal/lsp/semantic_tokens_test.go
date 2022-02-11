@@ -230,3 +230,58 @@ func TestUniversalCharstring(t *testing.T) {
 			0, 4, 6, uint32(lsp.Keyword), 0,
 			0, 7, 20, uint32(lsp.Type), uint32(lsp.DefaultLibrary)}, list.Data)
 }
+
+func TestPortTypeDeclSemTok(t *testing.T) {
+	suite := buildSuite(t, `module Test
+{
+	import from TestPortTypeDeclSemTok_Module_1 all;
+	type charstring AddrType;
+	type boolean Type1;
+	type port MyPort message {
+		in integer, universal charstring
+		out Type1, TestPortTypeDeclSemTok_Module_1.Type2
+		map param (in integer pi, boolean pb);
+		address AddrType
+	}
+}`, `module TestPortTypeDeclSemTok_Module_1.Type2
+{
+	type integer Type2;
+}`)
+
+	list := generateTokenList(t, suite, nil)
+
+	assert.Equal(t,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
+			2, 1, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Keyword), 0,
+			0, 5, 31, uint32(lsp.Namespace), 0,
+			0, 32, 3, uint32(lsp.Keyword), 0,
+			1, 1, 4, uint32(lsp.Keyword), 0,
+			0, 5, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 11, 8, uint32(lsp.Type), uint32(lsp.Definition),
+			1, 1, 4, uint32(lsp.Keyword), 0,
+			0, 5, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 5, uint32(lsp.Type), uint32(lsp.Definition),
+			1, 1, 4, uint32(lsp.Keyword), 0,
+			0, 5, 4, uint32(lsp.Keyword), 0,
+			0, 5, 6, uint32(lsp.Interface), uint32(lsp.Definition),
+			0, 7, 7, uint32(lsp.Keyword), 0,
+			1, 2, 2, uint32(lsp.Keyword), 0,
+			0, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 9, 20, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			1, 2, 3, uint32(lsp.Keyword), 0,
+			0, 4, 5, uint32(lsp.Type), 0,
+			0, 6, 31, uint32(lsp.Namespace), 0,
+			0, 32, 5, uint32(lsp.Type), 0,
+			1, 2, 3, uint32(lsp.Keyword), 0,
+			0, 4, 5, uint32(lsp.Keyword), 0,
+			0, 7, 2, uint32(lsp.Keyword), 0,
+			0, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 2, uint32(lsp.Parameter), uint32(lsp.Definition),
+			0, 4, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 2, uint32(lsp.Parameter), uint32(lsp.Definition),
+			1, 2, 7, uint32(lsp.Keyword), 0,
+			0, 8, 8, uint32(lsp.Type), 0}, list.Data)
+}
