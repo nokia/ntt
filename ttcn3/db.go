@@ -87,6 +87,11 @@ func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, parents ...ast.Node) []*De
 }
 
 func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
+	if len(parents) > 1 {
+		if _, ok := parents[len(parents)-1].(ast.NodeList); ok {
+			parents = parents[:len(parents)-1]
+		}
+	}
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
 		return db.findTypes(visited, n, tree, parents...)
@@ -128,7 +133,7 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 
 			// Find definitions in imported files.
 			for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
-				defs = append(defs, db.FindDefinitions(id, m.Tree, m.Node)...)
+				defs = append(defs, db.findDefinitions(visited, id, m.Tree, m.Node)...)
 			}
 		}
 
@@ -143,15 +148,17 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 
 // findType returns all type definitions refered by expression n.
 func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
+
 	var result []*Definition
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		for _, t := range db.findTypes(visited, n.X, tree, parents...) {
-			// Convert every found type definition to a scope and
-			// try looking up the field. Non-Scope types are ignored.
-			defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
-			result = append(result, defs...)
-
+		candidates := db.findTypes(visited, n.X, tree, parents...)
+		for _, c := range candidates {
+			for _, t := range db.typeOf(visited, c, parents...) {
+				if defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel)); len(defs) > 0 {
+					result = append(result, defs...)
+				}
+			}
 		}
 		return result
 
@@ -162,22 +169,24 @@ func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, paren
 		return db.findTypes(visited, n.Fun, tree, append(parents, n)...)
 
 	case *ast.Ident:
-		for _, def := range db.FindDefinitions(n, tree, parents...) {
-			if t := def.Type(); t != nil {
-				// Type references need further resolving.
-				if x, ok := t.Node.(ast.Expr); ok {
-					visited[x] = true
-					result = append(result, db.findTypes(visited, x, t.Tree, parents...)...)
-				} else {
-					result = append(result, t)
-				}
-			}
-		}
+		result = db.findDefinitions(visited, n, tree, parents...)
 		return result
 	}
 
 	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	return nil
+}
+
+func (db *DB) typeOf(visited map[ast.Node]bool, def *Definition, parents ...ast.Node) []*Definition {
+	if t := def.Type(); t != nil {
+		def = t
+	}
+
+	if x, ok := def.Node.(ast.Expr); ok {
+		return db.findTypes(visited, x, def.Tree, parents...)
+	}
+
+	return []*Definition{def}
 }
 
 // FindImportedDefinitions returns a list of modules that may contain the given
