@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 )
@@ -74,6 +76,10 @@ func (s *Suites) AddSuite(root string) {
 	s.roots[root] = suite
 	files, _ := suite.Files()
 	s.mu.Unlock()
+
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		files = append(files, fs.FindTTCN3Files(dir)...)
+	}
 
 	s.db.Index(files...)
 }
