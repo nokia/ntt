@@ -3,7 +3,6 @@ package lsp
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
@@ -23,12 +22,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	start := time.Now()
 	defer log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
 
-	// Legacy Mode
-	if e := os.Getenv("_NTT_USE_DB"); e == "" {
-		return definitionsOld(s.Owners(params.TextDocument.URI), file, line, col), nil
-	}
-
-	if defs := s.db.ResolveAt(file, line, col); len(defs) > 0 {
+	if defs := s.db.LookupAt(file, line, col); len(defs) > 0 {
 		for _, def := range defs {
 			pos := def.Tree.Position(def.Ident.Pos())
 			log.Debugf("Definition found at %s", pos)
@@ -43,20 +37,6 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	}
 	return unifyLocs(locs), nil
 
-}
-
-func definitionsOld(suites []*ntt.Suite, file string, line, col int) []protocol.Location {
-	var locs []protocol.Location
-	for _, suite := range suites {
-		id, _ := suite.DefinitionAt(file, line, col)
-		log.Debugf("IdentifierInfo: %#v", id)
-		if id != nil && id.Def != nil {
-			locs = append(locs, location(id.Def.Position))
-		} else {
-			locs = append(locs, cTags(suite, file, line, col)...)
-		}
-	}
-	return unifyLocs(locs)
 }
 
 func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {

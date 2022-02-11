@@ -59,96 +59,170 @@ func (db *DB) Index(files ...string) {
 	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), syms, len(files))
 }
 
-func (db *DB) ResolveAt(file string, line int, col int) []*Definition {
+func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	start := time.Now()
-	log.Debugf("%s:%d:%d: Resolving...\n", file, line, col)
-	defer log.Debugf("%s:%d:%d: Resolve took %s\n", file, line, col, time.Since(start))
+	log.Debugf("%s:%d:%d: Lookup started...\n", file, line, col)
+	defer log.Debugf("%s:%d:%d: Lookup took %s\n", file, line, col, time.Since(start))
 
 	tree := ParseFile(file)
-	id, stack := getResolveStack(tree, tree.Pos(line, col))
-	if id == nil {
-		log.Debugf("%s:%d:%d: No symbol to resolve. Stack: %v\n", file, line, col, nodes(stack))
+	n, stack := parentNodes(tree, tree.Pos(line, col))
+	if n == nil {
+		log.Debugf("%s:%d:%d: No symbol at cursor position. Stack: %v\n", file, line, col, nodes(stack))
+	}
+
+	if isFieldID(n, stack) {
+		log.Debugf("Field assignment not implemented. Stack: %v", nodes(stack))
 		return nil
 	}
 
-	if isSelectorID(id, stack) || isFieldID(id, stack) {
-		log.Debugf("Resolve %v not implemented.", nodes(stack))
-		return nil
+	if isSelectorID(n, stack) {
+		n, stack = stack[0].(*ast.SelectorExpr), stack[1:]
 	}
+	return db.FindDefinitions(n.(ast.Expr), tree, stack...)
 
-	return db.findDefinitions(ast.Name(id), tree, stack...)
 }
 
-func (db *DB) findDefinitions(name string, tree *Tree, stack ...ast.Node) []*Definition {
-	var defs []*Definition
+func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+	return db.findDefinitions(make(map[ast.Node]bool), n, tree, stack...)
+}
 
-	// resolve current module
-	for _, n := range stack {
-		if scope := NewScope(n, tree); scope != nil {
-			if def, ok := scope.Names[name]; ok {
-				for {
-					defs = append(defs, def)
-					if def.Next == nil {
-						break
+func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		return db.findTypes(visited, n, tree, stack...)
+
+	case *ast.Ident:
+		var defs []*Definition
+		id := n
+
+		// Find definitions in current file by walking up the scopes.
+		for _, n := range stack {
+			visited[n] = true
+			found := NewScope(n, tree).Lookup(id.String())
+			defs = append(defs, found...)
+		}
+
+		if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
+			// TTCN-3 standard requires, that all global definition may have a module prefix.
+			if id.String() == ast.Name(mod) {
+				defs = append(defs, &Definition{
+					Ident: mod.Name,
+					Node:  mod,
+					Tree:  tree,
+				})
+			}
+			// Find defintions of files of the same module
+			for file := range db.Modules[ast.Name(mod)] {
+				tree := ParseFile(file)
+				for _, m := range tree.Modules() {
+					if !visited[m] && ast.Name(m) == ast.Name(mod) {
+						found := NewScope(m, tree).Lookup(id.String())
+						for _, d := range found {
+							if _, ok := d.Node.(*ast.ImportDecl); !ok {
+								defs = append(defs, d)
+							}
+						}
 					}
-					def = def.Next
 				}
 			}
+
+			// Find definitions in imported files.
+			for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
+				defs = append(defs, db.FindDefinitions(id, m.Tree, m.Node)...)
+			}
 		}
+
+		return defs
+
+	default:
+		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+		return nil
 	}
 
-	// resolve imported modules
-	if mod, ok := stack[len(stack)-1].(*ast.Module); ok {
-		defs = append(defs, db.findGlobals(name, mod)...)
-	}
-	return defs
 }
 
-func (db *DB) findGlobals(name string, mod *ast.Module) []*Definition {
-	modules, files := db.importMaps(mod)
-	candidates := db.candidates(name, files)
-
+// findType returns all type definitions refered by expression n.
+func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, stack ...ast.Node) []*Definition {
 	var result []*Definition
-	for _, file := range candidates {
-		tree := ParseFile(file)
-		for _, mod := range tree.Modules() {
-			if modules[ast.Name(mod)] {
-				if defs := db.findDefinitions(name, tree, mod); len(defs) > 0 {
-					result = append(result, defs...)
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		for _, t := range db.findTypes(visited, n.X, tree, stack...) {
+			// Convert every found type definition to a scope and
+			// try looking up the field. Non-Scope types are ignored.
+			defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel))
+			result = append(result, defs...)
+
+		}
+		return result
+
+	case *ast.IndexExpr:
+		return db.findTypes(visited, n.X, tree, append(stack, n)...)
+
+	case *ast.CallExpr:
+		return db.findTypes(visited, n.Fun, tree, append(stack, n)...)
+
+	case *ast.Ident:
+		for _, def := range db.FindDefinitions(n, tree, stack...) {
+			if t := def.Type(); t != nil {
+				// Type references need further resolving.
+				if _, ok := t.Node.(ast.Expr); ok {
+					//types = append(types, findTypes()...)
+				} else {
+					result = append(result, t)
 				}
 			}
 		}
+		return result
 	}
-	return result
+
+	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+	return nil
 }
 
-func (db *DB) importMaps(n ast.Node) (mods, files map[string]bool) {
-	mods = make(map[string]bool)
-	files = make(map[string]bool)
+// FindImportedDefinitions returns a list of modules that may contain the given
+// symbol. First parameter id specifies the symbol to look for and second
+// parameter module specifies where the imports come from.
+func (db *DB) FindImportedDefinitions(id string, module *ast.Module) []*Definition {
+	importedModules := make(map[string]bool)
+	importedFiles := make(map[string]bool)
+
+	// Only use imports from the current module.
 	ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
 		if n, ok := n.Def.(*ast.ImportDecl); ok {
-			name := ast.Name(n.Module)
-			mods[name] = true
-			for file := range db.Modules[name] {
-				files[file] = true
+			imported := ast.Name(n.Module)
+
+			// Ignore self-imports
+			if imported == ast.Name(module) {
+				return false
+			}
+			importedModules[imported] = true
+			for file := range db.Modules[imported] {
+				importedFiles[file] = true
 			}
 		}
 		return true
-	}, n)
-	return mods, files
-}
+	}, module)
 
-func (db *DB) candidates(name string, imported map[string]bool) []string {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
+	// Find all files that contain the symbol.
 	var candidates []string
-	for file := range db.Names[name] {
-		if imported[file] {
+	for file := range db.Names[id] {
+		if importedFiles[file] {
+
 			candidates = append(candidates, file)
 		}
 	}
-	return candidates
+
+	// Parse all imported modules that contain the symbol.
+	var mods []*Definition
+	for _, file := range candidates {
+		tree := ParseFile(file)
+		for _, mod := range tree.Modules() {
+			if importedModules[ast.Name(mod)] && mod != module {
+				mods = append(mods, &Definition{Ident: mod.Name, Node: mod, Tree: tree})
+			}
+		}
+	}
+	return mods
 }
 
 func (db *DB) addModule(file string, name string) {
@@ -165,13 +239,13 @@ func (db *DB) addDefinition(file string, name string) {
 	db.Names[name][file] = true
 }
 
-// getResolveStack returns the symbol name and the stack of nodes that lead to the symbol.
-func getResolveStack(tree *Tree, pos loc.Pos) (ast.Node, []ast.Node) {
+// parentNodes returns the symbol name and the stack of nodes that lead to the symbol.
+func parentNodes(tree *Tree, pos loc.Pos) (ast.Expr, []ast.Node) {
 	// First two elements on the stack are expected to be the ID-Token and the
 	// Identifier node.
 	if s := tree.SliceAt(pos); len(s) >= 2 {
 		if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
-			return s[1], s[2:]
+			return s[1].(ast.Expr), s[2:]
 		}
 	}
 

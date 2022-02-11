@@ -1222,7 +1222,7 @@ type (
 	}
 
 	ControlPart struct {
-		Tok  Token
+		Name *Ident
 		Body *BlockStmt
 		With *WithSpec
 	}
@@ -1335,7 +1335,7 @@ func (x *ModuleDef) Pos() loc.Pos {
 	return x.Def.Pos()
 }
 
-func (x *ControlPart) Pos() loc.Pos { return x.Tok.Pos() }
+func (x *ControlPart) Pos() loc.Pos { return x.Name.Pos() }
 func (x *ImportDecl) Pos() loc.Pos  { return x.ImportTok.Pos() }
 func (x *GroupDecl) Pos() loc.Pos   { return x.Tok.Pos() }
 func (x *FriendDecl) Pos() loc.Pos  { return x.FriendTok.Pos() }
