@@ -135,7 +135,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeL
 	}()
 
 	// parse source
-	p.init(fset, filename, text, 0)
+	p.init(fset, filename, text, AllErrors)
 	for p.tok != token.EOF {
 		nodes = append(nodes, p.parse())
 
