@@ -16,7 +16,7 @@ func TestScopes(t *testing.T) {
 		{`{var int x := x}`, []string{"x"}},
 		{`{var int x := x; {var int y := x}}`, []string{"x"}},
 		{`template int t<type T>(int x) := 1`, []string{"T", "x"}},
-		{`function f<type T>(int p) {var int x}`, []string{"T", "p", "x"}},
+		{`function f<type T>(int p) {var int x}`, []string{"T", "p"}},
 		{`type record { int x } R<type T>`, []string{"x", "T"}},
 		{`type record { record { int y } x } R<type T>`, []string{"x", "T"}},
 		{`type record of record { int x } R`, []string{}},
@@ -25,11 +25,8 @@ func TestScopes(t *testing.T) {
 		{`type enumerated E<type T>{ E1, E2 }`, []string{"T", "E1", "E2"}},
 		{`type function F<type T>(int p) runs on C return X`, []string{"T", "p"}},
 		{`type port P<type T}> message { inout T; map param(int p)}`, []string{"T"}},
-		{`type component C<type T> extends D {var T x}`, []string{"T", "x"}},
-		{`for (var int i;true;i:=i+1) {var int x}`, []string{"i", "x"}},
-		{`while (true) {var int x}`, []string{"x"}},
-		{`do {var int x} while (true){`, []string{"x"}},
-		{`if (true) {var int x} else {var int y}`, []string{}},
+		{`type component C<type T> extends D {var T x}`, []string{"T"}},
+		{`for (var int i;true;i:=i+1) {var int x}`, []string{"i"}},
 		{`
 			module M {
 				import from foo all;

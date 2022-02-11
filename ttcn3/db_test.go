@@ -177,6 +177,10 @@ func TestFindDefinitions(t *testing.T) {
 			input: `module M2 {type record R {int x}}
 				module R  {type R.¶x x; import from M2 all}`,
 			want: []string{"x0", "x2"}},
+		{
+			name:  "typeref",
+			input: `module M { type record R {int x}; control { var M.R r; r.¶x := 23 }}`,
+			want:  []string{"x0"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
