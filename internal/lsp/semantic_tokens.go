@@ -10,6 +10,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/scanner"
 	"github.com/nokia/ntt/ttcn3/token"
@@ -24,14 +25,14 @@ type TokenGen struct {
 }
 
 type SemTokVisitor struct {
-	syntax      *ntt.ParseInfo
+	tree        *ttcn3.Tree
+	db          *ttcn3.DB
 	actualToken SemanticTokenType
 	actualModif SemanticTokenModifiers
 	Data        []uint32
 	tg          TokenGen
 	startOffs   loc.Pos
 	endOffs     loc.Pos
-	modNameSet  *map[string]struct{}
 	nodeStack   []ast.Node
 }
 
@@ -240,13 +241,13 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		return true
 	}
 
-	begin := tokv.syntax.Position(n.Pos())
-	end := tokv.syntax.Position(n.LastTok().End())
+	begin := tokv.tree.Position(n.Pos())
+	end := tokv.tree.Position(n.LastTok().End())
 	switch node := n.(type) {
 	case *ast.Module:
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, uint32(Definition))...)
 		}
 		for _, def := range node.Defs {
@@ -256,8 +257,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		return false
 	case *ast.StructTypeDecl:
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Struct, uint32(Definition))...)
 			for _, field := range node.Fields {
 				ast.Inspect(field, tokv.VisitModuleDefs)
@@ -282,8 +283,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		}
 		if isSubType {
 			if node.Name != nil {
-				begin = tokv.syntax.Position(node.Name.Pos())
-				end = tokv.syntax.Position(node.Name.End())
+				begin = tokv.tree.Position(node.Name.Pos())
+				end = tokv.tree.Position(node.Name.End())
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(Definition))...)
 			}
 		}
@@ -292,8 +293,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		return false
 	case *ast.PortTypeDecl:
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Interface, uint32(Definition))...)
 			for _, attr := range node.Attrs {
 				ast.Inspect(attr, tokv.VisitModuleDefs)
@@ -304,8 +305,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 
 	case *ast.ComponentTypeDecl:
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Class, uint32(Definition))...)
 			if node.Body != nil {
 				ast.Inspect(node.Body, tokv.VisitModuleDefs)
@@ -314,8 +315,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		return false
 	case *ast.FuncDecl:
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, uint32(Definition))...)
 		}
 		if node.Params != nil {
@@ -336,8 +337,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			tokv.actualToken = None
 		}
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|Readonly))...)
 		}
 		if node.Params != nil {
@@ -362,25 +363,39 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		return false
 	case *ast.Declarator:
 		if node.Name != nil {
-			begin = tokv.syntax.Position(node.Name.Pos())
-			end = tokv.syntax.Position(node.Name.End())
+			begin = tokv.tree.Position(node.Name.Pos())
+			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
 		}
 		tokv.popNodeStack()
 		return false
 	case *ast.Ident:
-		begin := tokv.syntax.Position(node.Pos())
-		end := tokv.syntax.Position(node.End())
+		begin := tokv.tree.Position(node.Pos())
+		end := tokv.tree.Position(node.End())
 		switch node.Tok.Kind {
 		case token.IDENT:
 			if _, ok := predefTypeMap[node.String()]; ok {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, uint32(DefaultLibrary))...)
 			} else if _, ok := libraryFuncMap[node.String()]; ok {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, uint32(DefaultLibrary))...)
-			} else if _, ok := (*tokv.modNameSet)[node.String()]; ok {
+				/*} else if _, ok := (*tokv.modNameSet)[node.String()]; ok {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
+				*/
 			} else if tokv.actualToken != None {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
+
+			} else {
+				def := tokv.db.FindDefinitions(node, tokv.tree, tokv.nodeStack...)
+				if len(def) > 0 {
+					switch def[0].Node.(type) {
+					case *ast.Field:
+						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
+					case *ast.ImportDecl:
+						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
+					case *ast.FormalPar:
+						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Definition))...)
+					}
+				}
 			}
 		case token.UNIVERSAL:
 			if node.Tok2.Kind == token.CHARSTRING {
@@ -409,8 +424,8 @@ func (tokv *SemTokVisitor) getFormalPars(nt ast.Node) bool {
 			tokv.actualToken = None
 		}
 		if fpars.Name != nil {
-			begin := tokv.syntax.Position(fpars.Name.Pos())
-			end := tokv.syntax.Position(fpars.Name.End())
+			begin := tokv.tree.Position(fpars.Name.Pos())
+			end := tokv.tree.Position(fpars.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Declaration))...)
 		}
 		tokv.popNodeStack()
@@ -419,23 +434,25 @@ func (tokv *SemTokVisitor) getFormalPars(nt ast.Node) bool {
 	return true
 }
 
-func NewSemTokVisitor(synt *ntt.ParseInfo, modNameSet *map[string]struct{}, txtRange protocol.Range) *SemTokVisitor {
+func NewSemTokVisitor(tree *ttcn3.Tree, db *ttcn3.DB, txtRange protocol.Range) *SemTokVisitor {
 	return &SemTokVisitor{
-		syntax:     synt,
-		Data:       make([]uint32, 0, 20),
-		startOffs:  synt.Pos(int(txtRange.Start.Line+1), int(txtRange.Start.Character+1)),
-		endOffs:    synt.Pos(int(txtRange.End.Line+1), int(txtRange.End.Character+1)),
-		tg:         TokenGen{},
-		modNameSet: modNameSet,
-		nodeStack:  make([]ast.Node, 0, 10)}
+		tree:      tree,
+		db:        db,
+		Data:      make([]uint32, 0, 20),
+		startOffs: tree.Pos(int(txtRange.Start.Line+1), int(txtRange.Start.Character+1)),
+		endOffs:   tree.Pos(int(txtRange.End.Line+1), int(txtRange.End.Character+1)),
+		tg:        TokenGen{},
+		nodeStack: make([]ast.Node, 0, 10)}
 }
 
-func NewSemanticTokensFromCurrentModule(syntax *ntt.ParseInfo, suite *ntt.Suite, fileName string, txtRange protocol.Range) *protocol.SemanticTokens {
-	stVisitor := NewSemTokVisitor(syntax, getModuleNameSetFromSuite(suite), txtRange)
+func NewSemanticTokensFromCurrentModule(tree *ttcn3.Tree, db *ttcn3.DB, suite *ntt.Suite, fileName string, txtRange protocol.Range) *protocol.SemanticTokens {
+	stVisitor := NewSemTokVisitor(tree, db, txtRange)
 
-	ast.Inspect(syntax.Module, stVisitor.VisitModuleDefs)
-	if EmitKeywords {
-		stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName, txtRange), stVisitor.Data)
+	for _, mod := range tree.Modules() {
+		ast.Inspect(mod, stVisitor.VisitModuleDefs)
+		if EmitKeywords {
+			stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName, txtRange), stVisitor.Data)
+		}
 	}
 	stVisitor.Data[0] -= txtRange.Start.Line
 	stVisitor.Data[1] -= txtRange.Start.Character
@@ -463,22 +480,13 @@ func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTo
 	if len(suites) == 0 {
 		return nil, nil
 	}
-	// NOTE: having the current file owned by more then one suite should not
-	// import from modules originating from both suites. This would
-	// in most ways end up with cyclic imports.
-	// Thus 'completion' shall collect items only from one suite.
-	// Decision: first suite
-	syntax := suites[0].ParseWithAllErrors(params.TextDocument.URI.SpanURI().Filename())
-	if syntax.Module == nil {
-		return nil, syntax.Err
-	}
 
-	if syntax.Module.Name == nil {
-		return nil, nil
-	}
-	modEnd := syntax.Position(syntax.Module.End())
+	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
+	mods := tree.Modules()
+
+	modEnd := tree.Position(mods[len(mods)-1].End())
 	txtRange := protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: uint32(modEnd.Line - 1), Character: uint32(modEnd.Column - 1)}}
-	ret = NewSemanticTokensFromCurrentModule(syntax, suites[0], params.TextDocument.URI.SpanURI().Filename(), txtRange)
+	ret = NewSemanticTokensFromCurrentModule(tree, &s.db, suites[0], params.TextDocument.URI.SpanURI().Filename(), txtRange)
 	return ret, nil
 }
 
@@ -502,20 +510,8 @@ func (s *Server) semanticTokensRange(ctx context.Context, params *protocol.Seman
 	if len(suites) == 0 {
 		return nil, nil
 	}
-	// NOTE: having the current file owned by more then one suite should not
-	// import from modules originating from both suites. This would
-	// in most ways end up with cyclic imports.
-	// Thus 'completion' shall collect items only from one suite.
-	// Decision: first suite
-	syntax := suites[0].ParseWithAllErrors(params.TextDocument.URI.SpanURI().Filename())
-	if syntax.Module == nil {
-		return nil, syntax.Err
-	}
 
-	if syntax.Module.Name == nil {
-		return nil, nil
-	}
-
-	ret = NewSemanticTokensFromCurrentModule(syntax, suites[0], params.TextDocument.URI.SpanURI().Filename(), params.Range)
+	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
+	ret = NewSemanticTokensFromCurrentModule(tree, &s.db, suites[0], params.TextDocument.URI.SpanURI().Filename(), params.Range)
 	return ret, nil
 }

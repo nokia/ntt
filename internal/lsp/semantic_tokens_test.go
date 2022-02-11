@@ -7,6 +7,7 @@ import (
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,21 +16,28 @@ func SetRange(startLine uint32, startCol uint32, endLine uint32, endCol uint32) 
 		Start: protocol.Position{Line: startLine, Character: startCol},
 		End:   protocol.Position{Line: endLine, Character: endCol}}
 }
-func DefaultRange(syntax *ntt.ParseInfo) *protocol.Range {
-	modEnd := syntax.Position(syntax.Module.End())
+func DefaultRange(tree *ttcn3.Tree) *protocol.Range {
+	modEnd := tree.Position(tree.Root.End())
 	return &protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: uint32(modEnd.Line - 1), Character: uint32(modEnd.Column - 1)}}
 }
 func generateTokenList(t *testing.T, suite *ntt.Suite, rng *protocol.Range) *protocol.SemanticTokens {
 	lsp.EmitKeywords = true
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
-	syntax := suite.ParseWithAllErrors(name)
-	//_, nodes := suite.Tags(name)
-	//log.Debug(fmt.Sprintf("SemanticTokens nodes %v.", nodes))
-	if rng == nil {
-		rng = DefaultRange(syntax)
+	tree := ttcn3.ParseFile(name)
+
+	// index
+	db := &ttcn3.DB{}
+	if srcs, _ := suite.Sources(); len(srcs) > 0 {
+		for _, src := range srcs {
+			db.Index(src)
+		}
 	}
-	//txtRange :=
-	return lsp.NewSemanticTokensFromCurrentModule(syntax, suite, name, *rng)
+
+	if rng == nil {
+		rng = DefaultRange(tree)
+	}
+
+	return lsp.NewSemanticTokensFromCurrentModule(tree, db, suite, name, *rng)
 }
 
 func TestFullModuleKwOnly(t *testing.T) {
@@ -243,7 +251,7 @@ func TestPortTypeDeclSemTok(t *testing.T) {
 		map param (in integer pi, boolean pb);
 		address AddrType
 	}
-}`, `module TestPortTypeDeclSemTok_Module_1.Type2
+}`, `module TestPortTypeDeclSemTok_Module_1
 {
 	type integer Type2;
 }`)
@@ -273,7 +281,7 @@ func TestPortTypeDeclSemTok(t *testing.T) {
 			0, 9, 20, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
 			1, 2, 3, uint32(lsp.Keyword), 0,
 			0, 4, 5, uint32(lsp.Type), 0,
-			0, 6, 31, uint32(lsp.Namespace), 0,
+			0, 7, 31, uint32(lsp.Namespace), 0,
 			0, 32, 5, uint32(lsp.Type), 0,
 			1, 2, 3, uint32(lsp.Keyword), 0,
 			0, 4, 5, uint32(lsp.Keyword), 0,
