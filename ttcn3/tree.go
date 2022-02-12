@@ -255,6 +255,10 @@ type finder struct {
 }
 
 func (f *finder) findDefinitions(n ast.Expr, tree *Tree) []*Definition {
+	if n == nil {
+		return nil
+	}
+
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
 		return f.dot(n, tree)

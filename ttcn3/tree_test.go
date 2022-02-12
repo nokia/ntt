@@ -7,36 +7,51 @@ import (
 )
 
 func TestSliceAt(t *testing.T) {
-	input := `module M
-		  {
-			function func<type T>(T x)
-			{
-				{
-					¶T := x;
-				}
-			}
-		  }`
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		{
+			input: `module M2 {} module M1 {import from ¶M2 all}`,
+			want: []string{
+				"*ast.Ident(M2)",
+				"*ast.ImportDecl",
+				"*ast.ModuleDef",
+				"*ast.Module(M1)",
+				"ast.NodeList",
+			}},
+		{
 
-	cursor, source := extractCursor(input)
-	tree := parseFile(t, t.Name(), source)
-
-	var actual []string
-	for _, n := range tree.SliceAt(cursor) {
-		actual = append(actual, nodeDesc(n))
+			input: `module M {
+				  function func<type T>(T x) {
+				    while (true) { ¶T := x; }
+				  }
+		  		}`,
+			want: []string{
+				"*ast.Ident(T)",
+				"*ast.BinaryExpr",
+				"*ast.ExprStmt",
+				"*ast.BlockStmt",
+				"*ast.WhileStmt",
+				"*ast.BlockStmt",
+				"*ast.FuncDecl(func)",
+				"*ast.ModuleDef(func)",
+				"*ast.Module(M)",
+				"ast.NodeList",
+			}},
 	}
 
-	expected := []string{
-		"*ast.Ident(T)",
-		"*ast.BinaryExpr",
-		"*ast.ExprStmt",
-		"*ast.BlockStmt",
-		"*ast.BlockStmt",
-		"*ast.FuncDecl(func)",
-		"*ast.ModuleDef(func)",
-		"*ast.Module(M)",
-		"ast.NodeList",
+	for _, tt := range tests {
+		cursor, source := extractCursor(tt.input)
+		tree := parseFile(t, t.Name(), source)
+
+		var actual []string
+		for _, n := range tree.SliceAt(cursor) {
+			actual = append(actual, nodeDesc(n))
+		}
+
+		assert.Equal(t, tt.want, actual)
 	}
-	assert.Equal(t, expected, actual)
 }
 
 func TestExprAt(t *testing.T) {
