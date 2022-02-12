@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
@@ -20,9 +21,17 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	)
 
 	start := time.Now()
-	defer log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
+	defer func() {
+		log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
+	}()
 
-	if defs := s.db.LookupAt(file, line, col); len(defs) > 0 {
+	tree := ttcn3.ParseFile(file)
+	x := tree.ExprAt(tree.Pos(line, col))
+	if x == nil {
+		log.Debugf("%s:%d:%d: No symbol at cursor position.", file, line, col)
+		return nil, nil
+	}
+	if defs := tree.LookupWithDB(x, &s.db); len(defs) > 0 {
 		for _, def := range defs {
 			pos := def.Tree.Position(def.Ident.Pos())
 			log.Debugf("Definition found at %s", pos)

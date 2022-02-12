@@ -6,7 +6,6 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 var (
@@ -83,7 +82,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 
 }
 
-func TestFindDefinitions(t *testing.T) {
+func TestLookup(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string
@@ -188,8 +187,7 @@ func TestFindDefinitions(t *testing.T) {
 
 			actual := []string{}
 			n := tree.ExprAt(cursor)
-			parents := ast.Parents(n, tree.Root)
-			for _, d := range db.FindDefinitions(n, tree, parents...) {
+			for _, d := range tree.LookupWithDB(n, db) {
 				actual = append(actual, ids[d.Ident])
 			}
 
