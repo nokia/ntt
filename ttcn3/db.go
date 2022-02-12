@@ -65,19 +65,12 @@ func (db *DB) LookupAt(file string, line int, col int) []*Definition {
 	defer log.Debugf("%s:%d:%d: Lookup took %s\n", file, line, col, time.Since(start))
 
 	tree := ParseFile(file)
-	n, parents := parentNodes(tree, tree.Pos(line, col))
+	n := tree.ExprAt(tree.Pos(line, col))
 	if n == nil {
-		log.Debugf("%s:%d:%d: No symbol at cursor position. Stack: %v\n", file, line, col, nodes(parents))
-	}
-
-	if isFieldID(n, parents) {
-		log.Debugf("Field assignment not implemented. Stack: %v", nodes(parents))
+		log.Debugf("%s:%d:%d: No symbol at cursor position.", file, line, col)
 		return nil
 	}
-
-	if isSelectorID(n, parents) {
-		n, parents = parents[0].(*ast.SelectorExpr), parents[1:]
-	}
+	parents := ast.Parents(n, tree.Root)
 	return db.FindDefinitions(n.(ast.Expr), tree, parents...)
 
 }

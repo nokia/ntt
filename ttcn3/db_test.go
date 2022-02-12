@@ -6,6 +6,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 var (
@@ -186,8 +187,9 @@ func TestFindDefinitions(t *testing.T) {
 			db.Index(tree.Filename())
 
 			actual := []string{}
-			n, stack := parentNodes(tree, cursor)
-			for _, d := range db.FindDefinitions(n, tree, stack...) {
+			n := tree.ExprAt(cursor)
+			parents := ast.Parents(n, tree.Root)
+			for _, d := range db.FindDefinitions(n, tree, parents...) {
 				actual = append(actual, ids[d.Ident])
 			}
 
