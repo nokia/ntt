@@ -160,7 +160,7 @@ func TestLookup(t *testing.T) {
 				module M1 {type R.¶x x; import from M2 all}`,
 			want: []string{"x0"}},
 		{
-			name: "dot import",
+			name: "dot imports",
 			input: `module M2 {type record R {int x}}
 				module R  {type M2.R.¶x x; import from M2 all}`,
 			want: []string{"x0"}},
