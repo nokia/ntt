@@ -48,6 +48,13 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	return t.parents[n]
 }
 
+func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
+	parents := ast.Parents(n, tree.Root)
+	visited := make(map[ast.Node]bool)
+	return db.findDefinitions(visited, n, tree, parents...)
+
+}
+
 func (t *Tree) Modules() []*ast.Module {
 	var nodes []*ast.Module
 	ast.Inspect(t.Root, func(n ast.Node) bool {

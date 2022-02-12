@@ -59,26 +59,6 @@ func (db *DB) Index(files ...string) {
 	log.Debugf("Cache built in %v: %d symbols in %d files.\n", time.Since(start), syms, len(files))
 }
 
-func (db *DB) LookupAt(file string, line int, col int) []*Definition {
-	start := time.Now()
-	log.Debugf("%s:%d:%d: Lookup started...\n", file, line, col)
-	defer log.Debugf("%s:%d:%d: Lookup took %s\n", file, line, col, time.Since(start))
-
-	tree := ParseFile(file)
-	n := tree.ExprAt(tree.Pos(line, col))
-	if n == nil {
-		log.Debugf("%s:%d:%d: No symbol at cursor position.", file, line, col)
-		return nil
-	}
-	parents := ast.Parents(n, tree.Root)
-	return db.FindDefinitions(n.(ast.Expr), tree, parents...)
-
-}
-
-func (db *DB) FindDefinitions(n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
-	return db.findDefinitions(make(map[ast.Node]bool), n, tree, parents...)
-}
-
 func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
 	if len(parents) > 1 {
 		if _, ok := parents[len(parents)-1].(ast.NodeList); ok {
