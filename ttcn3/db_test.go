@@ -1,18 +1,12 @@
 package ttcn3_test
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/token"
 )
-
-const CURSOR = "¶"
 
 var (
 	file1 = `
@@ -31,8 +25,6 @@ func init() {
 	fs.SetContent("file2.ttcn3", []byte(file2))
 	fs.SetContent("file3.ttcn3", []byte(file3))
 }
-
-type SliceMap map[string][]string
 
 func TestIndex(t *testing.T) {
 	db := ttcn3.DB{}
@@ -184,114 +176,24 @@ func TestFindDefinitions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testFindDefinition(t, tt.input, tt.want)
+			var cursor loc.Pos
+			cursor, tt.input = extractCursor(tt.input)
+
+			tree := parseFile(t, t.Name(), tt.input)
+			ids := enumerateIDs(tree.Root)
+
+			db := &ttcn3.DB{}
+			db.Index(tree.Filename())
+
+			actual := []string{}
+			n, stack := parentNodes(tree, cursor)
+			for _, d := range db.FindDefinitions(n, tree, stack...) {
+				actual = append(actual, ids[d.Ident])
+			}
+
+			if !equal(actual, tt.want) {
+				t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", tt.want, actual)
+			}
 		})
 	}
-}
-
-func testFindDefinition(t *testing.T, input string, expected []string) {
-	// extract cursor position
-	cursor := strings.Index(input, CURSOR)
-	input = strings.Replace(input, CURSOR, "", 1)
-
-	// parse
-	file := fmt.Sprintf("%s.ttcn3", t.Name())
-	fs.SetContent(file, []byte(input))
-	tree := ttcn3.ParseFile(file)
-	ids := idMap(tree.Root)
-
-	// index
-	db := &ttcn3.DB{}
-	db.Index(file)
-
-	actual := []string{}
-	n, stack := parentNodes(tree, cursor)
-	for _, d := range db.FindDefinitions(n, tree, stack...) {
-		actual = append(actual, ids[d.Ident])
-	}
-
-	if !equal(actual, expected) {
-		t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", expected, actual)
-	}
-}
-func idMap(root ast.Node) map[*ast.Ident]string {
-	// build ID map
-	ids := make(map[*ast.Ident]string)
-	counter := make(map[string]int)
-	ast.Inspect(root, func(n ast.Node) bool {
-		if x, ok := n.(*ast.Ident); ok {
-			i := counter[x.String()]
-			counter[x.String()]++
-			ids[x] = fmt.Sprintf("%s%d", x.String(), i)
-		}
-		return true
-	})
-
-	return ids
-}
-func parentNodes(tree *ttcn3.Tree, cursor int) (n ast.Expr, s []ast.Node) {
-	s = tree.SliceAt(loc.Pos(cursor + 1))
-	if len(s) < 2 {
-		return nil, nil
-	}
-
-	if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
-		n, s = s[1].(ast.Expr), s[2:]
-	}
-	if len(s) > 0 {
-		if x, ok := s[0].(*ast.SelectorExpr); ok && n == x.Sel {
-			n, s = x, s[1:]
-		}
-	}
-	return n, s
-}
-
-func importedDefs(db *ttcn3.DB, id string, module string) []string {
-	var s []string
-	mod := moduleFrom("file1.ttcn3", module)
-	for _, d := range db.FindImportedDefinitions(id, mod) {
-		name := ast.Name(d.Node)
-		file := d.Tree.Position(d.Node.Pos()).Filename
-		s = append(s, fmt.Sprintf("%s:%s", name, file))
-	}
-	return s
-}
-
-func moduleFrom(file, module string) *ast.Module {
-	tree := ttcn3.ParseFile(file)
-	for _, m := range tree.Modules() {
-		if ast.Name(m) == module {
-			return m
-		}
-	}
-	return nil
-}
-
-func testMapsEqual(t *testing.T, a, b SliceMap) {
-	if !equalSliceMap(a, b) {
-		t.Errorf("Maps not equal:\n\t got = %v\n\twant = %v", a, b)
-	}
-}
-
-func equalSliceMap(a, b SliceMap) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if !equal(v, b[k]) {
-			return false
-		}
-	}
-	return true
-}
-
-func makeSliceMap(m map[string]map[string]bool) SliceMap {
-	sm := SliceMap{}
-	for k, v := range m {
-		sm[k] = make([]string, 0, len(v))
-		for kk := range v {
-			sm[k] = append(sm[k], kk)
-		}
-	}
-	return sm
 }
