@@ -22,6 +22,10 @@ type Definition struct {
 	Next *Definition
 }
 
+func Definitions(id string, n ast.Node, t *Tree) []*Definition {
+	return NewScope(n, t).Lookup(id)
+}
+
 func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 	if scp.Names == nil {
 		scp.Names = make(map[string]*Definition)

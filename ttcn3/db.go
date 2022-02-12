@@ -96,7 +96,7 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 		// Find definitions in current file by walking up the scopes.
 		for _, n := range parents {
 			visited[n] = true
-			found := NewScope(n, tree).Lookup(id.String())
+			found := Definitions(id.String(), n, tree)
 			defs = append(defs, found...)
 		}
 
@@ -114,7 +114,7 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 				tree := ParseFile(file)
 				for _, m := range tree.Modules() {
 					if !visited[m] && ast.Name(m) == ast.Name(mod) {
-						found := NewScope(m, tree).Lookup(id.String())
+						found := Definitions(id.String(), m, tree)
 						for _, d := range found {
 							if _, ok := d.Node.(*ast.ImportDecl); !ok {
 								defs = append(defs, d)
@@ -148,7 +148,7 @@ func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, paren
 		candidates := db.findTypes(visited, n.X, tree, parents...)
 		for _, c := range candidates {
 			for _, t := range db.typeOf(visited, c, parents...) {
-				if defs := NewScope(t.Node, t.Tree).Lookup(ast.Name(n.Sel)); len(defs) > 0 {
+				if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
 					result = append(result, defs...)
 				}
 			}
