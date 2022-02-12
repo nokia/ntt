@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/nokia/ntt/ttcn3/token"
 )
@@ -275,6 +276,9 @@ func Name(n Node) string {
 }
 
 func Children(n Node) []Node {
+	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+		return nil
+	}
 	var children []Node
 	switch n := n.(type) {
 	case NodeList:
