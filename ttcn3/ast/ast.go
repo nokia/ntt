@@ -431,8 +431,16 @@ func (x *RegexpExpr) Pos() loc.Pos   { return x.Tok.Pos() }
 func (x *PatternExpr) Pos() loc.Pos  { return x.Tok.Pos() }
 func (x *DecmatchExpr) Pos() loc.Pos { return x.Tok.Pos() }
 func (x *DecodedExpr) Pos() loc.Pos  { return x.Tok.Pos() }
-func (x *DefKindExpr) Pos() loc.Pos  { return x.Kind.Pos() }
-func (x *ExceptExpr) Pos() loc.Pos   { return x.X.Pos() }
+func (x *DefKindExpr) Pos() loc.Pos {
+	if x.Kind.IsValid() {
+		return x.Kind.Pos()
+	}
+	if len(x.List) > 0 {
+		return x.List[0].Pos()
+	}
+	return loc.NoPos
+}
+func (x *ExceptExpr) Pos() loc.Pos { return x.X.Pos() }
 
 func (x *Ident) End() loc.Pos             { return x.LastTok().End() }
 func (x *ParametrizedIdent) End() loc.Pos { return x.LastTok().End() }
