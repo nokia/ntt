@@ -15,6 +15,12 @@ type Tree struct {
 	Root    ast.NodeList
 	Names   map[string]bool
 	Err     error
+
+	filename string
+}
+
+func (t *Tree) Filename() string {
+	return t.filename
 }
 
 func (t *Tree) Modules() []*ast.Module {

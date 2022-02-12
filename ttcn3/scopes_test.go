@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 // TestScope verifies that scopes are built and populated correctly.
@@ -50,49 +49,4 @@ func TestScopes(t *testing.T) {
 			t.Errorf("%q: mismatch:\n\twant=%v\n\t got=%v", tt.input, tt.names, actual)
 		}
 	}
-}
-
-// Unwrap first node from NodeLists
-func unwrapFirst(n ast.Node) ast.Node {
-	switch n := n.(type) {
-	case ast.NodeList:
-		if len(n) == 0 {
-			return nil
-		}
-		return unwrapFirst(n[0])
-	case *ast.ExprStmt:
-		return unwrapFirst(n.Expr)
-	case *ast.DeclStmt:
-		return unwrapFirst(n.Decl)
-	case *ast.ModuleDef:
-		return unwrapFirst(n.Def)
-	default:
-		return n
-	}
-}
-
-// equal returns true if a and b are equal, order is ignored.
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	m := make(map[string]int, len(a))
-	for i := range a {
-		m[a[i]]++
-		m[b[i]]--
-	}
-	for _, v := range m {
-		if v != 0 {
-			return false
-		}
-	}
-	return true
-}
-
-func nameSlice(scp *ttcn3.Scope) []string {
-	s := make([]string, 0, len(scp.Names))
-	for k := range scp.Names {
-		s = append(s, k)
-	}
-	return s
 }
