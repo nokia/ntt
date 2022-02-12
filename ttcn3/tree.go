@@ -1,10 +1,10 @@
 package ttcn3
 
 import (
-	"log"
 	"reflect"
 
 	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
 )
@@ -17,10 +17,35 @@ type Tree struct {
 	Err     error
 
 	filename string
+	parents  map[ast.Node]ast.Node
 }
 
 func (t *Tree) Filename() string {
 	return t.filename
+}
+
+func (t *Tree) ParentOf(n ast.Node) ast.Node {
+	if t.parents == nil {
+		t.parents = make(map[ast.Node]ast.Node)
+		var visit func(n ast.Node)
+		visit = func(n ast.Node) {
+			for _, c := range ast.Children(n) {
+				switch c.(type) {
+				case ast.Token, ast.NodeList:
+				default:
+					t.parents[c] = n
+				}
+				visit(c)
+			}
+		}
+		visit(t.Root)
+	}
+
+	switch n.(type) {
+	case ast.Token, ast.NodeList:
+		return nil
+	}
+	return t.parents[n]
 }
 
 func (t *Tree) Modules() []*ast.Module {
@@ -143,11 +168,40 @@ func (tree *Tree) Position(pos loc.Pos) loc.Position {
 	return tree.FileSet.Position(pos)
 }
 
-func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
-	return slice(tree.Root, pos)
+// ExprAt returns the primary expression at the given position.
+func (tree *Tree) ExprAt(pos loc.Pos) ast.Expr {
+	s := tree.SliceAt(pos)
+	if len(s) == 0 {
+		log.Debugf("%s: no expression at cursor position.\n", tree.Position(pos))
+		return nil
+	}
+
+	id, ok := s[0].(*ast.Ident)
+	if !ok {
+		log.Debugf("%s: no identifier at cursor position.\n", tree.Position(pos))
+		return nil
+	}
+
+	parent := tree.ParentOf(id)
+	switch p := parent.(type) {
+	case *ast.SelectorExpr:
+		if id == p.Sel {
+			return p
+		}
+	case *ast.BinaryExpr:
+		if id == p.X && p.Op.Kind == token.ASSIGN {
+			if _, ok := tree.ParentOf(p).(*ast.CompositeLiteral); ok {
+				log.Debugf("%s: field assignment not supported.\n",
+					tree.Position(pos))
+				return nil
+			}
+		}
+	}
+
+	return id
 }
 
-func slice(n ast.Node, pos loc.Pos) []ast.Node {
+func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	var (
 		path  []ast.Node
 		visit func(n ast.Node)
@@ -158,10 +212,7 @@ func slice(n ast.Node, pos loc.Pos) []ast.Node {
 			return
 		}
 
-		if n, ok := n.(ast.NodeList); ok {
-			for _, n := range n {
-				visit(n)
-			}
+		if _, ok := n.(ast.Token); ok {
 			return
 		}
 
@@ -173,7 +224,7 @@ func slice(n ast.Node, pos loc.Pos) []ast.Node {
 		}
 
 	}
-	visit(n)
+	visit(tree.Root)
 
 	// Reverse path so leaf is first element.
 	for i := 0; i < len(path)/2; i++ {
