@@ -120,11 +120,11 @@ func TestLookup(t *testing.T) {
 		{
 			name:  "imports",
 			input: `module M1 {type ¶x integer; import from x all}`,
-			want:  []string{}},
+			want:  []string{"x1"}},
 		{
 			name:  "imports",
 			input: `module M2 {} module M1 {import from ¶M2 all}`,
-			want:  []string{"M20"}},
+			want:  []string{"M20", "M21"}},
 		{
 			name: "imports",
 			input: `module M1 {type ¶x integer}
