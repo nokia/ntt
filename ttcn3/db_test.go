@@ -133,7 +133,7 @@ func TestLookup(t *testing.T) {
 		{
 			name:  "imports",
 			input: `module x {} module x {import from x all; var integer x := ¶x}`,
-			want:  []string{"x1", "x2", "x3"}},
+			want:  []string{"x0", "x1", "x2", "x3"}},
 		{
 			name:  "dot",
 			input: `module M {var integer x := ¶M.x}`,
