@@ -50,8 +50,8 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 
 func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
 	parents := ast.Parents(n, tree.Root)
-	visited := make(map[ast.Node]bool)
-	return db.findDefinitions(visited, n, tree, parents...)
+	f := &finder{DB: db, v: make(map[ast.Node]bool)}
+	return f.findDefinitions(n, tree, parents...)
 
 }
 
@@ -248,4 +248,103 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	}
 
 	return path
+}
+
+type finder struct {
+	*DB
+	v map[ast.Node]bool
+}
+
+func (f *finder) findDefinitions(n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
+	if len(parents) > 1 {
+		if _, ok := parents[len(parents)-1].(ast.NodeList); ok {
+			parents = parents[:len(parents)-1]
+		}
+	}
+
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		return f.dot(n, tree, parents...)
+
+	case *ast.Ident:
+		return f.globals(n, tree, parents...)
+
+	case *ast.IndexExpr:
+		return nil
+
+	case *ast.CallExpr:
+		return nil
+	}
+
+	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+	return nil
+}
+
+func (f *finder) globals(id *ast.Ident, tree *Tree, parents ...ast.Node) []*Definition {
+	var defs []*Definition
+
+	// Find definitions in current file by walking up the scopes.
+	for _, n := range parents {
+		f.v[n] = true
+		found := Definitions(id.String(), n, tree)
+		defs = append(defs, found...)
+	}
+
+	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
+		// TTCN-3 standard requires, that all global definition may have a module prefix.
+		if id.String() == ast.Name(mod) {
+			defs = append(defs, &Definition{
+				Ident: mod.Name,
+				Node:  mod,
+				Tree:  tree,
+			})
+		}
+		// Find defintions of files of the same module
+		for file := range f.Modules[ast.Name(mod)] {
+			tree := ParseFile(file)
+			for _, m := range tree.Modules() {
+				if !f.v[m] && ast.Name(m) == ast.Name(mod) {
+					found := Definitions(id.String(), m, tree)
+					for _, d := range found {
+						if _, ok := d.Node.(*ast.ImportDecl); !ok {
+							defs = append(defs, d)
+						}
+					}
+				}
+			}
+		}
+
+		// Find definitions in imported files.
+		for _, m := range f.FindImportedDefinitions(ast.Name(id), mod) {
+			defs = append(defs, f.findDefinitions(id, m.Tree, m.Node)...)
+		}
+	}
+
+	return defs
+}
+
+// findType returns all type definitions refered by expression n.
+func (f *finder) dot(n *ast.SelectorExpr, tree *Tree, parents ...ast.Node) []*Definition {
+	var result []*Definition
+	candidates := f.findDefinitions(n.X, tree, parents...) // !!!!! <-- was types
+	for _, c := range candidates {
+		for _, t := range f.typeOf(c, parents...) {
+			if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
+				result = append(result, defs...)
+			}
+		}
+	}
+	return result
+}
+
+func (f *finder) typeOf(def *Definition, parents ...ast.Node) []*Definition {
+	if t := def.Type(); t != nil {
+		def = t
+	}
+
+	if x, ok := def.Node.(ast.Expr); ok {
+		return f.findDefinitions(x, def.Tree, parents...) // !!!!! <-- was types
+	}
+
+	return []*Definition{def}
 }
