@@ -284,38 +284,17 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	var defs []*Definition
 	// Find definitions in current file by walking up the scopes.
 	for _, n := range parents {
+		if _, ok := n.(*ast.ModuleDef); ok {
+			break
+		}
 		f.v[n] = true
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
 	}
 
+	// Find definitions in visible files.
 	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
-		// TTCN-3 standard requires, that all global definition may have a module prefix.
-		if id.String() == ast.Name(mod) {
-			defs = append(defs, &Definition{
-				Ident: mod.Name,
-				Node:  mod,
-				Tree:  tree,
-			})
-		}
-		// Find defintions of files of the same module
-		for file := range f.Modules[ast.Name(mod)] {
-			tree := ParseFile(file)
-			for _, m := range tree.Modules() {
-				if !f.v[m] && ast.Name(m) == ast.Name(mod) {
-					found := Definitions(id.String(), m, tree)
-					for _, d := range found {
-						if _, ok := d.Node.(*ast.ImportDecl); !ok {
-							defs = append(defs, d)
-						}
-					}
-				}
-			}
-		}
-
-		// Find definitions in imported files.
-		for _, m := range f.FindImportedDefinitions(id.String(), mod) {
-			// TTCN-3 standard requires, that all global definition may have a module prefix.
+		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
 				defs = append(defs, m)
 			}

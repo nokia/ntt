@@ -50,7 +50,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		db := ttcn3.DB{}
 		mod := moduleFrom("file1.ttcn3", "M1")
-		if defs := db.FindImportedDefinitions("E", mod); len(defs) != 0 {
+		if defs := db.VisibleModules("E", mod); len(defs) != 0 {
 			t.Errorf("Expected 0 definitions, got %v", defs)
 		}
 	})
@@ -59,7 +59,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 		db := ttcn3.DB{}
 		db.Index("file1.ttcn3", "file2.ttcn3", "file3.ttcn3")
 
-		expected := []string{"M2:file1.ttcn3"}
+		expected := []string{"M2:file1.ttcn3", "M1:file1.ttcn3", "M1:file2.ttcn3"}
 		actual := importedDefs(&db, "E", "M1")
 		if !equal(actual, expected) {
 			t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", expected, actual)
@@ -73,7 +73,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 		db.Modules["M2"]["file3.ttcn3"] = true // false positiv entry
 		db.Names["E"]["file3.ttcn3"] = true    // false positiv entry
 
-		expected := []string{"M2:file1.ttcn3"}
+		expected := []string{"M2:file1.ttcn3", "M1:file1.ttcn3", "M1:file2.ttcn3"}
 		actual := importedDefs(&db, "E", "M1")
 		if !equal(actual, expected) {
 			t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", expected, actual)
