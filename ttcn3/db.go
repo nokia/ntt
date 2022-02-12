@@ -65,89 +65,80 @@ func (db *DB) findDefinitions(visited map[ast.Node]bool, n ast.Expr, tree *Tree,
 			parents = parents[:len(parents)-1]
 		}
 	}
+
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		return db.findTypes(visited, n, tree, parents...)
+		return db.dot(visited, n, tree, parents...)
 
 	case *ast.Ident:
-		var defs []*Definition
-		id := n
-
-		// Find definitions in current file by walking up the scopes.
-		for _, n := range parents {
-			visited[n] = true
-			found := Definitions(id.String(), n, tree)
-			defs = append(defs, found...)
-		}
-
-		if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
-			// TTCN-3 standard requires, that all global definition may have a module prefix.
-			if id.String() == ast.Name(mod) {
-				defs = append(defs, &Definition{
-					Ident: mod.Name,
-					Node:  mod,
-					Tree:  tree,
-				})
-			}
-			// Find defintions of files of the same module
-			for file := range db.Modules[ast.Name(mod)] {
-				tree := ParseFile(file)
-				for _, m := range tree.Modules() {
-					if !visited[m] && ast.Name(m) == ast.Name(mod) {
-						found := Definitions(id.String(), m, tree)
-						for _, d := range found {
-							if _, ok := d.Node.(*ast.ImportDecl); !ok {
-								defs = append(defs, d)
-							}
-						}
-					}
-				}
-			}
-
-			// Find definitions in imported files.
-			for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
-				defs = append(defs, db.findDefinitions(visited, id, m.Tree, m.Node)...)
-			}
-		}
-
-		return defs
-
-	default:
-		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
-		return nil
-	}
-
-}
-
-// findType returns all type definitions refered by expression n.
-func (db *DB) findTypes(visited map[ast.Node]bool, n ast.Expr, tree *Tree, parents ...ast.Node) []*Definition {
-
-	var result []*Definition
-	switch n := n.(type) {
-	case *ast.SelectorExpr:
-		candidates := db.findTypes(visited, n.X, tree, parents...)
-		for _, c := range candidates {
-			for _, t := range db.typeOf(visited, c, parents...) {
-				if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
-					result = append(result, defs...)
-				}
-			}
-		}
-		return result
+		return db.globals(visited, n, tree, parents...)
 
 	case *ast.IndexExpr:
-		return db.findTypes(visited, n.X, tree, append(parents, n)...)
+		return nil
 
 	case *ast.CallExpr:
-		return db.findTypes(visited, n.Fun, tree, append(parents, n)...)
-
-	case *ast.Ident:
-		result = db.findDefinitions(visited, n, tree, parents...)
-		return result
+		return nil
 	}
 
 	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	return nil
+}
+
+func (db *DB) globals(visited map[ast.Node]bool, id *ast.Ident, tree *Tree, parents ...ast.Node) []*Definition {
+	var defs []*Definition
+
+	// Find definitions in current file by walking up the scopes.
+	for _, n := range parents {
+		visited[n] = true
+		found := Definitions(id.String(), n, tree)
+		defs = append(defs, found...)
+	}
+
+	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
+		// TTCN-3 standard requires, that all global definition may have a module prefix.
+		if id.String() == ast.Name(mod) {
+			defs = append(defs, &Definition{
+				Ident: mod.Name,
+				Node:  mod,
+				Tree:  tree,
+			})
+		}
+		// Find defintions of files of the same module
+		for file := range db.Modules[ast.Name(mod)] {
+			tree := ParseFile(file)
+			for _, m := range tree.Modules() {
+				if !visited[m] && ast.Name(m) == ast.Name(mod) {
+					found := Definitions(id.String(), m, tree)
+					for _, d := range found {
+						if _, ok := d.Node.(*ast.ImportDecl); !ok {
+							defs = append(defs, d)
+						}
+					}
+				}
+			}
+		}
+
+		// Find definitions in imported files.
+		for _, m := range db.FindImportedDefinitions(ast.Name(id), mod) {
+			defs = append(defs, db.findDefinitions(visited, id, m.Tree, m.Node)...)
+		}
+	}
+
+	return defs
+}
+
+// findType returns all type definitions refered by expression n.
+func (db *DB) dot(visited map[ast.Node]bool, n *ast.SelectorExpr, tree *Tree, parents ...ast.Node) []*Definition {
+	var result []*Definition
+	candidates := db.findDefinitions(visited, n.X, tree, parents...) // !!!!! <-- was types
+	for _, c := range candidates {
+		for _, t := range db.typeOf(visited, c, parents...) {
+			if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
+				result = append(result, defs...)
+			}
+		}
+	}
+	return result
 }
 
 func (db *DB) typeOf(visited map[ast.Node]bool, def *Definition, parents ...ast.Node) []*Definition {
@@ -156,7 +147,7 @@ func (db *DB) typeOf(visited map[ast.Node]bool, def *Definition, parents ...ast.
 	}
 
 	if x, ok := def.Node.(ast.Expr); ok {
-		return db.findTypes(visited, x, def.Tree, parents...)
+		return db.findDefinitions(visited, x, def.Tree, parents...) // !!!!! <-- was types
 	}
 
 	return []*Definition{def}
