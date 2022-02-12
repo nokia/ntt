@@ -315,6 +315,10 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 
 		// Find definitions in imported files.
 		for _, m := range f.FindImportedDefinitions(id.String(), mod) {
+			// TTCN-3 standard requires, that all global definition may have a module prefix.
+			if id.String() == m.Ident.String() {
+				defs = append(defs, m)
+			}
 			defs = append(defs, Definitions(id.String(), m.Node, m.Tree)...)
 		}
 	}
