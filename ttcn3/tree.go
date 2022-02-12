@@ -190,11 +190,20 @@ func (tree *Tree) ExprAt(pos loc.Pos) ast.Expr {
 		}
 	case *ast.BinaryExpr:
 		if id == p.X && p.Op.Kind == token.ASSIGN {
-			if _, ok := tree.ParentOf(p).(*ast.CompositeLiteral); ok {
+			q := tree.ParentOf(p)
+			switch q := q.(type) {
+			case *ast.CompositeLiteral:
 				log.Debugf("%s: field assignment not supported.\n",
 					tree.Position(pos))
 				return nil
+			case *ast.ParenExpr:
+				if _, ok := tree.ParentOf(q).(*ast.CallExpr); ok {
+					log.Debugf("%s: field assignment not supported.\n",
+						tree.Position(pos))
+					return nil
+				}
 			}
+
 		}
 	}
 

@@ -158,3 +158,11 @@ func nameSlice(scp *ttcn3.Scope) []string {
 	}
 	return s
 }
+
+func nodeDesc(n ast.Node) string {
+	s := fmt.Sprintf("%T", n)
+	if n := ast.Name(n); n != "" {
+		s += fmt.Sprintf("(%s)", n)
+	}
+	return s
+}

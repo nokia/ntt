@@ -1,10 +1,8 @@
 package ttcn3_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,11 +22,7 @@ func TestSliceAt(t *testing.T) {
 
 	var actual []string
 	for _, n := range tree.SliceAt(cursor) {
-		s := fmt.Sprintf("%T", n)
-		if n := ast.Name(n); n != "" {
-			s += fmt.Sprintf("(%s)", n)
-		}
-		actual = append(actual, s)
+		actual = append(actual, nodeDesc(n))
 	}
 
 	expected := []string{
@@ -43,4 +37,36 @@ func TestSliceAt(t *testing.T) {
 		"ast.NodeList",
 	}
 	assert.Equal(t, expected, actual)
+}
+
+func TestExprAt(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"", "<nil>"},
+		{"x", "<nil>"},
+		{"¶", "<nil>"},
+		{"x¶", "<nil>"},
+		{"¶x", "*ast.Ident(x)"},
+		{"¶x[-]", "*ast.Ident(x)"},
+		{"¶x[-][-]", "*ast.Ident(x)"},
+		{"¶x()[-]", "*ast.Ident(x)"},
+		{"¶x.y.z", "*ast.Ident(x)"},
+		{"x¶.y.z", "<nil>"},
+		{"x.¶y.z", "*ast.SelectorExpr(x.y)"},
+		{"x.y.¶z", "*ast.SelectorExpr(x.y.z)"},
+		{"x[-].¶y.z", "*ast.SelectorExpr(.y)"},
+		{"foo(23, ¶x:= 1)", "<nil>"}, // not supported yet
+		{"a := { ¶x:= 1}", "<nil>"},  // not supported yet
+		{"a := { [¶x]:= 1}", "*ast.Ident(x)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			cursor, source := extractCursor(tt.input)
+			tree := parseFile(t, t.Name(), source)
+			actual := nodeDesc(tree.ExprAt(cursor))
+			assert.Equal(t, tt.want, actual)
+		})
+	}
 }
