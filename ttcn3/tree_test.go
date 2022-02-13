@@ -183,6 +183,18 @@ func TestLookup(t *testing.T) {
 			name:  "typeref",
 			input: `module M { type record R {int x}; control { var M.R r; r.¶x := 23 }}`,
 			want:  []string{"x0"}},
+		{
+			name:  "index",
+			input: `module M { type record of record {int x} RoR; control { var M.R r; r.¶x := 23 }}`,
+			want:  []string{}},
+		{
+			name:  "index",
+			input: `module M { type record of record {int x} RoR; control { var M.R r; r[-].¶x := 23 }}`,
+			want:  []string{"x0"}},
+		{
+			name:  "index",
+			input: `module M { type record of record {int x} RoR; control { var M.R[-] r; r.¶x := 23 }}`,
+			want:  []string{"x0"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
