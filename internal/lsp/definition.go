@@ -22,19 +22,19 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 	start := time.Now()
 	defer func() {
-		log.Debug(fmt.Sprintf("DefintionRequest took %s.", time.Since(start)))
+		log.Debug(fmt.Sprintf("DefintionRequest took %s.\n", time.Since(start)))
 	}()
 
 	tree := ttcn3.ParseFile(file)
 	x := tree.ExprAt(tree.Pos(line, col))
 	if x == nil {
-		log.Debugf("%s:%d:%d: No symbol at cursor position.", file, line, col)
+		log.Debugf("%s:%d:%d: No symbol at cursor position.\n", file, line, col)
 		return nil, nil
 	}
 	if defs := tree.LookupWithDB(x, &s.db); len(defs) > 0 {
 		for _, def := range defs {
 			pos := def.Tree.Position(def.Ident.Pos())
-			log.Debugf("Definition found at %s", pos)
+			log.Debugf("Definition found at %s\n", pos)
 			locs = append(locs, location(pos))
 		}
 		return unifyLocs(locs), nil
@@ -50,17 +50,17 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 func cTags(suite *ntt.Suite, file string, line int, col int) []protocol.Location {
 	stast := time.Now()
-	defer log.Debug(fmt.Sprintf("cTags fallback took %s", time.Since(stast)))
+	defer func() {
+		log.Debug(fmt.Sprintf("cTags fallback took %s\n", time.Since(stast)))
+	}()
 
 	var ret []protocol.Location
 
 	tree := suite.Parse(file)
 	if tree == nil {
-		log.Debug(fmt.Sprintf("Parsing %q failed.", file))
+		log.Debug(fmt.Sprintf("Parsing %q failed.\n", file))
 		return nil
 	}
-
-	log.Debug(fmt.Sprintf("Parse: %+v", tree))
 
 	// If Module is nil, there's no need to continue, because there's no
 	// AST to iterate over.
