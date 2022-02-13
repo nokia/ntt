@@ -62,11 +62,11 @@ func (db *DB) Index(files ...string) {
 // VisibleModules returns a list of modules that may contain the given
 // symbol. First parameter id specifies the symbol to look for and second
 // parameter module specifies where the imports come from.
-func (db *DB) VisibleModules(id string, module *ast.Module) []*Definition {
+func (db *DB) VisibleModules(id string, mod *ast.Module) []*Definition {
 	importedModules := make(map[string]bool)
 	importedFiles := make(map[string]bool)
 
-	handleImport := func(moduleName string) {
+	addImport := func(moduleName string) {
 		importedModules[moduleName] = true
 		for file := range db.Modules[moduleName] {
 			importedFiles[file] = true
@@ -76,15 +76,15 @@ func (db *DB) VisibleModules(id string, module *ast.Module) []*Definition {
 	// TTCN-3 standard requires, that all global definition may have a
 	// module prefix. We handle this by "self-importing" the current
 	// module.
-	handleImport(ast.Name(module))
+	addImport(ast.Name(mod))
 
 	// Only use imports from the current module.
 	ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
 		if n, ok := n.Def.(*ast.ImportDecl); ok {
-			handleImport(ast.Name(n.Module))
+			addImport(ast.Name(n.Module))
 		}
 		return true
-	}, module)
+	}, mod)
 
 	// Find all files that contain the symbol.
 	var candidates []string
@@ -99,9 +99,9 @@ func (db *DB) VisibleModules(id string, module *ast.Module) []*Definition {
 	var mods []*Definition
 	for _, file := range candidates {
 		tree := ParseFile(file)
-		for _, mod := range tree.Modules() {
-			if importedModules[ast.Name(mod)] {
-				mods = append(mods, &Definition{Ident: mod.Name, Node: mod, Tree: tree})
+		for _, m := range tree.Modules() {
+			if importedModules[ast.Name(m)] {
+				mods = append(mods, &Definition{Ident: m.Name, Node: m, Tree: tree})
 			}
 		}
 	}

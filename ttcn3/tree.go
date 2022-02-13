@@ -288,9 +288,6 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	var defs []*Definition
 	// Find definitions in current file by walking up the scopes.
 	for _, n := range parents {
-		if _, ok := n.(*ast.ModuleDef); ok {
-			break
-		}
 		f.v[n] = true
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
@@ -301,6 +298,9 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
 				defs = append(defs, m)
+			}
+			if m.Node == mod {
+				continue
 			}
 			defs = append(defs, Definitions(id.String(), m.Node, m.Tree)...)
 		}
