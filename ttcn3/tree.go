@@ -278,7 +278,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return f.globals(n, tree)
 
 	case *ast.IndexExpr:
-		return nil
+		return f.index(n, tree)
 
 	case *ast.CallExpr:
 		return nil
@@ -320,7 +320,6 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	return defs
 }
 
-// findType returns all type definitions refered by expression n.
 func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Definition {
 	var result []*Definition
 	candidates := f.lookup(n.X, tree)
@@ -334,14 +333,76 @@ func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Definition {
 	return result
 }
 
+func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Definition {
+	var result []*Definition
+	candidates := f.lookup(n.X, tree)
+	for _, c := range candidates {
+		for _, t := range f.typeOf(c) {
+			if l, ok := t.Node.(*ast.ListSpec); ok {
+				result = append(result, &Definition{Node: l.ElemType, Tree: t.Tree})
+			} else {
+				result = append(result, c)
+			}
+		}
+	}
+	return result
+}
 func (f *finder) typeOf(def *Definition) []*Definition {
-	if t := def.Type(); t != nil {
-		def = t
-	}
+	var result []*Definition
 
-	if x, ok := def.Node.(ast.Expr); ok {
-		return f.lookup(x, def.Tree)
-	}
+	q := []*Definition{def}
 
-	return []*Definition{def}
+	for len(q) > 0 {
+
+		def := q[0]
+		q = q[1:]
+
+		switch n := def.Node.(type) {
+		case *ast.TemplateDecl:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.ValueDecl:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.FormalPar:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.Field:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.SubTypeDecl:
+			if n.Field != nil {
+				q = append(q, &Definition{Node: n.Field.Type, Tree: def.Tree})
+			}
+
+		case *ast.FuncDecl:
+			if n.Return != nil {
+				q = append(q, &Definition{Node: n.Return.Type, Tree: def.Tree})
+			}
+
+		case *ast.SignatureDecl:
+			if n.Return != nil {
+				q = append(q, &Definition{Node: n.Return.Type, Tree: def.Tree})
+			}
+
+		case ast.Expr:
+			q = append(q, f.lookup(n, def.Tree)...)
+
+		case *ast.RefSpec:
+			q = append(q, f.lookup(n.X, def.Tree)...)
+
+		case *ast.BehaviourSpec,
+			*ast.BehaviourTypeDecl,
+			*ast.ComponentTypeDecl,
+			*ast.EnumSpec,
+			*ast.EnumTypeDecl,
+			*ast.Module,
+			*ast.PortTypeDecl,
+			*ast.ListSpec,
+			*ast.StructSpec,
+			*ast.StructTypeDecl:
+			result = append(result, &Definition{Node: n, Tree: def.Tree})
+		}
+	}
+	return result
 }
