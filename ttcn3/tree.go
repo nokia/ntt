@@ -390,6 +390,9 @@ func (f *finder) typeOf(def *Definition) []*Definition {
 		case ast.Expr:
 			q = append(q, f.lookup(n, def.Tree)...)
 
+		case *ast.RefSpec:
+			q = append(q, f.lookup(n.X, def.Tree)...)
+
 		case *ast.BehaviourSpec,
 			*ast.BehaviourTypeDecl,
 			*ast.ComponentTypeDecl,
