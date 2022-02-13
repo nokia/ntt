@@ -316,11 +316,43 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	parents := ast.Parents(id, tree.Root)
 
-	var defs []*Definition
+	var defs, q []*Definition
 	// Find definitions in current file by walking up the scopes.
 	for _, n := range parents {
+		switch n := n.(type) {
+		case *ast.FuncDecl:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+			if n.Mtc != nil {
+				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: tree})
+			}
+		case *ast.BehaviourSpec:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+		case *ast.BehaviourTypeDecl:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+		}
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
+	}
+
+	// Traverse alternate scope hierarchies (runs on, extends, etc.)
+	for len(q) > 0 {
+		_ = q[0]
+		q = q[1:]
 	}
 
 	// Find definitions in visible files.
