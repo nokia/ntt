@@ -20,10 +20,12 @@ type Tree struct {
 	parents  map[ast.Node]ast.Node
 }
 
+// Filename returns the filename of the file that was parsed.
 func (t *Tree) Filename() string {
 	return t.filename
 }
 
+// ParentOf returns the parent of the given node.
 func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	if t.parents == nil {
 		t.parents = make(map[ast.Node]ast.Node)
@@ -48,6 +50,14 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	return t.parents[n]
 }
 
+// Lookup returns the definitions of the given expression. For handling imports
+// and multiple modules, use LookupWithDB.
+func (tree *Tree) Lookup(n ast.Expr) []*Definition {
+	f := &finder{DB: &DB{}, v: make(map[ast.Node]bool)}
+	return f.lookup(n, tree)
+}
+
+// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
 func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
 	f := &finder{DB: db, v: make(map[ast.Node]bool)}
 	return f.lookup(n, tree)
@@ -216,6 +226,7 @@ func (tree *Tree) ExprAt(pos loc.Pos) ast.Expr {
 	return id
 }
 
+// SliceAt returns the slice of nodes at the given position.
 func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	var (
 		path  []ast.Node
