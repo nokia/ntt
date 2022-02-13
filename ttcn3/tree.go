@@ -338,13 +338,11 @@ func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Definition {
 	candidates := f.lookup(n.X, tree)
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
-			//fmt.Printf("XXXXX %T\n", t.Node)
-			//switch n := t.Node.(type) {
-			//case *ast.Field:
 			if l, ok := t.Node.(*ast.ListSpec); ok {
 				result = append(result, &Definition{Node: l.ElemType, Tree: t.Tree})
+			} else {
+				result = append(result, c)
 			}
-			//}
 		}
 	}
 	return result
