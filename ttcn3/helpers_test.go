@@ -67,7 +67,7 @@ func parentNodes(tree *ttcn3.Tree, cursor loc.Pos) (n ast.Expr, s []ast.Node) {
 func importedDefs(db *ttcn3.DB, id string, module string) []string {
 	var s []string
 	mod := moduleFrom("file1.ttcn3", module)
-	for _, d := range db.FindImportedDefinitions(id, mod) {
+	for _, d := range db.VisibleModules(id, mod) {
 		name := ast.Name(d.Node)
 		file := d.Tree.Position(d.Node.Pos()).Filename
 		s = append(s, fmt.Sprintf("%s:%s", name, file))

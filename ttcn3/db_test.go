@@ -50,7 +50,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		db := ttcn3.DB{}
 		mod := moduleFrom("file1.ttcn3", "M1")
-		if defs := db.FindImportedDefinitions("E", mod); len(defs) != 0 {
+		if defs := db.VisibleModules("E", mod); len(defs) != 0 {
 			t.Errorf("Expected 0 definitions, got %v", defs)
 		}
 	})
@@ -59,7 +59,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 		db := ttcn3.DB{}
 		db.Index("file1.ttcn3", "file2.ttcn3", "file3.ttcn3")
 
-		expected := []string{"M2:file1.ttcn3"}
+		expected := []string{"M2:file1.ttcn3", "M1:file1.ttcn3", "M1:file2.ttcn3"}
 		actual := importedDefs(&db, "E", "M1")
 		if !equal(actual, expected) {
 			t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", expected, actual)
@@ -73,7 +73,7 @@ func TestFindImportedDefinitions(t *testing.T) {
 		db.Modules["M2"]["file3.ttcn3"] = true // false positiv entry
 		db.Names["E"]["file3.ttcn3"] = true    // false positiv entry
 
-		expected := []string{"M2:file1.ttcn3"}
+		expected := []string{"M2:file1.ttcn3", "M1:file1.ttcn3", "M1:file2.ttcn3"}
 		actual := importedDefs(&db, "E", "M1")
 		if !equal(actual, expected) {
 			t.Errorf("Mismatch:\n\twant=%v,\n\t got=%v", expected, actual)
@@ -122,6 +122,10 @@ func TestLookup(t *testing.T) {
 			input: `module M1 {type ¶x integer; import from x all}`,
 			want:  []string{"x1"}},
 		{
+			name:  "imports",
+			input: `module M2 {} module M1 {import from ¶M2 all}`,
+			want:  []string{"M20", "M21"}},
+		{
 			name: "imports",
 			input: `module M1 {type ¶x integer}
 				module M1 {import from x all}`,
@@ -133,7 +137,7 @@ func TestLookup(t *testing.T) {
 		{
 			name:  "imports",
 			input: `module x {} module x {import from x all; var integer x := ¶x}`,
-			want:  []string{"x1", "x2", "x3"}},
+			want:  []string{"x0", "x1", "x2", "x3"}},
 		{
 			name:  "dot",
 			input: `module M {var integer x := ¶M.x}`,

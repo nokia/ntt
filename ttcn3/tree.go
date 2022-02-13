@@ -50,7 +50,7 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 
 func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
 	f := &finder{DB: db, v: make(map[ast.Node]bool)}
-	return f.findDefinitions(n, tree)
+	return f.lookup(n, tree)
 
 }
 
@@ -254,7 +254,11 @@ type finder struct {
 	v map[ast.Node]bool
 }
 
-func (f *finder) findDefinitions(n ast.Expr, tree *Tree) []*Definition {
+func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
+	if n == nil {
+		return nil
+	}
+
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
 		return f.dot(n, tree)
@@ -289,35 +293,14 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 		defs = append(defs, found...)
 	}
 
+	// Find definitions in visible files.
 	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
-		// TTCN-3 standard requires, that all global definition may have a module prefix.
-		if id.String() == ast.Name(mod) {
-			defs = append(defs, &Definition{
-				Ident: mod.Name,
-				Node:  mod,
-				Tree:  tree,
-			})
-		}
-		// Find defintions of files of the same module
-		for file := range f.Modules[ast.Name(mod)] {
-			tree := ParseFile(file)
-			for _, m := range tree.Modules() {
-				if !f.v[m] && ast.Name(m) == ast.Name(mod) {
-					found := Definitions(id.String(), m, tree)
-					for _, d := range found {
-						if _, ok := d.Node.(*ast.ImportDecl); !ok {
-							defs = append(defs, d)
-						}
-					}
-				}
-			}
-		}
-
-		// Find definitions in imported files.
-		for _, m := range f.FindImportedDefinitions(id.String(), mod) {
-			// TTCN-3 standard requires, that all global definition may have a module prefix.
+		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
 				defs = append(defs, m)
+			}
+			if m.Node == mod {
+				continue
 			}
 			defs = append(defs, Definitions(id.String(), m.Node, m.Tree)...)
 		}
@@ -329,7 +312,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 // findType returns all type definitions refered by expression n.
 func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Definition {
 	var result []*Definition
-	candidates := f.findDefinitions(n.X, tree)
+	candidates := f.lookup(n.X, tree)
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
 			if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
@@ -346,7 +329,7 @@ func (f *finder) typeOf(def *Definition) []*Definition {
 	}
 
 	if x, ok := def.Node.(ast.Expr); ok {
-		return f.findDefinitions(x, def.Tree)
+		return f.lookup(x, def.Tree)
 	}
 
 	return []*Definition{def}
