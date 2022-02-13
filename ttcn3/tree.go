@@ -339,24 +339,69 @@ func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Definition {
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
 			//fmt.Printf("XXXXX %T\n", t.Node)
-			switch n := t.Node.(type) {
-			case *ast.Field:
-				if l, ok := n.Type.(*ast.ListSpec); ok {
-					result = append(result, &Definition{Node: l.ElemType, Tree: t.Tree})
-				}
+			//switch n := t.Node.(type) {
+			//case *ast.Field:
+			if l, ok := t.Node.(*ast.ListSpec); ok {
+				result = append(result, &Definition{Node: l.ElemType, Tree: t.Tree})
 			}
+			//}
 		}
 	}
 	return result
 }
 func (f *finder) typeOf(def *Definition) []*Definition {
-	if t := def.Type(); t != nil {
-		def = t
-	}
+	var result []*Definition
 
-	if x, ok := def.Node.(ast.Expr); ok {
-		return f.lookup(x, def.Tree)
-	}
+	q := []*Definition{def}
 
-	return []*Definition{def}
+	for len(q) > 0 {
+
+		def := q[0]
+		q = q[1:]
+
+		switch n := def.Node.(type) {
+		case *ast.TemplateDecl:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.ValueDecl:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.FormalPar:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.Field:
+			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
+
+		case *ast.SubTypeDecl:
+			if n.Field != nil {
+				q = append(q, &Definition{Node: n.Field.Type, Tree: def.Tree})
+			}
+
+		case *ast.FuncDecl:
+			if n.Return != nil {
+				q = append(q, &Definition{Node: n.Return.Type, Tree: def.Tree})
+			}
+
+		case *ast.SignatureDecl:
+			if n.Return != nil {
+				q = append(q, &Definition{Node: n.Return.Type, Tree: def.Tree})
+			}
+
+		case ast.Expr:
+			q = append(q, f.lookup(n, def.Tree)...)
+
+		case *ast.BehaviourSpec,
+			*ast.BehaviourTypeDecl,
+			*ast.ComponentTypeDecl,
+			*ast.EnumSpec,
+			*ast.EnumTypeDecl,
+			*ast.Module,
+			*ast.PortTypeDecl,
+			*ast.ListSpec,
+			*ast.StructSpec,
+			*ast.StructTypeDecl:
+			result = append(result, &Definition{Node: n, Tree: def.Tree})
+		}
+	}
+	return result
 }
