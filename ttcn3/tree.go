@@ -278,7 +278,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return f.globals(n, tree)
 
 	case *ast.IndexExpr:
-		return nil
+		return f.index(n, tree)
 
 	case *ast.CallExpr:
 		return nil
@@ -320,7 +320,6 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	return defs
 }
 
-// findType returns all type definitions refered by expression n.
 func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Definition {
 	var result []*Definition
 	candidates := f.lookup(n.X, tree)
@@ -334,6 +333,22 @@ func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Definition {
 	return result
 }
 
+func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Definition {
+	var result []*Definition
+	candidates := f.lookup(n.X, tree)
+	for _, c := range candidates {
+		for _, t := range f.typeOf(c) {
+			//fmt.Printf("XXXXX %T\n", t.Node)
+			switch n := t.Node.(type) {
+			case *ast.Field:
+				if l, ok := n.Type.(*ast.ListSpec); ok {
+					result = append(result, &Definition{Node: l.ElemType, Tree: t.Tree})
+				}
+			}
+		}
+	}
+	return result
+}
 func (f *finder) typeOf(def *Definition) []*Definition {
 	if t := def.Type(); t != nil {
 		def = t

@@ -185,15 +185,19 @@ func TestLookup(t *testing.T) {
 			want:  []string{"x0"}},
 		{
 			name:  "index",
-			input: `module M { type record of record {int x} RoR; control { var M.R r; r.¶x := 23 }}`,
+			input: `module M { type record of record {int x} R; control { var M.R r; r.¶x := 23 }}`,
 			want:  []string{}},
 		{
 			name:  "index",
-			input: `module M { type record of record {int x} RoR; control { var M.R r; r[-].¶x := 23 }}`,
+			input: `module M { type record of record {int x} R; control { var M.R r; r[-].¶x := 23 }}`,
 			want:  []string{"x0"}},
 		{
 			name:  "index",
-			input: `module M { type record of record {int x} RoR; control { var M.R[-] r; r.¶x := 23 }}`,
+			input: `module M { type record of record {int x} R; control { var M.R[-] r; r.¶x := 23 }}`,
+			want:  []string{"x0"}},
+		{
+			name:  "index",
+			input: `module M { type record R {int x}; control { var M.R r[2]; r[0].¶x := 23 }}`,
 			want:  []string{"x0"}},
 	}
 	for _, tt := range tests {

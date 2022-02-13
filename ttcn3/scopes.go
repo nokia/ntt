@@ -306,6 +306,7 @@ func (d *Definition) Type() *Definition {
 		*ast.Field,
 		*ast.Module,
 		*ast.PortTypeDecl,
+		*ast.ListSpec,
 		*ast.StructSpec,
 		*ast.StructTypeDecl:
 		return &Definition{Node: n, Tree: d.Tree}
