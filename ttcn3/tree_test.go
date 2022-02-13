@@ -207,6 +207,28 @@ func TestLookup(t *testing.T) {
 			name:  "index",
 			input: `module M { type record R {int x}; control { var M.R r[2]; r[0].¶x := 23 }}`,
 			want:  []string{"x0"}},
+		{
+			name:  "components",
+			input: `type component C { var int x; }; function f() runs on C { ¶x }`,
+			want:  []string{"x0"}},
+		{
+			name: "components",
+			input: `type component C extends D, E {}
+			        type component D { var int x; }
+			        type component E { var int x; };
+				function f(int x) runs on C { while (true) {¶x} }`,
+			want: []string{"x0", "x1", "x2"}},
+		{
+			name: "components",
+			input: `type record R {int x}
+			        type component C {var R r}
+				function f() runs on C { while (true) {r.¶x} }`,
+			want: []string{"x0"}},
+		{
+			name: "components",
+			input: `type record R {int x}
+				function f() runs on R { while (true) {¶x} }`,
+			want: []string{"x0"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
