@@ -50,7 +50,7 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 
 func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
 	f := &finder{DB: db, v: make(map[ast.Node]bool)}
-	return f.findDefinitions(n, tree)
+	return f.lookup(n, tree)
 
 }
 
@@ -254,7 +254,7 @@ type finder struct {
 	v map[ast.Node]bool
 }
 
-func (f *finder) findDefinitions(n ast.Expr, tree *Tree) []*Definition {
+func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 	if n == nil {
 		return nil
 	}
@@ -312,7 +312,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 // findType returns all type definitions refered by expression n.
 func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Definition {
 	var result []*Definition
-	candidates := f.findDefinitions(n.X, tree)
+	candidates := f.lookup(n.X, tree)
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
 			if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
@@ -329,7 +329,7 @@ func (f *finder) typeOf(def *Definition) []*Definition {
 	}
 
 	if x, ok := def.Node.(ast.Expr); ok {
-		return f.findDefinitions(x, def.Tree)
+		return f.lookup(x, def.Tree)
 	}
 
 	return []*Definition{def}
