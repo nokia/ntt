@@ -161,6 +161,14 @@ func TestLookup(t *testing.T) {
 			input: `module R {type record R {int x}; type R.¶x x}`,
 			want:  []string{"x0", "x2"}},
 		{
+			name: "dot",
+			input: `module R {
+					type record R {int x}
+					type R Foo;
+					var Foo f := f.¶x;
+				}`,
+			want: []string{"x0"}},
+		{
 			name:  "dot",
 			input: `module R {type record R {int x}; type R.R.¶x x}`,
 			want:  []string{"x0"}},
