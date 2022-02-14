@@ -385,7 +385,7 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
 
 			} else {
-				def := tokv.db.FindDefinitions(node, tokv.tree, tokv.nodeStack...)
+				def := tokv.tree.LookupWithDB(node, tokv.db)
 				if len(def) > 0 {
 					switch def[0].Node.(type) {
 					case *ast.Field:
