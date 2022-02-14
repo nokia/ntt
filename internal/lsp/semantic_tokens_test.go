@@ -98,6 +98,7 @@ func TestFullModuleKwTypeId(t *testing.T) {
 func TestConstAndTemplDecl(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
+		type integer X;
 		type X Y;
 		type record MyRec {
 			integer i
@@ -116,6 +117,9 @@ func TestConstAndTemplDecl(t *testing.T) {
 			0, 0, 6, uint32(lsp.Keyword), 0,
 			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
 			2, 2, 4, uint32(lsp.Keyword), 0,
+			0, 5, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 8, 1, uint32(lsp.Type), uint32(lsp.Definition),
+			1, 2, 4, uint32(lsp.Keyword), 0,
 			0, 5, 1, uint32(lsp.Type), 0,
 			0, 2, 1, uint32(lsp.Type), uint32(lsp.Definition),
 			1, 2, 4, uint32(lsp.Keyword), 0,
@@ -135,6 +139,7 @@ func TestConstAndTemplDecl(t *testing.T) {
 			0, 7, 8, uint32(lsp.Keyword), 0,
 			0, 9, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
 			0, 8, 3, uint32(lsp.Parameter), uint32(lsp.Declaration),
+			1, 8, 3, uint32(lsp.Parameter), 0,
 		}, list.Data)
 }
 
@@ -143,7 +148,7 @@ func TestModuleIds(t *testing.T) {
     {
 		import from TestModuleIds_Module_1 all;
 		type TestModuleIds_Module_1.Byte MyByte;
-		function f(TestModuleIds_Module_1.Byte pb) := {
+		function f(TestModuleIds_Module_1.Byte pb) {
 			var TestModuleIds_Module_1.MyRec r;
 			r.i := pb;
 		}
@@ -163,19 +168,20 @@ func TestModuleIds(t *testing.T) {
 			0, 7, 4, uint32(lsp.Keyword), 0,
 			0, 5, 22, uint32(lsp.Namespace), 0,
 			0, 23, 3, uint32(lsp.Keyword), 0, //all
-			1, 2, 4, uint32(lsp.Keyword), 0, // type
+			1, 2, 4, uint32(lsp.Keyword), 0, // type line 3
 			0, 5, 22, uint32(lsp.Namespace), 0, //
 			0, 23, 4, uint32(lsp.Type), 0,
 			0, 5, 6, uint32(lsp.Type), uint32(lsp.Definition),
-			1, 2, 8, uint32(lsp.Keyword), 0,
+			1, 2, 8, uint32(lsp.Keyword), 0, // line 4
 			0, 9, 1, uint32(lsp.Function), uint32(lsp.Definition),
 			0, 2, 22, uint32(lsp.Namespace), 0,
 			0, 23, 4, uint32(lsp.Type), 0,
 			0, 5, 2, uint32(lsp.Parameter), uint32(lsp.Declaration), // pb
-			1, 3, 3, uint32(lsp.Keyword), 0, //var
+			1, 3, 3, uint32(lsp.Keyword), 0, //var line 5
 			0, 4, 22, uint32(lsp.Namespace), 0,
 			0, 23, 5, uint32(lsp.Type), uint32(lsp.Undefined),
 			0, 6, 1, uint32(lsp.Variable), uint32(lsp.Declaration),
+			1, 10, 2, uint32(lsp.Parameter), 0,
 		}, list.Data)
 }
 
@@ -287,9 +293,9 @@ func TestPortTypeDeclSemTok(t *testing.T) {
 			0, 4, 5, uint32(lsp.Keyword), 0,
 			0, 7, 2, uint32(lsp.Keyword), 0,
 			0, 3, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
-			0, 8, 2, uint32(lsp.Parameter), uint32(lsp.Definition),
+			0, 8, 2, uint32(lsp.Parameter), uint32(lsp.Declaration),
 			0, 4, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
-			0, 8, 2, uint32(lsp.Parameter), uint32(lsp.Definition),
+			0, 8, 2, uint32(lsp.Parameter), uint32(lsp.Declaration),
 			1, 2, 7, uint32(lsp.Keyword), 0,
 			0, 8, 8, uint32(lsp.Type), 0}, list.Data)
 }

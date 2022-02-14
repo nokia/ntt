@@ -255,6 +255,17 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		}
 		tokv.popNodeStack()
 		return false
+	case *ast.FormalPar:
+		if node.Type != nil {
+			ast.Inspect(node.Type, tokv.VisitModuleDefs)
+		}
+		if node.Name != nil {
+			begin := tokv.tree.Position(node.Name.Pos())
+			end := tokv.tree.Position(node.Name.End())
+			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Declaration))...)
+		}
+		tokv.popNodeStack()
+		return false
 	case *ast.StructTypeDecl:
 		if node.Name != nil {
 			begin = tokv.tree.Position(node.Name.Pos())
@@ -276,10 +287,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			}
 		}
 		if node.Type != nil {
-			tokv.actualToken = Type
-			tokv.actualModif = Undefined
+			//tokv.actualModif = Undefined
 			ast.Inspect(node.Type, tokv.VisitModuleDefs)
-			tokv.actualToken = None
 		}
 		if isSubType {
 			if node.Name != nil {
@@ -320,7 +329,7 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, uint32(Definition))...)
 		}
 		if node.Params != nil {
-			ast.Inspect(node.Params, tokv.getFormalPars)
+			ast.Inspect(node.Params, tokv.VisitModuleDefs)
 		}
 		if node.Return != nil {
 			ast.Inspect(node.Return, tokv.VisitModuleDefs)
@@ -342,12 +351,14 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Declaration|Readonly))...)
 		}
 		if node.Params != nil {
-			ast.Inspect(node.Params, tokv.getFormalPars)
+			ast.Inspect(node.Params, tokv.VisitModuleDefs)
+		}
+		if node.Value != nil {
+			ast.Inspect(node.Value, tokv.VisitModuleDefs)
 		}
 		tokv.popNodeStack()
 		return false
 	case *ast.ValueDecl:
-		tokv.actualToken = Type
 		ast.Inspect(node.Type, tokv.VisitModuleDefs)
 		tokv.actualToken = Variable
 		tokv.actualModif = Declaration
@@ -388,12 +399,12 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 				def := tokv.tree.LookupWithDB(node, tokv.db)
 				if len(def) > 0 {
 					switch def[0].Node.(type) {
-					case *ast.Field:
+					case *ast.StructTypeDecl, *ast.Field:
 						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
 					case *ast.ImportDecl:
 						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
 					case *ast.FormalPar:
-						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Definition))...)
+						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, 0)...)
 					}
 				}
 			}
@@ -410,39 +421,17 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 	return true
 }
 
-func (tokv *SemTokVisitor) getFormalPars(nt ast.Node) bool {
-	if nt == nil {
-		tokv.popNodeStack()
-		return false
-	}
-	tokv.pushNodeStack(nt)
-	switch fpars := nt.(type) {
-	case *ast.FormalPar:
-		if fpars.Type != nil {
-			tokv.actualToken = Type
-			ast.Inspect(fpars.Type, tokv.VisitModuleDefs)
-			tokv.actualToken = None
-		}
-		if fpars.Name != nil {
-			begin := tokv.tree.Position(fpars.Name.Pos())
-			end := tokv.tree.Position(fpars.Name.End())
-			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Declaration))...)
-		}
-		tokv.popNodeStack()
-		return false
-	}
-	return true
-}
-
 func NewSemTokVisitor(tree *ttcn3.Tree, db *ttcn3.DB, txtRange protocol.Range) *SemTokVisitor {
 	return &SemTokVisitor{
-		tree:      tree,
-		db:        db,
-		Data:      make([]uint32, 0, 20),
-		startOffs: tree.Pos(int(txtRange.Start.Line+1), int(txtRange.Start.Character+1)),
-		endOffs:   tree.Pos(int(txtRange.End.Line+1), int(txtRange.End.Character+1)),
-		tg:        TokenGen{},
-		nodeStack: make([]ast.Node, 0, 10)}
+		tree:        tree,
+		db:          db,
+		actualToken: None,
+		actualModif: Undefined,
+		Data:        make([]uint32, 0, 20),
+		startOffs:   tree.Pos(int(txtRange.Start.Line+1), int(txtRange.Start.Character+1)),
+		endOffs:     tree.Pos(int(txtRange.End.Line+1), int(txtRange.End.Character+1)),
+		tg:          TokenGen{},
+		nodeStack:   make([]ast.Node, 0, 10)}
 }
 
 func NewSemanticTokensFromCurrentModule(tree *ttcn3.Tree, db *ttcn3.DB, suite *ntt.Suite, fileName string, txtRange protocol.Range) *protocol.SemanticTokens {
