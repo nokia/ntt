@@ -70,20 +70,6 @@ func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 	return nil
 }
 
-// Lookup returns the definitions of the given expression. For handling imports
-// and multiple modules, use LookupWithDB.
-func (tree *Tree) Lookup(n ast.Expr) []*Definition {
-	f := &finder{DB: &DB{}, cache: make(map[ast.Node][]*Definition)}
-	return f.lookup(n, tree)
-}
-
-// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
-func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
-	f := &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
-	return f.lookup(n, tree)
-
-}
-
 func (t *Tree) Modules() []*Definition {
 	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
@@ -276,6 +262,20 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	}
 
 	return path
+}
+
+// Lookup returns the definitions of the given expression. For handling imports
+// and multiple modules, use LookupWithDB.
+func (tree *Tree) Lookup(n ast.Expr) []*Definition {
+	f := &finder{DB: &DB{}, cache: make(map[ast.Node][]*Definition)}
+	return f.lookup(n, tree)
+}
+
+// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
+func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
+	f := &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
+	return f.lookup(n, tree)
+
 }
 
 type finder struct {

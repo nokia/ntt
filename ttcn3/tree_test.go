@@ -209,14 +209,16 @@ func TestLookup(t *testing.T) {
 			want:  []string{"x0"}},
 		{
 			name:  "components",
-			input: `type component C { var int x; }; function f() runs on C { ¶x }`,
+			input: `module M {type component C { var int x; }; function f() runs on C { ¶x }}`,
 			want:  []string{"x0"}},
 		{
 			name: "components",
-			input: `type component C extends D, E {}
-			        type component D { var int x; }
-			        type component E { var int x; };
-				function f(int x) runs on C { while (true) {¶x} }`,
+			input: `module M {
+			           type component C extends D, E {}
+			           type component D { var int x; }
+			           type component E { var int x; };
+				   function f(int x) runs on C { while (true) {¶x} }
+				}`,
 			want: []string{"x0", "x1", "x2"}},
 		{
 			name: "components",
