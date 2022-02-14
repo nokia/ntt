@@ -22,6 +22,10 @@ type Definition struct {
 	Next *Definition
 }
 
+func Definitions(id string, n ast.Node, t *Tree) []*Definition {
+	return NewScope(n, t).Lookup(id)
+}
+
 func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 	if scp.Names == nil {
 		scp.Names = make(map[string]*Definition)
@@ -266,45 +270,4 @@ func (scp *Scope) add(n ast.Node) error {
 	}
 
 	return fmt.Errorf("%T is not a declaration", n)
-}
-
-func (d *Definition) Type() *Definition {
-	switch n := d.Node.(type) {
-	case *ast.TemplateDecl:
-		return &Definition{Node: n.Type, Tree: d.Tree}
-
-	case *ast.ValueDecl:
-		return &Definition{Node: n.Type, Tree: d.Tree}
-
-	case *ast.FormalPar:
-		return &Definition{Node: n.Type, Tree: d.Tree}
-
-	case *ast.SubTypeDecl:
-		if n.Field != nil {
-			return &Definition{Node: n.Field.Type, Tree: d.Tree}
-		}
-
-	case *ast.FuncDecl:
-		if n.Return != nil {
-			return &Definition{Node: n.Return.Type, Tree: d.Tree}
-		}
-
-	case *ast.SignatureDecl:
-		if n.Return != nil {
-			return &Definition{Node: n.Return.Type, Tree: d.Tree}
-		}
-
-	case *ast.BehaviourSpec,
-		*ast.BehaviourTypeDecl,
-		*ast.ComponentTypeDecl,
-		*ast.EnumSpec,
-		*ast.EnumTypeDecl,
-		*ast.Field,
-		*ast.Module,
-		*ast.PortTypeDecl,
-		*ast.StructSpec,
-		*ast.StructTypeDecl:
-		return &Definition{Node: n, Tree: d.Tree}
-	}
-	return nil
 }
