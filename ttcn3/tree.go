@@ -50,6 +50,16 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	return t.parents[n]
 }
 
+// ModuleOf returns the module of the given node, by walking up the tree.
+func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
+	for n := n; n != nil; n = t.ParentOf(n) {
+		if m, ok := n.(*ast.Module); ok {
+			return m
+		}
+	}
+	return nil
+}
+
 // Lookup returns the definitions of the given expression. For handling imports
 // and multiple modules, use LookupWithDB.
 func (tree *Tree) Lookup(n ast.Expr) []*Definition {
