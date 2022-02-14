@@ -351,8 +351,22 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 
 	// Traverse alternate scope hierarchies (runs on, extends, etc.)
 	for len(q) > 0 {
-		_ = q[0]
+		def := q[0]
 		q = q[1:]
+
+		n, ok := def.Node.(ast.Expr)
+		if !ok {
+			continue
+		}
+
+		for _, d := range f.lookup(n, def.Tree) {
+			defs = append(defs, Definitions(id.String(), d.Node, d.Tree)...)
+			if c, ok := d.Node.(*ast.ComponentTypeDecl); ok {
+				for _, e := range c.Extends {
+					q = append(q, &Definition{Node: e, Tree: d.Tree})
+				}
+			}
+		}
 	}
 
 	// Find definitions in visible files.
