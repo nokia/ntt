@@ -320,16 +320,16 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	var defs []*Definition
 
 	visited := make(map[ast.Node]bool)
-
 	for q := []*Definition{{Node: tree.ParentOf(id), Tree: tree}}; len(q) > 0; {
 		d := q[0]
 		q = q[1:]
+
 		if visited[d.Node] {
 			continue
 		}
 		visited[d.Node] = true
 
-		q = append(q, &Definition{Node: d.Node, Tree: d.Tree})
+		q = append(q, &Definition{Node: d.Tree.ParentOf(d.Node), Tree: d.Tree})
 
 		switch n := d.Node.(type) {
 		case *ast.FuncDecl:
