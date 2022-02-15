@@ -9,6 +9,14 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
+var debugLevel = log.DebugLevel
+
+func init() {
+	if s := env.Getenv("NTT_TRACE"); s != "" {
+		debugLevel = log.TraceLevel
+	}
+}
+
 func (s *Server) setTrace(ctx context.Context, params *protocol.SetTraceParams) error {
 	setTrace(params.Value)
 	return nil
