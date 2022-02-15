@@ -313,7 +313,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	}
 
 	// Find definitions in visible files.
-	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
+	if mod := tree.ModuleOf(id); mod != nil {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
 				defs = append(defs, m)
