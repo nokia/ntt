@@ -272,7 +272,7 @@ func listTests(cmd *cobra.Command, args []string) error {
 				return true
 			case *ast.ModuleDef, *ast.GroupDecl:
 				return true
-			case ast.NodeList:
+			case *ast.NodeList:
 				return true
 			}
 			return false
@@ -283,21 +283,12 @@ func listTests(cmd *cobra.Command, args []string) error {
 
 func listModules(cmd *cobra.Command, args []string) error {
 	for _, tree := range trees {
-		if tree.Err != nil {
-			return tree.Err
-		}
-		if len(tree.Root) == 0 {
-			continue
-		}
-		mod, ok := tree.Root[0].(*ast.Module)
-		if !ok {
-			continue
-		}
-
-		name := mod.Name.String()
-		tags := doc.FindAllTags(mod.Tok.Comments())
-		if match(name, tags) {
-			printItem(tree.FileSet, mod.Pos(), tags, name)
+		for _, mod := range tree.Modules() {
+			name := mod.Name.String()
+			tags := doc.FindAllTags(mod.Tok.Comments())
+			if match(name, tags) {
+				printItem(tree.FileSet, mod.Pos(), tags, name)
+			}
 		}
 	}
 	return nil
@@ -326,7 +317,7 @@ func listImports(cmd *cobra.Command, args []string) error {
 				return true
 			case *ast.ModuleDef, *ast.GroupDecl:
 				return true
-			case ast.NodeList:
+			case *ast.NodeList:
 				return true
 			}
 			return false

@@ -12,7 +12,7 @@ import (
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
 	FileSet *loc.FileSet
-	Root    ast.NodeList
+	Root    ast.Node
 	Names   map[string]bool
 	Err     error
 
@@ -32,9 +32,7 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 		var visit func(n ast.Node)
 		visit = func(n ast.Node) {
 			for _, c := range ast.Children(n) {
-				switch c.(type) {
-				case ast.Token, ast.NodeList:
-				default:
+				if _, ok := c.(ast.Token); !ok {
 					t.parents[c] = n
 				}
 				visit(c)
@@ -43,8 +41,7 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 		visit(t.Root)
 	}
 
-	switch n.(type) {
-	case ast.Token, ast.NodeList:
+	if _, ok := n.(ast.Token); ok {
 		return nil
 	}
 	return t.parents[n]
@@ -307,11 +304,6 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	parents := ast.Parents(id, tree.Root)
-	if len(parents) > 0 {
-		if _, ok := parents[len(parents)-1].(ast.NodeList); ok {
-			parents = parents[:len(parents)-1]
-		}
-	}
 
 	var defs []*Definition
 	// Find definitions in current file by walking up the scopes.
@@ -321,7 +313,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	}
 
 	// Find definitions in visible files.
-	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
+	if mod := tree.ModuleOf(id); mod != nil {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
 				defs = append(defs, m)

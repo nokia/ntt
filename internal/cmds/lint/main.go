@@ -11,11 +11,11 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/nokia/ntt/ttcn3/token"
-	"github.com/nokia/ntt/project"
-	"github.com/nokia/ntt/ttcn3"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -229,184 +229,179 @@ func lint(cmd *cobra.Command, args []string) error {
 			}
 
 			tree := ttcn3.ParseFile(files[i])
-			if len(tree.Root) == 0 {
-				return
-			}
-			mod, ok := tree.Root[0].(*ast.Module)
-			if !ok {
-				return
-			}
+			for _, mod := range tree.Modules() {
 
-			if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Name)) {
-				return
-			}
-
-			stack := make([]ast.Node, 1, 64)
-			cc := make(map[ast.Node]int)
-			ccID := ast.Node(mod)
-
-			caseElse := make(map[ast.Node]int)
-			var selectID *ast.SelectStmt
-
-			ast.Inspect(mod, func(n ast.Node) bool {
-				if n == nil {
-					stack = stack[:len(stack)-1]
-					return false
+				if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Name)) {
+					continue
 				}
 
-				stack = append(stack, n)
-				fset := tree.FileSet
+				stack := make([]ast.Node, 1, 64)
+				cc := make(map[ast.Node]int)
+				ccID := ast.Node(mod)
 
-				switch n := n.(type) {
-				case *ast.Ident:
-					checkUsage(fset, n)
+				caseElse := make(map[ast.Node]int)
+				var selectID *ast.SelectStmt
 
-				case *ast.Module:
-					checkNaming(fset, n, style.Naming.Modules)
-					checkBraces(fset, n.LBrace, n.RBrace)
-
-				case *ast.FuncDecl:
-					ccID = n
-					cc[ccID] = 1 // Intial McCabe value
-
-					switch n.Kind.Kind {
-					case token.TESTCASE:
-						checkNaming(fset, n, style.Naming.Tests)
-						checkTags(fset, n, style.Tags.Tests)
-					case token.FUNCTION:
-						checkNaming(fset, n, style.Naming.Functions)
-					case token.ALTSTEP:
-						checkNaming(fset, n, style.Naming.Altsteps)
+				ast.Inspect(mod, func(n ast.Node) bool {
+					if n == nil {
+						stack = stack[:len(stack)-1]
+						return false
 					}
 
-					checkLines(fset, n)
+					stack = append(stack, n)
+					fset := tree.FileSet
 
-				case *ast.FormalPar:
-					checkNaming(fset, n, style.Naming.Parameters)
+					switch n := n.(type) {
+					case *ast.Ident:
+						checkUsage(fset, n)
 
-					// We do not descent any further,
-					// because we do not want to count
-					// cyclomatic complexity for default
-					// values.
-					return false
+					case *ast.Module:
+						checkNaming(fset, n, style.Naming.Modules)
+						checkBraces(fset, n.LBrace, n.RBrace)
 
-				case *ast.PortTypeDecl:
-					checkNaming(fset, n, style.Naming.PortTypes)
-					checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.FuncDecl:
+						ccID = n
+						cc[ccID] = 1 // Intial McCabe value
 
-				case *ast.Declarator:
-					if len(stack) <= 2 {
+						switch n.Kind.Kind {
+						case token.TESTCASE:
+							checkNaming(fset, n, style.Naming.Tests)
+							checkTags(fset, n, style.Tags.Tests)
+						case token.FUNCTION:
+							checkNaming(fset, n, style.Naming.Functions)
+						case token.ALTSTEP:
+							checkNaming(fset, n, style.Naming.Altsteps)
+						}
+
+						checkLines(fset, n)
+
+					case *ast.FormalPar:
+						checkNaming(fset, n, style.Naming.Parameters)
+
+						// We do not descent any further,
+						// because we do not want to count
+						// cyclomatic complexity for default
+						// values.
+						return false
+
+					case *ast.PortTypeDecl:
+						checkNaming(fset, n, style.Naming.PortTypes)
+						checkBraces(fset, n.LBrace, n.RBrace)
+
+					case *ast.Declarator:
+						if len(stack) <= 2 {
+							return true
+						}
+
+						// The parent of a declarator should
+						// always be a ValueDecl.  If not, we
+						// have some internal issues, it's okay
+						// to panic then.
+						parent := stack[len(stack)-2].(*ast.ValueDecl)
+						scope := stack[:len(stack)-2]
+
+						switch {
+						case isPort(parent):
+							checkNaming(fset, n, style.Naming.Ports)
+						case isConst(parent):
+							switch {
+							case inGlobalScope(scope):
+								checkNaming(fset, n, style.Naming.GlobalConsts)
+							case inComponentScope(scope):
+								checkNaming(fset, n, style.Naming.ComponentConsts)
+							}
+						case isVarTemplate(parent):
+							checkNaming(fset, n, style.Naming.VarTemplates)
+						case isVar(parent):
+							switch {
+							case inComponentScope(scope):
+								checkNaming(fset, n, style.Naming.ComponentVars)
+							default:
+								checkNaming(fset, n, style.Naming.Locals)
+							}
+						}
+
 						return true
-					}
 
-					// The parent of a declarator should
-					// always be a ValueDecl.  If not, we
-					// have some internal issues, it's okay
-					// to panic then.
-					parent := stack[len(stack)-2].(*ast.ValueDecl)
-					scope := stack[:len(stack)-2]
+					case *ast.TemplateDecl:
+						checkNaming(fset, n, style.Naming.Templates)
 
-					switch {
-					case isPort(parent):
-						checkNaming(fset, n, style.Naming.Ports)
-					case isConst(parent):
-						switch {
-						case inGlobalScope(scope):
-							checkNaming(fset, n, style.Naming.GlobalConsts)
-						case inComponentScope(scope):
-							checkNaming(fset, n, style.Naming.ComponentConsts)
+					case *ast.BlockStmt:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.CompositeLiteral:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.ExceptExpr:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.SelectStmt:
+						selectID = n
+						caseElse[selectID] = 0
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.StructSpec:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.EnumSpec:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.ModuleParameterGroup:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.StructTypeDecl:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.EnumTypeDecl:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.ImportDecl:
+						checkBraces(fset, n.LBrace, n.RBrace)
+						checkImport(fset, n, mod)
+					case *ast.GroupDecl:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.WithSpec:
+						checkBraces(fset, n.LBrace, n.RBrace)
+					case *ast.ParenExpr:
+						if n.LParen.Kind == token.LBRACE {
+							checkBraces(fset, n.LParen, n.RParen)
 						}
-					case isVarTemplate(parent):
-						checkNaming(fset, n, style.Naming.VarTemplates)
-					case isVar(parent):
-						switch {
-						case inComponentScope(scope):
-							checkNaming(fset, n, style.Naming.ComponentVars)
-						default:
-							checkNaming(fset, n, style.Naming.Locals)
-						}
-					}
 
+					case *ast.ModuleDef:
+						// Reset ID for counting cyclomatic complexity.
+						ccID = mod
+
+					case *ast.BinaryExpr:
+						if n.Op.Kind == token.AND || n.Op.Kind == token.OR {
+							cc[ccID]++
+						}
+
+					case *ast.IfStmt:
+						cc[ccID]++
+
+					case *ast.CaseClause:
+						if isCaseElse(n) {
+							caseElse[selectID]++
+						} else {
+							// Do not count case else for complexity
+							cc[ccID]++
+						}
+
+					case *ast.CommClause:
+						if style.Complexity.IgnoreGuards {
+							return true
+						}
+
+						// Do not count else-guards
+						if n.Else.IsValid() {
+							return true
+						}
+						// Every AltGuard increases cyclomatic complexity.
+						cc[ccID]++
+
+						// Every AltGuard expressions also increases complexity.
+						if n.X != nil {
+							cc[ccID]++
+						}
+
+					}
 					return true
+				})
 
-				case *ast.TemplateDecl:
-					checkNaming(fset, n, style.Naming.Templates)
-
-				case *ast.BlockStmt:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.CompositeLiteral:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.ExceptExpr:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.SelectStmt:
-					selectID = n
-					caseElse[selectID] = 0
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.StructSpec:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.EnumSpec:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.ModuleParameterGroup:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.StructTypeDecl:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.EnumTypeDecl:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.ImportDecl:
-					checkBraces(fset, n.LBrace, n.RBrace)
-					checkImport(fset, n, mod)
-				case *ast.GroupDecl:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.WithSpec:
-					checkBraces(fset, n.LBrace, n.RBrace)
-				case *ast.ParenExpr:
-					if n.LParen.Kind == token.LBRACE {
-						checkBraces(fset, n.LParen, n.RParen)
-					}
-
-				case *ast.ModuleDef:
-					// Reset ID for counting cyclomatic complexity.
-					ccID = mod
-
-				case *ast.BinaryExpr:
-					if n.Op.Kind == token.AND || n.Op.Kind == token.OR {
-						cc[ccID]++
-					}
-
-				case *ast.IfStmt:
-					cc[ccID]++
-
-				case *ast.CaseClause:
-					if isCaseElse(n) {
-						caseElse[selectID]++
-					} else {
-						// Do not count case else for complexity
-						cc[ccID]++
-					}
-
-				case *ast.CommClause:
-					if style.Complexity.IgnoreGuards {
-						return true
-					}
-
-					// Do not count else-guards
-					if n.Else.IsValid() {
-						return true
-					}
-					// Every AltGuard increases cyclomatic complexity.
-					cc[ccID]++
-
-					// Every AltGuard expressions also increases complexity.
-					if n.X != nil {
-						cc[ccID]++
-					}
-
-				}
-				return true
-			})
-
-			checkComplexity(tree.FileSet, cc)
-			checkCaseElse(tree.FileSet, caseElse)
+				checkComplexity(tree.FileSet, cc)
+				checkCaseElse(tree.FileSet, caseElse)
+			}
 		}(i)
 	}
 
