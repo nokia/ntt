@@ -323,44 +323,42 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 
 	for q := []*Definition{{Node: tree.ParentOf(id), Tree: tree}}; len(q) > 0; {
 		d := q[0]
-		n := d.Node
-		tree := d.Tree
-
-		if visited[n] {
+		q = q[1:]
+		if visited[d.Node] {
 			continue
 		}
-		visited[n] = true
+		visited[d.Node] = true
 
-		q = append(q[1:], &Definition{Node: n, Tree: tree})
+		q = append(q, &Definition{Node: d.Node, Tree: d.Tree})
 
 		switch n := d.Node.(type) {
 		case *ast.FuncDecl:
 			if n.RunsOn != nil {
-				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: d.Tree})
 			}
 			if n.System != nil {
-				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.System.Comp, Tree: d.Tree})
 			}
 			if n.Mtc != nil {
-				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: d.Tree})
 			}
 		case *ast.BehaviourSpec:
 			if n.RunsOn != nil {
-				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: d.Tree})
 			}
 			if n.System != nil {
-				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.System.Comp, Tree: d.Tree})
 			}
 		case *ast.BehaviourTypeDecl:
 			if n.RunsOn != nil {
-				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: d.Tree})
 			}
 			if n.System != nil {
-				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+				q = append(q, &Definition{Node: n.System.Comp, Tree: d.Tree})
 			}
 		case *ast.ComponentTypeDecl:
 			for _, e := range n.Extends {
-				q = append(q, &Definition{Node: e, Tree: tree})
+				q = append(q, &Definition{Node: e, Tree: d.Tree})
 			}
 
 		}
