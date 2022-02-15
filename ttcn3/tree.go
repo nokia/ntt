@@ -290,9 +290,10 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return nil
 	}
 
-	if results := f.cache[n]; results != nil {
+	if results, ok := f.cache[n]; ok {
 		return results
 	}
+	f.cache[n] = nil
 
 	var results []*Definition
 	switch n := n.(type) {
