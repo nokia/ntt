@@ -378,6 +378,11 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
 		}
+		tokv.actualToken = None
+		tokv.actualModif = Undefined
+		if node.Value != nil {
+			ast.Inspect(node.Value, tokv.VisitModuleDefs)
+		}
 		tokv.popNodeStack()
 		return false
 	case *ast.Ident:
@@ -392,21 +397,20 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 				/*} else if _, ok := (*tokv.modNameSet)[node.String()]; ok {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
 				*/
+			} else if def := tokv.tree.LookupWithDB(node, tokv.db); len(def) > 0 {
+				switch def[0].Node.(type) {
+				case *ast.StructTypeDecl, *ast.Field:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
+				case *ast.ImportDecl:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
+				case *ast.FormalPar:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, 0)...)
+				case *ast.FuncDecl:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, 0)...)
+				}
+
 			} else if tokv.actualToken != None {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), tokv.actualToken, uint32(tokv.actualModif))...)
-
-			} else {
-				def := tokv.tree.LookupWithDB(node, tokv.db)
-				if len(def) > 0 {
-					switch def[0].Node.(type) {
-					case *ast.StructTypeDecl, *ast.Field:
-						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
-					case *ast.ImportDecl:
-						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
-					case *ast.FormalPar:
-						tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, 0)...)
-					}
-				}
 			}
 		case token.UNIVERSAL:
 			if node.Tok2.Kind == token.CHARSTRING {
