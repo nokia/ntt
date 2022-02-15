@@ -297,11 +297,11 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 
 	var results []*Definition
 	switch n := n.(type) {
-	case *ast.SelectorExpr:
-		results = f.dot(n, tree)
-
 	case *ast.Ident:
 		results = f.globals(n, tree)
+
+	case *ast.SelectorExpr:
+		results = f.dot(n, tree)
 
 	case *ast.IndexExpr:
 		results = f.index(n, tree)
