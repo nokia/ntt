@@ -309,7 +309,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 	case *ast.CallExpr:
 		log.Debugf("%s: not implemented yet: %T\n", tree.Position(n.Pos()), n)
 	default:
-		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+		log.Debugf("%s: unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	}
 
 	f.cache[n] = results
