@@ -398,7 +398,7 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 				tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
 				*/
 			} else if def := tokv.tree.LookupWithDB(node, tokv.db); len(def) > 0 {
-				switch def[0].Node.(type) {
+				switch defNode := def[0].Node.(type) {
 				case *ast.StructTypeDecl, *ast.Field:
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
 				case *ast.ImportDecl:
@@ -407,6 +407,12 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, 0)...)
 				case *ast.FuncDecl:
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, 0)...)
+				case *ast.ValueDecl:
+					var modif SemanticTokenModifiers = Undefined
+					if (defNode.Kind.Kind == token.CONST) || (defNode.Kind.Kind == token.TEMPLATE) {
+						modif = Readonly
+					}
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(modif))...)
 				}
 
 			} else if tokv.actualToken != None {

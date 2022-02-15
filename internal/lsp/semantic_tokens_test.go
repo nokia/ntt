@@ -181,7 +181,8 @@ func TestModuleIds(t *testing.T) {
 			0, 4, 22, uint32(lsp.Namespace), 0,
 			0, 23, 5, uint32(lsp.Type), uint32(lsp.Undefined),
 			0, 6, 1, uint32(lsp.Variable), uint32(lsp.Declaration),
-			1, 10, 2, uint32(lsp.Parameter), 0,
+			1, 3, 1, uint32(lsp.Variable), 0,
+			0, 7, 2, uint32(lsp.Parameter), 0,
 		}, list.Data)
 }
 
@@ -311,12 +312,11 @@ func TestFunctionParams(t *testing.T) {
 		var charstring ch := p_ch;
 		ch := p_ch;
 		v_r1.ch1 := p_ch;
-		t_r1 := {p_ch};
+		t_r2 := {p_ch};
 		t_r2 := {ch1 := p_ch};
 		f(p_ch := p_ch);
 		return R:{p_ch}
 	}
-
 }`, `module TestFunctionParams_Module_1
 {
 	type record R {
@@ -354,10 +354,14 @@ func TestFunctionParams(t *testing.T) {
 			0, 4, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
 			0, 11, 2, uint32(lsp.Variable), uint32(lsp.Declaration),
 			0, 6, 4, uint32(lsp.Parameter), 0,
-			1, 8, 4, uint32(lsp.Parameter), 0,
-			1, 14, 4, uint32(lsp.Parameter), 0, // v_r1.ch1 := p_ch;
-			1, 11, 4, uint32(lsp.Parameter), 0,
-			1, 18, 4, uint32(lsp.Parameter), 0, // t_r2 := {ch1 := p_ch};
+			1, 2, 2, uint32(lsp.Variable), 0,
+			0, 6, 4, uint32(lsp.Parameter), 0,
+			1, 2, 4, uint32(lsp.Variable), 0,
+			0, 12, 4, uint32(lsp.Parameter), 0, // v_r1.ch1 := p_ch;
+			1, 2, 4, uint32(lsp.Variable), 0,
+			0, 9, 4, uint32(lsp.Parameter), 0,
+			1, 2, 4, uint32(lsp.Variable), 0,
+			0, 16, 4, uint32(lsp.Parameter), 0, // t_r2 := {ch1 := p_ch};
 			1, 2, 1, uint32(lsp.Function), 0,
 			0, 2, 4, uint32(lsp.Parameter), 0,
 			0, 8, 4, uint32(lsp.Parameter), 0, // f(p_ch := p_ch);
