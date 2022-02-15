@@ -63,13 +63,13 @@ func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 // Lookup returns the definitions of the given expression. For handling imports
 // and multiple modules, use LookupWithDB.
 func (tree *Tree) Lookup(n ast.Expr) []*Definition {
-	f := &finder{DB: &DB{}, v: make(map[ast.Node]bool)}
+	f := &finder{DB: &DB{}, cache: make(map[ast.Node][]*Definition)}
 	return f.lookup(n, tree)
 }
 
 // LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
 func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
-	f := &finder{DB: db, v: make(map[ast.Node]bool)}
+	f := &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
 	return f.lookup(n, tree)
 
 }
@@ -272,7 +272,7 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 
 type finder struct {
 	*DB
-	v map[ast.Node]bool
+	cache map[ast.Node][]*Definition
 }
 
 func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
@@ -280,22 +280,29 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return nil
 	}
 
-	switch n := n.(type) {
-	case *ast.SelectorExpr:
-		return f.dot(n, tree)
-
-	case *ast.Ident:
-		return f.globals(n, tree)
-
-	case *ast.IndexExpr:
-		return f.index(n, tree)
-
-	case *ast.CallExpr:
-		return nil
+	if results := f.cache[n]; results != nil {
+		return results
 	}
 
-	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
-	return nil
+	var results []*Definition
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		results = f.dot(n, tree)
+
+	case *ast.Ident:
+		results = f.globals(n, tree)
+
+	case *ast.IndexExpr:
+		results = f.index(n, tree)
+
+	case *ast.CallExpr:
+		log.Debugf("%s: not implemented yet: %T\n", tree.Position(n.Pos()), n)
+	default:
+		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+	}
+
+	f.cache[n] = results
+	return results
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
@@ -309,7 +316,6 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	var defs []*Definition
 	// Find definitions in current file by walking up the scopes.
 	for _, n := range parents {
-		f.v[n] = true
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
 	}
