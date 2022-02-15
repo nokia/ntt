@@ -117,11 +117,11 @@ func makeSliceMap(m map[string]map[string]bool) SliceMap {
 // Unwrap first node from NodeLists
 func unwrapFirst(n ast.Node) ast.Node {
 	switch n := n.(type) {
-	case ast.NodeList:
-		if len(n) == 0 {
+	case *ast.NodeList:
+		if len(n.Nodes) == 0 {
 			return nil
 		}
-		return unwrapFirst(n[0])
+		return unwrapFirst(n.Nodes[0])
 	case *ast.ExprStmt:
 		return unwrapFirst(n.Expr)
 	case *ast.DeclStmt:

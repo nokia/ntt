@@ -143,7 +143,7 @@ func (n *NodeList) Pos() loc.Pos {
 }
 
 func (n *NodeList) End() loc.Pos {
-	if tok := n.LastTok(); tok.IsValid() {
+	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
 	return loc.NoPos

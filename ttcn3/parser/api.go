@@ -134,6 +134,8 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *ast.Node
 		err = p.errors.Err()
 	}()
 
+	nodes = &ast.NodeList{}
+
 	// parse source
 	p.init(fset, filename, text, AllErrors)
 	for p.tok != token.EOF {
