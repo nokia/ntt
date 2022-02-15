@@ -260,8 +260,8 @@ func (scp *Scope) add(n ast.Node) error {
 			scp.add(n)
 		}
 
-	case ast.NodeList:
-		for _, n := range n {
+	case *ast.NodeList:
+		for _, n := range n.Nodes {
 			scp.add(n)
 		}
 

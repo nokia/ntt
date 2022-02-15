@@ -3,9 +3,9 @@ package interpreter
 import (
 	"math/big"
 
+	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
-	"github.com/nokia/ntt/runtime"
 )
 
 func Eval(n ast.Node, env runtime.Scope) runtime.Object {
@@ -64,9 +64,9 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		env.Set(n.Name.String(), val)
 		return nil
 
-	case ast.NodeList:
+	case *ast.NodeList:
 		var result runtime.Object
-		for _, stmt := range n {
+		for _, stmt := range n.Nodes {
 			result = eval(stmt, env)
 			if needBreak(result) {
 				return result

@@ -110,7 +110,7 @@ func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (ast.Expr, e
 	return p.parseExpr(), nil
 }
 
-func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeList, names map[string]bool, err error) {
+func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *ast.NodeList, names map[string]bool, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
 	}
@@ -137,7 +137,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeL
 	// parse source
 	p.init(fset, filename, text, AllErrors)
 	for p.tok != token.EOF {
-		nodes = append(nodes, p.parse())
+		nodes.Nodes = append(nodes.Nodes, p.parse())
 
 		if p.tok != token.EOF && !topLevelTokens[p.tok] {
 			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))
@@ -145,7 +145,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes ast.NodeL
 		}
 
 		if p.tok == token.COMMA || p.tok == token.SEMICOLON {
-			p.consumeTrivia(nodes[len(nodes)-1].LastTok())
+			p.consumeTrivia(nodes.Nodes[len(nodes.Nodes)-1].LastTok())
 		}
 
 	}

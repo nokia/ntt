@@ -135,8 +135,8 @@ func (info *Info) InsertTree(n ast.Node, scp Scope) error {
 	case *ast.ComponentTypeDecl:
 		return insertComponentTypeDecl(n, scp, info)
 
-	case ast.NodeList:
-		return insertNodes(n, scp, info).ErrorOrNil()
+	case *ast.NodeList:
+		return insertNodes(n.Nodes, scp, info).ErrorOrNil()
 
 	case *ast.ExprStmt:
 		return info.InsertTree(n.Expr, scp)
