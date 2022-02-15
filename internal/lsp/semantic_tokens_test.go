@@ -299,3 +299,69 @@ func TestPortTypeDeclSemTok(t *testing.T) {
 			1, 2, 7, uint32(lsp.Keyword), 0,
 			0, 8, 8, uint32(lsp.Type), 0}, list.Data)
 }
+
+func TestFunctionParams(t *testing.T) {
+	suite := buildSuite(t, `module Test
+{
+	import from TestFunctionParams_Module_1 all;
+
+	function f(charstring p_ch) return template charstring {
+		var R v_r1 := {p_ch};
+		var template R t_r2 := {ch1 := p_ch};
+		var charstring ch := p_ch;
+		ch := p_ch;
+		v_r1.ch1 := p_ch;
+		t_r1 := {p_ch};
+		t_r2 := {ch1 := p_ch};
+		f(p_ch := p_ch);
+		return R:{p_ch}
+	}
+
+}`, `module TestFunctionParams_Module_1
+{
+	type record R {
+		charstring ch1
+	};
+}`)
+
+	list := generateTokenList(t, suite, nil)
+
+	assert.Equal(t,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
+			2, 1, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Keyword), 0,
+			0, 5, 27, uint32(lsp.Namespace), 0,
+			0, 28, 3, uint32(lsp.Keyword), 0, //all
+			2, 1, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Function), uint32(lsp.Definition),
+			0, 2, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 11, 4, uint32(lsp.Parameter), uint32(lsp.Declaration),
+			0, 6, 6, uint32(lsp.Keyword), 0, // return
+			0, 7, 8, uint32(lsp.Keyword), 0, //  template
+			0, 9, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary), // charstring
+			1, 2, 3, uint32(lsp.Keyword), 0,
+			0, 4, 1, uint32(lsp.Type), 0,
+			0, 2, 4, uint32(lsp.Variable), uint32(lsp.Declaration),
+			0, 9, 4, uint32(lsp.Parameter), 0,
+			1, 2, 3, uint32(lsp.Keyword), 0,
+			0, 4, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Type), 0,
+			0, 2, 4, uint32(lsp.Variable), uint32(lsp.Declaration),
+			0, 16, 4, uint32(lsp.Parameter), 0, //var template R tr2
+			1, 2, 3, uint32(lsp.Keyword), 0,
+			0, 4, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 11, 2, uint32(lsp.Variable), uint32(lsp.Declaration),
+			0, 6, 4, uint32(lsp.Parameter), 0,
+			1, 8, 4, uint32(lsp.Parameter), 0,
+			1, 14, 4, uint32(lsp.Parameter), 0, // v_r1.ch1 := p_ch;
+			1, 11, 4, uint32(lsp.Parameter), 0,
+			1, 18, 4, uint32(lsp.Parameter), 0, // t_r2 := {ch1 := p_ch};
+			1, 2, 1, uint32(lsp.Function), 0,
+			0, 2, 4, uint32(lsp.Parameter), 0,
+			0, 8, 4, uint32(lsp.Parameter), 0, // f(p_ch := p_ch);
+			1, 2, 6, uint32(lsp.Keyword), 0,
+			0, 7, 1, uint32(lsp.Type), 0,
+			0, 3, 4, uint32(lsp.Parameter), 0}, list.Data)
+}
