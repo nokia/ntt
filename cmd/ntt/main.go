@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/nokia/ntt/internal/errors"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
@@ -107,6 +108,8 @@ func init() {
 }
 
 func main() {
+	defer log.Close()
+
 	if s := k3.DataDir(); s != "" {
 		os.Setenv("K3_DATADIR", s)
 	}
