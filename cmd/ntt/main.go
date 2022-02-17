@@ -101,7 +101,7 @@ func init() {
 	rootCmd.AddCommand(tags.Command)
 	rootCmd.AddCommand(report.Command)
 
-	if exe, _ := exec.LookPath("k3-run"); exe == "" || os.Getenv("K3_40_RUN_POLICY") != "old" {
+	if exe, _ := exec.LookPath("ntt-run"); exe == "" || os.Getenv("K3_40_RUN_POLICY") != "old" {
 		rootCmd.AddCommand(run.Command)
 	}
 
