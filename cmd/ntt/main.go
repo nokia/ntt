@@ -15,6 +15,7 @@ import (
 	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
 
+	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/cmds/dump"
 	"github.com/nokia/ntt/internal/cmds/langserver"
 	"github.com/nokia/ntt/internal/cmds/lint"
@@ -100,6 +101,7 @@ func init() {
 	rootCmd.AddCommand(list.Command)
 	rootCmd.AddCommand(tags.Command)
 	rootCmd.AddCommand(report.Command)
+	rootCmd.AddCommand(build.Command)
 
 	useNokiaRunner := func() bool {
 		if s, ok := os.LookupEnv("K3_40_RUN_POLICY"); ok {
