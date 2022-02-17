@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
@@ -229,6 +230,18 @@ func lint(cmd *cobra.Command, args []string) error {
 			}
 
 			tree := ttcn3.ParseFile(files[i])
+			if tree.Err != nil {
+				switch e := tree.Err.(type) {
+				case *errors.ErrorList:
+					for _, e := range e.List() {
+						report(e)
+					}
+				default:
+					report(e)
+				}
+				return
+			}
+
 			for _, mod := range tree.Modules() {
 
 				if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Name)) {
