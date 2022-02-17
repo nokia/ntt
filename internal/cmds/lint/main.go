@@ -189,7 +189,7 @@ type Import struct {
 }
 
 func init() {
-	Command.PersistentFlags().StringVarP(&config, "config", "c", "", "path to YAML formatted file containing linter configuration")
+	Command.PersistentFlags().StringVarP(&config, "config", "c", ".ntt-lint.yml", "path to YAML formatted file containing linter configuration")
 }
 
 func lint(cmd *cobra.Command, args []string) error {
@@ -198,7 +198,7 @@ func lint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	c := fs.Open(".ntt-lint.yml")
+	c := fs.Open(config)
 	b, err := c.Bytes()
 	if err != nil {
 		log.Verbose(err.Error())
