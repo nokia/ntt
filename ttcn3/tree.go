@@ -317,54 +317,59 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
-	var defs []*Definition
+	parents := ast.Parents(id, tree.Root)
 
-	visited := make(map[ast.Node]bool)
-	for q := []*Definition{{Node: tree.ParentOf(id), Tree: tree}}; len(q) > 0; {
-		d := q[0]
-		q = q[1:]
-
-		if visited[d.Node] {
-			continue
-		}
-		visited[d.Node] = true
-
-		q = append(q, &Definition{Node: d.Tree.ParentOf(d.Node), Tree: d.Tree})
-
-		switch n := d.Node.(type) {
+	var defs, q []*Definition
+	// Find definitions in current file by walking up the scopes.
+	for _, n := range parents {
+		switch n := n.(type) {
 		case *ast.FuncDecl:
 			if n.RunsOn != nil {
-				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
 			}
 			if n.System != nil {
-				q = append(q, &Definition{Node: n.System.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
 			}
 			if n.Mtc != nil {
-				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: tree})
 			}
 		case *ast.BehaviourSpec:
 			if n.RunsOn != nil {
-				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
 			}
 			if n.System != nil {
-				q = append(q, &Definition{Node: n.System.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
 			}
 		case *ast.BehaviourTypeDecl:
 			if n.RunsOn != nil {
-				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
 			}
 			if n.System != nil {
-				q = append(q, &Definition{Node: n.System.Comp, Tree: d.Tree})
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
 			}
-		case *ast.ComponentTypeDecl:
-			for _, e := range n.Extends {
-				q = append(q, &Definition{Node: e, Tree: d.Tree})
-			}
+		}
+		found := Definitions(id.String(), n, tree)
+		defs = append(defs, found...)
+	}
 
+	// Traverse alternate scope hierarchies (runs on, extends, etc.)
+	for len(q) > 0 {
+		def := q[0]
+		q = q[1:]
+
+		n, ok := def.Node.(ast.Expr)
+		if !ok {
+			continue
 		}
 
-		found := Definitions(id.String(), d.Node, d.Tree)
-		defs = append(defs, found...)
+		for _, d := range f.lookup(n, def.Tree) {
+			defs = append(defs, Definitions(id.String(), d.Node, d.Tree)...)
+			if c, ok := d.Node.(*ast.ComponentTypeDecl); ok {
+				for _, e := range c.Extends {
+					q = append(q, &Definition{Node: e, Tree: d.Tree})
+				}
+			}
+		}
 	}
 
 	// Find definitions in visible files.
