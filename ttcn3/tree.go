@@ -317,10 +317,10 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
-	parents := ast.Parents(id, tree.Root)
-
 	var defs, q []*Definition
-	// Find definitions in current file by walking up the scopes.
+
+	// Traverse parent scopes (P+) and collect imports scopes (I*)
+	parents := ast.Parents(id, tree.Root)
 	for _, n := range parents {
 		switch n := n.(type) {
 		case *ast.FuncDecl:
@@ -352,7 +352,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 		defs = append(defs, found...)
 	}
 
-	// Traverse alternate scope hierarchies (runs on, extends, etc.)
+	// Traverse import scopes (I*)
 	for len(q) > 0 {
 		def := q[0]
 		q = q[1:]
@@ -372,7 +372,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 		}
 	}
 
-	// Find definitions in visible files.
+	// Traver visible module scopes (I*)
 	if mod := tree.ModuleOf(id); mod != nil {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
