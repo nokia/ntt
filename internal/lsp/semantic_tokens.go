@@ -264,6 +264,9 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			end := tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Parameter, uint32(Declaration))...)
 		}
+		if node.Value != nil {
+			ast.Inspect(node.Value, tokv.VisitModuleDefs)
+		}
 		tokv.popNodeStack()
 		return false
 	case *ast.StructTypeDecl:
@@ -353,9 +356,13 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		if node.Params != nil {
 			ast.Inspect(node.Params, tokv.VisitModuleDefs)
 		}
+		if node.Base != nil {
+			ast.Inspect(node.Base, tokv.VisitModuleDefs)
+		}
 		if node.Value != nil {
 			ast.Inspect(node.Value, tokv.VisitModuleDefs)
 		}
+
 		tokv.popNodeStack()
 		return false
 	case *ast.ValueDecl:
@@ -413,6 +420,8 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 						modif = Readonly
 					}
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(modif))...)
+				case *ast.TemplateDecl:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Readonly))...)
 				}
 
 			} else if tokv.actualToken != None {

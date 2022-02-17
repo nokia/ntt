@@ -369,3 +369,70 @@ func TestFunctionParams(t *testing.T) {
 			0, 7, 1, uint32(lsp.Type), 0,
 			0, 3, 4, uint32(lsp.Parameter), 0}, list.Data)
 }
+
+func TestTemplateAndConst(t *testing.T) {
+	suite := buildSuite(t, `module Test
+{
+	import from TestTemplateAndConst_Module_1 all;
+
+	const charstring c_ch2 := c_ch;
+	template charstring a_ch2 := a_ch;
+	template R a_r2(template charstring p_ch := a_ch) modifies a_r := {
+		ch1 := c_ch,
+		ch2 := p_ch
+	}
+	template R a_r3 := a_r(p_ch := a_ch2);
+
+}`, `module TestTemplateAndConst_Module_1
+{
+	type record R {
+		charstring ch1,
+		charstring ch2 optional
+	};
+	const charstring c_ch := "xx";
+	template charstring a_ch := ?;
+	template (omit) R a_r(template charstring p_ch) := {
+		ch1 := p_ch,
+		ch2 := omit
+	}
+}`)
+
+	list := generateTokenList(t, suite, nil)
+
+	assert.Equal(t,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
+			2, 1, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Keyword), 0,
+			0, 5, 29, uint32(lsp.Namespace), 0,
+			0, 30, 3, uint32(lsp.Keyword), 0, //all
+			2, 1, 5, uint32(lsp.Keyword), 0,
+			0, 6, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 11, 5, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			0, 9, 4, uint32(lsp.Variable), uint32(lsp.Readonly),
+			1, 1, 8, uint32(lsp.Keyword), 0,
+			0, 9, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 11, 5, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			0, 9, 4, uint32(lsp.Variable), uint32(lsp.Readonly),
+
+			1, 1, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Type), 0,
+			0, 2, 4, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			0, 5, 8, uint32(lsp.Keyword), 0,
+			0, 9, 10, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+			0, 11, 4, uint32(lsp.Parameter), uint32(lsp.Declaration),
+			0, 8, 4, uint32(lsp.Variable), uint32(lsp.Readonly),
+			0, 6, 8, uint32(lsp.Keyword), 0,
+			0, 9, 3, uint32(lsp.Variable), uint32(lsp.Readonly),
+			1, 9, 4, uint32(lsp.Variable), uint32(lsp.Readonly),
+			1, 9, 4, uint32(lsp.Parameter), 0,
+
+			2, 1, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Type), 0,
+			0, 2, 4, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
+			0, 8, 3, uint32(lsp.Variable), uint32(lsp.Readonly),
+			//0, 4, 4, uint32(lsp.Parameter), 0, TODO: is not yet recognized by gotodef
+			0, 8 + 4, 5, uint32(lsp.Variable), uint32(lsp.Readonly),
+		}, list.Data)
+}
