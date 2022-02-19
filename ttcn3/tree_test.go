@@ -20,7 +20,7 @@ func TestSliceAt(t *testing.T) {
 				"*ast.ImportDecl",
 				"*ast.ModuleDef",
 				"*ast.Module(M1)",
-				"ast.NodeList",
+				"*ast.NodeList",
 			}},
 		{
 
@@ -39,7 +39,7 @@ func TestSliceAt(t *testing.T) {
 				"*ast.FuncDecl(func)",
 				"*ast.ModuleDef(func)",
 				"*ast.Module(M)",
-				"ast.NodeList",
+				"*ast.NodeList",
 			}},
 	}
 

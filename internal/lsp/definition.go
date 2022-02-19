@@ -27,17 +27,15 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 
 	tree := ttcn3.ParseFile(file)
 	x := tree.ExprAt(tree.Pos(line, col))
-	if x == nil {
-		log.Debugf("%s:%d:%d: No symbol at cursor position.\n", file, line, col)
-		return nil, nil
-	}
-	if defs := tree.LookupWithDB(x, &s.db); len(defs) > 0 {
-		for _, def := range defs {
-			pos := def.Tree.Position(def.Ident.Pos())
-			log.Debugf("Definition found at %s\n", pos)
-			locs = append(locs, location(pos))
+	if x != nil {
+		if defs := tree.LookupWithDB(x, &s.db); len(defs) > 0 {
+			for _, def := range defs {
+				pos := def.Tree.Position(def.Ident.Pos())
+				log.Debugf("Definition found at %s\n", pos)
+				locs = append(locs, location(pos))
+			}
+			return unifyLocs(locs), nil
 		}
-		return unifyLocs(locs), nil
 	}
 
 	// Fallback to cTags

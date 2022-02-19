@@ -18,7 +18,9 @@ package log
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"runtime/trace"
 )
 
 type Level int
@@ -46,11 +48,40 @@ type Span interface {
 var (
 	std Logger = &ConsoleLogger{Out: os.Stderr}
 	lvl        = PrintLevel
+
+	tracer io.WriteCloser
 )
 
-func GlobalLevel() Level         { return lvl }
-func SetGlobalLevel(level Level) { lvl = level }
-func SetGlobalLogger(l Logger)   { std = l }
+func GlobalLevel() Level       { return lvl }
+func SetGlobalLogger(l Logger) { std = l }
+func SetGlobalLevel(level Level) {
+	if lvl == TraceLevel && tracer != nil {
+		trace.Stop()
+		tracer.Close()
+	}
+
+	if level == TraceLevel {
+		path := "ntt.trace"
+		if s := os.Getenv("NTT_TRACE_FILE"); s != "" {
+			path = s
+		}
+
+		var err error
+		tracer, err = os.Create(path)
+		if err != nil {
+			panic(err)
+		}
+		trace.Start(tracer)
+	}
+	lvl = level
+}
+
+func Close() {
+	if tracer != nil {
+		trace.Stop()
+		tracer.Close()
+	}
+}
 
 func Print(v ...interface{})                 { std.Output(PrintLevel, fmt.Sprint(v...)) }
 func Printf(format string, v ...interface{}) { std.Output(PrintLevel, fmt.Sprintf(format, v...)) }
@@ -70,7 +101,7 @@ func Traceln(v ...interface{})               { std.Output(TraceLevel, fmt.Sprint
 
 func init() {
 	if s := os.Getenv("NTT_DEBUG"); s != "" {
-		lvl = DebugLevel
+		SetGlobalLevel(DebugLevel)
 	}
 	if s := os.Getenv("NTT_DEBUG_FILE"); s != "" {
 		if file, err := os.Create(s); err == nil {
@@ -78,11 +109,14 @@ func init() {
 		}
 	}
 	if s := os.Getenv("K3_DEBUG"); s != "" {
-		lvl = DebugLevel
+		SetGlobalLevel(DebugLevel)
 	}
 	if s := os.Getenv("K3_DEBUG_FILE"); s != "" {
 		if file, err := os.Create(s); err == nil {
 			SetGlobalLogger(&ConsoleLogger{Out: file})
 		}
+	}
+	if s := os.Getenv("NTT_TRACE"); s != "" {
+		SetGlobalLevel(TraceLevel)
 	}
 }

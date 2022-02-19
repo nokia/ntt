@@ -551,8 +551,8 @@ func Walk(v Visitor, node Node) {
 		walkExprList(v, n.List)
 		Walk(v, n.Value)
 
-	case NodeList:
-		for _, n := range n {
+	case *NodeList:
+		for _, n := range n.Nodes {
 			Walk(v, n)
 		}
 	default:

@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/nokia/ntt/internal/errors"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
@@ -100,13 +101,32 @@ func init() {
 	rootCmd.AddCommand(tags.Command)
 	rootCmd.AddCommand(report.Command)
 
-	if exe, _ := exec.LookPath("k3-run"); exe == "" || os.Getenv("K3_40_RUN_POLICY") != "old" {
+	useNokiaRunner := func() bool {
+		if s, ok := os.LookupEnv("K3_40_RUN_POLICY"); ok {
+			if s == "ntt" {
+				return false
+			}
+			return true
+		}
+		if exe, _ := exec.LookPath("k3-run"); exe != "" {
+			return true
+		}
+		if exe, _ := exec.LookPath("ntt-run"); exe != "" {
+			return true
+		}
+		return false
+
+	}
+
+	if !useNokiaRunner() {
 		rootCmd.AddCommand(run.Command)
 	}
 
 }
 
 func main() {
+	defer log.Close()
+
 	if s := k3.DataDir(); s != "" {
 		os.Setenv("K3_DATADIR", s)
 	}

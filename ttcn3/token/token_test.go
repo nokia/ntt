@@ -16,7 +16,6 @@ func TestUnquote(t *testing.T) {
 	}
 	for _, tt := range tests {
 		actual, err := Unquote(tt.input)
-		t.Log("\n", tt.input)
 		if err != nil {
 			t.Errorf("Unexpected error: %s", err.Error())
 		}

@@ -281,8 +281,8 @@ func Children(n Node) []Node {
 	}
 	var children []Node
 	switch n := n.(type) {
-	case NodeList:
-		for _, child := range n {
+	case *NodeList:
+		for _, child := range n.Nodes {
 			children = append(children, child)
 		}
 	case Token:

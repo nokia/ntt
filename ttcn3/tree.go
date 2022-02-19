@@ -12,7 +12,7 @@ import (
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
 	FileSet *loc.FileSet
-	Root    ast.NodeList
+	Root    ast.Node
 	Names   map[string]bool
 	Err     error
 
@@ -32,9 +32,7 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 		var visit func(n ast.Node)
 		visit = func(n ast.Node) {
 			for _, c := range ast.Children(n) {
-				switch c.(type) {
-				case ast.Token, ast.NodeList:
-				default:
+				if _, ok := c.(ast.Token); !ok {
 					t.parents[c] = n
 				}
 				visit(c)
@@ -43,23 +41,32 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 		visit(t.Root)
 	}
 
-	switch n.(type) {
-	case ast.Token, ast.NodeList:
+	if _, ok := n.(ast.Token); ok {
 		return nil
 	}
 	return t.parents[n]
 }
 
+// ModuleOf returns the module of the given node, by walking up the tree.
+func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
+	for n := n; n != nil; n = t.ParentOf(n) {
+		if m, ok := n.(*ast.Module); ok {
+			return m
+		}
+	}
+	return nil
+}
+
 // Lookup returns the definitions of the given expression. For handling imports
 // and multiple modules, use LookupWithDB.
 func (tree *Tree) Lookup(n ast.Expr) []*Definition {
-	f := &finder{DB: &DB{}, v: make(map[ast.Node]bool)}
+	f := &finder{DB: &DB{}, cache: make(map[ast.Node][]*Definition)}
 	return f.lookup(n, tree)
 }
 
 // LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
 func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
-	f := &finder{DB: db, v: make(map[ast.Node]bool)}
+	f := &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
 	return f.lookup(n, tree)
 
 }
@@ -262,7 +269,7 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 
 type finder struct {
 	*DB
-	v map[ast.Node]bool
+	cache map[ast.Node][]*Definition
 }
 
 func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
@@ -270,42 +277,43 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return nil
 	}
 
-	switch n := n.(type) {
-	case *ast.SelectorExpr:
-		return f.dot(n, tree)
-
-	case *ast.Ident:
-		return f.globals(n, tree)
-
-	case *ast.IndexExpr:
-		return f.index(n, tree)
-
-	case *ast.CallExpr:
-		return nil
+	if results := f.cache[n]; results != nil {
+		return results
 	}
 
-	log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
-	return nil
+	var results []*Definition
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		results = f.dot(n, tree)
+
+	case *ast.Ident:
+		results = f.globals(n, tree)
+
+	case *ast.IndexExpr:
+		results = f.index(n, tree)
+
+	case *ast.CallExpr:
+		log.Debugf("%s: not implemented yet: %T\n", tree.Position(n.Pos()), n)
+	default:
+		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+	}
+
+	f.cache[n] = results
+	return results
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
 	parents := ast.Parents(id, tree.Root)
-	if len(parents) > 0 {
-		if _, ok := parents[len(parents)-1].(ast.NodeList); ok {
-			parents = parents[:len(parents)-1]
-		}
-	}
 
 	var defs []*Definition
 	// Find definitions in current file by walking up the scopes.
 	for _, n := range parents {
-		f.v[n] = true
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
 	}
 
 	// Find definitions in visible files.
-	if mod, ok := parents[len(parents)-1].(*ast.Module); ok {
+	if mod := tree.ModuleOf(id); mod != nil {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
 				defs = append(defs, m)
