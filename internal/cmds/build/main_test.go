@@ -14,7 +14,10 @@ func TestImportLib(t *testing.T) {
 	}{
 		{path: "./testdata/invalid", err: os.ErrNotExist},
 		{path: "./testdata/other", err: ErrNoSources},
-		{path: "./testdata/lib", result: []string{}},
+		{path: "./testdata/lib", result: []string{
+			"testdata/lib/a.ttcn3",
+			"testdata/lib/b.ttcn3",
+		}},
 	}
 
 	for _, tt := range tests {
