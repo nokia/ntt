@@ -20,6 +20,8 @@ github.com/inconshreveable/mousetrap
 github.com/kr/pretty
 # github.com/kr/text v0.2.0
 github.com/kr/text
+# github.com/magefile/mage v1.12.1
+github.com/magefile/mage/mg
 # github.com/moosq/gotenv v1.2.1-0.20210920134751-74a0968dec41
 github.com/moosq/gotenv
 # github.com/pmezard/go-difflib v1.0.0

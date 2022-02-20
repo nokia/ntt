@@ -10,6 +10,7 @@ require (
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/magefile/mage v1.12.1
 	github.com/moosq/gotenv v1.2.1-0.20210920134751-74a0968dec41
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/cobra v1.1.1
