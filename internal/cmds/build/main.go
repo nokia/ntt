@@ -76,8 +76,8 @@ func buildTTCN3(name string, srcs ...string) error {
 	}
 
 	args := []string{"-o", out}
-	if env := os.Getenv("K3CFLAGS"); env != "" {
-		args = append(args, strings.Fields(env))
+	if env := Env("K3CFLAGS"); env != nil {
+		args = append(args, env...)
 	}
 	visited := make(map[string]bool)
 	for _, src := range srcs {
@@ -127,23 +127,22 @@ func buildImport(dir string) ([]string, error) {
 	}
 
 	if len(asn1Files) > 0 {
-		out, err := genASN1(name, "", asn1Files...)
+		codec, err := asn1Generate(name, asn1Files...)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := buildASN1(name, out...); err != nil {
+		lib, err := asn1Build(name, codec...)
+		if err != nil {
 			return nil, err
 		}
 
-		//cmd = "$CC -fPIC -shared $^ -D_OSSGETHEADER -DOSSPRINT $CFLAGS $LDFLAGS $EXTRA_LDFLAGS -l:libasn1code.a -Wl,-Bdynamic -o $@"
-		//if err := run(cmd, ""); err != nil {
-		//	return nil, err
-		//}
-		//cmd = fmt.Sprintf("$ASN2TTCN -o $@ $< %smod $ENCODING", name)
-		//if err := run(cmd, ""); err != nil {
-		//	return nil, err
-		//}
+		mods, err := asn1Modules(name, lib...)
+		if err != nil {
+			return nil, err
+		}
+
+		ttcn3Files = append(ttcn3Files, mods...)
 	}
 
 	if len(cFiles) > 0 {
@@ -161,47 +160,93 @@ func buildImport(dir string) ([]string, error) {
 	return ttcn3Files, nil
 }
 
-func genASN1(name string, encoding string, srcs ...string) ([]string, error) {
-
-	c := Outf("%senc.c", name)
-	h := Outf("%senc.h", name)
-	if ok, err := target.Dir(c, srcs...); !ok || err != nil {
+func asn1Generate(name string, srcs ...string) ([]string, error) {
+	c := Outf("%s.enc.c", name)
+	h := Outf("%s.enc.h", name)
+	if ok, err := target.Path(c, srcs...); !ok || err != nil {
 		return []string{c, h}, err
 	}
-	if ok, err := target.Dir(h, srcs...); !ok || err != nil {
+	if ok, err := target.Path(h, srcs...); !ok || err != nil {
 		return []string{c, h}, err
 	}
 
-	//$ASN1FLAGS
-	cmd := "$ASN1C $OSSINFO/asn1dflt.linux-$(uname -m) $^ -$ENCODING $ALL_ASN1FLAGS -output $*.enc -prefix $*"
+	// Everything uses per except for specs with "rrc" in the name.
+	encoding := Encoding(name)
+
+	args := []string{"$OSSINFO/asn1dflt.linux-x86_64"}
+	args = append(args, srcs...)
+	args = append(args, fmt.Sprintf("-%s", encoding))
+	args = append(args, Env("ASN1CFLAGS")...)
+	args = append(args, "-output", strings.TrimSuffix(c, ".c"), "-prefix", strings.TrimSuffix(c, ".enc.c"))
 	return []string{c, h}, Exec("$ASN1C", args...)
 
 }
 
-func buildASN1(name string, srcs ...string) ([]string, error) {
-	return nil, nil
+func asn1Build(name string, srcs ...string) ([]string, error) {
+	out := Outf("%slib.so", name)
+	if b, err := target.Path(out, srcs...); !b || err != nil {
+		return []string{out}, err
+	}
+	args := []string{"-fPIC", "-shared"}
+	args = append(args, srcs...)
+	args = append(args, "-D_OSSGETHEADER", "-DOSSPRINT")
+	if env := Env("CFLAGS"); env != nil {
+		args = append(args, env...)
+	}
+	if env := Env("LDFLAGS"); env != nil {
+		args = append(args, env...)
+	}
+	if env := Env("EXTRA_LDFLAGS"); env != nil {
+		args = append(args, env...)
+	}
+	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", out)
+	return []string{out}, Exec("$CC", args...)
+}
+
+func asn1Modules(name string, srcs ...string) ([]string, error) {
+	out := Outf("%smod.ttcn3", name)
+	args := []string{"-o", out}
+	args = append(args, srcs...)
+	args = append(args, fmt.Sprintf("%smod", name), Encoding(name))
+	return nil, Exec("$ASN2TTCN", args...)
 }
 
 func buildAdapter(name string, srcs ...string) ([]string, error) {
 	out := Outf("k3r-%s-plugin.so", name)
-	b, err := target.Path(out, srcs...)
-	if !b || err != nil {
-		return nil, err
+	if b, err := target.Path(out, srcs...); !b || err != nil {
+		return []string{out}, err
 	}
 
 	var args []string
 
-	if env := os.Getenv("CXXFLAGS"); env != "" {
-		args = append(args, env)
+	if env := Env("CXXFLAGS"); env != nil {
+		args = append(args, env...)
 	}
-	if env := os.Getenv("LDFLAGS"); env != "" {
-		args = append(args, env)
+	if env := Env("LDFLAGS"); env != nil {
+		args = append(args, env...)
 	}
-	if env := os.Getenv("EXTRA_LDFLAGS"); env != "" {
-		args = append(args, env)
+	if env := Env("EXTRA_LDFLAGS"); env != nil {
+		args = append(args, env...)
 	}
 	args = append(args, "-lk3-plugin", "-shared", "-fPIC", "-o", out)
 	return []string{out}, Exec("$CXX", args...)
+}
+
+func Encoding(name string) string {
+	if strings.Contains(strings.ToLower(name), "rrc") {
+		return "uper"
+	}
+	return "per"
+}
+
+func Env(key string) []string {
+	if env := os.Getenv(key); env != "" {
+		return strings.Fields(env)
+	}
+	if env, ok := DefaultEnv[key]; ok {
+		return strings.Fields(env)
+	}
+	return nil
 }
 
 func Exec(name string, args ...string) error {
@@ -225,10 +270,6 @@ func Exec(name string, args ...string) error {
 	log.Debugln("+", cmd.String())
 	return cmd.Run()
 
-}
-
-func run(cmd string, files ...string) error {
-	return nil
 }
 
 func Outf(f string, v ...interface{}) string {
