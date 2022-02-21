@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"syscall"
 	"testing"
 
 	"github.com/nokia/ntt/internal/log"
@@ -16,11 +17,10 @@ func init() {
 	}
 
 	os.Setenv("ASN1C", wrapCmd("asn1c"))
-	os.Setenv("K3C", wrapCmd("k3c"))
+	os.Setenv("K3C", wrapCmd("mtc"))
 	os.Setenv("CC", wrapCmd("cc"))
 	os.Setenv("CXX", wrapCmd("cxx"))
-	os.Setenv("ASN2TTCN", wrapCmd("asn2ttcn"))
-
+	os.Setenv("ASN2TTCN", wrapCmd("asn1tottcn3"))
 	os.Setenv("ASN1CFLAGS", "")
 	os.Setenv("K3CFLAGS", "")
 	os.Setenv("CFLAGS", "")
@@ -37,10 +37,12 @@ func TestImports(t *testing.T) {
 		result []string
 		err    error
 	}{
-		{path: "./testdata/invalid", err: os.ErrNotExist},
+		{path: "./testdata/invalid/notexist", err: os.ErrNotExist},
+		{path: "./testdata/invalid/file.ttcn3", err: syscall.ENOTDIR},
+		{path: "./testdata/invalid/dirs", err: ErrNoSources},
 		{path: "./testdata/other", err: ErrNoSources},
-		{path: "./testdata/lib", result: []string{"testdata/lib/a.ttcn3", "testdata/lib/b.ttcn3"}},
-		//{path: "./testdata/asn1", result: []string{"testdata/lib/a.ttcn3", "testdata/lib/b.ttcn3"}},
+		{path: "./testdata/🤔", result: []string{"testdata/🤔/a.ttcn3"}},
+		{path: "./testdata/lib", result: []string{"testdata/lib/a.ttcn3", "testdata/lib/b.ttcn3", "testdata/lib/🤔.ttcn3"}},
 	}
 
 	for _, tt := range tests {
