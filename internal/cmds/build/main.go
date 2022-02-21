@@ -96,8 +96,6 @@ func buildTTCN3(name string, srcs ...string) error {
 }
 
 func buildImport(dir string) ([]string, error) {
-	name := fs.Slugify(fs.Stem(dir))
-
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -109,6 +107,9 @@ func buildImport(dir string) ([]string, error) {
 	)
 
 	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
 		switch path := filepath.Join(dir, f.Name()); filepath.Ext(path) {
 		case ".asn1", ".asn":
 			asn1Files = append(asn1Files, path)
@@ -126,6 +127,7 @@ func buildImport(dir string) ([]string, error) {
 		return nil, fmt.Errorf("%s: %w", dir, ErrNoSources)
 	}
 
+	name := fs.Slugify(fs.Stem(dir))
 	if len(asn1Files) > 0 {
 		codec, err := asn1Generate(name, asn1Files...)
 		if err != nil {
@@ -170,14 +172,12 @@ func asn1Generate(name string, srcs ...string) ([]string, error) {
 		return []string{c, h}, err
 	}
 
-	// Everything uses per except for specs with "rrc" in the name.
-	encoding := Encoding(name)
-
-	args := []string{"$OSSINFO/asn1dflt.linux-x86_64"}
-	args = append(args, srcs...)
-	args = append(args, fmt.Sprintf("-%s", encoding))
+	var args []string
+	args = append(args, fmt.Sprintf("-%s", Encoding(name)))
 	args = append(args, Env("ASN1CFLAGS")...)
 	args = append(args, "-output", strings.TrimSuffix(c, ".c"), "-prefix", strings.TrimSuffix(c, ".enc.c"))
+	args = append(args, "$OSSINFO/asn1dflt.linux-x86_64")
+	args = append(args, srcs...)
 	return []string{c, h}, Exec("$ASN1C", args...)
 
 }
@@ -187,8 +187,8 @@ func asn1Build(name string, srcs ...string) ([]string, error) {
 	if b, err := target.Path(out, srcs...); !b || err != nil {
 		return []string{out}, err
 	}
-	args := []string{"-fPIC", "-shared"}
-	args = append(args, srcs...)
+	var args []string
+	args = append(args, "-fPIC", "-shared")
 	args = append(args, "-D_OSSGETHEADER", "-DOSSPRINT")
 	if env := Env("CFLAGS"); env != nil {
 		args = append(args, env...)
@@ -200,6 +200,7 @@ func asn1Build(name string, srcs ...string) ([]string, error) {
 		args = append(args, env...)
 	}
 	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", out)
+	args = append(args, srcs...)
 	return []string{out}, Exec("$CC", args...)
 }
 
@@ -216,9 +217,7 @@ func buildAdapter(name string, srcs ...string) ([]string, error) {
 	if b, err := target.Path(out, srcs...); !b || err != nil {
 		return []string{out}, err
 	}
-
 	var args []string
-
 	if env := Env("CXXFLAGS"); env != nil {
 		args = append(args, env...)
 	}
@@ -229,6 +228,7 @@ func buildAdapter(name string, srcs ...string) ([]string, error) {
 		args = append(args, env...)
 	}
 	args = append(args, "-lk3-plugin", "-shared", "-fPIC", "-o", out)
+	args = append(args, srcs...)
 	return []string{out}, Exec("$CXX", args...)
 }
 
@@ -240,7 +240,7 @@ func Encoding(name string) string {
 }
 
 func Env(key string) []string {
-	if env := os.Getenv(key); env != "" {
+	if env, ok := os.LookupEnv(key); ok {
 		return strings.Fields(env)
 	}
 	if env, ok := DefaultEnv[key]; ok {
@@ -258,6 +258,11 @@ func Exec(name string, args ...string) error {
 	}
 
 	name = os.Expand(name, expand)
+	if f := strings.Fields(name); len(f) > 0 {
+		name = f[0]
+		args = append(f[1:], args...)
+	}
+
 	for i := range args {
 		args[i] = os.Expand(args[i], expand)
 	}
@@ -269,7 +274,6 @@ func Exec(name string, args ...string) error {
 
 	log.Debugln("+", cmd.String())
 	return cmd.Run()
-
 }
 
 func Outf(f string, v ...interface{}) string {
