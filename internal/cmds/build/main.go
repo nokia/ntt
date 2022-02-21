@@ -240,7 +240,7 @@ func Encoding(name string) string {
 }
 
 func Env(key string) []string {
-	if env := os.Getenv(key); env != "" {
+	if env, ok := os.LookupEnv(key); ok {
 		return strings.Fields(env)
 	}
 	if env, ok := DefaultEnv[key]; ok {
@@ -258,6 +258,11 @@ func Exec(name string, args ...string) error {
 	}
 
 	name = os.Expand(name, expand)
+	if f := strings.Fields(name); len(f) > 0 {
+		name = f[0]
+		args = append(f[1:], args...)
+	}
+
 	for i := range args {
 		args[i] = os.Expand(args[i], expand)
 	}
