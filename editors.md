@@ -49,21 +49,21 @@ section](https://github.com/nokia/ntt#install) for details.
 | Document Range Formatting   | `textDocument/rangeFormatting`    | :x:                |
 | Document on Type Formatting | `textDocument/onTypeFormatting`   | :x:                |
 | Rename                      | `textDocument/rename`             | :x:                |
---> 
+-->
 
 
 **Troubleshooting: Go to Definition does not work**
 
 
 Go to Definition works only for known TTCN-3 modules. Yet, there is no standard
-way of telling the language server where to look for TTCN-3 modules.  
+way of telling the language server where to look for TTCN-3 modules.
 
 You should always open whole folders (`Open > Folder`) and not just
 single files (`Open > File`). The language server automatically recognizes all
-TTCN-3 from that opened folder.  
+TTCN-3 from that opened folder.
 If your TTCN-3 test suite is organized across multiple folders, a [test suite manifest
 file](getting-started#the-test-suite-manifest)
-should be in the test suite's root folder.  
+should be in the test suite's root folder.
 When you open multiple folders (workspace), the first folder is considered the
 test suite root folder.
 
@@ -151,4 +151,22 @@ augroup lsp_install
     " call s:on_lsp_buffer_enabled only for languages that has the server registered.
     autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
 augroup END
+```
+
+## Emacs
+
+First of all make sure ntt is [manually installed](https://github.com/nokia/ntt#install).
+
+Install [lsp-mode](https://github.com/emacs-lsp/lsp-mode) from MELPA/ELPA and configure TTCN-3 support:
+
+```elisp
+(use-package lsp-mode
+  :hook ((ttcn-3-mode . lsp-deferred))
+  :config
+  (add-to-list 'lsp-language-id-configuration
+    '(".*\\.ttcn3$" . "ttcn3"))
+  (lsp-register-client
+    (make-lsp-client :new-connection (lsp-stdio-connection '("ntt" "langserver"))
+                     :activation-fn (lsp-activate-on "ttcn3")
+                     :server-id 'ntt)))
 ```
