@@ -275,6 +275,13 @@ func Name(n Node) string {
 	return ""
 }
 
+func add(s []Node, n Node) []Node {
+	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+		return s
+	}
+	return append(s, n)
+}
+
 func Children(n Node) []Node {
 	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
 		return nil
@@ -283,524 +290,524 @@ func Children(n Node) []Node {
 	switch n := n.(type) {
 	case *NodeList:
 		for _, child := range n.Nodes {
-			children = append(children, child)
+			children = add(children, child)
 		}
 	case Token:
 	case *ErrorNode:
-		children = append(children, n.From)
-		children = append(children, n.To)
+		children = add(children, n.From)
+		children = add(children, n.To)
 
 	case *Ident:
-		children = append(children, n.Tok)
-		children = append(children, n.Tok2)
+		children = add(children, n.Tok)
+		children = add(children, n.Tok2)
 
 	case *ParametrizedIdent:
-		children = append(children, n.Ident)
-		children = append(children, n.Params)
+		children = add(children, n.Ident)
+		children = add(children, n.Params)
 
 	case *ValueLiteral:
-		children = append(children, n.Tok)
+		children = add(children, n.Tok)
 
 	case *CompositeLiteral:
-		children = append(children, n.LBrace)
+		children = add(children, n.LBrace)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *UnaryExpr:
-		children = append(children, n.Op)
-		children = append(children, n.X)
+		children = add(children, n.Op)
+		children = add(children, n.X)
 
 	case *BinaryExpr:
-		children = append(children, n.X)
-		children = append(children, n.Op)
-		children = append(children, n.Y)
+		children = add(children, n.X)
+		children = add(children, n.Op)
+		children = add(children, n.Y)
 
 	case *ParenExpr:
-		children = append(children, n.LParen)
+		children = add(children, n.LParen)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RParen)
+		children = add(children, n.RParen)
 
 	case *SelectorExpr:
-		children = append(children, n.X)
-		children = append(children, n.Dot)
-		children = append(children, n.Sel)
+		children = add(children, n.X)
+		children = add(children, n.Dot)
+		children = add(children, n.Sel)
 
 	case *IndexExpr:
-		children = append(children, n.X)
-		children = append(children, n.LBrack)
-		children = append(children, n.Index)
-		children = append(children, n.RBrack)
+		children = add(children, n.X)
+		children = add(children, n.LBrack)
+		children = add(children, n.Index)
+		children = add(children, n.RBrack)
 
 	case *CallExpr:
-		children = append(children, n.Fun)
-		children = append(children, n.Args)
+		children = add(children, n.Fun)
+		children = add(children, n.Args)
 
 	case *LengthExpr:
-		children = append(children, n.X)
-		children = append(children, n.Len)
-		children = append(children, n.Size)
+		children = add(children, n.X)
+		children = add(children, n.Len)
+		children = add(children, n.Size)
 
 	case *RedirectExpr:
-		children = append(children, n.X)
-		children = append(children, n.Tok)
-		children = append(children, n.ValueTok)
+		children = add(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.ValueTok)
 		for _, n := range n.Value {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.ParamTok)
+		children = add(children, n.ParamTok)
 		for _, n := range n.Param {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.SenderTok)
-		children = append(children, n.Sender)
-		children = append(children, n.IndexTok)
-		children = append(children, n.IndexValueTok)
-		children = append(children, n.Index)
-		children = append(children, n.TimestampTok)
-		children = append(children, n.Timestamp)
+		children = add(children, n.SenderTok)
+		children = add(children, n.Sender)
+		children = add(children, n.IndexTok)
+		children = add(children, n.IndexValueTok)
+		children = add(children, n.Index)
+		children = add(children, n.TimestampTok)
+		children = add(children, n.Timestamp)
 
 	case *ValueExpr:
-		children = append(children, n.X)
-		children = append(children, n.Tok)
-		children = append(children, n.Y)
+		children = add(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.Y)
 
 	case *ParamExpr:
-		children = append(children, n.X)
-		children = append(children, n.Tok)
-		children = append(children, n.Y)
+		children = add(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.Y)
 
 	case *FromExpr:
-		children = append(children, n.Kind)
-		children = append(children, n.FromTok)
-		children = append(children, n.X)
+		children = add(children, n.Kind)
+		children = add(children, n.FromTok)
+		children = add(children, n.X)
 
 	case *ModifiesExpr:
-		children = append(children, n.Tok)
-		children = append(children, n.X)
-		children = append(children, n.Assign)
-		children = append(children, n.Y)
+		children = add(children, n.Tok)
+		children = add(children, n.X)
+		children = add(children, n.Assign)
+		children = add(children, n.Y)
 
 	case *RegexpExpr:
-		children = append(children, n.Tok)
-		children = append(children, n.NoCase)
-		children = append(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.NoCase)
+		children = add(children, n.X)
 
 	case *PatternExpr:
-		children = append(children, n.Tok)
-		children = append(children, n.NoCase)
-		children = append(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.NoCase)
+		children = add(children, n.X)
 
 	case *DecmatchExpr:
-		children = append(children, n.Tok)
-		children = append(children, n.Params)
-		children = append(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.Params)
+		children = add(children, n.X)
 
 	case *DecodedExpr:
-		children = append(children, n.Tok)
-		children = append(children, n.Params)
-		children = append(children, n.X)
+		children = add(children, n.Tok)
+		children = add(children, n.Params)
+		children = add(children, n.X)
 
 	case *DefKindExpr:
-		children = append(children, n.Kind)
+		children = add(children, n.Kind)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
 
 	case *ExceptExpr:
-		children = append(children, n.X)
-		children = append(children, n.ExceptTok)
-		children = append(children, n.LBrace)
+		children = add(children, n.X)
+		children = add(children, n.ExceptTok)
+		children = add(children, n.LBrace)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *BlockStmt:
-		children = append(children, n.LBrace)
+		children = add(children, n.LBrace)
 		for _, n := range n.Stmts {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *DeclStmt:
-		children = append(children, n.Decl)
+		children = add(children, n.Decl)
 
 	case *ExprStmt:
-		children = append(children, n.Expr)
+		children = add(children, n.Expr)
 
 	case *BranchStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.Label)
+		children = add(children, n.Tok)
+		children = add(children, n.Label)
 
 	case *ReturnStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.Result)
+		children = add(children, n.Tok)
+		children = add(children, n.Result)
 
 	case *AltStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.Body)
+		children = add(children, n.Tok)
+		children = add(children, n.Body)
 
 	case *CallStmt:
-		children = append(children, n.Stmt)
-		children = append(children, n.Body)
+		children = add(children, n.Stmt)
+		children = add(children, n.Body)
 
 	case *ForStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.LParen)
-		children = append(children, n.Init)
-		children = append(children, n.InitSemi)
-		children = append(children, n.Cond)
-		children = append(children, n.CondSemi)
-		children = append(children, n.Post)
-		children = append(children, n.RParen)
-		children = append(children, n.Body)
+		children = add(children, n.Tok)
+		children = add(children, n.LParen)
+		children = add(children, n.Init)
+		children = add(children, n.InitSemi)
+		children = add(children, n.Cond)
+		children = add(children, n.CondSemi)
+		children = add(children, n.Post)
+		children = add(children, n.RParen)
+		children = add(children, n.Body)
 
 	case *WhileStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.Cond)
-		children = append(children, n.Body)
+		children = add(children, n.Tok)
+		children = add(children, n.Cond)
+		children = add(children, n.Body)
 
 	case *DoWhileStmt:
-		children = append(children, n.DoTok)
-		children = append(children, n.Body)
-		children = append(children, n.WhileTok)
-		children = append(children, n.Cond)
+		children = add(children, n.DoTok)
+		children = add(children, n.Body)
+		children = add(children, n.WhileTok)
+		children = add(children, n.Cond)
 
 	case *IfStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.Cond)
-		children = append(children, n.Then)
-		children = append(children, n.ElseTok)
-		children = append(children, n.Else)
+		children = add(children, n.Tok)
+		children = add(children, n.Cond)
+		children = add(children, n.Then)
+		children = add(children, n.ElseTok)
+		children = add(children, n.Else)
 
 	case *SelectStmt:
-		children = append(children, n.Tok)
-		children = append(children, n.Union)
-		children = append(children, n.Tag)
-		children = append(children, n.LBrace)
+		children = add(children, n.Tok)
+		children = add(children, n.Union)
+		children = add(children, n.Tag)
+		children = add(children, n.LBrace)
 		for _, n := range n.Body {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *CaseClause:
-		children = append(children, n.Tok)
-		children = append(children, n.Case)
-		children = append(children, n.Body)
+		children = add(children, n.Tok)
+		children = add(children, n.Case)
+		children = add(children, n.Body)
 
 	case *CommClause:
-		children = append(children, n.LBrack)
-		children = append(children, n.X)
-		children = append(children, n.Else)
-		children = append(children, n.RBrack)
-		children = append(children, n.Comm)
-		children = append(children, n.Body)
+		children = add(children, n.LBrack)
+		children = add(children, n.X)
+		children = add(children, n.Else)
+		children = add(children, n.RBrack)
+		children = add(children, n.Comm)
+		children = add(children, n.Body)
 
 	case *Field:
-		children = append(children, n.DefaultTok)
-		children = append(children, n.Type)
-		children = append(children, n.Name)
+		children = add(children, n.DefaultTok)
+		children = add(children, n.Type)
+		children = add(children, n.Name)
 		for _, n := range n.ArrayDef {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.TypePars)
-		children = append(children, n.ValueConstraint)
-		children = append(children, n.LengthConstraint)
-		children = append(children, n.Optional)
+		children = add(children, n.TypePars)
+		children = add(children, n.ValueConstraint)
+		children = add(children, n.LengthConstraint)
+		children = add(children, n.Optional)
 
 	case *RefSpec:
-		children = append(children, n.X)
+		children = add(children, n.X)
 
 	case *StructSpec:
-		children = append(children, n.Kind)
-		children = append(children, n.LBrace)
+		children = add(children, n.Kind)
+		children = add(children, n.LBrace)
 		for _, n := range n.Fields {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *ListSpec:
-		children = append(children, n.Kind)
-		children = append(children, n.Length)
-		children = append(children, n.OfTok)
-		children = append(children, n.ElemType)
+		children = add(children, n.Kind)
+		children = add(children, n.Length)
+		children = add(children, n.OfTok)
+		children = add(children, n.ElemType)
 
 	case *EnumSpec:
-		children = append(children, n.Tok)
-		children = append(children, n.LBrace)
+		children = add(children, n.Tok)
+		children = add(children, n.LBrace)
 		for _, n := range n.Enums {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *BehaviourSpec:
-		children = append(children, n.Kind)
-		children = append(children, n.Params)
-		children = append(children, n.RunsOn)
-		children = append(children, n.System)
-		children = append(children, n.Return)
+		children = add(children, n.Kind)
+		children = add(children, n.Params)
+		children = add(children, n.RunsOn)
+		children = add(children, n.System)
+		children = add(children, n.Return)
 
 	case *ValueDecl:
-		children = append(children, n.Kind)
-		children = append(children, n.TemplateRestriction)
-		children = append(children, n.Modif)
-		children = append(children, n.Type)
+		children = add(children, n.Kind)
+		children = add(children, n.TemplateRestriction)
+		children = add(children, n.Modif)
+		children = add(children, n.Type)
 		for _, n := range n.Decls {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.With)
+		children = add(children, n.With)
 
 	case *Declarator:
-		children = append(children, n.Name)
+		children = add(children, n.Name)
 		for _, n := range n.ArrayDef {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.AssignTok)
-		children = append(children, n.Value)
+		children = add(children, n.AssignTok)
+		children = add(children, n.Value)
 
 	case *TemplateDecl:
-		children = append(children, &n.RestrictionSpec)
-		children = append(children, n.Modif)
-		children = append(children, n.Type)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.Params)
-		children = append(children, n.ModifiesTok)
-		children = append(children, n.Base)
-		children = append(children, n.AssignTok)
-		children = append(children, n.Value)
-		children = append(children, n.With)
+		children = add(children, &n.RestrictionSpec)
+		children = add(children, n.Modif)
+		children = add(children, n.Type)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.Params)
+		children = add(children, n.ModifiesTok)
+		children = add(children, n.Base)
+		children = add(children, n.AssignTok)
+		children = add(children, n.Value)
+		children = add(children, n.With)
 
 	case *ModuleParameterGroup:
-		children = append(children, n.Tok)
-		children = append(children, n.LBrace)
+		children = add(children, n.Tok)
+		children = add(children, n.LBrace)
 		for _, n := range n.Decls {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *FuncDecl:
-		children = append(children, n.External)
-		children = append(children, n.Kind)
-		children = append(children, n.Name)
-		children = append(children, n.Modif)
-		children = append(children, n.TypePars)
-		children = append(children, n.Params)
-		children = append(children, n.RunsOn)
-		children = append(children, n.Mtc)
-		children = append(children, n.System)
-		children = append(children, n.Return)
-		children = append(children, n.Body)
-		children = append(children, n.With)
+		children = add(children, n.External)
+		children = add(children, n.Kind)
+		children = add(children, n.Name)
+		children = add(children, n.Modif)
+		children = add(children, n.TypePars)
+		children = add(children, n.Params)
+		children = add(children, n.RunsOn)
+		children = add(children, n.Mtc)
+		children = add(children, n.System)
+		children = add(children, n.Return)
+		children = add(children, n.Body)
+		children = add(children, n.With)
 
 	case *SignatureDecl:
-		children = append(children, n.Tok)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.Params)
-		children = append(children, n.NoBlock)
-		children = append(children, n.Return)
-		children = append(children, n.ExceptionTok)
-		children = append(children, n.Exception)
-		children = append(children, n.With)
+		children = add(children, n.Tok)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.Params)
+		children = add(children, n.NoBlock)
+		children = add(children, n.Return)
+		children = add(children, n.ExceptionTok)
+		children = add(children, n.Exception)
+		children = add(children, n.With)
 
 	case *SubTypeDecl:
-		children = append(children, n.TypeTok)
-		children = append(children, n.Field)
-		children = append(children, n.With)
+		children = add(children, n.TypeTok)
+		children = add(children, n.Field)
+		children = add(children, n.With)
 
 	case *StructTypeDecl:
-		children = append(children, n.TypeTok)
-		children = append(children, n.Kind)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.LBrace)
+		children = add(children, n.TypeTok)
+		children = add(children, n.Kind)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.LBrace)
 		for _, n := range n.Fields {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *EnumTypeDecl:
-		children = append(children, n.TypeTok)
-		children = append(children, n.EnumTok)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.LBrace)
+		children = add(children, n.TypeTok)
+		children = add(children, n.EnumTok)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.LBrace)
 		for _, n := range n.Enums {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *BehaviourTypeDecl:
-		children = append(children, n.TypeTok)
-		children = append(children, n.Kind)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.Params)
-		children = append(children, n.RunsOn)
-		children = append(children, n.System)
-		children = append(children, n.Return)
-		children = append(children, n.With)
+		children = add(children, n.TypeTok)
+		children = add(children, n.Kind)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.Params)
+		children = add(children, n.RunsOn)
+		children = add(children, n.System)
+		children = add(children, n.Return)
+		children = add(children, n.With)
 
 	case *PortTypeDecl:
-		children = append(children, n.TypeTok)
-		children = append(children, n.PortTok)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.Kind)
-		children = append(children, n.Realtime)
-		children = append(children, n.LBrace)
+		children = add(children, n.TypeTok)
+		children = add(children, n.PortTok)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.Kind)
+		children = add(children, n.Realtime)
+		children = add(children, n.LBrace)
 		for _, n := range n.Attrs {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *PortAttribute:
-		children = append(children, n.Kind)
+		children = add(children, n.Kind)
 		for _, n := range n.Types {
-			children = append(children, n)
+			children = add(children, n)
 		}
 
 	case *PortMapAttribute:
-		children = append(children, n.MapTok)
-		children = append(children, n.ParamTok)
-		children = append(children, n.Params)
+		children = add(children, n.MapTok)
+		children = add(children, n.ParamTok)
+		children = add(children, n.Params)
 
 	case *ComponentTypeDecl:
-		children = append(children, n.TypeTok)
-		children = append(children, n.CompTok)
-		children = append(children, n.Name)
-		children = append(children, n.TypePars)
-		children = append(children, n.ExtendsTok)
+		children = add(children, n.TypeTok)
+		children = add(children, n.CompTok)
+		children = add(children, n.Name)
+		children = add(children, n.TypePars)
+		children = add(children, n.ExtendsTok)
 		for _, n := range n.Extends {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.Body)
-		children = append(children, n.With)
+		children = add(children, n.Body)
+		children = add(children, n.With)
 
 	case *Module:
-		children = append(children, n.Tok)
-		children = append(children, n.Name)
-		children = append(children, n.Language)
-		children = append(children, n.LBrace)
+		children = add(children, n.Tok)
+		children = add(children, n.Name)
+		children = add(children, n.Language)
+		children = add(children, n.LBrace)
 		for _, n := range n.Defs {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *ModuleDef:
-		children = append(children, n.Visibility)
-		children = append(children, n.Def)
+		children = add(children, n.Visibility)
+		children = add(children, n.Def)
 
 	case *ControlPart:
-		children = append(children, n.Name)
-		children = append(children, n.Body)
-		children = append(children, n.With)
+		children = add(children, n.Name)
+		children = add(children, n.Body)
+		children = add(children, n.With)
 
 	case *ImportDecl:
-		children = append(children, n.ImportTok)
-		children = append(children, n.FromTok)
-		children = append(children, n.Module)
-		children = append(children, n.Language)
-		children = append(children, n.LBrace)
+		children = add(children, n.ImportTok)
+		children = add(children, n.FromTok)
+		children = add(children, n.Module)
+		children = add(children, n.Language)
+		children = add(children, n.LBrace)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *GroupDecl:
-		children = append(children, n.Tok)
-		children = append(children, n.Name)
-		children = append(children, n.LBrace)
+		children = add(children, n.Tok)
+		children = add(children, n.Name)
+		children = add(children, n.LBrace)
 		for _, n := range n.Defs {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
-		children = append(children, n.With)
+		children = add(children, n.RBrace)
+		children = add(children, n.With)
 
 	case *FriendDecl:
-		children = append(children, n.FriendTok)
-		children = append(children, n.ModuleTok)
-		children = append(children, n.Module)
-		children = append(children, n.With)
+		children = add(children, n.FriendTok)
+		children = add(children, n.ModuleTok)
+		children = add(children, n.Module)
+		children = add(children, n.With)
 
 	case *LanguageSpec:
-		children = append(children, n.Tok)
+		children = add(children, n.Tok)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
 
 	case *RestrictionSpec:
-		children = append(children, n.TemplateTok)
-		children = append(children, n.LParen)
-		children = append(children, n.Tok)
-		children = append(children, n.RParen)
+		children = add(children, n.TemplateTok)
+		children = add(children, n.LParen)
+		children = add(children, n.Tok)
+		children = add(children, n.RParen)
 
 	case *RunsOnSpec:
-		children = append(children, n.RunsTok)
-		children = append(children, n.OnTok)
-		children = append(children, n.Comp)
+		children = add(children, n.RunsTok)
+		children = add(children, n.OnTok)
+		children = add(children, n.Comp)
 
 	case *SystemSpec:
-		children = append(children, n.Tok)
-		children = append(children, n.Comp)
+		children = add(children, n.Tok)
+		children = add(children, n.Comp)
 
 	case *MtcSpec:
-		children = append(children, n.Tok)
-		children = append(children, n.Comp)
+		children = add(children, n.Tok)
+		children = add(children, n.Comp)
 
 	case *ReturnSpec:
-		children = append(children, n.Tok)
-		children = append(children, n.Restriction)
-		children = append(children, n.Modif)
-		children = append(children, n.Type)
+		children = add(children, n.Tok)
+		children = add(children, n.Restriction)
+		children = add(children, n.Modif)
+		children = add(children, n.Type)
 
 	case *FormalPars:
-		children = append(children, n.LParen)
+		children = add(children, n.LParen)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RParen)
+		children = add(children, n.RParen)
 
 	case *FormalPar:
-		children = append(children, n.Direction)
-		children = append(children, n.TemplateRestriction)
-		children = append(children, n.Modif)
-		children = append(children, n.Type)
-		children = append(children, n.Name)
+		children = add(children, n.Direction)
+		children = add(children, n.TemplateRestriction)
+		children = add(children, n.Modif)
+		children = add(children, n.Type)
+		children = add(children, n.Name)
 		for _, n := range n.ArrayDef {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.AssignTok)
-		children = append(children, n.Value)
+		children = add(children, n.AssignTok)
+		children = add(children, n.Value)
 
 	case *WithSpec:
-		children = append(children, n.Tok)
-		children = append(children, n.LBrace)
+		children = add(children, n.Tok)
+		children = add(children, n.LBrace)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RBrace)
+		children = add(children, n.RBrace)
 
 	case *WithStmt:
-		children = append(children, n.Kind)
-		children = append(children, n.Override)
-		children = append(children, n.LParen)
+		children = add(children, n.Kind)
+		children = add(children, n.Override)
+		children = add(children, n.LParen)
 		for _, n := range n.List {
-			children = append(children, n)
+			children = add(children, n)
 		}
-		children = append(children, n.RParen)
-		children = append(children, n.Value)
+		children = add(children, n.RParen)
+		children = add(children, n.Value)
 	}
 	return children
 }
