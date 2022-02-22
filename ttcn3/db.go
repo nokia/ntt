@@ -41,7 +41,7 @@ func (db *DB) Index(files ...string) {
 			db.mu.Lock()
 			for _, n := range tree.Modules() {
 				syms++
-				db.addModule(path, ast.Name(n))
+				db.addModule(path, ast.Name(n.Node))
 			}
 
 			for k := range tree.Names {
@@ -97,8 +97,8 @@ func (db *DB) VisibleModules(id string, mod *ast.Module) []*Definition {
 	for _, file := range candidates {
 		tree := ParseFile(file)
 		for _, m := range tree.Modules() {
-			if importedModules[ast.Name(m)] {
-				mods = append(mods, &Definition{Ident: m.Name, Node: m, Tree: tree})
+			if importedModules[ast.Name(m.Node)] {
+				mods = append(mods, m)
 			}
 		}
 	}

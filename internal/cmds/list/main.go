@@ -284,10 +284,10 @@ func listTests(cmd *cobra.Command, args []string) error {
 func listModules(cmd *cobra.Command, args []string) error {
 	for _, tree := range trees {
 		for _, mod := range tree.Modules() {
-			name := mod.Name.String()
+			name := mod.Ident.String()
 			tags := doc.FindAllTags(mod.Tok.Comments())
 			if match(name, tags) {
-				printItem(tree.FileSet, mod.Pos(), tags, name)
+				printItem(tree.FileSet, mod.Ident.Pos(), tags, name)
 			}
 		}
 	}

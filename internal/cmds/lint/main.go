@@ -242,7 +242,8 @@ func lint(cmd *cobra.Command, args []string) error {
 				return
 			}
 
-			for _, mod := range tree.Modules() {
+			for _, def := range tree.Modules() {
+				mod := def.Node.(*ast.Module)
 
 				if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Name)) {
 					continue
