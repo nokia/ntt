@@ -39,6 +39,17 @@ var (
 
 		Args: cobra.ArbitraryArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			switch Verbose {
+			case 0, 1:
+			case 2:
+				log.SetGlobalLevel(log.VerboseLevel)
+			case 3:
+				log.SetGlobalLevel(log.DebugLevel)
+			default:
+				log.SetGlobalLevel(log.TraceLevel)
+
+			}
+
 			if cpuprofile != "" {
 				f, err := os.Create(cpuprofile)
 				if err != nil {
@@ -75,7 +86,7 @@ var (
 		},
 	}
 
-	Verbose = false
+	Verbose = 0
 	ShSetup = false
 	JSON    = false
 
@@ -87,8 +98,9 @@ var (
 )
 
 func init() {
+	log.SetGlobalLevel(log.PrintLevel)
 	session.SharedDir = "/tmp/k3"
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().IntVarP(&Verbose, "verbose", "v", 0, "verbose output")
 	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	rootCmd.AddCommand(showCmd)
 
@@ -102,27 +114,7 @@ func init() {
 	rootCmd.AddCommand(tags.Command)
 	rootCmd.AddCommand(report.Command)
 	rootCmd.AddCommand(build.Command)
-
-	useNokiaRunner := func() bool {
-		if s, ok := os.LookupEnv("K3_40_RUN_POLICY"); ok {
-			if s == "ntt" {
-				return false
-			}
-			return true
-		}
-		if exe, _ := exec.LookPath("k3-run"); exe != "" {
-			return true
-		}
-		if exe, _ := exec.LookPath("ntt-run"); exe != "" {
-			return true
-		}
-		return false
-
-	}
-
-	if !useNokiaRunner() {
-		rootCmd.AddCommand(run.Command)
-	}
+	rootCmd.AddCommand(run.Command)
 
 }
 

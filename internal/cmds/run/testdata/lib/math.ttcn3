@@ -1,0 +1,7 @@
+module math {
+	function add(integer x, integer y) return integer { return x + y; }
+
+	testcase Test() runs on C {
+		setverdict(fail, "math failed")
+	}
+}

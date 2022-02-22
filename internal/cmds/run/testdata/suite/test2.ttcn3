@@ -1,0 +1,7 @@
+module test2 {
+	import from test all;
+
+	testcase C() runs on test.C {
+		setverdict(inconc)
+	}
+}
