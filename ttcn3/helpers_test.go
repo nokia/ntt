@@ -78,8 +78,8 @@ func importedDefs(db *ttcn3.DB, id string, module string) []string {
 func moduleFrom(file, module string) *ast.Module {
 	tree := ttcn3.ParseFile(file)
 	for _, m := range tree.Modules() {
-		if ast.Name(m) == module {
-			return m
+		if ast.Name(m.Node) == module {
+			return m.Node.(*ast.Module)
 		}
 	}
 	return nil

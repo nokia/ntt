@@ -2,7 +2,9 @@ package ttcn3
 
 import (
 	"reflect"
+	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -71,80 +73,80 @@ func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
 
 }
 
-func (t *Tree) Modules() []*ast.Module {
-	var nodes []*ast.Module
+func (t *Tree) Modules() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.Module); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Funcs() []*ast.FuncDecl {
-	var nodes []*ast.FuncDecl
+func (t *Tree) Funcs() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.FuncDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Imports() []*ast.ImportDecl {
-	var nodes []*ast.ImportDecl
+func (t *Tree) Imports() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ImportDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Ports() []*ast.PortTypeDecl {
-	var nodes []*ast.PortTypeDecl
+func (t *Tree) Ports() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.PortTypeDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Components() []*ast.ComponentTypeDecl {
-	var nodes []*ast.ComponentTypeDecl
+func (t *Tree) Components() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ComponentTypeDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Controls() []*ast.ControlPart {
-	var nodes []*ast.ControlPart
+func (t *Tree) Controls() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ControlPart); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) ModulePars() []*ast.Declarator {
-	var nodes []*ast.Declarator
+func (t *Tree) ModulePars() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
@@ -157,11 +159,11 @@ func (t *Tree) ModulePars() []*ast.Declarator {
 			return true
 
 		case *ast.Declarator:
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 		}
 		return false
 	})
-	return nodes
+	return defs
 }
 
 // Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
@@ -413,4 +415,32 @@ func (f *finder) typeOf(def *Definition) []*Definition {
 		}
 	}
 	return result
+}
+
+// Inspect the AST and return a list of all the definitions found by fn.
+func Inspect(files []string, fn func(*Tree) []*Definition) ([]*Definition, error) {
+	var (
+		result []*Definition
+		wg     sync.WaitGroup
+		mu     sync.Mutex
+		err    *multierror.Error
+	)
+
+	wg.Add(len(files))
+	for _, file := range files {
+		go func(file string) {
+			defer wg.Done()
+			tree := ParseFile(file)
+			if tree.Err != nil {
+				err = multierror.Append(err, tree.Err)
+			}
+			defs := fn(tree)
+			mu.Lock()
+			defer mu.Unlock()
+			result = append(result, defs...)
+		}(file)
+	}
+
+	wg.Wait()
+	return result, err
 }
