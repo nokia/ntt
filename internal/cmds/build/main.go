@@ -57,6 +57,7 @@ func build(name string, p project.Interface) error {
 	if err != nil {
 		return err
 	}
+
 	for _, dir := range imports {
 		files, err := buildImport(dir)
 		if err != nil {
@@ -86,12 +87,11 @@ func buildTTCN3(name string, srcs ...string) error {
 			args = append(args, "-I", dir)
 			visited[dir] = true
 		}
-		args = append(args, src)
 	}
 	for _, dir := range k3.FindAuxiliaryDirectories() {
 		args = append(args, "-I", dir)
 	}
-
+	args = append(args, srcs...)
 	return Exec("$K3C", args...)
 }
 
