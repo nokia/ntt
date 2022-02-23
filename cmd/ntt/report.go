@@ -133,8 +133,7 @@ func NewReport(args []string) *Report {
 
 	r.K3.Compiler = k3.Compiler()
 	r.K3.Runtime = k3.Runtime()
-	r.K3.Builtins = k3.BuiltinDirectories()
-
+	r.K3.Builtins = k3.FindAuxiliaryDirectories()
 	r.OssInfo, _ = r.suite.Getenv("OSSINFO")
 	return &r
 }

@@ -72,6 +72,22 @@ func DataDir() string {
 
 // FindAuxiliaryDirectories returns a list of auxiliary k3 directories containing TTCN-3 files.
 func FindAuxiliaryDirectories() []string {
+
+	// If are using a runtime from out developer source tree, we should
+	// also use files and adapter from that tree as well.
+	if hint := filepath.Dir(Runtime()); strings.HasSuffix(hint, "/src/k3r") {
+		dir := collectFolders(
+			hint+"/../k3r-*-plugin",
+			hint+"/../../../src/k3r-*-plugin",
+			hint+"/../../../src/ttcn3",
+			hint+"/../../../src/libzmq",
+		)
+		if len(dir) > 0 {
+			return dir
+		}
+
+	}
+
 	auxDirs := []string{
 		PluginDir(),
 		DataDir(),
@@ -84,36 +100,6 @@ func FindAuxiliaryDirectories() []string {
 		}
 	}
 	return ret
-}
-
-func BuiltinDirectories() []string {
-	switch hint := filepath.Dir(Runtime()); {
-	// Probably a regular K3 installation. We assume datadir and libdir are
-	// in a sibling folder.
-	case strings.HasSuffix(hint, "/bin"):
-		return collectFolders(
-			hint+"/../lib*/k3/plugins",
-			hint+"/../lib*/k3/plugins/ttcn3",
-			hint+"/../lib/*/k3/plugins",
-			hint+"/../lib/*/k3/plugins/ttcn3",
-			hint+"/../share/k3/ttcn3",
-		)
-
-	// If the runtime seems to be a buildtree of our source repository, we
-	// assume the builtins are there as well.
-	case strings.HasSuffix(hint, "/src/k3r"):
-		// TODO(5nord) the last glob fails if CMAKE_BUILD_DIR is not
-		// beneath CMAKE_SOURCE_DIR. Find a way to locate the source
-		// dir correctly.
-		return collectFolders(
-			hint+"/../k3r-*-plugin",
-			hint+"/../../../src/k3r-*-plugin",
-			hint+"/../../../src/ttcn3",
-			hint+"/../../../src/libzmq",
-		)
-	default:
-		return nil
-	}
 }
 
 func collectFolders(globs ...string) []string {
