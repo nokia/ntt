@@ -57,7 +57,8 @@ func build(name string, p project.Interface) error {
 	if err != nil {
 		return err
 	}
-	for _, dir := range imports {
+
+	for _, dir := range append(imports, k3.BuiltinDirectories()...) {
 		files, err := buildImport(dir)
 		if err != nil {
 			return err
