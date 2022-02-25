@@ -1,0 +1,14 @@
+module math {
+	function DivZero() {
+		log(0/0);
+	}
+
+	type component MTC {}
+	testcase Test() runs on MTC {
+		setverdict(pass, "math succeeded");
+	}
+
+	control {
+		execute(Test());
+	}
+}

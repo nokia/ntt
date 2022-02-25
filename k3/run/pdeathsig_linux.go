@@ -6,5 +6,7 @@ import (
 )
 
 func setPdeathsig(cmd *exec.Cmd) {
-	cmd.SysProcAttr.Pdeathsig = syscall.SIGKILL
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGKILL,
+	}
 }

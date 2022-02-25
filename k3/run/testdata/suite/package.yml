@@ -1,0 +1,6 @@
+name: testsuite
+sources:
+  - .
+imports:
+  - ..
+
