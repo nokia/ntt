@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func Execute(path string, args ...string) error {
+func Exec(path string, args ...string) error {
 	cmd := exec.Command(path, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

@@ -15,6 +15,7 @@ import (
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	k3r "github.com/nokia/ntt/k3/run"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/spf13/cobra"
@@ -23,6 +24,8 @@ import (
 type Job struct {
 	Name string
 	*ntt.Suite
+	SuiteName    string
+	RuntimePaths []string
 }
 
 type Result struct {
@@ -75,55 +78,70 @@ func init() {
 			if err != nil {
 				return fmt.Errorf("k3s: %w", err)
 			}
-			return Execute(exe, args...)
+			return Exec(exe, args...)
 		}
 	}
 }
 
+// Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+	wg := sync.WaitGroup{}
 	jobs := make(chan Job, MaxWorkers)
-
-	results := Run(context.Background(), jobs)
-
+	results := make(chan Result, MaxWorkers)
 	go func() {
 		files, ids := splitArgs(args, cmd.ArgsLenAtDash())
 		if err := EnqueueJobs(files, ids, jobs); err != nil {
 			results <- Result{Event: k3r.Event{Err: err}}
 		}
 	}()
+	for i := 0; i < MaxWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case job, ok := <-jobs:
+					if !ok {
+						return
+					}
+					Execute(job, results)
 
+				case <-ctx.Done():
+					results <- Result{Event: k3r.Event{Err: ctx.Err()}}
+					return
+				}
+			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
 	for r := range results {
 		HandleResult(r)
 	}
 	return nil
 }
 
-func Run(ctx context.Context, jobs chan Job) chan Result {
-	results := make(chan Result, MaxWorkers)
-	wg := sync.WaitGroup{}
-
-	for i := 0; i < MaxWorkers; i++ {
-		wg.Add(1)
-		go worker(context.Background(), &wg, jobs, results)
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	return results
-}
-
+// EnqueueJobs creates the job load and sends it to the jobs channel.
 func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 	defer close(jobs)
 	suite, err := ntt.NewFromArgs(files...)
 	if err != nil {
 		return err
 	}
+
+	name, err := suite.Name()
+	if err != nil {
+		return fmt.Errorf("test suite name: %w", err)
+	}
+
+	paths, err := runtimePaths(suite)
+
 	if len(ids) > 0 {
 		for _, id := range ids {
-			jobs <- Job{Name: id, Suite: suite}
+			jobs <- Job{Name: id, Suite: suite, SuiteName: name, RuntimePaths: paths}
 		}
 		return nil
 	}
@@ -137,8 +155,10 @@ func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 			if n := n.Node.(*ast.FuncDecl); n.IsTest() {
 				mod := ast.Name(tree.ModuleOf(n))
 				jobs <- Job{
-					Name:  fmt.Sprintf("%s.%s", mod, n.Name.String()),
-					Suite: suite,
+					Name:         fmt.Sprintf("%s.%s", mod, n.Name.String()),
+					Suite:        suite,
+					SuiteName:    name,
+					RuntimePaths: paths,
 				}
 			}
 		}
@@ -147,40 +167,27 @@ func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 	return nil
 }
 
+// Execute runs a single test and sends the results to the channel.
+func Execute(job Job, results chan<- Result) {
+	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.SuiteName))
+	test := k3r.NewTest(t3xf, job.Name)
+	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.RuntimePaths, ":")))
+	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.RuntimePaths, ":")))
+	for event := range test.Run() {
+		results <- Result{Test: *test, Event: event}
+	}
+}
+
 func HandleResult(res Result) {
-	switch res.Event.Type {
-	case "tciTestCaseStarted":
-	}
 }
 
-func worker(ctx context.Context, wg *sync.WaitGroup, jobs <-chan Job, results chan<- Result) {
-	defer wg.Done()
-	for {
-		select {
-		case job, ok := <-jobs:
-			if !ok {
-				return
-			}
-			execute(job, results)
-
-		case <-ctx.Done():
-			results <- Result{Event: k3r.Event{Err: ctx.Err()}}
-			return
-		}
-	}
-}
-
-func execute(job Job, results chan<- Result) {
-	name, err := job.Suite.Name()
+// runtimePaths returns the paths to the adapters and runtime libraries for the given test suite.
+func runtimePaths(p project.Interface) ([]string, error) {
+	imports, err := p.Imports()
 	if err != nil {
-		results <- Result{Event: k3r.Event{Err: fmt.Errorf("test suite name: %w", err)}}
-		return
+		return nil, fmt.Errorf("suite imports: %w", err)
 	}
-	imports, err := job.Suite.Imports()
-	if err != nil {
-		results <- Result{Event: k3r.Event{Err: fmt.Errorf("suite imports: %w", err)}}
-		return
-	}
+
 	var paths []string
 	if s := env.Getenv("NTT_CACHE"); s != "" {
 		paths = append(paths, strings.Split(s, ":")...)
@@ -189,15 +196,7 @@ func execute(job Job, results chan<- Result) {
 	if cwd, err := os.Getwd(); err == nil {
 		paths = append(paths, cwd)
 	}
-
-	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", name))
-	test := k3r.NewTest(t3xf, job.Name)
-	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(paths, ":")))
-	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(paths, ":")))
-	for event := range test.Run() {
-		results <- Result{Test: *test, Event: event}
-	}
-
+	return paths, nil
 }
 
 // splitArgs splits an argument list at pos. Pos is usually the position of '--'
