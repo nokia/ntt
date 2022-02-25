@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -60,7 +61,7 @@ var (
 
 func init() {
 	flags := Command.Flags()
-	flags.IntVarP(&MaxWorkers, "jobs", "j", 1, "number of parallel tests")
+	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "number of parallel tests")
 	flags.BoolVarP(&OutputJSON, "json", "", false, "output in JSON format")
 
 	flags.Bool("build", false, "build test suite")
@@ -193,12 +194,18 @@ func HandleResult(res Result) {
 		fmt.Printf("=== RUN %s\n", res.Event.Name)
 	case k3r.TestTerminated:
 		switch res.Event.Verdict {
+		case "pass":
+			color.Set(color.FgGreen)
 		case "fail", "error":
 			color.Set(color.FgRed, color.Bold)
 		case "inconc", "none":
 			color.Set(color.FgYellow, color.Bold)
 		}
 		fmt.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+		color.Unset()
+	case k3r.Error:
+		color.Set(color.FgRed, color.Bold)
+		fmt.Printf("+++ fatal %s\n", res.Event.Err.Error())
 		color.Unset()
 	}
 }
