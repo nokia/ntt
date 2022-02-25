@@ -94,7 +94,7 @@ func TestEvents(t *testing.T) {
 
 func testBuild(t *testing.T) string {
 	t.Helper()
-	if k3r := k3.Runtime(); k3r == "" {
+	if k3r := k3.Runtime(); k3r == "k3r" {
 		t.Skip("no k3 runtime found")
 	}
 
