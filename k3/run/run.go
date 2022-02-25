@@ -5,13 +5,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
 )
 
@@ -26,9 +26,6 @@ type Test struct {
 
 	// ModulePars hold module parameters
 	ModulePars []string
-
-	// Timeout is the maximum run time for the test in seconds.
-	Timeout time.Duration
 
 	// Path to the T3XF file.
 	T3XF string
@@ -45,52 +42,192 @@ type Test struct {
 	// Env specifies the environment variables to pass to the test.
 	Env []string
 
-	// Begin is the time the test started.
-	Begin time.Time
-
-	// End is the time the test ended.
-	End time.Time
-
-	// Verdict is the test verdict.
-	Verdict string
-
-	// Reason is the reason for the verdict.
-	Reason string
+	// Stderr is the stderr of the test.
+	Stderr bytes.Buffer
 }
 
-func (t *Test) Run() error {
-	ctx := context.Background()
-	if t.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, t.Timeout)
-		defer cancel()
+var (
+	ErrUnknown        = fmt.Errorf("unknown error")
+	ErrNotImplemented = fmt.Errorf("not implemented")
+
+	ErrNoSuch        = fmt.Errorf("no such thing")
+	ErrNoSuchModule  = fmt.Errorf("no such module")
+	ErrNoSuchTest    = fmt.Errorf("no such test case")
+	ErrNoSuchControl = fmt.Errorf("no such control")
+
+	ErrRuntimeNotReady = fmt.Errorf("runtime not ready")
+	ErrModuleNotReady  = fmt.Errorf("module not ready")
+	ErrTestNotReady    = fmt.Errorf("test case not ready")
+	ErrControlNotReady = fmt.Errorf("control not ready")
+)
+
+type RuntimeError struct {
+	Err error
+}
+
+func (r *RuntimeError) Error() string {
+	return r.Unwrap().Error()
+}
+
+func (r *RuntimeError) Unwrap() error {
+	return r.Err
+}
+
+// EventType is the type of an event.
+type EventType int
+
+const (
+	Error = EventType(iota)
+	TestStarted
+	TestTerminated
+	ControlStarted
+	ControlTerminated
+)
+
+func (t EventType) String() string {
+	switch t {
+	case Error:
+		return "tciError"
+	case TestStarted:
+		return "tciTestCaseStarted"
+	case TestTerminated:
+		return "tciTestCaseTerminated"
+	case ControlStarted:
+		return "tciControlStarted"
+	case ControlTerminated:
+		return "tciControlTerminated"
+	default:
+		return "unknown"
 	}
+}
 
-	cmd := exec.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
-	cmd.Dir = t.Dir
-	cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
-	cmd.Env = append(cmd.Env, t.ModulePars...)
-	cmd.Stdin = strings.NewReader(t.request())
+// MarshalText implements the encoding.TextMarshaler interface.
+func (t EventType) MarshalText() ([]byte, error) {
+	return []byte(t.String()), nil
+}
 
-	setPdeathsig(cmd)
-
-	var stderr, stdout bytes.Buffer
-	cmd.Stderr = &stderr
-	cmd.Stdout = &stdout
-
-	t.Begin = time.Now()
-	err := cmd.Run()
-	t.End = time.Now()
-
-	t.handleResponse(&stdout)
-
-	if ctx.Err() == context.DeadlineExceeded {
-		t.Verdict = "error"
-		t.Reason = "timeout"
-		return ctx.Err()
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (t EventType) UnmarshalText(text []byte) error {
+	switch string(text) {
+	case "tciError":
+		t = Error
+	case "tciTestCaseStarted":
+		t = TestStarted
+	case "tciTestCaseTerminated":
+		t = TestTerminated
+	case "tciControlStarted":
+		t = ControlStarted
+	case "tciControlTerminated":
+		t = ControlTerminated
+	default:
+		return fmt.Errorf("unknown event type: %s", text)
 	}
+	return nil
+}
 
-	return err
+type Event struct {
+	Time    time.Time `json:"time,omitempty"`
+	Type    EventType `json:"type,omitempty"`
+	Name    string    `json:"name,omitempty"`
+	Verdict string    `json:"verdict,omitempty"`
+	Err     error     `json:"error,omitempty"`
+}
+
+func (e Event) String() string {
+	s := e.Type.String()
+	if e.Name != "" {
+		s += " " + e.Name
+	}
+	if e.Verdict != "" {
+		s += " " + e.Verdict
+	}
+	if e.Err != nil {
+		s += " (" + e.Err.Error() + ")"
+	}
+	return s
+}
+
+func NewErrorEvent(err error) Event {
+	return Event{
+		Time:    time.Now(),
+		Type:    Error,
+		Verdict: "error",
+		Err:     err,
+	}
+}
+
+func (t *Test) Run() <-chan Event {
+	return t.RunWithContext(context.Background())
+}
+
+func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
+
+	events := make(chan Event)
+
+	go func() {
+		defer close(events)
+
+		cmd := exec.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
+		cmd.Dir = t.Dir
+		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
+		cmd.Env = append(cmd.Env, t.ModulePars...)
+		cmd.Stdin = strings.NewReader(t.request())
+
+		setPdeathsig(cmd)
+
+		cmd.Stderr = &t.Stderr
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			events <- NewErrorEvent(&RuntimeError{Err: err})
+			return
+		}
+
+		log.Debugf("+ %s\n", cmd.String())
+		err = cmd.Start()
+		if err != nil {
+			events <- NewErrorEvent(&RuntimeError{Err: err})
+			return
+		}
+
+		scanner := bufio.NewScanner(stdout)
+		scanner.Split(bufio.ScanLines)
+		for scanner.Scan() {
+			line := scanner.Text()
+			switch v := strings.Fields(line); v[0] {
+			case "tciTestCaseStarted":
+				events <- Event{Type: TestStarted, Name: v[1], Time: time.Now()}
+			case "tciTestCaseTerminated":
+				events <- Event{Type: TestTerminated, Verdict: v[1], Time: time.Now()}
+			case "tciControlTerminated":
+				events <- Event{Type: ControlTerminated, Time: time.Now()}
+			case "tciError":
+				switch v[1] {
+				case "E101:":
+					events <- NewErrorEvent(ErrNoSuchModule)
+				case "E102:":
+					events <- NewErrorEvent(ErrNoSuchTest)
+				case "E200:":
+					events <- NewErrorEvent(ErrRuntimeNotReady)
+				case "E201:":
+					events <- NewErrorEvent(ErrModuleNotReady)
+				case "E202:":
+					events <- NewErrorEvent(ErrTestNotReady)
+				case "E203:":
+					events <- NewErrorEvent(ErrControlNotReady)
+				case "E999:":
+					events <- NewErrorEvent(fmt.Errorf("%w: %s", ErrNotImplemented, strings.Join(v[2:], " ")))
+				default:
+					events <- NewErrorEvent(fmt.Errorf("%w: %s", ErrUnknown, strings.Join(v[1:], " ")))
+				}
+
+			}
+		}
+		if err := cmd.Wait(); err != nil || ctx.Err() == context.DeadlineExceeded {
+			events <- NewErrorEvent(&RuntimeError{Err: err})
+		}
+	}()
+
+	return events
 }
 
 // request builds a request for running a test or control part.
@@ -109,23 +246,6 @@ func (t *Test) request() string {
 	return req.String()
 }
 
-// handleResponse parses the response from the K3 runtime, grepping the verdict
-func (t *Test) handleResponse(resp io.Reader) {
-	scanner := bufio.NewScanner(resp)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := scanner.Text()
-		switch v := strings.Split(line, "\t"); v[0] {
-		case "tciTestCaseTerminated":
-			t.Verdict = v[1]
-		case "tciError":
-			t.Verdict = "error"
-			t.Reason = strings.Join(v[1:], "\t")
-		case "tciControlTerminated":
-		}
-	}
-}
-
 // NewTest creates a new test instance ready to run.
 func NewTest(t3xf string, name string) *Test {
 	return &Test{
@@ -134,6 +254,5 @@ func NewTest(t3xf string, name string) *Test {
 		Env:     os.Environ(),
 		LogFile: fs.ReplaceExt(t3xf, "log"),
 		Runtime: k3.Runtime(),
-		Verdict: "none",
 	}
 }
