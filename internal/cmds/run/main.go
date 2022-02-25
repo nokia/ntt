@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fatih/color"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/env"
@@ -89,12 +90,17 @@ func run(cmd *cobra.Command, args []string) error {
 	wg := sync.WaitGroup{}
 	jobs := make(chan Job, MaxWorkers)
 	results := make(chan Result, MaxWorkers)
+
+	// Enqueue jobs.
 	go func() {
+		defer close(jobs)
 		files, ids := splitArgs(args, cmd.ArgsLenAtDash())
 		if err := EnqueueJobs(files, ids, jobs); err != nil {
-			results <- Result{Event: k3r.Event{Err: err}}
+			results <- Result{Event: k3r.NewErrorEvent(err)}
 		}
 	}()
+
+	// Start workers and process jobs in parallel.
 	for i := 0; i < MaxWorkers; i++ {
 		wg.Add(1)
 		go func() {
@@ -108,16 +114,20 @@ func run(cmd *cobra.Command, args []string) error {
 					Execute(job, results)
 
 				case <-ctx.Done():
-					results <- Result{Event: k3r.Event{Err: ctx.Err()}}
+					results <- Result{Event: k3r.NewErrorEvent(ctx.Err())}
 					return
 				}
 			}
 		}()
 	}
+
+	// Wait for all workers to finish.
 	go func() {
 		wg.Wait()
 		close(results)
 	}()
+
+	// Process results.
 	for r := range results {
 		HandleResult(r)
 	}
@@ -126,7 +136,6 @@ func run(cmd *cobra.Command, args []string) error {
 
 // EnqueueJobs creates the job load and sends it to the jobs channel.
 func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
-	defer close(jobs)
 	suite, err := ntt.NewFromArgs(files...)
 	if err != nil {
 		return err
@@ -179,6 +188,19 @@ func Execute(job Job, results chan<- Result) {
 }
 
 func HandleResult(res Result) {
+	switch res.Type {
+	case k3r.TestStarted:
+		fmt.Printf("=== RUN %s\n", res.Event.Name)
+	case k3r.TestTerminated:
+		switch res.Event.Verdict {
+		case "fail", "error":
+			color.Set(color.FgRed, color.Bold)
+		case "inconc", "none":
+			color.Set(color.FgYellow, color.Bold)
+		}
+		fmt.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+		color.Unset()
+	}
 }
 
 // runtimePaths returns the paths to the adapters and runtime libraries for the given test suite.

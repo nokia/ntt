@@ -25,22 +25,22 @@ func TestEvents(t *testing.T) {
 		{
 			input: "test.A",
 			events: []string{
-				`tciTestCaseStarted "test.A"`,
+				`tciTestCaseStarted test.A`,
 				`tciTestCaseTerminated pass`,
 			}},
 		{
 			input: "test.control",
 			events: []string{
-				`tciTestCaseStarted "test.B"`,
+				`tciTestCaseStarted test.B`,
 				`tciTestCaseTerminated fail`,
-				`tciTestCaseStarted "test.A"`,
+				`tciTestCaseStarted test.A`,
 				`tciTestCaseTerminated pass`,
 				`tciControlTerminated`,
 			}},
 		{
 			input: "test2.control",
 			events: []string{
-				`tciTestCaseStarted "test2.A"`,
+				`tciTestCaseStarted test2.A`,
 				`tciTestCaseTerminated pass`,
 				`tciControlTerminated`,
 			}},
@@ -83,7 +83,7 @@ func TestEvents(t *testing.T) {
 			input:   "math.Test",
 			timeout: 1 * time.Second,
 			events: []string{
-				`tciTestCaseStarted "math.Test"`,
+				`tciTestCaseStarted math.Test`,
 				`tciError error (timeout)`,
 			}},
 	}
