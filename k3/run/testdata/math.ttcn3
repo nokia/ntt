@@ -6,6 +6,7 @@ module math {
 	type component MTC {}
 	testcase Test() runs on MTC {
 		setverdict(pass, "math succeeded");
+		wait(now+20.0);
 	}
 
 	control {

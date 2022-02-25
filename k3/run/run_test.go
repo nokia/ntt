@@ -1,8 +1,10 @@
 package run_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/cmds/build"
@@ -17,7 +19,7 @@ func TestEvents(t *testing.T) {
 
 	tests := []struct {
 		input   string
-		timeout float64
+		timeout time.Duration
 		events  []string
 	}{
 		{
@@ -77,16 +79,32 @@ func TestEvents(t *testing.T) {
 			events: []string{
 				"tciError error (module not ready)",
 			}},
+		{
+			input:   "math.Test",
+			timeout: 1 * time.Second,
+			events: []string{
+				`tciTestCaseStarted "math.Test"`,
+				`tciError error (timeout)`,
+			}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			t.Parallel()
+			ctx := context.Background()
+			var cancel context.CancelFunc
+			if tt.timeout > 0 {
+				ctx, cancel = context.WithTimeout(ctx, time.Duration(tt.timeout))
+			}
+
 			var actual []string
-			for e := range run.NewTest(t3xf, tt.input).Run() {
+			for e := range run.NewTest(t3xf, tt.input).RunWithContext(ctx) {
 				actual = append(actual, e.String())
 			}
 			assert.Equal(t, tt.events, actual)
+			if cancel != nil {
+				cancel()
+			}
 		})
 	}
 

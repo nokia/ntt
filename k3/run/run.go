@@ -49,6 +49,7 @@ type Test struct {
 var (
 	ErrUnknown        = fmt.Errorf("unknown error")
 	ErrNotImplemented = fmt.Errorf("not implemented")
+	ErrTimeout        = fmt.Errorf("timeout")
 
 	ErrNoSuch        = fmt.Errorf("no such thing")
 	ErrNoSuchModule  = fmt.Errorf("no such module")
@@ -222,7 +223,10 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 
 			}
 		}
-		if err := cmd.Wait(); err != nil || ctx.Err() == context.DeadlineExceeded {
+		err = cmd.Wait()
+		if ctx.Err() == context.DeadlineExceeded {
+			events <- NewErrorEvent(ErrTimeout)
+		} else if err != nil {
 			events <- NewErrorEvent(&RuntimeError{Err: err})
 		}
 	}()
