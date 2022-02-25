@@ -195,6 +195,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 		var name string
 		for scanner.Scan() {
 			line := scanner.Text()
+			log.Traceln(">", line)
 			switch v := strings.Fields(line); v[0] {
 			case "tciTestCaseStarted":
 				name = v[1][1 : len(v[1])-1]
@@ -258,7 +259,9 @@ func (t *Test) request() string {
 		fmt.Fprintf(&req, "tciStartTestCase \"%s\" {%s}\n", t.Name, strings.Join(t.Args, ","))
 	}
 	fmt.Fprintln(&req, "tcinonExitTE")
-	return req.String()
+	s := req.String()
+	log.Traceln("<", s)
+	return s
 }
 
 // NewTest creates a new test instance ready to run.
