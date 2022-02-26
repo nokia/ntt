@@ -2,7 +2,9 @@ package run
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -16,6 +18,7 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/k3"
 	k3r "github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
@@ -25,22 +28,18 @@ import (
 )
 
 type Job struct {
-	Name string
-	*ntt.Suite
+	Name      string
+	Iteration int
+
+	// "Precalculated" suite configuration.
 	SuiteName    string
 	RuntimePaths []string
 }
 
 type Result struct {
+	*Job
 	k3r.Test
 	k3r.Event
-}
-
-func (r *Result) Log() {
-	switch {
-	case OutputJSON:
-
-	}
 }
 
 var (
@@ -60,10 +59,13 @@ var (
 
 	fatal   = color.New(color.FgRed).Add(color.Bold)
 	failure = color.New(color.FgRed).Add(color.Bold)
-	warning = color.New(color.FgCyan).Add(color.Bold)
+	warning = color.New(color.FgYellow).Add(color.Bold)
 	success = color.New(color.FgGreen)
 
 	ErrCommandFailed = fmt.Errorf("command failed")
+
+	Runs   []results.Run
+	Ledger = make(map[*Job]*Result)
 )
 
 func init() {
@@ -94,9 +96,11 @@ func init() {
 
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
+	defer FlushTestResults()
+
 	ctx := context.Background()
 	wg := sync.WaitGroup{}
-	jobs := make(chan Job, MaxWorkers)
+	jobs := make(chan *Job, MaxWorkers)
 	results := make(chan Result, MaxWorkers)
 
 	// Enqueue jobs.
@@ -146,7 +150,7 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 // EnqueueJobs creates the job load and sends it to the jobs channel.
-func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
+func EnqueueJobs(files []string, ids []string, jobs chan *Job) error {
 	suite, err := ntt.NewFromArgs(files...)
 	if err != nil {
 		return err
@@ -161,7 +165,7 @@ func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 
 	if len(ids) > 0 {
 		for _, id := range ids {
-			jobs <- Job{Name: id, Suite: suite, SuiteName: name, RuntimePaths: paths}
+			jobs <- &Job{Name: id, SuiteName: name, RuntimePaths: paths}
 		}
 		return nil
 	}
@@ -170,23 +174,22 @@ func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 		return err
 	}
 	if policy := os.Getenv("K3_40_RUN_POLICY"); policy == "old" {
-		enqueueControls(jobs, suite, name, paths, srcs)
+		enqueueControls(jobs, name, paths, srcs)
 	} else {
-		enqueueTests(jobs, suite, name, paths, srcs)
+		enqueueTests(jobs, name, paths, srcs)
 	}
 	return nil
 }
 
-func enqueueTests(jobs chan Job, suite *ntt.Suite, name string, paths []string, srcs []string) {
+func enqueueTests(jobs chan *Job, suiteName string, paths []string, srcs []string) {
 	for _, src := range srcs {
 		tree := ttcn3.ParseFile(src)
 		for _, n := range tree.Funcs() {
 			if n := n.Node.(*ast.FuncDecl); n.IsTest() {
 				mod := ast.Name(tree.ModuleOf(n))
-				jobs <- Job{
+				jobs <- &Job{
 					Name:         fmt.Sprintf("%s.%s", mod, n.Name.String()),
-					Suite:        suite,
-					SuiteName:    name,
+					SuiteName:    suiteName,
 					RuntimePaths: paths,
 				}
 			}
@@ -195,15 +198,14 @@ func enqueueTests(jobs chan Job, suite *ntt.Suite, name string, paths []string, 
 	}
 }
 
-func enqueueControls(jobs chan Job, suite *ntt.Suite, name string, paths []string, srcs []string) {
+func enqueueControls(jobs chan *Job, suiteName string, paths []string, srcs []string) {
 	for _, src := range srcs {
 		tree := ttcn3.ParseFile(src)
 		for _, n := range tree.Controls() {
 			mod := ast.Name(tree.ModuleOf(n.Node))
-			jobs <- Job{
+			jobs <- &Job{
 				Name:         fmt.Sprintf("%s.control", mod),
-				Suite:        suite,
-				SuiteName:    name,
+				SuiteName:    suiteName,
 				RuntimePaths: paths,
 			}
 		}
@@ -212,35 +214,76 @@ func enqueueControls(jobs chan Job, suite *ntt.Suite, name string, paths []strin
 }
 
 // Execute runs a single test and sends the results to the channel.
-func Execute(job Job, results chan<- Result) {
+func Execute(job *Job, results chan<- Result) {
 	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.SuiteName))
 	test := k3r.NewTest(t3xf, job.Name)
 	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.RuntimePaths, ":")))
 	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.RuntimePaths, ":")))
 	for event := range test.Run() {
-		results <- Result{Test: *test, Event: event}
+		results <- Result{
+			Job:   job,
+			Test:  *test,
+			Event: event,
+		}
 	}
 }
 
 func HandleResult(res Result) {
 	switch res.Type {
 	case k3r.TestStarted:
+		Ledger[res.Job] = &res
 		fmt.Printf("=== RUN %s\n", res.Event.Name)
+
 	case k3r.TestTerminated:
+		if prev := Ledger[res.Job]; prev != nil {
+			delete(Ledger, res.Job)
+			Runs = append(Runs, results.Run{
+				Name:    res.Event.Name,
+				Verdict: res.Event.Verdict,
+				Begin:   results.Timestamp{Time: prev.Event.Time},
+				End:     results.Timestamp{Time: res.Event.Time},
+			})
+		}
 		switch res.Event.Verdict {
 		case "pass":
 			success.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+
 		case "fail", "error":
 			failure.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
 			atomic.AddUint64(&errorCount, 1)
+
 		case "inconc", "none":
 			warning.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
 			atomic.AddUint64(&errorCount, 1)
 		}
+
 	case k3r.Error:
-		fatal.Printf("+++ fatal %s\n", res.Event.Err.Error())
+		fatal.Printf("+++ fatal ")
+		if name := res.Event.Name; name != "" {
+			fatal.Printf("%s: ", name)
+		}
+		fatal.Printf("%s\n", res.Event.Err.Error())
 		atomic.AddUint64(&errorCount, 1)
 	}
+}
+
+func FlushTestResults() error {
+	db := &results.DB{
+		Version: "1",
+		Sessions: []results.Session{
+			{
+				Id:              "1",
+				MaxJobs:         MaxWorkers,
+				ExpectedVerdict: "pass",
+				Runs:            Runs,
+			},
+		},
+	}
+	b, err := json.MarshalIndent(db, "", "  ")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(cache.Lookup("test_results.json"), b, 0644)
 }
 
 // runtimePaths returns the paths to the adapters and runtime libraries for the given test suite.
