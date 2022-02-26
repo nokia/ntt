@@ -15,7 +15,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	Command.AddCommand(versionCmd)
 }
 
 func versionInfo(cmd *cobra.Command, args []string) {

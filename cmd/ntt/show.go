@@ -136,7 +136,7 @@ func show(cmd *cobra.Command, args []string) error {
 	report := NewReport(sources)
 
 	switch {
-	case JSON:
+	case outputJSON:
 		return printJSON(report, keys)
 	case ShSetup:
 		return printShellScript(report, keys)

@@ -25,7 +25,7 @@ func addHelp(topics []string, short string, long string) {
 		Long:    long,
 	}
 
-	rootCmd.AddCommand(h)
+	Command.AddCommand(h)
 }
 
 func init() {

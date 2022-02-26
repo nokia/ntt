@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	rootCmd = &cobra.Command{
+	Command = &cobra.Command{
 		Use:   "ntt",
 		Short: "ntt is a tool for managing TTCN-3 source code and tests",
 
@@ -39,16 +39,7 @@ var (
 
 		Args: cobra.ArbitraryArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			switch Verbose {
-			case 0, 1:
-			case 2:
-				log.SetGlobalLevel(log.VerboseLevel)
-			case 3:
-				log.SetGlobalLevel(log.DebugLevel)
-			default:
-				log.SetGlobalLevel(log.TraceLevel)
-
-			}
+			log.SetGlobalLevel(Verbosity())
 
 			if cpuprofile != "" {
 				f, err := os.Create(cpuprofile)
@@ -86,9 +77,11 @@ var (
 		},
 	}
 
-	Verbose = 0
-	ShSetup = false
-	JSON    = false
+	verbose     int
+	quiet       bool
+	ShSetup     bool
+	outputJSON  bool
+	outputPlain bool
 
 	version = "dev"
 	commit  = "none"
@@ -98,24 +91,48 @@ var (
 )
 
 func init() {
-	log.SetGlobalLevel(log.PrintLevel)
 	session.SharedDir = "/tmp/k3"
-	rootCmd.PersistentFlags().IntVarP(&Verbose, "verbose", "v", 0, "verbose output")
-	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
-	rootCmd.AddCommand(showCmd)
+	Command.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output")
+	Command.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "quiet output")
+	Command.PersistentFlags().BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
+	Command.PersistentFlags().BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
+	Command.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
+	Command.AddCommand(showCmd)
 
 	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
-	showCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
-	rootCmd.AddCommand(dump.Command)
-	rootCmd.AddCommand(locate_file.Command)
-	rootCmd.AddCommand(langserver.Command)
-	rootCmd.AddCommand(lint.Command)
-	rootCmd.AddCommand(list.Command)
-	rootCmd.AddCommand(tags.Command)
-	rootCmd.AddCommand(report.Command)
-	rootCmd.AddCommand(build.Command)
-	rootCmd.AddCommand(run.Command)
+	Command.AddCommand(dump.Command)
+	Command.AddCommand(locate_file.Command)
+	Command.AddCommand(langserver.Command)
+	Command.AddCommand(lint.Command)
+	Command.AddCommand(list.Command)
+	Command.AddCommand(tags.Command)
+	Command.AddCommand(report.Command)
+	Command.AddCommand(build.Command)
+	Command.AddCommand(run.Command)
 
+}
+
+func Format() string {
+	switch {
+	case outputPlain:
+		return "plain"
+	case outputJSON:
+		return "json"
+	default:
+		return "text"
+	}
+}
+
+func Verbosity() log.Level {
+	if quiet {
+		return log.DisabledLevel
+	}
+
+	lvl := log.PrintLevel + log.Level(verbose)
+	if lvl > log.TraceLevel {
+		lvl = log.TraceLevel
+	}
+	return lvl
 }
 
 func main() {
@@ -132,7 +149,7 @@ func main() {
 		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
 	}
 
-	err := rootCmd.Execute()
+	err := Command.Execute()
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}

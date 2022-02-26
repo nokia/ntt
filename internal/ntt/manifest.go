@@ -356,7 +356,6 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	}
 
 	f := fs.Open(fs.Path(suite.Root()) + "/package.yml")
-	log.Debugf("Open manifest %q\n", f.Path())
 	b, err := f.Bytes()
 	if err != nil {
 		log.Debugln(err.Error())
@@ -368,6 +367,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 		return nil, err
 	}
 
+	log.Debugf("found manifest: %s\n", f.Path())
 	type manifestData struct {
 		manifest manifest
 		err      error

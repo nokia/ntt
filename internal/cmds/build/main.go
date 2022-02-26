@@ -306,7 +306,7 @@ func Exec(name string, srcs []string, args []string) error {
 		}
 	}
 
-	log.Debugln("+", cmd.String())
+	log.Verboseln("+", cmd.String())
 	return cmd.Run()
 }
 
