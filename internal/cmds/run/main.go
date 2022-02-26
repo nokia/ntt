@@ -56,7 +56,10 @@ var (
 	MaxWorkers int
 	OutputJSON bool
 
-	ErrNoSuchTest = fmt.Errorf("no such test")
+	fatal   = color.New(color.FgRed).Add(color.Bold)
+	failure = color.New(color.FgRed).Add(color.Bold)
+	warning = color.New(color.FgCyan).Add(color.Bold)
+	success = color.New(color.FgGreen)
 )
 
 func init() {
@@ -195,18 +198,14 @@ func HandleResult(res Result) {
 	case k3r.TestTerminated:
 		switch res.Event.Verdict {
 		case "pass":
-			color.Set(color.FgGreen)
+			success.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
 		case "fail", "error":
-			color.Set(color.FgRed, color.Bold)
+			failure.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
 		case "inconc", "none":
-			color.Set(color.FgYellow, color.Bold)
+			warning.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
 		}
-		fmt.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
-		color.Unset()
 	case k3r.Error:
-		color.Set(color.FgRed, color.Bold)
-		fmt.Printf("+++ fatal %s\n", res.Event.Err.Error())
-		color.Unset()
+		fatal.Printf("+++ fatal %s\n", res.Event.Err.Error())
 	}
 }
 
