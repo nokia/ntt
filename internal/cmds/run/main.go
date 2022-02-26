@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/fatih/color"
 	"github.com/nokia/ntt/internal/cache"
@@ -55,6 +56,7 @@ var (
 
 	MaxWorkers int
 	OutputJSON bool
+	errorCount uint64
 
 	fatal   = color.New(color.FgRed).Add(color.Bold)
 	failure = color.New(color.FgRed).Add(color.Bold)
@@ -134,6 +136,9 @@ func run(cmd *cobra.Command, args []string) error {
 	// Process results.
 	for r := range results {
 		HandleResult(r)
+	}
+	if errorCount > 0 {
+		return fmt.Errorf("%d error(s) occurred", errorCount)
 	}
 	return nil
 }
@@ -225,11 +230,14 @@ func HandleResult(res Result) {
 			success.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
 		case "fail", "error":
 			failure.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+			atomic.AddUint64(&errorCount, 1)
 		case "inconc", "none":
 			warning.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+			atomic.AddUint64(&errorCount, 1)
 		}
 	case k3r.Error:
 		fatal.Printf("+++ fatal %s\n", res.Event.Err.Error())
+		atomic.AddUint64(&errorCount, 1)
 	}
 }
 
