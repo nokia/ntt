@@ -162,6 +162,15 @@ func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 	if err != nil {
 		return err
 	}
+	if policy := os.Getenv("K3_40_RUN_POLICY"); policy == "old" {
+		enqueueControls(jobs, suite, name, paths, srcs)
+	} else {
+		enqueueTests(jobs, suite, name, paths, srcs)
+	}
+	return nil
+}
+
+func enqueueTests(jobs chan Job, suite *ntt.Suite, name string, paths []string, srcs []string) {
 	for _, src := range srcs {
 		tree := ttcn3.ParseFile(src)
 		for _, n := range tree.Funcs() {
@@ -177,7 +186,22 @@ func EnqueueJobs(files []string, ids []string, jobs chan Job) error {
 		}
 
 	}
-	return nil
+}
+
+func enqueueControls(jobs chan Job, suite *ntt.Suite, name string, paths []string, srcs []string) {
+	for _, src := range srcs {
+		tree := ttcn3.ParseFile(src)
+		for _, n := range tree.Controls() {
+			mod := ast.Name(tree.ModuleOf(n.Node))
+			jobs <- Job{
+				Name:         fmt.Sprintf("%s.control", mod),
+				Suite:        suite,
+				SuiteName:    name,
+				RuntimePaths: paths,
+			}
+		}
+
+	}
 }
 
 // Execute runs a single test and sends the results to the channel.
