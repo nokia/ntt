@@ -1,6 +1,7 @@
 package build
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/magefile/mage/target"
 	"github.com/nokia/ntt/internal/cache"
+	"github.com/nokia/ntt/internal/compdb"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
@@ -45,7 +47,14 @@ var (
 		"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
 		"ASN2TTCN":   "asn1tottcn3",
 	}
+
+	CompDB bool
+	DB     []compdb.Command
 )
+
+func init() {
+	Command.Flags().BoolVar(&CompDB, "compdb", false, "generate compilation database")
+}
 
 func build(name string, p project.Interface) error {
 	srcs, err := p.Sources()
@@ -66,7 +75,19 @@ func build(name string, p project.Interface) error {
 		srcs = append(srcs, files...)
 	}
 
-	return buildTTCN3(name, srcs...)
+	if err := buildTTCN3(name, srcs...); err != nil {
+		return err
+	}
+
+	b, err := json.MarshalIndent(DB, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal compdb: %w", err)
+	}
+
+	if err := os.WriteFile("compile_commands.json", b, 0644); err != nil {
+		return fmt.Errorf("failed to write compile_commands.json: %w", err)
+	}
+	return nil
 }
 
 func buildTTCN3(name string, srcs ...string) error {
@@ -92,7 +113,7 @@ func buildTTCN3(name string, srcs ...string) error {
 		args = append(args, "-I", dir)
 	}
 	args = append(args, srcs...)
-	return Exec("$K3C", args...)
+	return Exec("$K3C", srcs, args)
 }
 
 func buildImport(dir string) ([]string, error) {
@@ -178,7 +199,7 @@ func asn1Generate(name string, srcs ...string) ([]string, error) {
 	args = append(args, "-output", strings.TrimSuffix(c, ".c"), "-prefix", strings.TrimSuffix(c, ".enc.c"))
 	args = append(args, "$OSSINFO/asn1dflt.linux-x86_64")
 	args = append(args, srcs...)
-	return []string{c, h}, Exec("$ASN1C", args...)
+	return []string{c, h}, Exec("$ASN1C", srcs, args)
 
 }
 
@@ -201,7 +222,7 @@ func asn1Build(name string, srcs ...string) ([]string, error) {
 	}
 	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", out)
 	args = append(args, srcs...)
-	return []string{out}, Exec("$CC", args...)
+	return []string{out}, Exec("$CC", srcs, args)
 }
 
 func asn1Modules(name string, srcs ...string) ([]string, error) {
@@ -209,7 +230,7 @@ func asn1Modules(name string, srcs ...string) ([]string, error) {
 	args := []string{"-o", out}
 	args = append(args, srcs...)
 	args = append(args, fmt.Sprintf("%smod", name), Encoding(name))
-	return nil, Exec("$ASN2TTCN", args...)
+	return nil, Exec("$ASN2TTCN", srcs, args)
 }
 
 func buildAdapter(name string, srcs ...string) ([]string, error) {
@@ -229,7 +250,7 @@ func buildAdapter(name string, srcs ...string) ([]string, error) {
 	}
 	args = append(args, "-lk3-plugin", "-shared", "-fPIC", "-o", out)
 	args = append(args, srcs...)
-	return []string{out}, Exec("$CXX", args...)
+	return []string{out}, Exec("$CXX", srcs, args)
 }
 
 func Encoding(name string) string {
@@ -249,7 +270,7 @@ func Env(key string) []string {
 	return nil
 }
 
-func Exec(name string, args ...string) error {
+func Exec(name string, srcs []string, args []string) error {
 	expand := func(key string) string {
 		if v, ok := os.LookupEnv(key); ok {
 			return v
@@ -271,6 +292,17 @@ func Exec(name string, args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
+
+	if CompDB {
+		cwd, _ := os.Getwd()
+		for _, src := range srcs {
+			DB = append(DB, compdb.Command{
+				Directory: cwd,
+				File:      src,
+				Arguments: cmd.Args,
+			})
+		}
+	}
 
 	log.Debugln("+", cmd.String())
 	return cmd.Run()
