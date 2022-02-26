@@ -79,13 +79,15 @@ func build(name string, p project.Interface) error {
 		return err
 	}
 
-	b, err := json.MarshalIndent(DB, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal compdb: %w", err)
-	}
+	if CompDB {
+		b, err := json.MarshalIndent(DB, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal compdb: %w", err)
+		}
 
-	if err := os.WriteFile("compile_commands.json", b, 0644); err != nil {
-		return fmt.Errorf("failed to write compile_commands.json: %w", err)
+		if err := os.WriteFile("compile_commands.json", b, 0644); err != nil {
+			return fmt.Errorf("failed to write compile_commands.json: %w", err)
+		}
 	}
 	return nil
 }
