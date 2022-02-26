@@ -1,6 +1,7 @@
 package main
 
 import (
+	stderrors "errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -167,7 +168,10 @@ func fatal(err error) {
 	case errors.ErrorList:
 		errors.PrintError(os.Stderr, err)
 	default:
-		fmt.Fprintln(os.Stderr, err.Error())
+		// Run command has its own error logging.
+		if !stderrors.Is(err, run.ErrCommandFailed) {
+			fmt.Fprintln(os.Stderr, err.Error())
+		}
 	}
 
 	os.Exit(1)

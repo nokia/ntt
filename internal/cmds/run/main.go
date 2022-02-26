@@ -62,6 +62,8 @@ var (
 	failure = color.New(color.FgRed).Add(color.Bold)
 	warning = color.New(color.FgCyan).Add(color.Bold)
 	success = color.New(color.FgGreen)
+
+	ErrCommandFailed = fmt.Errorf("command failed")
 )
 
 func init() {
@@ -138,7 +140,7 @@ func run(cmd *cobra.Command, args []string) error {
 		HandleResult(r)
 	}
 	if errorCount > 0 {
-		return fmt.Errorf("%d error(s) occurred", errorCount)
+		return fmt.Errorf("%w: %d error(s) occurred", ErrCommandFailed, errorCount)
 	}
 	return nil
 }
