@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/nokia/ntt/internal/cache"
@@ -143,6 +144,7 @@ func run(cmd *cobra.Command, args []string) error {
 	for r := range results {
 		HandleResult(r)
 	}
+
 	if errorCount > 0 {
 		return fmt.Errorf("%w: %d error(s) occurred", ErrCommandFailed, errorCount)
 	}
@@ -235,6 +237,7 @@ func HandleResult(res Result) {
 		fmt.Printf("=== RUN %s\n", res.Event.Name)
 
 	case k3r.TestTerminated:
+		var d time.Duration
 		if prev := Ledger[res.Job]; prev != nil {
 			delete(Ledger, res.Job)
 			Runs = append(Runs, results.Run{
@@ -243,17 +246,19 @@ func HandleResult(res Result) {
 				Begin:   results.Timestamp{Time: prev.Event.Time},
 				End:     results.Timestamp{Time: res.Event.Time},
 			})
+			d = res.Event.Time.Sub(prev.Event.Time)
 		}
+		line := fmt.Sprintf("--- %s %s\t(duration=%.3gs)", res.Event.Verdict, res.Event.Name, float64(d.Seconds()))
 		switch res.Event.Verdict {
 		case "pass":
-			success.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+			success.Println(line)
 
 		case "fail", "error":
-			failure.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+			failure.Println(line)
 			atomic.AddUint64(&errorCount, 1)
 
 		case "inconc", "none":
-			warning.Printf("--- %s %s\n", res.Event.Verdict, res.Event.Name)
+			warning.Println(line)
 			atomic.AddUint64(&errorCount, 1)
 		}
 
