@@ -149,7 +149,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 	verbose  = false
 	trees    []*ttcn3.Tree
 
-	baskets = []ntt2.Basket{ntt2.DefaultBasket}
+	Basket = ntt2.DefaultBasket
 )
 
 func init() {
@@ -180,11 +180,11 @@ func loadBaskets(suite *ntt.Suite) error {
 			args = []string{"-R", "@" + name}
 		}
 
-		basket, err := ntt2.NewBasket(name, args...)
+		sb, err := ntt2.NewBasket(name, args...)
 		if err != nil {
 			return err
 		}
-		baskets = append(baskets, basket)
+		Basket.Baskets = append(Basket.Baskets, sb)
 	}
 	return nil
 }
@@ -234,7 +234,7 @@ func listTests(cmd *cobra.Command, args []string) error {
 
 				name := module + "." + n.Name.String()
 				tags := doc.FindAllTags(n.Kind.Comments())
-				if match(name, tags) {
+				if Basket.Match(name, tags) {
 					printItem(tree.FileSet, n.Pos(), tags, name)
 				}
 
@@ -257,7 +257,7 @@ func listModules(cmd *cobra.Command, args []string) error {
 		for _, mod := range tree.Modules() {
 			name := mod.Ident.String()
 			tags := doc.FindAllTags(mod.Tok.Comments())
-			if match(name, tags) {
+			if Basket.Match(name, tags) {
 				printItem(tree.FileSet, mod.Ident.Pos(), tags, name)
 			}
 		}
@@ -279,7 +279,7 @@ func listImports(cmd *cobra.Command, args []string) error {
 			case *ast.ImportDecl:
 				name := n.Module.String()
 				tags := doc.FindAllTags(n.ImportTok.Comments())
-				if match(name, tags) {
+				if Basket.Match(name, tags) {
 					printItem(tree.FileSet, n.Pos(), tags, module, name)
 				}
 
@@ -311,7 +311,7 @@ func listControls(cmd *cobra.Command, args []string) error {
 			case *ast.ControlPart:
 				name := module + ".control"
 				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
-				if match(name, tags) {
+				if Basket.Match(name, tags) {
 					printItem(tree.FileSet, n.Pos(), tags, name)
 				}
 
@@ -349,7 +349,7 @@ func listModulePars(cmd *cobra.Command, args []string) error {
 			case *ast.Declarator:
 				name := module + "." + n.Name.String()
 				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
-				if !match(name, tags) {
+				if !Basket.Match(name, tags) {
 					return false
 				}
 				printItem(tree.FileSet, n.Pos(), tags, name)
@@ -387,18 +387,4 @@ func printItem(fset *loc.FileSet, pos loc.Pos, tags [][]string, fields ...string
 		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
 	}
 	fmt.Fprintf(w, "%s\n", s)
-}
-
-func match(name string, tags [][]string) bool {
-	ok := baskets[0].Match(name, tags)
-	if len(baskets) == 1 {
-		return ok
-	}
-
-	for _, basket := range baskets[1:] {
-		if basket.Match(name, tags) && ok {
-			return true
-		}
-	}
-	return false
 }
