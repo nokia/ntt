@@ -4,11 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
-	"sync"
 
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
@@ -115,28 +114,9 @@ If a basket is not defined by an environment variable, it's equivalent to a
 
 `,
 
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			verbose, _ = cmd.Flags().GetBool("verbose")
-
-			suite, err := ntt.NewFromArgs(args...)
-			if err != nil {
-				return err
-			}
-
-			return parseFiles(cmd, suite)
-		},
-
-		PersistentPostRun: func(cmd *cobra.Command, args []string) { w.Flush() },
-
 		// Listing tests is the default command
-		RunE: listTests,
+		RunE: list,
 	}
-
-	listTestsCmd      = &cobra.Command{Use: `tests`, RunE: listTests}
-	listModulesCmd    = &cobra.Command{Use: `modules`, RunE: listModules}
-	listImportsCmd    = &cobra.Command{Use: `imports`, RunE: listImports}
-	listControlsCmd   = &cobra.Command{Use: `controls`, RunE: listControls}
-	listModuleParsCmd = &cobra.Command{Use: `modulepars`, RunE: listModulePars}
 
 	w = bufio.NewWriter(os.Stdout)
 
@@ -150,205 +130,106 @@ If a basket is not defined by an environment variable, it's equivalent to a
 func init() {
 	Basket.LoadFromEnv("NTT_LIST_BASKETS")
 	Command.PersistentFlags().BoolVarP(&showTags, "tags", "t", false, "enable output of testcase documentation tags")
-	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd, listControlsCmd, listModuleParsCmd)
-}
-
-func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
-	var (
-		srcs []string
-		err  error
+	Command.AddCommand(
+		&cobra.Command{Use: `tests`, RunE: list},
+		&cobra.Command{Use: `modules`, RunE: list},
+		&cobra.Command{Use: `imports`, RunE: list},
+		&cobra.Command{Use: `controls`, RunE: list},
+		&cobra.Command{Use: `modulepars`, RunE: list},
 	)
 
-	switch cmd.Name() {
-	case "tests", "list":
-		srcs, err = suite.Sources()
-	default:
-		srcs, err = project.Files(suite)
+}
+
+func list(cmd *cobra.Command, args []string) error {
+	if log.GlobalLevel() > log.PrintLevel {
+		verbose = true
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(srcs))
-	trees = make([]*ttcn3.Tree, len(srcs))
-	for i, src := range srcs {
-		go func(i int, src string) {
-			defer wg.Done()
-			trees[i] = ttcn3.ParseFile(src)
-		}(i, src)
+	suite, err := ntt.NewFromArgs(args...)
+	if err != nil {
+		return err
 	}
-	wg.Wait()
+	files, err := filesOfInterest(cmd.Use, suite)
+	for _, f := range files {
+		tree := ttcn3.ParseFile(f)
+		if tree.Err != nil {
+			return tree.Err
+		}
+
+		var module string
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
+			if n != nil {
+				switch n := n.(type) {
+				case *ast.Module:
+					module = ast.Name(n.Name)
+					if cmd.Use == "modules" {
+						Print(tree, n.Pos(), module, n.Tok.Comments())
+						return false
+					}
+					return true
+				case *ast.FuncDecl:
+					if n.IsTest() && (cmd.Use == "list" || cmd.Use == "tests") {
+						Print(tree, n.Pos(), module+"."+n.Name.String(), n.Kind.Comments())
+					}
+				case *ast.ImportDecl:
+					if cmd.Use == "imports" {
+						Print(tree, n.Pos(), fmt.Sprintf("%s\t%s", module, n.Module.String()), n.ImportTok.Comments())
+					}
+				case *ast.ControlPart:
+					if cmd.Use == "controls" {
+						Print(tree, n.Pos(), module+".control", ast.FirstToken(n).Comments())
+					}
+				case *ast.Declarator:
+					if cmd.Use == "modulepars" {
+						Print(tree, n.Pos(), module+"."+n.Name.String(), ast.FirstToken(n).Comments())
+					}
+				case *ast.ValueDecl:
+					if n.Kind.Kind == token.MODULEPAR || n.Kind.Kind == token.ILLEGAL {
+						return true
+					}
+				case *ast.NodeList, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
+					return true
+
+				}
+			}
+			return false
+		})
+	}
+
+	w.Flush()
 	return err
 }
 
-func listTests(cmd *cobra.Command, args []string) error {
-	for _, tree := range trees {
-		if tree.Err != nil {
-			return tree.Err
-		}
-
-		var module string
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
-			if n == nil {
-				return false
-			}
-			switch n := n.(type) {
-			case *ast.FuncDecl:
-				if !n.IsTest() {
-					break
-				}
-
-				name := module + "." + n.Name.String()
-				tags := doc.FindAllTags(n.Kind.Comments())
-				if Basket.Match(name, tags) {
-					printItem(tree.FileSet, n.Pos(), tags, name)
-				}
-
-			case *ast.Module:
-				module = n.Name.String()
-				return true
-			case *ast.ModuleDef, *ast.GroupDecl:
-				return true
-			case *ast.NodeList:
-				return true
-			}
-			return false
-		})
+func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
+	tags := doc.FindAllTags(comments)
+	if !Basket.Match(id, tags) {
+		return
 	}
-	return nil
-}
 
-func listModules(cmd *cobra.Command, args []string) error {
-	for _, tree := range trees {
-		for _, mod := range tree.Modules() {
-			name := mod.Ident.String()
-			tags := doc.FindAllTags(mod.Tok.Comments())
-			if Basket.Match(name, tags) {
-				printItem(tree.FileSet, mod.Ident.Pos(), tags, name)
-			}
-		}
-	}
-	return nil
-}
-
-func listImports(cmd *cobra.Command, args []string) error {
-	for _, tree := range trees {
-		if tree.Err != nil {
-			return tree.Err
-		}
-		var module string
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
-			if n == nil {
-				return false
-			}
-			switch n := n.(type) {
-			case *ast.ImportDecl:
-				name := n.Module.String()
-				tags := doc.FindAllTags(n.ImportTok.Comments())
-				if Basket.Match(name, tags) {
-					printItem(tree.FileSet, n.Pos(), tags, module, name)
-				}
-
-			case *ast.Module:
-				module = n.Name.String()
-				return true
-			case *ast.ModuleDef, *ast.GroupDecl:
-				return true
-			case *ast.NodeList:
-				return true
-			}
-			return false
-		})
-	}
-	return nil
-}
-
-func listControls(cmd *cobra.Command, args []string) error {
-	for _, tree := range trees {
-		if tree.Err != nil {
-			return tree.Err
-		}
-		var module string
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
-			if n == nil {
-				return false
-			}
-			switch n := n.(type) {
-			case *ast.ControlPart:
-				name := module + ".control"
-				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
-				if Basket.Match(name, tags) {
-					printItem(tree.FileSet, n.Pos(), tags, name)
-				}
-
-			case *ast.Module:
-				module = n.Name.String()
-				return true
-
-			case *ast.ModuleDef, *ast.GroupDecl:
-				return true
-			}
-			return false
-		})
-	}
-	return nil
-}
-
-func listModulePars(cmd *cobra.Command, args []string) error {
-	for _, tree := range trees {
-		if tree.Err != nil {
-			return tree.Err
-		}
-		var module string
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
-			if n == nil {
-				return false
-			}
-			switch n := n.(type) {
-			case *ast.ValueDecl:
-				if n.Kind.Kind == token.MODULEPAR || n.Kind.Kind == token.ILLEGAL {
-					return true
-				}
-
-				return false
-
-			case *ast.Declarator:
-				name := module + "." + n.Name.String()
-				tags := doc.FindAllTags(ast.FirstToken(n).Comments())
-				if !Basket.Match(name, tags) {
-					return false
-				}
-				printItem(tree.FileSet, n.Pos(), tags, name)
-
-			case *ast.Module:
-				module = n.Name.String()
-				return true
-
-			case *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
-				return true
-			}
-			return false
-		})
-	}
-	return nil
-}
-
-func printItem(fset *loc.FileSet, pos loc.Pos, tags [][]string, fields ...string) {
-
-	s := strings.Join(fields, "\t")
+	p := tree.Position(pos)
 
 	if showTags && len(tags) != 0 {
 		for _, tag := range tags {
 			if verbose {
-				p := fset.Position(pos)
 				fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\n", s, tag[0], tag[1])
+			fmt.Fprintf(w, "%s\t%s\t%s\n", id, tag[0], tag[1])
 		}
 		return
 	}
 
 	if verbose {
-		p := fset.Position(pos)
 		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
 	}
-	fmt.Fprintf(w, "%s\n", s)
+	fmt.Fprintf(w, "%s\n", id)
+}
+
+func filesOfInterest(cmd string, p project.Interface) ([]string, error) {
+	switch cmd {
+	case "tests", "controls", "list":
+		return p.Sources()
+	default:
+		return project.Files(p)
+	}
+
 }
