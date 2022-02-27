@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 
+	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
@@ -16,7 +16,6 @@ import (
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 var (
@@ -150,40 +149,12 @@ If a basket is not defined by an environment variable, it's equivalent to a
 	verbose  = false
 	trees    []*ttcn3.Tree
 
-	baskets = []basket{{name: "default"}}
+	baskets = []ntt2.Basket{ntt2.DefaultBasket}
 )
 
 func init() {
 	Command.PersistentFlags().BoolVarP(&showTags, "tags", "t", false, "enable output of testcase documentation tags")
-	Command.PersistentFlags().StringSliceVarP(&baskets[0].nameRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
-	Command.PersistentFlags().StringSliceVarP(&baskets[0].nameExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
-	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
-	Command.PersistentFlags().StringSliceVarP(&baskets[0].tagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
 	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd, listControlsCmd, listModuleParsCmd)
-}
-
-type basket struct {
-	name        string
-	nameRegex   []string
-	nameExclude []string
-	tagsRegex   []string
-	tagsExclude []string
-}
-
-func newBasket(name string, args []string) (basket, error) {
-	b := basket{name: name}
-
-	fs := pflag.NewFlagSet(name, pflag.ContinueOnError)
-	fs.StringSliceVarP(&b.nameRegex, "regex", "r", []string{}, "list objects matching regular * expression.")
-	fs.StringSliceVarP(&b.nameExclude, "exclude", "x", []string{}, "exclude objects matching regular * expresion.")
-	fs.StringSliceVarP(&b.tagsRegex, "tags-regex", "R", []string{}, "list objects with tags matching regular * expression")
-	fs.StringSliceVarP(&b.tagsExclude, "tags-exclude", "X", []string{}, "exclude objects with tags matching * regular expression")
-
-	if err := fs.Parse(args); err != nil {
-		return b, err
-	}
-
-	return b, nil
 }
 
 func loadBaskets(suite *ntt.Suite) error {
@@ -209,7 +180,7 @@ func loadBaskets(suite *ntt.Suite) error {
 			args = []string{"-R", "@" + name}
 		}
 
-		basket, err := newBasket(name, args)
+		basket, err := ntt2.NewBasket(name, args...)
 		if err != nil {
 			return err
 		}
@@ -419,71 +390,15 @@ func printItem(fset *loc.FileSet, pos loc.Pos, tags [][]string, fields ...string
 }
 
 func match(name string, tags [][]string) bool {
-	ok := baskets[0].match(name, tags)
+	ok := baskets[0].Match(name, tags)
 	if len(baskets) == 1 {
 		return ok
 	}
 
 	for _, basket := range baskets[1:] {
-		if basket.match(name, tags) && ok {
+		if basket.Match(name, tags) && ok {
 			return true
 		}
 	}
 	return false
-}
-
-func (b *basket) match(name string, tags [][]string) bool {
-	if !b.matchAll(b.nameRegex, name) {
-		return false
-	}
-	if len(b.nameExclude) > 0 && b.matchAll(b.nameExclude, name) {
-		return false
-	}
-
-	if len(b.tagsRegex) > 0 {
-		if len(tags) == 0 {
-			return false
-		}
-		if !b.matchAllTags(b.tagsRegex, tags) {
-			return false
-		}
-	}
-
-	if len(b.tagsExclude) > 0 && b.matchAllTags(b.tagsExclude, tags) {
-		return false
-	}
-
-	return true
-}
-
-func (b *basket) matchAll(regexes []string, s string) bool {
-	for _, r := range regexes {
-		if ok, _ := regexp.Match(r, []byte(s)); !ok {
-			return false
-		}
-	}
-	return true
-}
-
-func (b *basket) matchAllTags(regexes []string, tags [][]string) bool {
-next:
-	for _, r := range regexes {
-		f := strings.SplitN(r, ":", 2)
-		for i := range f {
-			f[i] = strings.TrimSpace(f[i])
-		}
-		for _, tag := range tags {
-			if ok, _ := regexp.Match(f[0], []byte(tag[0])); !ok {
-				continue
-			}
-			if len(f) > 1 {
-				if ok, _ := regexp.Match(f[1], []byte(tag[1])); !ok {
-					continue
-				}
-			}
-			continue next
-		}
-		return false
-	}
-	return true
 }
