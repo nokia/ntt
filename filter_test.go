@@ -1,6 +1,7 @@
 package ntt_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -32,6 +33,7 @@ func TestBasketMatch(t *testing.T) {
 		{basket: "-x foo|bar", name: "bar", want: false},
 		{basket: "-x foo", name: "bar", want: true},
 
+		{basket: "-X @foo|@bar", want: true},
 		{basket: "-R foo", tags: []string{"@foo bar"}, want: true},
 		{basket: "-R foo:bar", tags: []string{"@foo bar"}, want: true},
 		{basket: "-R :bar", tags: []string{"@foo bar"}, want: true},
@@ -102,5 +104,42 @@ func TestSubBaskets(t *testing.T) {
 		if actual != tt.want {
 			t.Errorf("Basket(%q).Match(%q, %q) = %v, want %v", tt.basket, tt.name, tt.tags, actual, tt.want)
 		}
+	}
+}
+
+func TestLoadFromEnv(t *testing.T) {
+	os.Setenv("TEST_BASKET", "stable:wip")
+	os.Setenv("TEST_BASKET_stable", "-X @wip|@flaky")
+	defer func() {
+		os.Unsetenv("TEST_BASKET")
+		os.Unsetenv("TEST_BASKET_stable")
+	}()
+
+	b, err := ntt.NewBasket("testBasket", "-r", "foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b.LoadFromEnv("TEST_BASKET")
+	test := []struct {
+		name string
+		tags []string
+		want bool
+	}{
+		{name: "foo", want: true},
+		{name: "foo", tags: []string{"@wip"}, want: true},
+		{name: "foo", tags: []string{"@flaky"}, want: false},
+		{name: "bar", want: false},
+		{name: "bar", tags: []string{"@wip"}, want: false},
+		{name: "bar", tags: []string{"@false"}, want: false},
+	}
+
+	for _, tt := range test {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := b.Match(tt.name, doc.FindAllTags(strings.Join(tt.tags, "\n")))
+			if actual != tt.want {
+				t.Errorf("Basket.Match(%q, %q) = %v, want %v", tt.name, tt.tags, actual, tt.want)
+			}
+		})
 	}
 }
