@@ -1,9 +1,11 @@
 package ntt
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
+	"github.com/nokia/ntt/internal/env"
 	flag "github.com/spf13/pflag"
 )
 
@@ -148,6 +150,32 @@ func NewBasket(name string, args ...string) (Basket, error) {
 		return b, err
 	}
 	return b, nil
+}
+
+// Load baskets from given environment variable.
+func (b *Basket) LoadFromEnv(key string) error {
+	s := env.Getenv(key)
+	if s == "" {
+		return nil
+	}
+
+	for _, name := range strings.Split(s, ":") {
+		// Ignore empty fields
+		if name == "" {
+			continue
+		}
+		args := strings.Fields(env.Getenv(fmt.Sprintf("%s_%s", key, name)))
+		if len(args) == 0 {
+			args = []string{"-R", "@" + name}
+		}
+
+		sb, err := NewBasket(name, args...)
+		if err != nil {
+			return err
+		}
+		b.Baskets = append(b.Baskets, sb)
+	}
+	return nil
 }
 
 // Match returns true if the given name and tags match the basket or sub-basket filters.

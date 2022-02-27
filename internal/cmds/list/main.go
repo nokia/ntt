@@ -123,12 +123,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 				return err
 			}
 
-			if err := parseFiles(cmd, suite); err != nil {
-				fmt.Fprintln(os.Stderr, err.Error())
-			}
-
-			return loadBaskets(suite)
-
+			return parseFiles(cmd, suite)
 		},
 
 		PersistentPostRun: func(cmd *cobra.Command, args []string) { w.Flush() },
@@ -149,44 +144,13 @@ If a basket is not defined by an environment variable, it's equivalent to a
 	verbose  = false
 	trees    []*ttcn3.Tree
 
-	Basket = ntt2.DefaultBasket
+	Basket ntt2.Basket
 )
 
 func init() {
+	Basket.LoadFromEnv("NTT_LIST_BASKETS")
 	Command.PersistentFlags().BoolVarP(&showTags, "tags", "t", false, "enable output of testcase documentation tags")
 	Command.AddCommand(listTestsCmd, listModulesCmd, listImportsCmd, listControlsCmd, listModuleParsCmd)
-}
-
-func loadBaskets(suite *ntt.Suite) error {
-	env, err := suite.Getenv("NTT_LIST_BASKETS")
-	if err != nil || env == "" {
-		if _, ok := err.(*project.NoSuchVariableError); ok {
-			return nil
-		}
-		return err
-	}
-
-	for _, name := range strings.Split(env, ":") {
-		if name == "" {
-			continue
-		}
-
-		flags, err := suite.Getenv("NTT_LIST_BASKETS_" + name)
-		args := strings.Fields(flags)
-		if err != nil {
-			if _, ok := err.(*project.NoSuchVariableError); !ok {
-				return err
-			}
-			args = []string{"-R", "@" + name}
-		}
-
-		sb, err := ntt2.NewBasket(name, args...)
-		if err != nil {
-			return err
-		}
-		Basket.Baskets = append(Basket.Baskets, sb)
-	}
-	return nil
 }
 
 func parseFiles(cmd *cobra.Command, suite *ntt.Suite) error {
