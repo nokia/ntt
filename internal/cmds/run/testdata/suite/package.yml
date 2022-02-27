@@ -1,0 +1,6 @@
+sources:
+  - test.ttcn3
+  - test2.ttcn3
+
+imports:
+  - ../lib

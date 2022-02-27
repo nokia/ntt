@@ -54,28 +54,28 @@ func (db *DB) MaxJobs() int {
 
 type Session struct {
 	Id              string
-	MaxJobs         int
-	MaxLoad         int
-	ExpectedVerdict string `json:"expected_verdict"`
-	Runs            []Run
+	MaxJobs         int    `json:"max_jobs,omitempty"`
+	MaxLoad         int    `json:"max_load,omitempty"`
+	ExpectedVerdict string `json:"expected_verdict,omitempty"`
+	Runs            []Run  `json:"runs,omitempty"`
 }
 
 // A Run describes the execution of a single test case.
 type Run struct {
-	Name     string // Full qualified test name
-	Instance int    // Test instance
-	Verdict  string // the test verdict (pass, fail, none, ...)
-	Reason   string // Optional reason for verdicts
+	Name     string `json:"name"`               // Full qualified test name
+	Instance int    `json:"instance,omitempty"` // Test instance
+	Verdict  string `json:"verdict,omitempty"`  // the test verdict (pass, fail, none, ...)
+	Reason   string `json:"reason,omitempty"`   // Optional reason for verdicts
 
-	Begin Timestamp // When the test was started
-	End   Timestamp // When the test ended
+	Begin Timestamp `json:"begin"` // When the test was started
+	End   Timestamp `json:"end"`   // When the test ended
 
-	WorkingDir string  // Working Directory of the test
-	Load       float64 // the system load when the test was started
-	MaxMem     int     // the maximum memory used when the test ended
+	WorkingDir string  `json:"working_dir,omitempty"` // Working Directory of the test
+	Load       float64 `json:"load,omitempty"`        // the system load when the test was started
+	MaxMem     int     `json:"max_mem,omitempty"`     // the maximum memory used when the test ended
 
-	RunnerID        string `json:"runnerid"`
-	ExpectedVerdict string
+	RunnerID        string `json:"runner_id,omitempty"`
+	ExpectedVerdict string `json:"expected_verdict,omitempty"`
 }
 
 // A unique identifier of the run. Usually something like "testname-2"

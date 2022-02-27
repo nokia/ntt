@@ -1,0 +1,16 @@
+module test {
+	type component C {}
+
+	testcase A() runs on C {
+		setverdict(pass, "default pass");
+	}
+
+	testcase B() runs on C {
+		setverdict(pass, "another default pass");
+	}
+
+	control {
+		execute(B());
+	}
+}
+

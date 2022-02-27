@@ -26,7 +26,8 @@ import (
 type Level int
 
 const (
-	PrintLevel Level = iota
+	DisabledLevel Level = iota
+	PrintLevel
 	VerboseLevel
 	DebugLevel
 	TraceLevel

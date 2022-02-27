@@ -192,13 +192,25 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 
 		scanner := bufio.NewScanner(stdout)
 		scanner.Split(bufio.ScanLines)
+		var name string
 		for scanner.Scan() {
 			line := scanner.Text()
+			log.Traceln(">", line)
 			switch v := strings.Fields(line); v[0] {
 			case "tciTestCaseStarted":
-				events <- Event{Type: TestStarted, Name: v[1], Time: time.Now()}
+				name = v[1][1 : len(v[1])-1]
+				events <- Event{
+					Type: TestStarted,
+					Name: name,
+					Time: time.Now(),
+				}
 			case "tciTestCaseTerminated":
-				events <- Event{Type: TestTerminated, Verdict: v[1], Time: time.Now()}
+				events <- Event{
+					Type:    TestTerminated,
+					Name:    name,
+					Verdict: v[1],
+					Time:    time.Now(),
+				}
 			case "tciControlTerminated":
 				events <- Event{Type: ControlTerminated, Time: time.Now()}
 			case "tciError":
@@ -247,7 +259,9 @@ func (t *Test) request() string {
 		fmt.Fprintf(&req, "tciStartTestCase \"%s\" {%s}\n", t.Name, strings.Join(t.Args, ","))
 	}
 	fmt.Fprintln(&req, "tcinonExitTE")
-	return req.String()
+	s := req.String()
+	log.Traceln("<", s)
+	return s
 }
 
 // NewTest creates a new test instance ready to run.

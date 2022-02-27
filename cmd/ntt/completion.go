@@ -23,10 +23,10 @@ Note, if bash-completion is not installed on Linux, please install the
 
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		rootCmd.GenBashCompletion(os.Stdout)
+		Command.GenBashCompletion(os.Stdout)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(completionCmd)
+	Command.AddCommand(completionCmd)
 }

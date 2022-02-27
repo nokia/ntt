@@ -1,6 +1,7 @@
 package main
 
 import (
+	stderrors "errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,7 +28,7 @@ import (
 )
 
 var (
-	rootCmd = &cobra.Command{
+	Command = &cobra.Command{
 		Use:   "ntt",
 		Short: "ntt is a tool for managing TTCN-3 source code and tests",
 
@@ -39,6 +40,8 @@ var (
 
 		Args: cobra.ArbitraryArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			log.SetGlobalLevel(Verbosity())
+
 			if cpuprofile != "" {
 				f, err := os.Create(cpuprofile)
 				if err != nil {
@@ -75,9 +78,11 @@ var (
 		},
 	}
 
-	Verbose = false
-	ShSetup = false
-	JSON    = false
+	verbose     int
+	quiet       bool
+	ShSetup     bool
+	outputJSON  bool
+	outputPlain bool
 
 	version = "dev"
 	commit  = "none"
@@ -88,42 +93,47 @@ var (
 
 func init() {
 	session.SharedDir = "/tmp/k3"
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
-	rootCmd.AddCommand(showCmd)
+	Command.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output")
+	Command.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "quiet output")
+	Command.PersistentFlags().BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
+	Command.PersistentFlags().BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
+	Command.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
+	Command.AddCommand(showCmd)
 
 	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
-	showCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
-	rootCmd.AddCommand(dump.Command)
-	rootCmd.AddCommand(locate_file.Command)
-	rootCmd.AddCommand(langserver.Command)
-	rootCmd.AddCommand(lint.Command)
-	rootCmd.AddCommand(list.Command)
-	rootCmd.AddCommand(tags.Command)
-	rootCmd.AddCommand(report.Command)
-	rootCmd.AddCommand(build.Command)
+	Command.AddCommand(dump.Command)
+	Command.AddCommand(locate_file.Command)
+	Command.AddCommand(langserver.Command)
+	Command.AddCommand(lint.Command)
+	Command.AddCommand(list.Command)
+	Command.AddCommand(tags.Command)
+	Command.AddCommand(report.Command)
+	Command.AddCommand(build.Command)
+	Command.AddCommand(run.Command)
 
-	useNokiaRunner := func() bool {
-		if s, ok := os.LookupEnv("K3_40_RUN_POLICY"); ok {
-			if s == "ntt" {
-				return false
-			}
-			return true
-		}
-		if exe, _ := exec.LookPath("k3-run"); exe != "" {
-			return true
-		}
-		if exe, _ := exec.LookPath("ntt-run"); exe != "" {
-			return true
-		}
-		return false
+}
 
+func Format() string {
+	switch {
+	case outputPlain:
+		return "plain"
+	case outputJSON:
+		return "json"
+	default:
+		return "text"
+	}
+}
+
+func Verbosity() log.Level {
+	if quiet {
+		return log.DisabledLevel
 	}
 
-	if !useNokiaRunner() {
-		rootCmd.AddCommand(run.Command)
+	lvl := log.PrintLevel + log.Level(verbose)
+	if lvl > log.TraceLevel {
+		lvl = log.TraceLevel
 	}
-
+	return lvl
 }
 
 func main() {
@@ -140,7 +150,7 @@ func main() {
 		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
 	}
 
-	err := rootCmd.Execute()
+	err := Command.Execute()
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}
@@ -158,7 +168,10 @@ func fatal(err error) {
 	case errors.ErrorList:
 		errors.PrintError(os.Stderr, err)
 	default:
-		fmt.Fprintln(os.Stderr, err.Error())
+		// Run command has its own error logging.
+		if !stderrors.Is(err, run.ErrCommandFailed) {
+			fmt.Fprintln(os.Stderr, err.Error())
+		}
 	}
 
 	os.Exit(1)
