@@ -21,11 +21,12 @@ func TestBasketMatch(t *testing.T) {
 		{basket: "", name: "foo", tags: []string{"@wip"}, want: true},
 
 		{basket: "-r fo.", name: "foobar", want: true},
-		{basket: "-r foo -r bar", name: "foobar", want: true},
 		{basket: "-r foo|bar", name: "bar", want: true},
 		{basket: "-r foo", name: "bar", want: false},
 
-		{basket: "-x fo.", name: "foobar", want: false},
+		{basket: "-x fo.", name: "foo", want: false},
+		{basket: "-r foo -r bar", name: "foo", want: false},
+		{basket: "-r foo -r bar", name: "foobar", want: true},
 		{basket: "-r foo -x bar", name: "foobar", want: false},
 		{basket: "-x foo -r bar", name: "foobar", want: false},
 		{basket: "-x foo|bar", name: "bar", want: false},
@@ -60,14 +61,46 @@ func TestBasketMatch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		actual := b.Match(tt.name, findTags(tt.tags...))
+		actual := b.Match(tt.name, doc.FindAllTags(strings.Join(tt.tags, "\n")))
 		if actual != tt.want {
 			t.Errorf("Basket(%q).Match(%q, %q) = %v, want %v", tt.basket, tt.name, tt.tags, actual, tt.want)
 		}
 	}
 }
 
-// makeTags finds all tags in the given string slice.
-func findTags(tags ...string) [][]string {
-	return doc.FindAllTags(strings.Join(tags, "\n"))
+func TestSubBaskets(t *testing.T) {
+	tests := []struct {
+		basket string
+		name   string
+		tags   []string
+		want   bool
+	}{
+		{basket: "-r foo:-r bar", name: "foo", want: true},
+		{basket: "-r foo:-r bar", name: "bar", want: true},
+		{basket: "-r foo:-x foo", name: "foo", want: true},
+		{basket: "-r foo -x bar:-x foo", name: "foobar", want: false},
+		{basket: "-r foo:-x foo:-x foo", name: "foobar", want: true},
+		{basket: "-r foo:-x foo:-x bar", name: "foobar", want: true},
+	}
+
+	for _, tt := range tests {
+
+		b, err := ntt.NewBasket("testBasket")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, s := range strings.Split(tt.basket, ":") {
+			sb, err := ntt.NewBasket("subBasket", strings.Fields(s)...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			b.Baskets = append(b.Baskets, sb)
+		}
+
+		actual := b.Match(tt.name, doc.FindAllTags(strings.Join(tt.tags, "\n")))
+		if actual != tt.want {
+			t.Errorf("Basket(%q).Match(%q, %q) = %v, want %v", tt.basket, tt.name, tt.tags, actual, tt.want)
+		}
+	}
 }

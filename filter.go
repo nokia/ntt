@@ -113,6 +113,9 @@ type Basket struct {
 
 	// Regular expressions the object tags must not match.
 	TagsExclude []string
+
+	// Baskets are sub-baskets to be ORed.
+	Baskets []Basket
 }
 
 // NewBasket creates a new basket and parses the given arguments.
@@ -147,8 +150,23 @@ func NewBasket(name string, args ...string) (Basket, error) {
 	return b, nil
 }
 
-// Match returns true if the given name and tags match the basket filters.
+// Match returns true if the given name and tags match the basket or sub-basket filters.
 func (b *Basket) Match(name string, tags [][]string) bool {
+	ok := b.match(name, tags)
+	if len(b.Baskets) == 0 {
+		return ok
+	}
+
+	for _, basket := range b.Baskets {
+		if basket.Match(name, tags) && ok {
+			return true
+		}
+	}
+	return false
+}
+
+// match returns true if the given name and tags match the basket filters.
+func (b *Basket) match(name string, tags [][]string) bool {
 	if !b.matchAll(b.NameRegex, name) {
 		return false
 	}
