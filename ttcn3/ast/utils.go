@@ -4,8 +4,32 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/token"
 )
+
+// IsNil returns true if the node is nil.
+func IsNil(n Node) bool {
+	if n == nil || reflect.ValueOf(n).IsNil() {
+		return true
+	}
+	return false
+}
+
+// FindChildOfType returns the first direct child of the give node, enclosing
+// given position.
+func FindChildOf(n Node, pos loc.Pos) Node {
+	if IsNil(n) || !pos.IsValid() {
+		return nil
+	}
+	children := Children(n)
+	for _, c := range children {
+		if c.Pos() <= pos && pos < c.End() {
+			return c
+		}
+	}
+	return nil
+}
 
 // First returns the first valid token of a syntax tree
 func FirstToken(n Node) *Token {
