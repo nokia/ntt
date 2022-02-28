@@ -56,11 +56,14 @@ var (
 func GlobalLevel() Level       { return lvl }
 func SetGlobalLogger(l Logger) { std = l }
 func SetGlobalLevel(level Level) {
+
+	// Stop running tracer
 	if lvl == TraceLevel && tracer != nil {
 		trace.Stop()
 		tracer.Close()
 	}
 
+	// If new log level is trace, start a new tracer
 	if level == TraceLevel {
 		path := "ntt.trace"
 		if s := os.Getenv("NTT_TRACE_FILE"); s != "" {
@@ -74,6 +77,16 @@ func SetGlobalLevel(level Level) {
 		}
 		trace.Start(tracer)
 	}
+
+	// If new log level is debug and user requested a debug file, use it.
+	if level == DebugLevel {
+		if s := os.Getenv("NTT_DEBUG_FILE"); s != "" {
+			if file, err := os.Create(s); err == nil {
+				SetGlobalLogger(&ConsoleLogger{Out: file})
+			}
+		}
+	}
+
 	lvl = level
 }
 
@@ -103,19 +116,6 @@ func Traceln(v ...interface{})               { std.Output(TraceLevel, fmt.Sprint
 func init() {
 	if s := os.Getenv("NTT_DEBUG"); s != "" {
 		SetGlobalLevel(DebugLevel)
-	}
-	if s := os.Getenv("NTT_DEBUG_FILE"); s != "" {
-		if file, err := os.Create(s); err == nil {
-			SetGlobalLogger(&ConsoleLogger{Out: file})
-		}
-	}
-	if s := os.Getenv("K3_DEBUG"); s != "" {
-		SetGlobalLevel(DebugLevel)
-	}
-	if s := os.Getenv("K3_DEBUG_FILE"); s != "" {
-		if file, err := os.Create(s); err == nil {
-			SetGlobalLogger(&ConsoleLogger{Out: file})
-		}
 	}
 	if s := os.Getenv("NTT_TRACE"); s != "" {
 		SetGlobalLevel(TraceLevel)

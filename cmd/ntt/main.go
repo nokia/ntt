@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/session"
@@ -125,15 +126,20 @@ func Format() string {
 }
 
 func Verbosity() log.Level {
-	if quiet {
+	switch {
+	case env.Getenv("NTT_TRACE") != "":
+		return log.TraceLevel
+	case env.Getenv("NTT_DEBUG") != "":
+		return log.DebugLevel
+	case quiet:
 		return log.DisabledLevel
+	default:
+		lvl := log.PrintLevel + log.Level(verbose)
+		if lvl > log.TraceLevel {
+			lvl = log.TraceLevel
+		}
+		return lvl
 	}
-
-	lvl := log.PrintLevel + log.Level(verbose)
-	if lvl > log.TraceLevel {
-		lvl = log.TraceLevel
-	}
-	return lvl
 }
 
 func main() {
