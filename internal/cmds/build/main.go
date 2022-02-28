@@ -36,7 +36,6 @@ func Build(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
 	if CompDB {
 		builders, err := ntt2.PlanProject(name, suite)
 		if err != nil {
@@ -46,7 +45,7 @@ func Build(cmd *cobra.Command, args []string) error {
 		var db []compdb.Command
 		for _, b := range builders {
 			if c, ok := b.(compdb.Commander); ok {
-				c.Commands(db)
+				db = append(db, c.Commands()...)
 			}
 		}
 		if len(db) > 0 {
@@ -60,6 +59,5 @@ func Build(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-
 	return ntt2.BuildProject(name, suite)
 }

@@ -36,7 +36,6 @@ type Command struct {
 
 // The Commander interface is used to generate the compilation database.
 type Commander interface {
-	// Commands adds commands to the given compilation database. It returns
-	// the number of commands added and an error if any.
-	Commands(cmds []Command) (int, error)
+	// Commands returns the list of commands to be executed.
+	Commands() []Command
 }

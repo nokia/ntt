@@ -61,16 +61,17 @@ func (p *Plugin) Build() error {
 	return err
 }
 
-func (p *Plugin) Commands(cmds []compdb.Command) (int, error) {
+func (p *Plugin) Commands() []compdb.Command {
 	cmd := p.command()
+	var ret []compdb.Command
 	for _, src := range p.sources {
-		cmds = append(cmds, compdb.Command{
+		ret = append(ret, compdb.Command{
 			Command: cmd.String(),
 			File:    src,
 			Output:  p.target,
 		})
 	}
-	return len(p.sources), nil
+	return ret
 }
 
 func NewT3XFBuilder(name string, srcs ...string) *T3XF {
@@ -126,16 +127,17 @@ func (t *T3XF) Build() error {
 	return err
 }
 
-func (t *T3XF) Commands(cmds []compdb.Command) (int, error) {
+func (t *T3XF) Commands() []compdb.Command {
 	cmd := t.command()
+	var ret []compdb.Command
 	for _, src := range t.sources {
-		cmds = append(cmds, compdb.Command{
+		ret = append(ret, compdb.Command{
 			Command: cmd.String(),
 			File:    src,
 			Output:  t.target,
 		})
 	}
-	return len(t.sources), nil
+	return ret
 }
 
 func NewASN1Codec(name string, encoding string, srcs ...string) *ASN1Codec {
@@ -231,10 +233,10 @@ func (c *ASN1Codec) Build() error {
 	return err
 }
 
-func (c *ASN1Codec) Commands(cmds []compdb.Command) (int, error) {
-	n := len(cmds)
+func (c *ASN1Codec) Commands() []compdb.Command {
+	var ret []compdb.Command
 	for _, src := range c.sources {
-		cmds = append(cmds, compdb.Command{
+		ret = append(ret, compdb.Command{
 			Command: c.generateCommand().String(),
 			File:    src,
 			Output:  c.c,
@@ -245,7 +247,7 @@ func (c *ASN1Codec) Commands(cmds []compdb.Command) (int, error) {
 		})
 	}
 
-	cmds = append(cmds,
+	ret = append(ret,
 		compdb.Command{
 			Command: c.buildCommand().String(),
 			File:    c.c,
@@ -262,5 +264,5 @@ func (c *ASN1Codec) Commands(cmds []compdb.Command) (int, error) {
 			Output:  c.mod,
 		})
 
-	return len(cmds) - n, nil
+	return ret
 }
