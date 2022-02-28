@@ -27,6 +27,9 @@ func FindChildOf(n Node, pos loc.Pos) Node {
 	}
 	children := Children(n)
 	for _, c := range children {
+		if IsNil(c) {
+			continue
+		}
 		if c.Pos() <= pos && pos < c.End() {
 			return c
 		}
