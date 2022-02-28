@@ -2,6 +2,7 @@
 // specified by https://clang.llvm.org/docs/JSONCompilationDatabase.html
 package compdb
 
+// Command is a compilation database entry.
 type Command struct {
 
 	// The working directory of the compilation. All paths specified in the
@@ -31,4 +32,11 @@ type Command struct {
 	// is optional. It can be used to distinguish different processing
 	// modes of the same input file.
 	Output string `json:"output,omitempty"`
+}
+
+// The Commander interface is used to generate the compilation database.
+type Commander interface {
+	// Commands adds commands to the given compilation database. It returns
+	// the number of commands added and an error if any.
+	Commands(cmds []Command) (int, error)
 }
