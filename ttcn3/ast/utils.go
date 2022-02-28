@@ -10,7 +10,10 @@ import (
 
 // IsNil returns true if the node is nil.
 func IsNil(n Node) bool {
-	if n == nil || reflect.ValueOf(n).IsNil() {
+	if n == nil {
+		return true
+	}
+	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
 		return true
 	}
 	return false

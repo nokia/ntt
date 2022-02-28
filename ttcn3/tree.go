@@ -1,7 +1,6 @@
 package ttcn3
 
 import (
-	"reflect"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
@@ -243,7 +242,7 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	)
 
 	visit = func(n ast.Node) {
-		if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+		if ast.IsNil(n) {
 			return
 		}
 
@@ -251,11 +250,9 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 			return
 		}
 
-		if inside := n.Pos() <= pos && pos < n.End(); inside {
-			path = append(path, n)
-			for _, child := range ast.Children(n) {
-				visit(child)
-			}
+		path = append(path, n)
+		if child := ast.FindChildOf(n, pos); !ast.IsNil(child) {
+			visit(child)
 		}
 
 	}
