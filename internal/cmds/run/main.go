@@ -158,14 +158,11 @@ func NewSuite(files []string) (*Suite, error) {
 
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	defer FlushTestResults()
 
-	ctx := context.Background()
-	wg := sync.WaitGroup{}
-	results := make(chan Result, MaxWorkers)
-
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-
 	suite, err := NewSuite(files)
 	if err != nil {
 		return err
@@ -173,35 +170,8 @@ func run(cmd *cobra.Command, args []string) error {
 
 	jobs := GenerateJobs(suite, ids, MaxWorkers)
 
-	// Start workers and process jobs in parallel.
-	for i := 0; i < MaxWorkers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for {
-				select {
-				case job, ok := <-jobs:
-					if !ok {
-						return
-					}
-					Execute(job, results)
-
-				case <-ctx.Done():
-					results <- Result{Event: k3r.NewErrorEvent(ctx.Err())}
-					return
-				}
-			}
-		}()
-	}
-
-	// Wait for all workers to finish.
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	// Process results.
-	for r := range results {
+	// Execute the jobs in parallel and collect the results.
+	for r := range ExecuteJobs(ctx, jobs, MaxWorkers) {
 		HandleResult(r)
 	}
 
@@ -239,6 +209,38 @@ func GenerateJobs(suite *Suite, ids []string, size int) chan *Job {
 		}
 	}()
 	return out
+}
+
+func ExecuteJobs(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
+	wg := sync.WaitGroup{}
+	results := make(chan Result, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case job, ok := <-jobs:
+					if !ok {
+						return
+					}
+					Execute(job, results)
+
+				case <-ctx.Done():
+					results <- Result{Event: k3r.NewErrorEvent(ctx.Err())}
+					return
+				}
+			}
+		}()
+	}
+
+	// Wait for all workers to finish.
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	return results
 }
 
 // Execute runs a single test and sends the results to the channel.
