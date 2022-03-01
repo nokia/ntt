@@ -48,16 +48,15 @@ var (
 The ntt run command first builds a test executable using the files or
 directories passed as first argument list.
 The test executable is then run with the tests specified as second argument
-list.
-If no ids are specified, ntt run will run all tests in the test suite.
+list. If no ids are specified, ntt run will run all tests in the test suite.
+
 Running control functions is supported. For example:
 
         ntt run -- test.A test.control test.B
 
 
-
-The ntt run command supports ntt list test baskets (see "ntt help list").
-Bellow example will run all tests with @stable tag:
+Test baskets are also supported (see "ntt help list"). Bellow example will run
+all tests with @stable-tag:
 
 	NTT_LIST_BASKETS=stable ntt run
 
