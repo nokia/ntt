@@ -1,6 +1,7 @@
 package ttcn3
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
@@ -46,6 +47,17 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 		return nil
 	}
 	return t.parents[n]
+}
+
+// Returns the qualified name of the given node.
+func (t *Tree) QualifiedName(n ast.Node) string {
+	if name := ast.Name(n); name != "" {
+		if mod := t.ModuleOf(n); mod != nil {
+			return fmt.Sprintf("%s.%s", ast.Name(mod.Name), name)
+		}
+		return name
+	}
+	return ""
 }
 
 // ModuleOf returns the module of the given node, by walking up the tree.
@@ -136,7 +148,7 @@ func (t *Tree) Controls() []*Definition {
 	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ControlPart); ok {
-			defs = append(defs, &Definition{Node: n, Tree: t})
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
 		return true

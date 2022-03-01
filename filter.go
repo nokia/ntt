@@ -9,12 +9,6 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-var (
-
-	// DefaultBasket contains all objects.
-	DefaultBasket, _ = NewBasket("default")
-)
-
 // FilterFlags returns a flagset with all flags for filtering objects.
 //
 // Filterflags are regular expressions to filter objects. If you pass multiple regular
