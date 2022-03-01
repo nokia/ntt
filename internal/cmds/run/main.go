@@ -93,12 +93,12 @@ Environment variables:
 
 func init() {
 	flags := Command.Flags()
-	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "number of parallel tests")
+	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.BoolVarP(&OutputJSON, "json", "", false, "output in JSON format")
 
 	flags.Bool("build", false, "build test suite")
 	flags.Bool("no-summary", false, "disable test summary")
-	flags.StringP("engine", "", "syntax", "what engine to use (t3xf or syntax)")
+	flags.StringP("tests-file", "t", "", "Read tests from file (use '-' for stdin)")
 
 	flags.MarkHidden("build")
 	flags.MarkHidden("no-summary")
@@ -166,6 +166,14 @@ func run(cmd *cobra.Command, args []string) error {
 	suite, err := NewSuite(files)
 	if err != nil {
 		return err
+	}
+
+	if path := cmd.Flag("tests-file").Value.String(); path != "" {
+		tests, err := readTestsFromFile(path)
+		if err != nil {
+			return err
+		}
+		ids = append(tests, ids...)
 	}
 
 	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers)
@@ -353,4 +361,29 @@ func splitArgs(args []string, pos int) ([]string, []string) {
 		return args, []string{}
 	}
 	return args[:pos], args[pos:]
+}
+
+func readTestsFromFile(path string) ([]string, error) {
+	var (
+		lines []byte
+		err   error
+	)
+	if path == "-" {
+		lines, err = ioutil.ReadAll(os.Stdin)
+	} else {
+		f, ferr := os.Open(path)
+		if ferr != nil {
+			return nil, ferr
+		}
+		lines, err = ioutil.ReadAll(f)
+
+	}
+	var tests []string
+	for _, line := range strings.Split(string(lines), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			tests = append(tests, line)
+		}
+	}
+	return tests, err
 }
