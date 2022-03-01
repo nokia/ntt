@@ -43,6 +43,12 @@ var (
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			log.SetGlobalLevel(Verbosity())
 
+			if chdir != "" {
+				if err := os.Chdir(chdir); err != nil {
+					return fmt.Errorf("chdir: %w", err)
+				}
+				log.Debugf("chdir: %s", chdir)
+			}
 			if cpuprofile != "" {
 				f, err := os.Create(cpuprofile)
 				if err != nil {
@@ -84,6 +90,7 @@ var (
 	ShSetup     bool
 	outputJSON  bool
 	outputPlain bool
+	chdir       string
 
 	version = "dev"
 	commit  = "none"
@@ -99,6 +106,7 @@ func init() {
 	Command.PersistentFlags().BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
 	Command.PersistentFlags().BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
 	Command.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
+	Command.PersistentFlags().StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
 	Command.AddCommand(showCmd)
 
 	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
