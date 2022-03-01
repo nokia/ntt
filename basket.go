@@ -11,7 +11,7 @@ import (
 
 // BasketFlags returns a flagset with all flags for filtering objects.
 //
-// Filterflags are regular expressions to filter objects. If you pass multiple regular
+// BasketFlags are regular expressions to filter objects. If you pass multiple regular
 // expressions, all of them must match (AND). Example:
 //
 // 	$ cat example.ttcn3
