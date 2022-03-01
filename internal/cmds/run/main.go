@@ -158,50 +158,20 @@ func NewSuite(files []string) (*Suite, error) {
 
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	defer FlushTestResults()
 
-	ctx := context.Background()
-	wg := sync.WaitGroup{}
-	results := make(chan Result, MaxWorkers)
-
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-
 	suite, err := NewSuite(files)
 	if err != nil {
 		return err
 	}
 
-	jobs := GenerateJobs(suite, ids, MaxWorkers)
+	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers)
 
-	// Start workers and process jobs in parallel.
-	for i := 0; i < MaxWorkers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for {
-				select {
-				case job, ok := <-jobs:
-					if !ok {
-						return
-					}
-					Execute(job, results)
-
-				case <-ctx.Done():
-					results <- Result{Event: k3r.NewErrorEvent(ctx.Err())}
-					return
-				}
-			}
-		}()
-	}
-
-	// Wait for all workers to finish.
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	// Process results.
-	for r := range results {
+	// Execute the jobs in parallel and collect the results.
+	for r := range ExecuteJobs(ctx, jobs, MaxWorkers) {
 		HandleResult(r)
 	}
 
@@ -212,42 +182,81 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 // GenerateIDs emits test IDs based on given file and and id list to a channel.
-func GenerateIDs(ids []string, files []string, policy string, b ntt2.Basket) <-chan string {
+func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b ntt2.Basket) <-chan string {
 	policy = strings.ToLower(policy)
 	policy = strings.TrimSpace(policy)
 	switch {
 	case len(ids) > 0:
-		return ntt2.GenerateIDs(ids)
+		return ntt2.GenerateIDsWithContext(ctx, ids...)
 	case policy == "old":
-		return ntt2.GenerateControlsWithBasket(files, b)
+		return ntt2.GenerateControlsWithContext(ctx, b, files...)
 	default:
-		return ntt2.GenerateTestsWithBasket(files, b)
+		return ntt2.GenerateTestsWithContext(ctx, b, files...)
 
 	}
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(suite *Suite, ids []string, size int) chan *Job {
+func GenerateJobs(ctx context.Context, suite *Suite, ids []string, size int) chan *Job {
 	out := make(chan *Job, size)
 	go func() {
 		defer close(out)
-		for id := range GenerateIDs(ids, suite.Sources, env.Getenv("K3_40_RUN_POLICY"), Basket) {
+		i := 0
+		for id := range GenerateIDs(ctx, ids, suite.Sources, env.Getenv("K3_40_RUN_POLICY"), Basket) {
+			i++
 			out <- &Job{
 				Name:  id,
 				Suite: suite,
 			}
+
 		}
+		log.Debugf("Generating %d jobs done.\n", i)
 	}()
 	return out
 }
 
+func ExecuteJobs(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
+	wg := sync.WaitGroup{}
+	results := make(chan Result, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			log.Debugf("Worker %d started.\n", i)
+			defer log.Debugf("Worker %d finished.\n", i)
+
+			for {
+				select {
+				case job, ok := <-jobs:
+					if !ok {
+						return
+					}
+					Execute(ctx, job, results)
+
+				case <-ctx.Done():
+					results <- Result{Event: k3r.NewErrorEvent(ctx.Err())}
+					return
+				}
+			}
+		}(i)
+	}
+
+	// Wait for all workers to finish.
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	return results
+}
+
 // Execute runs a single test and sends the results to the channel.
-func Execute(job *Job, results chan<- Result) {
+func Execute(ctx context.Context, job *Job, results chan<- Result) {
 	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.Suite.Name))
 	test := k3r.NewTest(t3xf, job.Name)
 	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
 	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
-	for event := range test.Run() {
+	for event := range test.RunWithContext(ctx) {
 		results <- Result{
 			Job:   job,
 			Test:  *test,

@@ -1,6 +1,7 @@
 package run
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -50,7 +51,7 @@ func TestGenerateIDs(t *testing.T) {
 				}
 			}
 
-			c := GenerateIDs(strings.Fields(tt.ids), suite.Sources, tt.policy, b)
+			c := GenerateIDs(context.Background(), strings.Fields(tt.ids), suite.Sources, tt.policy, b)
 			var actual []string
 			for id := range c {
 				actual = append(actual, id)
