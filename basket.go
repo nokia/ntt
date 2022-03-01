@@ -9,7 +9,7 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-// FilterFlags returns a flagset with all flags for filtering objects.
+// BasketFlags returns a flagset with all flags for filtering objects.
 //
 // Filterflags are regular expressions to filter objects. If you pass multiple regular
 // expressions, all of them must match (AND). Example:
@@ -48,8 +48,8 @@ import (
 // 	example.foo
 // 	example.bar
 //
-func FilterFlags() *flag.FlagSet {
-	fs := flag.NewFlagSet("filter", flag.ContinueOnError)
+func BasketFlags() *flag.FlagSet {
+	fs := flag.NewFlagSet("basket", flag.ContinueOnError)
 	fs.StringSliceP("regex", "r", nil, "list objects matching regular * expression.")
 	fs.StringSliceP("exclude", "x", nil, "exclude objects matching regular * expresion.")
 	fs.StringSliceP("tags-regex", "R", nil, "list objects with tags matching regular * expression")
@@ -119,7 +119,7 @@ func NewBasket(name string, args ...string) (Basket, error) {
 	b := Basket{Name: name}
 
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
-	fs.AddFlagSet(FilterFlags())
+	fs.AddFlagSet(BasketFlags())
 	if err := fs.Parse(args); err != nil {
 		return b, err
 	}
