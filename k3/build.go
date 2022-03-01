@@ -2,6 +2,7 @@ package k3
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -120,6 +121,10 @@ func (t *T3XF) command() *exec.Cmd {
 func (t *T3XF) Build() error {
 	b, err := build.NeedsRebuild(t.target, t.sources...)
 	if b && err == nil {
+		// T3XF file should be removed before building to force a new inode.
+		// This ensures that already open T3XF files stay intact.
+		os.Remove(t.target)
+
 		cmd := t.command()
 		log.Verboseln("+", cmd.String())
 		err = cmd.Run()
