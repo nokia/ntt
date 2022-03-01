@@ -17,7 +17,7 @@ func TestGenerators(t *testing.T) {
 			"test.B",
 			"test2.C",
 		}
-		c := ntt.GenerateTests(srcs)
+		c := ntt.GenerateTests(srcs...)
 		actual := consumeStringChannel(c)
 		assert.Equal(t, expected, actual)
 	})
@@ -26,7 +26,7 @@ func TestGenerators(t *testing.T) {
 		expected := []string{
 			"test.control",
 		}
-		c := ntt.GenerateControls(srcs)
+		c := ntt.GenerateControls(srcs...)
 		actual := consumeStringChannel(c)
 		assert.Equal(t, expected, actual)
 	})
