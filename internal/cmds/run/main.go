@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/env"
@@ -23,18 +24,13 @@ import (
 	"github.com/nokia/ntt/k3"
 	k3r "github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
-	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/spf13/cobra"
 )
 
 type Job struct {
 	Name      string
 	Iteration int
-
-	// "Precalculated" suite configuration.
-	SuiteName    string
-	RuntimePaths []string
+	Suite     *Suite
 }
 
 type Result struct {
@@ -65,8 +61,9 @@ var (
 
 	ErrCommandFailed = fmt.Errorf("command failed")
 
-	Runs   []results.Run
-	Ledger = make(map[*Job]*Result)
+	Runs      []results.Run
+	Ledger    = make(map[*Job]*Result)
+	Basket, _ = ntt2.NewBasket("default")
 )
 
 func init() {
@@ -80,6 +77,8 @@ func init() {
 
 	flags.MarkHidden("build")
 	flags.MarkHidden("no-summary")
+
+	Basket.LoadFromEnv("NTT_LIST_BASKETS")
 
 	// When SCT_K3_SERVER is set, we hand execution over to k3s.
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
@@ -95,23 +94,59 @@ func init() {
 	}
 }
 
+type Suite struct {
+	Suite        *ntt.Suite
+	Name         string
+	Sources      []string
+	RuntimePaths []string
+}
+
+func NewSuite(files []string) (*Suite, error) {
+	suite, err := ntt.NewFromArgs(files...)
+	if err != nil {
+		return nil, fmt.Errorf("loading test suite failed: %w", err)
+	}
+
+	name, err := suite.Name()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving test suite name failed: %w", err)
+	}
+
+	srcs, err := suite.Sources()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving TTCN-3 sources failed: %w", err)
+	}
+
+	paths, err := runtimePaths(suite)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving runtime paths failed: %w", err)
+	}
+
+	return &Suite{
+		Suite:        suite,
+		Name:         name,
+		Sources:      srcs,
+		RuntimePaths: paths,
+	}, nil
+
+}
+
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
 	defer FlushTestResults()
 
 	ctx := context.Background()
 	wg := sync.WaitGroup{}
-	jobs := make(chan *Job, MaxWorkers)
 	results := make(chan Result, MaxWorkers)
 
-	// Enqueue jobs.
-	go func() {
-		defer close(jobs)
-		files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-		if err := EnqueueJobs(files, ids, jobs); err != nil {
-			results <- Result{Event: k3r.NewErrorEvent(err)}
-		}
-	}()
+	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
+
+	suite, err := NewSuite(files)
+	if err != nil {
+		return err
+	}
+
+	jobs := GenerateJobs(suite, ids, MaxWorkers)
 
 	// Start workers and process jobs in parallel.
 	for i := 0; i < MaxWorkers; i++ {
@@ -151,76 +186,42 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// EnqueueJobs creates the job load and sends it to the jobs channel.
-func EnqueueJobs(files []string, ids []string, jobs chan *Job) error {
-	suite, err := ntt.NewFromArgs(files...)
-	if err != nil {
-		return err
-	}
-
-	name, err := suite.Name()
-	if err != nil {
-		return fmt.Errorf("test suite name: %w", err)
-	}
-
-	paths, err := runtimePaths(suite)
-
-	if len(ids) > 0 {
-		for _, id := range ids {
-			jobs <- &Job{Name: id, SuiteName: name, RuntimePaths: paths}
-		}
-		return nil
-	}
-	srcs, err := suite.Sources()
-	if err != nil {
-		return err
-	}
-	if policy := os.Getenv("K3_40_RUN_POLICY"); policy == "old" {
-		enqueueControls(jobs, name, paths, srcs)
-	} else {
-		enqueueTests(jobs, name, paths, srcs)
-	}
-	return nil
-}
-
-func enqueueTests(jobs chan *Job, suiteName string, paths []string, srcs []string) {
-	for _, src := range srcs {
-		tree := ttcn3.ParseFile(src)
-		for _, n := range tree.Funcs() {
-			if n := n.Node.(*ast.FuncDecl); n.IsTest() {
-				mod := ast.Name(tree.ModuleOf(n))
-				jobs <- &Job{
-					Name:         fmt.Sprintf("%s.%s", mod, n.Name.String()),
-					SuiteName:    suiteName,
-					RuntimePaths: paths,
-				}
-			}
-		}
+// GenerateIDs emits test IDs based on given file and and id list to a channel.
+func GenerateIDs(ids []string, files []string, policy string, b ntt2.Basket) <-chan string {
+	policy = strings.ToLower(policy)
+	policy = strings.TrimSpace(policy)
+	switch {
+	case len(ids) > 0:
+		return ntt2.GenerateIDs(ids)
+	case policy == "old":
+		return ntt2.GenerateControlsWithBasket(files, b)
+	default:
+		return ntt2.GenerateTestsWithBasket(files, b)
 
 	}
 }
 
-func enqueueControls(jobs chan *Job, suiteName string, paths []string, srcs []string) {
-	for _, src := range srcs {
-		tree := ttcn3.ParseFile(src)
-		for _, n := range tree.Controls() {
-			mod := ast.Name(tree.ModuleOf(n.Node))
-			jobs <- &Job{
-				Name:         fmt.Sprintf("%s.control", mod),
-				SuiteName:    suiteName,
-				RuntimePaths: paths,
+// GenerateJobs emits jobs from the given suite and ids to a job channel.
+func GenerateJobs(suite *Suite, ids []string, size int) chan *Job {
+	out := make(chan *Job, size)
+	go func() {
+		defer close(out)
+		for id := range GenerateIDs(ids, suite.Sources, env.Getenv("K3_40_RUN_POLICY"), Basket) {
+			out <- &Job{
+				Name:  id,
+				Suite: suite,
 			}
 		}
-
-	}
+	}()
+	return out
 }
 
 // Execute runs a single test and sends the results to the channel.
 func Execute(job *Job, results chan<- Result) {
-	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.SuiteName))
+	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.Suite.Name))
 	test := k3r.NewTest(t3xf, job.Name)
-	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.RuntimePaths, ":")))
-	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.RuntimePaths, ":")))
+	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
+	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
 	for event := range test.Run() {
 		results <- Result{
 			Job:   job,

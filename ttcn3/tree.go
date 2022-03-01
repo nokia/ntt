@@ -148,7 +148,7 @@ func (t *Tree) Controls() []*Definition {
 	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ControlPart); ok {
-			defs = append(defs, &Definition{Node: n, Tree: t})
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
 		return true
