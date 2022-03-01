@@ -43,6 +43,32 @@ var (
 	Command = &cobra.Command{
 		Use:   "run [ <path>... ] [ -- <test id>... ]",
 		Short: "Run tests from a TTCN-3 test suite.",
+		Long: `Run tests from a TTCN-3 test suite.
+
+The ntt run first command builds a test executable using the files or
+directories passed as first argument list.
+The test executable is then run with the tests specified as second argument
+list.
+If no ids are specified, ntt run will run all tests in the test suite.
+Running control functions is supported. For example:
+
+        ntt run -- test.A test.control test.B
+
+
+
+The ntt run command supports ntt list test baskets (see "ntt help list").
+Bellow example will run all tests with @stable tag:
+
+	NTT_LIST_BASKETS=stable ntt run
+
+
+Environment variables:
+
+* SCT_K3_SERVER=on	replace ntt process with k3s.
+* K3_40_RUN_POLICY=old	if no ids are specified, run all control parts.
+
+`,
+
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			files, _ := splitArgs(args, cmd.ArgsLenAtDash())
 			return build.Command.RunE(cmd, files)
