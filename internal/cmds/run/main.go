@@ -45,7 +45,7 @@ var (
 		Short: "Run tests from a TTCN-3 test suite.",
 		Long: `Run tests from a TTCN-3 test suite.
 
-The ntt run first command builds a test executable using the files or
+The ntt run command first builds a test executable using the files or
 directories passed as first argument list.
 The test executable is then run with the tests specified as second argument
 list.
