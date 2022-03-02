@@ -216,18 +216,23 @@ func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
 
 	if showTags && len(tags) != 0 {
 		for _, tag := range tags {
-			if showFiles {
-				fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
-			}
-			fmt.Fprintf(w, "%s\t%s\t%s\n", id, tag[0], tag[1])
+			PrintMatch(p, id, tag[0], tag[1])
 		}
 		return
 	}
 
+	PrintMatch(p, id)
+}
+
+func PrintMatch(pos loc.Position, id string, tags ...string) {
 	if showFiles {
-		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
+		fmt.Fprintf(w, "%s:%d\t", pos.Filename, pos.Line)
 	}
-	fmt.Fprintf(w, "%s\n", id)
+	fmt.Fprintf(w, id)
+	for _, t := range tags {
+		fmt.Fprintf(w, "\t%s", t)
+	}
+	fmt.Fprintln(w)
 }
 
 func filesOfInterest(cmd string, p project.Interface) ([]string, error) {
