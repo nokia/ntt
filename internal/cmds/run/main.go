@@ -419,6 +419,8 @@ func HandleResult(res Result) {
 		fatal.Printf("+++ fatal ")
 		if name := res.Event.Name; name != "" {
 			fatal.Printf("%s: ", name)
+		} else {
+			fatal.Printf("%s: ", res.Job.Name)
 		}
 		fatal.Printf("%s\n", res.Event.Err.Error())
 		atomic.AddUint64(&errorCount, 1)
