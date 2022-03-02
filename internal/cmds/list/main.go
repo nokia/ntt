@@ -2,6 +2,7 @@ package list
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -119,9 +120,11 @@ If a basket is not defined by an environment variable, it's equivalent to a
 
 	w = bufio.NewWriter(os.Stdout)
 
-	showFiles = false
-	showTags  = false
-	trees     []*ttcn3.Tree
+	showFiles   = false
+	showTags    = false
+	formatJSON  = false
+	formatPlain = true
+	first       = true
 
 	Basket, _ = ntt2.NewBasket("list")
 )
@@ -155,6 +158,14 @@ func list(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	formatJSON, _ = cmd.Flags().GetBool("json")
+	formatPlain, _ = cmd.Flags().GetBool("plain")
+
+	if formatJSON {
+		fmt.Fprintln(w, "[")
+	}
+
 	files, err := filesOfInterest(cmd.Use, suite)
 	for _, f := range files {
 		tree := ttcn3.ParseFile(f)
@@ -202,8 +213,34 @@ func list(cmd *cobra.Command, args []string) error {
 		})
 	}
 
+	if formatJSON {
+		fmt.Fprintln(w, "]")
+	}
 	w.Flush()
 	return err
+}
+
+type Match struct {
+	Filename string `json:"filename,omitempty"`
+	Line     int    `json:"line,omitempty"`
+	Column   int    `json:"column,omitempty"`
+	ID       string `json:"id,omitempty"`
+	Tags     []Tag  `json:"tags,omitempty"`
+}
+
+type Tag struct {
+	Key   string
+	Value string
+}
+
+func (t Tag) String() string {
+	if t.Value != "" {
+		return fmt.Sprintf("%s:%s", t.Key, t.Value)
+	}
+	return t.Key
+}
+func (t Tag) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
 }
 
 func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
@@ -214,14 +251,42 @@ func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
 
 	p := tree.Position(pos)
 
-	if showTags && len(tags) != 0 {
-		for _, tag := range tags {
-			PrintMatch(p, id, tag[0], tag[1])
+	var prettyTags []Tag
+	for _, tag := range tags {
+		t := Tag{Key: tag[0]}
+		if len(tag) > 1 {
+			t.Value = tag[1]
 		}
-		return
+		prettyTags = append(prettyTags, t)
 	}
+	switch {
+	case formatJSON:
+		if !first {
+			w.Write([]byte(",\n"))
+		}
+		first = false
+		b, err := json.Marshal(Match{
+			Filename: p.Filename,
+			Line:     p.Line,
+			Column:   p.Column,
+			ID:       id,
+			Tags:     prettyTags,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		w.Write(b)
+	case formatPlain:
+		if showTags && len(tags) != 0 {
+			for _, tag := range prettyTags {
+				PrintMatch(p, id, tag.String())
+			}
+			return
+		}
 
-	PrintMatch(p, id)
+		PrintMatch(p, id)
+	}
 }
 
 func PrintMatch(pos loc.Position, id string, tags ...string) {
