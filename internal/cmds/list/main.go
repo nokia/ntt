@@ -7,7 +7,6 @@ import (
 
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
@@ -120,16 +119,20 @@ If a basket is not defined by an environment variable, it's equivalent to a
 
 	w = bufio.NewWriter(os.Stdout)
 
-	showTags = false
-	verbose  = false
-	trees    []*ttcn3.Tree
+	showFiles = false
+	showTags  = false
+	trees     []*ttcn3.Tree
 
-	Basket ntt2.Basket
+	Basket, _ = ntt2.NewBasket("list")
 )
 
 func init() {
-	Basket.LoadFromEnv("NTT_LIST_BASKETS")
-	Command.PersistentFlags().BoolVarP(&showTags, "tags", "t", false, "enable output of testcase documentation tags")
+	flags := Command.PersistentFlags()
+	flags.BoolVar(&showFiles, "with-filename", false, "Print the filename for each match.")
+	flags.BoolVar(&showTags, "with-tags", false, "Print documentation tags for each match.")
+	flags.BoolVarP(&showTags, "tags", "t", false, "Print documentation tags for each match.")
+	flags.MarkDeprecated("tags", "please use --with-tags instead")
+	Command.PersistentFlags().AddFlagSet(ntt2.BasketFlags())
 	Command.AddCommand(
 		&cobra.Command{Use: `tests`, RunE: list},
 		&cobra.Command{Use: `modules`, RunE: list},
@@ -141,9 +144,12 @@ func init() {
 }
 
 func list(cmd *cobra.Command, args []string) error {
-	if log.GlobalLevel() > log.PrintLevel {
-		verbose = true
-	}
+
+	Basket.LoadFromEnv("NTT_LIST_BASKETS")
+	Basket.NameRegex, _ = cmd.Flags().GetStringSlice("regex")
+	Basket.NameExclude, _ = cmd.Flags().GetStringSlice("exclude")
+	Basket.TagsRegex, _ = cmd.Flags().GetStringSlice("tags-regex")
+	Basket.TagsExclude, _ = cmd.Flags().GetStringSlice("tags-exclude")
 
 	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
@@ -210,7 +216,7 @@ func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
 
 	if showTags && len(tags) != 0 {
 		for _, tag := range tags {
-			if verbose {
+			if showFiles {
 				fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
 			}
 			fmt.Fprintf(w, "%s\t%s\t%s\n", id, tag[0], tag[1])
@@ -218,7 +224,7 @@ func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
 		return
 	}
 
-	if verbose {
+	if showFiles {
 		fmt.Fprintf(w, "%s:%d\t", p.Filename, p.Line)
 	}
 	fmt.Fprintf(w, "%s\n", id)
