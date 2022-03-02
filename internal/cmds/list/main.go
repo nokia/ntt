@@ -135,7 +135,7 @@ func init() {
 	flags.BoolVar(&showTags, "with-tags", false, "Print documentation tags for each match.")
 	flags.BoolVarP(&showTags, "tags", "t", false, "Print documentation tags for each match.")
 	flags.MarkDeprecated("tags", "please use --with-tags instead")
-	Command.PersistentFlags().AddFlagSet(ntt2.BasketFlags())
+	flags.AddFlagSet(ntt2.BasketFlags())
 	Command.AddCommand(
 		&cobra.Command{Use: `tests`, RunE: list},
 		&cobra.Command{Use: `modules`, RunE: list},

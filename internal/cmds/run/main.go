@@ -97,6 +97,7 @@ Environment variables:
 
 func init() {
 	flags := Command.Flags()
+	flags.AddFlagSet(ntt2.BasketFlags())
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.BoolVarP(&OutputJSON, "json", "", false, "output in JSON format")
 
@@ -149,6 +150,13 @@ func NewSuite(files []string) (*Suite, error) {
 
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
+	var err error
+	Basket, err = ntt2.NewBasketWithFlags("list", cmd.Flags())
+	Basket.LoadFromEnv("NTT_LIST_BASKETS")
+	if err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
