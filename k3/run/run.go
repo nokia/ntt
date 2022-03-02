@@ -168,6 +168,9 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 	go func() {
 		defer close(events)
 
+		if t.LogFile == "" {
+			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
+		}
 		cmd := exec.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
 		cmd.Dir = t.Dir
 		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
@@ -270,7 +273,6 @@ func NewTest(t3xf string, name string) *Test {
 		Name:    name,
 		T3XF:    t3xf,
 		Env:     os.Environ(),
-		LogFile: fs.ReplaceExt(t3xf, "log"),
 		Runtime: k3.Runtime(),
 	}
 }
