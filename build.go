@@ -110,6 +110,10 @@ func PlanImport(dir string) ([]build.Builder, error) {
 			ttcn3Files = append(ttcn3Files, path)
 			processed++
 		case ".c", ".cxx", ".cpp", ".cc":
+			// Skip ASN1 codecs
+			if strings.HasSuffix(path, ".enc.c") {
+				continue
+			}
 			cFiles = append(cFiles, path)
 			processed++
 		}
