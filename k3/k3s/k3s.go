@@ -30,11 +30,9 @@ func (r *Runner) Run(w io.Writer, testID string) error {
 	r.clean(testID)
 
 	// Execute test (k3s backend)
-	cmd := nttCommand(r.p, "run", "-j1", "--results-file=test_results.json", "--no-summary")
+	cmd := nttCommand(r.p, "run", "--", testID)
 	cmd.Dir = r.Dir
 	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
-	cmd.Stdin = strings.NewReader(testID + "\n")
-
 	out, err := cmd.CombinedOutput()
 	w.Write(out)
 	return multierror.Append(err, r.report(w, testID)).ErrorOrNil()

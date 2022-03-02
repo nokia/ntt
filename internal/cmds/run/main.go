@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -63,7 +64,7 @@ all tests with @stable-tag:
 
 Environment variables:
 
-* SCT_K3_SERVER=on	replace ntt process with k3s.
+* SCT_K3_SERVER=on	use k3s as backend.
 * K3_40_RUN_POLICY=old	if no ids are specified, run all control parts.
 
 `,
@@ -82,7 +83,8 @@ Environment variables:
 	fatal   = color.New(color.FgRed).Add(color.Bold)
 	failure = color.New(color.FgRed).Add(color.Bold)
 	warning = color.New(color.FgYellow).Add(color.Bold)
-	success = color.New(color.FgGreen)
+	success = color.New(color.Reset)
+	k3sExec = color.New(color.FgCyan).Add(color.Bold).SprintFunc()
 
 	ErrCommandFailed = fmt.Errorf("command failed")
 
@@ -104,19 +106,6 @@ func init() {
 	flags.MarkHidden("no-summary")
 
 	Basket.LoadFromEnv("NTT_LIST_BASKETS")
-
-	// When SCT_K3_SERVER is set, we hand execution over to k3s.
-	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
-		Command.DisableFlagParsing = true
-		Command.RunE = func(cmd *cobra.Command, args []string) error {
-			log.Debugln("engine: k3s")
-			exe, err := exec.LookPath("k3s")
-			if err != nil {
-				return fmt.Errorf("k3s: %w", err)
-			}
-			return Exec(exe, args...)
-		}
-	}
 }
 
 type Suite struct {
@@ -178,6 +167,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers)
 
+	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
+		args := append(files, "--no-summary", "--results-file=test_results.json", fmt.Sprintf("-j%d", MaxWorkers))
+		k3s := exec.CommandContext(ctx, "k3s", args...)
+		k3s.Stdin = k3sJobs(jobs)
+		k3s.Stdout = os.Stdout
+		k3s.Stderr = os.Stderr
+		setPdeathsig(k3s)
+		log.Verboseln("+", k3s.String())
+		return k3s.Run()
+	}
+
 	// Execute the jobs in parallel and collect the results.
 	for r := range ExecuteJobs(ctx, jobs, MaxWorkers) {
 		HandleResult(r)
@@ -187,6 +187,14 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w: %d error(s) occurred", ErrCommandFailed, errorCount)
 	}
 	return nil
+}
+
+func k3sJobs(jobs <-chan *Job) io.Reader {
+	var ids []string
+	for j := range jobs {
+		ids = append(ids, j.Name)
+	}
+	return strings.NewReader(strings.Join(ids, "\n"))
 }
 
 // GenerateIDs emits test IDs based on given file and and id list to a channel.
