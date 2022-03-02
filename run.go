@@ -74,7 +74,7 @@ func GenerateControlsWithContext(ctx context.Context, b Basket, files ...string)
 
 func generate(ctx context.Context, def *ttcn3.Definition, b Basket, c chan<- string) bool {
 	id := def.Tree.QualifiedName(def.Ident)
-	tags := doc.FindAllTags(ast.FirstToken(def.Ident).Comments())
+	tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
 	if b.Match(id, tags) {
 		select {
 		case c <- id:
