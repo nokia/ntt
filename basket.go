@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/env"
+	"github.com/spf13/pflag"
 	flag "github.com/spf13/pflag"
 )
 
@@ -116,13 +117,17 @@ type Basket struct {
 
 // NewBasket creates a new basket and parses the given arguments.
 func NewBasket(name string, args ...string) (Basket, error) {
-	b := Basket{Name: name}
 
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	fs.AddFlagSet(BasketFlags())
 	if err := fs.Parse(args); err != nil {
-		return b, err
+		return Basket{}, err
 	}
+	return NewBasketWithFlags(name, fs)
+}
+
+func NewBasketWithFlags(name string, fs *pflag.FlagSet) (Basket, error) {
+	b := Basket{Name: name}
 
 	var err error
 
