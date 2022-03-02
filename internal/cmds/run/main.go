@@ -91,6 +91,8 @@ Environment variables:
 	Runs      []results.Run
 	Ledger    = make(map[*Job]*Result)
 	Basket, _ = ntt2.NewBasket("default")
+
+	ResultsFile = cache.Lookup("test_results.json")
 )
 
 func init() {
@@ -149,7 +151,6 @@ func NewSuite(files []string) (*Suite, error) {
 func run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	defer FlushTestResults()
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
 	suite, err := NewSuite(files)
@@ -168,7 +169,12 @@ func run(cmd *cobra.Command, args []string) error {
 	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers)
 
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
-		args := append(files, "--no-summary", "--results-file=test_results.json", fmt.Sprintf("-j%d", MaxWorkers))
+		args := []string{
+			"--no-summary",
+			fmt.Sprintf("--results-file=%s", ResultsFile),
+			fmt.Sprintf("-j%d", MaxWorkers),
+		}
+		args = append(args, files...)
 		k3s := exec.CommandContext(ctx, "k3s", args...)
 		k3s.Stdin = k3sJobs(jobs)
 		k3s.Stdout = os.Stdout
@@ -179,6 +185,9 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Execute the jobs in parallel and collect the results.
+	os.Remove(cache.Lookup("test_results.json"))
+	defer FlushTestResults()
+
 	for r := range ExecuteJobs(ctx, jobs, MaxWorkers) {
 		HandleResult(r)
 	}
