@@ -126,7 +126,7 @@ If a basket is not defined by an environment variable, it's equivalent to a
 	formatPlain = true
 	first       = true
 
-	Basket, _ = ntt2.NewBasket("list")
+	Basket ntt2.Basket
 )
 
 func init() {
@@ -148,11 +148,12 @@ func init() {
 
 func list(cmd *cobra.Command, args []string) error {
 
+	var err error
+	Basket, err = ntt2.NewBasketWithFlags("list", cmd.Flags())
 	Basket.LoadFromEnv("NTT_LIST_BASKETS")
-	Basket.NameRegex, _ = cmd.Flags().GetStringSlice("regex")
-	Basket.NameExclude, _ = cmd.Flags().GetStringSlice("exclude")
-	Basket.TagsRegex, _ = cmd.Flags().GetStringSlice("tags-regex")
-	Basket.TagsExclude, _ = cmd.Flags().GetStringSlice("tags-exclude")
+	if err != nil {
+		return err
+	}
 
 	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
@@ -277,7 +278,7 @@ func Print(tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
 			return
 		}
 		w.Write(b)
-	case formatPlain:
+	default:
 		if showTags && len(tags) != 0 {
 			for _, tag := range prettyTags {
 				PrintMatch(p, id, tag.String())
