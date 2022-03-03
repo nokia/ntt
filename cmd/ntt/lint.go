@@ -1,4 +1,4 @@
-package lint
+package main
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	LintCommand = &cobra.Command{
 		Use:   "lint",
 		Short: "Check a test suite for suspicious or invalid code",
 		Long: `lint examines TTCN-3 source files and reports suspicious code.
@@ -189,7 +189,7 @@ type Import struct {
 }
 
 func init() {
-	Command.PersistentFlags().StringVarP(&config, "config", "c", ".ntt-lint.yml", "path to YAML formatted file containing linter configuration")
+	LintCommand.PersistentFlags().StringVarP(&config, "config", "c", ".ntt-lint.yml", "path to YAML formatted file containing linter configuration")
 }
 
 func lint(cmd *cobra.Command, args []string) error {
@@ -234,10 +234,10 @@ func lint(cmd *cobra.Command, args []string) error {
 				switch e := tree.Err.(type) {
 				case *errors.ErrorList:
 					for _, e := range e.List() {
-						report(e)
+						reportError(e)
 					}
 				default:
-					report(e)
+					reportError(e)
 				}
 				return
 			}
@@ -468,7 +468,7 @@ next:
 		}
 
 		// If we could not match any, we report an error
-		report(&errPattern{fset: fset, node: n, msg: msg})
+		reportError(&errPattern{fset: fset, node: n, msg: msg})
 	}
 }
 
@@ -481,7 +481,7 @@ func checkLines(fset *loc.FileSet, n ast.Node) {
 	end := fset.Position(n.End())
 	lines := end.Line - begin.Line
 	if lines > style.MaxLines {
-		report(&errLines{fset: fset, node: n, lines: lines})
+		reportError(&errLines{fset: fset, node: n, lines: lines})
 	}
 
 }
@@ -494,7 +494,7 @@ func checkBraces(fset *loc.FileSet, left ast.Node, right ast.Node) {
 	p1 := fset.Position(left.Pos())
 	p2 := fset.Position(right.Pos())
 	if p1.Line != p2.Line && p1.Column != p2.Column {
-		report(&errBraces{fset: fset, left: left, right: right})
+		reportError(&errBraces{fset: fset, left: left, right: right})
 	}
 }
 
@@ -505,7 +505,7 @@ func checkComplexity(fset *loc.FileSet, cc map[ast.Node]int) {
 
 	for n, v := range cc {
 		if v > style.Complexity.Max {
-			report(&errComplexity{fset: fset, node: n, complexity: v})
+			reportError(&errComplexity{fset: fset, node: n, complexity: v})
 		}
 
 	}
@@ -517,7 +517,7 @@ func checkCaseElse(fset *loc.FileSet, caseElse map[ast.Node]int) {
 	}
 	for n, v := range caseElse {
 		if v == 0 {
-			report(&errMissingCaseElse{fset: fset, node: n})
+			reportError(&errMissingCaseElse{fset: fset, node: n})
 		}
 	}
 }
@@ -534,7 +534,7 @@ func checkUsage(fset *loc.FileSet, n *ast.Ident) {
 	}
 	u.count++
 	if u.count >= u.Limit {
-		report(&errUsageExceedsLimit{
+		reportError(&errUsageExceedsLimit{
 			fset:  fset,
 			node:  n,
 			usage: u.count,
@@ -585,7 +585,7 @@ func checkSuite(suite *ntt.Suite) {
 			}
 
 			if _, found := usedModules[mod]; !found {
-				report(&errUnusedModule{file: file})
+				reportError(&errUnusedModule{file: file})
 			}
 		}
 	}
@@ -607,7 +607,7 @@ func matchAny(patterns []string, s string) bool {
 	return false
 }
 
-func report(e error) {
+func reportError(e error) {
 
 	// Check if this error is silenced (with a NOLINT-directive for example).
 	type silencer interface {

@@ -18,7 +18,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nokia/ntt/internal/cmds/build"
-	"github.com/nokia/ntt/internal/cmds/lint"
 	"github.com/nokia/ntt/internal/cmds/report"
 	"github.com/nokia/ntt/internal/cmds/run"
 	"github.com/nokia/ntt/internal/cmds/tags"
@@ -109,7 +108,7 @@ func init() {
 	Command.AddCommand(DumpCommand)
 	Command.AddCommand(LocateFileCommand)
 	Command.AddCommand(LangserverCommand)
-	Command.AddCommand(lint.Command)
+	Command.AddCommand(LintCommand)
 	Command.AddCommand(ListCommand)
 	Command.AddCommand(tags.Command)
 	Command.AddCommand(report.Command)
