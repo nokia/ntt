@@ -19,7 +19,6 @@ import (
 
 	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/cmds/lint"
-	"github.com/nokia/ntt/internal/cmds/list"
 	"github.com/nokia/ntt/internal/cmds/report"
 	"github.com/nokia/ntt/internal/cmds/run"
 	"github.com/nokia/ntt/internal/cmds/tags"
@@ -111,7 +110,7 @@ func init() {
 	Command.AddCommand(LocateFileCommand)
 	Command.AddCommand(LangserverCommand)
 	Command.AddCommand(lint.Command)
-	Command.AddCommand(list.Command)
+	Command.AddCommand(ListCommand)
 	Command.AddCommand(tags.Command)
 	Command.AddCommand(report.Command)
 	Command.AddCommand(build.Command)

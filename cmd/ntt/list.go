@@ -1,4 +1,4 @@
-package list
+package main
 
 import (
 	"bufio"
@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	ListCommand = &cobra.Command{
 		Use:   "list",
 		Short: "List modules, tests, imports, ...",
 		Long: `List various types of objects.
@@ -130,13 +130,13 @@ If a basket is not defined by an environment variable, it's equivalent to a
 )
 
 func init() {
-	flags := Command.PersistentFlags()
+	flags := ListCommand.PersistentFlags()
 	flags.BoolVar(&showFiles, "with-filename", false, "Print the filename for each match.")
 	flags.BoolVar(&showTags, "with-tags", false, "Print documentation tags for each match.")
 	flags.BoolVarP(&showTags, "tags", "t", false, "Print documentation tags for each match.")
 	flags.MarkDeprecated("tags", "please use --with-tags instead")
 	flags.AddFlagSet(ntt2.BasketFlags())
-	Command.AddCommand(
+	ListCommand.AddCommand(
 		&cobra.Command{Use: `tests`, RunE: list},
 		&cobra.Command{Use: `modules`, RunE: list},
 		&cobra.Command{Use: `imports`, RunE: list},
