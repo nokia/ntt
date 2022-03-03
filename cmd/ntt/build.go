@@ -1,4 +1,4 @@
-package build
+package main
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	BuildCommand = &cobra.Command{
 		Use:   "build",
 		Short: "Build test suite and its dependencies",
 		RunE:  Build,
@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	Command.Flags().BoolVar(&CompDB, "compdb", false, "generate compilation database")
+	BuildCommand.Flags().BoolVar(&CompDB, "compdb", false, "generate compilation database")
 }
 
 func Build(cmd *cobra.Command, args []string) error {

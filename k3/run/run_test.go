@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
-	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
@@ -116,18 +116,16 @@ func testBuild(t *testing.T) string {
 		t.Skip("no k3 runtime found")
 	}
 
-	args := []string{"testdata/suite"}
-	build.Command.SetArgs(args)
-	if err := build.Command.Execute(); err != nil {
-		t.Fatal(err)
-	}
-
-	suite, err := ntt.NewFromArgs(args...)
+	suite, err := ntt.NewFromArgs("testdata/suite")
 	if err != nil {
 		t.Fatal(err)
 	}
 	name, err := suite.Name()
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := ntt2.BuildProject(name, suite); err != nil {
 		t.Fatal(err)
 	}
 	return cache.Lookup(fmt.Sprintf("%s.t3xf", name))

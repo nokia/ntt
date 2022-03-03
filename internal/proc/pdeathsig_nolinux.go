@@ -1,6 +1,6 @@
 // +build !linux
 
-package run
+package proc
 
 import (
 	"os/exec"

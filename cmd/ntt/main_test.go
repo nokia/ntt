@@ -1,4 +1,4 @@
-package run
+package main
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func TestGenerateIDs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			suite, err := NewSuite([]string{"../../../testdata/vanilla"})
+			suite, err := NewSuite([]string{"../../testdata/vanilla"})
 			if err != nil {
 				t.Fatal(err)
 			}

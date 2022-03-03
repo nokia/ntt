@@ -1,4 +1,4 @@
-package dump
+package main
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ import (
 var (
 	indent = 0
 
-	Command = &cobra.Command{
+	DumpCommand = &cobra.Command{
 		Use:   "dump",
 		Short: "Dump TTCN-3 syntax trees",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -48,8 +48,8 @@ var (
 )
 
 func init() {
-	Command.PersistentFlags().BoolVarP(&useTTCN3, "ttcn3", "", false, "formatted TTCN-3 output")
-	Command.PersistentFlags().BoolVarP(&useDot, "dot", "", false, "graphviz output")
+	DumpCommand.PersistentFlags().BoolVarP(&useTTCN3, "ttcn3", "", false, "formatted TTCN-3 output")
+	DumpCommand.PersistentFlags().BoolVarP(&useDot, "dot", "", false, "graphviz output")
 }
 
 func dump(v reflect.Value, f string) {
