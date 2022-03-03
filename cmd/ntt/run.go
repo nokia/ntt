@@ -84,6 +84,7 @@ Environment variables:
 	}
 
 	MaxWorkers int
+	MaxFail    int
 	OutputJSON bool
 	errorCount uint64
 	LogsDir    string
@@ -107,6 +108,7 @@ func init() {
 	flags := RunCommand.Flags()
 	flags.AddFlagSet(ntt2.BasketFlags())
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
+	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.BoolVarP(&OutputJSON, "json", "", false, "output in JSON format")
 	flags.StringVarP(&LogsDir, "logs-dir", "o", "", "store log files in DIR")
 	flags.StringP("tests-file", "t", "", "Read tests from file (use '-' for stdin)")
@@ -195,6 +197,11 @@ func run(cmd *cobra.Command, args []string) error {
 	// Execute the jobs in parallel and collect the results.
 	for r := range ExecuteJobs(ctx, jobs, MaxWorkers) {
 		HandleResult(r)
+		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
+			ColorFatal.Print("+++ fatal too many errors. Exiting.\n")
+			cancel()
+			break
+		}
 	}
 
 	if errorCount > 0 {
