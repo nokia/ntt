@@ -20,7 +20,6 @@ import (
 	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/cmds/lint"
 	"github.com/nokia/ntt/internal/cmds/list"
-	"github.com/nokia/ntt/internal/cmds/locate_file"
 	"github.com/nokia/ntt/internal/cmds/report"
 	"github.com/nokia/ntt/internal/cmds/run"
 	"github.com/nokia/ntt/internal/cmds/tags"
@@ -109,7 +108,7 @@ func init() {
 
 	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 	Command.AddCommand(DumpCommand)
-	Command.AddCommand(locate_file.Command)
+	Command.AddCommand(LocateFileCommand)
 	Command.AddCommand(LangserverCommand)
 	Command.AddCommand(lint.Command)
 	Command.AddCommand(list.Command)
