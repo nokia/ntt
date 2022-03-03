@@ -15,7 +15,7 @@ import (
 var (
 	showCmd = &cobra.Command{
 		Use:   "show [ <file>...] [-- var...]",
-		Short: "show configuration variables used by ntt",
+		Short: "Show test suite configuration.",
 		RunE:  show,
 	}
 

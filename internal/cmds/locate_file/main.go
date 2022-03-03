@@ -10,7 +10,7 @@ import (
 var (
 	Command = &cobra.Command{
 		Use:    "locate-file",
-		Short:  "locate a file using NTT_CACHE",
+		Short:  "Locate a file using NTT_CACHE",
 		Hidden: true,
 		RunE:   locate,
 	}

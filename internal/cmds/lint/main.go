@@ -24,7 +24,7 @@ import (
 var (
 	Command = &cobra.Command{
 		Use:   "lint",
-		Short: "lint examines TTCN-3 source files and reports suspicious code",
+		Short: "Check a test suite for suspicious or invalid code",
 		Long: `lint examines TTCN-3 source files and reports suspicious code.
 It may find problems not caught by the compiler, but also constructs
 considered "bad style".

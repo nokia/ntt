@@ -9,7 +9,7 @@ import (
 var (
 	versionCmd = &cobra.Command{
 		Use:   "version",
-		Short: "show version",
+		Short: "Show version.",
 		Run:   versionInfo,
 	}
 )

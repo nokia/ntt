@@ -14,7 +14,7 @@ import (
 var (
 	Command = &cobra.Command{
 		Use:   "build",
-		Short: "Builds compiles TTCN-3 source and imports specified by the import paths.",
+		Short: "Build test suite and its dependencies",
 		RunE:  Build,
 	}
 
