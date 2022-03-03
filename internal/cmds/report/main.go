@@ -17,7 +17,7 @@ import (
 var (
 	Command = &cobra.Command{
 		Use:   "report",
-		Short: "show information about latest test run",
+		Short: "Show report about latest test run",
 		Long: `show information about latest test run",
 
 The report command shows a summary of the latest test run. The summary includes

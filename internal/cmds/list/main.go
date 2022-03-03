@@ -20,7 +20,7 @@ import (
 var (
 	Command = &cobra.Command{
 		Use:   "list",
-		Short: "List various types of objects",
+		Short: "List modules, tests, imports, ...",
 		Long: `List various types of objects.
 
 List control parts, modules, imports or tests. The list command without any explicit

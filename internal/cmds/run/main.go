@@ -51,7 +51,7 @@ type Result struct {
 var (
 	Command = &cobra.Command{
 		Use:   "run [ <path>... ] [ -- <test id>... ]",
-		Short: "Run tests from a TTCN-3 test suite.",
+		Short: "Build and run test suite",
 		Long: `Run tests from a TTCN-3 test suite.
 
 The ntt run command first builds a test executable using the files or

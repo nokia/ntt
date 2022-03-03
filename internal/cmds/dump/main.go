@@ -19,8 +19,8 @@ var (
 	indent = 0
 
 	Command = &cobra.Command{
-		Use:    "dump",
-		Hidden: true,
+		Use:   "dump",
+		Short: "Dump TTCN-3 syntax trees",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			suite, err := ntt.NewFromArgs(args...)
 			if err != nil {

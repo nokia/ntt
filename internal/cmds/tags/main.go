@@ -9,15 +9,15 @@ import (
 	"sync"
 
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/spf13/cobra"
 )
 
 var (
 	Command = &cobra.Command{
 		Use:   "tags",
-		Short: "tags generates an index file for TTCN-3 language objects",
+		Short: "Write a cTags database to stdout",
 		Long: `tags  generates an index (or "tag") file for TTCN-3 language objects found in file(s). 
 
 This tag file allows these items to be quickly and easily located by a text
