@@ -29,24 +29,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type Job struct {
-	Name       string
-	Iteration  int
-	Suite      *Suite
-	WorkingDir string
-	LogFile    string
-}
-
-func (j *Job) ID() string {
-	return fs.Stem(j.WorkingDir)
-}
-
-type Result struct {
-	Job
-	k3r.Test
-	k3r.Event
-}
-
 var (
 	RunCommand = &cobra.Command{
 		Use:   "run [ <path>... ] [ -- <test id>... ]",
@@ -103,6 +85,24 @@ Environment variables:
 
 	ResultsFile = cache.Lookup("test_results.json")
 )
+
+type Job struct {
+	Name       string
+	Iteration  int
+	Suite      *Suite
+	WorkingDir string
+	LogFile    string
+}
+
+func (j *Job) ID() string {
+	return fs.Stem(j.WorkingDir)
+}
+
+type Result struct {
+	Job
+	k3r.Test
+	k3r.Event
+}
 
 func init() {
 	flags := RunCommand.Flags()
