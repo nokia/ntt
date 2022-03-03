@@ -1,4 +1,4 @@
-package langserver
+package main
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	LangserverCommand = &cobra.Command{
 		Hidden: true,
 		Use:    "langserver",
 		Short:  "Start TTCN-3 language server",

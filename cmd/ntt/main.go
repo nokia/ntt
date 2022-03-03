@@ -18,7 +18,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nokia/ntt/internal/cmds/build"
-	"github.com/nokia/ntt/internal/cmds/langserver"
 	"github.com/nokia/ntt/internal/cmds/lint"
 	"github.com/nokia/ntt/internal/cmds/list"
 	"github.com/nokia/ntt/internal/cmds/locate_file"
@@ -111,7 +110,7 @@ func init() {
 	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 	Command.AddCommand(DumpCommand)
 	Command.AddCommand(locate_file.Command)
-	Command.AddCommand(langserver.Command)
+	Command.AddCommand(LangserverCommand)
 	Command.AddCommand(lint.Command)
 	Command.AddCommand(list.Command)
 	Command.AddCommand(tags.Command)
