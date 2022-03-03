@@ -10,6 +10,7 @@ import (
 
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/spf13/cobra"
 )
@@ -47,18 +48,11 @@ func tags(cmd *cobra.Command, args []string) error {
 	for i := range files {
 		go func(i int) {
 			defer wg.Done()
-			mod, nodes := suite.Tags(files[i])
-			if mod == nil || mod.Module == nil {
-				return
+			tree := ttcn3.ParseFile(files[i])
+			for _, n := range tree.Tags() {
+				pos := tree.Position(n.Pos())
+				tags[i] = append(tags[i], NewTag(ast.Name(n), pos.Filename, pos.Line, Kind(n)))
 			}
-
-			t := make([]string, 0, len(mod.Module.Defs)*2)
-			for _, n := range nodes {
-				pos := mod.Position(n.Pos())
-				t = append(t, NewTag(ast.Name(n), pos.Filename, pos.Line, Kind(n)))
-			}
-			tags[i] = t
-
 		}(i)
 	}
 

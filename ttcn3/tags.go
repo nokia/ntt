@@ -1,37 +1,12 @@
-package ntt
+package ttcn3
 
 import (
-	"context"
-
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
-// Tags will return all named nodes (defintions, enums, ...) from a file.
-func (suite *Suite) Tags(file string) (*ParseInfo, []ast.Node) {
-	mod := suite.Parse(file)
-	if mod == nil || mod.Module == nil {
-		return mod, nil
-	}
-
-	type tagsInfo struct {
-		mod  *ParseInfo
-		tags []ast.Node
-	}
-
-	mod.tags = suite.store.Bind("tags_"+mod.id(), func(ctx context.Context) interface{} {
-		return &tagsInfo{
-			tags: suite.tags(mod),
-		}
-	})
-
-	v := mod.tags.Get(context.TODO())
-	return mod, v.(*tagsInfo).tags
-
-}
-
-func (suite *Suite) tags(mod *ParseInfo) []ast.Node {
-	t := make([]ast.Node, 0, len(mod.Module.Defs)*2)
-	ast.Inspect(mod.Module, func(n ast.Node) bool {
+func (tree *Tree) Tags() []ast.Node {
+	var t []ast.Node
+	ast.Inspect(tree.Root, func(n ast.Node) bool {
 		if n == nil {
 			return false
 		}
