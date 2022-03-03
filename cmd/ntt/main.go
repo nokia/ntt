@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"runtime/pprof"
 	"strconv"
-	"strings"
 	"syscall"
 
 	"github.com/nokia/ntt/internal/env"
@@ -20,7 +19,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	RootCommand = &cobra.Command{
 		Use:   "ntt",
 		Short: "ntt is a tool for managing TTCN-3 source code and tests",
 
@@ -53,26 +52,25 @@ var (
 		},
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || strings.HasPrefix(args[0], "-") {
-				if _, ok := os.LookupEnv("NTT_ENABLE_REPL"); ok {
-					return repl()
+			if len(args) > 0 && args[0][0] != '-' {
+				if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
+					return proc.Exec(path, args[1:]...)
 				}
-				cmd.Help()
-				return nil
+				if path, err := exec.LookPath("k3-" + args[0]); err == nil {
+					return proc.Exec(path, args[1:]...)
+				}
+				return fmt.Errorf("unknown command: %s", args[0])
 			}
 
-			if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
-				return proc.Exec(path, args[1:]...)
+			if err := cmd.Flags().Parse(args); err != nil {
+				return err
 			}
 
-			if path, err := exec.LookPath("k3-" + args[0]); err == nil {
-				return proc.Exec(path, args[1:]...)
+			if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+				return repl()
 			}
 
-			err := fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-			cmd.Println("Error:", err.Error())
-			cmd.Printf("Run '%v --help' for usage.\n", cmd.CommandPath())
-			return err
+			return cmd.Help()
 		},
 	}
 
@@ -92,25 +90,28 @@ var (
 
 func init() {
 	session.SharedDir = "/tmp/k3"
-	Command.PersistentFlags().CountVarP(&verbose, "verbose", "v", "verbose output")
-	Command.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "quiet output")
-	Command.PersistentFlags().BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
-	Command.PersistentFlags().BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
-	Command.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
-	Command.PersistentFlags().StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
-	Command.AddCommand(showCmd)
+	root := RootCommand
+	flags := root.PersistentFlags()
+	flags.CountVarP(&verbose, "verbose", "v", "verbose output")
+	flags.BoolVarP(&quiet, "quiet", "q", false, "quiet output")
+	flags.BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
+	flags.BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
+	flags.BoolP("interactive", "i", false, "run in interactive mode")
+	flags.StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
+	flags.StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
 
-	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
-	Command.AddCommand(DumpCommand)
-	Command.AddCommand(LocateFileCommand)
-	Command.AddCommand(LangserverCommand)
-	Command.AddCommand(LintCommand)
-	Command.AddCommand(ListCommand)
-	Command.AddCommand(TagsCommand)
-	Command.AddCommand(ReportCommand)
-	Command.AddCommand(BuildCommand)
-	Command.AddCommand(RunCommand)
+	root.AddCommand(ShowCommand)
+	root.AddCommand(DumpCommand)
+	root.AddCommand(LocateFileCommand)
+	root.AddCommand(LangserverCommand)
+	root.AddCommand(LintCommand)
+	root.AddCommand(ListCommand)
+	root.AddCommand(TagsCommand)
+	root.AddCommand(ReportCommand)
+	root.AddCommand(BuildCommand)
+	root.AddCommand(RunCommand)
 
+	ShowCommand.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 }
 
 func Format() string {
@@ -155,7 +156,7 @@ func main() {
 		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
 	}
 
-	err := Command.Execute()
+	err := RootCommand.Execute()
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}

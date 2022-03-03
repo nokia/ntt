@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	versionCmd = &cobra.Command{
+	VersionCommand = &cobra.Command{
 		Use:   "version",
 		Short: "Show version.",
 		Run:   versionInfo,
@@ -15,7 +15,7 @@ var (
 )
 
 func init() {
-	Command.AddCommand(versionCmd)
+	RootCommand.AddCommand(VersionCommand)
 }
 
 func versionInfo(cmd *cobra.Command, args []string) {
