@@ -19,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nokia/ntt/internal/cmds/build"
-	"github.com/nokia/ntt/internal/cmds/report"
 )
 
 var (
@@ -110,7 +109,7 @@ func init() {
 	Command.AddCommand(LintCommand)
 	Command.AddCommand(ListCommand)
 	Command.AddCommand(TagsCommand)
-	Command.AddCommand(report.Command)
+	Command.AddCommand(ReportCommand)
 	Command.AddCommand(build.Command)
 	Command.AddCommand(RunCommand)
 

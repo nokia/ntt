@@ -138,7 +138,7 @@ func show(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	report := NewReport(sources)
+	report := NewConfigReport(sources)
 
 	switch {
 	case outputJSON:
@@ -331,7 +331,7 @@ func (r *ConfigReport) Err() string {
 	return ""
 }
 
-func NewReport(args []string) *ConfigReport {
+func NewConfigReport(args []string) *ConfigReport {
 	var err error = nil
 	r := ConfigReport{Args: args}
 	r.suite, r.err = ntt.NewFromArgs(args...)

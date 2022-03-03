@@ -1,7 +1,6 @@
-package report
+package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -24,7 +23,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	ReportCommand = &cobra.Command{
 		Use:   "report",
 		Short: "Show report about latest test run",
 		Long: `show information about latest test run",
@@ -129,8 +128,6 @@ JSON template:
 `,
 		RunE: report,
 	}
-
-	w = bufio.NewWriter(os.Stdout)
 
 	useJSON  = false
 	useJUnit = false
@@ -355,9 +352,9 @@ var funcMap = template.FuncMap{
 }
 
 func init() {
-	Command.PersistentFlags().BoolVarP(&useJSON, "json", "", false, "output report in JSON format")
-	Command.PersistentFlags().BoolVarP(&useJUnit, "junit", "", false, "output report in Junit format")
-	Command.PersistentFlags().StringVarP(&templateText, "template", "t", "", "output report with custom template")
+	ReportCommand.PersistentFlags().BoolVarP(&useJSON, "json", "", false, "output report in JSON format")
+	ReportCommand.PersistentFlags().BoolVarP(&useJUnit, "junit", "", false, "output report in Junit format")
+	ReportCommand.PersistentFlags().StringVarP(&templateText, "template", "t", "", "output report with custom template")
 }
 
 type Report struct {
