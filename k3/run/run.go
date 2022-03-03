@@ -6,12 +6,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/k3"
 )
 
@@ -171,14 +171,11 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 		if t.LogFile == "" {
 			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
 		}
-		cmd := exec.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
+		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
 		cmd.Dir = t.Dir
 		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
 		cmd.Env = append(cmd.Env, t.ModulePars...)
 		cmd.Stdin = strings.NewReader(t.request())
-
-		setPdeathsig(cmd)
-
 		cmd.Stderr = &t.Stderr
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {

@@ -1,4 +1,4 @@
-package run
+package main
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -23,6 +22,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/k3"
 	k3r "github.com/nokia/ntt/k3/run"
@@ -49,7 +49,7 @@ type Result struct {
 }
 
 var (
-	Command = &cobra.Command{
+	RunCommand = &cobra.Command{
 		Use:   "run [ <path>... ] [ -- <test id>... ]",
 		Short: "Build and run test suite",
 		Long: `Run tests from a TTCN-3 test suite.
@@ -89,11 +89,11 @@ Environment variables:
 	errorCount uint64
 	LogsDir    string
 
-	fatal   = color.New(color.FgRed).Add(color.Bold)
-	failure = color.New(color.FgRed).Add(color.Bold)
-	warning = color.New(color.FgYellow).Add(color.Bold)
-	success = color.New(color.Reset)
-	k3sExec = color.New(color.FgCyan).Add(color.Bold).SprintFunc()
+	ColorFatal   = color.New(color.FgRed).Add(color.Bold)
+	ColorFailure = color.New(color.FgRed).Add(color.Bold)
+	ColorWarning = color.New(color.FgYellow).Add(color.Bold)
+	ColorSuccess = color.New(color.Reset)
+	ColorK3sExec = color.New(color.FgCyan).Add(color.Bold).SprintFunc()
 
 	ErrCommandFailed = fmt.Errorf("command failed")
 
@@ -105,7 +105,7 @@ Environment variables:
 )
 
 func init() {
-	flags := Command.Flags()
+	flags := RunCommand.Flags()
 	flags.AddFlagSet(ntt2.BasketFlags())
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.BoolVarP(&OutputJSON, "json", "", false, "output in JSON format")
@@ -211,11 +211,10 @@ func k3sRun(ctx context.Context, files []string, jobs <-chan Job) error {
 		fmt.Sprintf("-j%d", MaxWorkers),
 	}
 	args = append(args, files...)
-	k3s := exec.CommandContext(ctx, "k3s", args...)
+	k3s := proc.CommandContext(ctx, "k3s", args...)
 	k3s.Stdin = k3sJobs(jobs)
 	k3s.Stdout = os.Stdout
 	k3s.Stderr = os.Stderr
-	setPdeathsig(k3s)
 	log.Verboseln("+", k3s.String())
 	return k3s.Run()
 }
@@ -404,25 +403,25 @@ func HandleResult(res Result) {
 		line := fmt.Sprintf("--- %s %s\t(duration=%.3gs)", res.Event.Verdict, res.Event.Name, float64(d.Seconds()))
 		switch res.Event.Verdict {
 		case "pass":
-			success.Println(line)
+			ColorSuccess.Println(line)
 
 		case "fail", "error":
-			failure.Println(line)
+			ColorFailure.Println(line)
 			atomic.AddUint64(&errorCount, 1)
 
 		case "inconc", "none":
-			warning.Println(line)
+			ColorWarning.Println(line)
 			atomic.AddUint64(&errorCount, 1)
 		}
 
 	case k3r.Error:
-		fatal.Printf("+++ fatal ")
+		ColorFatal.Printf("+++ fatal ")
 		if name := res.Event.Name; name != "" {
-			fatal.Printf("%s: ", name)
+			ColorFatal.Printf("%s: ", name)
 		} else {
-			fatal.Printf("%s: ", res.Job.Name)
+			ColorFatal.Printf("%s: ", res.Job.Name)
 		}
-		fatal.Printf("%s\n", res.Event.Err.Error())
+		ColorFatal.Printf("%s\n", res.Event.Err.Error())
 		atomic.AddUint64(&errorCount, 1)
 	}
 }
@@ -462,17 +461,6 @@ func runtimePaths(p project.Interface) ([]string, error) {
 		paths = append(paths, cwd)
 	}
 	return paths, nil
-}
-
-// splitArgs splits an argument list at pos. Pos is usually the position of '--'
-// (see cobra.Command.ArgsLenAtDash).
-//
-// Is pos < 0, the second list will be empty
-func splitArgs(args []string, pos int) ([]string, []string) {
-	if pos < 0 {
-		return args, []string{}
-	}
-	return args[:pos], args[pos:]
 }
 
 func readTestsFromFile(path string) ([]string, error) {

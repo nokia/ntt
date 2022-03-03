@@ -13,14 +13,13 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
 
 	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/cmds/report"
-	"github.com/nokia/ntt/internal/cmds/run"
-	"github.com/nokia/ntt/internal/cmds/tags"
 )
 
 var (
@@ -66,11 +65,11 @@ var (
 			}
 
 			if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
-				return Execute(path, args[1:]...)
+				return proc.Exec(path, args[1:]...)
 			}
 
 			if path, err := exec.LookPath("k3-" + args[0]); err == nil {
-				return Execute(path, args[1:]...)
+				return proc.Exec(path, args[1:]...)
 			}
 
 			err := fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
@@ -110,10 +109,10 @@ func init() {
 	Command.AddCommand(LangserverCommand)
 	Command.AddCommand(LintCommand)
 	Command.AddCommand(ListCommand)
-	Command.AddCommand(tags.Command)
+	Command.AddCommand(TagsCommand)
 	Command.AddCommand(report.Command)
 	Command.AddCommand(build.Command)
-	Command.AddCommand(run.Command)
+	Command.AddCommand(RunCommand)
 
 }
 
@@ -178,7 +177,7 @@ func fatal(err error) {
 		errors.PrintError(os.Stderr, err)
 	default:
 		// Run command has its own error logging.
-		if !stderrors.Is(err, run.ErrCommandFailed) {
+		if !stderrors.Is(err, ErrCommandFailed) {
 			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	}

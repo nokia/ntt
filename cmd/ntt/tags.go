@@ -1,4 +1,4 @@
-package tags
+package main
 
 import (
 	"bufio"
@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	Command = &cobra.Command{
+	TagsCommand = &cobra.Command{
 		Use:   "tags",
 		Short: "Write a cTags database to stdout",
 		Long: `tags  generates an index (or "tag") file for TTCN-3 language objects found in file(s). 
@@ -27,8 +27,6 @@ object).`,
 
 		RunE: tags,
 	}
-
-	w = bufio.NewWriter(os.Stdout)
 )
 
 func tags(cmd *cobra.Command, args []string) error {

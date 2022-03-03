@@ -1,14 +1,14 @@
 // +build !unix,!linux
 
-package main
+package proc
 
 import (
 	"os"
 	"os/exec"
 )
 
-func Execute(path string, args ...string) error {
-	cmd := exec.Command(path, args...)
+func execute(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
