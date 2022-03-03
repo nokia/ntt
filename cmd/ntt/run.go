@@ -17,7 +17,6 @@ import (
 	"github.com/fatih/color"
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
-	"github.com/nokia/ntt/internal/cmds/build"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -79,7 +78,7 @@ Environment variables:
 
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			files, _ := splitArgs(args, cmd.ArgsLenAtDash())
-			return build.Command.RunE(cmd, files)
+			return BuildCommand.RunE(cmd, files)
 		},
 		RunE: run,
 	}

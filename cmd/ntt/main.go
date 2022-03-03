@@ -17,8 +17,6 @@ import (
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
-
-	"github.com/nokia/ntt/internal/cmds/build"
 )
 
 var (
@@ -110,7 +108,7 @@ func init() {
 	Command.AddCommand(ListCommand)
 	Command.AddCommand(TagsCommand)
 	Command.AddCommand(ReportCommand)
-	Command.AddCommand(build.Command)
+	Command.AddCommand(BuildCommand)
 	Command.AddCommand(RunCommand)
 
 }
