@@ -226,7 +226,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 					Time:    time.Now(),
 				}
 			case "tciControlTerminated":
-				events <- Event{Type: ControlTerminated, Name: t.Name, Time: time.Now()}
+				events <- Event{Type: ControlTerminated, Name: t.Name, Verdict: "pass", Time: time.Now()}
 			case "tciError":
 				switch v[1] {
 				case "E101:":
