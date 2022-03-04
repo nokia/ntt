@@ -13,10 +13,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/fatih/color"
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/proc"
@@ -162,7 +164,7 @@ type Suite struct {
 	RuntimePaths []string
 }
 
-func NewSuite(files []string) (*Suite, error) {
+func NewSuite(files ...string) (*Suite, error) {
 	suite, err := ntt.NewFromArgs(files...)
 	if err != nil {
 		return nil, fmt.Errorf("loading test suite failed: %w", err)
@@ -192,6 +194,38 @@ func NewSuite(files []string) (*Suite, error) {
 
 }
 
+func (s *Suite) Timeout() time.Duration {
+	t, err := s.Suite.Timeout()
+	if err != nil {
+		log.Verbosef("retrieving test suite timeout failed: %v\n", err)
+	}
+	d, err := time.ParseDuration(fmt.Sprintf("%fs", t))
+	if err != nil {
+		log.Verbosef("retrieving test suite timeout failed: %v\n", err)
+	}
+	return d
+}
+
+func (s *Suite) ParametersFile() string {
+	f, err := s.Suite.ParametersFile()
+	if err != nil {
+		log.Verbosef("retrieving parameters file failed: %v", err)
+		return ""
+	}
+	if f != nil {
+		return f.Path()
+	}
+	return ""
+}
+
+func (s *Suite) ParametersDir() string {
+	dir, err := s.Suite.ParametersDir()
+	if err != nil {
+		log.Verbosef("retrieving parameters file failed: %v", err)
+	}
+	return dir
+}
+
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
 
@@ -209,7 +243,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-	suite, err := NewSuite(files)
+	suite, err := NewSuite(files...)
 	if err != nil {
 		return err
 	}
@@ -453,6 +487,13 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 	}
 
 	test := k3r.NewTest(t3xf, job.Name)
+
+	pars, err := ModulePars(job.Name, job.Suite)
+	if err != nil {
+		results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
+		return
+	}
+	test.ModulePars = pars
 	test.Dir = workingDir
 	test.LogFile = logFile
 	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
@@ -464,6 +505,39 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 			Event: event,
 		}
 	}
+}
+
+// Default Timeout: package.yml
+// Suite Paremters: $K3_PARAMETERS_FILE
+// Test parameters: $K3_PARAMETERS_DIR/$MODULE/$TEST.parameters
+// $K3_TIMEOUT
+func ModulePars(name string, suite *Suite) (map[string]string, error) {
+	m := make(map[string]string)
+
+	if suitePars := suite.ParametersFile(); suitePars != "" {
+		if b, err := fs.Content(suitePars); err == nil {
+			if _, err := toml.Decode(string(b), &m); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if mod, test := SplitQualifiedName(name); mod != "" {
+		testPars := filepath.Join(suite.ParametersDir(), mod, test+".parameters")
+		if b, err := fs.Content(testPars); err == nil {
+			if _, err := toml.Decode(string(b), &m); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return m, nil
+}
+
+func SplitQualifiedName(name string) (string, string) {
+	parts := strings.Split(name, ".")
+	if len(parts) == 1 {
+		return "", name
+	}
+	return parts[0], strings.Join(parts[1:], ".")
 }
 
 func FlushTestResults() error {
