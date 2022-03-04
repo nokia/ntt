@@ -149,6 +149,20 @@ func (e Event) String() string {
 	return s
 }
 
+func (e Event) IsStartEvent() bool {
+	return e.Type == TestStarted || e.Type == ControlStarted
+}
+
+func (e Event) IsEndEvent() bool {
+	return e.Type == TestTerminated || e.Type == ControlTerminated
+}
+
+func (e Event) IsError() bool {
+	if e.IsStartEvent() || e.Verdict == "pass" && e.Type != Error {
+		return false
+	}
+	return true
+}
 func NewErrorEvent(err error) Event {
 	return Event{
 		Time:    time.Now(),
