@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -228,7 +229,24 @@ func (s *Suite) ParametersDir() string {
 
 // Run runs the given jobs in parallel.
 func run(cmd *cobra.Command, args []string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	defer func() {
+		signal.Stop(signalChan)
+		cancel()
+	}()
+	go func() {
+		select {
+		case <-signalChan: // first signal, cancel context
+			cancel()
+		case <-ctx.Done():
+		}
+		<-signalChan // second signal, hard exit
+		os.Exit(2)
+	}()
 	if OutputDir != "" {
 		if err := os.MkdirAll(OutputDir, os.ModePerm); err != nil {
 			return fmt.Errorf("creating logs directory failed: %w", err)
@@ -255,9 +273,6 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 		ids = append(tests, ids...)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers)
 
@@ -424,18 +439,8 @@ func ExecuteJobs(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
 			log.Debugf("Worker %d started.\n", i)
 			defer log.Debugf("Worker %d finished.\n", i)
 
-			for {
-				select {
-				case job, ok := <-jobs:
-					if !ok {
-						return
-					}
-					Execute(ctx, job, results)
-
-				case <-ctx.Done():
-					results <- Result{Event: k3r.NewErrorEvent(ctx.Err())}
-					return
-				}
+			for job := range jobs {
+				Execute(ctx, job, results)
 			}
 		}(i)
 	}
