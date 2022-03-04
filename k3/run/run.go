@@ -25,7 +25,7 @@ type Test struct {
 	Args []string
 
 	// ModulePars hold module parameters
-	ModulePars []string
+	ModulePars map[string]string
 
 	// Path to the T3XF file.
 	T3XF string
@@ -194,7 +194,9 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
 		cmd.Dir = t.Dir
 		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
-		cmd.Env = append(cmd.Env, t.ModulePars...)
+		for k, v := range t.ModulePars {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		}
 		cmd.Stdin = strings.NewReader(t.request())
 		cmd.Stderr = &t.Stderr
 		stdout, err := cmd.StdoutPipe()
