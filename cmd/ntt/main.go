@@ -75,7 +75,7 @@ var (
 	}
 
 	verbose     int
-	quiet       bool
+	outputQuiet bool
 	ShSetup     bool
 	outputJSON  bool
 	outputPlain bool
@@ -93,7 +93,7 @@ func init() {
 	root := RootCommand
 	flags := root.PersistentFlags()
 	flags.CountVarP(&verbose, "verbose", "v", "verbose output")
-	flags.BoolVarP(&quiet, "quiet", "q", false, "quiet output")
+	flags.BoolVarP(&outputQuiet, "quiet", "q", false, "quiet output")
 	flags.BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
 	flags.BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
 	flags.BoolP("interactive", "i", false, "run in interactive mode")
@@ -116,6 +116,8 @@ func init() {
 
 func Format() string {
 	switch {
+	case outputQuiet:
+		return "quiet"
 	case outputPlain:
 		return "plain"
 	case outputJSON:
@@ -131,7 +133,7 @@ func Verbosity() log.Level {
 		return log.TraceLevel
 	case env.Getenv("NTT_DEBUG") != "":
 		return log.DebugLevel
-	case quiet:
+	case outputQuiet:
 		return log.DisabledLevel
 	default:
 		lvl := log.PrintLevel + log.Level(verbose)

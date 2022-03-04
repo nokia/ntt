@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/fatih/color"
@@ -66,7 +65,6 @@ Environment variables:
 
 	MaxWorkers int
 	MaxFail    int
-	OutputJSON bool
 	errorCount uint64
 	OutputDir  string
 
@@ -75,6 +73,18 @@ Environment variables:
 	ColorWarning = color.New(color.FgYellow, color.Bold)
 	ColorSuccess = color.New()
 	ColorStart   = color.New()
+	Colors       = func(v string) *color.Color {
+		switch v {
+		case "pass":
+			return ColorSuccess
+		case "inconc":
+			return ColorWarning
+		case "none":
+			return ColorWarning
+		default:
+			return ColorFailure
+		}
+	}
 
 	ErrCommandFailed = fmt.Errorf("command failed")
 
@@ -130,15 +140,17 @@ type Result struct {
 	k3r.Event
 }
 
+func (r *Result) ID() string {
+	return fmt.Sprintf("%s-%s", r.Job.ID(), r.Event.Name)
+}
+
 func init() {
 	flags := RunCommand.Flags()
 	flags.AddFlagSet(ntt2.BasketFlags())
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
-	flags.BoolVarP(&OutputJSON, "json", "", false, "output in JSON format")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
 	flags.StringP("tests-file", "t", "", "Read tests from file (use '-' for stdin)")
-
 }
 
 type Suite struct {
@@ -216,20 +228,95 @@ func run(cmd *cobra.Command, args []string) error {
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
 		return k3sRun(ctx, files, jobs)
 	}
+	return nttRun(ctx, jobs)
+}
+
+func nttRun(ctx context.Context, jobs <-chan *Job) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	os.Remove(cache.Lookup("test_results.json"))
 	defer FlushTestResults()
 
 	// Execute the jobs in parallel and collect the results.
-	for r := range ExecuteJobs(ctx, jobs, MaxWorkers) {
-		HandleResult(r)
+	for res := range ExecuteJobs(ctx, jobs, MaxWorkers) {
+
+		// Track errors for early exit (aka --max-fail).
+		if res.Event.IsError() {
+			errorCount++
+		}
+
+		// Track begin timestamps for calculating durations.
+		begin, end := stamps[res.ID()], res.Event.Time
+		if begin.IsZero() {
+			stamps[res.ID()] = time.Now()
+			begin = end
+		}
+		duration := end.Sub(begin)
+
+		displayName := res.Job.Name
+		if n := res.Event.Name; n != "" {
+			displayName = n
+		}
+
+		displayVerdict := res.Event.Verdict
+		if displayVerdict == "" {
+			displayVerdict = "none"
+		}
+		if res.Type == k3r.Error {
+			displayVerdict = "fatal"
+		}
+
+		run := results.Run{
+			Name:    displayName,
+			Verdict: displayVerdict,
+			Begin:   results.Timestamp{Time: begin},
+			End:     results.Timestamp{Time: end},
+		}
+		if res.Err != nil {
+			run.Reason = res.Err.Error()
+		}
+
+		if !res.IsStartEvent() {
+			Runs = append(Runs, run)
+		}
+
+		switch Format() {
+		case "quiet":
+			// No output
+		case "plain":
+			if !res.IsStartEvent() {
+				c := Colors(displayVerdict)
+				c.Printf("%s\t%s\t%.4f\n", displayVerdict, displayName, float64(duration.Seconds()))
+			}
+		case "json":
+			if !res.IsStartEvent() {
+				b, err := json.Marshal(run)
+				if err != nil {
+					panic(fmt.Sprintf("cannot marshal run: %v", run))
+				}
+				fmt.Println(string(b))
+			}
+		case "text":
+			switch {
+			case res.IsStartEvent():
+				ColorStart.Printf("=== RUN %s\n", displayName)
+			case res.Type == k3r.Error:
+				ColorFatal.Printf("+++ fatal %s\t(%s)\n", displayName, run.Reason)
+			default:
+				c := Colors(displayVerdict)
+				c.Printf("--- %s %s\t(duration=%.2fs)\n", displayVerdict, displayName, float64(duration.Seconds()))
+			}
+		default:
+			panic(fmt.Sprintf("unknown format: %s", Format()))
+		}
+
 		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
 			ColorFatal.Print("+++ fatal too many errors. Exiting.\n")
 			cancel()
 			break
 		}
 	}
-
 	if errorCount > 0 {
 		return fmt.Errorf("%w: %d error(s) occurred", ErrCommandFailed, errorCount)
 	}
@@ -360,63 +447,6 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 			Test:  *test,
 			Event: event,
 		}
-	}
-}
-
-func HandleResult(res Result) {
-	name := res.Job.Name
-	if n := res.Event.Name; n != "" {
-		name = n
-	}
-
-	switch res.Type {
-	case k3r.TestStarted, k3r.ControlStarted:
-		stamps[name] = time.Now()
-		ColorStart.Printf("=== RUN %s\n", name)
-
-	case k3r.TestTerminated, k3r.ControlTerminated:
-		begin := stamps[name]
-		end := res.Event.Time
-
-		if begin.IsZero() {
-			panic(fmt.Sprintf("implementation error: missing start time for %s", name))
-		}
-
-		if res.Job.Name == res.Event.Name {
-			Runs = append(Runs, results.Run{
-				Name:    name,
-				Verdict: res.Event.Verdict,
-				Begin:   results.Timestamp{Time: begin},
-				End:     results.Timestamp{Time: end},
-			})
-		}
-
-		line := fmt.Sprintf("--- %s %s\t(duration=%.2fs)", res.Event.Verdict, res.Event.Name, float64(end.Sub(begin).Seconds()))
-		switch res.Event.Verdict {
-		case "pass":
-			ColorSuccess.Println(line)
-		case "inconc", "none":
-			ColorWarning.Println(line)
-			atomic.AddUint64(&errorCount, 1)
-		default:
-			ColorFailure.Println(line)
-			atomic.AddUint64(&errorCount, 1)
-		}
-
-	case k3r.Error:
-		begin := stamps[name]
-		end := res.Event.Time
-
-		if !begin.IsZero() {
-			Runs = append(Runs, results.Run{
-				Name:    name,
-				Verdict: res.Event.Verdict,
-				Begin:   results.Timestamp{Time: begin},
-				End:     results.Timestamp{Time: end},
-			})
-		}
-		ColorFatal.Printf("+++ fatal %s	%s\n", name, res.Event.Err.Error())
-		atomic.AddUint64(&errorCount, 1)
 	}
 }
 
