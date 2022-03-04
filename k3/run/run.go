@@ -60,6 +60,7 @@ var (
 	ErrModuleNotReady  = fmt.Errorf("module not ready")
 	ErrTestNotReady    = fmt.Errorf("test case not ready")
 	ErrControlNotReady = fmt.Errorf("control not ready")
+	ErrNotQualified    = fmt.Errorf("id not fully qualified")
 )
 
 type RuntimeError struct {
@@ -168,6 +169,11 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 	go func() {
 		defer close(events)
 
+		if !strings.Contains(t.Name, ".") {
+			events <- NewErrorEvent(ErrNotQualified)
+			return
+		}
+
 		if t.LogFile == "" {
 			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
 		}
@@ -190,6 +196,14 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 			return
 		}
 
+		// k3r does not have a ControlStarted event, so we'll fake it.
+		if strings.HasSuffix(t.Name, ".control") {
+			events <- Event{
+				Type: ControlStarted,
+				Name: t.Name,
+				Time: time.Now(),
+			}
+		}
 		scanner := bufio.NewScanner(stdout)
 		scanner.Split(bufio.ScanLines)
 		var name string
@@ -212,7 +226,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 					Time:    time.Now(),
 				}
 			case "tciControlTerminated":
-				events <- Event{Type: ControlTerminated, Time: time.Now()}
+				events <- Event{Type: ControlTerminated, Name: t.Name, Verdict: "pass", Time: time.Now()}
 			case "tciError":
 				switch v[1] {
 				case "E101:":
@@ -222,7 +236,9 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 				case "E200:":
 					events <- NewErrorEvent(ErrRuntimeNotReady)
 				case "E201:":
-					events <- NewErrorEvent(ErrModuleNotReady)
+					// ErrModuleNotReady happens, when tciRootModule was not called.
+					// This is a spurious error, so we'll ignore it.
+					//events <- NewErrorEvent(ErrModuleNotReady)
 				case "E202:":
 					events <- NewErrorEvent(ErrTestNotReady)
 				case "E203:":

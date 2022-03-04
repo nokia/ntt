@@ -26,28 +26,31 @@ func TestEvents(t *testing.T) {
 			input: "test.A",
 			events: []string{
 				`tciTestCaseStarted test.A`,
-				`tciTestCaseTerminated pass`,
+				`tciTestCaseTerminated test.A pass`,
 			}},
 		{
 			input: "test.control",
 			events: []string{
+				`tciControlStarted test.control`,
 				`tciTestCaseStarted test.B`,
-				`tciTestCaseTerminated fail`,
+				`tciTestCaseTerminated test.B fail`,
 				`tciTestCaseStarted test.A`,
-				`tciTestCaseTerminated pass`,
-				`tciControlTerminated`,
+				`tciTestCaseTerminated test.A pass`,
+				`tciControlTerminated test.control`,
 			}},
 		{
 			input: "test2.control",
 			events: []string{
+				`tciControlStarted test2.control`,
 				`tciTestCaseStarted test2.A`,
-				`tciTestCaseTerminated pass`,
-				`tciControlTerminated`,
+				`tciTestCaseTerminated test2.A pass`,
+				`tciControlTerminated test2.control`,
 			}},
 		{
 			input: "test3.control",
 			events: []string{
-				`tciControlTerminated`, // no error message when control does not exist
+				`tciControlStarted test3.control`,
+				`tciControlTerminated test3.control`, // no error message when control does not exist
 			}},
 		{
 			input: "test3.X",
@@ -67,17 +70,17 @@ func TestEvents(t *testing.T) {
 		{
 			input: "asd",
 			events: []string{
-				"tciError error (module not ready)",
+				"tciError error (id not fully qualified)",
 			}},
 		{
 			input: "test3",
 			events: []string{
-				"tciError error (module not ready)",
+				"tciError error (id not fully qualified)",
 			}},
 		{
 			input: "control",
 			events: []string{
-				"tciError error (module not ready)",
+				"tciError error (id not fully qualified)",
 			}},
 		{
 			input:   "math.Test",
@@ -89,6 +92,7 @@ func TestEvents(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.input, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
