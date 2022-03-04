@@ -36,7 +36,7 @@ func TestEvents(t *testing.T) {
 				`tciTestCaseTerminated test.B fail`,
 				`tciTestCaseStarted test.A`,
 				`tciTestCaseTerminated test.A pass`,
-				`tciControlTerminated test.control`,
+				`tciControlTerminated test.control pass`,
 			}},
 		{
 			input: "test2.control",
@@ -44,13 +44,13 @@ func TestEvents(t *testing.T) {
 				`tciControlStarted test2.control`,
 				`tciTestCaseStarted test2.A`,
 				`tciTestCaseTerminated test2.A pass`,
-				`tciControlTerminated test2.control`,
+				`tciControlTerminated test2.control pass`,
 			}},
 		{
 			input: "test3.control",
 			events: []string{
 				`tciControlStarted test3.control`,
-				`tciControlTerminated test3.control`, // no error message when control does not exist
+				`tciControlTerminated test3.control pass`, // no error message when control does not exist
 			}},
 		{
 			input: "test3.X",
