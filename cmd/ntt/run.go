@@ -131,6 +131,8 @@ func (l *Ledger) NewJob(name string, suite *Suite) *Job {
 	}
 	l.names[name]++
 	l.jobs[job.id] = &job
+
+	log.Debugf("new job: name=%s, suite=%p, id=%s\n", name, suite, job.id)
 	return &job
 }
 
@@ -240,6 +242,7 @@ func nttRun(ctx context.Context, jobs <-chan *Job) error {
 
 	// Execute the jobs in parallel and collect the results.
 	for res := range ExecuteJobs(ctx, jobs, MaxWorkers) {
+		log.Debugf("result: jobID=%s, event=%#v\n", res.Job.ID(), res.Event)
 
 		// Track errors for early exit (aka --max-fail).
 		if res.Event.IsError() {
@@ -268,10 +271,11 @@ func nttRun(ctx context.Context, jobs <-chan *Job) error {
 		}
 
 		run := results.Run{
-			Name:    displayName,
-			Verdict: displayVerdict,
-			Begin:   results.Timestamp{Time: begin},
-			End:     results.Timestamp{Time: end},
+			Name:       displayName,
+			Verdict:    displayVerdict,
+			Begin:      results.Timestamp{Time: begin},
+			End:        results.Timestamp{Time: end},
+			WorkingDir: res.Test.Dir,
 		}
 		if res.Err != nil {
 			run.Reason = res.Err.Error()
@@ -424,16 +428,28 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 	} else {
 		workingDir = filepath.Join(OutputDir, job.ID())
 		if err := os.MkdirAll(workingDir, 0755); err != nil {
-			results <- Result{Event: k3r.NewErrorEvent(err)}
+			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
 			return
 		}
 	}
 
 	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.Suite.Name))
-	t3xf, err := filepath.Rel(workingDir, t3xf)
-	if err != nil {
-		results <- Result{Event: k3r.NewErrorEvent(fmt.Errorf("could not create relative path for %s: %w", t3xf, err))}
-		return
+	if workingDir != "" {
+		absT3xf, err := filepath.Abs(t3xf)
+		if err != nil {
+			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
+			return
+		}
+		absDir, err := filepath.Abs(workingDir)
+		if err != nil {
+			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
+			return
+		}
+		t3xf, err = filepath.Rel(absDir, absT3xf)
+		if err != nil {
+			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
+			return
+		}
 	}
 
 	test := k3r.NewTest(t3xf, job.Name)
