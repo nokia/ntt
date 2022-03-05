@@ -76,6 +76,7 @@ Environment variables:
 	ColorWarning = color.New(color.FgYellow, color.Bold)
 	ColorSuccess = color.New()
 	ColorStart   = color.New()
+	ColorRunning = color.New(color.Faint)
 	Colors       = func(v string) *color.Color {
 		switch v {
 		case "pass":
@@ -138,6 +139,23 @@ func (l *Ledger) NewJob(name string, suite *Suite) *Job {
 
 	log.Debugf("new job: name=%s, suite=%p, id=%s\n", name, suite, job.id)
 	return &job
+}
+
+func (l *Ledger) Done(job *Job) {
+	l.Lock()
+	defer l.Unlock()
+	delete(l.jobs, job.id)
+}
+
+func (l *Ledger) Jobs() []*Job {
+	l.Lock()
+	defer l.Unlock()
+
+	jobs := make([]*Job, 0, len(l.jobs))
+	for _, job := range l.jobs {
+		jobs = append(jobs, job)
+	}
+	return jobs
 }
 
 type Result struct {
@@ -379,8 +397,10 @@ L:
 				cancel()
 				break L
 			}
-		case t := <-ticker.C:
-			fmt.Println("Current time: ", t)
+		case <-ticker.C:
+			for _, job := range ledger.Jobs() {
+				ColorRunning.Printf("... running %s\n", job.Name)
+			}
 		}
 	}
 	if errorCount > 0 {
@@ -470,6 +490,7 @@ func ExecuteJobs(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
 // Execute runs a single test and sends the results to the channel.
 func Execute(ctx context.Context, job *Job, results chan<- Result) {
 
+	defer ledger.Done(job)
 	var (
 		workingDir string
 		logFile    string
