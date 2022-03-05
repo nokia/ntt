@@ -398,8 +398,10 @@ L:
 				break L
 			}
 		case <-ticker.C:
-			for _, job := range ledger.Jobs() {
-				ColorRunning.Printf("... running %s\n", job.Name)
+			if Format() == "text" {
+				for _, job := range ledger.Jobs() {
+					ColorRunning.Printf("... active %s\n", job.Name)
+				}
 			}
 		}
 	}
