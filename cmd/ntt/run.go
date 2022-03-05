@@ -97,6 +97,7 @@ Environment variables:
 	Basket, _ = ntt2.NewBasket("default")
 
 	ResultsFile = cache.Lookup("test_results.json")
+	TickerTime  = time.Second * 30
 )
 
 type Job struct {
@@ -290,84 +291,96 @@ func nttRun(ctx context.Context, jobs <-chan *Job) error {
 	defer FlushTestResults()
 
 	// Execute the jobs in parallel and collect the results.
-	for res := range ExecuteJobs(ctx, jobs, MaxWorkers) {
-		log.Debugf("result: jobID=%s, event=%#v\n", res.Job.ID(), res.Event)
-
-		// Track errors for early exit (aka --max-fail).
-		if res.Event.IsError() {
-			errorCount++
-		}
-
-		// Track begin timestamps for calculating durations.
-		begin, end := stamps[res.ID()], res.Event.Time
-		if begin.IsZero() {
-			stamps[res.ID()] = time.Now()
-			begin = end
-		}
-		duration := end.Sub(begin)
-
-		displayName := res.Job.Name
-		if n := res.Event.Name; n != "" {
-			displayName = n
-		}
-
-		displayVerdict := res.Event.Verdict
-		if displayVerdict == "" {
-			displayVerdict = "none"
-		}
-		if res.Type == k3r.Error {
-			displayVerdict = "fatal"
-		}
-
-		run := results.Run{
-			Name:       displayName,
-			Verdict:    displayVerdict,
-			Begin:      results.Timestamp{Time: begin},
-			End:        results.Timestamp{Time: end},
-			WorkingDir: res.Test.Dir,
-		}
-		if res.Err != nil {
-			run.Reason = res.Err.Error()
-		}
-
-		if !res.IsStartEvent() {
-			Runs = append(Runs, run)
-		}
-
-		switch Format() {
-		case "quiet":
-			// No output
-		case "plain":
-			if !res.IsStartEvent() {
-				c := Colors(displayVerdict)
-				c.Printf("%s\t%s\t%.4f\n", displayVerdict, displayName, float64(duration.Seconds()))
+	ticker := time.NewTicker(TickerTime)
+	ressults := ExecuteJobs(ctx, jobs, MaxWorkers)
+L:
+	for {
+		select {
+		case res, ok := <-ressults:
+			if !ok {
+				break L
 			}
-		case "json":
+			ticker.Reset(TickerTime)
+			log.Debugf("result: jobID=%s, event=%#v\n", res.Job.ID(), res.Event)
+
+			// Track errors for early exit (aka --max-fail).
+			if res.Event.IsError() {
+				errorCount++
+			}
+
+			// Track begin timestamps for calculating durations.
+			begin, end := stamps[res.ID()], res.Event.Time
+			if begin.IsZero() {
+				stamps[res.ID()] = time.Now()
+				begin = end
+			}
+			duration := end.Sub(begin)
+
+			displayName := res.Job.Name
+			if n := res.Event.Name; n != "" {
+				displayName = n
+			}
+
+			displayVerdict := res.Event.Verdict
+			if displayVerdict == "" {
+				displayVerdict = "none"
+			}
+			if res.Type == k3r.Error {
+				displayVerdict = "fatal"
+			}
+
+			run := results.Run{
+				Name:       displayName,
+				Verdict:    displayVerdict,
+				Begin:      results.Timestamp{Time: begin},
+				End:        results.Timestamp{Time: end},
+				WorkingDir: res.Test.Dir,
+			}
+			if res.Err != nil {
+				run.Reason = res.Err.Error()
+			}
+
 			if !res.IsStartEvent() {
-				b, err := json.Marshal(run)
-				if err != nil {
-					panic(fmt.Sprintf("cannot marshal run: %v", run))
+				Runs = append(Runs, run)
+			}
+
+			switch Format() {
+			case "quiet":
+				// No output
+			case "plain":
+				if !res.IsStartEvent() {
+					c := Colors(displayVerdict)
+					c.Printf("%s\t%s\t%.4f\n", displayVerdict, displayName, float64(duration.Seconds()))
 				}
-				fmt.Println(string(b))
-			}
-		case "text":
-			switch {
-			case res.IsStartEvent():
-				ColorStart.Printf("=== RUN %s\n", displayName)
-			case res.Type == k3r.Error:
-				ColorFatal.Printf("+++ fatal %s\t(%s)\n", displayName, run.Reason)
+			case "json":
+				if !res.IsStartEvent() {
+					b, err := json.Marshal(run)
+					if err != nil {
+						panic(fmt.Sprintf("cannot marshal run: %v", run))
+					}
+					fmt.Println(string(b))
+				}
+			case "text":
+				switch {
+				case res.IsStartEvent():
+					ColorStart.Printf("=== RUN %s\n", displayName)
+				case res.Type == k3r.Error:
+					ColorFatal.Printf("+++ fatal %s\t(%s)\n", displayName, run.Reason)
+				default:
+					c := Colors(displayVerdict)
+					c.Printf("--- %s %s\t(duration=%.2fs)\n", displayVerdict, displayName, float64(duration.Seconds()))
+				}
 			default:
-				c := Colors(displayVerdict)
-				c.Printf("--- %s %s\t(duration=%.2fs)\n", displayVerdict, displayName, float64(duration.Seconds()))
+				panic(fmt.Sprintf("unknown format: %s", Format()))
 			}
-		default:
-			panic(fmt.Sprintf("unknown format: %s", Format()))
-		}
 
-		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
-			ColorFatal.Print("+++ fatal too many errors. Exiting.\n")
-			cancel()
-			break
+			if MaxFail > 0 && errorCount >= uint64(MaxFail) {
+				ColorFatal.Print("+++ fatal too many errors. Exiting.\n")
+				cancel()
+				break L
+			}
+		case t := <-ticker.C:
+			fmt.Println("Current time: ", t)
 		}
 	}
 	if errorCount > 0 {
