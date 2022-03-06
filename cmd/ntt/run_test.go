@@ -49,7 +49,7 @@ func TestModulePars(t *testing.T) {
 }
 
 func testModulePars(name string, suite *Suite) ([]string, error) {
-	m, err := ModulePars(name, suite)
+	m, _, err := Parameters(name, suite)
 	var s []string
 	for k, v := range m {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
