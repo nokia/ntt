@@ -529,10 +529,15 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 
 	test := k3r.NewTest(t3xf, job.Name)
 
-	pars, err := ModulePars(job.Name, job.Suite)
+	pars, timeout, err := Parameters(job.Name, job.Suite)
 	if err != nil {
 		results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
 		return
+	}
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
 	}
 	test.ModulePars = pars
 	test.Dir = workingDir
@@ -552,13 +557,13 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 // Suite Paremters: $K3_PARAMETERS_FILE
 // Test parameters: $K3_PARAMETERS_DIR/$MODULE/$TEST.parameters
 // $K3_TIMEOUT
-func ModulePars(name string, suite *Suite) (map[string]string, error) {
+func Parameters(name string, suite *Suite) (map[string]string, time.Duration, error) {
 	m := make(map[string]string)
 
 	if suitePars := suite.ParametersFile(); suitePars != "" {
 		if b, err := fs.Content(suitePars); err == nil {
 			if _, err := toml.Decode(string(b), &m); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 	}
@@ -566,11 +571,21 @@ func ModulePars(name string, suite *Suite) (map[string]string, error) {
 		testPars := filepath.Join(suite.ParametersDir(), mod, test+".parameters")
 		if b, err := fs.Content(testPars); err == nil {
 			if _, err := toml.Decode(string(b), &m); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 	}
-	return m, nil
+
+	d := suite.Timeout()
+	if t, ok := m["TestcaseExecutor.time_out"]; ok {
+		delete(m, "TestcaseExecutor.time_out")
+		d2, err := time.ParseDuration(fmt.Sprintf("%ss", t))
+		if err != nil {
+			return nil, 0, err
+		}
+		d = d2
+	}
+	return m, d, nil
 }
 
 func SplitQualifiedName(name string) (string, string) {
