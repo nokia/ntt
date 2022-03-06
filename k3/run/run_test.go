@@ -3,6 +3,9 @@ package run_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,7 +18,10 @@ import (
 )
 
 func TestEvents(t *testing.T) {
-	t3xf := testBuild(t)
+	old, _, cancel := initStage(t)
+	defer cancel()
+
+	t3xf := testBuild(t, filepath.Join(old, "testdata/suite"))
 
 	tests := []struct {
 		input   string
@@ -94,7 +100,6 @@ func TestEvents(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.input, func(t *testing.T) {
-			t.Parallel()
 			ctx := context.Background()
 			var cancel context.CancelFunc
 			if tt.timeout > 0 {
@@ -114,13 +119,36 @@ func TestEvents(t *testing.T) {
 
 }
 
-func testBuild(t *testing.T) string {
+func initStage(t *testing.T) (string, string, func()) {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+
+	old, err = filepath.Rel(dir, old)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return old, dir, func() {
+		os.Chdir(old)
+		os.RemoveAll(dir)
+	}
+}
+
+func testBuild(t *testing.T, args ...string) string {
 	t.Helper()
 	if k3r := k3.Runtime(); k3r == "k3r" {
 		t.Skip("no k3 runtime found")
 	}
 
-	suite, err := ntt.NewFromArgs("testdata/suite")
+	suite, err := ntt.NewFromArgs(args...)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -204,7 +204,6 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 			events <- NewErrorEvent(&RuntimeError{Err: err})
 			return
 		}
-
 		log.Debugf("+ %s\n", cmd.String())
 		err = cmd.Start()
 		if err != nil {
