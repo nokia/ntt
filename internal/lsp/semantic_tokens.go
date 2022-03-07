@@ -431,6 +431,11 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(modif))...)
 				case *ast.TemplateDecl:
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Readonly))...)
+				case *ast.ComponentTypeDecl:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Class, 0)...)
+				case *ast.PortTypeDecl:
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Interface, 0)...)
+
 				}
 
 			} else if tokv.actualToken != None {
@@ -466,7 +471,7 @@ func NewSemanticTokensFromCurrentModule(tree *ttcn3.Tree, db *ttcn3.DB, suite *n
 	stVisitor := NewSemTokVisitor(tree, db, txtRange)
 
 	for _, mod := range tree.Modules() {
-		ast.Inspect(mod, stVisitor.VisitModuleDefs)
+		ast.Inspect(mod.Root, stVisitor.VisitModuleDefs)
 		if EmitKeywords {
 			stVisitor.Data = mergeSortTokenarrays(NewSyntaxTokensFromCurrentModule(fileName, txtRange), stVisitor.Data)
 		}
@@ -501,7 +506,7 @@ func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTo
 	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
 	mods := tree.Modules()
 
-	modEnd := tree.Position(mods[len(mods)-1].End())
+	modEnd := tree.Position(mods[len(mods)-1].Root.End())
 	txtRange := protocol.Range{Start: protocol.Position{Line: 0, Character: 0}, End: protocol.Position{Line: uint32(modEnd.Line - 1), Character: uint32(modEnd.Column - 1)}}
 	ret = NewSemanticTokensFromCurrentModule(tree, &s.db, suites[0], params.TextDocument.URI.SpanURI().Filename(), txtRange)
 	return ret, nil
