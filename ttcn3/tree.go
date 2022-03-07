@@ -70,20 +70,6 @@ func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 	return nil
 }
 
-// Lookup returns the definitions of the given expression. For handling imports
-// and multiple modules, use LookupWithDB.
-func (tree *Tree) Lookup(n ast.Expr) []*Definition {
-	f := &finder{DB: &DB{}, cache: make(map[ast.Node][]*Definition)}
-	return f.lookup(n, tree)
-}
-
-// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
-func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
-	f := &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
-	return f.lookup(n, tree)
-
-}
-
 func (t *Tree) Modules() []*Definition {
 	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
@@ -278,6 +264,22 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	return path
 }
 
+// Lookup returns the definitions of the given expression. For handling imports
+// and multiple modules, use LookupWithDB.
+func (tree *Tree) Lookup(n ast.Expr) []*Definition {
+	return newFinder(&DB{}).lookup(n, tree)
+}
+
+// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
+func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
+	return newFinder(db).lookup(n, tree)
+
+}
+
+func newFinder(db *DB) *finder {
+	return &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
+}
+
 type finder struct {
 	*DB
 	cache map[ast.Node][]*Definition
@@ -288,17 +290,18 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return nil
 	}
 
-	if results := f.cache[n]; results != nil {
+	if results, ok := f.cache[n]; ok {
 		return results
 	}
+	f.cache[n] = nil
 
 	var results []*Definition
 	switch n := n.(type) {
-	case *ast.SelectorExpr:
-		results = f.dot(n, tree)
-
 	case *ast.Ident:
 		results = f.globals(n, tree)
+
+	case *ast.SelectorExpr:
+		results = f.dot(n, tree)
 
 	case *ast.IndexExpr:
 		results = f.index(n, tree)
@@ -306,7 +309,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 	case *ast.CallExpr:
 		log.Debugf("%s: not implemented yet: %T\n", tree.Position(n.Pos()), n)
 	default:
-		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+		log.Debugf("%s: unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	}
 
 	f.cache[n] = results
@@ -314,16 +317,62 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
-	parents := ast.Parents(id, tree.Root)
+	var defs, q []*Definition
 
-	var defs []*Definition
-	// Find definitions in current file by walking up the scopes.
+	// Traverse parent scopes (P+) and collect imports scopes (I*)
+	parents := ast.Parents(id, tree.Root)
 	for _, n := range parents {
+		switch n := n.(type) {
+		case *ast.FuncDecl:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+			if n.Mtc != nil {
+				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: tree})
+			}
+		case *ast.BehaviourSpec:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+		case *ast.BehaviourTypeDecl:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+		}
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
 	}
 
-	// Find definitions in visible files.
+	// Traverse import scopes (I*)
+	for len(q) > 0 {
+		def := q[0]
+		q = q[1:]
+
+		n, ok := def.Node.(ast.Expr)
+		if !ok {
+			continue
+		}
+
+		for _, d := range f.lookup(n, def.Tree) {
+			defs = append(defs, Definitions(id.String(), d.Node, d.Tree)...)
+			if c, ok := d.Node.(*ast.ComponentTypeDecl); ok {
+				for _, e := range c.Extends {
+					q = append(q, &Definition{Node: e, Tree: d.Tree})
+				}
+			}
+		}
+	}
+
+	// Traver visible module scopes (I*)
 	if mod := tree.ModuleOf(id); mod != nil {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {

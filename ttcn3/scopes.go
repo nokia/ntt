@@ -110,6 +110,11 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 
 	case *ast.ComponentTypeDecl:
 		scp.add(n.TypePars)
+		if n.Body != nil {
+			for _, stmt := range n.Body.Stmts {
+				scp.add(stmt)
+			}
+		}
 
 	case *ast.BlockStmt:
 		for _, stmt := range n.Stmts {
