@@ -20,6 +20,8 @@ type Tree struct {
 
 	filename string
 	parents  map[ast.Node]ast.Node
+	scopes   map[ast.Node]*Scope
+	scopesMu sync.Mutex
 }
 
 // Filename returns the filename of the file that was parsed.
