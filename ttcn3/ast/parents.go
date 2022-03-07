@@ -21,7 +21,7 @@ func Parents(tgt, root Node) []Node {
 				return
 			}
 			path = append(path, n)
-			for _, child := range Children(n) {
+			if child := FindChildOf(n, pos); !IsNil(child) {
 				visit(child)
 			}
 		}
