@@ -222,14 +222,18 @@ func TestLookup(t *testing.T) {
 			want: []string{"x0", "x1", "x2"}},
 		{
 			name: "components",
-			input: `type record R {int x}
-			        type component C {var R r}
-				function f() runs on C { while (true) {r.¶x} }`,
+			input: `module M {
+				    type record R {int x}
+			            type component C {var R r}
+				    function f() runs on C { while (true) {r.¶x} }
+			    	}`,
 			want: []string{"x0"}},
 		{
 			name: "components",
-			input: `type record R {int x}
-				function f() runs on R { while (true) {¶x} }`,
+			input: `module M {
+				    type record R {int x}
+				    function f() runs on R { while (true) {¶x} }
+				}`,
 			want: []string{"x0"}},
 	}
 	for _, tt := range tests {
