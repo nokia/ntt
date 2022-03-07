@@ -320,9 +320,12 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 			begin = tokv.tree.Position(node.Name.Pos())
 			end = tokv.tree.Position(node.Name.End())
 			tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Class, uint32(Definition))...)
-			if node.Body != nil {
-				ast.Inspect(node.Body, tokv.VisitModuleDefs)
-			}
+		}
+		for _, ext := range node.Extends {
+			ast.Inspect(ext, tokv.VisitModuleDefs)
+		}
+		if node.Body != nil {
+			ast.Inspect(node.Body, tokv.VisitModuleDefs)
 		}
 		return false
 	case *ast.FuncDecl:
@@ -333,6 +336,12 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 		}
 		if node.Params != nil {
 			ast.Inspect(node.Params, tokv.VisitModuleDefs)
+		}
+		if node.RunsOn != nil {
+			ast.Inspect(node.RunsOn, tokv.VisitModuleDefs)
+		}
+		if node.System != nil {
+			ast.Inspect(node.System, tokv.VisitModuleDefs)
 		}
 		if node.Return != nil {
 			ast.Inspect(node.Return, tokv.VisitModuleDefs)

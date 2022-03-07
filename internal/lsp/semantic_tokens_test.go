@@ -40,20 +40,62 @@ func generateTokenList(t *testing.T, suite *ntt.Suite, rng *protocol.Range) *pro
 	return lsp.NewSemanticTokensFromCurrentModule(tree, db, suite, name, *rng)
 }
 
-func TestFullModuleKwOnly(t *testing.T) {
+func TestComponentDef(t *testing.T) {
 	suite := buildSuite(t, `module Test
     {
-        type component B0 extends C0, C1 {
+		import from TestComponentDef_Module_1 all;
+		type component B0 extends C0, TestComponentDef_Module_1.C1 {
 			var integer i := 1;
 			timer t1 := 2.0;
 			port P p;
 		}
-		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_0.C0 system B0 return integer {}
+		function f() runs on TestComponentDef_Module_1.C0 system B0 return integer {}
+	}`, `module TestComponentDef_Module_1
+	{
+		type component C0 {}
+		type component C1 {}
+		type port P message {
+            inout charstring
+        }
 	}`)
 
 	list := generateTokenList(t, suite, nil)
 
-	assert.NotEqual(t, len(list.Data), 0)
+	assert.Equal(t,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
+			2, 2, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Keyword), 0,
+			0, 5, 25, uint32(lsp.Namespace), 0,
+			0, 26, 3, uint32(lsp.Keyword), 0, //all
+			1, 2, 4, uint32(lsp.Keyword), 0,
+			0, 5, 9, uint32(lsp.Keyword), 0,
+			0, 10, 2, uint32(lsp.Class), uint32(lsp.Definition),
+			0, 3, 7, uint32(lsp.Keyword), 0,
+			0, 8, 2, uint32(lsp.Type), 0, //C0
+			0, 4, 25, uint32(lsp.Namespace), 0,
+			0, 26, 2, uint32(lsp.Type), 0,
+			1, 3, 3, uint32(lsp.Keyword), 0,
+			0, 4, 7, uint32(lsp.Type), 0,
+			0, 8, 1, uint32(lsp.Variable), uint32(lsp.Declaration),
+			1, 3, 5, uint32(lsp.Keyword), 0,
+			0, 6, 2, uint32(lsp.Variable), uint32(lsp.Declaration),
+			1, 3, 4, uint32(lsp.Keyword), 0,
+			0, 5, 1, uint32(lsp.Type), 0,
+			0, 2, 1, uint32(lsp.Variable), uint32(lsp.Declaration),
+
+			2, 2, 8, uint32(lsp.Keyword), 0,
+			0, 9, 1, uint32(lsp.Function), uint32(lsp.Definition),
+			0, 5, 4, uint32(lsp.Keyword), 0,
+			0, 5, 2, uint32(lsp.Keyword), 0,
+			0, 3, 25, uint32(lsp.Namespace), 0,
+			0, 26, 2, uint32(lsp.Type), 0,
+			0, 3, 6, uint32(lsp.Keyword), 0,
+			0, 7, 2, uint32(lsp.Type), 0,
+			0, 3, 6, uint32(lsp.Keyword), 0,
+			0, 7, 7, uint32(lsp.Type), uint32(lsp.DefaultLibrary),
+		}, list.Data)
 }
 
 func TestFullModuleKwTypeId(t *testing.T) {
