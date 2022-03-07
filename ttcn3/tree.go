@@ -1,8 +1,10 @@
 package ttcn3
 
 import (
-	"reflect"
+	"fmt"
+	"sync"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -47,6 +49,17 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	return t.parents[n]
 }
 
+// Returns the qualified name of the given node.
+func (t *Tree) QualifiedName(n ast.Node) string {
+	if name := ast.Name(n); name != "" {
+		if mod := t.ModuleOf(n); mod != nil {
+			return fmt.Sprintf("%s.%s", ast.Name(mod.Name), name)
+		}
+		return name
+	}
+	return ""
+}
+
 // ModuleOf returns the module of the given node, by walking up the tree.
 func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 	for n := n; n != nil; n = t.ParentOf(n) {
@@ -57,94 +70,80 @@ func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 	return nil
 }
 
-// Lookup returns the definitions of the given expression. For handling imports
-// and multiple modules, use LookupWithDB.
-func (tree *Tree) Lookup(n ast.Expr) []*Definition {
-	f := &finder{DB: &DB{}, cache: make(map[ast.Node][]*Definition)}
-	return f.lookup(n, tree)
-}
-
-// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
-func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
-	f := &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
-	return f.lookup(n, tree)
-
-}
-
-func (t *Tree) Modules() []*ast.Module {
-	var nodes []*ast.Module
+func (t *Tree) Modules() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.Module); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Funcs() []*ast.FuncDecl {
-	var nodes []*ast.FuncDecl
+func (t *Tree) Funcs() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.FuncDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Imports() []*ast.ImportDecl {
-	var nodes []*ast.ImportDecl
+func (t *Tree) Imports() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ImportDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Ports() []*ast.PortTypeDecl {
-	var nodes []*ast.PortTypeDecl
+func (t *Tree) Ports() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.PortTypeDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Components() []*ast.ComponentTypeDecl {
-	var nodes []*ast.ComponentTypeDecl
+func (t *Tree) Components() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ComponentTypeDecl); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) Controls() []*ast.ControlPart {
-	var nodes []*ast.ControlPart
+func (t *Tree) Controls() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		if n, ok := n.(*ast.ControlPart); ok {
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
 		return true
 	})
-	return nodes
+	return defs
 }
 
-func (t *Tree) ModulePars() []*ast.Declarator {
-	var nodes []*ast.Declarator
+func (t *Tree) ModulePars() []*Definition {
+	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
@@ -157,11 +156,11 @@ func (t *Tree) ModulePars() []*ast.Declarator {
 			return true
 
 		case *ast.Declarator:
-			nodes = append(nodes, n)
+			defs = append(defs, &Definition{Node: n, Tree: t})
 		}
 		return false
 	})
-	return nodes
+	return defs
 }
 
 // Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
@@ -241,7 +240,7 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	)
 
 	visit = func(n ast.Node) {
-		if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+		if ast.IsNil(n) {
 			return
 		}
 
@@ -249,11 +248,9 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 			return
 		}
 
-		if inside := n.Pos() <= pos && pos < n.End(); inside {
-			path = append(path, n)
-			for _, child := range ast.Children(n) {
-				visit(child)
-			}
+		path = append(path, n)
+		if child := ast.FindChildOf(n, pos); !ast.IsNil(child) {
+			visit(child)
 		}
 
 	}
@@ -267,6 +264,22 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	return path
 }
 
+// Lookup returns the definitions of the given expression. For handling imports
+// and multiple modules, use LookupWithDB.
+func (tree *Tree) Lookup(n ast.Expr) []*Definition {
+	return newFinder(&DB{}).lookup(n, tree)
+}
+
+// LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
+func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
+	return newFinder(db).lookup(n, tree)
+
+}
+
+func newFinder(db *DB) *finder {
+	return &finder{DB: db, cache: make(map[ast.Node][]*Definition)}
+}
+
 type finder struct {
 	*DB
 	cache map[ast.Node][]*Definition
@@ -277,17 +290,18 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		return nil
 	}
 
-	if results := f.cache[n]; results != nil {
+	if results, ok := f.cache[n]; ok {
 		return results
 	}
+	f.cache[n] = nil
 
 	var results []*Definition
 	switch n := n.(type) {
-	case *ast.SelectorExpr:
-		results = f.dot(n, tree)
-
 	case *ast.Ident:
 		results = f.globals(n, tree)
+
+	case *ast.SelectorExpr:
+		results = f.dot(n, tree)
 
 	case *ast.IndexExpr:
 		results = f.index(n, tree)
@@ -295,7 +309,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 	case *ast.CallExpr:
 		log.Debugf("%s: not implemented yet: %T\n", tree.Position(n.Pos()), n)
 	default:
-		log.Debugf("%s: Unsupported node type: %T\n", tree.Position(n.Pos()), n)
+		log.Debugf("%s: unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	}
 
 	f.cache[n] = results
@@ -303,16 +317,62 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
-	parents := ast.Parents(id, tree.Root)
+	var defs, q []*Definition
 
-	var defs []*Definition
-	// Find definitions in current file by walking up the scopes.
+	// Traverse parent scopes (P+) and collect imports scopes (I*)
+	parents := ast.Parents(id, tree.Root)
 	for _, n := range parents {
+		switch n := n.(type) {
+		case *ast.FuncDecl:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+			if n.Mtc != nil {
+				q = append(q, &Definition{Node: n.Mtc.Comp, Tree: tree})
+			}
+		case *ast.BehaviourSpec:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+		case *ast.BehaviourTypeDecl:
+			if n.RunsOn != nil {
+				q = append(q, &Definition{Node: n.RunsOn.Comp, Tree: tree})
+			}
+			if n.System != nil {
+				q = append(q, &Definition{Node: n.System.Comp, Tree: tree})
+			}
+		}
 		found := Definitions(id.String(), n, tree)
 		defs = append(defs, found...)
 	}
 
-	// Find definitions in visible files.
+	// Traverse import scopes (I*)
+	for len(q) > 0 {
+		def := q[0]
+		q = q[1:]
+
+		n, ok := def.Node.(ast.Expr)
+		if !ok {
+			continue
+		}
+
+		for _, d := range f.lookup(n, def.Tree) {
+			defs = append(defs, Definitions(id.String(), d.Node, d.Tree)...)
+			if c, ok := d.Node.(*ast.ComponentTypeDecl); ok {
+				for _, e := range c.Extends {
+					q = append(q, &Definition{Node: e, Tree: d.Tree})
+				}
+			}
+		}
+	}
+
+	// Traver visible module scopes (I*)
 	if mod := tree.ModuleOf(id); mod != nil {
 		for _, m := range f.VisibleModules(id.String(), mod) {
 			if id.String() == m.Ident.String() {
@@ -413,4 +473,32 @@ func (f *finder) typeOf(def *Definition) []*Definition {
 		}
 	}
 	return result
+}
+
+// Inspect the AST and return a list of all the definitions found by fn.
+func Inspect(files []string, fn func(*Tree) []*Definition) ([]*Definition, error) {
+	var (
+		result []*Definition
+		wg     sync.WaitGroup
+		mu     sync.Mutex
+		err    *multierror.Error
+	)
+
+	wg.Add(len(files))
+	for _, file := range files {
+		go func(file string) {
+			defer wg.Done()
+			tree := ParseFile(file)
+			if tree.Err != nil {
+				err = multierror.Append(err, tree.Err)
+			}
+			defs := fn(tree)
+			mu.Lock()
+			defer mu.Unlock()
+			result = append(result, defs...)
+		}(file)
+	}
+
+	wg.Wait()
+	return result, err
 }

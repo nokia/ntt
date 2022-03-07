@@ -1,0 +1,8 @@
+module test {
+	type component MTC {}
+	testcase A() runs on MTC {}
+	testcase B() runs on MTC {}
+	testcase C() runs on MTC {}
+	testcase D() runs on MTC {}
+}
+

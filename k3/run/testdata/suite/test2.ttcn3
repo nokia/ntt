@@ -1,0 +1,11 @@
+module test2 {
+	type component MTC {}
+	testcase A() runs on MTC {
+		setverdict(pass, "success");
+	}
+
+	control {
+		execute(A());
+	}
+}
+

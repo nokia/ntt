@@ -10,8 +10,8 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/k3/k3s"
 	"github.com/nokia/ntt/project"
-	"github.com/nokia/ntt/runner/k3s"
 )
 
 type TestController struct {

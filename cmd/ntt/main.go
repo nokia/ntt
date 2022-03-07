@@ -1,32 +1,25 @@
 package main
 
 import (
+	stderrors "errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"runtime/pprof"
 	"strconv"
-	"strings"
 	"syscall"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
 	"github.com/spf13/cobra"
-
-	"github.com/nokia/ntt/internal/cmds/dump"
-	"github.com/nokia/ntt/internal/cmds/langserver"
-	"github.com/nokia/ntt/internal/cmds/lint"
-	"github.com/nokia/ntt/internal/cmds/list"
-	"github.com/nokia/ntt/internal/cmds/locate_file"
-	"github.com/nokia/ntt/internal/cmds/report"
-	"github.com/nokia/ntt/internal/cmds/run"
-	"github.com/nokia/ntt/internal/cmds/tags"
 )
 
 var (
-	rootCmd = &cobra.Command{
+	RootCommand = &cobra.Command{
 		Use:   "ntt",
 		Short: "ntt is a tool for managing TTCN-3 source code and tests",
 
@@ -38,6 +31,14 @@ var (
 
 		Args: cobra.ArbitraryArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			log.SetGlobalLevel(Verbosity())
+
+			if chdir != "" {
+				if err := os.Chdir(chdir); err != nil {
+					return fmt.Errorf("chdir: %w", err)
+				}
+				log.Debugf("chdir: %s", chdir)
+			}
 			if cpuprofile != "" {
 				f, err := os.Create(cpuprofile)
 				if err != nil {
@@ -51,32 +52,34 @@ var (
 		},
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 || strings.HasPrefix(args[0], "-") {
-				if _, ok := os.LookupEnv("NTT_ENABLE_REPL"); ok {
-					return repl()
+			if len(args) > 0 && args[0][0] != '-' {
+				if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
+					return proc.Exec(path, args[1:]...)
 				}
-				cmd.Help()
-				return nil
+				if path, err := exec.LookPath("k3-" + args[0]); err == nil {
+					return proc.Exec(path, args[1:]...)
+				}
+				return fmt.Errorf("unknown command: %s", args[0])
 			}
 
-			if path, err := exec.LookPath("ntt-" + args[0]); err == nil {
-				return Execute(path, args[1:]...)
+			if err := cmd.Flags().Parse(args); err != nil {
+				return err
 			}
 
-			if path, err := exec.LookPath("k3-" + args[0]); err == nil {
-				return Execute(path, args[1:]...)
+			if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+				return repl()
 			}
 
-			err := fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-			cmd.Println("Error:", err.Error())
-			cmd.Printf("Run '%v --help' for usage.\n", cmd.CommandPath())
-			return err
+			return cmd.Help()
 		},
 	}
 
-	Verbose = false
-	ShSetup = false
-	JSON    = false
+	verbose     int
+	outputQuiet bool
+	ShSetup     bool
+	outputJSON  bool
+	outputPlain bool
+	chdir       string
 
 	version = "dev"
 	commit  = "none"
@@ -87,41 +90,58 @@ var (
 
 func init() {
 	session.SharedDir = "/tmp/k3"
-	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
-	rootCmd.AddCommand(showCmd)
+	root := RootCommand
+	flags := root.PersistentFlags()
+	flags.CountVarP(&verbose, "verbose", "v", "verbose output")
+	flags.BoolVarP(&outputQuiet, "quiet", "q", false, "quiet output")
+	flags.BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
+	flags.BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
+	flags.BoolP("interactive", "i", false, "run in interactive mode")
+	flags.StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
+	flags.StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
 
-	showCmd.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
-	showCmd.PersistentFlags().BoolVarP(&JSON, "json", "", false, "output in JSON format")
-	rootCmd.AddCommand(dump.Command)
-	rootCmd.AddCommand(locate_file.Command)
-	rootCmd.AddCommand(langserver.Command)
-	rootCmd.AddCommand(lint.Command)
-	rootCmd.AddCommand(list.Command)
-	rootCmd.AddCommand(tags.Command)
-	rootCmd.AddCommand(report.Command)
+	root.AddCommand(ShowCommand)
+	root.AddCommand(DumpCommand)
+	root.AddCommand(LocateFileCommand)
+	root.AddCommand(LangserverCommand)
+	root.AddCommand(LintCommand)
+	root.AddCommand(ListCommand)
+	root.AddCommand(TagsCommand)
+	root.AddCommand(ReportCommand)
+	root.AddCommand(BuildCommand)
+	root.AddCommand(RunCommand)
 
-	useNokiaRunner := func() bool {
-		if s, ok := os.LookupEnv("K3_40_RUN_POLICY"); ok {
-			if s == "ntt" {
-				return false
-			}
-			return true
-		}
-		if exe, _ := exec.LookPath("k3-run"); exe != "" {
-			return true
-		}
-		if exe, _ := exec.LookPath("ntt-run"); exe != "" {
-			return true
-		}
-		return false
+	ShowCommand.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
+}
 
+func Format() string {
+	switch {
+	case outputQuiet:
+		return "quiet"
+	case outputPlain:
+		return "plain"
+	case outputJSON:
+		return "json"
+	default:
+		return "text"
 	}
+}
 
-	if !useNokiaRunner() {
-		rootCmd.AddCommand(run.Command)
+func Verbosity() log.Level {
+	switch {
+	case env.Getenv("NTT_TRACE") != "":
+		return log.TraceLevel
+	case env.Getenv("NTT_DEBUG") != "":
+		return log.DebugLevel
+	case outputQuiet:
+		return log.DisabledLevel
+	default:
+		lvl := log.PrintLevel + log.Level(verbose)
+		if lvl > log.TraceLevel {
+			lvl = log.TraceLevel
+		}
+		return lvl
 	}
-
 }
 
 func main() {
@@ -138,7 +158,7 @@ func main() {
 		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
 	}
 
-	err := rootCmd.Execute()
+	err := RootCommand.Execute()
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()
 	}
@@ -156,7 +176,10 @@ func fatal(err error) {
 	case errors.ErrorList:
 		errors.PrintError(os.Stderr, err)
 	default:
-		fmt.Fprintln(os.Stderr, err.Error())
+		// Run command has its own error logging.
+		if !stderrors.Is(err, ErrCommandFailed) {
+			fmt.Fprintln(os.Stderr, err.Error())
+		}
 	}
 
 	os.Exit(1)

@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var completionCmd = &cobra.Command{
+var CompletionCommand = &cobra.Command{
 	Use:   "completion",
 	Short: "Output shell completion code",
 	Long: `To load completion run
@@ -23,10 +23,10 @@ Note, if bash-completion is not installed on Linux, please install the
 
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		rootCmd.GenBashCompletion(os.Stdout)
+		RootCommand.GenBashCompletion(os.Stdout)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(completionCmd)
+	RootCommand.AddCommand(CompletionCommand)
 }

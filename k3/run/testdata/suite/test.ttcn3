@@ -1,0 +1,21 @@
+module test {
+	type component MTC {}
+	testcase A() runs on MTC {
+		setverdict(pass, "success");
+	}
+
+	testcase B() runs on MTC {
+		setverdict(fail, "failure");
+	}
+
+	testcase C() runs on MTC {
+		setverdict(pass, "success");
+		log(23/0); // should cause an error
+	}
+
+	control {
+		execute(B());
+		execute(A());
+	}
+}
+

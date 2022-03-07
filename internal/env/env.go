@@ -35,9 +35,9 @@ func Parse(files ...string) Env {
 		f := fs.Open(cache.Lookup(path))
 		b, err := f.Bytes()
 		if err != nil {
-			log.Debugf("open env: %s\n", err.Error())
 			continue
 		}
+		log.Debugf("found environment file: %s\n", f.Path())
 		e, err := gotenv.StrictParse(bytes.NewReader(b))
 		if err != nil {
 			log.Verbosef("error parsing %q: %s\n", path, err.Error())
