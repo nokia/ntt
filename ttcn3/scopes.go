@@ -60,6 +60,16 @@ func (scp *Scope) Lookup(name string) []*Definition {
 // NewScope builts and populares a new scope from the given syntax node.
 // NewScope returns nil if no valid scope could be built.
 func NewScope(n ast.Node, tree *Tree) *Scope {
+	tree.scopesMu.Lock()
+	defer tree.scopesMu.Unlock()
+
+	if tree.scopes == nil {
+		tree.scopes = make(map[ast.Node]*Scope)
+	}
+	if s, ok := tree.scopes[n]; ok {
+		return s
+	}
+
 	scp := &Scope{
 		Node: n,
 		Tree: tree,
@@ -167,6 +177,7 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	default:
 		return nil
 	}
+	tree.scopes[n] = scp
 	return scp
 }
 
