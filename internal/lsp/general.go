@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
@@ -12,6 +13,27 @@ import (
 	errors "golang.org/x/xerrors"
 )
 
+func registerSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
+	semTok := os.Getenv("NTT_SEMANTIC_TOKENS")
+	if strings.ToLower(semTok) == "on" {
+		return &protocol.SemanticTokensRegistrationOptions{
+
+			TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
+				DocumentSelector: protocol.DocumentSelector{
+					protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
+				},
+			},
+			SemanticTokensOptions: protocol.SemanticTokensOptions{
+				Legend: protocol.SemanticTokensLegend{
+					TokenTypes:     tokenTypes,
+					TokenModifiers: tokenModifiers,
+				},
+				Range: true,
+				Full:  true,
+			}}
+	}
+	return nil
+}
 func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	s.stateMu.Lock()
 	state := s.state
@@ -55,21 +77,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 					IncludeText: false,
 				},
 			},
-			SemanticTokensProvider: protocol.SemanticTokensRegistrationOptions{
-
-				TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
-					DocumentSelector: protocol.DocumentSelector{
-						protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
-					},
-				},
-				SemanticTokensOptions: protocol.SemanticTokensOptions{
-					Legend: protocol.SemanticTokensLegend{
-						TokenTypes:     tokenTypes,
-						TokenModifiers: tokenModifiers,
-					},
-					Range: true,
-					Full:  true,
-				}},
+			SemanticTokensProvider: registerSemanticTokens(),
 			Workspace: protocol.Workspace5Gn{
 				WorkspaceFolders: protocol.WorkspaceFolders4Gn{
 					Supported:           true,
