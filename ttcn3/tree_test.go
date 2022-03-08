@@ -208,6 +208,22 @@ func TestLookup(t *testing.T) {
 			input: `module M { type record R {int x}; control { var M.R r[2]; r[0].¶x := 23 }}`,
 			want:  []string{"x0"}},
 		{
+			name: "call",
+			input: `module M {
+				    type record R {int x};
+				    function f() return R {}
+				    control { f().¶x := 23 }}`,
+			want: []string{"x0"}},
+		{
+			name: "call",
+			input: `module M {
+				    type record R {int x};
+				    type function F() return R;
+				    function f() return F {}
+				    control { f()().¶x := 23 }}`,
+			want: []string{"x0"}},
+
+		{
 			name:  "components",
 			input: `module M {type component C { var int x; }; function f() runs on C { ¶x }}`,
 			want:  []string{"x0"}},
