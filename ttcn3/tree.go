@@ -313,7 +313,8 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 		results = f.index(n, tree)
 
 	case *ast.CallExpr:
-		log.Debugf("%s: not implemented yet: %T\n", tree.Position(n.Pos()), n)
+		results = f.call(n, tree)
+
 	default:
 		log.Debugf("%s: unsupported node type: %T\n", tree.Position(n.Pos()), n)
 	}
@@ -416,6 +417,32 @@ func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Definition {
 				result = append(result, &Definition{Node: l.ElemType, Tree: t.Tree})
 			} else {
 				result = append(result, c)
+			}
+		}
+	}
+	return result
+}
+
+func (f *finder) call(n *ast.CallExpr, tree *Tree) []*Definition {
+	var result []*Definition
+	candidates := f.lookup(n.Fun, tree)
+	for _, c := range candidates {
+		for _, t := range f.typeOf(c) {
+			switch n := t.Node.(type) {
+			case *ast.BehaviourTypeDecl:
+				if n.Return != nil {
+					result = append(result, &Definition{Node: n.Return.Type, Tree: t.Tree})
+				}
+			case *ast.FuncDecl:
+				if n.Return != nil {
+					result = append(result, &Definition{Node: n.Return.Type, Tree: t.Tree})
+				}
+			case *ast.SignatureDecl:
+				if n.Return != nil {
+					result = append(result, &Definition{Node: n.Return.Type, Tree: t.Tree})
+				}
+			default:
+				result = append(result, t)
 			}
 		}
 	}
