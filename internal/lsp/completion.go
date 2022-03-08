@@ -12,10 +12,10 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/nokia/ntt/ttcn3/token"
-	"github.com/nokia/ntt/project"
 )
 
 type FunctionDetails struct {
@@ -373,6 +373,19 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 		log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", kind))
 	}
 	return list
+}
+
+func getModuleNameSetFromSuite(suite *ntt.Suite) *map[string]struct{} {
+	var set map[string]struct{}
+	if files := project.FindAllFiles(suite); len(files) > 0 {
+		set = make(map[string]struct{}, len(files))
+		for _, f := range files {
+			fileName := filepath.Base(f)
+			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
+			set[fileName] = struct{}{}
+		}
+	}
+	return &set
 }
 
 func moduleNameListFromSuite(suite *ntt.Suite, ownModName string, sortPref string) []protocol.CompletionItem {
