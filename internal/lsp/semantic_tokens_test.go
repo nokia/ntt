@@ -474,8 +474,8 @@ func TestTemplateAndConst(t *testing.T) {
 			0, 9, 1, uint32(lsp.Type), 0,
 			0, 2, 4, uint32(lsp.Variable), uint32(lsp.Declaration | lsp.Readonly),
 			0, 8, 3, uint32(lsp.Variable), uint32(lsp.Readonly),
-			//0, 4, 4, uint32(lsp.Parameter), 0, TODO: is not yet recognized by gotodef
-			0, 8 + 4, 5, uint32(lsp.Variable), uint32(lsp.Readonly),
+			0, 4, 4, uint32(lsp.Parameter), 0,
+			0, 8, 5, uint32(lsp.Variable), uint32(lsp.Readonly),
 		}, list.Data)
 }
 
@@ -536,7 +536,7 @@ func TestComponentVars(t *testing.T) {
 			1, 3, 6, uint32(lsp.Property), 0,
 			/*0, 7, 5, uint32(lsp.Keyword), 0,*/  // start( not a kw. TODO: check
 			0, 6 + 7, 1, uint32(lsp.Function), 0, // f
-			//0, 2, 3, uint32(lsp.Parameter), 0, // p_i := is not recognized. TODO: remove comment if implemented
-			0, 7 + 2, 5, uint32(lsp.Property), 0,
+			0, 2, 3, uint32(lsp.Parameter), 0, // p_i :=
+			0, 7, 5, uint32(lsp.Property), 0,
 		}, list.Data)
 }
