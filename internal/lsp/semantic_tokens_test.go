@@ -478,3 +478,65 @@ func TestTemplateAndConst(t *testing.T) {
 			0, 8 + 4, 5, uint32(lsp.Variable), uint32(lsp.Readonly),
 		}, list.Data)
 }
+
+func TestComponentVars(t *testing.T) {
+	suite := buildSuite(t, `module Test
+    {
+		import from TestComponentVars_Module_1 all;
+		testcase tc() runs on C3 system C0 {
+			vC0_C1 := C0.create();
+			vi_C2 := 1;
+			log(vi_C2);
+			p0_C0.send("hello");
+			vC0_C1.start(f(p_i := vi_C2));
+		}
+	}`, `module TestComponentVars_Module_1
+	{
+		type component C0 {
+			port P p0_C0;
+		}
+		type component C1 {
+			var C0 vC0_C1;
+		}
+		type component C2 extends C1 {
+			var integer vi_C2;
+		}
+		type component C3 extends C2, C0 {}
+		type port P message {
+            inout charstring
+        }
+		function f(integer p_i) runs on C0 {}
+	}`)
+
+	list := generateTokenList(t, suite, nil)
+
+	assert.Equal(t,
+		[]uint32{
+			0, 0, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Namespace), uint32(lsp.Definition),
+			2, 2, 6, uint32(lsp.Keyword), 0,
+			0, 7, 4, uint32(lsp.Keyword), 0,
+			0, 5, 26, uint32(lsp.Namespace), 0,
+			0, 27, 3, uint32(lsp.Keyword), 0, //all
+			1, 2, 8, uint32(lsp.Keyword), 0,
+			0, 9, 2, uint32(lsp.Function), uint32(lsp.Definition),
+			0, 5, 4, uint32(lsp.Keyword), 0,
+			0, 5, 2, uint32(lsp.Keyword), 0,
+			0, 3, 2, uint32(lsp.Class), 0, //C3
+			0, 3, 6, uint32(lsp.Keyword), 0,
+			0, 7, 2, uint32(lsp.Class), 0, //C0
+			1, 3, 6, uint32(lsp.Property), 0, //vC0_C1 :=
+			0, 10, 2, uint32(lsp.Class), 0,
+			/*0, 3, 6, uint32(lsp.Keyword), 0,*/ //create not a kw. TODO: check
+			1, 3, 5, uint32(lsp.Property), 0,    //vi_C2
+			1, 3, 3, uint32(lsp.Function), uint32(lsp.DefaultLibrary), //log
+			0, 4, 5, uint32(lsp.Property), 0, //vi_C2
+			1, 3, 5, uint32(lsp.Property), 0, // p0_C0.
+			/*0, 6, 4, uint32(lsp.Keyword), 0, */ // send not a kw. TODO: check
+			1, 3, 6, uint32(lsp.Property), 0,
+			/*0, 7, 5, uint32(lsp.Keyword), 0,*/  // start( not a kw. TODO: check
+			0, 6 + 7, 1, uint32(lsp.Function), 0, // f
+			//0, 2, 3, uint32(lsp.Parameter), 0, // p_i := is not recognized. TODO: remove comment if implemented
+			0, 7 + 2, 5, uint32(lsp.Property), 0,
+		}, list.Data)
+}

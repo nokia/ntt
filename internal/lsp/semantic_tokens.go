@@ -425,10 +425,17 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Function, 0)...)
 				case *ast.ValueDecl:
 					var modif SemanticTokenModifiers = Undefined
+					var semTokType SemanticTokenType = Variable
 					if (defNode.Kind.Kind == token.CONST) || (defNode.Kind.Kind == token.TEMPLATE) {
 						modif = Readonly
 					}
-					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(modif))...)
+					parents := ast.Parents(def[0].Node, def[0].Tree.Root)
+					if len(parents) > 2 {
+						if _, ok := parents[2].(*ast.ComponentTypeDecl); ok {
+							semTokType = Property
+						}
+					}
+					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), semTokType, uint32(modif))...)
 				case *ast.TemplateDecl:
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Variable, uint32(Readonly))...)
 				case *ast.ComponentTypeDecl:
