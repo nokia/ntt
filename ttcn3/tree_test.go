@@ -74,8 +74,8 @@ func TestExprAt(t *testing.T) {
 		{"x.¶y.z", "*ast.SelectorExpr(x.y)"},
 		{"x.y.¶z", "*ast.SelectorExpr(x.y.z)"},
 		{"x[-].¶y.z", "*ast.SelectorExpr(.y)"},
-		{"foo(23, ¶x:= 1)", "<nil>"}, // not supported yet
-		{"a := { ¶x:= 1}", "<nil>"},  // not supported yet
+		{"foo(23, ¶x:= 1)", "*ast.Ident(x)"},
+		{"a := { ¶x:= 1}", "*ast.Ident(x)"},
 		{"a := { [¶x]:= 1}", "*ast.Ident(x)"},
 	}
 	for _, tt := range tests {
@@ -251,6 +251,16 @@ func TestLookup(t *testing.T) {
 				    function f() runs on R { while (true) {¶x} }
 				}`,
 			want: []string{"x0"}},
+		{
+			name: "parameters",
+			input: `module M {
+					const int x := 1;
+					function f(int x) {}
+					signature f(int x);
+					template int f(int x) := 23;
+					control { f(¶x := 23)}
+				}`,
+			want: []string{"x1", "x2", "x3"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
