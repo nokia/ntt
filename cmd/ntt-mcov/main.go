@@ -21,9 +21,13 @@ var (
 )
 
 func main() {
+	mcov(bufio.NewReader(os.Stdin), bufio.NewWriter(os.Stdout))
+}
+
+func mcov(in io.Reader, out io.Writer) {
 
 	// Scanner reads stdin line by line
-	r := bufio.NewReader(os.Stdin)
+	r := bufio.NewReader(in)
 
 	var (
 		text string
@@ -73,7 +77,7 @@ func main() {
 	}
 
 	if err != io.EOF {
-		log.Println(err)
+		fmt.Println(err)
 	}
 
 	// Report coverage
@@ -95,7 +99,7 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("%s\t%d\n", k, count[k])
+		fmt.Fprintf(out, "%s\t%d\n", k, count[k])
 	}
 }
 
@@ -179,5 +183,5 @@ func cover(typ string, tmpl ast.Expr) {
 }
 
 func notImplemented(typ string, n ast.Node) {
-	fmt.Fprintf(os.Stderr, "line %d: Type %T for field %s not implemented.", line, n, typ)
+	log.Printf("line %d: Type %T for field %s not implemented.", line, n, typ)
 }
