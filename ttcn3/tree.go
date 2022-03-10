@@ -210,29 +210,9 @@ func (tree *Tree) ExprAt(pos loc.Pos) ast.Expr {
 		return nil
 	}
 
-	parent := tree.ParentOf(id)
-	switch p := parent.(type) {
-	case *ast.SelectorExpr:
-		if id == p.Sel {
-			return p
-		}
-	case *ast.BinaryExpr:
-		if id == p.X && p.Op.Kind == token.ASSIGN {
-			q := tree.ParentOf(p)
-			switch q := q.(type) {
-			case *ast.CompositeLiteral:
-				log.Debugf("%s: field assignment not supported.\n",
-					tree.Position(pos))
-				return nil
-			case *ast.ParenExpr:
-				if _, ok := tree.ParentOf(q).(*ast.CallExpr); ok {
-					log.Debugf("%s: field assignment not supported.\n",
-						tree.Position(pos))
-					return nil
-				}
-			}
-
-		}
+	// Return the most left selector subtree (SelectorExpr is left-associative).
+	if p, ok := tree.ParentOf(id).(*ast.SelectorExpr); ok && id == p.Sel {
+		return p
 	}
 
 	return id
@@ -304,7 +284,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 	var results []*Definition
 	switch n := n.(type) {
 	case *ast.Ident:
-		results = f.globals(n, tree)
+		results = f.ident(n, tree)
 
 	case *ast.SelectorExpr:
 		results = f.dot(n, tree)
@@ -321,6 +301,27 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Definition {
 
 	f.cache[n] = results
 	return results
+}
+
+func (f *finder) ident(id *ast.Ident, tree *Tree) []*Definition {
+	if p, ok := tree.ParentOf(id).(*ast.BinaryExpr); ok && id == p.X && p.Op.Kind == token.ASSIGN {
+		switch pp := tree.ParentOf(p).(type) {
+		case *ast.CompositeLiteral:
+			log.Debugf("%s: field assignment not supported.\n",
+				tree.Position(id.Pos()))
+			return nil
+		case *ast.ParenExpr:
+			if ppp, ok := tree.ParentOf(pp).(*ast.CallExpr); ok {
+				var results []*Definition
+				for _, r := range f.lookup(ppp.Fun, tree) {
+					results = append(results, Definitions(id.String(), r.Node, r.Tree)...)
+				}
+				return results
+			}
+		}
+
+	}
+	return f.globals(id, tree)
 }
 
 func (f *finder) globals(id *ast.Ident, tree *Tree) []*Definition {
