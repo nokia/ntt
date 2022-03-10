@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
@@ -50,6 +51,7 @@ var (
 	ErrUnknown        = fmt.Errorf("unknown error")
 	ErrNotImplemented = fmt.Errorf("not implemented")
 	ErrTimeout        = fmt.Errorf("timeout")
+	ErrInvalidMessage = fmt.Errorf("invalid message")
 
 	ErrNoSuch        = fmt.Errorf("no such thing")
 	ErrNoSuchModule  = fmt.Errorf("no such module")
@@ -192,6 +194,9 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
 		}
 		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
+		if s := env.Getenv("K3RFLAGS"); s != "" {
+			cmd.Args = append(cmd.Args, strings.Split(s, " ")...)
+		}
 		cmd.Dir = t.Dir
 		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
 		for k, v := range t.ModulePars {
@@ -223,7 +228,10 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 		scanner.Split(bufio.ScanLines)
 		var name string
 		for scanner.Scan() {
-			line := scanner.Text()
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" {
+				continue
+			}
 			log.Traceln(">", line)
 			switch v := strings.Fields(line); v[0] {
 			case "tciTestCaseStarted":
@@ -264,7 +272,8 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 				default:
 					events <- NewErrorEvent(fmt.Errorf("%w: %s", ErrUnknown, strings.Join(v[1:], " ")))
 				}
-
+			default:
+				events <- NewErrorEvent(fmt.Errorf("%w: %s", ErrInvalidMessage, line))
 			}
 		}
 		err = cmd.Wait()
