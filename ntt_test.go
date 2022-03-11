@@ -1,12 +1,18 @@
 package ntt_test
 
 import (
+	"errors"
+	"fmt"
 	"os"
+	"sort"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/nokia/ntt"
+	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/ttcn3/doc"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBasketMatch(t *testing.T) {
@@ -142,4 +148,114 @@ func TestLoadFromEnv(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPlanImports(t *testing.T) {
+	os.Setenv("NTT_WANT_HELPER_PROCESS", "1")
+	defer os.Unsetenv("NTT_WANT_HELPER_PROCESS")
+
+	tests := []struct {
+		path   string
+		result []string
+		err    error
+	}{
+		{path: "./testdata/invalid/notexist", err: os.ErrNotExist},
+		{path: "./testdata/invalid/file.ttcn3", err: syscall.ENOTDIR},
+		{path: "./testdata/invalid/dirs", err: ntt.ErrNoSources},
+		{path: "./testdata/other", err: ntt.ErrNoSources},
+		{path: "./testdata/🤔", result: []string{"testdata/🤔/a.ttcn3"}},
+		{path: "./testdata/lib", result: []string{"testdata/lib/a.ttcn3", "testdata/lib/b.ttcn3", "testdata/lib/🤔.ttcn3"}},
+	}
+
+	for _, tt := range tests {
+		result, err := ntt.PlanImport(tt.path)
+		if !errors.Is(err, tt.err) {
+			t.Errorf("%v: %v, want %v", tt.path, err, tt.err)
+		}
+		if len(tt.result) == 0 {
+			continue
+		}
+		if len(result) != 1 {
+			t.Errorf("Unexpected result: %v", result)
+			continue
+		}
+
+		b, ok := result[0].(*k3.T3XF)
+		if !ok {
+			t.Errorf("Expected T3XF builder, got %T", result[0])
+			continue
+		}
+		actual := b.Sources()
+		if !equal(actual, tt.result) {
+			t.Errorf("%v: %v, want %v", tt.path, actual, tt.result)
+		}
+	}
+
+}
+
+// equal returns true if a and b are equal string slices, order is ignored.
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]int, len(a))
+	for i := range a {
+		m[a[i]]++
+		m[b[i]]--
+	}
+	for _, v := range m {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func TestModulePars(t *testing.T) {
+	// There are to paths how module parameters reach the runtime:
+	// 1. From the default parameters file (K3_PARAMETERS_FILE)
+	// 2. From the parameters directory (K3_PARAMETERS_DIR/$MODULE/$TEST.parameters)
+
+	tests := []struct {
+		file string
+		name string
+		want []string
+	}{
+		{name: "", want: nil},
+		{name: "xxx", want: nil},
+		{name: "xxx.xxx", want: nil},
+		{file: "xxx", want: nil},
+		{file: "good.parameters", want: []string{"X=X from good", "Y=Y from good"}},
+		{file: "good.parameters", name: "A", want: []string{"X=X from good", "Y=Y from good"}},
+		{file: "good.parameters", name: "test.A", want: []string{"X=X from good", "Y=Y from good"}},
+		{file: "good.parameters", name: "test.B", want: []string{"X=X from good", "Y=Y from B", "Z=Z from B"}},
+		{file: "good.parameters", name: "test.C", want: nil},
+		{file: "bad.parameters", want: nil},
+		{file: "bad.parameters", name: "test.B", want: nil},
+	}
+	for _, tt := range tests {
+		t.Run(t.Name(), func(t *testing.T) {
+			os.Setenv("NTT_PARAMETERS_FILE", tt.file)
+			os.Setenv("NTT_PARAMETERS_DIR", "testdata/parameters")
+			defer os.Unsetenv("NTT_PARAMETERS_FILE")
+			defer os.Unsetenv("NTT_PARAMETERS_DIR")
+			got, _ := testModulePars(t, tt.name)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func testModulePars(t *testing.T, name string) ([]string, error) {
+	suite, err := ntt.NewSuite("testdata/parameters")
+	if err != nil {
+		t.Fatalf("NewSuite() failed: %v", err)
+	}
+
+	m, _, err := suite.TestParameters(name)
+	var s []string
+	for k, v := range m {
+		s = append(s, fmt.Sprintf("%s=%s", k, v))
+	}
+	sort.Strings(s)
+	return s, err
 }
