@@ -313,8 +313,18 @@ func (f *finder) ident(id *ast.Ident, tree *Tree) []*Definition {
 		case *ast.ParenExpr:
 			if ppp, ok := tree.ParentOf(pp).(*ast.CallExpr); ok {
 				var results []*Definition
-				for _, r := range f.lookup(ppp.Fun, tree) {
-					results = append(results, Definitions(id.String(), r.Node, r.Tree)...)
+				for _, c := range f.lookup(ppp.Fun, tree) {
+					results = append(results, Definitions(id.String(), c.Node, c.Tree)...)
+					// Bellow switch is required to handle behvaiour types references.
+					// See tests TestLookup/parameters#01 and TestLookup/parameters#02.
+					//
+					// This brute force solution is not ideal, but it works for now.
+					switch c.Node.(type) {
+					case *ast.Field, *ast.RefSpec:
+						for _, t := range f.typeOf(c) {
+							results = append(results, Definitions(id.String(), t.Node, t.Tree)...)
+						}
+					}
 				}
 				return results
 			}
