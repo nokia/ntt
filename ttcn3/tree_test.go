@@ -258,9 +258,26 @@ func TestLookup(t *testing.T) {
 					function f(int x) {}
 					signature f(int x);
 					template int f(int x) := 23;
+					type function f(int x);
 					control { f(¶x := 23)}
 				}`,
-			want: []string{"x1", "x2", "x3"}},
+			want: []string{"x1", "x2", "x3", "x4"}},
+		{
+			name: "parameters",
+			input: `module M {
+					type record R { FuncType f }
+					type function FuncType(int x);
+					control { var R r; r.f(¶x := 23)}
+				}`,
+			want: []string{"x0"}},
+		{
+			name: "parameters",
+			input: `module M {
+					type record R { record of FuncType f }
+					type function FuncType(int x);
+					control { var R r; r.f[0](¶x := 23)}
+				}`,
+			want: []string{"x0"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
