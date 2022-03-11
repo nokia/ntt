@@ -1,53 +1,59 @@
-package ntt_test
+package ntt
 
 import (
+	"fmt"
+	"os"
+	"sort"
 	"testing"
 
-	"github.com/nokia/ntt"
-	nttold "github.com/nokia/ntt/internal/ntt"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerators(t *testing.T) {
-	srcs := testSources(t, "testdata/vanilla")
+func TestModulePars(t *testing.T) {
+	// There are to paths how module parameters reach the runtime:
+	// 1. From the default parameters file (K3_PARAMETERS_FILE)
+	// 2. From the parameters directory (K3_PARAMETERS_DIR/$MODULE/$TEST.parameters)
 
-	t.Run("tests", func(t *testing.T) {
-		expected := []string{
-			"test.A",
-			"test.B",
-			"test2.C",
-		}
-		c := ntt.GenerateTests(srcs...)
-		actual := consumeStringChannel(c)
-		assert.Equal(t, expected, actual)
-	})
-
-	t.Run("controls", func(t *testing.T) {
-		expected := []string{
-			"test.control",
-		}
-		c := ntt.GenerateControls(srcs...)
-		actual := consumeStringChannel(c)
-		assert.Equal(t, expected, actual)
-	})
+	tests := []struct {
+		file string
+		name string
+		want []string
+	}{
+		{name: "", want: nil},
+		{name: "xxx", want: nil},
+		{name: "xxx.xxx", want: nil},
+		{file: "xxx", want: nil},
+		{file: "good.parameters", want: []string{"X=X from good", "Y=Y from good"}},
+		{file: "good.parameters", name: "A", want: []string{"X=X from good", "Y=Y from good"}},
+		{file: "good.parameters", name: "test.A", want: []string{"X=X from good", "Y=Y from good"}},
+		{file: "good.parameters", name: "test.B", want: []string{"X=X from good", "Y=Y from B", "Z=Z from B"}},
+		{file: "good.parameters", name: "test.C", want: nil},
+		{file: "bad.parameters", want: nil},
+		{file: "bad.parameters", name: "test.B", want: nil},
+	}
+	for _, tt := range tests {
+		t.Run(t.Name(), func(t *testing.T) {
+			os.Setenv("NTT_PARAMETERS_FILE", tt.file)
+			os.Setenv("NTT_PARAMETERS_DIR", "testdata/parameters")
+			defer os.Unsetenv("NTT_PARAMETERS_FILE")
+			defer os.Unsetenv("NTT_PARAMETERS_DIR")
+			got, _ := testModulePars(t, tt.name)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
 
-func testSources(t *testing.T, dir string) []string {
-	suite, err := nttold.NewFromArgs(dir)
+func testModulePars(t *testing.T, name string) ([]string, error) {
+	suite, err := NewSuite("testdata/parameters")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("NewSuite() failed: %v", err)
 	}
-	srcs, err := suite.Sources()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return srcs
-}
 
-func consumeStringChannel(c <-chan string) []string {
-	var result []string
-	for s := range c {
-		result = append(result, s)
+	m, _, err := suite.TestParameters(name)
+	var s []string
+	for k, v := range m {
+		s = append(s, fmt.Sprintf("%s=%s", k, v))
 	}
-	return result
+	sort.Strings(s)
+	return s, err
 }

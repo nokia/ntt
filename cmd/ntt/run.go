@@ -14,19 +14,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/fatih/color"
-	ntt2 "github.com/nokia/ntt"
+	"github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
-	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
-	"github.com/nokia/ntt/k3"
 	k3r "github.com/nokia/ntt/k3/run"
-	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +90,7 @@ Environment variables:
 	Runs      []results.Run
 	ledger    = NewLedger()
 	stamps    = make(map[string]time.Time)
-	Basket, _ = ntt2.NewBasket("default")
+	Basket, _ = ntt.NewBasket("default")
 
 	ResultsFile = cache.Lookup("test_results.json")
 	TickerTime  = time.Second * 30
@@ -105,7 +100,7 @@ type Job struct {
 	id        string
 	Name      string
 	Iteration int
-	Suite     *Suite
+	Suite     *ntt.Suite
 }
 
 func (j *Job) ID() string {
@@ -125,7 +120,7 @@ func NewLedger() *Ledger {
 	}
 }
 
-func (l *Ledger) NewJob(name string, suite *Suite) *Job {
+func (l *Ledger) NewJob(name string, suite *ntt.Suite) *Job {
 	l.Lock()
 	defer l.Unlock()
 
@@ -170,80 +165,11 @@ func (r *Result) ID() string {
 
 func init() {
 	flags := RunCommand.Flags()
-	flags.AddFlagSet(ntt2.BasketFlags())
+	flags.AddFlagSet(ntt.BasketFlags())
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
 	flags.StringP("tests-file", "t", "", "Read tests from file (use '-' for stdin)")
-}
-
-type Suite struct {
-	Suite        *ntt.Suite
-	Name         string
-	Sources      []string
-	RuntimePaths []string
-}
-
-func NewSuite(files ...string) (*Suite, error) {
-	suite, err := ntt.NewFromArgs(files...)
-	if err != nil {
-		return nil, fmt.Errorf("loading test suite failed: %w", err)
-	}
-
-	name, err := suite.Name()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving test suite name failed: %w", err)
-	}
-
-	srcs, err := suite.Sources()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving TTCN-3 sources failed: %w", err)
-	}
-
-	paths, err := runtimePaths(suite)
-	if err != nil {
-		return nil, fmt.Errorf("retrieving runtime paths failed: %w", err)
-	}
-
-	return &Suite{
-		Suite:        suite,
-		Name:         name,
-		Sources:      srcs,
-		RuntimePaths: paths,
-	}, nil
-
-}
-
-func (s *Suite) Timeout() time.Duration {
-	t, err := s.Suite.Timeout()
-	if err != nil {
-		log.Verbosef("retrieving test suite timeout failed: %v\n", err)
-	}
-	d, err := time.ParseDuration(fmt.Sprintf("%fs", t))
-	if err != nil {
-		log.Verbosef("retrieving test suite timeout failed: %v\n", err)
-	}
-	return d
-}
-
-func (s *Suite) ParametersFile() string {
-	f, err := s.Suite.ParametersFile()
-	if err != nil {
-		log.Verbosef("retrieving parameters file failed: %v", err)
-		return ""
-	}
-	if f != nil {
-		return f.Path()
-	}
-	return ""
-}
-
-func (s *Suite) ParametersDir() string {
-	dir, err := s.Suite.ParametersDir()
-	if err != nil {
-		log.Verbosef("retrieving parameters file failed: %v", err)
-	}
-	return dir
 }
 
 // Run runs the given jobs in parallel.
@@ -273,14 +199,14 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	var err error
-	Basket, err = ntt2.NewBasketWithFlags("list", cmd.Flags())
+	Basket, err = ntt.NewBasketWithFlags("list", cmd.Flags())
 	Basket.LoadFromEnv("NTT_LIST_BASKETS")
 	if err != nil {
 		return err
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-	suite, err := NewSuite(files...)
+	suite, err := ntt.NewSuite(files...)
 	if err != nil {
 		return err
 	}
@@ -435,22 +361,22 @@ func k3sJobs(jobs <-chan *Job) io.Reader {
 }
 
 // GenerateIDs emits test IDs based on given file and and id list to a channel.
-func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b ntt2.Basket) <-chan string {
+func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b ntt.Basket) <-chan string {
 	policy = strings.ToLower(policy)
 	policy = strings.TrimSpace(policy)
 	switch {
 	case len(ids) > 0:
-		return ntt2.GenerateIDsWithContext(ctx, ids...)
+		return ntt.GenerateIDsWithContext(ctx, ids...)
 	case policy == "old":
-		return ntt2.GenerateControlsWithContext(ctx, b, files...)
+		return ntt.GenerateControlsWithContext(ctx, b, files...)
 	default:
-		return ntt2.GenerateTestsWithContext(ctx, b, files...)
+		return ntt.GenerateTestsWithContext(ctx, b, files...)
 
 	}
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *Suite, ids []string, size int) chan *Job {
+func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int) chan *Job {
 	out := make(chan *Job, size)
 	go func() {
 		defer close(out)
@@ -529,7 +455,7 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 
 	test := k3r.NewTest(t3xf, job.Name)
 
-	pars, timeout, err := Parameters(job.Name, job.Suite)
+	pars, timeout, err := job.Suite.TestParameters(job.Name)
 	if err != nil {
 		results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
 		return
@@ -553,49 +479,6 @@ func Execute(ctx context.Context, job *Job, results chan<- Result) {
 	}
 }
 
-// Default Timeout: package.yml
-// Suite Paremters: $K3_PARAMETERS_FILE
-// Test parameters: $K3_PARAMETERS_DIR/$MODULE/$TEST.parameters
-// $K3_TIMEOUT
-func Parameters(name string, suite *Suite) (map[string]string, time.Duration, error) {
-	m := make(map[string]string)
-
-	if suitePars := suite.ParametersFile(); suitePars != "" {
-		if b, err := fs.Content(suitePars); err == nil {
-			if _, err := toml.Decode(string(b), &m); err != nil {
-				return nil, 0, err
-			}
-		}
-	}
-	if mod, test := SplitQualifiedName(name); mod != "" {
-		testPars := filepath.Join(suite.ParametersDir(), mod, test+".parameters")
-		if b, err := fs.Content(testPars); err == nil {
-			if _, err := toml.Decode(string(b), &m); err != nil {
-				return nil, 0, err
-			}
-		}
-	}
-
-	d := suite.Timeout()
-	if t, ok := m["TestcaseExecutor.time_out"]; ok {
-		delete(m, "TestcaseExecutor.time_out")
-		d2, err := time.ParseDuration(fmt.Sprintf("%ss", t))
-		if err != nil {
-			return nil, 0, err
-		}
-		d = d2
-	}
-	return m, d, nil
-}
-
-func SplitQualifiedName(name string) (string, string) {
-	parts := strings.Split(name, ".")
-	if len(parts) == 1 {
-		return "", name
-	}
-	return parts[0], strings.Join(parts[1:], ".")
-}
-
 func FlushTestResults() error {
 	db := &results.DB{
 		Version: "1",
@@ -613,24 +496,6 @@ func FlushTestResults() error {
 		return err
 	}
 	return ioutil.WriteFile(cache.Lookup("test_results.json"), b, 0644)
-}
-
-// runtimePaths returns the paths to the adapters and runtime libraries for the given test suite.
-func runtimePaths(p project.Interface) ([]string, error) {
-	imports, err := p.Imports()
-	if err != nil {
-		return nil, fmt.Errorf("suite imports: %w", err)
-	}
-
-	var paths []string
-	if s := env.Getenv("NTT_CACHE"); s != "" {
-		paths = append(paths, strings.Split(s, ":")...)
-	}
-	paths = append(imports, k3.FindAuxiliaryDirectories()...)
-	if cwd, err := os.Getwd(); err == nil {
-		paths = append(paths, cwd)
-	}
-	return paths, nil
 }
 
 func readTestsFromFile(path string) ([]string, error) {
