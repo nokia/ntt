@@ -74,12 +74,13 @@ var (
 		},
 	}
 
-	verbose     int
-	outputQuiet bool
-	ShSetup     bool
-	outputJSON  bool
-	outputPlain bool
-	chdir       string
+	verbose        int
+	ShSetup        bool
+	outputQuiet    bool
+	outputJSON     bool
+	outputPlain    bool
+	outputProgress bool
+	chdir          string
 
 	version = "dev"
 	commit  = "none"
@@ -122,6 +123,8 @@ func Format() string {
 		return "plain"
 	case outputJSON:
 		return "json"
+	case outputProgress:
+		return "progress"
 	default:
 		return "text"
 	}

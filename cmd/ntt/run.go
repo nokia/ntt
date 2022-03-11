@@ -94,6 +94,7 @@ Environment variables:
 
 	ResultsFile = cache.Lookup("test_results.json")
 	TickerTime  = time.Second * 30
+	Start       = time.Now()
 )
 
 type Job struct {
@@ -169,7 +170,7 @@ func init() {
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
-	flags.StringP("tests-file", "t", "", "Read tests from file (use '-' for stdin)")
+	flags.BoolVarP(&outputProgress, "progress", "P", false, "show progress")
 }
 
 // Run runs the given jobs in parallel.
