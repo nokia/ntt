@@ -8,15 +8,18 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/nokia/ntt/build"
+	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -623,4 +626,169 @@ func generate(ctx context.Context, def *ttcn3.Definition, b Basket, c chan<- str
 		}
 	}
 	return true
+}
+
+// Job represents a single job to be executed.
+type Job struct {
+	// Full qualified name of the test or control function to be executed.
+	Name string
+
+	// Working directory for the job.
+	Dir string
+
+	// Test suite the job belongs to.
+	Suite *Suite
+
+	id string
+}
+
+// A unique job identifier.
+func (j *Job) ID() string {
+	return j.id
+}
+
+// Ledger is a worker pool for executing jobs.
+type Ledger struct {
+	sync.Mutex
+	names map[string]int
+	jobs  map[string]*Job
+}
+
+func NewLedger() *Ledger {
+	return &Ledger{
+		names: make(map[string]int),
+		jobs:  make(map[string]*Job),
+	}
+}
+
+func (l *Ledger) NewJob(name string, suite *Suite) *Job {
+	l.Lock()
+	defer l.Unlock()
+
+	job := Job{
+		id:    fmt.Sprintf("%s-%d", name, l.names[name]),
+		Name:  name,
+		Suite: suite,
+	}
+	l.names[name]++
+	l.jobs[job.id] = &job
+
+	log.Debugf("new job: name=%s, suite=%p, id=%s\n", name, suite, job.id)
+	return &job
+}
+
+func (l *Ledger) Done(job *Job) {
+	l.Lock()
+	defer l.Unlock()
+	delete(l.jobs, job.id)
+}
+
+func (l *Ledger) Jobs() []*Job {
+	l.Lock()
+	defer l.Unlock()
+
+	jobs := make([]*Job, 0, len(l.jobs))
+	for _, job := range l.jobs {
+		jobs = append(jobs, job)
+	}
+	return jobs
+}
+
+type Result struct {
+	*Job
+	run.Test
+	run.Event
+}
+
+func (r *Result) ID() string {
+	return fmt.Sprintf("%s-%s", r.Job.ID(), r.Event.Name)
+}
+
+func (l *Ledger) Execute(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
+	wg := sync.WaitGroup{}
+	results := make(chan Result, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			log.Debugf("Worker %d started.\n", i)
+			defer log.Debugf("Worker %d finished.\n", i)
+
+			for job := range jobs {
+				l.execute(ctx, job, results)
+			}
+		}(i)
+	}
+
+	// Wait for all workers to finish.
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	return results
+}
+
+// execute runs a single test and sends the results to the channel.
+func (l *Ledger) execute(ctx context.Context, job *Job, results chan<- Result) {
+
+	defer l.Done(job)
+	var (
+		workingDir string
+		logFile    string
+	)
+
+	if job.Dir == "" {
+		logFile = fmt.Sprintf("%s.log", strings.TrimSuffix(job.ID(), "-0"))
+	} else {
+		workingDir = filepath.Join(job.Dir, job.ID())
+		if err := os.MkdirAll(workingDir, 0755); err != nil {
+			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			return
+		}
+	}
+
+	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.Suite.Name))
+	if workingDir != "" {
+		absT3xf, err := filepath.Abs(t3xf)
+		if err != nil {
+			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			return
+		}
+		absDir, err := filepath.Abs(workingDir)
+		if err != nil {
+			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			return
+		}
+		t3xf, err = filepath.Rel(absDir, absT3xf)
+		if err != nil {
+			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			return
+		}
+	}
+
+	test := run.NewTest(t3xf, job.Name)
+
+	pars, timeout, err := job.Suite.TestParameters(job.Name)
+	if err != nil {
+		results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+		return
+	}
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+	test.ModulePars = pars
+	test.Dir = workingDir
+	test.LogFile = logFile
+	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
+	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
+	for event := range test.RunWithContext(ctx) {
+		results <- Result{
+			Job:   job,
+			Test:  *test,
+			Event: event,
+		}
+	}
 }

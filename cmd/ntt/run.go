@@ -8,10 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/fatih/color"
@@ -88,7 +86,7 @@ Environment variables:
 	ErrCommandFailed = fmt.Errorf("command failed")
 
 	Runs      []results.Run
-	ledger    = NewLedger()
+	ledger    = ntt.NewLedger()
 	stamps    = make(map[string]time.Time)
 	Basket, _ = ntt.NewBasket("default")
 
@@ -96,73 +94,6 @@ Environment variables:
 	TickerTime  = time.Second * 30
 	Start       = time.Now()
 )
-
-type Job struct {
-	id        string
-	Name      string
-	Iteration int
-	Suite     *ntt.Suite
-}
-
-func (j *Job) ID() string {
-	return j.id
-}
-
-type Ledger struct {
-	sync.Mutex
-	names map[string]int
-	jobs  map[string]*Job
-}
-
-func NewLedger() *Ledger {
-	return &Ledger{
-		names: make(map[string]int),
-		jobs:  make(map[string]*Job),
-	}
-}
-
-func (l *Ledger) NewJob(name string, suite *ntt.Suite) *Job {
-	l.Lock()
-	defer l.Unlock()
-
-	job := Job{
-		id:    fmt.Sprintf("%s-%d", name, l.names[name]),
-		Name:  name,
-		Suite: suite,
-	}
-	l.names[name]++
-	l.jobs[job.id] = &job
-
-	log.Debugf("new job: name=%s, suite=%p, id=%s\n", name, suite, job.id)
-	return &job
-}
-
-func (l *Ledger) Done(job *Job) {
-	l.Lock()
-	defer l.Unlock()
-	delete(l.jobs, job.id)
-}
-
-func (l *Ledger) Jobs() []*Job {
-	l.Lock()
-	defer l.Unlock()
-
-	jobs := make([]*Job, 0, len(l.jobs))
-	for _, job := range l.jobs {
-		jobs = append(jobs, job)
-	}
-	return jobs
-}
-
-type Result struct {
-	*Job
-	k3r.Test
-	k3r.Event
-}
-
-func (r *Result) ID() string {
-	return fmt.Sprintf("%s-%s", r.Job.ID(), r.Event.Name)
-}
 
 func init() {
 	flags := RunCommand.Flags()
@@ -228,7 +159,7 @@ func run(cmd *cobra.Command, args []string) error {
 	return nttRun(ctx, jobs)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *Job) error {
+func nttRun(ctx context.Context, jobs <-chan *ntt.Job) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -237,7 +168,7 @@ func nttRun(ctx context.Context, jobs <-chan *Job) error {
 
 	// Execute the jobs in parallel and collect the results.
 	ticker := time.NewTicker(TickerTime)
-	ressults := ExecuteJobs(ctx, jobs, MaxWorkers)
+	ressults := ledger.Execute(ctx, jobs, MaxWorkers)
 L:
 	for {
 		select {
@@ -338,7 +269,7 @@ L:
 	return nil
 }
 
-func k3sRun(ctx context.Context, files []string, jobs <-chan *Job) error {
+func k3sRun(ctx context.Context, files []string, jobs <-chan *ntt.Job) error {
 	args := []string{
 		"--no-summary",
 		fmt.Sprintf("--results-file=%s", ResultsFile),
@@ -353,7 +284,7 @@ func k3sRun(ctx context.Context, files []string, jobs <-chan *Job) error {
 	return k3s.Run()
 }
 
-func k3sJobs(jobs <-chan *Job) io.Reader {
+func k3sJobs(jobs <-chan *ntt.Job) io.Reader {
 	var ids []string
 	for j := range jobs {
 		ids = append(ids, j.Name)
@@ -377,8 +308,8 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int) chan *Job {
-	out := make(chan *Job, size)
+func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int) chan *ntt.Job {
+	out := make(chan *ntt.Job, size)
 	go func() {
 		defer close(out)
 		i := 0
@@ -389,95 +320,6 @@ func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int)
 		log.Debugf("Generating %d jobs done.\n", i)
 	}()
 	return out
-}
-
-func ExecuteJobs(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
-	wg := sync.WaitGroup{}
-	results := make(chan Result, n)
-	for i := 0; i < n; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			log.Debugf("Worker %d started.\n", i)
-			defer log.Debugf("Worker %d finished.\n", i)
-
-			for job := range jobs {
-				Execute(ctx, job, results)
-			}
-		}(i)
-	}
-
-	// Wait for all workers to finish.
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	return results
-}
-
-// Execute runs a single test and sends the results to the channel.
-func Execute(ctx context.Context, job *Job, results chan<- Result) {
-
-	defer ledger.Done(job)
-	var (
-		workingDir string
-		logFile    string
-	)
-
-	if OutputDir == "" {
-		logFile = fmt.Sprintf("%s.log", strings.TrimSuffix(job.ID(), "-0"))
-	} else {
-		workingDir = filepath.Join(OutputDir, job.ID())
-		if err := os.MkdirAll(workingDir, 0755); err != nil {
-			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
-			return
-		}
-	}
-
-	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.Suite.Name))
-	if workingDir != "" {
-		absT3xf, err := filepath.Abs(t3xf)
-		if err != nil {
-			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
-			return
-		}
-		absDir, err := filepath.Abs(workingDir)
-		if err != nil {
-			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
-			return
-		}
-		t3xf, err = filepath.Rel(absDir, absT3xf)
-		if err != nil {
-			results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
-			return
-		}
-	}
-
-	test := k3r.NewTest(t3xf, job.Name)
-
-	pars, timeout, err := job.Suite.TestParameters(job.Name)
-	if err != nil {
-		results <- Result{Job: job, Event: k3r.NewErrorEvent(err)}
-		return
-	}
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
-	}
-	test.ModulePars = pars
-	test.Dir = workingDir
-	test.LogFile = logFile
-	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
-	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
-	for event := range test.RunWithContext(ctx) {
-		results <- Result{
-			Job:   job,
-			Test:  *test,
-			Event: event,
-		}
-	}
 }
 
 func FlushTestResults() error {
