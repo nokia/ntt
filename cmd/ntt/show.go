@@ -160,8 +160,11 @@ func printJSON(report *ConfigReport, keys []string) error {
 	}
 
 	b, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal report: %w", err)
+	}
 	fmt.Println(string(b))
-	return err
+	return report.err
 }
 
 func printShellScript(report *ConfigReport, keys []string) error {
@@ -180,8 +183,6 @@ function k3-hook()
 
 {{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
 {{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
-{{ if .ParametersDir  -}} export K3_PARAMETERS_DIR='{{ .ParametersDir }}'   {{- end }}
-{{ if .ParametersFile -}} export K3_PARAMETERS_FILE='{{ .ParametersFile }}' {{- end }}
 {{ if .TestHook       -}} export K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
 {{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
 {{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
@@ -350,7 +351,9 @@ func NewConfigReport(args []string) *ConfigReport {
 		var err error
 		b, err := f.Bytes()
 		if err == nil {
-			err = yaml.UnmarshalStrict(b, &r.ParametersFile)
+			if err2 := yaml.UnmarshalStrict(b, &r.ParametersFile); err2 != nil {
+				err = fmt.Errorf("Syntax error in file %s: %w", f.Path(), err2)
+			}
 		}
 		if r.err == nil {
 			r.err = err
