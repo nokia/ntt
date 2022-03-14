@@ -25,12 +25,14 @@ func FindChildOf(n Node, pos loc.Pos) Node {
 	if IsNil(n) || !pos.IsValid() {
 		return nil
 	}
-	children := Children(n)
-	for _, c := range children {
-		if IsNil(c) {
-			continue
-		}
-		if c.Pos() <= pos && pos < c.End() {
+	for children := Children(n); len(children) > 0; {
+		mid := len(children) / 2
+		switch c := children[mid]; {
+		case pos < c.Pos():
+			children = children[:mid]
+		case pos >= c.End():
+			children = children[mid+1:]
+		default:
 			return c
 		}
 	}
