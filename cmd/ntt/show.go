@@ -10,11 +10,13 @@ import (
 	"strings"
 	"text/template"
 
+	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -158,8 +160,11 @@ func printJSON(report *ConfigReport, keys []string) error {
 	}
 
 	b, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal report: %w", err)
+	}
 	fmt.Println(string(b))
-	return err
+	return report.err
 }
 
 func printShellScript(report *ConfigReport, keys []string) error {
@@ -178,8 +183,6 @@ function k3-hook()
 
 {{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
 {{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
-{{ if .ParametersDir  -}} export K3_PARAMETERS_DIR='{{ .ParametersDir }}'   {{- end }}
-{{ if .ParametersFile -}} export K3_PARAMETERS_FILE='{{ .ParametersFile }}' {{- end }}
 {{ if .TestHook       -}} export K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
 {{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
 {{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
@@ -299,26 +302,26 @@ func splitArgs(args []string, pos int) ([]string, []string) {
 }
 
 type ConfigReport struct {
-	Args           []string `json:"args"`
-	Name           string   `json:"name"`
-	Timeout        float64  `json:"timeout"`
-	ParametersDir  string   `json:"parameters_dir"`
-	ParametersFile string   `json:"parameters_file"`
-	TestHook       string   `json:"test_hook"`
-	SourceDir      string   `json:"source_dir"`
-	DataDir        string   `json:"datadir"`
-	SessionID      int      `json:"session_id"`
-	Environ        []string `json:"env"`
-	Sources        []string `json:"sources"`
-	Imports        []string `json:"imports"`
-	Files          []string `json:"files"`
-	AuxFiles       []string `json:"aux_files"`
-	OssInfo        string   `json:"ossinfo"`
-	K3             struct {
+	Args      []string `json:"args"`
+	Name      string   `json:"name"`
+	Timeout   float64  `json:"timeout"`
+	TestHook  string   `json:"test_hook"`
+	SourceDir string   `json:"source_dir"`
+	DataDir   string   `json:"datadir"`
+	SessionID int      `json:"session_id"`
+	Environ   []string `json:"env"`
+	Sources   []string `json:"sources"`
+	Imports   []string `json:"imports"`
+	Files     []string `json:"files"`
+	AuxFiles  []string `json:"aux_files"`
+	OssInfo   string   `json:"ossinfo"`
+	K3        struct {
 		Compiler string   `json:"compiler"`
 		Runtime  string   `json:"runtime"`
 		Builtins []string `json:"builtins"`
 	} `json:"k3"`
+
+	ntt2.ParametersFile
 
 	suite *ntt.Suite
 	err   error
@@ -344,17 +347,19 @@ func NewConfigReport(args []string) *ConfigReport {
 		r.Timeout, r.err = r.suite.Timeout()
 	}
 
-	r.ParametersDir, err = r.suite.ParametersDir()
-
-	if (r.err == nil) && (err != nil) {
-		r.err = err
+	if f, _ := r.suite.ParametersFile(); f != nil {
+		var err error
+		b, err := f.Bytes()
+		if err == nil {
+			if err2 := yaml.UnmarshalStrict(b, &r.ParametersFile); err2 != nil {
+				err = fmt.Errorf("Syntax error in file %s: %w", f.Path(), err2)
+			}
+		}
+		if r.err == nil {
+			r.err = err
+		}
 	}
 
-	r.ParametersFile, err = path(r.suite.ParametersFile())
-
-	if (r.err == nil) && (err != nil) {
-		r.err = err
-	}
 	r.TestHook, err = path(r.suite.TestHook())
 	if (r.err == nil) && (err != nil) {
 		r.err = err

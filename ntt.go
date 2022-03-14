@@ -27,6 +27,42 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// A TestConfig specifies how and when a testcase should be executed.
+type TestConfig struct {
+	// Fully qualified name. Optional testcase parameters are allowed.
+	Test string `json:"test,omitempty"`
+
+	// Timeout in seconds.
+	Timeout float64 `json:"timeout,omitempty"`
+
+	// Module parameters
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
+
+	// Only execute testcase if the given conditions are met.
+	Only *ExecuteCondition `json:"only,omitempty,inline"`
+
+	// Do not execute testcase if the given conditions are met.
+	Except *ExecuteCondition `json:"except,omitempty"`
+}
+
+// ExecuteCondition specifies conditions for executing a testcase.
+type ExecuteCondition struct {
+	Presets []string `json:"presets,omitempty"`
+}
+
+// ParametersFile describes the parameters file.
+type ParametersFile struct {
+	// Global test configuration.
+	TestConfig `yaml:",inline"`
+
+	// Testconfiguration presets providing alternative global configurations.
+	Presets map[string]TestConfig `json:"presets,omitempty"`
+
+	// Test specific configuration. Each entry is a test configuration and
+	// specifies how and when a test should be executed.
+	Execute []TestConfig `json:"execute,omitempty"`
+}
+
 // BasketFlags returns a flagset with all flags for filtering objects.
 //
 // BasketFlags are regular expressions to filter objects. If you pass multiple regular
