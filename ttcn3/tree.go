@@ -307,9 +307,11 @@ func (f *finder) ident(id *ast.Ident, tree *Tree) []*Definition {
 	if p, ok := tree.ParentOf(id).(*ast.BinaryExpr); ok && id == p.X && p.Op.Kind == token.ASSIGN {
 		switch pp := tree.ParentOf(p).(type) {
 		case *ast.CompositeLiteral:
-			log.Debugf("%s: field assignment not supported.\n",
-				tree.Position(id.Pos()))
-			return nil
+			var results []*Definition
+			for _, c := range f.typeOf(&Definition{Node: pp, Tree: tree}) {
+				results = append(results, Definitions(id.String(), c.Node, c.Tree)...)
+			}
+			return results
 		case *ast.ParenExpr:
 			if ppp, ok := tree.ParentOf(pp).(*ast.CallExpr); ok {
 				var results []*Definition
@@ -459,6 +461,7 @@ func (f *finder) call(n *ast.CallExpr, tree *Tree) []*Definition {
 	}
 	return result
 }
+
 func (f *finder) typeOf(def *Definition) []*Definition {
 	var result []*Definition
 
@@ -470,6 +473,12 @@ func (f *finder) typeOf(def *Definition) []*Definition {
 		q = q[1:]
 
 		switch n := def.Node.(type) {
+		case *ast.CompositeLiteral:
+			q = append(q, &Definition{Node: def.ParentOf(n), Tree: def.Tree})
+
+		case *ast.BinaryExpr:
+			q = append(q, &Definition{Node: n.X, Tree: def.Tree})
+
 		case *ast.TemplateDecl:
 			q = append(q, &Definition{Node: n.Type, Tree: def.Tree})
 

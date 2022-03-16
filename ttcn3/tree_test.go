@@ -278,6 +278,27 @@ func TestLookup(t *testing.T) {
 					control { var R r; r.f[0](¶x := 23)}
 				}`,
 			want: []string{"x0"}},
+		{
+			name: "field assignment",
+			input: `module M {
+					const int x := 1;
+					type record R { int x }
+					template R t(int x) := { ¶x := x }
+				}`,
+			want: []string{"x1"}},
+		{
+			name: "field assignment",
+			input: `module M {
+					const int x := 1;
+					type record R { int x }
+					type record S { int x }
+					control {
+						var R x;
+						x := { ¶x := x }
+						var S x;
+					}
+				}`,
+			want: []string{"x1", "x2"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
