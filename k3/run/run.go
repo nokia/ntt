@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -195,7 +196,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 		}
 		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
 		if s := env.Getenv("K3RFLAGS"); s != "" {
-			cmd.Args = append(cmd.Args, strings.Split(s, " ")...)
+			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
 		cmd.Dir = t.Dir
 		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
@@ -276,7 +277,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 				events <- NewErrorEvent(fmt.Errorf("%w: %s", ErrInvalidMessage, line))
 			}
 		}
-		err = cmd.Wait()
+		err = waitGracefully(t, cmd)
 		if ctx.Err() == context.DeadlineExceeded {
 			events <- NewErrorEvent(ErrTimeout)
 		} else if err != nil {
@@ -285,6 +286,30 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 	}()
 
 	return events
+}
+
+// waitGracefully waits for the k3 runtime to exit, checks if the log file is
+// truncated and stores the k3 exit code in the log-file for convenient retrieval.
+func waitGracefully(t *Test, cmd *exec.Cmd) error {
+	cmdErr := cmd.Wait()
+	f, err := os.OpenFile(t.LogFile, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if ofs, err := f.Seek(-1, os.SEEK_END); err == nil {
+		b := make([]byte, 1)
+		if _, err = f.ReadAt(b, ofs); err != nil {
+			return err
+		}
+		if b[0] != '\n' {
+			f.Seek(0, os.SEEK_END)
+			f.Write([]byte{'\n'})
+		}
+	}
+	f.Seek(0, os.SEEK_END)
+	fmt.Fprintf(f, "%s.999999|exit|%d\n", time.Now().Format("20060102T150405"), cmd.ProcessState.ExitCode())
+	return cmdErr
 }
 
 // request builds a request for running a test or control part.

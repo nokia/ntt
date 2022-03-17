@@ -102,6 +102,7 @@ func init() {
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
 	flags.BoolVarP(&outputProgress, "progress", "P", false, "show progress")
+	flags.StringVarP(&testsFile, "tests-file", "t", "", "read tests from FILE. When FILE is '-', read standard input")
 }
 
 // Run runs the given jobs in parallel.
@@ -143,8 +144,8 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if path := cmd.Flag("tests-file").Value.String(); path != "" {
-		tests, err := readTestsFromFile(path)
+	if testsFile != "" {
+		tests, err := readTestsFromFile(testsFile)
 		if err != nil {
 			return err
 		}
