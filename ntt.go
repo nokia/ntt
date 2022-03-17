@@ -683,18 +683,36 @@ func (j *Job) ID() string {
 	return j.id
 }
 
+type Result struct {
+	*Job
+	run.Test
+	run.Event
+}
+
+func (r *Result) ID() string {
+	return fmt.Sprintf("%s-%s", r.Job.ID(), r.Event.Name)
+}
+
+// Runner is a test runner.
+type Runner interface {
+	// Run the jobs in the given channel.
+	Run(ctx context.Context, jobs <-chan *Job) <-chan Result
+}
+
+func NewLedger(n int) *Ledger {
+	return &Ledger{
+		maxWorkers: n,
+		names:      make(map[string]int),
+		jobs:       make(map[string]*Job),
+	}
+}
+
 // Ledger is a worker pool for executing jobs.
 type Ledger struct {
 	sync.Mutex
-	names map[string]int
-	jobs  map[string]*Job
-}
-
-func NewLedger() *Ledger {
-	return &Ledger{
-		names: make(map[string]int),
-		jobs:  make(map[string]*Job),
-	}
+	maxWorkers int
+	names      map[string]int
+	jobs       map[string]*Job
 }
 
 func (l *Ledger) NewJob(name string, suite *Suite) *Job {
@@ -730,20 +748,10 @@ func (l *Ledger) Jobs() []*Job {
 	return jobs
 }
 
-type Result struct {
-	*Job
-	run.Test
-	run.Event
-}
-
-func (r *Result) ID() string {
-	return fmt.Sprintf("%s-%s", r.Job.ID(), r.Event.Name)
-}
-
-func (l *Ledger) Execute(ctx context.Context, jobs <-chan *Job, n int) <-chan Result {
+func (l *Ledger) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 	wg := sync.WaitGroup{}
-	results := make(chan Result, n)
-	for i := 0; i < n; i++ {
+	results := make(chan Result, l.maxWorkers)
+	for i := 0; i < l.maxWorkers; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -751,7 +759,7 @@ func (l *Ledger) Execute(ctx context.Context, jobs <-chan *Job, n int) <-chan Re
 			defer log.Debugf("Worker %d finished.\n", i)
 
 			for job := range jobs {
-				l.execute(ctx, job, results)
+				l.run(ctx, job, results)
 			}
 		}(i)
 	}
@@ -766,7 +774,7 @@ func (l *Ledger) Execute(ctx context.Context, jobs <-chan *Job, n int) <-chan Re
 }
 
 // execute runs a single test and sends the results to the channel.
-func (l *Ledger) execute(ctx context.Context, job *Job, results chan<- Result) {
+func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 
 	defer l.Done(job)
 	var (
