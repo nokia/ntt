@@ -80,6 +80,7 @@ var (
 	outputJSON     bool
 	outputPlain    bool
 	outputProgress bool
+	testsFile      string
 	chdir          string
 
 	version = "dev"
