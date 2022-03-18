@@ -1021,6 +1021,14 @@ func (p *parser) parseRedirect(x ast.Expr) *ast.RedirectExpr {
 	return r
 }
 
+func (p *parser) parseName() *ast.Ident {
+	id := p.parseIdent()
+	if id != nil {
+		id.IsName = true
+	}
+	return id
+}
+
 func (p *parser) parseIdent() *ast.Ident {
 	switch p.tok {
 	case token.UNIVERSAL:
@@ -1424,7 +1432,7 @@ func (p *parser) parseExceptStmt() *ast.DefKindExpr {
 func (p *parser) parseGroup() *ast.GroupDecl {
 	x := new(ast.GroupDecl)
 	x.Tok = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	x.LBrace = p.expect(token.LBRACE)
 
 	for p.tok != token.RBRACE && p.tok != token.EOF {
@@ -1592,7 +1600,7 @@ func (p *parser) parsePortTypeDecl() *ast.PortTypeDecl {
 	x := new(ast.PortTypeDecl)
 	x.TypeTok = p.consume()
 	x.PortTok = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -1653,7 +1661,7 @@ func (p *parser) parseComponentTypeDecl() *ast.ComponentTypeDecl {
 	x := new(ast.ComponentTypeDecl)
 	x.TypeTok = p.consume()
 	x.CompTok = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -1677,7 +1685,7 @@ func (p *parser) parseStructTypeDecl() *ast.StructTypeDecl {
 	x := new(ast.StructTypeDecl)
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -1706,7 +1714,7 @@ func (p *parser) parseEnumTypeDecl() *ast.EnumTypeDecl {
 	x := new(ast.EnumTypeDecl)
 	x.TypeTok = p.consume()
 	x.EnumTok = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -1724,9 +1732,23 @@ func (p *parser) parseEnumTypeDecl() *ast.EnumTypeDecl {
 }
 
 func (p *parser) parseEnum() ast.Expr {
+	var firstIdent func(n ast.Expr) *ast.Ident
+	firstIdent = func(n ast.Expr) *ast.Ident {
+		switch n := n.(type) {
+		case *ast.CallExpr:
+			return firstIdent(n.Fun)
+		case *ast.SelectorExpr:
+			return firstIdent(n.X)
+		case *ast.Ident:
+			return n
+		default:
+			return nil
+		}
+	}
 	x := p.parseExpr()
-	if name := ast.Name(x); name != "" {
-		p.names[name] = true
+	if id := firstIdent(x); id != nil {
+		p.names[id.String()] = true
+		id.IsName = true
 	}
 	return x
 }
@@ -1742,7 +1764,7 @@ func (p *parser) parseBehaviourTypeDecl() *ast.BehaviourTypeDecl {
 	x := new(ast.BehaviourTypeDecl)
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -1791,7 +1813,7 @@ func (p *parser) parseField() *ast.Field {
 		x.DefaultTok = p.consume()
 	}
 	x.Type = p.parseTypeSpec()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -1937,7 +1959,7 @@ func (p *parser) parseTemplateDecl() *ast.TemplateDecl {
 	if _, ok := x.Type.(*ast.ErrorNode); ok {
 		return x
 	}
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -2050,7 +2072,7 @@ func (p *parser) parseDeclList() (list []*ast.Declarator) {
 
 func (p *parser) parseDeclarator() *ast.Declarator {
 	x := &ast.Declarator{}
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LBRACK {
 		x.ArrayDef = p.parseArrayDefs()
 	}
@@ -2076,7 +2098,7 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		x.Modif = p.consume()
 	}
 
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -2123,7 +2145,7 @@ func (p *parser) parseExtFuncDecl() *ast.FuncDecl {
 		x.Modif = p.consume()
 	}
 
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 
 	x.Params = p.parseFormalPars()
 
@@ -2157,7 +2179,7 @@ func (p *parser) parseSignatureDecl() *ast.SignatureDecl {
 
 	x := new(ast.SignatureDecl)
 	x.Tok = p.consume()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 	if p.tok == token.LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
@@ -2250,7 +2272,7 @@ func (p *parser) parseFormalPar() *ast.FormalPar {
 		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
-	x.Name = p.parseIdent()
+	x.Name = p.parseName()
 
 	if p.tok == token.LBRACK {
 		x.ArrayDef = p.parseArrayDefs()
@@ -2299,6 +2321,7 @@ func (p *parser) parseTypeFormalPar() *ast.FormalPar {
 		x.Type = p.parseTypeRef()
 	}
 	x.Name = make_ident(p.expect(token.IDENT))
+	x.Name.IsName = true
 	if p.tok == token.ASSIGN {
 		x.AssignTok = p.consume()
 		x.Value = p.parseTypeRef()

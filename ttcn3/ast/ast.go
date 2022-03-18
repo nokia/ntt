@@ -159,8 +159,9 @@ func (n *NodeList) LastTok() *Token {
 type (
 	// Ident represents an identifier.
 	Ident struct {
-		Tok  Token // first identifier token
-		Tok2 Token `json:",omitempty"` // optional second identifier token, e.g. for "any port"
+		IsName bool  // true if this is a name, false if it is a reference
+		Tok    Token // first identifier token
+		Tok2   Token `json:",omitempty"` // optional second identifier token, e.g. for "any port"
 	}
 
 	// ParametrizedIdent represents a paremetrized identifier, e.g. "f<charstring>".
