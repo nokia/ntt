@@ -86,7 +86,6 @@ Environment variables:
 	ErrCommandFailed = fmt.Errorf("command failed")
 
 	Runs      []results.Run
-	ledger    = ntt.NewLedger()
 	stamps    = make(map[string]time.Time)
 	Basket, _ = ntt.NewBasket("default")
 
@@ -152,15 +151,16 @@ func run(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers)
+	ledger := ntt.NewLedger(MaxWorkers)
+	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
 
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
 		return k3sRun(ctx, files, jobs)
 	}
-	return nttRun(ctx, jobs)
+	return nttRun(ctx, jobs, ledger)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *ntt.Job) error {
+func nttRun(ctx context.Context, jobs <-chan *ntt.Job, ledger *ntt.Ledger) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -169,7 +169,7 @@ func nttRun(ctx context.Context, jobs <-chan *ntt.Job) error {
 
 	// Execute the jobs in parallel and collect the results.
 	ticker := time.NewTicker(TickerTime)
-	ressults := ledger.Execute(ctx, jobs, MaxWorkers)
+	ressults := ledger.Run(ctx, jobs)
 L:
 	for {
 		select {
@@ -309,7 +309,7 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int) chan *ntt.Job {
+func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int, ledger *ntt.Ledger) chan *ntt.Job {
 	out := make(chan *ntt.Job, size)
 	go func() {
 		defer close(out)
