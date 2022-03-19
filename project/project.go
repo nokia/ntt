@@ -174,13 +174,13 @@ func Variables(vars map[string]string) ([]string, error) {
 }
 
 func Open(path string) (*Project, error) {
-	p := Project{root: path}
+	p := Project{root: path, Config: Config{}}
 
 	// Try reading the manifest
 	file := filepath.Join(p.root, ManifestFile)
 	if b, err := fs.Content(file); err == nil {
 		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
-		return &p, yaml.UnmarshalStrict(b, &p.Manifest)
+		return &p, yaml.UnmarshalStrict(b, &p.Config)
 	}
 
 	// Fall back to recursive scanning
@@ -198,7 +198,7 @@ type Project struct {
 	modulesMu sync.Mutex
 	modules   map[string]string
 
-	Manifest Manifest
+	Config
 }
 
 // String returns a simple string representation
@@ -222,7 +222,7 @@ func (p *Project) Sources() ([]string, error) {
 		errs error
 	)
 
-	for _, src := range p.Manifest.Sources {
+	for _, src := range p.Config.Sources {
 		src, err := p.evalPath(src)
 		if err != nil {
 			errs = multierror.Append(errs, err)
@@ -245,7 +245,7 @@ func (p *Project) Imports() ([]string, error) {
 	}
 
 	var imports []string
-	for _, dir := range p.Manifest.Imports {
+	for _, dir := range p.Config.Imports {
 		dir, err := p.evalPath(dir)
 		if err != nil {
 			errs = multierror.Append(errs, err)
@@ -285,8 +285,8 @@ func (p *Project) FindModule(name string) (string, error) {
 }
 
 func (p *Project) findFilesRecursive() error {
-	p.Manifest.Sources = fs.Rel(p.root, fs.FindTTCN3FilesRecursive(p.root)...)
-	log.Debugf("Found %d source files for %q\n", len(p.Manifest.Sources), p.root)
+	p.Config.Sources = fs.Rel(p.root, fs.FindTTCN3FilesRecursive(p.root)...)
+	log.Debugf("Found %d source files for %q\n", len(p.Config.Sources), p.root)
 
 	commonDirs := []string{
 		"../../../sct",
@@ -304,7 +304,7 @@ func (p *Project) findFilesRecursive() error {
 		}
 
 		for _, dir := range fs.FindTTCN3DirectoriesRecursive(path) {
-			p.Manifest.Imports = append(p.Manifest.Imports, dir)
+			p.Config.Imports = append(p.Config.Imports, dir)
 			log.Debugf("Found import %q\n", dir)
 		}
 	}
@@ -313,16 +313,16 @@ func (p *Project) findFilesRecursive() error {
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".
 func (p *Project) Environ() ([]string, error) {
-	return Variables(p.Manifest.Variables)
+	return Variables(p.Config.Variables)
 }
 
 // Expand expands string v using Project.Getenv
 func (p *Project) Expand(v string) (string, error) {
-	return expandVar(v, p.Manifest.Variables, make(map[string]string))
+	return expandVar(v, p.Config.Variables, make(map[string]string))
 }
 
 func (p *Project) Getenv(v string) (string, error) {
-	return getVar(v, p.Manifest.Variables, make(map[string]string))
+	return getVar(v, p.Config.Variables, make(map[string]string))
 }
 
 func (p *Project) evalPath(path string) (string, error) {

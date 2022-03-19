@@ -2,13 +2,11 @@ package ntt
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/session"
@@ -70,12 +68,10 @@ func (suite *Suite) Root() string {
 //
 // The root folder is the main-package, which may contain a manifest file
 // (`package.yml`)
-func (suite *Suite) SetRoot(folder string) {
+func (suite *Suite) SetRoot(folder string) error {
 	p, err := project.Open(folder)
-	if err != nil {
-		log.Verbosef(fmt.Sprintf("error opening project: %s", err.Error()))
-	}
 	suite.p = p
+	return err
 }
 
 func (suite *Suite) LatestResults() (*results.DB, error) {

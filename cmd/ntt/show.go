@@ -6,17 +6,14 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 
-	ntt2 "github.com/nokia/ntt"
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -131,22 +128,52 @@ var (
 )
 
 func show(cmd *cobra.Command, args []string) error {
-
 	sources, keys := splitArgs(args, cmd.ArgsLenAtDash())
-
 	suite, err := ntt.NewFromArgs(sources...)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		return err
 	}
 
-	report := NewConfigReport(sources)
+	c, err := suite.Config()
+
+	r := ConfigReport{
+		Args:   args,
+		Config: c,
+		err:    err,
+	}
+
+	checkErr := func(err error) {
+		if err != nil && r.err == nil {
+			r.err = err
+		}
+	}
+
+	r.DataDir = env.Getenv("NTT_DATADIR")
+
+	r.Environ, err = suite.Environ()
+	sort.Strings(r.Environ)
+	checkErr(err)
+
+	r.Files, err = project.Files(suite)
+	checkErr(err)
+
+	if c.Root != "" {
+		r.SourceDir = c.Root
+		if path, err := filepath.Abs(r.SourceDir); err == nil {
+			r.SourceDir = path
+		}
+		checkErr(err)
+	}
+
+	for _, dir := range c.K3.Builtins {
+		r.AuxFiles = append(r.AuxFiles, fs.FindTTCN3Files(dir)...)
+	}
 
 	switch {
 	case outputJSON:
-		return printJSON(report, keys)
+		return printJSON(&r, keys)
 	case ShSetup:
-		return printShellScript(report, keys)
+		return printShellScript(&r, keys)
 	case len(keys) != 0:
 		return printUserKeys(suite, keys)
 	default:
@@ -183,7 +210,7 @@ function k3-hook()
 
 {{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
 {{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
-{{ if .TestHook       -}} export K3_TEST_HOOK='{{ .TestHook }}'             {{- end }}
+{{ if .HooksFile      -}} export K3_TEST_HOOK='{{ .HooksFile }}'            {{- end }}
 {{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
 {{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
 {{ if .SessionID      -}} export K3_SESSION_ID='{{ .SessionID }}'           {{- end }}
@@ -302,29 +329,14 @@ func splitArgs(args []string, pos int) ([]string, []string) {
 }
 
 type ConfigReport struct {
-	Args      []string `json:"args"`
-	Name      string   `json:"name"`
-	Timeout   float64  `json:"timeout"`
-	TestHook  string   `json:"test_hook"`
+	Args []string `json:"args"`
+	*project.Config
 	SourceDir string   `json:"source_dir"`
 	DataDir   string   `json:"datadir"`
-	SessionID int      `json:"session_id"`
 	Environ   []string `json:"env"`
-	Sources   []string `json:"sources"`
-	Imports   []string `json:"imports"`
 	Files     []string `json:"files"`
 	AuxFiles  []string `json:"aux_files"`
-	OssInfo   string   `json:"ossinfo"`
-	K3        struct {
-		Compiler string   `json:"compiler"`
-		Runtime  string   `json:"runtime"`
-		Builtins []string `json:"builtins"`
-	} `json:"k3"`
-
-	ntt2.ParametersFile
-
-	suite *ntt.Suite
-	err   error
+	err       error
 }
 
 func (r *ConfigReport) Err() string {
@@ -332,102 +344,6 @@ func (r *ConfigReport) Err() string {
 		return r.err.Error()
 	}
 	return ""
-}
-
-func NewConfigReport(args []string) *ConfigReport {
-	var err error = nil
-	r := ConfigReport{Args: args}
-	r.suite, r.err = ntt.NewFromArgs(args...)
-
-	if r.err == nil {
-		r.Name, r.err = r.suite.Name()
-	}
-
-	if r.err == nil {
-		r.Timeout, r.err = r.suite.Timeout()
-	}
-
-	if f, _ := r.suite.ParametersFile(); f != nil {
-		var err error
-		b, err := f.Bytes()
-		if err == nil {
-			if err2 := yaml.UnmarshalStrict(b, &r.ParametersFile); err2 != nil {
-				err = fmt.Errorf("Syntax error in file %s: %w", f.Path(), err2)
-			}
-		}
-		if r.err == nil {
-			r.err = err
-		}
-	}
-
-	r.TestHook, err = path(r.suite.TestHook())
-	if (r.err == nil) && (err != nil) {
-		r.err = err
-	}
-
-	r.DataDir, err = r.suite.Getenv("NTT_DATADIR")
-	if (r.err == nil) && (err != nil) {
-		r.err = err
-	}
-
-	if env, err := r.suite.Getenv("NTT_SESSION_ID"); err == nil {
-		r.SessionID, err = strconv.Atoi(env)
-		if (r.err == nil) && (err != nil) {
-			r.err = err
-		}
-	} else {
-		if r.err == nil {
-			r.err = err
-		}
-	}
-
-	r.Environ, err = r.suite.Environ()
-	if err == nil {
-		sort.Strings(r.Environ)
-	}
-	if (r.err == nil) && (err != nil) {
-		r.err = err
-	}
-
-	{
-		paths, err := r.suite.Sources()
-		r.Sources = paths
-		if (r.err == nil) && (err != nil) {
-			r.err = err
-		}
-	}
-
-	{
-		paths, err := r.suite.Imports()
-		r.Imports = paths
-		if (r.err == nil) && (err != nil) {
-			r.err = err
-		}
-	}
-
-	r.Files, err = project.Files(r.suite)
-	if (r.err == nil) && (err != nil) {
-		r.err = err
-	}
-
-	if root := r.suite.Root(); root != "" {
-		r.SourceDir = root
-		if path, err := filepath.Abs(r.SourceDir); err == nil {
-			r.SourceDir = path
-		} else if r.err == nil {
-			r.err = err
-		}
-	}
-
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		r.AuxFiles = append(r.AuxFiles, fs.FindTTCN3Files(dir)...)
-	}
-
-	r.K3.Compiler = k3.Compiler()
-	r.K3.Runtime = k3.Runtime()
-	r.K3.Builtins = k3.FindAuxiliaryDirectories()
-	r.OssInfo, _ = r.suite.Getenv("OSSINFO")
-	return &r
 }
 
 func path(f *fs.File, err error) (string, error) {

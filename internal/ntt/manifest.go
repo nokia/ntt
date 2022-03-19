@@ -57,7 +57,7 @@ func (suite *Suite) Imports() ([]string, error) {
 // AddSources appends files... to the known sources list.
 func (suite *Suite) AddSources(files ...string) {
 	suite.lazyInit()
-	suite.p.Manifest.Sources = append(suite.p.Manifest.Sources, files...)
+	suite.p.Config.Sources = append(suite.p.Config.Sources, files...)
 }
 
 // Name returns the name of the test suite. Or err != nil if the name could not
@@ -139,8 +139,8 @@ func (suite *Suite) TestHook() (*fs.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	if m != nil && m.TestHook != "" {
-		path, err := suite.Expand(m.TestHook)
+	if m != nil && m.HooksFile != "" {
+		path, err := suite.Expand(m.HooksFile)
 		if err != nil {
 			return nil, err
 		}
@@ -334,22 +334,8 @@ func fileExists(path string) (bool, error) {
 	return true, nil
 }
 
-type manifest struct {
-	// Static configuration
-	Name      string
-	Sources   []string
-	Imports   []string
-	Variables map[string]string
-
-	// Runtime configuration
-	TestHook       string  `yaml:"test_hook"`       // Path for test hook.
-	ParametersFile string  `yaml:"parameters_file"` // Path for module parameters file.
-	ParametersDir  string  `yaml:"parameters_dir"`  // Optional path for parameters_file.
-	Timeout        float64 `yaml:"timeout"`         // Global timeout for tests.
-}
-
 // parseManifest tries to parse an (optional) manifest file.
-func (suite *Suite) parseManifest() (*manifest, error) {
+func (suite *Suite) parseManifest() (*project.Config, error) {
 	// Without root folder, there's no manifest to parse. This is ok.
 	if suite.Root() == "" {
 		return nil, nil
@@ -369,7 +355,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 
 	log.Debugf("found manifest: %s\n", f.Path())
 	type manifestData struct {
-		manifest manifest
+		manifest *project.Config
 		err      error
 	}
 
@@ -382,7 +368,7 @@ func (suite *Suite) parseManifest() (*manifest, error) {
 	v := f.Handle.Get(context.TODO())
 	data := v.(*manifestData)
 
-	return &data.manifest, data.err
+	return data.manifest, data.err
 }
 
 // FindModule tries to find a .ttcn3 based on its module name.
