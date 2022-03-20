@@ -38,8 +38,6 @@ func buildSuite(t *testing.T, strs ...string) *ntt.Suite {
 	suite := &ntt.Suite{}
 	for i, s := range strs {
 		name := fmt.Sprintf("%s_Module_%d.ttcn3", t.Name(), i)
-		//file := fs.Open(name)
-		//file.SetBytes([]byte(s))
 		suite.AddSources(name)
 		srcs, _ := suite.Sources()
 		fh := fs.Open(srcs[len(srcs)-1])

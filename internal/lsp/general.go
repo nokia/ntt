@@ -25,8 +25,8 @@ func registerSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
 			},
 			SemanticTokensOptions: protocol.SemanticTokensOptions{
 				Legend: protocol.SemanticTokensLegend{
-					TokenTypes:     tokenTypes,
-					TokenModifiers: tokenModifiers,
+					TokenTypes:     TokenTypes,
+					TokenModifiers: TokenModifiers,
 				},
 				Range: true,
 				Full:  true,

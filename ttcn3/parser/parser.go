@@ -1193,7 +1193,7 @@ func (p *parser) parseModule() *ast.Module {
 
 	m := new(ast.Module)
 	m.Tok = p.expect(token.MODULE)
-	m.Name = p.parseIdent()
+	m.Name = p.parseName()
 	p.names[ast.Name(m.Name)] = true
 
 	if p.tok == token.LANGUAGE {
