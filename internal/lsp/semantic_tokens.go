@@ -415,8 +415,15 @@ func (tokv *SemTokVisitor) VisitModuleDefs(n ast.Node) bool {
 				*/
 			} else if def := tokv.tree.LookupWithDB(node, tokv.db); len(def) > 0 {
 				switch defNode := def[0].Node.(type) {
-				case *ast.StructTypeDecl, *ast.Field:
+				case *ast.StructTypeDecl:
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
+				case *ast.Field:
+					parents := ast.Parents(defNode, def[0].Root)
+					if len(parents) > 0 {
+						if _, ok := parents[0].(*ast.SubTypeDecl); ok {
+							tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Type, 0)...)
+						}
+					}
 				case *ast.ImportDecl:
 					tokv.Data = append(tokv.Data, tokv.tg.NewTuple(uint32(begin.Line-1), uint32(begin.Column-1), uint32(end.Offset-begin.Offset), Namespace, 0)...)
 				case *ast.FormalPar:
