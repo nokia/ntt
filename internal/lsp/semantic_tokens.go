@@ -218,9 +218,9 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 				mod SemanticTokenModifiers
 			)
 			if id.IsName {
-				typ, mod = TokenType(tree, tree.ParentOf(id))
+				typ, mod = DefinitionToken(tree, tree.ParentOf(id))
 			} else {
-				typ, mod = LookupTokenType(tree, db, id)
+				typ, mod = ReferenceToken(tree, db, id)
 			}
 
 			if typ != None {
@@ -250,7 +250,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 	return tokens
 }
 
-func TokenType(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticTokenModifiers) {
+func DefinitionToken(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticTokenModifiers) {
 	switch n := n.(type) {
 	case *ast.Module:
 		return Namespace, Definition
@@ -286,12 +286,12 @@ func TokenType(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticTokenMo
 		}
 		return typ, mod
 	case *ast.Declarator:
-		return TokenType(tree, tree.ParentOf(n))
+		return DefinitionToken(tree, tree.ParentOf(n))
 	}
 	return None, Undefined
 }
 
-func LookupTokenType(tree *ttcn3.Tree, db *ttcn3.DB, id *ast.Ident) (SemanticTokenType, SemanticTokenModifiers) {
+func ReferenceToken(tree *ttcn3.Tree, db *ttcn3.DB, id *ast.Ident) (SemanticTokenType, SemanticTokenModifiers) {
 	name := id.String()
 	if typ, ok := builtins[name]; ok {
 		return typ, DefaultLibrary
@@ -301,8 +301,8 @@ func LookupTokenType(tree *ttcn3.Tree, db *ttcn3.DB, id *ast.Ident) (SemanticTok
 		return None, Undefined
 	}
 	if len(defs) > 1 {
-		log.Debugf("LookupTokenType: multiple definitions for %s\n", name)
+		log.Debugf("ReferenceToken: multiple definitions for %s\n", name)
 	}
-	typ, mod := TokenType(defs[0].Tree, defs[0].Node)
+	typ, mod := DefinitionToken(defs[0].Tree, defs[0].Node)
 	return typ, mod &^ (Definition | Declaration)
 }
