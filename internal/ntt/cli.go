@@ -132,6 +132,5 @@ func NewFromDirectory(dir string) (*Suite, error) {
 	}
 
 	suite := &Suite{}
-	suite.SetRoot(dir)
-	return suite, nil
+	return suite, suite.SetRoot(dir)
 }
