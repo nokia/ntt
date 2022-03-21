@@ -83,3 +83,48 @@ func TestConfigGet(t *testing.T) {
 		assert.True(t, errors.Is(err, strconv.ErrSyntax), err)
 	})
 }
+
+func TestGetVariables(t *testing.T) {
+	c := project.Config{
+		Sources: []string{"1", "2", "3"},
+		Variables: map[string]string{
+			"foo":     "fromConf",
+			"name":    "fromConf",
+			"sources": "a b c",
+		},
+	}
+	t.Run("invalid", func(t *testing.T) {
+		v, err := c.Get("fo")
+		assert.Nil(t, v)
+		assert.True(t, errors.Is(err, project.ErrNoSuchName))
+	})
+	t.Run("simple", func(t *testing.T) {
+		v, err := c.Get("foo")
+		assert.Equal(t, "fromConf", v)
+		assert.Nil(t, err)
+	})
+	t.Run("simple env", func(t *testing.T) {
+		os.Setenv("NTT_FOO", "fromEnv")
+		defer os.Unsetenv("NTT_FOO")
+		v, err := c.Get("foo")
+		assert.Equal(t, "fromEnv", v)
+		assert.Nil(t, err)
+	})
+	t.Run("conflict", func(t *testing.T) {
+		v, err := c.Get("name")
+		assert.Equal(t, "", v)
+		assert.Nil(t, err)
+	})
+	t.Run("conflict", func(t *testing.T) {
+		v, err := c.Get("sources")
+		assert.Equal(t, []string{"1", "2", "3"}, v)
+		assert.Nil(t, err)
+	})
+	t.Run("conflict env", func(t *testing.T) {
+		os.Setenv("NTT_SOURCES", "x y z")
+		defer os.Unsetenv("NTT_SOURCES")
+		v, err := c.Get("sources")
+		assert.Equal(t, []string{"x", "y", "z"}, v)
+		assert.Nil(t, err)
+	})
+}

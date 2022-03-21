@@ -150,39 +150,47 @@ func (c *Config) Get(name string) (interface{}, error) {
 	mapper := func(field string) bool {
 		return strings.ToLower(field) == strings.ToLower(strings.ReplaceAll(name, "_", ""))
 	}
+	field := reflect.Indirect(reflect.ValueOf(c)).FieldByNameFunc(mapper)
+	if s, ok := env.LookupEnv(fmt.Sprintf("NTT_%s", strings.ToUpper(name))); ok {
+		return cast(s, field)
+	}
+	if field.IsValid() {
+		return field.Interface(), nil
+	}
+	if s, ok := c.Variables[name]; ok {
+		return s, nil
+	}
+	return nil, fmt.Errorf("config: %w: %s", ErrNoSuchName, name)
+}
 
-	if v := reflect.Indirect(reflect.ValueOf(c)).FieldByNameFunc(mapper); v.IsValid() {
-		name = fmt.Sprintf("NTT_%s", strings.ToUpper(name))
-		if s, ok := env.LookupEnv(name); ok {
-			switch v.Interface().(type) {
-			case string:
-				return s, nil
-			case []string:
-				return strings.Fields(s), nil
-			case float64:
-				f, err := strconv.ParseFloat(s, 64)
-				if err != nil {
-					return nil, fmt.Errorf("config: %w", err)
-				}
-				return f, nil
-			case int:
-				i, err := strconv.ParseInt(s, 0, 64)
-				if err != nil {
-					return nil, fmt.Errorf("config: %w", err)
-				}
-				return int(i), nil
-			case bool:
-				b, err := strconv.ParseBool(s)
-				if err != nil {
-					return nil, fmt.Errorf("config: %w", err)
-				}
-				return b, nil
-			default:
-				return nil, fmt.Errorf("config: %w: %s=%q to %s", ErrConversion, name, s, v.Type())
-			}
-		}
-		return v.Interface(), nil
+func cast(s string, v reflect.Value) (interface{}, error) {
+	if !v.IsValid() {
+		return s, nil
 	}
 
-	return nil, fmt.Errorf("config: %w: %s", ErrNoSuchName, name)
+	switch v.Interface().(type) {
+	case string:
+		return s, nil
+	case []string:
+		return strings.Fields(s), nil
+	case float64:
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return nil, fmt.Errorf("config: %w", err)
+		}
+		return f, nil
+	case int:
+		i, err := strconv.ParseInt(s, 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("config: %w", err)
+		}
+		return int(i), nil
+	case bool:
+		b, err := strconv.ParseBool(s)
+		if err != nil {
+			return nil, fmt.Errorf("config: %w", err)
+		}
+		return b, nil
+	}
+	return s, nil
 }
