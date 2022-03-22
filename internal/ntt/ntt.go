@@ -74,6 +74,11 @@ func (suite *Suite) SetRoot(folder string) error {
 	return err
 }
 
+func (suite *Suite) SetSourceDir(folder string) {
+	suite.lazyInit()
+	suite.p.Config.SourceDir = folder
+}
+
 func (suite *Suite) LatestResults() (*results.DB, error) {
 	b, err := fs.Open("test_results.json").Bytes()
 	if err != nil {
