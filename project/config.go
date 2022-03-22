@@ -31,29 +31,57 @@ type Config struct {
 	// Imports are the dependencies of the project (e.g. adapters, codecs, etc.).
 	Imports []string `json:"imports,omitempty"`
 
+	// Variables are project specific environment variables.
 	Variables map[string]string `json:"variables,omitempty"`
 
+	// Hooks are the commands that are executed by ntt to signal various events.
+	Hooks `json:",inline" yaml:",inline"`
+
+	// HooksFile is the path to an executable file that is executed by ntt to signal various events.
 	HooksFile string `json:"test_hook,omitempty"`
-	Hooks     `json:",inline" yaml:",inline"`
 
-	ParametersFile string `json:"parameters_file,omitempty" yaml:"parameters_file"` // Path for module parameters file.
-	ParametersDir  string `json:"parameters_dir,omitempty" yaml:"parameters_dir"`   // Optional path for parameters_file.
-	Parameters     `json:"parameters" yaml:",inline"`
+	// Parameters are additional test suite parameters.
+	Parameters `json:"parameters" yaml:",inline"`
 
+	// ParametersFile is the path for additional test suite parameters.
+	ParametersFile string `json:"parameters_file,omitempty" yaml:"parameters_file"`
+
+	// ParametersDir is an additional search path for the parameters file.
+	ParametersDir string `json:"parameters_dir,omitempty" yaml:"parameters_dir"`
+
+	// Linter configuration.
+	Lint `json:"lint,omitempty"`
+
+	// Path to the an external linter configuration file.
 	LintFile string `json:"lint_file,omitempty" yaml:"lint_file"` // Path for lint file.
-	Lint     `json:"lint,omitempty"`
-	K3       `json:"k3,omitempty" yaml:"-"`
 
+	// K3 specific configuration.
+	K3 `json:"k3,omitempty" yaml:"-"`
+
+	// Path to the environment file.
 	EnvFile string `json:"env_file,omitempty" yaml:"-"`
 }
 
+// Hooks describes various hooks that can be executed by ntt. When a hook
+// returns an error ntt will stop the execution of the test suite.
 type Hooks struct {
+	// BeforeBuild is executed before the build process.
 	BeforeBuild []string `json:"before_build,omitempty" yaml:"before_build"`
-	AfterBuild  []string `json:"after_build,omitempty" yaml:"after_build"`
-	BeforeRun   []string `json:"before_run,omitempty" yaml:"before_run"`
-	AfterRun    []string `json:"after_run,omitempty" yaml:"after_run"`
-	BeforeTest  []string `json:"before_test,omitempty" yaml:"before_test"`
-	AfterTest   []string `json:"after_test,omitempty" yaml:"after_test"`
+
+	// AfterBuild is executed after the build process.
+	AfterBuild []string `json:"after_build,omitempty" yaml:"after_build"`
+
+	// BeforeRun is executed before any tests are executed.
+	BeforeRun []string `json:"before_run,omitempty" yaml:"before_run"`
+
+	// AfterRun is executed after all tests have been executed.
+	AfterRun []string `json:"after_run,omitempty" yaml:"after_run"`
+
+	// BeforeTest is executed before each test.
+	BeforeTest []string `json:"before_test,omitempty" yaml:"before_test"`
+
+	// AfterTest is executed after each test.
+	AfterTest []string `json:"after_test,omitempty" yaml:"after_test"`
 }
 
 // Parameters describes the parameters file.
@@ -93,13 +121,30 @@ type ExecuteCondition struct {
 }
 
 type Lint struct {
-	MaxLines        int  `json:"max_lines,omitempty" yaml:"max_lines"`
-	AlignedBraces   bool `json:"aligned_braces,omitempty" yaml:"aligned_braces"`
+
+	// The maximum nummber of lines a function, test or altstep can have.
+	MaxLines int `json:"max_lines,omitempty" yaml:"max_lines"`
+
+	// AlignedBraces reports an error if braces are not aligned.
+	AlignedBraces bool `json:"aligned_braces,omitempty" yaml:"aligned_braces"`
+
+	// RequireCaseElse reports an error if a case statement does not have an else branch.
 	RequireCaseElse bool `json:"require_case_else,omitempty" yaml:"require_case_else"`
-	Complexity      struct {
-		Max          int  `json:"max,omitempty" yaml:"max"`
+
+	// Complexity configures the cyclomatic complexity settings.
+	Complexity struct {
+		// The maximum allowed cyclomatic complexity of a function.
+		Max int `json:"max,omitempty" yaml:"max"`
+
+		// IgnoreGuards ignores the cyclomatic complexity of alt guards.
 		IgnoreGuards bool `json:"ignore_guards,omitempty" yaml:"ignore_guards"`
 	} `json:"complexity,omitempty" yaml:"complexity"`
+
+	// Naming configure the naming rules. Each key is a regular expression.
+	// A leading ! negates the rule. The value is the error message. Example:
+	//
+	//     "^[A-Z0-9_]+$": "global constants must be UPPER_CASE"
+	//
 	Naming struct {
 		Modules         map[string]string `json:"modules,omitempty" yaml:"modules"`
 		Tests           map[string]string `json:"tests,omitempty" yaml:"tests"`
@@ -115,29 +160,52 @@ type Lint struct {
 		Templates       map[string]string `json:"templates,omitempty" yaml:"templates"`
 		Locals          map[string]string `json:"locals,omitempty" yaml:"locals"`
 	} `json:"naming,omitempty" yaml:"naming"`
+
+	// Tags configure the tags each test must have.
 	Tags struct {
 		Tests map[string]string `json:"tests,omitempty" yaml:"tests"`
 	} `json:"tags,omitempty" yaml:"tags"`
+
 	Ignore struct {
+		// Modules to ignore.
 		Modules []string `json:"modules,omitempty" yaml:"modules"`
-		Files   []string `json:"files,omitempty" yaml:"files"`
+
+		// File to ignore.
+		Files []string `json:"files,omitempty" yaml:"files"`
 	} `json:"ignore,omitempty" yaml:"ignore"`
+
+	// Usage defines an upper limit for the number of times a symbol can be used.
 	Usage map[string]*struct {
-		Text  string `json:"text,omitempty" yaml:"text"`
-		Limit int    `json:"limit,omitempty" yaml:"limit"`
+		// Text to display when the limit is reached.
+		Text string `json:"text,omitempty" yaml:"text"`
+
+		// Limit is the number of times a symbol can be used.
+		Limit int `json:"limit,omitempty" yaml:"limit"`
 		count int
 	} `json:"usage,omitempty" yaml:"usage"`
+
 	Unused struct {
+		// Warn about unused modules.
 		Modules bool `json:"modules,omitempty" yaml:"modules"`
 	} `json:"unused,omitempty" yaml:"unused"`
 }
 
+// K3 specific configuration
 type K3 struct {
-	SessionID string   `json:"session_id"`
-	Compiler  string   `json:"compiler"`
-	Runtime   string   `json:"runtime"`
-	Builtins  []string `json:"builtins,omitempty"`
-	OssInfo   string   `json:"ossinfo,omitempty"`
+	// A unique identifier for the test.
+	SessionID string `json:"session_id"`
+
+	// Path to the compiler.
+	Compiler string `json:"compiler"`
+
+	// Path to the runtime.
+	Runtime string `json:"runtime"`
+
+	// Path to additional TTCN-3 files
+	Builtins []string `json:"builtins,omitempty"`
+
+	// Path to OSS Nokalva installation.
+	OssInfo string `json:"ossinfo,omitempty"`
 }
 
 // Get returns the configuration a given name. Environment variables with the
