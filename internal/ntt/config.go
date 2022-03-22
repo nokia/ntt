@@ -2,6 +2,7 @@ package ntt
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/jinzhu/copier"
 	"github.com/nokia/ntt/k3"
@@ -62,7 +63,10 @@ func (s *Suite) Config() (*project.Config, error) {
 	c.Timeout, err = s.Timeout()
 	check(err)
 
-	c.Root = s.Root()
+	if path, err := filepath.Abs(c.SourceDir); err == nil {
+		c.SourceDir = path
+	}
+	check(err)
 
 	i, err := s.Id()
 	check(err)

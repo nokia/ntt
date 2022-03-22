@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -22,109 +21,6 @@ var (
 		Use:   "show [ <file>...] [-- var...]",
 		Short: "Show test suite configuration.",
 		RunE:  show,
-	}
-
-	stringers = map[string]func(suite *ntt.Suite) string{
-		"name": func(suite *ntt.Suite) string {
-			s, err := suite.Name()
-			if err != nil {
-				fatal(err)
-			}
-			return s
-		},
-
-		"sources": func(suite *ntt.Suite) string {
-			srcs, err := suite.Sources()
-			if err != nil {
-				fatal(err)
-			}
-			return strings.Join(srcs, "\n")
-		},
-
-		"imports": func(suite *ntt.Suite) string {
-			imps, err := suite.Imports()
-			if err != nil {
-				fatal(err)
-			}
-			return strings.Join(imps, "\n")
-		},
-		"timeout": func(suite *ntt.Suite) string {
-			t, err := suite.Timeout()
-			if err != nil {
-				fatal(err)
-			}
-			if t > 0 {
-				return fmt.Sprint(t)
-			}
-			return ""
-
-		},
-
-		"parameters_dir": func(suite *ntt.Suite) string {
-			d, err := suite.ParametersDir()
-			if err != nil {
-				fatal(err)
-			}
-			return d
-		},
-
-		"parameters_file": func(suite *ntt.Suite) string {
-			f, err := suite.ParametersFile()
-			if err != nil {
-				fatal(err)
-			}
-			if f != nil {
-				return f.Path()
-			}
-			return ""
-		},
-
-		"test_hook": func(suite *ntt.Suite) string {
-			f, err := suite.TestHook()
-			if err != nil {
-				fatal(err)
-			}
-			if f != nil {
-				return f.Path()
-			}
-			return ""
-		},
-
-		"source_dir": func(suite *ntt.Suite) string {
-			if root := suite.Root(); root != "" {
-				return root
-			}
-			return ""
-		},
-
-		"datadir": func(suite *ntt.Suite) string {
-			s, err := suite.Getenv("NTT_DATADIR")
-			if err != nil {
-				fatal(err)
-			}
-			return s
-		},
-
-		"session_id": func(suite *ntt.Suite) string {
-			s, err := suite.Getenv("NTT_SESSION_ID")
-			if err != nil {
-				fatal(err)
-			}
-			return s
-		},
-
-		"env": func(suite *ntt.Suite) string {
-			env, err := suite.Environ()
-			if err != nil {
-				fatal(err)
-			}
-			sort.Strings(env)
-			res := make([]string, 0, len(env))
-			for _, e := range env {
-				res = append(res, fmt.Sprintf(`'%s'`, e))
-			}
-			return strings.Join(res, "\n")
-		},
 	}
 )
 
@@ -158,14 +54,6 @@ func show(cmd *cobra.Command, args []string) error {
 	r.Files, err = project.Files(suite)
 	checkErr(err)
 
-	if c.Root != "" {
-		r.SourceDir = c.Root
-		if path, err := filepath.Abs(r.SourceDir); err == nil {
-			r.SourceDir = path
-		}
-		checkErr(err)
-	}
-
 	for _, dir := range c.K3.Builtins {
 		r.AuxFiles = append(r.AuxFiles, fs.FindTTCN3Files(dir)...)
 	}
@@ -176,9 +64,22 @@ func show(cmd *cobra.Command, args []string) error {
 	case ShSetup:
 		return printShellScript(&r, keys)
 	case len(keys) != 0:
-		return printUserKeys(c, keys)
+		return printValues(c, keys)
 	default:
-		return printDefaultKeys(suite)
+		keys := []string{
+			"name",
+			"root",
+			"source_dir",
+			"sources",
+			"imports",
+			"timeout",
+			"parameters_dir",
+			"parameters_file",
+			"test_hook",
+			"datadir",
+			"session_id",
+		}
+		return printKeyValues(c, keys)
 	}
 }
 
@@ -277,57 +178,56 @@ false
 	return nil
 }
 
-func printUserKeys(c *project.Config, keys []string) error {
-	for _, key := range keys {
-		var (
-			v   interface{}
-			err error
-		)
+func get(c *project.Config, key string) ([]string, error) {
+	var (
+		v   interface{}
+		err error
+	)
 
-		if key == "env" {
-			v = c.Variables
-		} else {
-			v, err = c.Get(key)
-			if err != nil {
-				return err
-			}
+	if key == "env" {
+		v = c.Variables
+	} else {
+		v, err = c.Get(key)
+		if err != nil {
+			return nil, err
 		}
+	}
 
-		switch reflect.TypeOf(v).Kind() {
-		case reflect.Slice:
-			fmt.Println(strings.Join(v.([]string), "\n"))
-		case reflect.Map:
-			s := make([]string, 0, len(v.(map[string]string)))
-			for k, v := range v.(map[string]string) {
-				s = append(s, fmt.Sprintf("'%s=%s'", k, v))
-			}
-			sort.Strings(s)
-			for _, s := range s {
-				fmt.Println(s)
-			}
-		default:
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Slice:
+		return v.([]string), nil
+	case reflect.Map:
+		s := make([]string, 0, len(v.(map[string]string)))
+		for k, v := range v.(map[string]string) {
+			s = append(s, fmt.Sprintf("'%s=%s'", k, v))
+		}
+		sort.Strings(s)
+		return s, nil
+	default:
+		return []string{fmt.Sprint(v)}, nil
+	}
+}
+
+func printValues(c *project.Config, keys []string) error {
+	for _, key := range keys {
+		s, err := get(c, key)
+		if err != nil {
+			return err
+		}
+		for _, v := range s {
 			fmt.Println(v)
 		}
 	}
 	return nil
 }
 
-func printDefaultKeys(suite *ntt.Suite) error {
-	for _, key := range []string{
-		"name",
-		"sources",
-		"imports",
-		"timeout",
-		"parameters_dir",
-		"parameters_file",
-		"test_hook",
-		"source_dir",
-		"datadir",
-		"session_id",
-	} {
-		if s := stringers[key](suite); s != "" {
-			fmt.Printf("K3_%s=\"%s\"\n", strings.ToUpper(key), strings.Replace(s, "\n", " ", -1))
+func printKeyValues(c *project.Config, keys []string) error {
+	for _, key := range keys {
+		s, err := get(c, key)
+		if err != nil {
+			return err
 		}
+		fmt.Printf("NTT_%s=\"%s\"\n", strings.ToUpper(key), strings.Join(s, " "))
 	}
 
 	return nil
@@ -360,12 +260,4 @@ func (r *ConfigReport) Err() string {
 		return r.err.Error()
 	}
 	return ""
-}
-
-func path(f *fs.File, err error) (string, error) {
-	if f == nil {
-		return "", err
-	}
-
-	return f.Path(), err
 }
