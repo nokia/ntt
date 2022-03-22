@@ -60,7 +60,7 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*ntt.Suite {
 
 // AddSuite add a TTCN-3 test suite to the list of known suites.
 // the list of know suites.
-func (s *Suites) AddSuite(root string) {
+func (s *Suites) AddSuite(root project.Suite) {
 	s.mu.Lock()
 
 	// Although the folder is known, it might be necessary to re-read it due to
@@ -72,8 +72,9 @@ func (s *Suites) AddSuite(root string) {
 
 	log.Printf("Adding %q to list of known test suites\n", root)
 	suite := &ntt.Suite{}
-	suite.SetRoot(root)
-	s.roots[root] = suite
+	suite.SetRoot(root.RootDir)
+	suite.SetSourceDir(root.SourceDir)
+	s.roots[root.RootDir] = suite
 	files, _ := suite.Files()
 	s.mu.Unlock()
 

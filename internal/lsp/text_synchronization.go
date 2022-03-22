@@ -33,7 +33,7 @@ func (s *Server) didOpen(ctx context.Context, params *protocol.DidOpenTextDocume
 			}
 		} else {
 			log.Printf("Could not find a good candidate. Trying %q recursively and hope for the best.\n", dir)
-			s.AddSuite(dir)
+			s.AddSuite(project.Suite{RootDir: dir, SourceDir: dir})
 		}
 
 	}

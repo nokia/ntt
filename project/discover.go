@@ -10,29 +10,28 @@ import (
 // Discover walks towards the file system root and collects
 // known test suite layouts.
 //
-// This initial version of Discover returns a string slice, but this may change
-// in future releases.
-func Discover(path string) []string {
+// Discover returns a list of potential test suite root directories.
+func Discover(path string) []Suite {
 
 	// Convert possible URIs to proper file system paths.
 	path = fs.Path(path)
 
-	var list []string
+	var list []Suite
 
 	fs.WalkUp(path, func(path string) bool {
 		// Check source directories
 		if file := filepath.Join(path, ManifestFile); fs.IsRegular(file) {
 			log.Debugf("discovered manifest: %q\n", file)
-			list = append(list, path)
+			list = append(list, Suite{RootDir: path, SourceDir: path})
 		}
-		list = append(list, readSuites(filepath.Join(path, IndexFile))...)
+		list = append(list, readIndices(filepath.Join(path, IndexFile))...)
 
 		// Check build directories
 		for _, file := range fs.Glob(path + "/*build*/" + IndexFile) {
-			list = append(list, readSuites(file)...)
+			list = append(list, readIndices(file)...)
 		}
 		for _, file := range fs.Glob(path + "/build/native/*/sct/" + IndexFile) {
-			list = append(list, readSuites(file)...)
+			list = append(list, readIndices(file)...)
 		}
 		return true
 	})
@@ -42,7 +41,7 @@ func Discover(path string) []string {
 		fs.WalkUp(path, func(path string) bool {
 			if tests := fs.Glob(path + "/testcases/*"); len(tests) > 0 {
 				log.Debugf("discovered testcases folder in %q\n", path)
-				list = append(list, path)
+				list = append(list, Suite{RootDir: path, SourceDir: path})
 				return false
 			}
 			return true
@@ -50,8 +49,8 @@ func Discover(path string) []string {
 	}
 
 	// Remove duplicate entries
-	result := make([]string, 0, len(list))
-	visited := make(map[string]bool)
+	result := make([]Suite, 0, len(list))
+	visited := make(map[Suite]bool)
 	for _, v := range list {
 		if !visited[v] {
 			visited[v] = true
@@ -61,8 +60,8 @@ func Discover(path string) []string {
 	return result
 }
 
-func readSuites(file string) []string {
-	var list []string
+func readIndices(file string) []Suite {
+	var list []Suite
 
 	si, err := ReadIndex(file)
 	if err != nil {
@@ -73,7 +72,7 @@ func readSuites(file string) []string {
 	for _, suite := range si.Suites {
 		if suite.RootDir != "" {
 			log.Debugf("using root_dir: %q\n", suite.RootDir)
-			list = append(list, suite.RootDir)
+			list = append(list, suite)
 		}
 	}
 
