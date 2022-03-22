@@ -174,7 +174,11 @@ func Variables(vars map[string]string) ([]string, error) {
 }
 
 func Open(path string) (*Project, error) {
-	p := Project{root: path, Config: Config{}}
+	p := Project{root: path,
+		Config: Config{
+			Root:      path,
+			SourceDir: path,
+		}}
 
 	// Try reading the manifest
 	file := filepath.Join(p.root, ManifestFile)

@@ -22,6 +22,9 @@ type Config struct {
 	// Root folder of the project.
 	Root string `json:"root,omitempty" yaml:"-"`
 
+	// Source folder of the project.
+	SourceDir string `json:"source_dir,omitempty" yaml:"-"`
+
 	// Name of the project.
 	Name string `json:"name,omitempty"`
 
