@@ -1,13 +1,17 @@
 package project
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/nokia/ntt/internal/env"
+	"github.com/nokia/ntt/internal/fs"
 )
 
 var (
@@ -15,7 +19,31 @@ var (
 	ErrConversion = errors.New("conversion error")
 )
 
-const ManifestFile = "package.yml"
+const (
+	ManifestFile = "package.yml"
+	IndexFile    = "ttcn3_suites.json"
+)
+
+// Index specifies where to look for project configuration files.
+type Index struct {
+	// SourceDir is the top level source directory.
+	SourceDir string `json:"source_dir"`
+
+	// BinaryDir is the top level binary directory.
+	BinaryDir string `json:"binary_dir"`
+
+	// Suite is a list of directories to search for project configuration files.
+	Suites []Suite `json:"suites"`
+}
+
+// Suite specifies the root and source directories of a project.
+type Suite struct {
+	// RootDir is the root directory of the project. This is usually where the package.yml is located.
+	RootDir string `json:"root_dir"`
+
+	// SourceDir is the directory where the test suite source files are located.
+	SourceDir string `json:"source_dir"`
+}
 
 // Config describes everything required to build and run test suites
 type Config struct {
@@ -123,6 +151,7 @@ type ExecuteCondition struct {
 	Presets []string `json:"presets,omitempty"`
 }
 
+// Lint describes the lint configuration.
 type Lint struct {
 
 	// The maximum nummber of lines a function, test or altstep can have.
@@ -264,4 +293,28 @@ func cast(s string, v reflect.Value) (interface{}, error) {
 		return b, nil
 	}
 	return s, nil
+}
+
+func ReadIndex(file string) (Index, error) {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return Index{}, err
+	}
+
+	c := Index{}
+
+	if err := json.Unmarshal(b, &c); err != nil {
+		return Index{}, err
+	}
+
+	base := filepath.Dir(file)
+	for i := range c.Suites {
+		if c.Suites[i].RootDir != "" {
+			c.Suites[i].RootDir = fs.Real(base, c.Suites[i].RootDir)
+		}
+		if c.Suites[i].SourceDir != "" {
+			c.Suites[i].SourceDir = fs.Real(base, c.Suites[i].SourceDir)
+		}
+	}
+	return c, nil
 }
