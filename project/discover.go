@@ -5,7 +5,6 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/project/suiteindex"
 )
 
 // Discover walks towards the file system root and collects
@@ -26,13 +25,13 @@ func Discover(path string) []string {
 			log.Debugf("discovered manifest: %q\n", file)
 			list = append(list, path)
 		}
-		list = append(list, readSuites(filepath.Join(path, suiteindex.Name))...)
+		list = append(list, readSuites(filepath.Join(path, IndexFile))...)
 
 		// Check build directories
-		for _, file := range fs.Glob(path + "/*build*/" + suiteindex.Name) {
+		for _, file := range fs.Glob(path + "/*build*/" + IndexFile) {
 			list = append(list, readSuites(file)...)
 		}
-		for _, file := range fs.Glob(path + "/build/native/*/sct/" + suiteindex.Name) {
+		for _, file := range fs.Glob(path + "/build/native/*/sct/" + IndexFile) {
 			list = append(list, readSuites(file)...)
 		}
 		return true
@@ -65,7 +64,7 @@ func Discover(path string) []string {
 func readSuites(file string) []string {
 	var list []string
 
-	si, err := suiteindex.ReadFile(file)
+	si, err := ReadIndex(file)
 	if err != nil {
 		return nil
 	}
