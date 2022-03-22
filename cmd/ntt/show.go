@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"text/template"
@@ -175,7 +176,7 @@ func show(cmd *cobra.Command, args []string) error {
 	case ShSetup:
 		return printShellScript(&r, keys)
 	case len(keys) != 0:
-		return printUserKeys(suite, keys)
+		return printUserKeys(c, keys)
 	default:
 		return printDefaultKeys(suite)
 	}
@@ -276,22 +277,37 @@ false
 	return nil
 }
 
-func printUserKeys(suite *ntt.Suite, keys []string) error {
-
+func printUserKeys(c *project.Config, keys []string) error {
 	for _, key := range keys {
-		if fun, found := stringers[key]; found {
-			if s := fun(suite); s != "" {
+		var (
+			v   interface{}
+			err error
+		)
+
+		if key == "env" {
+			v = c.Variables
+		} else {
+			v, err = c.Get(key)
+			if err != nil {
+				return err
+			}
+		}
+
+		switch reflect.TypeOf(v).Kind() {
+		case reflect.Slice:
+			fmt.Println(strings.Join(v.([]string), "\n"))
+		case reflect.Map:
+			s := make([]string, 0, len(v.(map[string]string)))
+			for k, v := range v.(map[string]string) {
+				s = append(s, fmt.Sprintf("'%s=%s'", k, v))
+			}
+			sort.Strings(s)
+			for _, s := range s {
 				fmt.Println(s)
 			}
-			continue
+		default:
+			fmt.Println(v)
 		}
-
-		s, err := suite.Getenv(key)
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(s)
 	}
 	return nil
 }
