@@ -27,6 +27,26 @@ func TestModule(t *testing.T) {
 	}, actual)
 }
 
+func TestEnum(t *testing.T) {
+	actual := testTokens(t, nil, `
+        module Test {
+	        type enumerated Enum { E1 }
+	        type record R { enumerated { E2 } E /* E not colored*/ }
+		control { log(E1, E2, R.E /* E not colored */) }
+	}`)
+	assert.Equal(t, []Token{
+		{Line: 2, Text: "Test", Type: lsp.Namespace, Mod: lsp.Definition},
+		{Line: 3, Text: "Enum", Type: lsp.Enum, Mod: lsp.Definition},
+		{Line: 3, Text: "E1", Type: lsp.EnumMember, Mod: lsp.Definition},
+		{Line: 4, Text: "R", Type: lsp.Struct, Mod: lsp.Definition},
+		{Line: 4, Text: "E2", Type: lsp.EnumMember, Mod: lsp.Definition},
+		{Line: 5, Text: "log", Type: lsp.Function, Mod: lsp.DefaultLibrary},
+		{Line: 5, Text: "E1", Type: lsp.EnumMember},
+		{Line: 5, Text: "E2", Type: lsp.EnumMember},
+		{Line: 5, Text: "R", Type: lsp.Struct},
+	}, actual)
+}
+
 func TestComponentDef(t *testing.T) {
 	actual := testTokens(t, nil, `
         module Test

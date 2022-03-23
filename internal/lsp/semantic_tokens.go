@@ -218,7 +218,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 				mod SemanticTokenModifiers
 			)
 			if id.IsName {
-				typ, mod = DefinitionToken(tree, tree.ParentOf(id))
+				typ, mod = DefinitionToken(tree, id)
 			} else {
 				typ, mod = ReferenceToken(tree, db, id)
 			}
@@ -258,8 +258,8 @@ func appendToken(tokens []uint32, tok ast.Token, tree *ttcn3.Tree, typ SemanticT
 	return tokens, line, col
 }
 
-func DefinitionToken(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticTokenModifiers) {
-	switch n := n.(type) {
+func DefinitionToken(tree *ttcn3.Tree, id ast.Node) (SemanticTokenType, SemanticTokenModifiers) {
+	switch n := tree.ParentOf(id).(type) {
 	case *ast.Module:
 		return Namespace, Definition
 	case *ast.ImportDecl:
@@ -268,6 +268,13 @@ func DefinitionToken(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticT
 		return Parameter, Declaration
 	case *ast.StructTypeDecl:
 		return Struct, Definition
+	case *ast.EnumTypeDecl:
+		if id == n.Name {
+			return Enum, Definition
+		}
+		return EnumMember, Definition
+	case *ast.EnumSpec:
+		return EnumMember, Definition
 	case *ast.Field:
 		if _, ok := tree.ParentOf(n).(*ast.SubTypeDecl); ok {
 			return Type, Definition
@@ -294,7 +301,7 @@ func DefinitionToken(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticT
 		}
 		return typ, mod
 	case *ast.Declarator:
-		return DefinitionToken(tree, tree.ParentOf(n))
+		return DefinitionToken(tree, n)
 	}
 	return None, Undefined
 }
@@ -311,6 +318,6 @@ func ReferenceToken(tree *ttcn3.Tree, db *ttcn3.DB, id *ast.Ident) (SemanticToke
 	if len(defs) > 1 {
 		log.Debugf("ReferenceToken: multiple definitions for %s\n", name)
 	}
-	typ, mod := DefinitionToken(defs[0].Tree, defs[0].Node)
+	typ, mod := DefinitionToken(defs[0].Tree, defs[0].Ident)
 	return typ, mod &^ (Definition | Declaration)
 }
