@@ -204,7 +204,7 @@ func TestUniversalCharstring(t *testing.T) {
         module Test
         {
                 type record MyRec {
-                        universal charstring  uch,
+                        universal /* foo */ charstring  uch,
                         charstring ch
                 }
                 type universal charstring UcharT;
@@ -214,12 +214,15 @@ func TestUniversalCharstring(t *testing.T) {
 	assert.Equal(t, []Token{
 		{Line: 2, Text: "Test", Type: lsp.Namespace, Mod: lsp.Definition},
 		{Line: 4, Text: "MyRec", Type: lsp.Struct, Mod: lsp.Definition},
-		{Line: 5, Text: "universal charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 5, Text: "universal", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 5, Text: "charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
 		{Line: 6, Text: "charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
-		{Line: 8, Text: "universal charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 8, Text: "universal", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 8, Text: "charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
 		{Line: 8, Text: "UcharT", Type: lsp.Type, Mod: lsp.Definition},
 		{Line: 9, Text: "f", Type: lsp.Function, Mod: lsp.Definition},
-		{Line: 9, Text: "universal charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 9, Text: "universal", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 9, Text: "charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
 	}, actual)
 }
 
@@ -251,7 +254,8 @@ func TestPortTypeDeclSemTok(t *testing.T) {
 		{Line: 6, Text: "Type1", Type: lsp.Type, Mod: lsp.Definition},
 		{Line: 7, Text: "MyPort", Type: lsp.Interface, Mod: lsp.Definition},
 		{Line: 8, Text: "integer", Type: lsp.Type, Mod: lsp.DefaultLibrary},
-		{Line: 8, Text: "universal charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 8, Text: "universal", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 8, Text: "charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
 		{Line: 9, Text: "Type1", Type: lsp.Type},
 		{Line: 9, Text: "TestPortTypeDeclSemTok_Module_1", Type: lsp.Namespace},
 		{Line: 9, Text: "Type2", Type: lsp.Type},
