@@ -224,30 +224,38 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 			}
 
 			if typ != None {
-				pos := tree.Position(id.Pos())
-				pos.Line -= 1
-				pos.Column -= 1
-
-				// relative line
-				relLine := pos.Line - line
-				if relLine != 0 {
-					col = 0
+				tokens, line, col = appendToken(tokens, id.Tok, tree, typ, mod, line, col)
+				if id.Tok2.IsValid() {
+					tokens, line, col = appendToken(tokens, id.Tok2, tree, typ, mod, line, col)
 				}
-				line = pos.Line
-
-				// relative column
-				relCol := pos.Column - col
-				col = pos.Column
-
-				// token width
-				width := int(id.End() - id.Pos())
-				tokens = append(tokens, uint32(relLine), uint32(relCol), uint32(width), uint32(typ), uint32(mod))
 			}
 		}
 		return true
 	})
 	log.Debugf("SemanticTokens: %d identifiers, %d bytes\n", len(tokens)/5, end-begin)
 	return tokens
+}
+
+func appendToken(tokens []uint32, tok ast.Token, tree *ttcn3.Tree, typ SemanticTokenType, mod SemanticTokenModifiers, line int, col int) ([]uint32, int, int) {
+	pos := tree.Position(tok.Pos())
+	pos.Line -= 1
+	pos.Column -= 1
+
+	// relative line
+	relLine := pos.Line - line
+	if relLine != 0 {
+		col = 0
+	}
+	line = pos.Line
+
+	// relative column
+	relCol := pos.Column - col
+	col = pos.Column
+
+	// token width
+	width := int(tok.End() - tok.Pos())
+	tokens = append(tokens, uint32(relLine), uint32(relCol), uint32(width), uint32(typ), uint32(mod))
+	return tokens, line, col
 }
 
 func DefinitionToken(tree *ttcn3.Tree, n ast.Node) (SemanticTokenType, SemanticTokenModifiers) {
