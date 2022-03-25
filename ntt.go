@@ -826,8 +826,8 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 	test.ModulePars = pars
 	test.Dir = workingDir
 	test.LogFile = logFile
-	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
-	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(job.Suite.RuntimePaths, ":")))
+	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("K3R_PATH")))
+	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("LD_LIBRARY_PATH")))
 	for event := range test.RunWithContext(ctx) {
 		results <- Result{
 			Job:   job,
