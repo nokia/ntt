@@ -184,7 +184,7 @@ func Open(path string) (*Project, error) {
 	file := filepath.Join(p.root, ManifestFile)
 	if b, err := fs.Content(file); err == nil {
 		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
-		return &p, yaml.UnmarshalStrict(b, &p.Config)
+		return &p, yaml.UnmarshalStrict(b, &p.Config.Manifest)
 	}
 
 	// Fall back to recursive scanning

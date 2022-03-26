@@ -86,11 +86,13 @@ func TestConfigGet(t *testing.T) {
 
 func TestGetVariables(t *testing.T) {
 	c := project.Config{
-		Sources: []string{"1", "2", "3"},
-		Variables: map[string]string{
-			"foo":     "fromConf",
-			"name":    "fromConf",
-			"sources": "a b c",
+		Manifest: project.Manifest{
+			Sources: []string{"1", "2", "3"},
+			Variables: map[string]string{
+				"foo":     "fromConf",
+				"name":    "fromConf",
+				"sources": "a b c",
+			},
 		},
 	}
 	t.Run("invalid", func(t *testing.T) {
