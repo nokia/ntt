@@ -360,8 +360,10 @@ func (suite *Suite) parseManifest() (*project.Config, error) {
 	}
 
 	f.Handle = suite.store.Bind(f.ID(), func(ctx context.Context) interface{} {
-		data := manifestData{}
-		data.err = yaml.UnmarshalStrict(b, &data.manifest)
+		data := manifestData{
+			manifest: &project.Config{},
+		}
+		data.err = yaml.UnmarshalStrict(b, &data.manifest.Manifest)
 		return &data
 	})
 

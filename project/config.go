@@ -48,11 +48,23 @@ type Suite struct {
 // Config describes everything required to build and run test suites
 type Config struct {
 	// Root folder of the project.
-	Root string `json:"root,omitempty" yaml:"-"`
+	Root string `json:"root,omitempty"`
 
 	// Source folder of the project.
-	SourceDir string `json:"source_dir,omitempty" yaml:"-"`
+	SourceDir string `json:"source_dir,omitempty"`
 
+	// Manifest is the project manifest file.
+	Manifest `json:,inline"`
+
+	// K3 specific configuration.
+	K3 `json:"k3,omitempty"`
+
+	// Path to the environment file.
+	EnvFile string `json:"env_file,omitempty"`
+}
+
+// Manifest describe the project manifest file (package.yml).
+type Manifest struct {
 	// Name of the project.
 	Name string `json:"name,omitempty"`
 
@@ -85,12 +97,6 @@ type Config struct {
 
 	// Path to the an external linter configuration file.
 	LintFile string `json:"lint_file,omitempty" yaml:"lint_file"` // Path for lint file.
-
-	// K3 specific configuration.
-	K3 `json:"k3,omitempty" yaml:"-"`
-
-	// Path to the environment file.
-	EnvFile string `json:"env_file,omitempty" yaml:"-"`
 }
 
 // Hooks describes various hooks that can be executed by ntt. When a hook
