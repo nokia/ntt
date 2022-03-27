@@ -18,7 +18,7 @@ import (
 
 type Runner struct {
 	// Project.Interface provides files and root directory.
-	p project.Interface
+	p *project.Config
 
 	// Working directory
 	Dir string
@@ -63,7 +63,7 @@ func (r *Runner) LogDir(testID string) string {
 }
 
 // New returns a new Runner for executing TTCN-3 tests with k3s backend.
-func New(w io.Writer, p project.Interface) (*Runner, error) {
+func New(w io.Writer, p *project.Config) (*Runner, error) {
 
 	// Find a nice working directory to put logs and other artifacts in it.
 	dir, err := nttWorkingDir(p)
@@ -88,9 +88,9 @@ func New(w io.Writer, p project.Interface) (*Runner, error) {
 }
 
 // nttWorkingDir returns a working directory for ntt artifacts.
-func nttWorkingDir(p project.Interface) (string, error) {
+func nttWorkingDir(p *project.Config) (string, error) {
 
-	dir := filepath.Join(fs.Path(p.Root()), "ntt.test")
+	dir := filepath.Join(fs.Path(p.Root), "ntt.test")
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
 		log.Debugf("Creating directory %q failed: %s", dir, err.Error())
@@ -105,7 +105,7 @@ func nttWorkingDir(p project.Interface) (string, error) {
 // This convencience function sets up common configuration:
 // It will set path to ntt-binary, sets proper test suite arguments, environ
 // variables and working directory.
-func nttCommand(p project.Interface, cmdName string, opts ...string) *exec.Cmd {
+func nttCommand(p *project.Config, cmdName string, opts ...string) *exec.Cmd {
 	cmd := exec.Command(nttExecutable())
 	cmd.Env = nttEnv(p)
 
@@ -143,8 +143,8 @@ func nttExecutable() string {
 
 // nttArgs returns the project root directory. If the project has no root
 // directory nttArgs will return a list of all project source files.
-func nttArgs(p project.Interface) []string {
-	if root := p.Root(); root != "" {
+func nttArgs(p *project.Config) []string {
+	if root := p.Root; root != "" {
 		return []string{root}
 	}
 
@@ -156,14 +156,14 @@ func nttArgs(p project.Interface) []string {
 // Nokia component tests.
 // nttEnv also copies os.Environ for variables like PATH and LD_LIBRARY_PATH
 // required by various scripts and C++ applications.
-func nttEnv(p project.Interface) []string {
+func nttEnv(p *project.Config) []string {
 
 	// SCTs use environment variable `NTT_CACHE` to find various required
 	// files. For example file `k3.env`, which is required for the SCTs to
 	// function correctly.
-	return append(os.Environ(), "NTT_CACHE="+strings.Join(func(p project.Interface) []string {
+	return append(os.Environ(), "NTT_CACHE="+strings.Join(func(p *project.Config) []string {
 		dirs := strings.Split(env.Getenv("NTT_CACHE"), ":")
-		if path := fs.FindK3EnvInCurrPath(fs.Path(p.Root())); path != "" {
+		if path := fs.FindK3EnvInCurrPath(fs.Path(p.Root)); path != "" {
 			dirs = append(dirs, path)
 		}
 		return dirs

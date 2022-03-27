@@ -317,7 +317,7 @@ func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int,
 	go func() {
 		defer close(out)
 		i := 0
-		for id := range GenerateIDs(ctx, ids, suite.Sources, env.Getenv("K3_40_RUN_POLICY"), Basket) {
+		for id := range GenerateIDs(ctx, ids, suite.Manifest.Sources, env.Getenv("K3_40_RUN_POLICY"), Basket) {
 			i++
 			out <- ledger.NewJob(id, suite)
 		}

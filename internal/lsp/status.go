@@ -10,7 +10,7 @@ import (
 	"text/template"
 
 	"github.com/dustin/go-humanize"
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
 )
 
 const statusTemplate = `
@@ -41,8 +41,8 @@ type Status struct {
 }
 
 var funcMap = template.FuncMap{
-	"files": func(suite *ntt.Suite) []string {
-		f, _ := suite.Files()
+	"files": func(suite *Suite) []string {
+		f, _ := project.Files(suite.Config)
 		return f
 	},
 	"memory": func() string {

@@ -262,6 +262,65 @@ func TestExpand(t *testing.T) {
 
 }
 
+func TestExpandAll(t *testing.T) {
+	vars := map[string]string{
+		"a": "a$b",
+		"b": "b$c",
+		"c": "c",
+	}
+
+	t.Run("nil", func(t *testing.T) {
+		err := env.ExpandAll(nil, vars)
+		assert.Nil(t, err)
+	})
+	t.Run("string", func(t *testing.T) {
+		err := env.ExpandAll("$a", vars)
+		assert.Nil(t, err)
+	})
+	t.Run("string", func(t *testing.T) {
+		s := "$a"
+		err := env.ExpandAll(&s, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, "abc", s)
+	})
+	t.Run("slice", func(t *testing.T) {
+		s := []string{"$a", "$b", "$c"}
+		err := env.ExpandAll(&s, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"abc", "bc", "c"}, s)
+	})
+	t.Run("slice", func(t *testing.T) {
+		s := [][]string{{"$a"}}
+		err := env.ExpandAll(&s, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, [][]string{{"abc"}}, s)
+	})
+	t.Run("slice", func(t *testing.T) {
+		s := []map[string]string{{"$a": "$a"}}
+		err := env.ExpandAll(&s, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, []map[string]string{{"$a": "abc"}}, s)
+	})
+	t.Run("map", func(t *testing.T) {
+		m := map[string]string{"$a": "$a"}
+		err := env.ExpandAll(m, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, "abc", m["$a"])
+	})
+	t.Run("map", func(t *testing.T) {
+		m := map[string]interface{}{"$a": "$a"}
+		err := env.ExpandAll(m, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, "abc", m["$a"])
+	})
+	t.Run("map", func(t *testing.T) {
+		m := map[string][]string{"$a": {"$a"}}
+		err := env.ExpandAll(m, vars)
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"abc"}, m["$a"])
+	})
+}
+
 func setContent(file string, content string) {
 	fs.SetContent(file, []byte(content))
 }

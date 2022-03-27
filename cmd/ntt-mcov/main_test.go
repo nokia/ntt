@@ -12,9 +12,9 @@ import (
 
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
+	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,16 +83,12 @@ func testBuild(t *testing.T, args ...string) string {
 		t.Skip("no k3 runtime found")
 	}
 
-	suite, err := ntt.NewFromArgs(args...)
+	p, err := project.Open(args...)
 	if err != nil {
 		t.Fatal(err)
 	}
-	name, err := suite.Name()
-	if err != nil {
+	if err := ntt2.BuildProject(p.Name, p); err != nil {
 		t.Fatal(err)
 	}
-	if err := ntt2.BuildProject(name, suite); err != nil {
-		t.Fatal(err)
-	}
-	return cache.Lookup(fmt.Sprintf("%s.t3xf", name))
+	return cache.Lookup(fmt.Sprintf("%s.t3xf", p.Name))
 }

@@ -8,7 +8,6 @@ import (
 
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -152,11 +151,6 @@ func list(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	suite, err := ntt.NewFromArgs(args...)
-	if err != nil {
-		return err
-	}
-
 	formatJSON, _ = cmd.Flags().GetBool("json")
 	formatPlain, _ = cmd.Flags().GetBool("plain")
 
@@ -164,7 +158,7 @@ func list(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(w, "[")
 	}
 
-	files, err := filesOfInterest(cmd.Use, suite)
+	files, err := filesOfInterest(cmd.Use, Project)
 	for _, f := range files {
 		tree := ttcn3.ParseFile(f)
 		if tree.Err != nil {
@@ -298,12 +292,12 @@ func PrintMatch(pos loc.Position, id string, tags ...string) {
 	fmt.Fprintln(w)
 }
 
-func filesOfInterest(cmd string, p project.Interface) ([]string, error) {
+func filesOfInterest(cmd string, conf *project.Config) ([]string, error) {
 	switch cmd {
 	case "tests", "controls", "list":
-		return p.Sources()
+		return conf.Sources, nil
 	default:
-		return project.Files(p)
+		return project.Files(conf)
 	}
 
 }

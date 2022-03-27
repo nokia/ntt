@@ -4,14 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/nokia/ntt/internal/env"
-	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
@@ -25,38 +22,11 @@ var (
 )
 
 func show(cmd *cobra.Command, args []string) error {
-	sources, keys := splitArgs(args, cmd.ArgsLenAtDash())
-	suite, err := ntt.NewFromArgs(sources...)
-	if err != nil {
-		return err
-	}
+	_, keys := splitArgs(args, cmd.ArgsLenAtDash())
 
-	c, err := suite.Config()
-
-	r := ConfigReport{
-		Args:   args,
-		Config: c,
-		err:    err,
-	}
-
-	checkErr := func(err error) {
-		if err != nil && r.err == nil {
-			r.err = err
-		}
-	}
-
-	r.DataDir = env.Getenv("NTT_DATADIR")
-
-	r.Environ, err = suite.Environ()
-	sort.Strings(r.Environ)
-	checkErr(err)
-
-	r.Files, err = project.Files(suite)
-	checkErr(err)
-
-	for _, dir := range c.K3.Builtins {
-		r.AuxFiles = append(r.AuxFiles, fs.FindTTCN3Files(dir)...)
-	}
+	r := ConfigReport{Config: Project}
+	r.Environ = Project.Variables.Slice()
+	r.Files, r.err = project.Files(Project)
 
 	switch {
 	case outputJSON:
@@ -64,7 +34,7 @@ func show(cmd *cobra.Command, args []string) error {
 	case ShSetup:
 		return printShellScript(&r, keys)
 	case len(keys) != 0:
-		return printValues(c, keys)
+		return printValues(Project, keys)
 	default:
 		keys := []string{
 			"name",
@@ -73,13 +43,13 @@ func show(cmd *cobra.Command, args []string) error {
 			"sources",
 			"imports",
 			"timeout",
-			"parameters_dir",
 			"parameters_file",
-			"test_hook",
+			"hooks_file",
+			"lint_file",
 			"datadir",
 			"session_id",
 		}
-		return printKeyValues(c, keys)
+		return printKeyValues(Project, keys)
 	}
 }
 
@@ -88,7 +58,7 @@ func printJSON(report *ConfigReport, keys []string) error {
 		return fmt.Errorf("command line option --json does not accept additional command line arguments")
 	}
 
-	b, err := json.MarshalIndent(report, "", "  ")
+	b, err := yaml.MarshalJSON(report)
 	if err != nil {
 		return fmt.Errorf("failed to marshal report: %w", err)
 	}
@@ -102,24 +72,17 @@ func printShellScript(report *ConfigReport, keys []string) error {
 # k3-hook calls the K3 test hook (if defined) with action passed by $1.
 function k3-hook()
 {
-    if [ -n "$K3_TEST_HOOK" ]; then
+    if [ -n "$K3_HOOKS_FILE" ]; then
         K3_SOURCES="${K3_SOURCES[*]}" \
         K3_IMPORTS="${K3_IMPORTS[*]}" \
         K3_TTCN3_FILES="${K3_TTCN3_FILES[*]}" \
-            "$K3_TEST_HOOK" "$@" 1>&2
+            "$K3_HOOKS_FILE" "$@" 1>&2
     fi
 }
 
 {{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
-{{ if gt .Timeout 0.0 -}} export K3_TIMEOUT='{{ .Timeout }}'                {{- end }}
-{{ if .HooksFile      -}} export K3_TEST_HOOK='{{ .HooksFile }}'            {{- end }}
+{{ if .HooksFile      -}} export K3_HOOKS_FILE='{{ .HooksFile }}'           {{- end }}
 {{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
-{{ if .DataDir        -}} export K3_DATADIR='{{ .DataDir }}'                {{- end }}
-{{ if .SessionID      -}} export K3_SESSION_ID='{{ .SessionID }}'           {{- end }}
-
-{{ if .K3.Compiler    -}} export K3C='{{ .K3.Compiler }}'           {{- end }}
-{{ if .K3.Runtime     -}} export K3R='{{ .K3.Runtime  }}'           {{- end }}
-{{ if .OssInfo        -}} export OSSINFO='{{ .OssInfo }}'           {{- end }}
 
 {{ range .Environ }}export '{{.}}'
 {{end}}
@@ -134,9 +97,6 @@ K3_IMPORTS=(
 
 K3_TTCN3_FILES=(
 {{ range .Files }}	{{.}}
-{{end}}
-	# Auxiliary files from K3
-{{ range .AuxFiles }}	{{.}}
 {{end}})
 
 K3_BUILTINS=(
@@ -179,32 +139,33 @@ false
 }
 
 func get(c *project.Config, key string) ([]string, error) {
-	var (
-		v   interface{}
-		err error
-	)
-
-	if key == "env" {
-		v = c.Variables
-	} else {
-		v, err = c.Get(key)
-		if err != nil {
-			return nil, err
-		}
+	b, err := yaml.MarshalJSON(c)
+	if err != nil {
+		return nil, err
 	}
 
-	switch reflect.TypeOf(v).Kind() {
-	case reflect.Slice:
-		return v.([]string), nil
-	case reflect.Map:
-		s := make([]string, 0, len(v.(map[string]string)))
-		for k, v := range v.(map[string]string) {
-			s = append(s, fmt.Sprintf("'%s=%s'", k, v))
+	conf := make(map[string]interface{})
+	if err := json.Unmarshal(b, &conf); err != nil {
+		return nil, err
+	}
+
+	v, ok := conf[key]
+	if !ok {
+		return nil, fmt.Errorf("key %q not found", key)
+	}
+
+	switch v := v.(type) {
+	case []string:
+		return v, nil
+	case map[string]string:
+		s := make([]string, 0, len(v))
+		for key, val := range v {
+			s = append(s, fmt.Sprintf("'%s=%s'", key, val))
 		}
 		sort.Strings(s)
 		return s, nil
 	default:
-		return []string{fmt.Sprint(v)}, nil
+		return []string{fmt.Sprintf("%v", v)}, nil
 	}
 }
 
@@ -227,7 +188,9 @@ func printKeyValues(c *project.Config, keys []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("NTT_%s=\"%s\"\n", strings.ToUpper(key), strings.Join(s, " "))
+		if len(s) > 0 {
+			fmt.Printf("NTT_%s=\"%s\"\n", strings.ToUpper(key), strings.Join(s, " "))
+		}
 	}
 
 	return nil
@@ -245,14 +208,11 @@ func splitArgs(args []string, pos int) ([]string, []string) {
 }
 
 type ConfigReport struct {
-	Args []string `json:"args"`
-	*project.Config
-	SourceDir string   `json:"source_dir"`
-	DataDir   string   `json:"datadir"`
-	Environ   []string `json:"env"`
-	Files     []string `json:"files"`
-	AuxFiles  []string `json:"aux_files"`
-	err       error
+	Args            []string `json:"args"`
+	*project.Config `json:",inline"`
+	Environ         []string `json:"env"`
+	Files           []string `json:"files"`
+	err             error
 }
 
 func (r *ConfigReport) Err() string {

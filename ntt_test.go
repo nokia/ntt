@@ -213,9 +213,6 @@ func equal(a, b []string) bool {
 
 func TestModulePars(t *testing.T) {
 	t.Skip()
-	// There are to paths how module parameters reach the runtime:
-	// 1. From the default parameters file (K3_PARAMETERS_FILE)
-	// 2. From the parameters directory (K3_PARAMETERS_DIR/$MODULE/$TEST.parameters)
 
 	tests := []struct {
 		file string
@@ -237,9 +234,7 @@ func TestModulePars(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(t.Name(), func(t *testing.T) {
 			os.Setenv("NTT_PARAMETERS_FILE", tt.file)
-			os.Setenv("NTT_PARAMETERS_DIR", "testdata/parameters")
 			defer os.Unsetenv("NTT_PARAMETERS_FILE")
-			defer os.Unsetenv("NTT_PARAMETERS_DIR")
 			got, _ := testModulePars(t, tt.name)
 			assert.Equal(t, tt.want, got)
 		})
@@ -247,12 +242,15 @@ func TestModulePars(t *testing.T) {
 }
 
 func testModulePars(t *testing.T, name string) ([]string, error) {
-	suite, err := ntt.NewSuite("testdata/parameters")
+	_, err := ntt.NewSuite("testdata/parameters")
 	if err != nil {
 		t.Fatalf("NewSuite() failed: %v", err)
 	}
 
-	m, _, err := suite.TestParameters(name)
+	var (
+		m map[string]string
+	)
+
 	var s []string
 	for k, v := range m {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))

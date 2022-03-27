@@ -46,8 +46,7 @@ manifest.
         [DEPENDS ...]
         [NAME name]
         [TIMEOUT secs]
-        [TEST_HOOK executable]
-        [PARAMETERS_DIR dir]
+	[HOOKS_FILE executable]
         [PARAMETERS_FILE file]
         [WORKING_DIRECTORY dir]
         [TARGETS target1...]
@@ -76,16 +75,12 @@ manifest.
   ``TIMEOUT seconds``
     Specifies a timeout after which a test case will be aborted.
 
-  ``TEST_HOOK executable``
+    ``HOOKS_FILE executable``
     Specifies an executable to be used as test hook.
-    If TEST_HOOK specifies an executable target (created by ADD_EXECUTABLE) it
+    If HOOKS_FILE specifies an executable target (created by ADD_EXECUTABLE) it
     will automatically be replaced by the location of the executable created at
     build time. Additionally a target-level dependency will be added so that
     the executable target will be built before this hook is used.
-
-    ``PARAMETERS_DIR dir``
-    Specifies a directory as the root for all .parameters files holding
-    module parameter initialisations.
 
   ``PARAMETERS_FILE file``
     Specifies a file containing TOML formatted test configuration.
@@ -139,7 +134,7 @@ file(REMOVE "${CMAKE_BINARY_DIR}/ttcn3_suites.json")
 function(add_ttcn3_suite TGT)
     set("ARGS_PREFIX" "")
     set("ARGS_OPTIONS" "")
-    set("ARGS_ONE_VALUE" "NAME;TIMEOUT;TEST_HOOK;PARAMETERS_FILE;PARAMETERS_DIR;WORKING_DIRECTORY")
+    set("ARGS_ONE_VALUE" "NAME;TIMEOUT;HOOKS_FILE;PARAMETERS_FILE;WORKING_DIRECTORY")
     set("ARGS_MULTI_VALUE" "VARS;SOURCES;DEPENDS;TARGETS")
     cmake_parse_arguments("${ARGS_PREFIX}" "${ARGS_OPTIONS}" "${ARGS_ONE_VALUE}" "${ARGS_MULTI_VALUE}" ${ARGN})
 
@@ -175,21 +170,17 @@ function(add_ttcn3_suite TGT)
         string(APPEND MANIFEST "timeout: ${_TIMEOUT}\n")
     endif()
 
-    if (_TEST_HOOK)
-        if(TARGET "${_TEST_HOOK}")
-            string(APPEND MANIFEST "test_hook: $<TARGET_FILE:${_TEST_HOOK}>\n")
-            add_dependencies("${TGT}" "${_TEST_HOOK}")
+    if (_HOOKS_FILE)
+        if(TARGET "${_HOOKS_FILE}")
+            string(APPEND MANIFEST "hooks_file: $<TARGET_FILE:${_HOOKS_FILE}>\n")
+            add_dependencies("${TGT}" "${_HOOKS_FILE}")
         else()
-            string(APPEND MANIFEST "test_hook: ${_TEST_HOOK}\n")
+            string(APPEND MANIFEST "hooks_file: ${_HOOKS_FILE}\n")
         endif()
     endif()
 
     if (_PARAMETERS_FILE)
         string(APPEND MANIFEST "parameters_file: ${_PARAMETERS_FILE}\n")
-    endif()
-
-    if (_PARAMETERS_DIR)
-        string(APPEND MANIFEST "parameters_dir: ${_PARAMETERS_DIR}\n")
     endif()
 
     if (_SOURCES)

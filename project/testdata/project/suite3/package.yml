@@ -1,5 +1,0 @@
-variables:
-  "FNORD": "foobar"
-
-sources:
-  - ${FNORD}/a.ttcn3

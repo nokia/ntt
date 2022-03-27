@@ -55,10 +55,7 @@ func TestJoinPath(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := fs.JoinPath(test.first, test.second)
-		if err != nil {
-			t.Errorf("JoinPath(%q, %q) error: %v", test.first, test.second, err)
-		}
+		got := fs.JoinPath(test.first, test.second)
 		assert.Equal(t, test.want, got)
 	}
 

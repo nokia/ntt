@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -15,8 +16,10 @@ import (
 	"github.com/nokia/ntt/internal/log"
 )
 
-var ErrUnknownVariable = fmt.Errorf("unknown variable")
-var ErrCyclicVariable = fmt.Errorf("cyclic variable")
+var (
+	ErrUnknownVariable = fmt.Errorf("unknown variable")
+	ErrCyclicVariable  = fmt.Errorf("cyclic variable")
+)
 
 var knownVars = map[string]bool{
 	"PATH":                true,
@@ -27,10 +30,8 @@ var knownVars = map[string]bool{
 	"K3RFLAGS":            true,
 	"LDFLAGS":             true,
 	"LD_LIBRARY_PATH":     true,
-	"NTT_DATADIR":         true,
 	"NTT_IMPORTS":         true,
 	"NTT_NAME":            true,
-	"NTT_PARAMETERS_DIR":  true,
 	"NTT_PARAMETERS_FILE": true,
 	"NTT_SOURCES":         true,
 	"NTT_SOURCE_DIR":      true,
@@ -49,14 +50,12 @@ func (env Env) Slice() []string {
 	return s
 }
 
-// Expand variable references recursively. Environment variables overwrite
-// variables defined in environment files. Undefined variables won't
-// be expanded and will return an error.
-func (env Env) Expand() error {
+// Expand expands variable references recursively.
+func Expand(v string, env Env) (string, error) {
 	var (
 		err     error
 		expand  func(string) string
-		visited map[string]bool
+		visited = make(map[string]bool)
 	)
 
 	expand = func(name string) string {
@@ -89,14 +88,49 @@ func (env Env) Expand() error {
 		return fmt.Sprintf("${%s}", name)
 	}
 
-	for name := range env {
-		visited = make(map[string]bool)
-		v := expand(name)
+	return os.Expand(v, expand), err
+}
+
+// Expand variable references recursively. Environment variables overwrite
+// variables defined in environment files. Undefined variables won't
+// be expanded and will return an error.
+func (env Env) Expand() error {
+	var gerr error
+	for k, v := range env {
+		v, err := Expand(v, env)
 		if err == nil {
-			env[name] = v
+			env[k] = v
 		}
+		if gerr == nil {
+			gerr = err
+		}
+
 	}
-	return err
+	return gerr
+}
+
+// EnvironMap returns the current process's environment as a string-map.
+// It also replaces K3-prefixes with NTT-prefixes.
+func EnvironMap() Env {
+	env := make(Env)
+	for _, kv := range os.Environ() {
+		kv := strings.SplitN(kv, "=", 2)
+		k, v := kv[0], kv[1]
+
+		// Nokia uses environment variables with K3-Prefix all over the place.
+		if strings.HasPrefix(k, "K3_") {
+			k = strings.Replace(k, "K3_", "NTT_", 1)
+			v = Getenv(k)
+		}
+		env[k] = v
+	}
+	return env
+}
+
+// Environ returns the current process's environment as a string-slice of the form key=value.
+// It also replaces K3-prefixes with NTT-prefixes.
+func Environ() []string {
+	return EnvironMap().Slice()
 }
 
 var Files = []string{"ntt.env", "k3.env"}
@@ -158,4 +192,46 @@ func LookupEnv(key string) (string, bool) {
 		return os.LookupEnv(strings.Replace(key, "NTT", "K3", 1))
 	}
 	return "", false
+}
+
+func ExpandAll(v interface{}, env Env) error {
+	expandAll(reflect.ValueOf(v), env)
+	return nil
+}
+
+func expandAll(v reflect.Value, env Env) {
+	switch v.Kind() {
+	case reflect.Ptr:
+		if v.IsValid() {
+			expandAll(v.Elem(), env)
+		}
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			expandAll(v.Field(i), env)
+		}
+	case reflect.Map:
+		for _, k := range v.MapKeys() {
+			val := v.MapIndex(k)
+			if s, ok := val.Interface().(string); ok {
+				val := reflect.ValueOf(&s)
+				expandAll(val, env)
+				v.SetMapIndex(k, reflect.ValueOf(s))
+			} else {
+				expandAll(val, env)
+			}
+		}
+	case reflect.Slice:
+		for i := 0; i < v.Len(); i++ {
+			expandAll(v.Index(i), env)
+		}
+	case reflect.Interface:
+		if !v.IsNil() {
+			expandAll(v.Elem(), env)
+		}
+	case reflect.String:
+		if v.CanSet() {
+			s, _ := Expand(v.String(), env)
+			v.SetString(s)
+		}
+	}
 }

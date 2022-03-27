@@ -114,7 +114,7 @@ func (t *T3XF) command() *exec.Cmd {
 			visited[dir] = true
 		}
 	}
-	for _, dir := range FindAuxiliaryDirectories() {
+	for _, dir := range Includes() {
 		args = append(args, "-I", dir)
 	}
 	args = append(args, t.sources...)

@@ -55,11 +55,7 @@ func TTCN3Files(paths ...string) ([]string, error) {
 			ret = append(ret, path)
 
 		case info.IsDir():
-			files := FindTTCN3Files(path)
-			if len(files) == 0 {
-				errs = multierror.Append(errs, fmt.Errorf("Could not find any ttcn3 source files in directory %q", path))
-			}
-			ret = append(ret, files...)
+			ret = append(ret, FindTTCN3Files(path)...)
 
 		case info.Mode().IsRegular() && HasTTCN3Extension(path):
 			ret = append(ret, path)
@@ -167,7 +163,10 @@ func Rel(base string, paths ...string) []string {
 
 // Real makes a path, which is relativ to base, to a real path.
 func Real(base, path string) string {
-	if filepath.IsAbs(path) || path[0] == '$' {
+	if path == "" {
+		return ""
+	}
+	if IsURI(path) || filepath.IsAbs(path) || path[0] == '$' {
 		return path
 	}
 	return filepath.Join(base, path)

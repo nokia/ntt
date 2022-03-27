@@ -8,14 +8,13 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 )
 
 type Suite struct {
-	*ntt.Suite
+	*project.Config
 	DB        *ttcn3.DB
 	modulesMu sync.Mutex
 	modules   map[string]string
@@ -25,7 +24,7 @@ type Suite struct {
 }
 
 func (s *Suite) AddSources(srcs ...string) {
-	s.Suite.AddSources(srcs...)
+	s.Config.Sources = append(s.Config.Sources, srcs...)
 	s.DB.Index(srcs...)
 }
 
@@ -34,8 +33,8 @@ func (s *Suite) Files() []string {
 	defer s.filesMu.Unlock()
 	if s.files == nil {
 		s.files = make(map[string]bool)
-		files, _ := project.Files(s.Suite)
-		for _, dir := range k3.FindAuxiliaryDirectories() {
+		files, _ := project.Files(s.Config)
+		for _, dir := range k3.Includes() {
 			for _, file := range fs.FindTTCN3Files(dir) {
 				files = append(files, file)
 			}
@@ -103,13 +102,6 @@ func (s *Suite) guessModuleByFileName(name string) (string, error) {
 	return "", fmt.Errorf("no such module %q", name)
 }
 
-func NewSuite() *Suite {
-	return &Suite{
-		Suite: &ntt.Suite{},
-		DB:    &ttcn3.DB{},
-	}
-}
-
 // Suites implements the mapping between ttcn3 source files and multiple test
 // suites.
 //
@@ -158,23 +150,34 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*Suite {
 // AddSuite add a TTCN-3 test suite to the list of known suites.
 // the list of know suites.
 func (s *Suites) AddSuite(root project.Suite) {
-	s.mu.Lock()
+	log.Printf("Adding %q to list of known test suites\n", root)
+	conf, err := project.NewConfig(
+		project.AutomaticRoot(root.RootDir),
+		project.AutomaticEnv(),
+		project.WithSourceDir(root.SourceDir),
+		project.WithK3(),
+		project.WithDefaults(),
+	)
 
-	// Although the folder is known, it might be necessary to re-read it due to
-	// a newly saved File
+	// If opening a project fails, we want to continue with what we have.
+	// Therefore we log the error and continue with the configuration we got.
+	if err != nil {
+		log.Println(err.Error())
+	}
+	suite := &Suite{
+		Config: conf,
+		DB:     &s.db,
+	}
+	s.mu.Lock()
 
 	if s.roots == nil {
 		s.roots = make(map[string]*Suite)
 	}
 
-	log.Printf("Adding %q to list of known test suites\n", root)
-	suite := NewSuite()
-	suite.SetRoot(root.RootDir)
-	suite.SetSourceDir(root.SourceDir)
-	suite.DB = &s.db
 	s.roots[root.RootDir] = suite
-	files := suite.Files()
 	s.mu.Unlock()
 
+	// Update index
+	files, _ := project.Files(conf)
 	s.db.Index(files...)
 }
