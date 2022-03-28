@@ -345,7 +345,8 @@ func NewSuite(files ...string) (*Suite, error) {
 	if s := env.Getenv("NTT_CACHE"); s != "" {
 		paths = append(paths, strings.Split(s, ":")...)
 	}
-	paths = append(imports, k3.FindAuxiliaryDirectories()...)
+	paths = append(paths, imports...)
+	paths = append(paths, k3.FindAuxiliaryDirectories()...)
 	if cwd, err := os.Getwd(); err == nil {
 		paths = append(paths, cwd)
 	}
