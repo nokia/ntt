@@ -84,7 +84,7 @@ type Manifest struct {
 	HooksFile string `json:"test_hook,omitempty"`
 
 	// Parameters are additional test suite parameters.
-	Parameters `json:"parameters" yaml:",inline"`
+	Parameters `json:",inline" yaml:",inline"`
 
 	// ParametersFile is the path for additional test suite parameters.
 	ParametersFile string `json:"parameters_file,omitempty" yaml:"parameters_file"`

@@ -51,7 +51,7 @@ func (s *Suite) Config() (*project.Config, error) {
 		b, err := f.Bytes()
 		check(err)
 		if err == nil {
-			if err2 := yaml.UnmarshalStrict(b, &c); err2 != nil {
+			if err2 := yaml.UnmarshalStrict(b, &c.Manifest); err2 != nil {
 				check(fmt.Errorf("Syntax error in file %s: %w", f.Path(), err2))
 			}
 		}
