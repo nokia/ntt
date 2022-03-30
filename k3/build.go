@@ -171,7 +171,7 @@ func (c *ASN1Codec) Targets() []string {
 func (c *ASN1Codec) generateCommand() *exec.Cmd {
 	args := []string{"$ASN1C"}
 	args = append(args, fmt.Sprintf("-%s", c.encoding))
-	args = append(args, build.FieldsExpand("ASN1CFLAGS")...)
+	args = append(args, build.FieldsExpand("$ASN1CFLAGS")...)
 	args = append(args, "-output", strings.TrimSuffix(c.c, ".c"), "-prefix", strings.TrimSuffix(c.c, ".enc.c"))
 	args = append(args, "$OSSINFO/asn1dflt.linux-x86_64")
 	args = append(args, c.sources...)
@@ -185,10 +185,10 @@ func (c *ASN1Codec) buildCommand() *exec.Cmd {
 	if env := build.FieldsExpand("CFLAGS"); env != nil {
 		args = append(args, env...)
 	}
-	if env := build.FieldsExpand("LDFLAGS"); env != nil {
+	if env := build.FieldsExpand("$LDFLAGS"); env != nil {
 		args = append(args, env...)
 	}
-	if env := build.FieldsExpand("EXTRA_LDFLAGS"); env != nil {
+	if env := build.FieldsExpand("$EXTRA_LDFLAGS"); env != nil {
 		args = append(args, env...)
 	}
 	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", c.lib)
