@@ -9,6 +9,7 @@ import (
 
 	"github.com/nokia/ntt/build"
 	"github.com/nokia/ntt/internal/compdb"
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 )
@@ -20,7 +21,7 @@ var DefaultEnv = map[string]string{
 	"ASN1C":      "asn1",
 	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
 	"ASN2TTCN":   "asn2ttcn",
-	"OSSINFO":    filepath.Join(DataDir(), "ossinfo"),
+	"OSSINFO":    filepath.Join(DataDir(), "asn1"),
 	"K3C":        Compiler(),
 	"K3R":        Runtime(),
 }
@@ -100,7 +101,7 @@ func (t *T3XF) Sources() []string {
 
 func (t *T3XF) command() *exec.Cmd {
 	args := []string{Compiler(), "-o", t.target}
-	if env := build.FieldsExpand("$K3CFLAGS"); env != nil {
+	if env := build.FieldsExpandWithDefault("$K3CFLAGS", DefaultEnv); env != nil {
 		args = append(args, env...)
 	}
 	visited := make(map[string]bool)
@@ -169,26 +170,32 @@ func (c *ASN1Codec) Targets() []string {
 }
 
 func (c *ASN1Codec) generateCommand() *exec.Cmd {
-	args := []string{"$ASN1C"}
+	args := build.FieldsExpandWithDefault("$ASN1C", DefaultEnv)
 	args = append(args, fmt.Sprintf("-%s", c.encoding))
-	args = append(args, build.FieldsExpand("$ASN1CFLAGS")...)
+	args = append(args, build.FieldsExpandWithDefault("$ASN1CFLAGS", DefaultEnv)...)
 	args = append(args, "-output", strings.TrimSuffix(c.c, ".c"), "-prefix", strings.TrimSuffix(c.c, ".enc.c"))
 	args = append(args, "$OSSINFO/asn1dflt.linux-x86_64")
 	args = append(args, c.sources...)
-	return build.Command(args...)
+	cmd := build.Command(args...)
+	for k, v := range DefaultEnv {
+		if env.Getenv(k) == "" {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+	return cmd
 }
 
 func (c *ASN1Codec) buildCommand() *exec.Cmd {
 	args := []string{"$CC"}
 	args = append(args, "-fPIC", "-shared")
 	args = append(args, "-D_OSSGETHEADER", "-DOSSPRINT")
-	if env := build.FieldsExpand("CFLAGS"); env != nil {
+	if env := build.FieldsExpandWithDefault("$CFLAGS", DefaultEnv); env != nil {
 		args = append(args, env...)
 	}
-	if env := build.FieldsExpand("$LDFLAGS"); env != nil {
+	if env := build.FieldsExpandWithDefault("$LDFLAGS", DefaultEnv); env != nil {
 		args = append(args, env...)
 	}
-	if env := build.FieldsExpand("$EXTRA_LDFLAGS"); env != nil {
+	if env := build.FieldsExpandWithDefault("$EXTRA_LDFLAGS", DefaultEnv); env != nil {
 		args = append(args, env...)
 	}
 	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", c.lib)
