@@ -143,7 +143,7 @@ type TestConfig struct {
 	Timeout float64 `json:"timeout,omitempty"`
 
 	// Module parameters
-	Parameters map[string]interface{} `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Parameters map[string]string `json:"parameters,omitempty" yaml:"parameters,omitempty"`
 
 	// Only execute testcase if the given conditions are met.
 	Only *ExecuteCondition `json:"only,omitempty"`
