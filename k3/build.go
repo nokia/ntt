@@ -50,7 +50,7 @@ func (p *Plugin) command() *exec.Cmd {
 	args := build.FieldsExpandWithDefault(cmd, DefaultEnv)
 	args = append(args, "-o", p.target)
 	args = append(args, p.sources...)
-	return build.Command(args...)
+	return build.CommandWithEnv(DefaultEnv, args...)
 }
 
 func (p *Plugin) Build() error {
@@ -116,7 +116,7 @@ func (t *T3XF) command() *exec.Cmd {
 		args = append(args, "-I", dir)
 	}
 	args = append(args, t.sources...)
-	return build.Command(args...)
+	return build.CommandWithEnv(DefaultEnv, args...)
 }
 
 func (t *T3XF) Build() error {
@@ -176,7 +176,7 @@ func (c *ASN1Codec) generateCommand() *exec.Cmd {
 	args = append(args, "-output", strings.TrimSuffix(c.c, ".c"), "-prefix", strings.TrimSuffix(c.c, ".enc.c"))
 	args = append(args, "$OSSINFO/asn1dflt.linux-x86_64")
 	args = append(args, c.sources...)
-	cmd := build.Command(args...)
+	cmd := build.CommandWithEnv(DefaultEnv, args...)
 	for k, v := range DefaultEnv {
 		if env.Getenv(k) == "" {
 			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
@@ -200,11 +200,11 @@ func (c *ASN1Codec) buildCommand() *exec.Cmd {
 	}
 	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", c.lib)
 	args = append(args, c.c, c.h)
-	return build.Command(args...)
+	return build.CommandWithEnv(DefaultEnv, args...)
 }
 
 func (c *ASN1Codec) moduleCommand() *exec.Cmd {
-	return build.Command("$ASN2TTCN", "-o", c.mod, c.lib, fs.Stem(c.mod), c.encoding)
+	return build.CommandWithEnv(DefaultEnv, "$ASN2TTCN", "-o", c.mod, c.lib, fs.Stem(c.mod), c.encoding)
 }
 
 func (c *ASN1Codec) Build() error {
