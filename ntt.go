@@ -568,6 +568,15 @@ func PlanImport(dir string) ([]build.Builder, error) {
 	if processed == 0 {
 		return nil, fmt.Errorf("%s: %w", dir, ErrNoSources)
 	}
+
+	if strings.HasPrefix(dir, ".") {
+		abs, err := filepath.Abs(dir)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", dir, err)
+		}
+		dir = abs
+	}
+
 	name := fs.Slugify(fs.Stem(dir))
 	if len(asn1Files) > 0 {
 		builders = append(builders, k3.NewASN1Codec(name, encoding(name), asn1Files...))
