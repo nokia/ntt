@@ -52,9 +52,15 @@ func FieldsExpandWithDefault(s string, defaults map[string]string) []string {
 // Command expands given arguments and returns a command. Stdout and Stderr, as
 // well as the environment, are inherited from the parent process.
 func Command(args ...string) *exec.Cmd {
+	return CommandWithEnv(nil, args...)
+}
+
+// CommandWithEnv expands given arguments and returns a command. Stdout and Stderr, as
+// well as the environment, are inherited from the parent process.
+func CommandWithEnv(env map[string]string, args ...string) *exec.Cmd {
 	var cmdArgs []string
 	for _, arg := range args {
-		cmdArgs = append(cmdArgs, FieldsExpand(arg)...)
+		cmdArgs = append(cmdArgs, FieldsExpandWithDefault(arg, env)...)
 	}
 	if len(cmdArgs) == 0 {
 		cmdArgs = []string{""}
@@ -63,6 +69,9 @@ func Command(args ...string) *exec.Cmd {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
+	for k, v := range env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	}
 	return cmd
 }
 
