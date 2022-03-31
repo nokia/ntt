@@ -68,10 +68,10 @@ func CommandWithEnv(env map[string]string, args ...string) *exec.Cmd {
 	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = os.Environ()
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
+	cmd.Env = append(cmd.Env, os.Environ()...)
 	return cmd
 }
 

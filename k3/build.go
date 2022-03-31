@@ -9,7 +9,6 @@ import (
 
 	"github.com/nokia/ntt/build"
 	"github.com/nokia/ntt/internal/compdb"
-	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 )
@@ -20,7 +19,7 @@ var DefaultEnv = map[string]string{
 	"CC":         "gcc",
 	"ASN1C":      "asn1",
 	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
-	"ASN2TTCN":   "asn2ttcn",
+	"ASN2TTCN":   "asn1tottcn3",
 	"OSSINFO":    filepath.Join(DataDir(), "asn1"),
 	"K3C":        Compiler(),
 	"K3R":        Runtime(),
@@ -176,13 +175,7 @@ func (c *ASN1Codec) generateCommand() *exec.Cmd {
 	args = append(args, "-output", strings.TrimSuffix(c.c, ".c"), "-prefix", strings.TrimSuffix(c.c, ".enc.c"))
 	args = append(args, "$OSSINFO/asn1dflt.linux-x86_64")
 	args = append(args, c.sources...)
-	cmd := build.CommandWithEnv(DefaultEnv, args...)
-	for k, v := range DefaultEnv {
-		if env.Getenv(k) == "" {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-	}
-	return cmd
+	return build.CommandWithEnv(DefaultEnv, args...)
 }
 
 func (c *ASN1Codec) buildCommand() *exec.Cmd {
