@@ -191,8 +191,8 @@ func (c *ASN1Codec) buildCommand() *exec.Cmd {
 	if env := build.FieldsExpandWithDefault("$EXTRA_LDFLAGS", DefaultEnv); env != nil {
 		args = append(args, env...)
 	}
-	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", c.lib)
 	args = append(args, c.c, c.h)
+	args = append(args, "-l:libasn1code.a", "-Wl,-Bdynamic", "-o", c.lib)
 	return build.CommandWithEnv(DefaultEnv, args...)
 }
 
