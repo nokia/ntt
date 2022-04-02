@@ -50,8 +50,8 @@ func parse(path string, input []byte) *Tree {
 	}
 
 	fset := loc.NewFileSet()
-	root, names, err := parser.Parse(fset, path, input)
-	return &Tree{FileSet: fset, Root: root, Names: names, Err: err, filename: path}
+	root, names, uses, err := parser.Parse(fset, path, input)
+	return &Tree{FileSet: fset, Root: root, Names: names, Uses: uses, Err: err, filename: path}
 }
 
 var builtins = `

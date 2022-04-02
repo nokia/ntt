@@ -6,6 +6,8 @@ import (
 
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,9 +36,11 @@ func TestFindAllTypeDefs(t *testing.T) {
 			import from TestFindAllTypeDefs_Module_0 {type Byte}
 			type Byte AliasByte;
 	  }`)
+	db := &ttcn3.DB{}
+	db.Index(project.FindAllFiles(suite)...)
 
 	// Lookup `Msg`
-	list := lsp.NewAllIdsWithSameName(suite, "Byte")
+	list := lsp.NewAllIdsWithSameName(db, "Byte")
 
 	assert.Equal(t, []protocol.Location{
 		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",

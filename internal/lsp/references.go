@@ -3,12 +3,12 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
-	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 )
@@ -38,38 +38,37 @@ func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Locati
 	return list
 }
 
-func NewAllIdsWithSameName(suite *ntt.Suite, idName string) []protocol.Location {
-	var complList []protocol.Location = nil
-	if files := project.FindAllFiles(suite); len(files) != 0 {
-		complList = make([]protocol.Location, 0, len(files))
-		for _, f := range files {
-			complList = append(complList, newAllIdsWithSameNameFromFile(f, idName)...)
-		}
+func NewAllIdsWithSameName(db *ttcn3.DB, name string) []protocol.Location {
+	var (
+		locs       []protocol.Location
+		candidates []string
+	)
+	for file := range db.Uses[name] {
+		candidates = append(candidates, file)
 	}
-	return complList
+	sort.Strings(candidates)
+	for _, file := range candidates {
+		locs = append(locs, newAllIdsWithSameNameFromFile(file, name)...)
+	}
+	return locs
 }
 
 func (s *Server) references(ctx context.Context, params *protocol.ReferenceParams) ([]protocol.Location, error) {
 	var (
-		locs []protocol.Location
-		file = params.TextDocument.URI
+		file = string(params.TextDocument.URI.SpanURI())
 		line = int(params.Position.Line) + 1
 		col  = int(params.Position.Character) + 1
 	)
 
-	for _, suite := range s.Owners(file) {
-		start := time.Now()
-		syntax := suite.Parse(string(file.SpanURI()))
-		if syntax.Module == nil {
-			return nil, syntax.Err
-		}
-		id := suite.IdentifierAt(syntax, line, col)
-		if id == nil {
-			return nil, ntt.ErrNoIdentFound
-		}
-		locs = append(locs, NewAllIdsWithSameName(suite, id.Tok.String())...)
-		elapsed := time.Since(start)
-		log.Debug(fmt.Sprintf("References took %s. IdentifierInfo: %#v", elapsed, id.String()))
+	start := time.Now()
+	defer func() {
+		log.Debug(fmt.Sprintf("References took %s.", time.Since(start)))
+	}()
+
+	tree := ttcn3.ParseFile(file)
+	id, ok := tree.ExprAt(tree.Pos(line, col)).(*ast.Ident)
+	if !ok || id == nil {
+		return nil, ntt.ErrNoIdentFound
 	}
-	return unifyLocs(locs), nil
+	return NewAllIdsWithSameName(&s.db, id.String()), nil
 }

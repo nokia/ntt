@@ -86,6 +86,7 @@ func moduleFrom(file, module string) *ast.Module {
 }
 
 func testMapsEqual(t *testing.T, a, b SliceMap) {
+	t.Helper()
 	if !equalSliceMap(a, b) {
 		t.Errorf("Maps not equal:\n\t got = %v\n\twant = %v", a, b)
 	}
