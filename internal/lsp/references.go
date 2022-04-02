@@ -9,13 +9,14 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
-func newAllIdsWithSameNameFromFile(suite *ntt.Suite, file string, idName string) []protocol.Location {
+func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Location {
 	list := make([]protocol.Location, 0, 10)
-	syntax := suite.Parse(file)
-	ast.Inspect(syntax.Module, func(n ast.Node) bool {
+	syntax := ttcn3.ParseFile(file)
+	ast.Inspect(syntax.Root, func(n ast.Node) bool {
 		if n == nil {
 			// called on node exit
 			return false
@@ -42,7 +43,7 @@ func NewAllIdsWithSameName(suite *ntt.Suite, idName string) []protocol.Location 
 	if files := project.FindAllFiles(suite); len(files) != 0 {
 		complList = make([]protocol.Location, 0, len(files))
 		for _, f := range files {
-			complList = append(complList, newAllIdsWithSameNameFromFile(suite, f, idName)...)
+			complList = append(complList, newAllIdsWithSameNameFromFile(f, idName)...)
 		}
 	}
 	return complList
