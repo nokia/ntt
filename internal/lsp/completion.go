@@ -13,6 +13,7 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/nokia/ntt/ttcn3/token"
@@ -78,8 +79,8 @@ func newPredefinedTypes() []protocol.CompletionItem {
 func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string) []*FunctionDetails {
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
-		syntax := suite.Parse(file)
-		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+		tree := ttcn3.ParseFile(file)
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -92,22 +93,22 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 					textFormat := protocol.PlainTextTextFormat
 					sig.WriteString(node.Kind.Lit + " " + mname + "." + node.Name.String())
 					len1 := len(sig.String())
-					printer.Print(&sig, syntax.FileSet, node.Params)
+					printer.Print(&sig, tree.FileSet, node.Params)
 					hasParams := (len(sig.String()) - len1) > 2
 					if hasParams {
 						textFormat = protocol.SnippetTextFormat
 					}
 					if node.RunsOn != nil {
 						sig.WriteString("\n  ")
-						printer.Print(&sig, syntax.FileSet, node.RunsOn)
+						printer.Print(&sig, tree.FileSet, node.RunsOn)
 					}
 					if node.System != nil {
 						sig.WriteString("\n  ")
-						printer.Print(&sig, syntax.FileSet, node.System)
+						printer.Print(&sig, tree.FileSet, node.System)
 					}
 					if node.Return != nil {
 						sig.WriteString("\n  ")
-						printer.Print(&sig, syntax.FileSet, node.Return)
+						printer.Print(&sig, tree.FileSet, node.Return)
 					}
 					tok := ast.FirstToken(node)
 
@@ -134,8 +135,8 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 func getAllValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
-		syntax := suite.Parse(file)
-		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+		tree := ttcn3.ParseFile(file)
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -170,8 +171,8 @@ func getAllValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind)
 func getAllTypesFromModule(suite *ntt.Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
-		syntax := suite.Parse(file)
-		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+		tree := ttcn3.ParseFile(file)
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -208,8 +209,8 @@ func getAllTypesFromModule(suite *ntt.Suite, mname string) []string {
 func getAllComponentTypesFromModule(suite *ntt.Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
-		syntax := suite.Parse(file)
-		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+		tree := ttcn3.ParseFile(file)
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -230,8 +231,8 @@ func getAllComponentTypesFromModule(suite *ntt.Suite, mname string) []string {
 func getAllPortTypesFromModule(suite *ntt.Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
-		syntax := suite.Parse(file)
-		ast.Inspect(syntax.Module, func(n ast.Node) bool {
+		tree := ttcn3.ParseFile(file)
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -943,13 +944,9 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	// in most ways end up with cyclic imports.
 	// Thus 'completion' shall collect items only from one suite.
 	// Decision: first suite
-	syntax := suites[0].ParseWithAllErrors(params.TextDocument.URI.SpanURI().Filename())
-	log.Debug(fmt.Sprintf("Completion after Parse :%p", &syntax.Module))
-	if syntax.Module == nil {
-		return nil, syntax.Err
-	}
-
-	if syntax.Module.Name == nil {
+	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
+	log.Debug(fmt.Sprintf("Completion after Parse :%p", &tree.Root))
+	if tree.Root == nil || len(tree.Modules()) == 0 {
 		complList := make([]protocol.CompletionItem, 1)
 		complList = append(complList, protocol.CompletionItem{Label: "module",
 			InsertText:       "module ${1:" + defaultModuleId + "} {\n\t${0}\n}",
@@ -959,8 +956,8 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 
 		return &protocol.CompletionList{IsIncomplete: false, Items: complList}, nil
 	}
-	pos := syntax.Pos(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
-	nodeStack := LastNonWsToken(syntax.Module, pos)
+	pos := tree.Pos(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
+	nodeStack := LastNonWsToken(tree.Root, pos)
 
 	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack, defaultModuleId)}, nil
 }

@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
@@ -26,11 +27,11 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 		return nil, err
 	}
 
-	tree := suite.ParseWithAllErrors(uri)
-	if tree == nil || tree.Module == nil {
+	tree := ttcn3.ParseFile(uri)
+	if tree == nil || tree.Root == nil {
 		return nil, nil
 	}
-	ast.Inspect(tree.Module, func(n ast.Node) bool {
+	ast.Inspect(tree.Root, func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.Module, *ast.ModuleDef:
 			return true
@@ -40,7 +41,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 			}
 			title := "run test"
 			params := nttTestParams{
-				ID:  ast.Name(tree.Module.Name) + "." + ast.Name(n.Name),
+				ID:  tree.QualifiedName(n),
 				URI: uri,
 			}
 			if s.testCtrl.IsRunning(suite, params.ID) {
