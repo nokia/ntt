@@ -8,14 +8,15 @@ import (
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
-func generateSymbols(t *testing.T, suite *ntt.Suite) (*ntt.ParseInfo, []protocol.DocumentSymbol) {
+func generateSymbols(t *testing.T, suite *ntt.Suite) (*ttcn3.Tree, []protocol.DocumentSymbol) {
 
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
-	syntax := suite.ParseWithAllErrors(name)
-	list := lsp.NewAllDefinitionSymbolsFromCurrentModule(syntax)
+	tree := ttcn3.ParseFile(name)
+	list := lsp.NewAllDefinitionSymbolsFromCurrentModule(tree)
 	ret := make([]protocol.DocumentSymbol, 0, len(list))
 	for _, l := range list {
 		if l, ok := l.(protocol.DocumentSymbol); ok {
@@ -23,10 +24,10 @@ func generateSymbols(t *testing.T, suite *ntt.Suite) (*ntt.ParseInfo, []protocol
 		}
 	}
 
-	return syntax, ret
+	return tree, ret
 }
 
-func setRange(syntax *ntt.ParseInfo, begin loc.Pos, end loc.Pos) protocol.Range {
+func setRange(syntax *ttcn3.Tree, begin loc.Pos, end loc.Pos) protocol.Range {
 	b := syntax.Position(begin)
 	e := syntax.Position(end)
 	ret := protocol.Range{
