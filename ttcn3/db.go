@@ -10,8 +10,11 @@ import (
 
 // DB implements database for querying TTCN-3 source code bases.
 type DB struct {
-	// Names is a map from symbol name to a list of files that contain the symbol.
+	// Names is a map from symbol name to a list of files that define the symbol.
 	Names map[string]map[string]bool
+
+	// Uses maps from symbol name to a list of files that use the symbol.
+	Uses map[string]map[string]bool
 
 	// Modules maps from module name to file path.
 	Modules map[string]map[string]bool
@@ -23,6 +26,9 @@ type DB struct {
 func (db *DB) Index(files ...string) {
 	if db.Names == nil {
 		db.Names = make(map[string]map[string]bool)
+	}
+	if db.Uses == nil {
+		db.Uses = make(map[string]map[string]bool)
 	}
 	if db.Modules == nil {
 		db.Modules = make(map[string]map[string]bool)
@@ -47,6 +53,10 @@ func (db *DB) Index(files ...string) {
 			for k := range tree.Names {
 				syms++
 				db.addDefinition(path, k)
+			}
+			for k := range tree.Uses {
+				syms++
+				db.addRef(path, k)
 			}
 			db.mu.Unlock()
 
@@ -117,4 +127,11 @@ func (db *DB) addDefinition(file string, name string) {
 		db.Names[name] = make(map[string]bool)
 	}
 	db.Names[name][file] = true
+}
+
+func (db *DB) addRef(file string, name string) {
+	if db.Uses[name] == nil {
+		db.Uses[name] = make(map[string]bool)
+	}
+	db.Uses[name][file] = true
 }

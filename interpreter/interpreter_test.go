@@ -376,7 +376,7 @@ func TestMapExpr(t *testing.T) {
 
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
-	nodes, _, err := parser.Parse(fset, "<stdin>", input)
+	nodes, _, _, err := parser.Parse(fset, "<stdin>", input)
 	if err != nil {
 		t.Fatalf("%s\n %s", input, err.Error())
 	}

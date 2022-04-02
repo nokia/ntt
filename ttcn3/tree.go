@@ -16,6 +16,7 @@ type Tree struct {
 	FileSet *loc.FileSet
 	Root    ast.Node
 	Names   map[string]bool
+	Uses    map[string]bool
 	Err     error
 
 	filename  string

@@ -10,7 +10,7 @@ import (
 
 func makeScope(t *testing.T, input string) (*orderedScope, *types.Info, error) {
 	fset := loc.NewFileSet()
-	root, _, err := parser.Parse(fset, "", input)
+	root, _, _, err := parser.Parse(fset, "", input)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}

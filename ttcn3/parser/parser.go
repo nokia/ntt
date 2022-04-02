@@ -48,6 +48,7 @@ type parser struct {
 	ppDefs map[string]bool
 
 	names map[string]bool
+	uses  map[string]bool
 
 	// Error recovery
 	// (used to limit the number of calls to advance
@@ -81,6 +82,7 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 	p.ppDefs["1"] = true
 
 	p.names = make(map[string]bool)
+	p.uses = make(map[string]bool)
 
 	// fetch first token
 	p.peek(1)
@@ -755,10 +757,7 @@ func (p *parser) parseOperand() ast.Expr {
 		tok := p.consume()
 		switch p.tok {
 		case token.COMPONENT, token.PORT, token.TIMER:
-			return &ast.Ident{
-				Tok:  tok,
-				Tok2: p.consume(),
-			}
+			return p.make_use(tok, p.consume())
 		case token.FROM:
 			return &ast.FromExpr{
 				Kind:    tok,
@@ -769,7 +768,7 @@ func (p *parser) parseOperand() ast.Expr {
 
 		// Workaround for deprecated port-attribute 'all'
 		if tok.Kind == token.ALL {
-			return make_ident(tok)
+			return p.make_use(tok)
 		}
 
 		p.errorExpected(p.pos(1), "'component', 'port', 'timer' or 'from'")
@@ -785,7 +784,7 @@ func (p *parser) parseOperand() ast.Expr {
 		token.TESTCASE,
 		token.TIMER,
 		token.UNMAP:
-		return make_ident(p.consume())
+		return p.make_use(p.consume())
 
 	case token.IDENT:
 		return p.parseRef()
@@ -873,10 +872,7 @@ func (p *parser) parseParenExpr() *ast.ParenExpr {
 }
 
 func (p *parser) parseUniversalCharstring() *ast.Ident {
-	return &ast.Ident{
-		Tok:  p.expect(token.UNIVERSAL),
-		Tok2: p.expect(token.CHARSTRING),
-	}
+	return p.make_use(p.expect(token.UNIVERSAL), p.expect(token.CHARSTRING))
 }
 
 func (p *parser) parseCompositeLiteral() *ast.CompositeLiteral {
@@ -1022,11 +1018,15 @@ func (p *parser) parseRedirect(x ast.Expr) *ast.RedirectExpr {
 }
 
 func (p *parser) parseName() *ast.Ident {
-	id := p.parseIdent()
-	if id != nil {
-		id.IsName = true
+	switch p.tok {
+	case token.IDENT, token.ADDRESS, token.CONTROL:
+		id := &ast.Ident{Tok: p.consume(), IsName: true}
+		p.names[id.String()] = true
+		return id
 	}
-	return id
+	p.expect(token.IDENT)
+	return nil
+
 }
 
 func (p *parser) parseIdent() *ast.Ident {
@@ -1034,7 +1034,7 @@ func (p *parser) parseIdent() *ast.Ident {
 	case token.UNIVERSAL:
 		return p.parseUniversalCharstring()
 	case token.IDENT, token.ADDRESS, token.ALIVE, token.CHARSTRING, token.CONTROL:
-		return &ast.Ident{Tok: p.consume()}
+		return p.make_use(p.consume())
 	default:
 		p.expect(token.IDENT) // use expect() error handling
 		return nil
@@ -1148,7 +1148,7 @@ func (p *parser) tryTypeIdent() ast.Expr {
 	var x *ast.Ident
 	switch p.tok {
 	case token.IDENT, token.ADDRESS, token.CHARSTRING:
-		x = &ast.Ident{Tok: p.consume()}
+		x = p.make_use(p.consume())
 	case token.UNIVERSAL:
 		x = p.parseUniversalCharstring()
 	default:
@@ -1194,7 +1194,6 @@ func (p *parser) parseModule() *ast.Module {
 	m := new(ast.Module)
 	m.Tok = p.expect(token.MODULE)
 	m.Name = p.parseName()
-	p.names[ast.Name(m.Name)] = true
 
 	if p.tok == token.LANGUAGE {
 		m.Language = p.parseLanguageSpec()
@@ -1299,8 +1298,17 @@ func (p *parser) addName(n ast.Node) {
  * Import Definition
  *************************************************************************/
 
-func make_ident(tok ast.Token) *ast.Ident {
-	return &ast.Ident{Tok: tok}
+func (p *parser) make_use(toks ...ast.Token) *ast.Ident {
+	if len(toks) != 1 && len(toks) != 2 {
+		panic("No support for multi-token identifiers.")
+	}
+	id := &ast.Ident{Tok: toks[0]}
+	p.uses[toks[0].String()] = true
+	if len(toks) == 2 {
+		id.Tok2 = toks[1]
+		p.uses[toks[1].String()] = true
+	}
+	return id
 }
 
 func (p *parser) parseImport() *ast.ImportDecl {
@@ -1320,7 +1328,7 @@ func (p *parser) parseImport() *ast.ImportDecl {
 	switch p.tok {
 	case token.ALL:
 		y := &ast.DefKindExpr{}
-		var z ast.Expr = make_ident(p.consume())
+		var z ast.Expr = p.make_use(p.consume())
 		if p.tok == token.EXCEPT {
 			z = &ast.ExceptExpr{
 				X:         z,
@@ -1355,7 +1363,7 @@ func (p *parser) parseImportStmt() *ast.DefKindExpr {
 		token.SIGNATURE, token.TEMPLATE, token.TESTCASE, token.TYPE:
 		x.Kind = p.consume()
 		if p.tok == token.ALL {
-			var y ast.Expr = make_ident(p.consume())
+			var y ast.Expr = p.make_use(p.consume())
 			if p.tok == token.EXCEPT {
 				y = &ast.ExceptExpr{
 					X:         y,
@@ -1388,7 +1396,7 @@ func (p *parser) parseImportStmt() *ast.DefKindExpr {
 		}
 	case token.IMPORT:
 		x.Kind = p.consume()
-		x.List = []ast.Expr{make_ident(p.expect(token.ALL))}
+		x.List = []ast.Expr{p.make_use(p.expect(token.ALL))}
 	default:
 		p.errorExpected(p.pos(1), "import definition qualifier")
 		p.advance(stmtStart)
@@ -1418,7 +1426,7 @@ func (p *parser) parseExceptStmt() *ast.DefKindExpr {
 	}
 
 	if p.tok == token.ALL {
-		x.List = []ast.Expr{make_ident(p.consume())}
+		x.List = []ast.Expr{p.make_use(p.consume())}
 	} else {
 		x.List = p.parseRefList()
 	}
@@ -1538,7 +1546,7 @@ func (p *parser) parseWithQualifier() ast.Expr {
 	case token.TYPE, token.TEMPLATE, token.CONST, token.ALTSTEP, token.TESTCASE, token.FUNCTION, token.SIGNATURE, token.MODULEPAR, token.GROUP:
 		x := new(ast.DefKindExpr)
 		x.Kind = p.consume()
-		var y ast.Expr = make_ident(p.expect(token.ALL))
+		var y ast.Expr = p.make_use(p.expect(token.ALL))
 		if p.tok == token.EXCEPT {
 			y = &ast.ExceptExpr{
 				X:         y,
@@ -2314,13 +2322,13 @@ func (p *parser) parseTypeFormalPar() *ast.FormalPar {
 
 	switch p.tok {
 	case token.TYPE:
-		x.Type = make_ident(p.consume())
+		x.Type = p.make_use(p.consume())
 	case token.SIGNATURE:
-		x.Type = make_ident(p.consume())
+		x.Type = p.make_use(p.consume())
 	default:
 		x.Type = p.parseTypeRef()
 	}
-	x.Name = make_ident(p.expect(token.IDENT))
+	x.Name = p.make_use(p.expect(token.IDENT))
 	x.Name.IsName = true
 	if p.tok == token.ASSIGN {
 		x.AssignTok = p.consume()
@@ -2362,9 +2370,9 @@ func (p *parser) parseStmt() ast.Stmt {
 	case token.REPEAT, token.BREAK, token.CONTINUE:
 		return &ast.BranchStmt{Tok: p.consume()}
 	case token.LABEL:
-		return &ast.BranchStmt{Tok: p.consume(), Label: &ast.Ident{Tok: p.expect(token.IDENT)}}
+		return &ast.BranchStmt{Tok: p.consume(), Label: p.make_use(p.expect(token.IDENT))}
 	case token.GOTO:
-		return &ast.BranchStmt{Tok: p.consume(), Label: &ast.Ident{Tok: p.expect(token.IDENT)}}
+		return &ast.BranchStmt{Tok: p.consume(), Label: p.make_use(p.expect(token.IDENT))}
 	case token.RETURN:
 		x := &ast.ReturnStmt{Tok: p.consume()}
 		if !stmtStart[p.tok] && p.tok != token.SEMICOLON && p.tok != token.RBRACE {

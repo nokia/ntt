@@ -36,6 +36,7 @@ func TestIndex(t *testing.T) {
 	testMapsEqual(t, makeSliceMap(db.Names), SliceMap{
 		"M1": []string{"file1.ttcn3", "file2.ttcn3"},
 		"M2": []string{"file1.ttcn3"},
+		"x":  []string{"file2.ttcn3"},
 		"E":  []string{"file1.ttcn3", "file2.ttcn3"},
 		"E1": []string{"file1.ttcn3", "file2.ttcn3"},
 		"C":  []string{"file2.ttcn3"},

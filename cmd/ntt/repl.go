@@ -23,7 +23,7 @@ func repl() error {
 		}
 
 		fset := loc.NewFileSet()
-		root, _, err := parser.Parse(fset, "<stdin>", s.Text())
+		root, _, _, err := parser.Parse(fset, "<stdin>", s.Text())
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
