@@ -3,6 +3,7 @@ package fs
 
 import (
 	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -30,6 +31,20 @@ func PathSlice(files ...*File) []string {
 		return nil
 	}
 	return ret
+}
+
+// JoinPath joins the given paths.
+func JoinPath(baseUrl string, elem ...string) (result string, err error) {
+	url, err := url.Parse(baseUrl)
+	if err != nil {
+		return
+	}
+	if len(elem) > 0 {
+		elem = append([]string{url.Path}, elem...)
+		url.Path = path.Join(elem...)
+	}
+	result = url.String()
+	return
 }
 
 // Path returns a decoded file path when you pass a URI with file:// scheme.

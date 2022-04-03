@@ -34,3 +34,26 @@ func TestCaching(t *testing.T) {
 	os.Setenv("NTT_CACHE", "testdata/cache")
 	assert.Equal(t, "testdata/cache/package.yml", fs.Open("package.yml").Path())
 }
+
+func TestJoinPath(t *testing.T) {
+	tests := []struct {
+		first, second string
+		want          string
+	}{
+		{"", "", ""},
+		{".", "", "."},
+		{".", "a", "a"},
+		{"/", "b", "/b"},
+		//{"//", "c", "/c"},
+		{"/", "/d", "/d"},
+	}
+
+	for _, test := range tests {
+		got, err := fs.JoinPath(test.first, test.second)
+		if err != nil {
+			t.Errorf("JoinPath(%q, %q) error: %v", test.first, test.second, err)
+		}
+		assert.Equal(t, test.want, got)
+	}
+
+}
