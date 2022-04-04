@@ -37,7 +37,7 @@ type Status struct {
 	Executable string
 	Version    string
 	PID        int
-	Suites     []*ntt.Suite
+	Suites     []*Suite
 }
 
 var funcMap = template.FuncMap{
@@ -52,7 +52,7 @@ var funcMap = template.FuncMap{
 	},
 }
 
-func NewStatus(suites []*ntt.Suite) *Status {
+func NewStatus(suites []*Suite) *Status {
 	s := Status{
 		PID:    os.Getpid(),
 		Suites: suites,
@@ -70,7 +70,7 @@ func NewStatus(suites []*ntt.Suite) *Status {
 
 func (s *Server) status(ctx context.Context) (interface{}, error) {
 	t := template.Must(template.New("ntt.status").Funcs(funcMap).Parse(statusTemplate))
-	var suites []*ntt.Suite
+	var suites []*Suite
 	for _, s := range s.roots {
 		suites = append(suites, s)
 	}

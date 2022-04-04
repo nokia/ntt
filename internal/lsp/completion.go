@@ -11,7 +11,6 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -76,7 +75,7 @@ func newPredefinedTypes() []protocol.CompletionItem {
 	return complList
 }
 
-func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string) []*FunctionDetails {
+func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*FunctionDetails {
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -128,11 +127,11 @@ func getAllBehavioursFromModule(suite *ntt.Suite, kind token.Kind, mname string)
 
 		})
 	}
-	log.Debug(fmt.Sprintf("AltstepCompletion List :%#v", list))
+	log.Debugln(fmt.Sprintf("AltstepCompletion List :%#v", list))
 	return list
 }
 
-func getAllValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind) []string {
+func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -168,7 +167,7 @@ func getAllValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind)
 	return list
 }
 
-func getAllTypesFromModule(suite *ntt.Suite, mname string) []string {
+func getAllTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -206,7 +205,7 @@ func getAllTypesFromModule(suite *ntt.Suite, mname string) []string {
 	return list
 }
 
-func getAllComponentTypesFromModule(suite *ntt.Suite, mname string) []string {
+func getAllComponentTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -228,7 +227,7 @@ func getAllComponentTypesFromModule(suite *ntt.Suite, mname string) []string {
 	return list
 }
 
-func getAllPortTypesFromModule(suite *ntt.Suite, mname string) []string {
+func getAllPortTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -250,7 +249,7 @@ func getAllPortTypesFromModule(suite *ntt.Suite, mname string) []string {
 	return list
 }
 
-func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+func newImportBehaviours(suite *Suite, kind token.Kind, mname string) []protocol.CompletionItem {
 	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
@@ -259,7 +258,7 @@ func newImportBehaviours(suite *ntt.Suite, kind token.Kind, mname string) []prot
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
 }
-func newAllBehavioursFromModule(suite *ntt.Suite, kinds []token.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
+func newAllBehavioursFromModule(suite *Suite, kinds []token.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
 
 	complList := make([]protocol.CompletionItem, 0, 10)
 	var items []*FunctionDetails
@@ -292,7 +291,7 @@ func newAllBehavioursFromModule(suite *ntt.Suite, kinds []token.Kind, attribs []
 	}
 	return complList
 }
-func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
+func newAllBehaviours(suite *Suite, kinds []token.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
 	var sortPref string
 
 	if files := project.FindAllFiles(suite); len(files) > 0 {
@@ -313,7 +312,7 @@ func newAllBehaviours(suite *ntt.Suite, kinds []token.Kind, attribs []BehavAttri
 	return nil
 }
 
-func newValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind, withDetail bool) []protocol.CompletionItem {
+func newValueDeclsFromModule(suite *Suite, mname string, kind token.Kind, withDetail bool) []protocol.CompletionItem {
 	items := getAllValueDeclsFromModule(suite, mname, kind)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
@@ -326,13 +325,13 @@ func newValueDeclsFromModule(suite *ntt.Suite, mname string, kind token.Kind, wi
 	return complList
 }
 
-func newImportValueDecls(suite *ntt.Suite, mname string, kind token.Kind) []protocol.CompletionItem {
+func newImportValueDecls(suite *Suite, mname string, kind token.Kind) []protocol.CompletionItem {
 	complList := newValueDeclsFromModule(suite, mname, kind, false)
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
 }
 
-func newImportTypes(suite *ntt.Suite, mname string) []protocol.CompletionItem {
+func newImportTypes(suite *Suite, mname string) []protocol.CompletionItem {
 	items := getAllTypesFromModule(suite, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	// NOTE: instead of 'StructCompletion' a better matching kind could be used
@@ -361,7 +360,7 @@ func newImportAfterModName() []protocol.CompletionItem {
 	return complList
 }
 
-func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+func newImportCompletions(suite *Suite, kind token.Kind, mname string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	switch kind {
 	case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
@@ -371,12 +370,12 @@ func newImportCompletions(suite *ntt.Suite, kind token.Kind, mname string) []pro
 	case token.TYPE:
 		list = newImportTypes(suite, mname)
 	default:
-		log.Debug(fmt.Sprintf("Kind not considered yet: %#v)", kind))
+		log.Debugln(fmt.Sprintf("Kind not considered yet: %#v)", kind))
 	}
 	return list
 }
 
-func getModuleNameSetFromSuite(suite *ntt.Suite) *map[string]struct{} {
+func getModuleNameSetFromSuite(suite *Suite) *map[string]struct{} {
 	var set map[string]struct{}
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		set = make(map[string]struct{}, len(files))
@@ -389,7 +388,7 @@ func getModuleNameSetFromSuite(suite *ntt.Suite) *map[string]struct{} {
 	return &set
 }
 
-func moduleNameListFromSuite(suite *ntt.Suite, ownModName string, sortPref string) []protocol.CompletionItem {
+func moduleNameListFromSuite(suite *Suite, ownModName string, sortPref string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		list = make([]protocol.CompletionItem, 0, len(files))
@@ -408,7 +407,7 @@ func moduleNameListFromSuite(suite *ntt.Suite, ownModName string, sortPref strin
 	return list
 }
 
-func newAllTypesFromModule(suite *ntt.Suite, modName string, sortPref string) []protocol.CompletionItem {
+func newAllTypesFromModule(suite *Suite, modName string, sortPref string) []protocol.CompletionItem {
 	items := getAllTypesFromModule(suite, modName)
 	complList := make([]protocol.CompletionItem, 0, len(items))
 	for _, v := range items {
@@ -421,7 +420,7 @@ func newAllTypesFromModule(suite *ntt.Suite, modName string, sortPref string) []
 	return complList
 }
 
-func newAllComponentTypesFromModule(suite *ntt.Suite, modName string, sortPref string) []protocol.CompletionItem {
+func newAllComponentTypesFromModule(suite *Suite, modName string, sortPref string) []protocol.CompletionItem {
 	items := getAllComponentTypesFromModule(suite, modName)
 	complList := make([]protocol.CompletionItem, 0, len(items))
 	for _, v := range items {
@@ -434,7 +433,7 @@ func newAllComponentTypesFromModule(suite *ntt.Suite, modName string, sortPref s
 	return complList
 }
 
-func newAllPortTypesFromModule(suite *ntt.Suite, modName string, sortPref string) []protocol.CompletionItem {
+func newAllPortTypesFromModule(suite *Suite, modName string, sortPref string) []protocol.CompletionItem {
 	items := getAllPortTypesFromModule(suite, modName)
 	portList := make([]protocol.CompletionItem, 0, len(items))
 	for _, v := range items {
@@ -447,7 +446,7 @@ func newAllPortTypesFromModule(suite *ntt.Suite, modName string, sortPref string
 	return portList
 }
 
-func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.CompletionItem {
+func newAllComponentTypes(suite *Suite, sortPref string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
@@ -461,7 +460,7 @@ func newAllComponentTypes(suite *ntt.Suite, sortPref string) []protocol.Completi
 	return complList
 }
 
-func newAllPortTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
+func newAllPortTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
 	var portList []protocol.CompletionItem = nil
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		portList = make([]protocol.CompletionItem, 0, len(files))
@@ -479,7 +478,7 @@ func newAllPortTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionI
 	return portList
 }
 
-func newAllTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem {
+func newAllTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
@@ -498,7 +497,7 @@ func newAllTypes(suite *ntt.Suite, ownModName string) []protocol.CompletionItem 
 	return complList
 }
 
-func newAllValueDecls(suite *ntt.Suite, kind token.Kind) []protocol.CompletionItem {
+func newAllValueDecls(suite *Suite, kind token.Kind) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files := project.FindAllFiles(suite); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
@@ -631,7 +630,7 @@ func isStartOpArgument(nodes []ast.Node) bool {
 	}
 	return false
 }
-func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
+func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
 	if nodes == nil || l == 0 {
@@ -868,7 +867,7 @@ func NewCompListItems(suite *ntt.Suite, pos loc.Pos, nodes []ast.Node, ownModNam
 				}
 			}
 		default:
-			log.Debug(fmt.Sprintf("Node not considered yet: %#v)", nodet))
+			log.Debugln(fmt.Sprintf("Node not considered yet: %#v)", nodet))
 		}
 	}
 	return list
@@ -893,7 +892,7 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 			}
 			return false
 		}
-		log.Debug(fmt.Sprintf("looking for %d In node[%d .. %d] (node: %#v)", pos, n.Pos(), n.End(), n))
+		log.Debugln(fmt.Sprintf("looking for %d In node[%d .. %d] (node: %#v)", pos, n.Pos(), n.End(), n))
 		if errNode, ok := n.(*ast.ErrorNode); ok {
 			if errNode.LastTok().End() == pos {
 				isError = true
@@ -914,7 +913,7 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 		copy(lastStack, nodeStack)
 		return !completed
 	})
-	log.Debug(fmt.Sprintf("Completion at lastNode :%#v NodeStack: %#v", lastStack[len(lastStack)-1], lastStack))
+	log.Debugln(fmt.Sprintf("Completion at lastNode :%#v NodeStack: %#v", lastStack[len(lastStack)-1], lastStack))
 	return lastStack
 }
 
@@ -922,12 +921,12 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
-		log.Debug(fmt.Sprintf("Completion took %s.", elapsed))
+		log.Debugln(fmt.Sprintf("Completion took %s.", elapsed))
 	}()
 	defer func() {
 		if err := recover(); err != nil {
 			// in case of a panic, just continue as this might be a common situation during typing
-			log.Debug(fmt.Sprintf("Info: %s.", err))
+			log.Debugln(fmt.Sprintf("Info: %s.", err))
 		}
 	}()
 	if !params.TextDocument.URI.SpanURI().IsFile() {
@@ -945,14 +944,14 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	// Thus 'completion' shall collect items only from one suite.
 	// Decision: first suite
 	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
-	log.Debug(fmt.Sprintf("Completion after Parse :%p", &tree.Root))
+	log.Debugln(fmt.Sprintf("Completion after Parse :%p", &tree.Root))
 	if tree.Root == nil || len(tree.Modules()) == 0 {
 		complList := make([]protocol.CompletionItem, 1)
 		complList = append(complList, protocol.CompletionItem{Label: "module",
 			InsertText:       "module ${1:" + defaultModuleId + "} {\n\t${0}\n}",
 			InsertTextFormat: protocol.SnippetTextFormat, Kind: protocol.KeywordCompletion})
 		elapsed := time.Since(start)
-		log.Debug(fmt.Sprintf("Completion took %s.", elapsed))
+		log.Debugln(fmt.Sprintf("Completion took %s.", elapsed))
 
 		return &protocol.CompletionList{IsIncomplete: false, Items: complList}, nil
 	}

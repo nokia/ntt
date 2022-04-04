@@ -7,12 +7,11 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
-func generateSymbols(t *testing.T, suite *ntt.Suite) (*ttcn3.Tree, []protocol.DocumentSymbol) {
+func generateSymbols(t *testing.T, suite *lsp.Suite) (*ttcn3.Tree, []protocol.DocumentSymbol) {
 
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	tree := ttcn3.ParseFile(name)

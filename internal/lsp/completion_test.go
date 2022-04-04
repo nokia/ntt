@@ -11,7 +11,6 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,14 +33,18 @@ func init() {
 	}
 
 }
-func buildSuite(t *testing.T, strs ...string) *ntt.Suite {
-	suite := &ntt.Suite{}
+func buildSuite(t *testing.T, strs ...string) *lsp.Suite {
+	suite := lsp.NewSuite()
 	for i, s := range strs {
 		name := fmt.Sprintf("%s_Module_%d.ttcn3", t.Name(), i)
 		suite.AddSources(name)
 		srcs, _ := suite.Sources()
 		fh := fs.Open(srcs[len(srcs)-1])
 		fh.SetBytes([]byte(s))
+		suite.DB.Index(srcs[len(srcs)-1])
+	}
+	for _, dir := range k3.FindAuxiliaryDirectories() {
+		suite.DB.Index(fs.FindTTCN3Files(dir)...)
 	}
 	return suite
 }
@@ -51,7 +54,7 @@ type Pos struct {
 	Column int
 }
 
-func completionAt(t *testing.T, suite *ntt.Suite, pos loc.Pos) []protocol.CompletionItem {
+func completionAt(t *testing.T, suite *lsp.Suite, pos loc.Pos) []protocol.CompletionItem {
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
 	syntax := suite.ParseWithAllErrors(name)
 	nodeStack := lsp.LastNonWsToken(syntax.Module, pos)
