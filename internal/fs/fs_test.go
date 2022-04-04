@@ -44,8 +44,14 @@ func TestJoinPath(t *testing.T) {
 		{".", "", "."},
 		{".", "a", "a"},
 		{"/", "b", "/b"},
-		//{"//", "c", "/c"},
+		{"//", "c", "/c"},
 		{"/", "/d", "/d"},
+		{"e", "f", "e/f"},
+		{"/g", "h", "/g/h"},
+		{"/i", "../j", "/j"},
+		{"file://k", "l", "file://k/l"},
+		{"file:///m", "n", "file:///m/n"},
+		{"file:///o", "../p", "file:///p"},
 	}
 
 	for _, test := range tests {

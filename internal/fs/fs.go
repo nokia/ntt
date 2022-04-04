@@ -33,11 +33,25 @@ func PathSlice(files ...*File) []string {
 	return ret
 }
 
-// JoinPath joins the given paths.
+// JoinPath joins any number of path elements into a single path, separating
+// them with an OS specific Separator. Empty elements are ignored. The result
+// is Cleaned. If the argument list is empty or all its elements are empty,
+// JoinPath returns an empty string.
+//
+// If baseUrl is an absolute URL, JoinPath will will keep the scheme of the
+// first argument and separats the rest with a slash.
 func JoinPath(baseUrl string, elem ...string) (result string, err error) {
+	if filepath.VolumeName(baseUrl) != "" {
+		// this is a windows path
+		return filepath.Join(elem...), nil
+	}
 	url, err := url.Parse(baseUrl)
 	if err != nil {
 		return
+	}
+	if url.Scheme == "" {
+		elem = append([]string{baseUrl}, elem...)
+		return filepath.Join(elem...), nil
 	}
 	if len(elem) > 0 {
 		elem = append([]string{url.Path}, elem...)
