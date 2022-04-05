@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/nokia/ntt/internal/fs"
@@ -18,6 +19,9 @@ type Suite struct {
 	DB        *ttcn3.DB
 	modulesMu sync.Mutex
 	modules   map[string]string
+
+	filesMu sync.Mutex
+	files   map[string]bool
 }
 
 func (s *Suite) AddSources(srcs ...string) {
@@ -25,10 +29,41 @@ func (s *Suite) AddSources(srcs ...string) {
 	s.DB.Index(srcs...)
 }
 
+func (s *Suite) Files() []string {
+	s.filesMu.Lock()
+	defer s.filesMu.Unlock()
+	if s.files == nil {
+		s.files = make(map[string]bool)
+		files, _ := project.Files(s.Suite)
+		for _, dir := range k3.FindAuxiliaryDirectories() {
+			for _, file := range fs.FindTTCN3Files(dir) {
+				files = append(files, file)
+			}
+		}
+		for _, dir := range files {
+			s.files[dir] = true
+		}
+	}
+
+	files := make([]string, 0, len(s.files))
+	for file := range s.files {
+		files = append(files, file)
+	}
+	sort.Strings(files)
+	return files
+}
+
+func (s *Suite) ContainsFile(file string) bool {
+	s.filesMu.Lock()
+	defer s.filesMu.Unlock()
+	return s.files[file]
+}
+
 func (s *Suite) FindModule(name string) (string, error) {
+
 	var files []string
 	for file := range s.DB.Modules[name] {
-		if project.ContainsFile(s, file) {
+		if s.files[file] {
 			files = append(files, file)
 		}
 	}
@@ -51,7 +86,7 @@ func (s *Suite) guessModuleByFileName(name string) (string, error) {
 
 	if s.modules == nil {
 		s.modules = make(map[string]string)
-		for _, file := range project.FindAllFiles(s) {
+		for _, file := range s.Files() {
 			name := fs.Stem(file)
 			s.modules[name] = file
 		}
@@ -113,7 +148,7 @@ func (s *Suites) Owners(uri protocol.DocumentURI) []*Suite {
 
 	var ret []*Suite
 	for _, suite := range s.roots {
-		if project.ContainsFile(suite, string(uri.SpanURI())) {
+		if suite.ContainsFile(string(uri.SpanURI())) {
 			ret = append(ret, suite)
 		}
 	}
@@ -138,12 +173,8 @@ func (s *Suites) AddSuite(root project.Suite) {
 	suite.SetSourceDir(root.SourceDir)
 	suite.DB = &s.db
 	s.roots[root.RootDir] = suite
-	files, _ := suite.Files()
+	files := suite.Files()
 	s.mu.Unlock()
-
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		files = append(files, fs.FindTTCN3Files(dir)...)
-	}
 
 	s.db.Index(files...)
 }

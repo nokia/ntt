@@ -11,7 +11,6 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/printer"
@@ -294,7 +293,7 @@ func newAllBehavioursFromModule(suite *Suite, kinds []token.Kind, attribs []Beha
 func newAllBehaviours(suite *Suite, kinds []token.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
 	var sortPref string
 
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		complList := make([]protocol.CompletionItem, 0, len(files)*2)
 
 		for _, f := range files {
@@ -377,7 +376,7 @@ func newImportCompletions(suite *Suite, kind token.Kind, mname string) []protoco
 
 func getModuleNameSetFromSuite(suite *Suite) *map[string]struct{} {
 	var set map[string]struct{}
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		set = make(map[string]struct{}, len(files))
 		for _, f := range files {
 			fileName := filepath.Base(f)
@@ -390,7 +389,7 @@ func getModuleNameSetFromSuite(suite *Suite) *map[string]struct{} {
 
 func moduleNameListFromSuite(suite *Suite, ownModName string, sortPref string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		list = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			fileName := filepath.Base(f)
@@ -448,7 +447,7 @@ func newAllPortTypesFromModule(suite *Suite, modName string, sortPref string) []
 
 func newAllComponentTypes(suite *Suite, sortPref string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
@@ -462,7 +461,7 @@ func newAllComponentTypes(suite *Suite, sortPref string) []protocol.CompletionIt
 
 func newAllPortTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
 	var portList []protocol.CompletionItem = nil
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		portList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
@@ -480,7 +479,7 @@ func newAllPortTypes(suite *Suite, ownModName string) []protocol.CompletionItem 
 
 func newAllTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
@@ -499,7 +498,7 @@ func newAllTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
 
 func newAllValueDecls(suite *Suite, kind token.Kind) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
-	if files := project.FindAllFiles(suite); len(files) > 0 {
+	if files := suite.Files(); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
 		for _, f := range files {
 			mName := filepath.Base(f)
