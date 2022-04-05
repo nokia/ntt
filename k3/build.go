@@ -45,10 +45,11 @@ func (p *Plugin) Targets() []string {
 }
 
 func (p *Plugin) command() *exec.Cmd {
-	cmd := "$CXX $CXXFLAGS $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin -shared -fPIC"
+	cmd := "$CXX $CXXFLAGS -shared -fPIC"
 	args := build.FieldsExpandWithDefault(cmd, DefaultEnv)
 	args = append(args, "-o", p.target)
 	args = append(args, p.sources...)
+	args = append(args, build.FieldsExpandWithDefault("$LDFLAGS $EXTRA_LDFLAGS -lk3-plugin", DefaultEnv)...)
 	return build.CommandWithEnv(DefaultEnv, args...)
 }
 
