@@ -324,7 +324,6 @@ func (t *Test) request() string {
 	} else {
 		fmt.Fprintf(&req, "tciStartTestCase \"%s\" {%s}\n", t.Name, strings.Join(t.Args, ","))
 	}
-	fmt.Fprintln(&req, "tcinonExitTE")
 	s := req.String()
 	log.Traceln("<", s)
 	return s
