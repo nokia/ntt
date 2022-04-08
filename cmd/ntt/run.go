@@ -276,6 +276,9 @@ func k3sRun(ctx context.Context, files []string, jobs <-chan *ntt.Job) error {
 		fmt.Sprintf("--results-file=%s", ResultsFile),
 		fmt.Sprintf("-j%d", MaxWorkers),
 	}
+	if s := env.Getenv("K3SFLAGS"); s != "" {
+		args = append(args, strings.Fields(s)...)
+	}
 	args = append(args, files...)
 	k3s := proc.CommandContext(ctx, "k3s", args...)
 	k3s.Stdin = k3sJobs(jobs)
