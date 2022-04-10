@@ -5,13 +5,60 @@ package env
 
 import (
 	"bytes"
+	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 )
+
+var ErrUndefinedVariable = fmt.Errorf("undefined variable")
+
+// Slice returns a sorted string slice of the variables.
+func (env Env) Slice() []string {
+	var s []string
+	for k, env := range env {
+		s = append(s, fmt.Sprintf("%s=%s", k, env))
+	}
+	sort.Strings(s)
+	return s
+}
+
+// Expand variable references recursively. Environment variables overwrite
+// variables defined in environment files. Undefined variables won't
+// be expanded and will return an error.
+func (env Env) Expand() error {
+	var (
+		err     error
+		expand  func(string) string
+		visited = make(map[string]bool)
+	)
+
+	expand = func(name string) string {
+		if s, ok := LookupEnv(name); ok {
+			return s
+		}
+		v, ok := env[name]
+		if !ok {
+			if err == nil {
+				err = fmt.Errorf("%w: %s", ErrUndefinedVariable, name)
+			}
+			return fmt.Sprintf("${%s}", name)
+		}
+		if !visited[name] {
+			visited[name] = true
+			v = os.Expand(v, expand)
+		}
+		return v
+	}
+	for name := range env {
+		env[name] = expand(name)
+	}
+	return err
+}
 
 var Files = []string{"ntt.env", "k3.env"}
 
