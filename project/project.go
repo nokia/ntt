@@ -158,7 +158,7 @@ func Variables(vars map[string]string) ([]string, error) {
 		allKeys[k] = true
 	}
 
-	for k := range env.Parse() {
+	for k := range env.ParseFiles() {
 		allKeys[k] = true
 	}
 
