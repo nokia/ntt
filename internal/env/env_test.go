@@ -20,13 +20,13 @@ func init() {
 func TestCache(t *testing.T) {
 
 	// First load should not find anything, because CACHE is not set.
-	env.Load()
+	env.LoadFiles()
 	if env := env.Getenv("NTT_FOO"); env != "" {
 		t.Errorf("Environment variable NTT_FOO should be empty")
 	}
 
 	os.Setenv("NTT_CACHE", "testdata/cache")
-	env.Load()
+	env.LoadFiles()
 	if env := env.Getenv("NTT_FOO"); env != "bar" {
 		t.Errorf("Want: NTT_FOO=%q, Got: NTT_FOO=%q", "bar", env)
 	}
@@ -57,7 +57,7 @@ func TestEnvK3(t *testing.T) {
 func TestPrefixReplaceNTT(t *testing.T) {
 	clearEnv()
 	setContent("ntt.env", `K3_FNORD="var2"`)
-	env.Load("ntt.env")
+	env.LoadFiles("ntt.env")
 	assert.Equal(t, "var2", env.Getenv("NTT_FNORD"))
 	assert.Equal(t, "var2", env.Getenv("K3_FNORD"))
 }
@@ -66,7 +66,7 @@ func TestPrefixReplaceNTT(t *testing.T) {
 func TestPrefixKeepK3(t *testing.T) {
 	clearEnv()
 	setContent("ntt.env", `NTT_FNORD="var1"`)
-	env.Load("ntt.env")
+	env.LoadFiles("ntt.env")
 	assert.Equal(t, "var1", env.Getenv("NTT_FNORD"))
 	assert.Equal(t, "", env.Getenv("K3_FNORD"))
 }
@@ -76,7 +76,7 @@ func TestPrefixHasBoth(t *testing.T) {
 	clearEnv()
 	setContent("ntt.env", `NTT_FNORD="var1"
 	K3_FNORD="var2"`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "var1", env.Getenv("NTT_FNORD"))
 	assert.Equal(t, "var2", env.Getenv("K3_FNORD"))
 }
@@ -87,7 +87,7 @@ func TestEnvK3BeforeNTT(t *testing.T) {
 	setContent("ntt.env", `NTT_FNORD="fromNTT"`)
 	setContent("k3.env", `NTT_FNORD="fromK3"
 	K3_FNORD="fromK3"`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "fromNTT", env.Getenv("NTT_FNORD"))
 	assert.Equal(t, "fromK3", env.Getenv("K3_FNORD"))
 }
@@ -98,7 +98,7 @@ func TestEnvK3BeforeNTTWithSubstitution(t *testing.T) {
 	setContent("ntt.env", `K3_FNORD="fromNTT"`)
 	setContent("k3.env", `NTT_FNORD="fromK3"
 	K3_FNORD="fromK3"`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "fromK3", env.Getenv("NTT_FNORD"))
 	assert.Equal(t, "fromNTT", env.Getenv("K3_FNORD"))
 }
@@ -120,7 +120,7 @@ func TestEnvK3BeforeNTTWithSubstitution(t *testing.T) {
 func TestEnvConversion(t *testing.T) {
 	clearEnv()
 	setContent("ntt.env", `NTT_FLOAT=23.5`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "23.5", env.Getenv("NTT_FLOAT"))
 }
 
@@ -131,7 +131,7 @@ func TestEnvExpansion(t *testing.T) {
 		NTT_A=a
 		NTT_B=$NTT_A
 	`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "a", env.Getenv("NTT_B"))
 }
 
@@ -141,7 +141,7 @@ func TestEnvExpansion2(t *testing.T) {
 		NTT_C=23.5
 		NTT_B=${NTT_C} $NTT_C
 	`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "23.5 23.5", env.Getenv("NTT_B"))
 }
 
@@ -153,7 +153,7 @@ func TestEnvExpansionEnv(t *testing.T) {
 		NTT_B=$NTT_A
 		NTT_A=a
 	`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "fromEnv", env.Getenv("NTT_B"))
 }
 
@@ -165,7 +165,7 @@ func TestEnvExpansionEnv2(t *testing.T) {
 		NTT_A=a
 		NTT_B=$NTT_A
 	`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "fromEnv", env.Getenv("NTT_B"))
 }
 
@@ -176,7 +176,7 @@ func TestEnvExpansionUnknown(t *testing.T) {
 		NTT_B=$NTT_A
 		NTT_A=a
 	`)
-	env.Load()
+	env.LoadFiles()
 	assert.Equal(t, "", env.Getenv("NTT_B"))
 }
 

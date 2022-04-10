@@ -15,17 +15,17 @@ var Files = []string{"ntt.env", "k3.env"}
 
 type Env gotenv.Env
 
-// Load environment files ntt.env and k3.env
-func Load(files ...string) {
-	for k, v := range Parse(files...) {
+// LoadFiles environment files ntt.env and k3.env
+func LoadFiles(files ...string) {
+	for k, v := range ParseFiles(files...) {
 		if _, ok := os.LookupEnv(k); !ok {
 			os.Setenv(k, v)
 		}
 	}
 }
 
-// Parse environment files ntt.env and k3.env
-func Parse(files ...string) Env {
+// ParseFiles environment files ntt.env and k3.env
+func ParseFiles(files ...string) Env {
 	if len(files) == 0 {
 		files = Files
 	}
