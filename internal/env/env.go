@@ -1,3 +1,6 @@
+// Package env provides functionality to dynamically load the environment variables
+//
+// Note: This is just a modified copy and wrapper around the gotenv package by suboisto
 package env
 
 import (
@@ -5,15 +8,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/moosq/gotenv"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 )
 
 var Files = []string{"ntt.env", "k3.env"}
-
-type Env gotenv.Env
 
 // LoadFiles environment files ntt.env and k3.env
 func LoadFiles(files ...string) {
@@ -38,7 +38,7 @@ func ParseFiles(files ...string) Env {
 			continue
 		}
 		log.Debugf("found environment file: %s\n", f.Path())
-		e, err := gotenv.StrictParse(bytes.NewReader(b))
+		e, err := StrictParse(bytes.NewReader(b))
 		if err != nil {
 			log.Verbosef("error parsing %q: %s\n", path, err.Error())
 		}
