@@ -1,6 +1,7 @@
 package env_test
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -178,6 +179,87 @@ func TestEnvExpansionUnknown(t *testing.T) {
 	`)
 	env.LoadFiles()
 	assert.Equal(t, "", env.Getenv("NTT_B"))
+}
+
+func TestSlice(t *testing.T) {
+	e := env.Env{
+		"Z": "z",
+		"a": "a=b",
+		"":  "23",
+		"A": "",
+	}
+	assert.Equal(t, []string{"=23", "A=", "Z=z", "a=a=b"}, e.Slice())
+}
+
+func TestExpand(t *testing.T) {
+	expand := func(e env.Env) ([]string, error) {
+		err := e.Expand()
+		return e.Slice(), err
+	}
+	t.Run("empty", func(t *testing.T) {
+		actual, err := expand(nil)
+		assert.Nil(t, err)
+		assert.Nil(t, actual)
+	})
+	t.Run("simple", func(t *testing.T) {
+		actual, err := expand(env.Env{
+			"a": "a$c",
+			"b": "b${c}",
+			"c": "c",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{
+			"a=ac",
+			"b=bc",
+			"c=c",
+		}, actual)
+	})
+	t.Run("transitive", func(t *testing.T) {
+		actual, err := expand(env.Env{
+			"a": "a$b",
+			"b": "b${c}",
+			"c": "c",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{
+			"a=abc",
+			"b=bc",
+			"c=c",
+		}, actual)
+	})
+	t.Run("unknown", func(t *testing.T) {
+		actual, err := expand(env.Env{
+			"a": "a$b",
+		})
+		if !errors.Is(err, env.ErrUnknownVariable) {
+			t.Errorf("expected ErrUnknownVariable, got %v", err)
+		}
+		assert.Equal(t, []string{
+			"a=a$b",
+		}, actual)
+	})
+	t.Run("known", func(t *testing.T) {
+		actual, err := expand(env.Env{
+			"a":      "a$CXXFLAGS",
+			"b":      "b$CFLAGS",
+			"CFLAGS": "foo",
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"CFLAGS=foo", "a=a", "b=bfoo"}, actual)
+	})
+	t.Run("cyclic", func(t *testing.T) {
+		actual, err := expand(env.Env{
+			"a": "$a",
+			"b": "$c",
+			"c": "$d",
+			"d": "$b",
+		})
+		if !errors.Is(err, env.ErrCyclicVariable) {
+			t.Errorf("expected ErrCyclicVariable, got %v", err)
+		}
+		assert.Equal(t, []string{"a=$a", "b=$c", "c=$d", "d=$b"}, actual)
+	})
+
 }
 
 func setContent(file string, content string) {

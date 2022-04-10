@@ -15,7 +15,29 @@ import (
 	"github.com/nokia/ntt/internal/log"
 )
 
-var ErrUndefinedVariable = fmt.Errorf("undefined variable")
+var ErrUnknownVariable = fmt.Errorf("unknown variable")
+var ErrCyclicVariable = fmt.Errorf("cyclic variable")
+
+var knownVars = map[string]bool{
+	"PATH":                true,
+	"CFLAGS":              true,
+	"CPPFLAGS":            true,
+	"CXXFLAGS":            true,
+	"K3CFLAGS":            true,
+	"K3RFLAGS":            true,
+	"LDFLAGS":             true,
+	"LD_LIBRARY_PATH":     true,
+	"NTT_DATADIR":         true,
+	"NTT_IMPORTS":         true,
+	"NTT_NAME":            true,
+	"NTT_PARAMETERS_DIR":  true,
+	"NTT_PARAMETERS_FILE": true,
+	"NTT_SOURCES":         true,
+	"NTT_SOURCE_DIR":      true,
+	"NTT_TEST_HOOK":       true,
+	"NTT_TIMEOUT":         true,
+	"NTT_VARIABLES":       true,
+}
 
 // Slice returns a sorted string slice of the variables.
 func (env Env) Slice() []string {
@@ -34,28 +56,45 @@ func (env Env) Expand() error {
 	var (
 		err     error
 		expand  func(string) string
-		visited = make(map[string]bool)
+		visited map[string]bool
 	)
 
 	expand = func(name string) string {
 		if s, ok := LookupEnv(name); ok {
 			return s
 		}
+
 		v, ok := env[name]
 		if !ok {
+			if knownVars[name] {
+				return ""
+			}
 			if err == nil {
-				err = fmt.Errorf("%w: %s", ErrUndefinedVariable, name)
+				err = fmt.Errorf("%w: %s", ErrUnknownVariable, name)
 			}
 			return fmt.Sprintf("${%s}", name)
 		}
 		if !visited[name] {
 			visited[name] = true
 			v = os.Expand(v, expand)
+			if err == nil {
+				env[name] = v
+			}
+			return v
+
 		}
-		return v
+		if err == nil {
+			err = fmt.Errorf("%w: %s", ErrCyclicVariable, name)
+		}
+		return fmt.Sprintf("${%s}", name)
 	}
+
 	for name := range env {
-		env[name] = expand(name)
+		visited = make(map[string]bool)
+		v := expand(name)
+		if err == nil {
+			env[name] = v
+		}
 	}
 	return err
 }
