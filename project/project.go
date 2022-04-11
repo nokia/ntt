@@ -14,8 +14,8 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/k3"
-	"gopkg.in/yaml.v2"
 )
 
 // Interface describes a TTCN-3 project.
@@ -184,7 +184,7 @@ func Open(path string) (*Project, error) {
 	file := filepath.Join(p.root, ManifestFile)
 	if b, err := fs.Content(file); err == nil {
 		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
-		return &p, yaml.UnmarshalStrict(b, &p.Config.Manifest)
+		return &p, yaml.Unmarshal(b, &p.Config.Manifest)
 	}
 
 	// Fall back to recursive scanning
