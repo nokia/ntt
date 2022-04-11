@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/jinzhu/copier"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
-	"gopkg.in/yaml.v2"
 )
 
 func (s *Suite) Config() (*project.Config, error) {
@@ -51,7 +51,7 @@ func (s *Suite) Config() (*project.Config, error) {
 		b, err := f.Bytes()
 		check(err)
 		if err == nil {
-			if err2 := yaml.UnmarshalStrict(b, &c.Manifest); err2 != nil {
+			if err2 := yaml.Unmarshal(b, &c.Manifest); err2 != nil {
 				check(fmt.Errorf("Syntax error in file %s: %w", f.Path(), err2))
 			}
 		}

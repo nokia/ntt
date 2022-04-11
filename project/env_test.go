@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 )
 
 // Verify unknown variable lead to an error

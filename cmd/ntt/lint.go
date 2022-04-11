@@ -12,13 +12,13 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -205,7 +205,7 @@ func lint(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	if err := yaml.UnmarshalStrict(b, &style); err != nil {
+	if err := yaml.Unmarshal(b, &style); err != nil {
 		return err
 	}
 

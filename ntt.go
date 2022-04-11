@@ -2,7 +2,6 @@ package ntt
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/nokia/ntt/build"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
@@ -447,17 +445,6 @@ func (s *Suite) parameters(name string) (map[string]string, time.Duration, error
 }
 
 func readParametersFile(path string, v interface{}) error {
-	b, err := fs.Content(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
-		return fmt.Errorf("reading parameters file failed: %w", err)
-	}
-	_, err = toml.Decode(string(b), v)
-	if err != nil {
-		return fmt.Errorf("decoding parameters file failed: %w", err)
-	}
 	return nil
 }
 

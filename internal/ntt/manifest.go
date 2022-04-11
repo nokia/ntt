@@ -11,8 +11,8 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
-	"gopkg.in/yaml.v2"
 )
 
 // Timeout returns the configured timeout of the Suite. If there's no timeout,
@@ -363,7 +363,7 @@ func (suite *Suite) parseManifest() (*project.Config, error) {
 		data := manifestData{
 			manifest: &project.Config{},
 		}
-		data.err = yaml.UnmarshalStrict(b, &data.manifest.Manifest)
+		data.err = yaml.Unmarshal(b, &data.manifest.Manifest)
 		return &data
 	})
 
