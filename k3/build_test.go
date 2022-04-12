@@ -55,7 +55,7 @@ func TestT3XFBuilder(t *testing.T) {
 	srcdir, _, cleanup := initStage(t)
 	defer cleanup()
 
-	b := k3.NewT3XFBuilder("suite", filepath.Join(srcdir, "testdata/suite/test.ttcn3"))
+	b := k3.NewT3XFBuilder("suite", []string{filepath.Join(srcdir, "testdata/suite/test.ttcn3")}, nil)
 	err := b.Build()
 	if err != nil {
 		t.Errorf("Build() = %v", err)

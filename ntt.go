@@ -485,7 +485,7 @@ func PlanProject(name string, p project.Interface) ([]build.Builder, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	var deps []string
 	for _, dir := range imports {
 		builders, err := PlanImport(dir)
 		if err != nil {
@@ -494,13 +494,13 @@ func PlanProject(name string, p project.Interface) ([]build.Builder, error) {
 		for _, b := range builders {
 			for _, o := range b.Targets() {
 				if fs.HasTTCN3Extension(o) {
-					srcs = append(srcs, o)
+					deps = append(deps, o)
 				}
 			}
 
 			// Skip T3XF Builders, because we'll build t3xf speparately.
 			if t, ok := b.(*k3.T3XF); ok {
-				srcs = append(srcs, t.Sources()...)
+				deps = append(deps, t.Sources()...)
 			} else {
 				ret = append(ret, b)
 			}
@@ -511,7 +511,7 @@ func PlanProject(name string, p project.Interface) ([]build.Builder, error) {
 		return nil, fmt.Errorf("test root folder %s: %w", p.Root(), ErrNoSources)
 	}
 
-	ret = append(ret, k3.NewT3XFBuilder(name, srcs...))
+	ret = append(ret, k3.NewT3XFBuilder(name, srcs, deps))
 	return ret, nil
 }
 
@@ -572,7 +572,7 @@ func PlanImport(dir string) ([]build.Builder, error) {
 		builders = append(builders, k3.NewPluginBuilder(name, cFiles...))
 	}
 	if len(ttcn3Files) > 0 {
-		builders = append(builders, k3.NewT3XFBuilder(name, ttcn3Files...))
+		builders = append(builders, k3.NewT3XFBuilder(name, nil, ttcn3Files))
 	}
 	return builders, nil
 }
