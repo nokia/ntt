@@ -54,8 +54,8 @@ func (db *DB) MaxJobs() int {
 
 type Session struct {
 	Id              string
-	MaxJobs         int    `json:"max_jobs,omitempty"`
-	MaxLoad         int    `json:"max_load,omitempty"`
+	MaxJobs         int    `json:"maxjobs,omitempty"`
+	MaxLoad         int    `json:"maxload,omitempty"`
 	ExpectedVerdict string `json:"expected_verdict,omitempty"`
 	Runs            []Run  `json:"runs,omitempty"`
 }
