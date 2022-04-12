@@ -76,11 +76,12 @@ func (p *Plugin) Commands() []compdb.Command {
 	return ret
 }
 
-func NewT3XFBuilder(name string, srcs ...string) *T3XF {
+func NewT3XFBuilder(name string, srcs []string, imports []string) *T3XF {
 	return &T3XF{
 		name:    name,
 		target:  build.Pathf("%s.t3xf", name),
 		sources: srcs,
+		imports: imports,
 	}
 }
 
@@ -89,6 +90,7 @@ type T3XF struct {
 	name    string
 	target  string
 	sources []string
+	imports []string
 }
 
 func (t *T3XF) Targets() []string {
@@ -96,7 +98,7 @@ func (t *T3XF) Targets() []string {
 }
 
 func (t *T3XF) Sources() []string {
-	return t.sources
+	return append(t.sources, t.imports...)
 }
 
 func (t *T3XF) command() *exec.Cmd {
@@ -105,8 +107,8 @@ func (t *T3XF) command() *exec.Cmd {
 		args = append(args, env...)
 	}
 	visited := make(map[string]bool)
-	for _, src := range t.sources {
-		dir := filepath.Dir(src)
+	for _, path := range t.imports {
+		dir := filepath.Dir(path)
 		if !visited[dir] {
 			args = append(args, "-I", dir)
 			visited[dir] = true
@@ -120,7 +122,8 @@ func (t *T3XF) command() *exec.Cmd {
 }
 
 func (t *T3XF) Build() error {
-	b, err := build.NeedsRebuild(t.target, t.sources...)
+	deps := append(t.sources, t.imports...)
+	b, err := build.NeedsRebuild(t.target, deps...)
 	if b && err == nil {
 		// T3XF file should be removed before building to force a new inode.
 		// This ensures that already open T3XF files stay intact.
