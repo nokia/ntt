@@ -53,6 +53,13 @@ func TestUnmarshal(t *testing.T) {
 		err := yaml.Unmarshal([]byte(`timeout: Foo`), &s)
 		assert.NotNil(t, err)
 	})
+
+	t.Run("test multi-line quotes", func(t *testing.T) {
+		var s Struct
+		err := yaml.Unmarshal([]byte(`name: |  Foo\n  Bar`), &s)
+		assert.Nil(t, err)
+		assert.Equal(t, `Foo\n  Bar`, s.Name)
+	})
 }
 
 func TestMarshalJSON(t *testing.T) {
