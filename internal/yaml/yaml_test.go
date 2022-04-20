@@ -69,9 +69,9 @@ func TestUnmarshal(t *testing.T) {
 		var c MyConfig
 		err := yaml.Unmarshal([]byte(`timeout: 3.42e-5
 parameters:
-  "mpar.anInt": -123
+  mpar.anInt: -123
 
-  "mpar.aBool": true
+  mpar.aBool: true
 `), &c)
 		assert.Nil(t, err)
 		assert.Equal(t, 3.42e-5, c.Timeout)
@@ -83,13 +83,28 @@ parameters:
 		var c MyConfig
 		err := yaml.Unmarshal([]byte(`timeout: 3.42e-5
 parameters:
-  "mpar.anInt": -123
-  "mpar.aBool": true
+  mpar.anInt: -123
+  mpar.aBool: true
 `), &c)
 		assert.Nil(t, err)
 		assert.Equal(t, 3.42e-5, c.Timeout)
 		assert.Equal(t, "-123", c.Parameters["mpar.anInt"])
 		assert.Equal(t, "true", c.Parameters["mpar.aBool"])
+	})
+
+	t.Run("test params w multi line strings", func(t *testing.T) {
+		var c MyConfig
+		err := yaml.Unmarshal([]byte(`timeout: 3.42e-5
+parameters:
+  mpar.aCompound1: |
+      { hex := '0a0a'H, str := "a string"}
+  mpar.aCharstring: |
+      "Hello World"
+`), &c)
+		assert.Nil(t, err)
+		assert.Equal(t, 3.42e-5, c.Timeout)
+		assert.Equal(t, "{ hex := '0a0a'H, str := \"a string\"}\n", c.Parameters["mpar.aCompound1"])
+		assert.Equal(t, "\"Hello World\"\n", c.Parameters["mpar.aCharstring"])
 	})
 }
 
