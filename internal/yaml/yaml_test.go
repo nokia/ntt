@@ -15,6 +15,10 @@ type Struct struct {
 	Timeout   yaml.Duration `json:",omitempty"`
 }
 
+type MyConfig struct {
+	Timeout    float64           `yaml:"timeout,omitempty"`
+	Parameters map[string]string `yaml:"parameters,omitempty"`
+}
 type EmbeddingStruct struct {
 	Struct `json:",inline"`
 }
@@ -59,6 +63,33 @@ func TestUnmarshal(t *testing.T) {
 		err := yaml.Unmarshal([]byte(`name: |  Foo\n  Bar`), &s)
 		assert.Nil(t, err)
 		assert.Equal(t, `Foo\n  Bar`, s.Name)
+	})
+
+	t.Run("test params without quotes", func(t *testing.T) {
+		var c MyConfig
+		err := yaml.Unmarshal([]byte(`timeout: 3.42e-5
+parameters:
+  "mpar.anInt": -123
+
+  "mpar.aBool": true
+`), &c)
+		assert.Nil(t, err)
+		assert.Equal(t, 3.42e-5, c.Timeout)
+		assert.Equal(t, "-123", c.Parameters["mpar.anInt"])
+		assert.Equal(t, "true", c.Parameters["mpar.aBool"])
+	})
+
+	t.Run("test params w/o quotes w/o empty lines", func(t *testing.T) {
+		var c MyConfig
+		err := yaml.Unmarshal([]byte(`timeout: 3.42e-5
+parameters:
+  "mpar.anInt": -123
+  "mpar.aBool": true
+`), &c)
+		assert.Nil(t, err)
+		assert.Equal(t, 3.42e-5, c.Timeout)
+		assert.Equal(t, "-123", c.Parameters["mpar.anInt"])
+		assert.Equal(t, "true", c.Parameters["mpar.aBool"])
 	})
 }
 
