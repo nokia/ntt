@@ -14,7 +14,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/session"
-	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
 
@@ -48,6 +48,13 @@ var (
 					return err
 				}
 			}
+
+			files, _ := splitArgs(args, cmd.ArgsLenAtDash())
+			p, err := project.Open(files...)
+			if err != nil {
+				return err
+			}
+			Project = p
 			return nil
 		},
 
@@ -88,10 +95,19 @@ var (
 	date    = "unknown"
 
 	cpuprofile = ""
+
+	Project *project.Config
 )
 
 func init() {
 	session.SharedDir = "/tmp/k3"
+	if s := os.Getenv("K3_SESSION_ID"); s == "" {
+		sid, err := session.Get()
+		if err != nil {
+			fatal(err)
+		}
+		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
+	}
 	root := RootCommand
 	flags := root.PersistentFlags()
 	flags.CountVarP(&verbose, "verbose", "v", "verbose output")
@@ -150,18 +166,6 @@ func Verbosity() log.Level {
 
 func main() {
 	defer log.Close()
-
-	if s := k3.DataDir(); s != "" {
-		os.Setenv("K3_DATADIR", s)
-	}
-	if s := os.Getenv("K3_SESSION_ID"); s == "" {
-		sid, err := session.Get()
-		if err != nil {
-			fatal(err)
-		}
-		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
-	}
-
 	err := RootCommand.Execute()
 	if cpuprofile != "" {
 		pprof.StopCPUProfile()

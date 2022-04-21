@@ -7,7 +7,6 @@ import (
 
 	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/compdb"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/spf13/cobra"
 )
 
@@ -28,16 +27,8 @@ func init() {
 }
 
 func Build(cmd *cobra.Command, args []string) error {
-	suite, err := ntt.NewFromArgs(args...)
-	if err != nil {
-		return err
-	}
-	name, err := suite.Name()
-	if err != nil {
-		return err
-	}
 	if CompDB {
-		builders, err := ntt2.PlanProject(name, suite)
+		builders, err := ntt2.PlanProject(Project.Name, Project)
 		if err != nil {
 			return err
 		}
@@ -59,5 +50,5 @@ func Build(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	return ntt2.BuildProject(name, suite)
+	return ntt2.BuildProject(Project.Name, Project)
 }

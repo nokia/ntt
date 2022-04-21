@@ -11,7 +11,6 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/k3/k3s"
-	"github.com/nokia/ntt/project"
 )
 
 type TestController struct {
@@ -33,8 +32,8 @@ type Test struct {
 }
 
 type pair struct {
-	name string
-	p    project.Interface
+	name  string
+	suite *Suite
 }
 
 func (c *TestController) Start(client protocol.Client) error {
@@ -69,22 +68,24 @@ func (c *TestController) handleEvents() {
 	}
 }
 
-func (c *TestController) IsRunning(p project.Interface, name string) bool {
+func (c *TestController) IsRunning(suite *Suite, name string) bool {
 	c.testsMu.Lock()
 	defer c.testsMu.Unlock()
-	_, ok := c.tests[pair{name, p}]
+	_, ok := c.tests[pair{name, suite}]
 	return ok
 }
 
-func (c *TestController) RunTest(p project.Interface, name string, logger io.Writer) error {
+func (c *TestController) RunTest(suite *Suite, name string, logger io.Writer) error {
 
-	if c.IsRunning(p, name) {
+	config := suite.Config
+
+	if c.IsRunning(suite, name) {
 		return fmt.Errorf("test %s already running", name)
 	}
 
 	tst := &Test{
 		state:  "pending",
-		pair:   pair{name, p},
+		pair:   pair{name, suite},
 		logger: logger,
 	}
 
@@ -93,9 +94,9 @@ func (c *TestController) RunTest(p project.Interface, name string, logger io.Wri
 	go func() {
 		fmt.Fprintf(logger, `
 ===============================================================================
-Compiling test %s in %q`, name, p.Root())
+Compiling test %s in %q`, name, config.Root)
 
-		r, err := k3s.New(logger, p)
+		r, err := k3s.New(logger, config)
 		if err != nil {
 			fmt.Fprintln(logger, err.Error())
 			c.messages <- Message{Type: "error", Test: tst}
@@ -104,7 +105,7 @@ Compiling test %s in %q`, name, p.Root())
 
 		fmt.Fprintf(logger, `
 ===============================================================================
-Running test %s in %q`, name, p.Root())
+Running test %s in %q`, name, config.Root)
 
 		err = r.Run(logger, name)
 

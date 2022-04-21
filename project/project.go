@@ -1,16 +1,27 @@
-// Package project collects information about test suite organisation by
-// implementing various heuristics.
+// Package project provides a tool-independent interface for working with
+// various TTCN-3 project layouts and configurations. The interface is
+// intended to be uniform across all project layouts. Supported layouts will
+// be extended over time.
+//
+// Here is a simple example, opening a project configuration:
+//
+// 	conf, err := project.Open("/path/to/project")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+//
+//
 package project
 
 import (
-	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -18,348 +29,651 @@ import (
 	"github.com/nokia/ntt/k3"
 )
 
-// Interface describes a TTCN-3 project.
-type Interface interface {
-	// Root is the test suite root folder. It is usually the folder where the manifest is.
-	Root() string
+// Config describes a single project configuration. It aggregates various
+// sources, such as manifest files, parameters files, environment files, ...
+type Config struct {
+	// The Manifest pulls in most of the project configuration.
+	Manifest `json:",inline"`
 
-	// Sources returns a slice of files and directories containing TTCN-3 source files.
-	Sources() ([]string, error)
+	// ManifestFile is the path to the manifest file.
+	ManifestFile string `json:"manifest_file"`
 
-	// Imports returns a slice of additional directories required to build a test executable.
-	// Codecs, adapters and libraries are specified by Imports, typically.
-	Imports() ([]string, error)
+	// Root is the root directory of the project. Usually this is the
+	// directory of the manifest file.
+	Root string
+
+	// SourceDir is the directory containing source files, data files or
+	// additional configuration files. SourceDir and Root are usually
+	// identical, unless manifest was generated into a dedicated build
+	// directory.
+	SourceDir string `json:"source_dir"`
+
+	// EnvFile is the path to the environment file. The content of the
+	// environment file will overwrite variables defined in the manifest.
+	// Default:
+	//
+	// 	${NTT_CACHE}/ntt.env
+	EnvFile string `json:"env_file"`
+
+	K3 struct {
+		// K3 root folder
+		Root string `json:",omitempty"`
+
+		// Path to the compiler.
+		Compiler string
+
+		// Path to the runtime.
+		Runtime string
+
+		// Path to $PREFIX/share/k3
+		DataDir string `json:"data_dir"`
+
+		// Path to additional TTCN-3 files
+		Includes []string
+
+		// Path to additional plugins
+		Plugins []string
+
+		// Path to OSS Nokalva installation.
+		OssInfo string
+	}
 }
 
-// Files returns all .ttcn3 available. It will not return generated .ttcn3 files.
-// On error Files will return an error.
-func Files(p Interface) ([]string, error) {
-	var errs *multierror.Error
-	files, err := p.Sources()
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
+// The Manifest file (package.yml).
+type Manifest struct {
+	// Name is a short name of the project. It is recommended to use TTCN-3
+	// identifiers (A-Za-z0-9_).
+	Name string
 
-	dirs, err := p.Imports()
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
+	Version     string
+	Description string
+	Author      string
+	License     string
+	Homepage    string
+	Repository  string
+	Bugs        string
+	Keywords    []string
 
-	for _, dir := range dirs {
-		f := fs.FindTTCN3Files(dir)
-		files = append(files, f...)
-	}
-	if errs.ErrorOrNil() == nil {
-		return files, nil
-	}
-	return files, multierror.Flatten(errs)
+	// Sources is a list of source files which provide the TTCN-3
+	// test-cases.
+	Sources []string
+
+	// Imports is list of dependencies, which are required to run TTCN-3
+	// test-cases. E.g. common code, adapters, codecs, ...
+	Imports []string
+
+	// BeforeBuild is a list of shell commands to be executed before
+	// building. An exit code unequal to 0 will cancel any further
+	// execution.
+	BeforeBuild []string `json:"before_build"`
+
+	// AfterBuild is a list of shell commands to be executed after
+	// building. An exit code unequal to 0 will cancel any further
+	// execution.
+	AfterBuild []string `json:"after_build"`
+
+	// BeforeRun is execute before any tests are run. An exit code unequal
+	// to 0 will cancel any further test execution.
+	BeforeRun []string `json:"before_run"`
+
+	// AfterRun is executed after all tests are run.
+	AfterRun []string `json:"after_run"`
+
+	// BeforeTest is executed before each test. An exit code unequal to 0
+	// will prevent test execution.
+	BeforeTest []string `json:"before_test"`
+
+	// AfterTest is executed after each test. An exit code unequal to 0
+	// will result in an error verdict.
+	AfterTest []string `json:"after_test"`
+
+	// Variables is a list of variables that can be used in the
+	// configuration files. Environment variables and variables defined in
+	// the environment file (ntt.env) will overwrite variables defined in
+	// this variables section.
+	Variables env.Env
+
+	// Parameters is an embedded parameters file.
+	Parameters `json:",inline"`
+
+	// ParametersFile is the path to the parameters file. Default:
+	//
+	// 	${NTT_SOURCE_DIR}/${NTT_NAME}.parameters
+	ParametersFile string `json:"parameters_file"`
+
+	// HooksFile is the path to the hooks file. Default:
+	//
+	// 	${NTT_SOURCE_DIR}/${NTT_NAME}.hooks
+	HooksFile string `json:"hooks_file"`
+
+	// LintFile is the path to the lint configuration file. Default:
+	//
+	// ${NTT_SOURCE_DIR}/ntt-lint.yml
+	LintFile string `json:"lint_file"`
 }
 
-// FindAllFiles returns all .ttcn3 files including auxiliary files from
-// k3 installation
-func FindAllFiles(p Interface) []string {
-	files, _ := Files(p)
-	// Use auxilliaryFiles from K3 to locate file
-	for _, dir := range k3.FindAuxiliaryDirectories() {
-		for _, file := range fs.FindTTCN3Files(dir) {
-			files = append(files, file)
+// The Parameters file provide runtime configuration for a project (e.g. parameters files)
+type Parameters struct {
+	// Global test configuration
+	TestConfig `json:",inline"`
+
+	// Presets provides configuration presets, which can be used for global
+	// and test specific configuration.
+	Presets map[string]TestConfig
+
+	// Execute provides a list of test specific configuration. Each entry
+	// specifies how and when a test should be executed.
+	Execute []TestConfig
+}
+
+// A TestConfig specifies how and when a testcase should be executed.
+type TestConfig struct {
+	// A pattern describing a test. Optional testcase parameters are allowed.
+	Test string `json:",omitempty"`
+
+	// Presets is a list of preset configurations to be used to execute
+	// the test.
+	Presets []string `json:",omitempty"`
+
+	// Timeout in seconds.
+	Timeout yaml.Duration `json:",omitempty"`
+
+	// Module parameters
+	Parameters map[string]string `json:",omitempty"`
+
+	// Only execute testcase if the given conditions are met.
+	Only *ExecuteCondition `json:",omitempty"`
+
+	// Do not execute testcase if the given conditions are met.
+	Except *ExecuteCondition `json:",omitempty"`
+}
+
+// ExecuteCondition specifies conditions for executing a testcase.
+type ExecuteCondition struct {
+	Presets []string
+}
+
+// Index specifies where to look for project configuration files.
+type Index struct {
+	// SourceDir is the top level source directory.
+	SourceDir string `json:"source_dir"`
+
+	// BinaryDir is the top level binary directory.
+	BinaryDir string `json:"binary_dir"`
+
+	// Suite is a list of directories to search for project configuration files.
+	Suites []Suite `json:"suites"`
+}
+
+// Suite specifies the root and source directories of a project.
+type Suite struct {
+	// RootDir is the root directory of the project. This is usually where the package.yml is located.
+	RootDir string `json:"root_dir"`
+
+	// SourceDir is the directory where the test suite source files are located.
+	SourceDir string `json:"source_dir"`
+}
+
+var (
+	ManifestFile = "package.yml"
+	IndexFile    = "ttcn3_suites.json"
+)
+
+// Discover walks towards the file system root and collects
+// known test suite layouts.
+//
+// Discover returns a list of potential test suite root directories.
+func Discover(path string) []Suite {
+
+	// Convert possible URIs to proper file system paths.
+	path = fs.Path(path)
+
+	var list []Suite
+
+	// Return index, ignoring errors.
+	readIndices := func(file string) []Suite {
+		b, err := fs.Content(file)
+		if err != nil {
+			log.Debugf("Failed to read %s: %s", file, err.Error())
+			return nil
 		}
+		var idx Index
+		if err := json.Unmarshal(b, &idx); err != nil {
+			log.Debugf("%s: %s", file, err.Error())
+		}
+
+		var list []Suite
+		for _, s := range idx.Suites {
+			if s.RootDir != "" {
+				root := fs.Real(filepath.Dir(file), s.RootDir)
+				log.Debugf("using root_dir: %q\n", root)
+				list = append(list, s)
+			}
+		}
+		return list
 	}
-	return files
-}
 
-// ContainsFile returns true, when path is managed by Interface.
-func ContainsFile(p Interface, path string) bool {
+	fs.WalkUp(path, func(path string) bool {
+		// Check source directories
+		if file := fs.JoinPath(path, ManifestFile); fs.IsRegular(file) {
+			log.Debugf("discovered manifest: %q\n", file)
+			list = append(list, Suite{RootDir: path, SourceDir: path})
+		}
+		list = append(list, readIndices(fs.JoinPath(path, IndexFile))...)
 
-	// The same file may be referenced by URI or by path. To normalize it
-	// we convert everything into URIs.
-	uri := fs.URI(path)
+		// Check build directories
+		for _, file := range fs.Glob(path + "/*build*/" + IndexFile) {
+			list = append(list, readIndices(file)...)
+		}
+		for _, file := range fs.Glob(path + "/build/native/*/sct/" + IndexFile) {
+			list = append(list, readIndices(file)...)
+		}
+		return true
+	})
 
-	files, _ := Files(p)
-	for _, file := range files {
-		if fs.URI(file) == uri {
+	// If we could not find any manifest, try guess a root directory based on known naming schemes.
+	if len(list) == 0 {
+		fs.WalkUp(path, func(path string) bool {
+			if tests := fs.Glob(path + "/testcases/*"); len(tests) > 0 {
+				log.Debugf("discovered testcases folder in %q\n", path)
+				list = append(list, Suite{RootDir: path, SourceDir: path})
+				return false
+			}
 			return true
+		})
+	}
+
+	// Remove duplicate entries
+	result := make([]Suite, 0, len(list))
+	visited := make(map[Suite]bool)
+	for _, v := range list {
+		if !visited[v] {
+			visited[v] = true
+			result = append(result, v)
 		}
 	}
-	return false
+	return result
 }
 
-// Fingerprint calculates a sum to identify a test suite based on its modules.
-func Fingerprint(p Interface) string {
-	var inputs []string
-	files, _ := Files(p)
-	for _, file := range files {
-		inputs = append(inputs, fs.Stem(file))
-	}
-	return fmt.Sprintf("project_%x", sha1.Sum([]byte(fmt.Sprint(inputs))))
+// Files returns the list of TTCN-3 source files.
+func Files(c *Config) ([]string, error) {
+	var files []string
+	files = append(files, c.Sources...)
+	files = append(files, c.Imports...)
+	files = append(files, c.K3.Includes...)
+	return fs.TTCN3Files(files...)
 }
 
-// ExpandVar expands variables references inside a string using environment
-// variables first and then a provided variables map second. If a reference
-// could not expanded, the variable reference will stay inside the string and
-// an an error will be returned.
-func ExpandVar(s string, vars map[string]string) (string, error) {
-	return expandVar(s, vars, make(map[string]string))
-}
-
-func expandVar(s string, vars map[string]string, visited map[string]string) (string, error) {
-	var errs error
-	mapper := func(name string) string {
-		s, err := getVar(name, vars, visited)
-		if err != nil {
-			errs = multierror.Append(errs, &NoSuchVariableError{Name: name})
-		}
-		return s
-	}
-	return os.Expand(s, mapper), errs
-}
-
-// GetVar returns a variable. Variable references in vars are expanded.
-// Environment variables are not.
-func GetVar(name string, vars map[string]string) (string, error) {
-	return getVar(name, vars, make(map[string]string))
-}
-
-func getVar(name string, vars map[string]string, visited map[string]string) (string, error) {
-	if v, ok := visited[name]; ok {
-		return v, nil
-	}
-	visited[name] = ""
-
-	if v, ok := env.LookupEnv(name); ok {
-		visited[name] = v
-		return v, nil
-	}
-
-	// We must not look for NTT_CACHE in variables sections of package.yml,
-	// because this would create an endless loop.
-	if name != "NTT_CACHE" && name != "K3_CACHE" {
-		if v, ok := vars[name]; ok {
-			v, err := expandVar(v, vars, visited)
-			visited[name] = v
-			return v, err
-		}
-	}
-
-	if knownVars[name] {
-		return "", nil
-	}
-
-	return "", &NoSuchVariableError{Name: name}
-}
-
-// Variables return all declared variables, in the form "key=value".
-func Variables(vars map[string]string) ([]string, error) {
-	var errs error
-
-	allKeys := make(map[string]bool)
-
-	for k := range vars {
-		allKeys[k] = true
-	}
-
-	for k := range env.ParseFiles() {
-		allKeys[k] = true
-	}
-
-	ret := make([]string, 0, len(allKeys))
-	for k := range allKeys {
-		v, err := GetVar(k, vars)
-		if err != nil {
-			errs = multierror.Append(errs, err)
-		}
-		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
-	}
-	return ret, nil
-}
-
-func Open(path string) (*Project, error) {
-	p := Project{root: path,
-		Config: Config{
-			Root:      path,
-			SourceDir: path,
-		}}
-
-	// Try reading the manifest
-	file := filepath.Join(p.root, ManifestFile)
-	if b, err := fs.Content(file); err == nil {
-		log.Debugf("%s: update configuration using manifest %q\n", p.String(), file)
-		return &p, yaml.Unmarshal(b, &p.Config.Manifest)
-	}
-
-	// Fall back to recursive scanning
-	log.Debugf("%s: update configuration using available folders\n", p.String())
-	return &p, p.findFilesRecursive()
-}
-
-// A Project provides meta information about a TTCN-3 test suite. Meta
-// information like: Location of configuration and source files, dependency
-// list, default values, ...
-type Project struct {
-	root string
-
-	// Module handling (maps module names to paths)
-	modulesMu sync.Mutex
-	modules   map[string]string
-
-	Config
-}
-
-// String returns a simple string representation
-func (p *Project) String() string {
-	return p.root
-}
-
-// Root directory is ttcn3 suite.
-func (p *Project) Root() string {
-	return p.root
-}
-
-// Sources returns all TTCN-3 source files.
-func (p *Project) Sources() ([]string, error) {
-	if env := env.Getenv("NTT_SOURCES"); env != "" {
-		return strings.Fields(env), nil
-	}
-
-	var (
-		srcs []string
-		errs error
+// Open returns the best possible configuration using the given arguments.
+//
+// Without any arguments Open will open the current working directory, unless
+// environment variable NTT_SOURCE_DIR is set.
+//
+// If you pass a manifest file as single argument, Open will use it directly.
+//
+// If you pass a directory as single argument, Open will first look for a
+// package.yml and use it.
+//
+// If no package.yml is found Open will look for TTCN-3 source files. It will
+// look recursively if directory contains typical project root files (i.e.
+// build.sh, testcases-folder, ...). Open will also recursively load TTCN-3
+// source files from typical import-directories (i.e ../common).
+func Open(args ...string) (*Config, error) {
+	defaults := ConfigOptions(
+		AutomaticEnv(),
+		WithIndex(cache.Lookup(IndexFile)),
+		WithK3(),
+		WithDefaults(),
 	)
 
-	for _, src := range p.Config.Sources {
-		src, err := p.evalPath(src)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use default arguments if none are given.
+	if len(args) == 0 {
+		args = []string{cwd}
+		if source_dir := env.Getenv("NTT_SOURCE_DIR"); source_dir != "" {
+			args = []string{source_dir}
+		}
+	}
+
+	// Multiple arguments are always treated as sources.
+	if len(args) > 1 {
+		return NewConfig(WithSources(args...), defaults)
+	}
+
+	// Treat a single file argument as source, unless it is a directory or
+	// manifest file.
+	if file := args[0]; fs.IsRegular(file) {
+		if filepath.Base(file) == ManifestFile {
+			return NewConfig(WithManifest(file), defaults)
+		}
+		return NewConfig(WithSources(file), defaults)
+	}
+
+	return NewConfig(AutomaticRoot(args[0]), defaults)
+}
+
+func NewConfig(opts ...ConfigOption) (*Config, error) {
+	c := &Config{}
+	return c, ConfigOptions(opts...)(c)
+}
+
+type ConfigOption func(*Config) error
+
+// ConfigOptions returns an options, which applies the given configuration options.
+func ConfigOptions(opts ...ConfigOption) ConfigOption {
+	return func(c *Config) error {
+		var gerr *multierror.Error
+		for _, opt := range opts {
+			if err := opt(c); err != nil {
+				gerr = multierror.Append(gerr, err)
+			}
+		}
+		return gerr.ErrorOrNil()
+	}
+}
+
+// WithIndex uses hints from given index file to configure source directories.
+func WithIndex(file string) ConfigOption {
+	return func(c *Config) error {
+		if c.Root == "" {
+			log.Debugf("project: skip index file %s\n", file)
+			return nil
+		}
+		b, err := fs.Content(file)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		var idx Index
+		if len(b) > 0 {
+			if err := json.Unmarshal(b, &idx); err != nil {
+				return fmt.Errorf("%s: %w", file, err)
+			}
+		}
+
+		base := filepath.Dir(file)
+		info, err := os.Stat(c.Root)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			return fmt.Errorf("%s: %w", c.Root, err)
 		}
-		files, err := fs.TTCN3Files(src)
+		for _, s := range idx.Suites {
+			if s.SourceDir != "" && s.RootDir != "" {
+				root := fs.Real(base, s.RootDir)
+				info2, err := os.Stat(root)
+				if err != nil {
+					return fmt.Errorf("%s: %w", root, err)
+				}
+				if os.SameFile(info, info2) {
+					log.Debugf("project: using source dir %s\n", s.SourceDir)
+					c.SourceDir = fs.Real(base, s.SourceDir)
+				}
+			}
+		}
+		return nil
+	}
+}
+
+// WithManifest reads a manifest file (package.yml).
+//
+// expand variable references recursively. Environment variables overwrite
+// variables defined in environment files. Variables defined in environment
+// files overwrite variables defined in the manifest. Undefined variables won't
+// be expanded and will return an error.
+func WithManifest(file string) ConfigOption {
+	return func(c *Config) error {
+		c.ManifestFile = file
+		c.Root = filepath.Dir(file)
+		b, err := fs.Content(file)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			return err
 		}
-		srcs = append(srcs, files...)
-
-	}
-	return srcs, errs
-}
-
-func (p *Project) Imports() ([]string, error) {
-	var errs error
-
-	if env := env.Getenv("NTT_IMPORTS"); env != "" {
-		return strings.Fields(env), nil
-	}
-
-	var imports []string
-	for _, dir := range p.Config.Imports {
-		dir, err := p.evalPath(dir)
-		if err != nil {
-			errs = multierror.Append(errs, err)
+		if c.Variables == nil {
+			c.Variables = make(map[string]string)
 		}
-		if info, err := os.Stat(dir); err != nil || !info.IsDir() {
-			errs = multierror.Append(errs, fmt.Errorf("%q must be a directory", dir))
+		if len(b) > 0 {
+			if err := yaml.Unmarshal(b, &c.Manifest); err != nil {
+				return fmt.Errorf("%s: %w", file, err)
+			}
 		}
-		imports = append(imports, dir)
-	}
-	return imports, errs
-}
-
-// FindModule tries to find a .ttcn3 based on its module name.
-func (p *Project) FindModule(name string) (string, error) {
-
-	p.modulesMu.Lock()
-	defer p.modulesMu.Unlock()
-
-	if p.modules == nil {
-		p.modules = make(map[string]string)
-		for _, file := range FindAllFiles(p) {
-			name := fs.Stem(file)
-			p.modules[name] = file
+		vars := c.Variables
+		for k, v := range env.ParseFiles() {
+			vars[k] = v
 		}
+		for k, v := range k3.DefaultEnv {
+			if _, ok := vars[k]; !ok {
+				vars[k] = v
+			}
+		}
+		if err := vars.Expand(); err != nil {
+			return err
+		}
+		env.ExpandAll(&c.Manifest, vars)
+		c.Manifest.expandPaths(c.Root)
+		log.Debugf("project: using manifest %s\n", file)
+		return nil
 	}
-	if file, ok := p.modules[name]; ok {
-		return file, nil
-	}
-
-	// Use NTT_CACHE to locate file
-	if f := fs.Open(name + ".ttcn3").Path(); fs.IsRegular(f) {
-		p.modules[name] = f
-		return f, nil
-	}
-
-	return "", fmt.Errorf("No such module %q", name)
 }
 
-func (p *Project) findFilesRecursive() error {
-	p.Config.Sources = fs.Rel(p.root, fs.FindTTCN3FilesRecursive(p.root)...)
-	log.Debugf("Found %d source files for %q\n", len(p.Config.Sources), p.root)
-
-	commonDirs := []string{
-		"../../../sct",
-		"../../../../sct",
-		"../common",
-		"../Common",
-		"../library",
-		"../../../../Common",
+func WithK3() ConfigOption {
+	return func(c *Config) error {
+		c.K3.Compiler = k3.Compiler()
+		c.K3.Runtime = k3.Runtime()
+		c.K3.Includes = k3.Includes()
+		c.K3.Plugins = k3.Plugins()
+		c.K3.OssInfo = filepath.Join(k3.DataDir(), "asn1")
+		return nil
 	}
-	for _, dir := range commonDirs {
-		path := filepath.Join(p.root, dir)
+}
 
-		if eval, err := filepath.EvalSymlinks(path); err == nil {
-			path = eval
+// WithRoot sets the root directory of the project.
+func WithRoot(root string) ConfigOption {
+	return func(c *Config) error {
+		c.Root = root
+		return nil
+	}
+}
+
+// WithSourceDir sets the source directory of the project.
+func WithSourceDir(dir string) ConfigOption {
+	return func(c *Config) error {
+		c.SourceDir = dir
+		return nil
+	}
+}
+
+// WithSources sets the sources of the project.
+func WithSources(srcs ...string) ConfigOption {
+	return func(c *Config) error {
+		c.Sources = srcs
+		return nil
+	}
+}
+
+// WithImports sets the imports of the project.
+func WithImports(dirs ...string) ConfigOption {
+	return func(c *Config) error {
+		c.Imports = dirs
+		return nil
+	}
+}
+
+// AutomaticRoot sets the root directory and automatically sets the source and
+// imports directories.
+//
+// If the root directory contains a package.yml, sources and imports are set
+// from the manifest exclusively.
+//
+// AutomaticRoot will load TTCN-3 source files recursively, if the root
+// directory contains typical project root files (e.g. build.sh, testcases/,
+// ...).
+//
+// Additionally AutomaticRoot finds common import directories relative to the root folder
+// (i.e ../library or ../common) and recursively adds all folders containing
+// TTCN-3 source files.
+func AutomaticRoot(root string) ConfigOption {
+	return func(c *Config) error {
+		c.Root = root
+		log.Debugf("project: root %s\n", root)
+		if manifest := fs.JoinPath(root, ManifestFile); fs.IsRegular(manifest) {
+			return WithManifest(manifest)(c)
 		}
 
-		for _, dir := range fs.FindTTCN3DirectoriesRecursive(path) {
-			p.Config.Imports = append(p.Config.Imports, dir)
-			log.Debugf("Found import %q\n", dir)
+		if isRoot(c.Root) {
+			log.Debugln("project: scanning recursively...")
+			c.Sources = fs.FindTTCN3FilesRecursive(c.Root)
+		} else {
+			c.Sources = fs.FindTTCN3Files(c.Root)
 		}
+		s := fmt.Sprintf("%v", c.Sources)
+		if len(s) > 200 {
+			s = s[:200] + fmt.Sprintf("...] (%d files/directories)", len(c.Sources))
+		}
+		log.Debugf("project: use sources: %s\n", s)
+
+		commonDirs := []string{
+			"../../../sct",
+			"../../../../sct",
+			"../common",
+			"../Common",
+			"../library",
+			"../../../../Common",
+		}
+		for _, dir := range commonDirs {
+			path := fs.JoinPath(c.Root, dir)
+			if eval, err := filepath.EvalSymlinks(path); err == nil {
+				path = eval
+			}
+
+			for _, dir := range fs.FindTTCN3DirectoriesRecursive(path) {
+				c.Imports = append(c.Imports, dir)
+			}
+		}
+		s = fmt.Sprintf("%v", c.Imports)
+		if len(s) > 200 {
+			s = s[:200] + fmt.Sprintf("...] (%d directories)", len(c.Imports))
+		}
+		log.Debugf("project: use imports: %s\n", s)
+
+		return nil
 	}
-	return nil
 }
 
-// Environ returns a copy of strings representing the environment, in the form "key=value".
-func (p *Project) Environ() ([]string, error) {
-	return Variables(p.Config.Variables)
-}
-
-// Expand expands string v using Project.Getenv
-func (p *Project) Expand(v string) (string, error) {
-	return expandVar(v, p.Config.Variables, make(map[string]string))
-}
-
-func (p *Project) Getenv(v string) (string, error) {
-	return getVar(v, p.Config.Variables, make(map[string]string))
-}
-
-func (p *Project) evalPath(path string) (string, error) {
-	subst, err := p.Expand(path)
-	if err == nil {
-		path = subst
+// AutomaticEnv let environment variables with NTT_ prefix overwrite
+// configuration. Currently supported are: NTT_NAME, NTT_SOURCES, NTT_IMPORTS,
+// NTT_PARAMETERS_FILE, NTT_HOOKS_FILE, NTT_LINT_FILE, NTT_TIMEOUT.
+func AutomaticEnv() ConfigOption {
+	return func(c *Config) error {
+		for k, v := range env.EnvironMap() {
+			used := true
+			switch k {
+			case "NTT_NAME":
+				c.Name = v
+			case "NTT_SOURCES":
+				c.Sources = strings.Split(v, string(os.PathListSeparator))
+			case "NTT_IMPORTS":
+				c.Imports = strings.Split(v, string(os.PathListSeparator))
+			case "NTT_PARAMETERS_FILE":
+				c.ParametersFile = v
+			case "NTT_HOOKS_FILE":
+				c.HooksFile = v
+			case "NTT_LINT_FILE":
+				c.LintFile = v
+			case "NTT_TIMEOUT":
+				if err := c.Timeout.UnmarshalText([]byte(v)); err != nil {
+					return fmt.Errorf("environment variable %s: %w", k, err)
+				}
+			default:
+				used = false
+			}
+			if used {
+				log.Debugf("project: using environment variable %s=%s\n", k, v)
+			}
+		}
+		return nil
 	}
-	return fs.Real(p.Root(), path), err
 }
 
-type NoSuchVariableError struct {
-	Name string
+// WithDefaults initializes Root, SourceDir, Name, ParametersFile and HooksFile.
+func WithDefaults() ConfigOption {
+	return func(c *Config) error {
+		if c.Root == "" {
+			switch {
+			case c.SourceDir != "":
+				c.Root = c.SourceDir
+			case len(c.Sources) > 0:
+				c.Root = filepath.Dir(c.Sources[0])
+			default:
+				cwd, err := os.Getwd()
+				if err != nil {
+					return err
+				}
+				c.Root = cwd
+			}
+			log.Debugf("project: using default root %s\n", c.Root)
+		}
+		if c.SourceDir == "" {
+			c.SourceDir = c.Root
+			log.Debugf("project: using default source dir %s\n", c.SourceDir)
+		}
+		if c.Name == "" {
+			c.Name = fs.Slugify(filepath.Base(c.Root))
+			log.Debugf("project: using default name %s\n", c.Name)
+		}
+		defaultFile := func(name string) string {
+			if path := cache.Lookup(name); fs.IsRegular(path) {
+				return path
+			}
+			if path := fs.JoinPath(c.Root, name); fs.IsRegular(path) {
+				return path
+			}
+			if path := fs.JoinPath(c.SourceDir, name); fs.IsRegular(path) {
+				return path
+			}
+			return ""
+		}
+		if c.ParametersFile == "" {
+			if path := defaultFile(fmt.Sprintf("%s.parameters", c.Name)); path != "" {
+				c.ParametersFile = path
+				log.Debugf("project: using parameters file %s\n", c.ParametersFile)
+			}
+		}
+		if c.HooksFile == "" {
+			if path := defaultFile(fmt.Sprintf("%s.hooks", c.Name)); path != "" {
+				c.HooksFile = path
+				log.Debugf("project: using hooks file %s\n", c.HooksFile)
+			}
+		}
+		if c.LintFile == "" {
+			if path := defaultFile("ntt-lint.yml"); path != "" {
+				c.LintFile = path
+				log.Debugf("project: using lint file %s\n", c.LintFile)
+			}
+		}
+		return nil
+	}
 }
 
-func (e *NoSuchVariableError) Error() string {
-	return e.Name + ": variable not defined"
+// isRoot returns true if the given path contains typical project root files.
+func isRoot(root string) bool {
+	return fs.IsRegular(fs.JoinPath(root, ManifestFile)) ||
+		fs.IsRegular(fs.JoinPath(root, "build.sh")) ||
+		fs.IsRegular(fs.JoinPath(root, "project.xml")) ||
+		fs.IsDir(fs.JoinPath(root, "testcases")) ||
+		len(fs.Glob(fs.JoinPath(root, "*.cfg"))) > 0 ||
+		len(fs.Glob(fs.JoinPath(root, "*.parameters"))) > 0
 }
 
-var knownVars = map[string]bool{
-	"CXXFLAGS":            true,
-	"K3CFLAGS":            true,
-	"K3RFLAGS":            true,
-	"LDFLAGS":             true,
-	"LD_LIBRARY_PATH":     true,
-	"PATH":                true,
-	"NTT_DATADIR":         true,
-	"NTT_IMPORTS":         true,
-	"NTT_NAME":            true,
-	"NTT_PARAMETERS_DIR":  true,
-	"NTT_PARAMETERS_FILE": true,
-	"NTT_SOURCES":         true,
-	"NTT_SOURCE_DIR":      true,
-	"NTT_TEST_HOOK":       true,
-	"NTT_TIMEOUT":         true,
-	"NTT_VARIABLES":       true,
+func (m *Manifest) expandPaths(base string) {
+	for i, src := range m.Sources {
+		m.Sources[i] = fs.Real(base, src)
+	}
+	for i, imp := range m.Imports {
+		m.Imports[i] = fs.Real(base, imp)
+	}
+	m.HooksFile = fs.Real(base, m.HooksFile)
+	m.ParametersFile = fs.Real(base, m.ParametersFile)
+	m.LintFile = fs.Real(base, m.LintFile)
 }

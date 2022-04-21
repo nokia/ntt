@@ -12,6 +12,8 @@ import (
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +24,7 @@ var (
 func init() {
 
 	auxModulesMap = make(map[string]bool)
-	for _, dir := range k3.FindAuxiliaryDirectories() {
+	for _, dir := range k3.Includes() {
 		for _, file := range fs.FindTTCN3Files(dir) {
 			auxModulesMap[fs.Stem(file)] = true
 		}
@@ -34,16 +36,18 @@ func init() {
 
 }
 func buildSuite(t *testing.T, strs ...string) *lsp.Suite {
-	suite := lsp.NewSuite()
+	suite := &lsp.Suite{
+		Config: &project.Config{},
+		DB:     &ttcn3.DB{},
+	}
 	for i, s := range strs {
 		name := fmt.Sprintf("%s_Module_%d.ttcn3", t.Name(), i)
-		suite.AddSources(name)
-		srcs, _ := suite.Sources()
-		fh := fs.Open(srcs[len(srcs)-1])
+		suite.Config.Sources = append(suite.Config.Sources, name)
+		fh := fs.Open(suite.Config.Sources[len(suite.Config.Sources)-1])
 		fh.SetBytes([]byte(s))
-		suite.DB.Index(srcs[len(srcs)-1])
+		suite.DB.Index(suite.Config.Sources[len(suite.Config.Sources)-1])
 	}
-	for _, dir := range k3.FindAuxiliaryDirectories() {
+	for _, dir := range k3.Includes() {
 		suite.DB.Index(fs.FindTTCN3Files(dir)...)
 	}
 	return suite
@@ -56,8 +60,8 @@ type Pos struct {
 
 func completionAt(t *testing.T, suite *lsp.Suite, pos loc.Pos) []protocol.CompletionItem {
 	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
-	syntax := suite.ParseWithAllErrors(name)
-	nodeStack := lsp.LastNonWsToken(syntax.Module, pos)
+	syntax := ttcn3.ParseFile(name)
+	nodeStack := lsp.LastNonWsToken(syntax.Root, pos)
 	name = name[:len(name)-len(filepath.Ext(name))]
 
 	var items []protocol.CompletionItem

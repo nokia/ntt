@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,7 +16,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
@@ -204,12 +205,6 @@ const (
 )
 
 func report(cmd *cobra.Command, args []string) error {
-
-	suite, err := ntt.NewFromArgs(args...)
-	if err != nil {
-		return err
-	}
-
 	switch {
 	case useJSON:
 		templateText = JSONTemplate
@@ -221,11 +216,11 @@ func report(cmd *cobra.Command, args []string) error {
 		templateText = SummaryTemplate
 	}
 
-	return ReportTemplate(os.Stdout, suite, templateText)
+	return ReportTemplate(os.Stdout, templateText)
 }
 
-func ReportTemplate(w io.Writer, suite *ntt.Suite, text string) error {
-	report, err := NewReport(suite)
+func ReportTemplate(w io.Writer, text string) error {
+	report, err := NewReport(Project)
 	if err != nil {
 		return err
 	}
@@ -359,13 +354,13 @@ func init() {
 
 type Report struct {
 	Collection
-	suite *ntt.Suite
+	suite *project.Config
 	db    results.DB
 	Cores int
 }
 
-func NewReport(suite *ntt.Suite) (*Report, error) {
-	db, err := suite.LatestResults()
+func NewReport(suite *project.Config) (*Report, error) {
+	db, err := results.Latest()
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +370,7 @@ func NewReport(suite *ntt.Suite) (*Report, error) {
 		Cores: runtime.NumCPU(),
 	}
 
-	r.Name, _ = suite.Name()
+	r.Name = suite.Name
 
 	if db != nil {
 		r.db = *db
@@ -386,16 +381,31 @@ func NewReport(suite *ntt.Suite) (*Report, error) {
 }
 
 func (r *Report) Getenv(s string) string {
-	env, _ := r.suite.Getenv(s)
-	return env
+	if s, ok := env.LookupEnv(s); ok {
+		return s
+	}
+
+	return r.suite.Variables[s]
 }
 
 func (r *Report) Environ() []string {
-	env := os.Environ()
-	env2, _ := r.suite.Environ()
-	env = append(env, env2...)
-	sort.Strings(env)
-	return env
+	env := make(map[string]string)
+	for k, v := range r.suite.Variables {
+		env[k] = v
+	}
+	for _, e := range os.Environ() {
+		kv := strings.SplitN(e, "=", 2)
+		if len(kv) == 2 {
+			env[kv[0]] = kv[1]
+		}
+	}
+
+	var list []string
+	for k, v := range env {
+		list = append(list, fmt.Sprintf("%s=%s", k, v))
+	}
+	sort.Strings(list)
+	return list
 }
 func (r *Report) LineCount() (int, error) {
 	files, err := project.Files(r.suite)

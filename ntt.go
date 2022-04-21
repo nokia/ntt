@@ -15,7 +15,6 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
@@ -24,42 +23,6 @@ import (
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/spf13/pflag"
 )
-
-// A TestConfig specifies how and when a testcase should be executed.
-type TestConfig struct {
-	// Fully qualified name. Optional testcase parameters are allowed.
-	Test string `json:"test,omitempty"`
-
-	// Timeout in seconds.
-	Timeout float64 `json:"timeout,omitempty"`
-
-	// Module parameters
-	Parameters map[string]interface{} `json:"parameters,omitempty"`
-
-	// Only execute testcase if the given conditions are met.
-	Only *ExecuteCondition `json:"only,omitempty,inline"`
-
-	// Do not execute testcase if the given conditions are met.
-	Except *ExecuteCondition `json:"except,omitempty"`
-}
-
-// ExecuteCondition specifies conditions for executing a testcase.
-type ExecuteCondition struct {
-	Presets []string `json:"presets,omitempty"`
-}
-
-// ParametersFile describes the parameters file.
-type ParametersFile struct {
-	// Global test configuration.
-	TestConfig `yaml:",inline"`
-
-	// Testconfiguration presets providing alternative global configurations.
-	Presets map[string]TestConfig `json:"presets,omitempty"`
-
-	// Test specific configuration. Each entry is a test configuration and
-	// specifies how and when a test should be executed.
-	Execute []TestConfig `json:"execute,omitempty"`
-}
 
 // BasketFlags returns a flagset with all flags for filtering objects.
 //
@@ -319,133 +282,32 @@ func SplitQualifiedName(name string) (string, string) {
 //
 // NewSuite will read manifest (package.yml) if any.
 func NewSuite(files ...string) (*Suite, error) {
-	oldSuite, err := ntt.NewFromArgs(files...)
+	p, err := project.Open(files...)
 	if err != nil {
 		return nil, fmt.Errorf("loading test suite failed: %w", err)
-	}
-
-	name, err := oldSuite.Name()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving test suite name failed: %w", err)
-	}
-
-	srcs, err := oldSuite.Sources()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving TTCN-3 sources failed: %w", err)
-	}
-
-	imports, err := oldSuite.Imports()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving TTCN-3 imports failed: %w", err)
 	}
 
 	var paths []string
 	if s := env.Getenv("NTT_CACHE"); s != "" {
 		paths = append(paths, strings.Split(s, ":")...)
 	}
-	paths = append(paths, imports...)
-	paths = append(paths, k3.FindAuxiliaryDirectories()...)
+	paths = append(paths, p.Manifest.Imports...)
+	paths = append(paths, k3.Plugins()...)
 	if cwd, err := os.Getwd(); err == nil {
 		paths = append(paths, cwd)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("retrieving runtime paths failed: %w", err)
-	}
-
-	t, err := oldSuite.Timeout()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving test suite timeout failed: %w\n", err)
-	}
-
-	d, err := time.ParseDuration(fmt.Sprintf("%fs", t))
-	if err != nil {
-		return nil, fmt.Errorf("retrieving test suite timeout failed: %w\n", err)
-	}
-
-	var parametersFile string
-	f, err := oldSuite.ParametersFile()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving parameters file failed: %w", err)
-	}
-	if f != nil {
-		parametersFile = f.Path()
-	}
-
-	dir, err := oldSuite.ParametersDir()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving parameters file failed: %w", err)
-	}
-	v, err := oldSuite.Variables()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving test suite variables failed: %w", err)
-	}
 	return &Suite{
-		Vars:           v,
-		Name:           name,
-		Sources:        srcs,
-		RuntimePaths:   paths,
-		timeout:        d,
-		parametersFile: parametersFile,
-		parametersDir:  dir,
+		Config:       p,
+		RuntimePaths: paths,
 	}, nil
 
 }
 
 // Suite represents a test suite.
 type Suite struct {
-	Name         string
-	Sources      []string
+	*project.Config
 	RuntimePaths []string
-	Vars         map[string]string
-
-	timeout        time.Duration
-	parametersFile string
-	parametersDir  string
-}
-
-// Parameters returns the module parameters and timeout to be used for execution.
-func (s *Suite) Parameters() (map[string]string, time.Duration, error) {
-	return s.parameters("")
-}
-
-// TestParameters returns module module parameters and timeout to be used for a single test case.
-func (s *Suite) TestParameters(name string) (map[string]string, time.Duration, error) {
-	return s.parameters(name)
-}
-
-func (s *Suite) parameters(name string) (map[string]string, time.Duration, error) {
-	m := make(map[string]string)
-
-	if path := s.parametersFile; path != "" {
-		if err := readParametersFile(path, &m); err != nil {
-			return nil, 0, fmt.Errorf("reading %q failed: %w", path, err)
-		}
-		log.Debugf("Read parameters from %q\n", path)
-	}
-
-	if mod, test := SplitQualifiedName(name); mod != "" {
-		testPars := filepath.Join(s.parametersDir, mod, test+".parameters")
-		if err := readParametersFile(testPars, &m); err != nil {
-			return nil, 0, fmt.Errorf("reading %qw failed: %w", testPars, err)
-		}
-		log.Debugf("Read test specific parameters from %q\n", testPars)
-	}
-
-	d := s.timeout
-	if t, ok := m["TestcaseExecutor.time_out"]; ok {
-		delete(m, "TestcaseExecutor.time_out")
-		d2, err := time.ParseDuration(fmt.Sprintf("%ss", t))
-		if err != nil {
-			return nil, 0, err
-		}
-		d = d2
-	}
-	return m, d, nil
-}
-
-func readParametersFile(path string, v interface{}) error {
-	return nil
 }
 
 // ErrNoSources is returned when no source files are found.
@@ -453,7 +315,7 @@ var ErrNoSources = fmt.Errorf("no sources")
 
 // BuildProject builds a project with the given name. It the build of the
 // project or any of its dependencies fails, the error is returned.
-func BuildProject(name string, p project.Interface) error {
+func BuildProject(name string, p *project.Config) error {
 	start := time.Now()
 	defer func() {
 		log.Debugf("build %s took %s\n", name, time.Since(start))
@@ -473,20 +335,15 @@ func BuildProject(name string, p project.Interface) error {
 // PlanProject returns a list of builders required to build the given project.
 //
 // Using a different backend than k3 is currently not supported.
-func PlanProject(name string, p project.Interface) ([]build.Builder, error) {
+func PlanProject(name string, conf *project.Config) ([]build.Builder, error) {
 	var ret []build.Builder
 
-	srcs, err := p.Sources()
+	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
 	}
-
-	imports, err := p.Imports()
-	if err != nil {
-		return nil, err
-	}
-	var deps []string
-	for _, dir := range imports {
+	var imports []string
+	for _, dir := range conf.Imports {
 		builders, err := PlanImport(dir)
 		if err != nil {
 			return nil, err
@@ -494,13 +351,13 @@ func PlanProject(name string, p project.Interface) ([]build.Builder, error) {
 		for _, b := range builders {
 			for _, o := range b.Targets() {
 				if fs.HasTTCN3Extension(o) {
-					deps = append(deps, o)
+					imports = append(imports, o)
 				}
 			}
 
 			// Skip T3XF Builders, because we'll build t3xf speparately.
 			if t, ok := b.(*k3.T3XF); ok {
-				deps = append(deps, t.Sources()...)
+				imports = append(imports, t.Sources()...)
 			} else {
 				ret = append(ret, b)
 			}
@@ -508,10 +365,10 @@ func PlanProject(name string, p project.Interface) ([]build.Builder, error) {
 	}
 
 	if len(srcs) == 0 {
-		return nil, fmt.Errorf("test root folder %s: %w", p.Root(), ErrNoSources)
+		return nil, fmt.Errorf("test root folder %s: %w", conf.Root, ErrNoSources)
 	}
 
-	ret = append(ret, k3.NewT3XFBuilder(name, srcs, deps))
+	ret = append(ret, k3.NewT3XFBuilder(name, srcs, imports))
 	return ret, nil
 }
 
@@ -810,7 +667,11 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 
 	test := run.NewTest(t3xf, job.Name)
 
-	pars, timeout, err := job.Suite.TestParameters(job.Name)
+	var (
+		pars    map[string]string
+		timeout time.Duration
+		err     error
+	)
 	if err != nil {
 		results <- Result{Job: job, Event: run.NewErrorEvent(err)}
 		return

@@ -11,7 +11,6 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
@@ -193,11 +192,6 @@ func init() {
 }
 
 func lint(cmd *cobra.Command, args []string) error {
-	suite, err := ntt.NewFromArgs(args...)
-	if err != nil {
-		return err
-	}
-
 	c := fs.Open(config)
 	b, err := c.Bytes()
 	if err != nil {
@@ -213,7 +207,7 @@ func lint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	files, err := project.Files(suite)
+	files, err := project.Files(Project)
 	if err != nil {
 		return err
 	}
@@ -421,7 +415,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 	wg.Wait()
 
-	checkSuite(suite)
+	checkConf(Project)
 
 	switch issues {
 	case 0:
@@ -563,14 +557,13 @@ func checkImport(fset *loc.FileSet, n *ast.ImportDecl, mod *ast.Module) {
 
 }
 
-func checkSuite(suite *ntt.Suite) {
+func checkConf(conf *project.Config) {
 
 	if !style.Unused.Modules {
 		return
 	}
 
-	pkgs, _ := suite.Imports()
-	for _, pkg := range pkgs {
+	for _, pkg := range conf.Imports {
 		files, _ := filepath.Glob(pkg + "/*.ttcn3")
 		for _, file := range files {
 			if isWhiteListed(style.Ignore.Files, file) {

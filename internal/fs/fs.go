@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/nokia/ntt/internal/span"
 )
@@ -40,33 +39,36 @@ func PathSlice(files ...*File) []string {
 //
 // If baseUrl is an absolute URL, JoinPath will will keep the scheme of the
 // first argument and separats the rest with a slash.
-func JoinPath(baseUrl string, elem ...string) (result string, err error) {
+func JoinPath(baseUrl string, elem ...string) string {
+	// We know first argument is a path, when there's a volume name.
 	if filepath.VolumeName(baseUrl) != "" {
-		// this is a windows path
-		return filepath.Join(elem...), nil
-	}
-	url, err := url.Parse(baseUrl)
-	if err != nil {
-		return
-	}
-	if url.Scheme == "" {
 		elem = append([]string{baseUrl}, elem...)
-		return filepath.Join(elem...), nil
+		return filepath.Join(elem...)
 	}
-	if len(elem) > 0 {
+
+	// We know first argument is an URL, when there's a scheme.
+	if url, err := url.Parse(baseUrl); err == nil && url.Scheme != "" {
 		elem = append([]string{url.Path}, elem...)
 		url.Path = path.Join(elem...)
+		return url.String()
 	}
-	result = url.String()
-	return
+
+	// Everything else is treated as a path.
+	elem = append([]string{baseUrl}, elem...)
+	return filepath.Join(elem...)
 }
 
 // Path returns a decoded file path when you pass a URI with file:// scheme.
 func Path(s string) string {
-	if !strings.HasPrefix(s, "file://") {
-		return s
+	if IsURI(s) {
+		return span.URIFromURI(s).Filename()
 	}
-	return span.URIFromURI(s).Filename()
+	return s
+}
+
+func IsURI(s string) bool {
+	url, err := url.Parse(s)
+	return err == nil && url.Scheme != ""
 }
 
 // URI turns paths into URIs

@@ -2,13 +2,13 @@ package lsp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/internal/ntt"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 )
@@ -68,7 +68,7 @@ func (s *Server) references(ctx context.Context, params *protocol.ReferenceParam
 	tree := ttcn3.ParseFile(file)
 	id, ok := tree.ExprAt(tree.Pos(line, col)).(*ast.Ident)
 	if !ok || id == nil {
-		return nil, ntt.ErrNoIdentFound
+		return nil, errors.New("no identifier at cursor")
 	}
 	return NewAllIdsWithSameName(&s.db, id.String()), nil
 }

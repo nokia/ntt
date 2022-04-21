@@ -1,13 +1,28 @@
 package results
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nokia/ntt/internal/fs"
 )
+
+func Latest() (*DB, error) {
+	b, err := fs.Open("test_results.json").Bytes()
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+	var db DB
+	return &db, json.Unmarshal(b, &db)
+}
 
 type DB struct {
 	Version  string

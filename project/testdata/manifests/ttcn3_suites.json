@@ -1,9 +1,0 @@
-{
-	"suites": [
-		{"source_dir": "sct/"},
-		{"root_dir":"../manifests/suite1/"},
-		{"root_dir":"suite1"},
-		{"root_dir":"obsolete"},
-		{"root_dir":"some-dir"}
-	]
-}

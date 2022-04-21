@@ -95,7 +95,7 @@ root of the test suite directory structure. Supported fields:
 | sources          | string[]          | TTCN-3 Source files containing tests.
 | imports          | string[]          | Packages the suite depends on. This could be adapters, codecs, generators, ...
 | timeout          | number            | Default timeout for tests in seconds.
-| test_hook        | string            | Path to test hook script.
+| hooks_file       | string            | Path to the hook script.
 | parameters_file  | string            | Path to module parameters file.
 | variables        | map[string]string | A key value list of custom variables.
 
@@ -133,12 +133,12 @@ $CMAKE_CURRENT_SOURCE_DIR, but in $CMAKE_CURRENT_BINARY_DIR.
 
 `)
 
-	addHelp([]string{"hooks", "hook", "test_hook"}, "How to setup a test and control the SUT", `The Test Hook.
+	addHelp([]string{"hooks", "hook", "test_hook", "hooks_file"}, "How to setup a test and control the SUT", `The Test Hook.
 
 The test hook is used to configure, start and stop applications or additional
 tools like tcpdump. It's default name is ${K3_NAME}.control. Alternatively it
-may be pecified environment variable K3_TEST_HOOK or by the manifest key
-test_hook.
+may be pecified environment variable K3_HOOKS_FILE or by the manifest key
+hooks_file.
 
 The same hook is called for different events. The event is passed as first
 argument. Following events are currently supported:

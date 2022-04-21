@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/nokia/ntt/internal/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/proto"
 )
@@ -45,7 +45,7 @@ func run(cmd *cobra.Command, args []string) error {
 		fatal(fmt.Errorf("could not find generator %q", name))
 	}
 
-	_, err = ntt.NewFromArgs(args...)
+	_, err = project.Open(args...)
 	if err != nil {
 		fatal(err)
 	}

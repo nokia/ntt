@@ -3,112 +3,151 @@
 package k3
 
 import (
+	"bufio"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 )
 
-// Root returns the directory where K3 toolset is installed, by first looking
-// at environment variable K3ROOT and then by probing for a installed K3
-// runtime engine.
-func Root() string {
-	if env := os.Getenv("K3ROOT"); env != "" {
-		return env
-	}
-
+// InstallDir returns the directory where k3 is probably installed.
+func InstallDir() string {
 	if env := os.Getenv("NTTROOT"); env != "" {
 		return env
 	}
-
-	// When k3r is installed, we assume its plugins are installed as well.
+	if env := os.Getenv("K3ROOT"); env != "" {
+		return env
+	}
 	if k3r, err := exec.LookPath("k3r"); err == nil {
-		if path := parentDir(k3r); path != "" {
+		if path, _ := filepath.Abs(filepath.Join(filepath.Dir(k3r), "..")); path != "" {
 			return path
 		}
 	}
-
 	return ""
 }
 
-// PluginDir returns the directory where k3 plugins are installed.
-func PluginDir() string {
-	root := Root()
-	if root == "" {
-		return ""
+// DataDir returns the directory where additional files are installed (/usr/share/k3).
+func DataDir() string {
+	if env := os.Getenv("NTT_DATADIR"); env != "" {
+		return env
 	}
+	if env := os.Getenv("K3_DATADIR"); env != "" {
+		return env
+	}
+	if dir := filepath.Join(InstallDir(), "share/k3"); fs.IsDir(dir) {
+		return dir
+	}
+	return ""
+}
 
+// Compiler returns the path to the TTCN-3 compiler. Compiler will return "mtc"
+// if no compiler is found.
+func Compiler() string {
+	if k3c := os.Getenv("K3C"); k3c != "" {
+		return k3c
+	}
+	if mtc := os.Getenv("MTC"); mtc != "" {
+		return mtc
+	}
+	if mtc := filepath.Join(cmake("mtc_BINARY_DIR"), "source/mtc/mtc"); fs.IsRegular(mtc) {
+		return mtc
+	}
+	return findK3Tool("mtc", "k3c", "k3c.exe")
+}
+
+// Runtime returns the path to the TTCN-3 runtime. Runtime will return "k3r" if
+// no runtime is found.
+func Runtime() string {
+	if k3r := os.Getenv("K3R"); k3r != "" {
+		return k3r
+	}
+	return findK3Tool("k3r", "k3r.exe")
+}
+
+// Plugins returns a list of k3 plugins.
+func Plugins() []string {
+	if dirs := k3DevelDirs(); len(dirs) > 0 {
+		return dirs
+	}
 	hints := []string{
 		"lib/k3/plugins",
 		"lib64/k3/plugins",
 		"lib/x86_64/k3/plugins",
 	}
 	for _, hint := range hints {
-		if dir := filepath.Join(root, hint); isDir(dir) {
-			return dir
+		if dir := filepath.Join(InstallDir(), hint); fs.IsDir(dir) {
+			return []string{dir}
 		}
 	}
-	return ""
+	return nil
 }
 
-func DataDir() string {
-	if env := os.Getenv("K3_DATADIR"); env != "" {
-		return env
-	}
-	if env := os.Getenv("NTT_DATADIR"); env != "" {
-		return env
-	}
-
-	root := Root()
-	if root == "" {
-		return ""
-	}
-
-	if dir := filepath.Join(root, "share/k3"); isDir(dir) {
-		return dir
-	}
-	return ""
-}
-
-// FindAuxiliaryDirectories returns a list of auxiliary k3 directories containing TTCN-3 files.
-func FindAuxiliaryDirectories() []string {
-
-	// If are using a runtime from out developer source tree, we should
-	// also use files and adapter from that tree as well.
-	if hint := filepath.Dir(Runtime()); strings.HasSuffix(hint, "/src/k3r") {
-		dir := collectFolders(
-			hint+"/../k3r-*-plugin",
-			hint+"/../../../src/k3r-*-plugin",
-			hint+"/../../../src/ttcn3",
-			hint+"/../../../src/libzmq",
-		)
-		if len(dir) > 0 {
-			return dir
-		}
-
-	}
-
-	auxDirs := []string{
-		PluginDir(),
-		DataDir(),
+// Includes returns a list of TTCN-3 include directories required by the k3 compiler.
+func Includes() []string {
+	auxDirs := Plugins()
+	if dir := DataDir(); dir != "" {
+		auxDirs = append(auxDirs, dir)
 	}
 
 	var ret []string
 	for _, dir := range auxDirs {
-		if ttcn3Dir := filepath.Join(dir, "ttcn3"); dir != "" && isDir(ttcn3Dir) {
-			ret = append(ret, ttcn3Dir)
+		if len(fs.FindTTCN3Files(dir)) > 0 {
+			ret = append(ret, dir)
 		}
+		if dir := filepath.Join(dir, "ttcn3"); len(fs.FindTTCN3Files(dir)) > 0 {
+			ret = append(ret, dir)
+		}
+	}
+	return clean(ret...)
+}
+
+func k3DevelDirs() []string {
+	var files []string
+	if binary_dir := cmake("k3_BINARY_DIR"); binary_dir != "" {
+		files = append(files, glob(filepath.Join(binary_dir, "src/k3r-*-plugin"))...)
+	}
+	if source_dir := cmake("k3_SOURCE_DIR"); source_dir != "" {
+		files = append(files, glob(
+			filepath.Join(source_dir, "k3r-*-plugin"),
+			filepath.Join(source_dir, "src/k3r-*-plugin"),
+			filepath.Join(source_dir, "src/ttcn3"),
+			filepath.Join(source_dir, "src/libzmq"),
+		)...)
+	}
+	return clean(files...)
+}
+
+// clean resolves symlinks and removes duplicates and non-folders.
+func clean(paths ...string) []string {
+	m := make(map[string]bool)
+	for _, path := range paths {
+		path, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			log.Verboseln("k3: clean:", err.Error())
+			return nil
+		}
+		info, err := os.Stat(path)
+		if err != nil {
+			log.Verboseln("k3: clean:", err.Error())
+			return nil
+		}
+		if info.IsDir() {
+			m[path] = true
+		}
+	}
+
+	ret := make([]string, 0, len(m))
+	for k := range m {
+		ret = append(ret, k)
 	}
 	return ret
 }
 
-func collectFolders(globs ...string) []string {
-	return removeDuplicates(filterFolders(evalSymlinks(resolveGlobs(globs))))
-}
-
-func resolveGlobs(globs []string) []string {
+func glob(globs ...string) []string {
 	var ret []string
-
 	for _, g := range globs {
 		if matches, err := filepath.Glob(g); err == nil {
 			ret = append(ret, matches...)
@@ -117,49 +156,60 @@ func resolveGlobs(globs []string) []string {
 	return ret
 }
 
-func evalSymlinks(links []string) []string {
-	var ret []string
-	for _, l := range links {
-		if path, err := filepath.EvalSymlinks(l); err == nil {
-			ret = append(ret, path)
+// cmake returns a variable with given name from CMakeCache.txt.
+func cmake(name string) string {
+	cache, err := findCMakeCache()
+	if err != nil {
+		log.Verboseln("k3: cmake:", err.Error())
+		return ""
+	}
+
+	f, err := os.Open(cache)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// CMakeCache.txt is optional
+			return ""
+		}
+		log.Verboseln("k3: cmake:", err.Error())
+		return ""
+	}
+	defer f.Close()
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		if v := strings.SplitN(s.Text(), ":", 2); v[0] == name {
+			w := strings.SplitN(v[1], "=", 2)
+			return w[1]
 		}
 	}
-	return ret
+	return ""
 }
 
-func filterFolders(paths []string) []string {
-	var ret []string
-	for _, path := range paths {
-		info, err := os.Stat(path)
-		if err != nil {
-			continue
-		}
-
-		if info.IsDir() {
-			ret = append(ret, path)
-		}
+// findCMakeCache returns the path to the CMakeCache.txt file, by walking up
+// the current working directory and the file hierarchy specified by
+// environment variable K3R
+func findCMakeCache() (string, error) {
+	find := func(path string) string {
+		var dir string
+		fs.WalkUp(path, func(path string) bool {
+			if fs.IsRegular(filepath.Join(path, "CMakeCache.txt")) {
+				dir = path
+			}
+			return true
+		})
+		return dir
 	}
-	return ret
-}
-
-func removeDuplicates(slice []string) []string {
-	var ret []string
-	h := make(map[string]bool)
-	for _, s := range slice {
-		if _, v := h[s]; !v {
-			h[s] = true
-			ret = append(ret, s)
-		}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
 	}
-	return ret
-}
+	if dir := find(cwd); dir != "" {
+		return dir, nil
+	}
+	if k3r := os.Getenv("K3R"); strings.HasSuffix(k3r, "src/k3r/k3r") {
+		return find(filepath.Dir(k3r)), nil
+	}
 
-func Compiler() string {
-	return findK3Tool("mtc", "k3c", "k3c.exe")
-}
-
-func Runtime() string {
-	return findK3Tool("k3r", "k3r.exe")
+	return "", nil
 }
 
 func findK3Tool(names ...string) string {
@@ -170,8 +220,8 @@ func findK3Tool(names ...string) string {
 		if env := os.Getenv(strings.ToUpper(name)); env != "" {
 			return env
 		}
-		if root := Root(); root != "" {
-			if exe, err := exec.LookPath(filepath.Join(root, name)); err == nil {
+		if root := InstallDir(); root != "" {
+			if exe, err := exec.LookPath(filepath.Join(root, "bin", name)); err == nil {
 				return exe
 			}
 		}
@@ -180,15 +230,4 @@ func findK3Tool(names ...string) string {
 		}
 	}
 	return names[0]
-}
-func parentDir(path string) string {
-	dir, _ := filepath.Abs(filepath.Join(filepath.Dir(path), ".."))
-	return dir
-}
-
-func isDir(path string) bool {
-	if info, err := os.Stat(path); err == nil {
-		return info.IsDir()
-	}
-	return false
 }

@@ -1,9 +1,0 @@
-{
-	"suites": [
-		{"source_dir": "../sct/"},
-		{"root_dir":"../../builds/suite1/build"},
-		{"root_dir":"../suite1/build"},
-		{"root_dir":"obsolete"},
-		{"root_dir":"some-dir"}
-	]
-}
