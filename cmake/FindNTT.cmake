@@ -46,7 +46,7 @@ manifest.
         [DEPENDS ...]
         [NAME name]
         [TIMEOUT secs]
-	[HOOKS_FILE executable]
+        [HOOKS_FILE executable]
         [PARAMETERS_FILE file]
         [WORKING_DIRECTORY dir]
         [TARGETS target1...]
