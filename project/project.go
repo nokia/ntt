@@ -328,7 +328,7 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := json.Unmarshal(b, &pf); err != nil {
+		if err := yaml.Unmarshal(b, &pf); err != nil {
 			return nil, err
 		}
 		gc = MergeParameters(gc, pf)
@@ -369,15 +369,15 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 		ast.Inspect(tree.Root, func(n ast.Node) bool {
 			switch n := n.(type) {
 			case *ast.FuncDecl:
-				if !n.IsTest() {
-					add(n.Name.String(), ast.FirstToken(n).Comments())
+				if n.IsTest() {
+					add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
 				}
+				return false
 			case *ast.ControlPart:
-				add(n.Name.String(), ast.FirstToken(n).Comments())
-			case *ast.Module, *ast.GroupDecl, *ast.ModuleDef:
-				return true
+				add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+				return false
 			}
-			return false
+			return true
 		})
 	}
 
