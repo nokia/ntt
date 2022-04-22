@@ -354,13 +354,12 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 				log.Verbosef("%s: %s\n", name, err.Error())
 			}
 			if ok {
-				tc2 := tc
-				tc2.Test = name
+				tc = MergeTestConfig(gc.TestConfig, tc)
+				tc.Test = name
 				if params != "" {
-					tc2.Test += "(" + params + ")"
+					tc.Test += "(" + params + ")"
 				}
-
-				list = append(list, tc2)
+				list = append(list, tc)
 			}
 		}
 	}
