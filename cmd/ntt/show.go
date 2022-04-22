@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
@@ -55,6 +56,17 @@ func printJSON(report *ConfigReport, keys []string) error {
 	if len(keys) != 0 {
 		return fmt.Errorf("command line option --json does not accept additional command line arguments")
 	}
+
+	var presets []string
+	if s := env.Getenv("NTT_PRESETS"); s != "" {
+		presets = strings.Split(s, string(os.PathListSeparator))
+	}
+
+	params, err := project.ApplyPresets(report.Config, presets...)
+	if err != nil {
+		return err
+	}
+	report.Config.Parameters = *params
 
 	b, err := yaml.MarshalJSON(report)
 	if err != nil {

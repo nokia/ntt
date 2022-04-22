@@ -27,6 +27,8 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/ttcn3"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 // Config describes a single project configuration. It aggregates various
@@ -176,7 +178,7 @@ type TestConfig struct {
 
 	// Presets is a list of preset configurations to be used to execute
 	// the test.
-	Presets []string `json:",omitempty"`
+	Preset []string `json:",omitempty"`
 
 	// Timeout in seconds.
 	Timeout yaml.Duration `json:",omitempty"`
@@ -298,13 +300,150 @@ func Discover(path string) []Suite {
 	return result
 }
 
-// Files returns the list of TTCN-3 source files.
+// Files returns the list of TTCN-3 source files. Genereated files are
+// excluded for now, but might be added in the future.
 func Files(c *Config) ([]string, error) {
 	var files []string
 	files = append(files, c.Sources...)
 	files = append(files, c.Imports...)
 	files = append(files, c.K3.Includes...)
 	return fs.TTCN3Files(files...)
+}
+
+// ApplyPresets returns a list of test case configurations with optional
+// presets applied. The presets are applied in the order they are specified in
+// the list.
+//
+// ApplyPresets reads test case configuration from environment variables, the
+// parameters file, package.yml and from the TTCN-3 documentation tags.
+func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
+
+	// Global configuration
+	gc := c.Parameters
+
+	// Parameters file overrides/extends global test configuration
+	if c.ParametersFile != "" {
+		var pf Parameters
+		b, err := fs.Content(c.ParametersFile)
+		if err != nil {
+			return nil, err
+		}
+		if err := yaml.Unmarshal(b, &pf); err != nil {
+			return nil, err
+		}
+		gc = MergeParameters(gc, pf)
+	}
+
+	// Presets override/extend parameters files
+	for _, preset := range presets {
+		tc, ok := gc.Presets[preset]
+		if !ok {
+			return nil, fmt.Errorf("preset %q not found", preset)
+		}
+		gc.TestConfig = MergeTestConfig(gc.TestConfig, tc)
+	}
+
+	var list []TestConfig
+
+	add := func(name string, comments string) {
+		// TODO(5nord) make this less quadratic.
+		for _, tc := range gc.Execute {
+			pattern, params := SplitTest(tc.Test)
+			ok, err := filepath.Match(pattern, name)
+			if err != nil {
+				log.Verbosef("%s: %s\n", name, err.Error())
+			}
+			if ok {
+				tc = MergeTestConfig(gc.TestConfig, tc)
+				tc.Test = name
+				if params != "" {
+					tc.Test += "(" + params + ")"
+				}
+				list = append(list, tc)
+			}
+		}
+	}
+
+	files, err := fs.TTCN3Files(c.Sources...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		tree := ttcn3.ParseFile(file)
+		ast.Inspect(tree.Root, func(n ast.Node) bool {
+			switch n := n.(type) {
+			case *ast.FuncDecl:
+				if n.IsTest() {
+					add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+				}
+				return false
+			case *ast.ControlPart:
+				add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+				return false
+			}
+			return true
+		})
+	}
+
+	gc.Execute = list
+	return &gc, nil
+}
+
+// SplitTest splits a test into its testcase name and parameters.
+func SplitTest(name string) (string, string) {
+	if i := strings.Index(name, "("); i > 0 {
+		return name[:i], name[i+1 : len(name)-1]
+	}
+	return name, ""
+}
+
+// MergeParameters merges the given parameters. Scalar values from b override
+// values from a. Maps are merged and arrays are appended.
+func MergeParameters(a, b Parameters) Parameters {
+	result := Parameters{}
+	result.TestConfig = MergeTestConfig(a.TestConfig, b.TestConfig)
+	result.Presets = make(map[string]TestConfig)
+	for k, v := range a.Presets {
+		result.Presets[k] = v
+	}
+	for k, v := range b.Presets {
+		result.Presets[k] = MergeTestConfig(result.Presets[k], v)
+	}
+	if len(result.Presets) == 0 {
+		result.Presets = nil
+	}
+	result.Execute = append(a.Execute, b.Execute...)
+	return result
+}
+
+// MergeTestConfig merges to test configurations. Scalar values from b override
+// values from a. Maps are merged. Arrays are appended.
+func MergeTestConfig(a, b TestConfig) TestConfig {
+	result := TestConfig{}
+	result.Test = a.Test
+	if b.Test != "" {
+		result.Test = b.Test
+	}
+	result.Timeout = a.Timeout
+	if b.Timeout.Duration > 0 {
+		result.Timeout = b.Timeout
+	}
+	result.Preset = append(a.Preset, b.Preset...)
+	result.Parameters = make(map[string]string)
+	for k, v := range a.Parameters {
+		result.Parameters[k] = v
+	}
+	for k, v := range b.Parameters {
+		result.Parameters[k] = v
+	}
+	if len(result.Parameters) == 0 {
+		result.Parameters = nil
+	}
+	// Should we return an error if a and b have conflicting execute conditions?
+	result.Only = b.Only
+	result.Except = b.Except
+	return result
 }
 
 // Open returns the best possible configuration using the given arguments.

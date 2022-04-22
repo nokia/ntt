@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
@@ -196,4 +197,61 @@ func TestWithManifest(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, "foo/bar/file", c.HooksFile)
 	})
+}
+
+func TestParametersMergeRules(t *testing.T) {
+	unmarshal := func(s string) project.Parameters {
+		var p project.Parameters
+		if err := yaml.Unmarshal([]byte(s), &p); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+
+	a := unmarshal(`
+                timeout: 0
+                presets:
+                   "A":
+                      timeout: 1
+                   "B":
+                      timeout: 2
+                execute:
+                  - test: "TC1"
+                    timeout: 3`)
+
+	b := unmarshal(`
+                timeout: 4
+                presets:
+                   "A":
+                      test: "*"
+                   "B":
+                      timeout: 5
+                   "C":
+                      timeout: 6
+                execute:
+                  - test: "TC1"
+                    timeout: 7`)
+
+	actual := project.MergeParameters(a, b)
+	expected := unmarshal(`
+                timeout: 4
+                presets:
+                  "A":
+                    test: "*"
+                    timeout: 1
+                  "B":
+                    timeout: 5
+                  "C":
+                    timeout: 6
+                execute:
+                  - test: "TC1"
+                    timeout: 3
+                  - test: "TC1"
+                    timeout: 7`)
+
+	assert.Equal(t, expected.TestConfig, actual.TestConfig)
+	assert.Equal(t, expected.Presets["A"], actual.Presets["A"])
+	assert.Equal(t, expected.Presets["B"], actual.Presets["B"])
+	assert.Equal(t, expected.Presets["C"], actual.Presets["C"])
+	assert.Equal(t, expected.Execute, actual.Execute)
 }
