@@ -42,12 +42,10 @@ func show(cmd *cobra.Command, args []string) error {
 			"source_dir",
 			"sources",
 			"imports",
-			"timeout",
 			"parameters_file",
 			"hooks_file",
 			"lint_file",
 			"datadir",
-			"session_id",
 		}
 		return printKeyValues(Project, keys)
 	}
