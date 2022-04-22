@@ -76,6 +76,9 @@ type Config struct {
 
 		// Path to OSS Nokalva installation.
 		OssInfo string
+
+		// T3XF is the path to the T3XF file.
+		T3XF string `json:"t3xf"`
 	}
 }
 
@@ -322,8 +325,8 @@ func Open(args ...string) (*Config, error) {
 	defaults := ConfigOptions(
 		AutomaticEnv(),
 		WithIndex(cache.Lookup(IndexFile)),
-		WithK3(),
 		WithDefaults(),
+		WithK3(),
 	)
 
 	cwd, err := os.Getwd()
@@ -464,6 +467,7 @@ func WithK3() ConfigOption {
 		c.K3.Includes = k3.Includes()
 		c.K3.Plugins = k3.Plugins()
 		c.K3.OssInfo = filepath.Join(k3.DataDir(), "asn1")
+		c.K3.T3XF = cache.Lookup(fmt.Sprintf("%s.t3xf", c.Name))
 		return nil
 	}
 }
