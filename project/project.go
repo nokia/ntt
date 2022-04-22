@@ -348,13 +348,19 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 	add := func(name string, comments string) {
 		// TODO(5nord) make this less quadratic.
 		for _, tc := range gc.Execute {
-			pattern, _ := SplitTest(tc.Test)
+			pattern, params := SplitTest(tc.Test)
 			ok, err := filepath.Match(pattern, name)
 			if err != nil {
 				log.Verbosef("%s: %s\n", name, err.Error())
 			}
 			if ok {
-				list = append(list, tc)
+				tc2 := tc
+				tc2.Test = name
+				if params != "" {
+					tc2.Test += "(" + params + ")"
+				}
+
+				list = append(list, tc2)
 			}
 		}
 	}
