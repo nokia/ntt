@@ -13,6 +13,11 @@ module test {
 		log(23/0); // should cause an error
 	}
 
+	testcase D() runs on MTC {
+		setverdict(pass, "success");
+		wait(20.0 + now);
+	}
+
 	control {
 		execute(B());
 		execute(A());
