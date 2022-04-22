@@ -780,7 +780,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 					// happens after
 					// * the altstep/function/testcase kw while typing the identifier
 					// * inside the exception list after { while typing the kind
-					if l == 7 {
+					if l == 8 {
 						if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
 							if scndNode.Kind.IsValid() {
 								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
