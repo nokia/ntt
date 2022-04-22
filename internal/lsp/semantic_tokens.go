@@ -88,17 +88,17 @@ const (
 )
 
 var TokenModifiers = []string{
-	Undefined:      "undefined",
-	Declaration:    "declaration",
-	Definition:     "definition",
-	Readonly:       "readonly",
-	Static:         "static",
-	Deprecated:     "deprecated",
-	Abstract:       "abstract",
-	Async:          "async",
-	Modification:   "modification",
-	Documentation:  "documentation",
-	DefaultLibrary: "defaultLibrary",
+	"undefined",
+	"declaration",
+	"definition",
+	"readonly",
+	"static",
+	"deprecated",
+	"abstract",
+	"async",
+	"modification",
+	"documentation",
+	"defaultLibrary",
 }
 
 var builtins = map[string]SemanticTokenType{
