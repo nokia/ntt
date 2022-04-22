@@ -155,8 +155,8 @@ func (s *Suites) AddSuite(root project.Suite) {
 		project.AutomaticRoot(root.RootDir),
 		project.AutomaticEnv(),
 		project.WithSourceDir(root.SourceDir),
-		project.WithK3(),
 		project.WithDefaults(),
+		project.WithK3(),
 	)
 
 	// If opening a project fails, we want to continue with what we have.

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/nokia/ntt/build"
-	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -344,7 +343,7 @@ func PlanProject(name string, conf *project.Config) ([]build.Builder, error) {
 	}
 	var imports []string
 	for _, dir := range conf.Imports {
-		builders, err := PlanImport(dir)
+		builders, err := PlanImport(conf, dir)
 		if err != nil {
 			return nil, err
 		}
@@ -368,7 +367,7 @@ func PlanProject(name string, conf *project.Config) ([]build.Builder, error) {
 		return nil, fmt.Errorf("test root folder %s: %w", conf.Root, ErrNoSources)
 	}
 
-	ret = append(ret, k3.NewT3XFBuilder(name, srcs, imports))
+	ret = append(ret, k3.NewT3XFBuilder(conf.K3.T3XF, srcs, imports))
 	return ret, nil
 }
 
@@ -377,7 +376,7 @@ func PlanProject(name string, conf *project.Config) ([]build.Builder, error) {
 // k3 plugin.
 //
 // Using a different backend than k3 is currently not supported.
-func PlanImport(dir string) ([]build.Builder, error) {
+func PlanImport(c *project.Config, dir string) ([]build.Builder, error) {
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -429,7 +428,7 @@ func PlanImport(dir string) ([]build.Builder, error) {
 		builders = append(builders, k3.NewPluginBuilder(name, cFiles...))
 	}
 	if len(ttcn3Files) > 0 {
-		builders = append(builders, k3.NewT3XFBuilder(name, nil, ttcn3Files))
+		builders = append(builders, k3.NewT3XFBuilder(c.K3.T3XF, nil, ttcn3Files))
 	}
 	return builders, nil
 }
@@ -646,7 +645,7 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 		}
 	}
 
-	t3xf := cache.Lookup(fmt.Sprintf("%s.t3xf", job.Suite.Name))
+	t3xf := job.Suite.K3.T3XF
 	if workingDir != "" {
 		absT3xf, err := filepath.Abs(t3xf)
 		if err != nil {

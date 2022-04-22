@@ -11,6 +11,7 @@ import (
 
 	"github.com/nokia/ntt"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/stretchr/testify/assert"
 )
@@ -168,7 +169,7 @@ func TestPlanImports(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result, err := ntt.PlanImport(tt.path)
+		result, err := ntt.PlanImport(&project.Config{}, tt.path)
 		if !errors.Is(err, tt.err) {
 			t.Errorf("%v: %v, want %v", tt.path, err, tt.err)
 		}

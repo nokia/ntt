@@ -76,10 +76,9 @@ func (p *Plugin) Commands() []compdb.Command {
 	return ret
 }
 
-func NewT3XFBuilder(name string, srcs []string, imports []string) *T3XF {
+func NewT3XFBuilder(t3xf string, srcs []string, imports []string) *T3XF {
 	return &T3XF{
-		name:    name,
-		target:  build.Pathf("%s.t3xf", name),
+		target:  t3xf,
 		sources: srcs,
 		imports: imports,
 	}
@@ -87,7 +86,6 @@ func NewT3XFBuilder(name string, srcs []string, imports []string) *T3XF {
 
 // T3XF is a T3XF builder.
 type T3XF struct {
-	name    string
 	target  string
 	sources []string
 	imports []string

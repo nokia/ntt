@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"testing"
 
 	ntt2 "github.com/nokia/ntt"
-	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
@@ -90,5 +88,5 @@ func testBuild(t *testing.T, args ...string) string {
 	if err := ntt2.BuildProject(p.Name, p); err != nil {
 		t.Fatal(err)
 	}
-	return cache.Lookup(fmt.Sprintf("%s.t3xf", p.Name))
+	return p.K3.T3XF
 }
