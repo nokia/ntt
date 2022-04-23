@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
@@ -87,10 +86,10 @@ func TestEvents(t *testing.T) {
 				"tciError error (id not fully qualified)",
 			}},
 		{
-			input:   "test.D",
+			input:   "math.Test",
 			timeout: 1 * time.Second,
 			events: []string{
-				`tciTestCaseStarted test.D`,
+				`tciTestCaseStarted math.Test`,
 				`tciError error (timeout)`,
 			}},
 	}
@@ -150,7 +149,7 @@ func testBuild(t *testing.T, args ...string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := ntt.BuildProject(p.Name, p); err != nil {
+	if err := project.Build(p); err != nil {
 		t.Fatal(err)
 	}
 	return p.K3.T3XF

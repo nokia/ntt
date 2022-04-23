@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/compdb"
+	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
 
@@ -27,16 +28,25 @@ func init() {
 }
 
 func Build(cmd *cobra.Command, args []string) error {
+	tasks, err := project.BuildTasks(Project)
+	if err != nil {
+		return err
+	}
 	if CompDB {
-		builders, err := ntt2.PlanProject(Project.Name, Project)
-		if err != nil {
-			return err
-		}
-
 		var db []compdb.Command
-		for _, b := range builders {
-			if c, ok := b.(compdb.Commander); ok {
-				db = append(db, c.Commands()...)
+		for _, t := range tasks {
+			if _, ok := t.(*k3.TTCN3Library); ok {
+				continue
+			}
+			cmd := t.String()
+			for _, in := range t.Inputs() {
+				for _, out := range t.Outputs() {
+					db = append(db, compdb.Command{
+						Command: cmd,
+						File:    in,
+						Output:  out,
+					})
+				}
 			}
 		}
 		if len(db) > 0 {
@@ -50,5 +60,10 @@ func Build(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}
-	return ntt2.BuildProject(Project.Name, Project)
+	for _, t := range tasks {
+		if err := t.Run(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

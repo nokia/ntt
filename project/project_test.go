@@ -1,9 +1,11 @@
 package project_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -12,6 +14,56 @@ import (
 	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNameFromURI(t *testing.T) {
+	tests := []struct {
+		uri  string
+		want string
+		err  error
+	}{
+		{uri: "", want: ""},
+		{uri: ".", want: "project"},
+		{uri: "foo", want: "foo"},
+		{uri: "foo bar", want: "foo_bar"},
+		{uri: "/foo/bar", want: "bar"},
+		{uri: "file:///foo/bar", want: "bar"},
+		{uri: "file://foo/bar", want: "bar"},
+		//TODO
+		//{uri: "file://.", want: "project"},
+	}
+	for _, tt := range tests {
+		got, err := project.NameFromURI(tt.uri)
+		if !errors.Is(err, tt.err) {
+			t.Errorf("NameFromURI(%q) error = %v, want %v", tt.uri, err, tt.err)
+		}
+		if got != tt.want {
+			t.Errorf("NameFromURI(%q) = %q, want %q", tt.uri, got, tt.want)
+		}
+	}
+}
+
+func TestEncodingFromURI(t *testing.T) {
+	tests := []struct {
+		uri  string
+		want string
+		err  error
+	}{
+		{uri: "", want: "per"},
+		{uri: "s1ap", want: "per"},
+		{uri: "bananap", want: "per"},
+		{uri: "EUTRA_RRC", want: "uper"},
+	}
+	for _, tt := range tests {
+		got, err := project.EncodingFromURI(tt.uri)
+		if !errors.Is(err, tt.err) {
+			t.Errorf("EncodingFromURI(%q) error = %v, want %v", tt.uri, err, tt.err)
+		}
+		if got != tt.want {
+			t.Errorf("EncodingFromURI(%q) = %q, want %q", tt.uri, got, tt.want)
+		}
+	}
+
+}
 
 func TestAutomaticEnv(t *testing.T) {
 	t.Run("NTT_NAME", func(t *testing.T) {
@@ -254,4 +306,57 @@ func TestParametersMergeRules(t *testing.T) {
 	assert.Equal(t, expected.Presets["B"], actual.Presets["B"])
 	assert.Equal(t, expected.Presets["C"], actual.Presets["C"])
 	assert.Equal(t, expected.Execute, actual.Execute)
+}
+
+func TestImportTasks(t *testing.T) {
+	tests := []struct {
+		path   string
+		result []string
+		err    error
+	}{
+		{path: "./testdata/ImportTasks/invalid/notexist", err: os.ErrNotExist},
+		{path: "./testdata/ImportTasks/invalid/file.ttcn3", err: syscall.ENOTDIR},
+		{path: "./testdata/ImportTasks/invalid/dirs", err: project.ErrNoSources},
+		{path: "./testdata/ImportTasks/other", err: project.ErrNoSources},
+		{path: "./testdata/ImportTasks/🤔", result: []string{"testdata/ImportTasks/🤔/a.ttcn3"}},
+		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3", "testdata/ImportTasks/lib/🤔.ttcn3"}},
+	}
+
+	for _, tt := range tests {
+		result, err := project.ImportTasks(&project.Config{}, tt.path)
+		if !errors.Is(err, tt.err) {
+			t.Errorf("%v: %v, want %v", tt.path, err, tt.err)
+		}
+		if len(tt.result) == 0 {
+			continue
+		}
+		if len(result) != 1 {
+			t.Errorf("Unexpected result: %v", result)
+			continue
+		}
+
+		actual := result[0].Inputs()
+		if !equal(actual, tt.result) {
+			t.Errorf("%v: %v, want %v", tt.path, actual, tt.result)
+		}
+	}
+
+}
+
+// equal returns true if a and b are equal string slices, order is ignored.
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]int, len(a))
+	for i := range a {
+		m[a[i]]++
+		m[b[i]]--
+	}
+	for _, v := range m {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
 }

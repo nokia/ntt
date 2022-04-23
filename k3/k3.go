@@ -4,22 +4,42 @@ package k3
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/sha256"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/nokia/ntt/internal/cache"
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/proc"
 )
+
+// DefaultEnv is the default environment for k3-based test suites.
+var DefaultEnv = map[string]string{
+	"CXX":        "g++",
+	"CC":         "gcc",
+	"ASN1C":      "asn1",
+	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
+	"ASN2TTCN":   "asn1tottcn3",
+	"OSSINFO":    filepath.Join(DataDir(), "asn1"),
+	"K3C":        Compiler(),
+	"K3R":        Runtime(),
+}
 
 // InstallDir returns the directory where k3 is probably installed.
 func InstallDir() string {
-	if env := os.Getenv("NTTROOT"); env != "" {
-		return env
+	if s := os.Getenv("NTTROOT"); s != "" {
+		return s
 	}
-	if env := os.Getenv("K3ROOT"); env != "" {
-		return env
+	if s := os.Getenv("K3ROOT"); s != "" {
+		return s
 	}
 	if k3r, err := exec.LookPath("k3r"); err == nil {
 		if path, _ := filepath.Abs(filepath.Join(filepath.Dir(k3r), "..")); path != "" {
@@ -31,11 +51,8 @@ func InstallDir() string {
 
 // DataDir returns the directory where additional files are installed (/usr/share/k3).
 func DataDir() string {
-	if env := os.Getenv("NTT_DATADIR"); env != "" {
-		return env
-	}
-	if env := os.Getenv("K3_DATADIR"); env != "" {
-		return env
+	if s := env.Getenv("NTT_DATADIR"); s != "" {
+		return s
 	}
 	if dir := filepath.Join(InstallDir(), "share/k3"); fs.IsDir(dir) {
 		return dir
@@ -102,6 +119,148 @@ func Includes() []string {
 		}
 	}
 	return clean(ret...)
+}
+
+// NewASN1Codec returns the commands required to compile ASN.1 files.
+func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...string) []*proc.Cmd {
+	if vars == nil {
+		vars = make(map[string]string)
+		for k, v := range DefaultEnv {
+			vars[k] = v
+		}
+	}
+	vars["name"] = name
+	vars["encoding"] = encoding
+
+	asn1 := proc.Task("$ASN1C -${encoding} $ASN1CFLAGS -output ${name}.enc -prefix ${name} $OSSINFO/asn1dflt.linux-x86_64 ${srcs}")
+	asn1.Env = vars
+	asn1.Sources = srcs
+	asn1.Targets = []string{
+		pathf("%s.enc.c", name),
+		pathf("%s.enc.h", name),
+	}
+
+	lib := proc.Task("$CC -fPIC -shared -D_OSSGETHEADER -DOSSPRINT $CFLAGS $LDFLAGS $EXTRA_LDFLAGS ${srcs} -l:libasn1code.a -Wl,-Bdynamic -o ${tgts}")
+	lib.Env = vars
+	lib.Sources = asn1.Targets
+	lib.Targets = []string{
+		pathf("%slib.so", name),
+	}
+
+	mod := proc.Task("$ASN2TTCN -o ${name}mod ${srcs} ${tgts} ${encoding}")
+	mod.Env = vars
+	mod.Sources = asn1.Targets
+	mod.Targets = []string{
+		pathf("%smod.ttcn", name),
+	}
+
+	return []*proc.Cmd{asn1, lib, mod}
+}
+
+// NewPlugin returns the commands for building a k3 plugin.
+func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd {
+	if vars == nil {
+		vars = make(map[string]string)
+		for k, v := range DefaultEnv {
+			vars[k] = v
+		}
+	}
+	p := proc.Task("$CXX $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
+	p.Env = vars
+	p.Sources = srcs
+	p.Targets = []string{pathf("k3r-%s-plugin.so", name)}
+	return []*proc.Cmd{p}
+}
+
+// NewT3XF returns the commands for building a T3XF.
+func NewT3XF(vars map[string]string, t3xf string, srcs ...string) []*proc.Cmd {
+	if vars == nil {
+		vars = make(map[string]string)
+		for k, v := range DefaultEnv {
+			vars[k] = v
+		}
+	}
+
+	// We need to remove k3 stdlib files from the source list, because of a
+	// missing module (PCMDmod).
+
+	// Pass stdlib as include instead.
+	for _, dir := range Includes() {
+		vars["K3CFLAGS"] += fmt.Sprintf(" -I%s", dir)
+	}
+
+	t := proc.Task("$K3C $K3CFLAGS -o ${tgts} ${srcs}")
+	t.Sources = srcs
+	t.Targets = []string{t3xf}
+	t.Env = vars
+	t.Before = func(t *proc.Cmd) error {
+		// We must not modify the t3xf file while it's beeing executed by k3r.
+		// Removing it ensures a new inode and all is fine.
+		if err := os.Remove(t3xf); !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		return nil
+	}
+	return []*proc.Cmd{t}
+}
+
+func removeStdlib(srcs []string) []string {
+
+	// There are multiple installations of the stdlib, so we cannot compare
+	// for identity but use a hash instead.
+	sum := func(file string) ([]byte, error) {
+		f, err := os.Open(file)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err != nil {
+			return nil, err
+		}
+		return h.Sum(nil), nil
+	}
+
+	// We build a map of hashes of the stdlib files. The key is the base
+	// name of the file.
+	stdlib := make(map[string][]byte)
+	for _, dir := range Includes() {
+		for _, file := range fs.FindTTCN3Files(dir) {
+			if s, err := sum(file); err == nil {
+				stdlib[fs.Stem(file)] = s
+			}
+		}
+	}
+
+	isStdlib := func(file string) bool {
+		if s1 := stdlib[fs.Stem(file)]; s1 != nil {
+			if s2, err := sum(file); err == nil {
+				return bytes.Equal(s1, s2)
+			}
+		}
+		return false
+	}
+
+	var ret []string
+	for _, src := range srcs {
+		if !isStdlib(src) {
+			ret = append(ret, src)
+		}
+	}
+	return ret
+}
+
+type TTCN3Library struct{ srcs []string }
+
+func (l *TTCN3Library) String() string    { return fmt.Sprintf("%s", l.srcs) }
+func (l *TTCN3Library) Outputs() []string { return l.srcs }
+func (l *TTCN3Library) Inputs() []string  { return l.srcs }
+func (l *TTCN3Library) Run() error        { return nil }
+
+// NewTTCN3Library returns the commands for building a TTCN-3 library.
+func NewTTCN3Library(vars map[string]string, name string, srcs ...string) []*TTCN3Library {
+	return []*TTCN3Library{{srcs}}
 }
 
 func k3DevelDirs() []string {
@@ -230,4 +389,9 @@ func findK3Tool(names ...string) string {
 		}
 	}
 	return names[0]
+}
+
+// pathf is like fmt.Sprintf but searches the NTT_CACHE environment variable first.
+func pathf(f string, v ...interface{}) string {
+	return cache.Lookup(fmt.Sprintf(f, v...))
 }

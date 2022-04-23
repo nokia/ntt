@@ -61,7 +61,9 @@ func JoinPath(baseUrl string, elem ...string) string {
 // Path returns a decoded file path when you pass a URI with file:// scheme.
 func Path(s string) string {
 	if IsURI(s) {
-		return span.URIFromURI(s).Filename()
+		if uri := span.URIFromURI(s); uri.IsFile() {
+			return uri.Filename()
+		}
 	}
 	return s
 }

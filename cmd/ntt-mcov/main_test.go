@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	ntt2 "github.com/nokia/ntt"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
 	"github.com/nokia/ntt/project"
@@ -85,7 +84,7 @@ func testBuild(t *testing.T, args ...string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := ntt2.BuildProject(p.Name, p); err != nil {
+	if err := project.Build(p); err != nil {
 		t.Fatal(err)
 	}
 	return p.K3.T3XF

@@ -10,9 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nokia/ntt/build"
 	"github.com/nokia/ntt/internal/env"
-	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/run"
@@ -288,7 +286,7 @@ func NewSuite(files ...string) (*Suite, error) {
 
 	var paths []string
 	if s := env.Getenv("NTT_CACHE"); s != "" {
-		paths = append(paths, strings.Split(s, ":")...)
+		paths = append(paths, strings.Split(s, string(os.PathListSeparator))...)
 	}
 	paths = append(paths, p.Manifest.Imports...)
 	paths = append(paths, k3.Plugins()...)
@@ -307,137 +305,6 @@ func NewSuite(files ...string) (*Suite, error) {
 type Suite struct {
 	*project.Config
 	RuntimePaths []string
-}
-
-// ErrNoSources is returned when no source files are found.
-var ErrNoSources = fmt.Errorf("no sources")
-
-// BuildProject builds a project with the given name. It the build of the
-// project or any of its dependencies fails, the error is returned.
-func BuildProject(name string, p *project.Config) error {
-	start := time.Now()
-	defer func() {
-		log.Debugf("build %s took %s\n", name, time.Since(start))
-	}()
-	builders, err := PlanProject(name, p)
-	if err != nil {
-		return err
-	}
-	for _, b := range builders {
-		if err := b.Build(); err != nil {
-			return err
-		}
-	}
-	return err
-}
-
-// PlanProject returns a list of builders required to build the given project.
-//
-// Using a different backend than k3 is currently not supported.
-func PlanProject(name string, conf *project.Config) ([]build.Builder, error) {
-	var ret []build.Builder
-
-	srcs, err := fs.TTCN3Files(conf.Sources...)
-	if err != nil {
-		return nil, err
-	}
-	var imports []string
-	for _, dir := range conf.Imports {
-		builders, err := PlanImport(conf, dir)
-		if err != nil {
-			return nil, err
-		}
-		for _, b := range builders {
-			for _, o := range b.Targets() {
-				if fs.HasTTCN3Extension(o) {
-					imports = append(imports, o)
-				}
-			}
-
-			// Skip T3XF Builders, because we'll build t3xf speparately.
-			if t, ok := b.(*k3.T3XF); ok {
-				imports = append(imports, t.Sources()...)
-			} else {
-				ret = append(ret, b)
-			}
-		}
-	}
-
-	if len(srcs) == 0 {
-		return nil, fmt.Errorf("test root folder %s: %w", conf.Root, ErrNoSources)
-	}
-
-	ret = append(ret, k3.NewT3XFBuilder(conf.K3.T3XF, srcs, imports))
-	return ret, nil
-}
-
-// PlanImport returns a list of builders required to build the given import
-// directory. An import directory can be a TTCN-3 library, a ASN.1 codec or a
-// k3 plugin.
-//
-// Using a different backend than k3 is currently not supported.
-func PlanImport(c *project.Config, dir string) ([]build.Builder, error) {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		builders                      []build.Builder
-		asn1Files, ttcn3Files, cFiles []string
-		processed                     int
-	)
-
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		switch path := filepath.Join(dir, f.Name()); filepath.Ext(path) {
-		case ".asn1", ".asn":
-			asn1Files = append(asn1Files, path)
-			processed++
-		case ".ttcn3", ".ttcn":
-			ttcn3Files = append(ttcn3Files, path)
-			processed++
-		case ".c", ".cxx", ".cpp", ".cc":
-			// Skip ASN1 codecs
-			if strings.HasSuffix(path, ".enc.c") {
-				continue
-			}
-			cFiles = append(cFiles, path)
-			processed++
-		}
-	}
-	if processed == 0 {
-		return nil, fmt.Errorf("%s: %w", dir, ErrNoSources)
-	}
-
-	if strings.HasPrefix(dir, ".") {
-		abs, err := filepath.Abs(dir)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", dir, err)
-		}
-		dir = abs
-	}
-
-	name := fs.Slugify(fs.Stem(dir))
-	if len(asn1Files) > 0 {
-		builders = append(builders, k3.NewASN1Codec(name, encoding(name), asn1Files...))
-	}
-	if len(cFiles) > 0 {
-		builders = append(builders, k3.NewPluginBuilder(name, cFiles...))
-	}
-	if len(ttcn3Files) > 0 {
-		builders = append(builders, k3.NewT3XFBuilder(c.K3.T3XF, nil, ttcn3Files))
-	}
-	return builders, nil
-}
-
-func encoding(name string) string {
-	if strings.Contains(strings.ToLower(name), "rrc") {
-		return "uper"
-	}
-	return "per"
 }
 
 // GenerateIDs emits given IDs to a channel.
