@@ -33,7 +33,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 	}
 	ast.Inspect(tree.Root, func(n ast.Node) bool {
 		switch n := n.(type) {
-		case *ast.Module, *ast.ModuleDef:
+		case *ast.NodeList, *ast.Module, *ast.ModuleDef:
 			return true
 		case *ast.FuncDecl:
 			if !n.IsTest() {
