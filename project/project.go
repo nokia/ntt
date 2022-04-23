@@ -15,10 +15,12 @@ package project
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/cache"
@@ -29,6 +31,10 @@ import (
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
+)
+
+var (
+	ErrNoSources = errors.New("no sources")
 )
 
 // Config describes a single project configuration. It aggregates various
@@ -82,6 +88,9 @@ type Config struct {
 		// T3XF is the path to the T3XF file.
 		T3XF string `json:"t3xf"`
 	}
+
+	// what toolchain to use.
+	toolchain string
 }
 
 // The Manifest file (package.yml).
@@ -298,6 +307,169 @@ func Discover(path string) []Suite {
 		}
 	}
 	return result
+}
+
+// Task is a build task.
+type Task interface {
+	// Inputs returns the list of input files.
+	Inputs() []string
+
+	// Outputs returns the list of output files.
+	Outputs() []string
+
+	// Run executes the task.
+	Run() error
+
+	// String returns a string representation of the task.
+	String() string
+}
+
+// Build builds a project.
+func Build(c *Config) error {
+	since := time.Now()
+	defer func() {
+		log.Debugf("build took %s", time.Since(since))
+	}()
+
+	tasks, err := BuildTasks(c)
+	if err != nil {
+		return err
+	}
+	for _, tsk := range tasks {
+		if err := tsk.Run(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// BuildTasks returns the build tasks required to generate and build the test
+// executable and its dependencies.
+func BuildTasks(c *Config) ([]Task, error) {
+	var (
+		ret  []Task
+		merr *multierror.Error
+	)
+
+	for _, imp := range c.Imports {
+		tasks, err := ImportTasks(c, imp)
+		if err != nil {
+			merr = multierror.Append(merr, err)
+			continue
+		}
+		ret = append(ret, tasks...)
+	}
+
+	srcs, err := fs.TTCN3Files(c.Sources...)
+	if err != nil {
+		merr = multierror.Append(merr, err)
+	}
+	for _, t := range ret {
+		for _, output := range t.Outputs() {
+			if fs.HasTTCN3Extension(output) {
+				srcs = append(srcs, output)
+			}
+		}
+	}
+
+	for _, t := range k3.NewT3XF(c.Variables, c.K3.T3XF, srcs...) {
+		ret = append(ret, t)
+	}
+
+	return ret, merr.ErrorOrNil()
+}
+
+// ImportTasks returns the build tasks required to generate and build a given
+// test suite dependency.
+func ImportTasks(c *Config, uri string) ([]Task, error) {
+	dir := fs.Path(uri)
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		tasks                         []Task
+		asn1Files, ttcn3Files, cFiles []string
+		processed                     int
+	)
+
+	// Collect and categorize all the files!
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		switch path := filepath.Join(dir, f.Name()); filepath.Ext(path) {
+		case ".asn1", ".asn":
+			asn1Files = append(asn1Files, path)
+			processed++
+		case ".ttcn3", ".ttcn":
+			ttcn3Files = append(ttcn3Files, path)
+			processed++
+		case ".c", ".cxx", ".cpp", ".cc":
+			// Skip ASN1 codecs
+			if strings.HasSuffix(path, ".enc.c") {
+				continue
+			}
+			cFiles = append(cFiles, path)
+			processed++
+		}
+	}
+	if processed == 0 {
+		return nil, fmt.Errorf("%s: %w", dir, ErrNoSources)
+	}
+
+	name, err := NameFromURI(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(asn1Files) > 0 {
+		encoding, err := EncodingFromURI(dir)
+		if err != nil {
+			return nil, err
+		}
+		for _, t := range k3.NewASN1Codec(c.Variables, name, encoding, asn1Files...) {
+			tasks = append(tasks, t)
+		}
+	}
+	if len(cFiles) > 0 {
+		for _, t := range k3.NewPlugin(c.Variables, name, cFiles...) {
+			tasks = append(tasks, t)
+		}
+	}
+	if len(ttcn3Files) > 0 {
+		for _, t := range k3.NewTTCN3Library(c.Variables, name, ttcn3Files...) {
+			tasks = append(tasks, t)
+		}
+	}
+	return tasks, nil
+}
+
+// NameFromURI derives a TTCN-3 compatible name from a path or URI.
+func NameFromURI(uri string) (string, error) {
+	uri = fs.Path(uri)
+	if strings.HasPrefix(uri, ".") {
+		abs, err := filepath.Abs(uri)
+		if err != nil {
+			return "", fmt.Errorf("%s: %w", uri, err)
+		}
+		uri = abs
+	}
+	return fs.Slugify(fs.Stem(uri)), nil
+}
+
+// Encoding returns the ASN.1 encoding for a given URI. Current implementation
+// always returns "per", unless the URI contains the string "rrc"
+func EncodingFromURI(uri string) (string, error) {
+	name, err := NameFromURI(uri)
+	if err != nil {
+		return "", err
+	}
+	if strings.Contains(strings.ToLower(name), "rrc") {
+		return "uper", nil
+	}
+	return "per", nil
 }
 
 // Files returns the list of TTCN-3 source files. Genereated files are
@@ -601,6 +773,7 @@ func WithManifest(file string) ConfigOption {
 
 func WithK3() ConfigOption {
 	return func(c *Config) error {
+		c.toolchain = "k3"
 		c.K3.Compiler = k3.Compiler()
 		c.K3.Runtime = k3.Runtime()
 		c.K3.Includes = k3.Includes()

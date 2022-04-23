@@ -13,7 +13,7 @@ import (
 	"github.com/nokia/ntt/k3/t3xf"
 )
 
-func TestPluginBuilder(t *testing.T) {
+func TestNewPlugin(t *testing.T) {
 	if k3.Runtime() == "k3r" {
 		t.Skip("Cannot locate k3 runtime. Skipping test.")
 	}
@@ -21,13 +21,13 @@ func TestPluginBuilder(t *testing.T) {
 	srcdir, _, cleanup := initStage(t)
 	defer cleanup()
 
-	b := k3.NewPluginBuilder("extfunc", filepath.Join(srcdir, "testdata/suite/extfunc/plugin.cc"))
-	err := b.Build()
+	b := k3.NewPlugin(k3.DefaultEnv, "extfunc", filepath.Join(srcdir, "testdata/suite/extfunc/plugin.cc"))[0]
+	err := b.Run()
 	if err != nil {
-		t.Errorf("Build() = %v", err)
+		t.Errorf("Run() = %v", err)
 	}
 
-	out := b.Targets()
+	out := b.Outputs()
 	if len(out) != 1 {
 		t.Fatalf("Unexpected numberof build artifacts: %v", out)
 	}
@@ -48,20 +48,20 @@ func TestPluginBuilder(t *testing.T) {
 
 }
 
-func TestT3XFBuilder(t *testing.T) {
+func TestNewT3XF(t *testing.T) {
 	if k3.Compiler() == "mtc" {
 		t.Skip("Cannot locate k3 compiler. Skipping test.")
 	}
 	srcdir, _, cleanup := initStage(t)
 	defer cleanup()
 
-	b := k3.NewT3XFBuilder("suite", []string{filepath.Join(srcdir, "testdata/suite/test.ttcn3")}, nil)
-	err := b.Build()
+	b := k3.NewT3XF(k3.DefaultEnv, "suite.t3xf", filepath.Join(srcdir, "testdata/suite/test.ttcn3"))[0]
+	err := b.Run()
 	if err != nil {
-		t.Errorf("Build() = %v", err)
+		t.Errorf("Run() = %v", err)
 	}
 
-	out := b.Targets()
+	out := b.Outputs()
 	if len(out) != 1 {
 		t.Fatalf("Unexpected numberof build artifacts: %v", out)
 	}
