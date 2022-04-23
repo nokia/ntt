@@ -40,7 +40,7 @@ func (s *Suite) Files() []string {
 			}
 		}
 		for _, dir := range files {
-			s.files[dir] = true
+			s.files[string(fs.URI(dir))] = true
 		}
 	}
 
@@ -178,6 +178,5 @@ func (s *Suites) AddSuite(root project.Suite) {
 	s.mu.Unlock()
 
 	// Update index
-	files, _ := project.Files(conf)
-	s.db.Index(files...)
+	s.db.Index(suite.Files()...)
 }
