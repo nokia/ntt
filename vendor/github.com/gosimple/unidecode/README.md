@@ -39,11 +39,20 @@ go get -u github.com/gosimple/unidecode
 ## Benchmark
 
 ```shell
-go get golang.org/x/perf/cmd/...
-
-go test -run=NONE -bench=. ./... > old.txt
+go test -run=NONE -bench=. -benchmem -count=6 ./... > old.txt
 # make changes
-go test -run=NONE -bench=. ./... > new.txt
+go test -run=NONE -bench=. -benchmem -count=6 ./... > new.txt
+
+go install golang.org/x/perf/cmd/benchstat@latest
 
 benchstat old.txt new.txt
 ```
+
+## Add new characters
+
+1. Edit `table.txt` file.
+2. Rebuild `table.go` file:
+
+   ```go
+   go run ./make_table.go
+   ```
