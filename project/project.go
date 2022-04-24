@@ -922,7 +922,7 @@ func WithDefaults() ConfigOption {
 			case len(c.Sources) > 0:
 				c.Root = filepath.Dir(c.Sources[0])
 				// When there's no root, but only source, we want the suite to be named after the source.
-				n, err := NameFromURI(c.Root)
+				n, err := NameFromURI(c.Sources[0])
 				if err != nil {
 					return err
 				}
