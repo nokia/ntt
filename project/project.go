@@ -694,7 +694,6 @@ func ConfigOptions(opts ...ConfigOption) ConfigOption {
 func WithIndex(file string) ConfigOption {
 	return func(c *Config) error {
 		if c.Root == "" {
-			log.Debugf("project: skip index file %s\n", file)
 			return nil
 		}
 		b, err := fs.Content(file)
@@ -780,6 +779,11 @@ func WithK3() ConfigOption {
 		c.K3.Plugins = k3.Plugins()
 		c.K3.OssInfo = filepath.Join(k3.DataDir(), "asn1")
 		c.K3.T3XF = cache.Lookup(fmt.Sprintf("%s.t3xf", c.Name))
+		log.Debugf("project: k3 compiler : %v\n", c.K3.Compiler)
+		log.Debugf("project: k3 runtime  : %v\n", c.K3.Runtime)
+		log.Debugf("project: k3 t3xf     : %v\n", c.K3.T3XF)
+		log.Debugf("project: k3 includes : %v\n", c.K3.Includes)
+		log.Debugf("project: k3 plugins  : %v\n", c.K3.Plugins)
 		return nil
 	}
 }
