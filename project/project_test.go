@@ -201,6 +201,12 @@ func TestWithDefaults(t *testing.T) {
 		assert.Nil(t, project.WithDefaults()(c))
 		assert.Equal(t, ".", c.Root)
 		assert.Equal(t, ".", c.SourceDir)
+
+		// Note: In previous implementation the default-name was always
+		// the base-name of the root folder.
+		// But when we execute many single file tests, this is not what we want.
+		// This test ensures that the default-name is the base-name of the first source file.
+		assert.Equal(t, "project", c.Name)
 	})
 
 }
