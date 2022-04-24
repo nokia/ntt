@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,11 +39,10 @@ func TestGenerateIDs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			suite, err := ntt.NewSuite("../../testdata/vanilla")
+			p, err := project.Open("../../testdata/vanilla")
 			if err != nil {
 				t.Fatal(err)
 			}
-
 			var b ntt.Basket
 			if tt.basket != "" {
 				b, err = ntt.NewBasket("testBasket", strings.Split(tt.basket, " ")...)
@@ -51,7 +51,7 @@ func TestGenerateIDs(t *testing.T) {
 				}
 			}
 
-			c := GenerateIDs(context.Background(), strings.Fields(tt.ids), suite.Manifest.Sources, tt.policy, b)
+			c := GenerateIDs(context.Background(), strings.Fields(tt.ids), p.Sources, tt.policy, b)
 			var actual []string
 			for id := range c {
 				actual = append(actual, id)

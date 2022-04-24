@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/stretchr/testify/assert"
 )
@@ -178,7 +179,11 @@ func TestModulePars(t *testing.T) {
 }
 
 func testModulePars(t *testing.T, name string) ([]string, error) {
-	_, err := ntt.NewSuite("testdata/parameters")
+	p, err := project.Open("testdata/parameters")
+	if err != nil {
+		t.Fatal("Open project:", err)
+	}
+	_, err = ntt.NewSuite(p)
 	if err != nil {
 		t.Fatalf("NewSuite() failed: %v", err)
 	}

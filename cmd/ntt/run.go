@@ -52,10 +52,6 @@ Environment variables:
 
 `,
 
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			files, _ := splitArgs(args, cmd.ArgsLenAtDash())
-			return BuildCommand.RunE(cmd, files)
-		},
 		RunE: run,
 	}
 
@@ -137,12 +133,12 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-	suite, err := ntt.NewSuite(files...)
+	suite, err := ntt.NewSuite(Project)
 	if err != nil {
 		return err
 	}
 
+	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
 	if testsFile != "" {
 		tests, err := readTestsFromFile(testsFile)
 		if err != nil {

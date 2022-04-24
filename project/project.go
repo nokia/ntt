@@ -921,6 +921,12 @@ func WithDefaults() ConfigOption {
 				c.Root = c.SourceDir
 			case len(c.Sources) > 0:
 				c.Root = filepath.Dir(c.Sources[0])
+				// When there's no root, but only source, we want the suite to be named after the source.
+				n, err := NameFromURI(c.Root)
+				if err != nil {
+					return err
+				}
+				c.Name = n
 			default:
 				cwd, err := os.Getwd()
 				if err != nil {
@@ -935,7 +941,11 @@ func WithDefaults() ConfigOption {
 			log.Debugf("project: using default source dir %s\n", c.SourceDir)
 		}
 		if c.Name == "" {
-			c.Name = fs.Slugify(filepath.Base(c.Root))
+			n, err := NameFromURI(c.Root)
+			if err != nil {
+				return err
+			}
+			c.Name = n
 			log.Debugf("project: using default name %s\n", c.Name)
 		}
 		defaultFile := func(name string) string {
