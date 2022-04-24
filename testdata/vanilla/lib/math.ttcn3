@@ -1,6 +1,7 @@
 module math {
 	function add(integer x, integer y) return integer { return x + y; }
 
+	type component C {}
 	testcase Test() runs on C {
 		setverdict(fail, "math failed")
 	}

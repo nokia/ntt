@@ -278,10 +278,9 @@ func SplitQualifiedName(name string) (string, string) {
 // current working directory or, if set, from NTT_SOURCE_DIR.
 //
 // NewSuite will read manifest (package.yml) if any.
-func NewSuite(files ...string) (*Suite, error) {
-	p, err := project.Open(files...)
-	if err != nil {
-		return nil, fmt.Errorf("loading test suite failed: %w", err)
+func NewSuite(p *project.Config) (*Suite, error) {
+	if err := project.Build(p); err != nil {
+		return nil, fmt.Errorf("building test suite failed: %w", err)
 	}
 
 	var paths []string

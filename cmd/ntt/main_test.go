@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt"
+	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +39,11 @@ func TestGenerateIDs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			suite, err := ntt.NewSuite("../../testdata/vanilla")
+			p, err := project.Open("../../testdata/vanilla")
+			if err != nil {
+				t.Fatal(err)
+			}
+			suite, err := ntt.NewSuite(p)
 			if err != nil {
 				t.Fatal(err)
 			}
