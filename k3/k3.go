@@ -326,10 +326,6 @@ func cmake(name string) string {
 
 	f, err := os.Open(cache)
 	if err != nil {
-		if os.IsNotExist(err) {
-			// CMakeCache.txt is optional
-			return ""
-		}
 		log.Verboseln("k3: cmake:", err.Error())
 		return ""
 	}
@@ -349,21 +345,21 @@ func cmake(name string) string {
 // environment variable K3R
 func findCMakeCache() (string, error) {
 	find := func(path string) string {
-		var dir string
+		var res string
 		fs.WalkUp(path, func(path string) bool {
-			if fs.IsRegular(filepath.Join(path, "CMakeCache.txt")) {
-				dir = path
+			if file := filepath.Join(path, "CMakeCache.txt"); fs.IsRegular(file) {
+				res = file
 			}
 			return true
 		})
-		return dir
+		return res
 	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	if dir := find(cwd); dir != "" {
-		return dir, nil
+	if f := find(cwd); f != "" {
+		return f, nil
 	}
 	if k3r := os.Getenv("K3R"); strings.HasSuffix(k3r, "src/k3r/k3r") {
 		return find(filepath.Dir(k3r)), nil
