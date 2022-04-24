@@ -2,7 +2,6 @@ package k3_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,8 +17,7 @@ func TestNewPlugin(t *testing.T) {
 		t.Skip("Cannot locate k3 runtime. Skipping test.")
 	}
 
-	srcdir, _, cleanup := initStage(t)
-	defer cleanup()
+	srcdir, _ := initStage(t)
 
 	b := k3.NewPlugin(k3.DefaultEnv, "extfunc", filepath.Join(srcdir, "testdata/suite/extfunc/plugin.cc"))[0]
 	err := b.Run()
@@ -52,8 +50,7 @@ func TestNewT3XF(t *testing.T) {
 	if k3.Compiler() == "mtc" {
 		t.Skip("Cannot locate k3 compiler. Skipping test.")
 	}
-	srcdir, _, cleanup := initStage(t)
-	defer cleanup()
+	srcdir, _ := initStage(t)
 
 	b := k3.NewT3XF(k3.DefaultEnv, "suite.t3xf", filepath.Join(srcdir, "testdata/suite/test.ttcn3"))[0]
 	err := b.Run()
@@ -78,11 +75,8 @@ func TestNewT3XF(t *testing.T) {
 	}
 }
 
-func initStage(t *testing.T) (string, string, func()) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+func initStage(t *testing.T) (string, string) {
+	dir := t.TempDir()
 	old, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -95,10 +89,11 @@ func initStage(t *testing.T) (string, string, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return old, dir, func() {
+	t.Cleanup(func() {
 		os.Chdir(old)
-		os.RemoveAll(dir)
-	}
+	})
+
+	return old, dir
 }
 
 func sliceContains(s []string, x string) bool {
