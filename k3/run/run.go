@@ -14,6 +14,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
+	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
 )
 
@@ -191,6 +192,13 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 			return
 		}
 
+		sid, err := session.Get()
+		if err != nil {
+			events <- NewErrorEvent(err)
+			return
+		}
+		defer session.Release(sid)
+
 		if t.LogFile == "" {
 			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
 		}
@@ -199,7 +207,11 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan Event {
 			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
 		cmd.Dir = t.Dir
-		cmd.Env = append(t.Env, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
+		cmd.Env = append(t.Env,
+			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
+			fmt.Sprintf("K3_SESSION_ID=%d", sid),
+		)
+
 		for k, v := range t.ModulePars {
 			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 		}

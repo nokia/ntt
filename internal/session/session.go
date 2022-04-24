@@ -30,6 +30,15 @@ func Get() (int, error) {
 	return s, nil
 }
 
+func Release(s int) {
+	if storage, err := New(SharedDir); err == nil {
+		if err := storage.Lock(); err == nil {
+			defer storage.Unlock()
+			storage.Release(s)
+		}
+	}
+}
+
 // Clean returns a slice of alive sessions
 func Clean(sessions []session) []session {
 	list := make([]session, 0)
