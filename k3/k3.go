@@ -19,6 +19,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
+	"github.com/nokia/ntt/internal/session"
 )
 
 // DefaultEnv is the default environment for k3-based test suites.
@@ -394,4 +395,8 @@ func findK3Tool(names ...string) string {
 // pathf is like fmt.Sprintf but searches the NTT_CACHE environment variable first.
 func pathf(f string, v ...interface{}) string {
 	return cache.Lookup(fmt.Sprintf(f, v...))
+}
+
+func init() {
+	session.SharedDir = "/tmp/k3"
 }

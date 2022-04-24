@@ -67,6 +67,7 @@ func (s *storage) Release(num int) {
 			list = append(list, s)
 		}
 	}
+	s.SetSessions(list)
 }
 
 // Sessions returns a sorted slice of active sessions from storage. If storage

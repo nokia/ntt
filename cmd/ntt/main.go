@@ -100,7 +100,6 @@ var (
 )
 
 func init() {
-	session.SharedDir = "/tmp/k3"
 	if s := os.Getenv("K3_SESSION_ID"); s == "" {
 		sid, err := session.Get()
 		if err != nil {
