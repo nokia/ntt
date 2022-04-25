@@ -148,11 +148,11 @@ func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...
 		pathf("%slib.so", name),
 	}
 
-	mod := proc.Task("$ASN2TTCN -o ${name}mod ${srcs} ${tgts} ${encoding}")
+	mod := proc.Task("$ASN2TTCN -o ${tgts} ${srcs} ${name}mod  ${encoding}")
 	mod.Env = vars
-	mod.Sources = asn1.Targets
+	mod.Sources = lib.Targets
 	mod.Targets = []string{
-		pathf("%smod.ttcn", name),
+		pathf("%smod.ttcn3", name),
 	}
 
 	return []*proc.Cmd{asn1, lib, mod}
