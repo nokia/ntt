@@ -182,16 +182,15 @@ func NewT3XF(vars map[string]string, t3xf string, srcs ...string) []*proc.Cmd {
 		}
 	}
 
-	// We need to remove k3 stdlib files from the source list, because of a
-	// missing module (PCMDmod).
-
 	// Pass stdlib as include instead.
 	for _, dir := range Includes() {
-		vars["K3CFLAGS"] += fmt.Sprintf(" -I%s", dir)
+		vars["_includes"] += fmt.Sprintf(" -I%s", dir)
 	}
 
-	t := proc.Task("$K3C $K3CFLAGS -o ${tgts} ${srcs}")
-	t.Sources = srcs
+	t := proc.Task("$K3C $K3CFLAGS $_includes -o ${tgts} ${srcs}")
+	// We need to remove k3 stdlib files from the source list, (if accidentally
+	// inserted by the user) because of a missing module (PCMDmod).
+	t.Sources = removeStdlib(srcs)
 	t.Targets = []string{t3xf}
 	t.Env = vars
 	t.Before = func(t *proc.Cmd) error {
