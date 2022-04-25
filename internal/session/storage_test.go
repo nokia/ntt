@@ -1,23 +1,10 @@
 package session
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func tempStorage() (*storage, func()) {
-	dir, err := ioutil.TempDir("", "storage.test")
-	if err != nil {
-		panic(err.Error())
-	}
-	s, _ := New(dir)
-	return s, func() {
-		os.RemoveAll(dir)
-	}
-}
 
 func TestEmptyStorage(t *testing.T) {
 	s, _ := New(".")

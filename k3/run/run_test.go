@@ -2,7 +2,6 @@ package run_test
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,8 +14,7 @@ import (
 )
 
 func TestEvents(t *testing.T) {
-	old, _, cancel := initStage(t)
-	defer cancel()
+	old, _ := initStage(t)
 
 	t3xf := testBuild(t, filepath.Join(old, "testdata/suite"))
 
@@ -116,11 +114,8 @@ func TestEvents(t *testing.T) {
 
 }
 
-func initStage(t *testing.T) (string, string, func()) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+func initStage(t *testing.T) (string, string) {
+	dir := t.TempDir()
 	old, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -133,10 +128,11 @@ func initStage(t *testing.T) (string, string, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return old, dir, func() {
+	t.Cleanup(func() {
 		os.Chdir(old)
-		os.RemoveAll(dir)
-	}
+	})
+
+	return old, dir
 }
 
 func testBuild(t *testing.T, args ...string) string {

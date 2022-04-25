@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,8 +36,7 @@ func TestMessageCoverage(t *testing.T) {
 
 func runK3(t *testing.T) io.Reader {
 	t.Helper()
-	old, cancel := initStage(t)
-	defer cancel()
+	old := initStage(t)
 	os.Setenv("K3RFLAGS", "--record-fmt=alist")
 	t3xf := testBuild(t, filepath.Join(old, "testdata/test.ttcn3"))
 	test := run.NewTest(t3xf, "test.control")
@@ -51,11 +49,8 @@ func runK3(t *testing.T) io.Reader {
 	return f
 }
 
-func initStage(t *testing.T) (string, func()) {
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+func initStage(t *testing.T) string {
+	dir := t.TempDir()
 	old, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -68,10 +63,12 @@ func initStage(t *testing.T) (string, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return old, func() {
+
+	t.Cleanup(func() {
 		os.Chdir(old)
-		os.RemoveAll(dir)
-	}
+	})
+
+	return old
 }
 
 func testBuild(t *testing.T, args ...string) string {
