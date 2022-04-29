@@ -46,7 +46,6 @@ func show(cmd *cobra.Command, args []string) error {
 			"parameters_file",
 			"hooks_file",
 			"lint_file",
-			"k3.data_dir",
 		}
 		return printKeyValues(Project, keys)
 	}
@@ -204,8 +203,7 @@ func printKeyValues(c *project.Config, keys []string) error {
 			return err
 		}
 		if len(s) > 0 {
-			ks := strings.Split(key, ".")
-			fmt.Printf("NTT_%s=\"%s\"\n", strings.ToUpper(ks[len(ks)-1]), strings.Join(s, " "))
+			fmt.Printf("NTT_%s=\"%s\"\n", strings.ToUpper(key), strings.Join(s, " "))
 		}
 	}
 
