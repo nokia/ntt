@@ -371,7 +371,8 @@ func BuildTasks(c *Config) ([]Task, error) {
 			}
 		}
 	}
-
+	expandedSources, _ := fs.TTCN3Files(c.Sources...)
+	srcs = k3.DependentSources(expandedSources, srcs)
 	for _, t := range k3.NewT3XF(c.Variables, c.K3.T3XF, srcs...) {
 		ret = append(ret, t)
 	}

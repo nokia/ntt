@@ -20,6 +20,8 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/session"
+	"github.com/nokia/ntt/ttcn3"
+	"github.com/nokia/ntt/ttcn3/ast"
 )
 
 // DefaultEnv is the default environment for k3-based test suites.
@@ -202,6 +204,74 @@ func NewT3XF(vars map[string]string, t3xf string, srcs ...string) []*proc.Cmd {
 		return nil
 	}
 	return []*proc.Cmd{t}
+}
+
+type Src struct {
+	FileName string
+	Usage    int
+	Imports  []string
+}
+
+func CollectModuleNames(src string) []string {
+	// simplified approach considdering a file contains
+	// only one module sharing the same name (excluding file extension)
+	return []string{fs.Stem(src)}
+}
+
+func CollectImports(name string) []string {
+	tree := ttcn3.ParseFile(name)
+	if tree == nil || tree.Root == nil {
+		return nil
+	}
+
+	ret := make([]string, 0, 10)
+	ast.Inspect(tree.Root, func(n ast.Node) bool {
+		switch n := n.(type) {
+		case *ast.NodeList, *ast.Module, *ast.ModuleDef:
+			return true
+		case *ast.ImportDecl:
+			ret = append(ret, n.Module.String())
+			return false
+		default:
+			return false
+		}
+	})
+	return ret
+}
+
+func DependentSources(testSrcs []string, srcs []string) []string {
+	all := make(map[string]*Src, len(srcs))
+	for _, s := range srcs {
+		for _, m := range CollectModuleNames(s) {
+			all[m] = &Src{Imports: CollectImports(s), FileName: s}
+		}
+	}
+	imported := make([]string, 0, len(testSrcs)*2)
+	for _, s := range testSrcs {
+		imported = append(imported, CollectModuleNames(s)...)
+	}
+	idx := 0
+	for {
+		if idx < len(imported) {
+			if v, ok := all[imported[idx]]; ok {
+				if v.Usage == 0 {
+					imported = append(imported, v.Imports...)
+				}
+				all[imported[idx]].Usage++
+			}
+			idx++
+		} else {
+			break
+		}
+	}
+	res := make([]string, 0, len(srcs))
+	for _, v := range all {
+		if v.Usage > 0 {
+			res = append(res, v.FileName)
+		}
+	}
+
+	return res
 }
 
 func removeStdlib(srcs []string) []string {
