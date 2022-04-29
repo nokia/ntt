@@ -46,7 +46,6 @@ func show(cmd *cobra.Command, args []string) error {
 			"parameters_file",
 			"hooks_file",
 			"lint_file",
-			"datadir",
 		}
 		return printKeyValues(Project, keys)
 	}
@@ -110,7 +109,7 @@ K3_TTCN3_FILES=(
 {{end}})
 
 K3_BUILTINS=(
-{{ range .K3.Builtins }}	{{.}}
+{{ range .K3.Includes }}	{{.}}
 {{end}})
 
 {{ if .Err }}
@@ -159,24 +158,29 @@ func get(c *project.Config, key string) ([]string, error) {
 		return nil, err
 	}
 
-	v, ok := conf[key]
-	if !ok {
-		return nil, fmt.Errorf("key %q not found", key)
-	}
-
-	switch v := v.(type) {
-	case []string:
-		return v, nil
-	case map[string]string:
-		s := make([]string, 0, len(v))
-		for key, val := range v {
-			s = append(s, fmt.Sprintf("'%s=%s'", key, val))
+	for _, k := range strings.Split(key, ".") {
+		v, ok := conf[k]
+		if !ok {
+			return nil, fmt.Errorf("key %q not found", k)
 		}
-		sort.Strings(s)
-		return s, nil
-	default:
-		return []string{fmt.Sprintf("%v", v)}, nil
+
+		switch v := v.(type) {
+		case []string:
+			return v, nil
+		case map[string]string:
+			s := make([]string, 0, len(v))
+			for key, val := range v {
+				s = append(s, fmt.Sprintf("'%s=%s'", key, val))
+			}
+			sort.Strings(s)
+			return s, nil
+		case map[string]interface{}:
+			conf = v
+		default:
+			return []string{fmt.Sprintf("%v", v)}, nil
+		}
 	}
+	return nil, fmt.Errorf("value of key %q is not of type string or list of strings", key)
 }
 
 func printValues(c *project.Config, keys []string) error {
