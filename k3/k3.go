@@ -182,12 +182,16 @@ func NewT3XF(vars map[string]string, t3xf string, srcs []string, imports ...stri
 		}
 	}
 
-	vars["_sources"] = strings.Join(srcs, " ")
+	// We need to remove k3 stdlib files from the source list, (if accidentally
+	// inserted by the user) because of a missing module (PCMDmod).
+	vars["_sources"] = strings.Join(removeStdlib(srcs), " ")
 
 	for _, dir := range Includes() {
 		vars["_includes"] += fmt.Sprintf(" -I%s", dir)
 	}
 
+	// We must not use imported TTCN-3 files directly, but their include directory
+	// instead. Because of some missing protobuf modules.
 	visited := make(map[string]bool)
 	for _, file := range imports {
 		if dir := filepath.Dir(file); !visited[dir] {
@@ -197,10 +201,7 @@ func NewT3XF(vars map[string]string, t3xf string, srcs []string, imports ...stri
 	}
 
 	t := proc.Task("$K3C $K3CFLAGS $_includes -o ${tgts} ${_sources}")
-
-	// We need to remove k3 stdlib files from the source list, (if accidentally
-	// inserted by the user) because of a missing module (PCMDmod).
-	t.Sources = append(removeStdlib(srcs), imports...)
+	t.Sources = append(srcs, imports...)
 	t.Targets = []string{t3xf}
 	t.Env = vars
 	t.Before = func(t *proc.Cmd) error {
