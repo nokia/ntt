@@ -364,15 +364,17 @@ func BuildTasks(c *Config) ([]Task, error) {
 	if err != nil {
 		merr = multierror.Append(merr, err)
 	}
+
+	var imports []string
 	for _, t := range ret {
 		for _, output := range t.Outputs() {
 			if fs.HasTTCN3Extension(output) {
-				srcs = append(srcs, output)
+				imports = append(imports)
 			}
 		}
 	}
 
-	for _, t := range k3.NewT3XF(c.Variables, c.K3.T3XF, srcs...) {
+	for _, t := range k3.NewT3XF(c.Variables, c.K3.T3XF, srcs, imports...) {
 		ret = append(ret, t)
 	}
 

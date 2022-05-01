@@ -174,7 +174,7 @@ func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd 
 }
 
 // NewT3XF returns the commands for building a T3XF.
-func NewT3XF(vars map[string]string, t3xf string, srcs ...string) []*proc.Cmd {
+func NewT3XF(vars map[string]string, t3xf string, srcs []string, imports ...string) []*proc.Cmd {
 	if vars == nil {
 		vars = make(map[string]string)
 		for k, v := range DefaultEnv {
@@ -182,15 +182,25 @@ func NewT3XF(vars map[string]string, t3xf string, srcs ...string) []*proc.Cmd {
 		}
 	}
 
-	// Pass stdlib as include instead.
+	vars["_sources"] = strings.Join(srcs, " ")
+
 	for _, dir := range Includes() {
 		vars["_includes"] += fmt.Sprintf(" -I%s", dir)
 	}
 
-	t := proc.Task("$K3C $K3CFLAGS $_includes -o ${tgts} ${srcs}")
+	visited := make(map[string]bool)
+	for _, file := range imports {
+		if dir := filepath.Dir(file); !visited[dir] {
+			visited[dir] = true
+			vars["_includes"] += fmt.Sprintf(" -I%s", dir)
+		}
+	}
+
+	t := proc.Task("$K3C $K3CFLAGS $_includes -o ${tgts} ${_sources}")
+
 	// We need to remove k3 stdlib files from the source list, (if accidentally
 	// inserted by the user) because of a missing module (PCMDmod).
-	t.Sources = removeStdlib(srcs)
+	t.Sources = append(removeStdlib(srcs), imports...)
 	t.Targets = []string{t3xf}
 	t.Env = vars
 	t.Before = func(t *proc.Cmd) error {
