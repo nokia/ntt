@@ -52,7 +52,7 @@ func TestNewT3XF(t *testing.T) {
 	}
 	srcdir, _ := initStage(t)
 
-	b := k3.NewT3XF(k3.DefaultEnv, "suite.t3xf", filepath.Join(srcdir, "testdata/suite/test.ttcn3"))[0]
+	b := k3.NewT3XF(k3.DefaultEnv, "suite.t3xf", []string{filepath.Join(srcdir, "testdata/suite/test.ttcn3")})[0]
 	err := b.Run()
 	if err != nil {
 		t.Errorf("Run() = %v", err)
