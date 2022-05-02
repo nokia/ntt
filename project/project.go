@@ -369,7 +369,7 @@ func BuildTasks(c *Config) ([]Task, error) {
 	for _, t := range ret {
 		for _, output := range t.Outputs() {
 			if fs.HasTTCN3Extension(output) {
-				imports = append(imports)
+				imports = append(imports, output)
 			}
 		}
 	}
