@@ -84,10 +84,10 @@ func TestEvents(t *testing.T) {
 				"tciError error (id not fully qualified)",
 			}},
 		{
-			input:   "math.Test",
+			input:   "test.D",
 			timeout: 1 * time.Second,
 			events: []string{
-				`tciTestCaseStarted math.Test`,
+				`tciTestCaseStarted test.D`,
 				`tciError error (timeout)`,
 			}},
 	}
