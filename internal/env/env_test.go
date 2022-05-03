@@ -239,6 +239,8 @@ func TestExpand(t *testing.T) {
 		}, actual)
 	})
 	t.Run("known", func(t *testing.T) {
+		os.Unsetenv("CXXFLAGS")
+		os.Unsetenv("CFLAGS")
 		actual, err := expand(env.Env{
 			"a":      "a$CXXFLAGS",
 			"b":      "b$CFLAGS",
