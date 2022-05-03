@@ -7,6 +7,7 @@ import (
 	"os"
 
 	ntt2 "github.com/nokia/ntt"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
@@ -295,7 +296,7 @@ func PrintMatch(pos loc.Position, id string, tags ...string) {
 func filesOfInterest(cmd string, conf *project.Config) ([]string, error) {
 	switch cmd {
 	case "tests", "controls", "list":
-		return conf.Sources, nil
+		return fs.TTCN3Files(conf.Sources...)
 	default:
 		return project.Files(conf)
 	}

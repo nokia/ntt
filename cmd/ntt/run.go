@@ -16,6 +16,7 @@ import (
 	"github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
@@ -148,7 +149,10 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	ledger := ntt.NewLedger(MaxWorkers)
-	jobs := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
+	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
+	if err != nil {
+		return err
+	}
 
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
 		return k3sRun(ctx, files, jobs)
@@ -308,18 +312,24 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int, ledger *ntt.Ledger) chan *ntt.Job {
+func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int, ledger *ntt.Ledger) (chan *ntt.Job, error) {
+	srcs, err := fs.TTCN3Files(suite.Sources...)
+	if err != nil {
+		return nil, err
+	}
+
 	out := make(chan *ntt.Job, size)
 	go func() {
 		defer close(out)
+
 		i := 0
-		for id := range GenerateIDs(ctx, ids, suite.Manifest.Sources, env.Getenv("K3_40_RUN_POLICY"), Basket) {
+		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), Basket) {
 			i++
 			out <- ledger.NewJob(id, suite)
 		}
 		log.Debugf("Generating %d jobs done.\n", i)
 	}()
-	return out
+	return out, nil
 }
 
 func FlushTestResults() error {
