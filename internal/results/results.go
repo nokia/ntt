@@ -98,6 +98,11 @@ func (r Run) ID() string {
 	return r.Name + "-" + fmt.Sprintf("%d", r.Instance)
 }
 
+// A unique identifier of the job.
+func (r Run) JobID() string {
+	return r.Name
+}
+
 // Duration of an individual run
 func (r Run) Duration() time.Duration {
 	return r.End.Sub(r.Begin.Time)
@@ -253,40 +258,40 @@ func FinalVerdicts(runs []Run) []Run {
 
 	var (
 		tests    = make(map[string]Run)
-		names    = make([]string, 0, len(runs))
+		jobs     = make([]string, 0, len(runs))
 		passed   = make(map[string]bool)
 		unstable = make(map[string]bool)
 	)
 
 	for _, run := range runs {
-		last, ok := tests[run.Name]
+		last, ok := tests[run.JobID()]
 		if !ok {
-			names = append(names, run.Name)
+			jobs = append(jobs, run.JobID())
 			last = run
 		}
 
 		// A test is a success if it passes at least once.
 		if run.Verdict == "pass" {
-			passed[run.Name] = true
+			passed[run.JobID()] = true
 		}
 
 		// A test is unstable if it has its verdicts change
 		if run.Verdict != last.Verdict {
-			unstable[run.Name] = true
+			unstable[run.JobID()] = true
 		}
 
 		// Remember worst and latest test run for post analysis
 		if severity(run.Verdict) >= severity(last.Verdict) {
-			tests[run.Name] = run
+			tests[run.JobID()] = run
 		}
 	}
 
-	ret := make([]Run, len(names))
-	for i, name := range names {
-		t := tests[name]
-		if passed[name] {
+	ret := make([]Run, len(jobs))
+	for i, job := range jobs {
+		t := tests[job]
+		if passed[job] {
 			t.Verdict = "pass"
-			if unstable[name] {
+			if unstable[job] {
 				t.Verdict = "unstable"
 			}
 		}
