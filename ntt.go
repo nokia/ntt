@@ -13,8 +13,9 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/k3/run"
+	"github.com/nokia/ntt/k3/k3r"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/tests"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
@@ -404,12 +405,16 @@ func (j *Job) ID() string {
 
 type Result struct {
 	*Job
-	run.Test
-	run.Event
+	k3r.Test
+	tests.Event
 }
 
 func (r *Result) ID() string {
-	return fmt.Sprintf("%s-%s", r.Job.ID(), r.Event.Name)
+	name := ""
+	if job := tests.UnwrapJob(r.Event); job != nil {
+		name = job.Name
+	}
+	return fmt.Sprintf("%s-%s", r.Job.ID(), name)
 }
 
 // Runner is a test runner.
@@ -506,7 +511,7 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 	} else {
 		workingDir = filepath.Join(job.Dir, job.ID())
 		if err := os.MkdirAll(workingDir, 0755); err != nil {
-			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
 			return
 		}
 	}
@@ -515,22 +520,22 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 	if workingDir != "" {
 		absT3xf, err := filepath.Abs(t3xf)
 		if err != nil {
-			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
 			return
 		}
 		absDir, err := filepath.Abs(workingDir)
 		if err != nil {
-			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
 			return
 		}
 		t3xf, err = filepath.Rel(absDir, absT3xf)
 		if err != nil {
-			results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
 			return
 		}
 	}
 
-	test := run.NewTest(t3xf, job.Name)
+	t := k3r.NewTest(t3xf, job.Name)
 
 	var (
 		pars    map[string]string
@@ -538,7 +543,7 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 		err     error
 	)
 	if err != nil {
-		results <- Result{Job: job, Event: run.NewErrorEvent(err)}
+		results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
 		return
 	}
 	if timeout > 0 {
@@ -546,16 +551,16 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	test.ModulePars = pars
-	test.Dir = workingDir
-	test.LogFile = logFile
-	test.Env = append(test.Env, job.Suite.Variables.Slice()...)
-	test.Env = append(test.Env, fmt.Sprintf("K3R_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("K3R_PATH")))
-	test.Env = append(test.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("LD_LIBRARY_PATH")))
-	for event := range test.RunWithContext(ctx) {
+	t.ModulePars = pars
+	t.Dir = workingDir
+	t.LogFile = logFile
+	t.Env = append(t.Env, job.Suite.Variables.Slice()...)
+	t.Env = append(t.Env, fmt.Sprintf("K3R_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("K3R_PATH")))
+	t.Env = append(t.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("LD_LIBRARY_PATH")))
+	for event := range t.RunWithContext(ctx) {
 		results <- Result{
 			Job:   job,
-			Test:  *test,
+			Test:  *t,
 			Event: event,
 		}
 	}

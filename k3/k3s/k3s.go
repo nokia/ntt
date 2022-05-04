@@ -16,7 +16,7 @@ import (
 	"github.com/nokia/ntt/project"
 )
 
-type Runner struct {
+type runner struct {
 	// Project.Interface provides files and root directory.
 	p *project.Config
 
@@ -24,7 +24,42 @@ type Runner struct {
 	Dir string
 }
 
-func (r *Runner) Run(w io.Writer, testID string) error {
+// Build calls ntt build to regenerate or rebuild changed TTCN-3 source files.
+func Build(w io.Writer, p *project.Config) error {
+	// Find a nice working directory to put logs and other artifacts in it.
+	dir, err := nttWorkingDir(p)
+	if err != nil {
+		return err
+	}
+
+	// Rebuild the test executable and required adapters first.
+	cmd := nttCommand(p, "build")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	w.Write([]byte(cmd.String()))
+	w.Write(out)
+	if err != nil {
+		return &BuildError{Cmd: cmd, Err: err}
+	}
+	return nil
+}
+
+// Run a test using k3s
+func Run(w io.Writer, p *project.Config, testID string) (string, error) {
+	// Find a nice working directory to put logs and other artifacts in it.
+	dir, err := nttWorkingDir(p)
+	if err != nil {
+		return "", err
+	}
+
+	r := &runner{
+		p:   p,
+		Dir: dir,
+	}
+	return dir, r.Run(w, testID)
+}
+
+func (r *runner) Run(w io.Writer, testID string) error {
 
 	// Clear any previous artifacts.
 	r.clean(testID)
@@ -38,7 +73,7 @@ func (r *Runner) Run(w io.Writer, testID string) error {
 	return multierror.Append(err, r.report(w, testID)).ErrorOrNil()
 }
 
-func (r *Runner) report(w io.Writer, testID string) error {
+func (r *runner) report(w io.Writer, testID string) error {
 
 	// Display a nice summary
 	cmd := nttCommand(r.p, "report")
@@ -49,7 +84,7 @@ func (r *Runner) report(w io.Writer, testID string) error {
 }
 
 // clean removes all artifacts of testID from the working directory.
-func (r *Runner) clean(testID string) {
+func (r *runner) clean(testID string) {
 	files, _ := filepath.Glob(filepath.Join(r.Dir, "logs", testID+"-*"))
 	for _, f := range files {
 		if err := os.RemoveAll(f); err != nil {
@@ -58,33 +93,8 @@ func (r *Runner) clean(testID string) {
 	}
 }
 
-func (r *Runner) LogDir(testID string) string {
+func (r *runner) LogDir(testID string) string {
 	return filepath.Join(r.Dir, "logs", testID+"-0")
-}
-
-// New returns a new Runner for executing TTCN-3 tests with k3s backend.
-func New(w io.Writer, p *project.Config) (*Runner, error) {
-
-	// Find a nice working directory to put logs and other artifacts in it.
-	dir, err := nttWorkingDir(p)
-	if err != nil {
-		return nil, err
-	}
-
-	// Rebuild the test executable and required adapters first.
-	cmd := nttCommand(p, "build")
-	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
-	w.Write([]byte(cmd.String()))
-	w.Write(out)
-	if err != nil {
-		return nil, &BuildError{Cmd: cmd, Err: err}
-	}
-
-	return &Runner{
-		p:   p,
-		Dir: dir,
-	}, nil
 }
 
 // nttWorkingDir returns a working directory for ntt artifacts.

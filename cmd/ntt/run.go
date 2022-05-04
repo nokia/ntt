@@ -20,7 +20,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
-	k3r "github.com/nokia/ntt/k3/run"
+	"github.com/nokia/ntt/tests"
 	"github.com/spf13/cobra"
 )
 
@@ -181,12 +181,12 @@ L:
 			log.Debugf("result: jobID=%s, event=%#v\n", res.Job.ID(), res.Event)
 
 			// Track errors for early exit (aka --max-fail).
-			if res.Event.IsError() {
+			if tests.IsFail(res.Event) {
 				errorCount++
 			}
 
 			// Track begin timestamps for calculating durations.
-			begin, end := stamps[res.ID()], res.Event.Time
+			begin, end := stamps[res.ID()], res.Event.Time()
 			if begin.IsZero() {
 				stamps[res.ID()] = time.Now()
 				begin = end
@@ -194,16 +194,18 @@ L:
 			duration := end.Sub(begin)
 
 			displayName := res.Job.Name
-			if n := res.Event.Name; n != "" {
-				displayName = n
+			if job := tests.UnwrapJob(res.Event); job != nil && job.Name != "" {
+				displayName = job.Name
 			}
 
-			displayVerdict := res.Event.Verdict
-			if displayVerdict == "" {
-				displayVerdict = "none"
-			}
-			if res.Type == k3r.Error {
+			displayVerdict := "none"
+			switch ev := res.Event.(type) {
+			case tests.ErrorEvent:
 				displayVerdict = "fatal"
+			case tests.StopEvent:
+				if v := ev.Verdict; v != "" {
+					displayVerdict = v
+				}
 			}
 
 			run := results.Run{
@@ -213,11 +215,13 @@ L:
 				End:        results.Timestamp{Time: end},
 				WorkingDir: res.Test.Dir,
 			}
-			if res.Err != nil {
-				run.Reason = res.Err.Error()
+
+			if err, ok := res.Event.(tests.ErrorEvent); ok {
+				run.Reason = err.Error()
 			}
 
-			if !res.IsStartEvent() {
+			_, isStartEvent := res.Event.(tests.StartEvent)
+			if !isStartEvent {
 				Runs = append(Runs, run)
 			}
 
@@ -225,12 +229,12 @@ L:
 			case "quiet":
 				// No output
 			case "plain":
-				if !res.IsStartEvent() {
+				if !isStartEvent {
 					c := Colors(displayVerdict)
 					c.Printf("%s\t%s\t%.4f\n", displayVerdict, displayName, float64(duration.Seconds()))
 				}
 			case "json":
-				if !res.IsStartEvent() {
+				if !isStartEvent {
 					b, err := json.Marshal(run)
 					if err != nil {
 						panic(fmt.Sprintf("cannot marshal run: %v", run))
@@ -239,9 +243,9 @@ L:
 				}
 			case "text":
 				switch {
-				case res.IsStartEvent():
+				case isStartEvent:
 					ColorStart.Printf("=== RUN %s\n", displayName)
-				case res.Type == k3r.Error:
+				case displayVerdict == "fatal":
 					ColorFatal.Printf("+++ fatal %s\t(%s)\n", displayName, run.Reason)
 				default:
 					c := Colors(displayVerdict)
