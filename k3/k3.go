@@ -141,7 +141,7 @@ func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...
 		pathf("%s.enc.h", name),
 	}
 
-	lib := proc.Task("$CC -fPIC -shared -D_OSSGETHEADER -DOSSPRINT $CFLAGS $LDFLAGS $EXTRA_LDFLAGS ${srcs} -l:libasn1code.a -Wl,-Bdynamic -o ${tgts}")
+	lib := proc.Task("$CC -fPIC -shared -D_OSSGETHEADER -DOSSPRINT $CPPFLAGS $CFLAGS $LDFLAGS $EXTRA_LDFLAGS ${srcs} -l:libasn1code.a -Wl,-Bdynamic -o ${tgts}")
 	lib.Env = vars
 	lib.Sources = asn1.Targets
 	lib.Targets = []string{
