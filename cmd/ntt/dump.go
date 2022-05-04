@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/printer"
@@ -21,7 +21,9 @@ var (
 		Use:   "dump",
 		Short: "Dump TTCN-3 syntax trees",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			files, _ := project.Files(Project)
+			srcs, _ := fs.TTCN3Files(Project.Sources...)
+			imports, _ := fs.TTCN3Files(Project.Imports...)
+			files := append(srcs, imports...)
 			for _, file := range files {
 				tree := ttcn3.ParseFile(file)
 				if useTTCN3 {
