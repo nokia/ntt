@@ -67,7 +67,7 @@ You'll find some (aged) documentation on how to write a plugin at:
 If you need additional libraries you may use environment variables to modify
 compilation. This is how a plugin is currently compiled:
 
-	$CXX $CXXFLAGS <sources> $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin -shared -fPIC -o k3r-<name>-plugin.so
+	$CXX $CPPFLAGS $CXXFLAGS <sources> $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin -shared -fPIC -o k3r-<name>-plugin.so
 
 Environment variable may be set-up via 'k3.env' or in the variables section of
 the manifest-file.

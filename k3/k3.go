@@ -141,7 +141,7 @@ func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...
 		pathf("%s.enc.h", name),
 	}
 
-	lib := proc.Task("$CC -fPIC -shared -D_OSSGETHEADER -DOSSPRINT $CFLAGS $LDFLAGS $EXTRA_LDFLAGS ${srcs} -l:libasn1code.a -Wl,-Bdynamic -o ${tgts}")
+	lib := proc.Task("$CC -fPIC -shared -D_OSSGETHEADER -DOSSPRINT $CPPFLAGS $CFLAGS $LDFLAGS $EXTRA_LDFLAGS ${srcs} -l:libasn1code.a -Wl,-Bdynamic -o ${tgts}")
 	lib.Env = vars
 	lib.Sources = asn1.Targets
 	lib.Targets = []string{
@@ -166,7 +166,7 @@ func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd 
 			vars[k] = v
 		}
 	}
-	p := proc.Task("$CXX $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
+	p := proc.Task("$CXX $CPPFLAGS $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
 	p.Env = vars
 	p.Sources = srcs
 	p.Targets = []string{pathf("k3r-%s-plugin.so", name)}
