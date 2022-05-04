@@ -166,7 +166,7 @@ func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd 
 			vars[k] = v
 		}
 	}
-	p := proc.Task("$CXX $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
+	p := proc.Task("$CXX $CPPFLAGS $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
 	p.Env = vars
 	p.Sources = srcs
 	p.Targets = []string{pathf("k3r-%s-plugin.so", name)}
