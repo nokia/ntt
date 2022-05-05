@@ -30,6 +30,12 @@ func FindChildOf(n Node, pos loc.Pos) Node {
 		if IsNil(c) {
 			continue
 		}
+
+		// ErrorNodes may overlap with other nodes and mess up the search.
+		if _, ok := c.(*ErrorNode); ok {
+			continue
+		}
+
 		if c.Pos() <= pos && pos < c.End() {
 			return c
 		}
