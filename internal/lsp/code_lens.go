@@ -44,7 +44,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 				ID:  tree.QualifiedName(n),
 				URI: uri,
 			}
-			if s.testCtrl.IsRunning(suite, params.ID) {
+			if s.testCtrl.IsRunning(suite.Config, params.ID) {
 				title = "test running..."
 				params.Stop = true
 			}

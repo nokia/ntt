@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/k3/run"
+	"github.com/nokia/ntt/k3/k3r"
 	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,7 +39,7 @@ func runK3(t *testing.T) io.Reader {
 	old := initStage(t)
 	os.Setenv("K3RFLAGS", "--record-fmt=alist")
 	t3xf := testBuild(t, filepath.Join(old, "testdata/test.ttcn3"))
-	test := run.NewTest(t3xf, "test.control")
+	test := k3r.NewTest(t3xf, "test.control")
 	for range test.Run() {
 	}
 	f, err := os.Open(test.LogFile)

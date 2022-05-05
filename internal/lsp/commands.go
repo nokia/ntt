@@ -52,7 +52,7 @@ func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCom
 			return nil, err
 		}
 
-		return nil, s.testCtrl.RunTest(suite, param.ID, s)
+		return nil, s.testCtrl.RunTest(suite.Config, param.ID, s)
 	}
 	return nil, nil
 }
