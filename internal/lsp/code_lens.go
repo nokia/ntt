@@ -17,17 +17,10 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 
 	var (
 		result []protocol.CodeLens
-		file   = params.TextDocument.URI
+		file   = string(params.TextDocument.URI.SpanURI())
 	)
 
-	uri := string(file.SpanURI())
-
-	suite, err := s.FirstSuite(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	tree := ttcn3.ParseFile(uri)
+	tree := ttcn3.ParseFile(file)
 	if tree == nil || tree.Root == nil {
 		return nil, nil
 	}
@@ -41,10 +34,13 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 			}
 			title := "run test"
 			params := nttTestParams{
-				ID:  tree.QualifiedName(n),
-				URI: uri,
+				TestID: TestID{
+					URI:  file,
+					Name: ast.Name(n),
+					Pos:  n.Pos(),
+				},
 			}
-			if s.testCtrl.IsRunning(suite.Config, params.ID) {
+			if s.testCtrl.IsRunning(params.TestID) {
 				title = "test running..."
 				params.Stop = true
 			}

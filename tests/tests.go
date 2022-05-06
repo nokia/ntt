@@ -10,19 +10,19 @@ import (
 
 // Job describes the test or control function to be executed.
 type Job struct {
-	// Name is the fully qualified name of the test or control function
+	// Name is the fully qualified name of the test or control function.
 	Name string
 
 	// Args is the list of arguments to pass to the test.
 	Args []string
 
-	// Timeout is the duration after which the test will be stopped.
+	// Timeout is the duration after which the job will be stopped.
 	Timeout time.Duration
 
 	// Module Parameters
 	ModulePars map[string]string
 
-	// Env specifies the environment variables to pass to the test.
+	// Env specifies the environment variables to pass to the job.
 	Env []string
 
 	// Config provides the project configuration
@@ -35,10 +35,10 @@ type JobError struct {
 	Err error
 }
 
-func (e JobError) Error() string {
+func (e *JobError) Error() string {
 	return e.Err.Error()
 }
-func (e JobError) Unwrap() error {
+func (e *JobError) Unwrap() error {
 	return e.Err
 }
 
@@ -63,27 +63,27 @@ func NewErrorEvent(err error) ErrorEvent {
 
 // StartEvent is an event that is emitted when the test is started.
 type StartEvent struct {
+	Name string
 	event
 	*Job
-	Name string
 }
 
 // NewStartEvent creates a new StartEvent.
 func NewStartEvent(job *Job, name string) StartEvent {
-	return StartEvent{event{t: time.Now()}, job, name}
+	return StartEvent{event: event{t: time.Now()}, Job: job, Name: name}
 }
 
 // StopEvent is an event that is emitted when the test is stopped.
 type StopEvent struct {
-	event
-	*Job
 	Name    string
 	Verdict string
+	event
+	*Job
 }
 
 // NewStopEvent creates a new StopEvent.
 func NewStopEvent(job *Job, name string, verdict string) StopEvent {
-	return StopEvent{event{t: time.Now()}, job, name, verdict}
+	return StopEvent{event: event{t: time.Now()}, Job: job, Name: name, Verdict: verdict}
 }
 
 // TickerEvent is an event that is emitted periodically during the test execution.
@@ -119,13 +119,37 @@ func UnwrapJob(e Event) *Job {
 	return nil
 }
 
-// IsFail returns true if the event is an error event or has an non-pass verdict.
-func IsFail(e Event) bool {
-	switch e := e.(type) {
-	case ErrorEvent:
-		return true
-	case StopEvent:
-		return e.Verdict != "pass"
+// IsPass returns true if the event is an StopEvent with a pass verdict. For
+// all other verdicts or events types IsPass will return false.
+func IsPass(e Event) bool {
+	if se, ok := e.(StopEvent); ok {
+		return se.Verdict == "pass"
 	}
 	return false
+}
+
+// Controller is responsible for running test cases. Essentially you put jobs
+// in and events come out.
+type Controller struct {
+	events chan Event
+}
+
+// NewController creates a new Controller for executing tests using the given executor.
+func (c *Controller) NewController(e Executor) *Controller {
+	return nil
+}
+
+// EnqueueJob puts a job in the queue.
+func (c *Controller) EnqueueJob(job *Job) error {
+	return nil
+}
+
+// Events returns a channel that emits events.
+func (c *Controller) Events() <-chan Event {
+	return c.events
+}
+
+type Executor interface {
+	// Execute runs the test job.
+	Execute(*Job) <-chan Event
 }

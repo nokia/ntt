@@ -105,7 +105,7 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	}
 
 	s.testCtrl = &TestController{}
-	s.testCtrl.Start(s.client)
+	s.testCtrl.Start(s.client, s, &s.Suites)
 	return nil
 }
 

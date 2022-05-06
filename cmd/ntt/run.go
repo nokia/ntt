@@ -181,7 +181,7 @@ L:
 			log.Debugf("result: jobID=%s, event=%#v\n", res.Job.ID(), res.Event)
 
 			// Track errors for early exit (aka --max-fail).
-			if tests.IsFail(res.Event) {
+			if !tests.IsPass(res.Event) {
 				errorCount++
 			}
 
