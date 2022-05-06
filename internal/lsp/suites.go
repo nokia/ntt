@@ -124,15 +124,6 @@ type Suites struct {
 	db ttcn3.DB
 }
 
-// FirstSuite returns the first test suite owning the file or an error if not
-// owning suite was found.
-func (s *Suites) FirstSuite(uri string) (*Suite, error) {
-	if suites := s.Owners(protocol.DocumentURI(uri)); len(suites) > 0 {
-		return suites[0], nil
-	}
-	return nil, fmt.Errorf("File %q seem not to belong to any test suite. Skipping execution.", uri)
-}
-
 // Owners returns all Suites that require the opened file.
 func (s *Suites) Owners(uri protocol.DocumentURI) []*Suite {
 	s.mu.Lock()

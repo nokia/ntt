@@ -27,9 +27,8 @@ func NewCommand(pos loc.Position, title string, command string, args ...interfac
 }
 
 type nttTestParams struct {
-	ID   string // Fully qualified testcase identifier
-	URI  string // URL points to the ttcn3 source file containing the testcase
-	Stop bool   // Stop the test
+	TestID      // TestID identifies a testcase in a ttch3 source file.
+	Stop   bool // Stop the test
 }
 
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
@@ -39,20 +38,12 @@ func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCom
 	case "ntt.status":
 		return s.status(ctx)
 	case "ntt.test":
-		var param nttTestParams
-		if err := unmarshalRaw(params.Arguments, &param); err != nil {
+		var tp nttTestParams
+		if err := unmarshalRaw(params.Arguments, &tp); err != nil {
 			return nil, err
 		}
 
-		// A file might belong to multiple test suites, possibly. But
-		// it's sufficient to just take the first test suite available,
-		// practically.
-		suite, err := s.FirstSuite(param.URI)
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, s.testCtrl.RunTest(suite.Config, param.ID, s)
+		return nil, s.testCtrl.RunTest(tp.TestID)
 	}
 	return nil, nil
 }
