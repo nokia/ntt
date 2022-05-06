@@ -88,8 +88,10 @@ func (c *TestController) RunTest(id TestID) error {
 	}
 
 	// First we need determine the runtime configuration.
-	// If we find multiple configuration, we don't ask the user to choose but just the last candidate.
-	// The assumption is: The the latest configuration has a higher probability to be the complete one.
+	//
+	// If we find multiple configurations, we don't ask the user to choose,
+	// but simply use the last candidate. The assumption is: The latest
+	// configuration has a higher probability to be the complete one.
 	candidates := c.suites.Owners(protocol.DocumentURI(id.URI))
 	if len(candidates) == 0 {
 		return fmt.Errorf("cannot run %s: no configuration found", id.URI)
