@@ -745,27 +745,16 @@ func WithManifest(file string) ConfigOption {
 		if err != nil {
 			return err
 		}
-		if c.Variables == nil {
-			c.Variables = make(map[string]string)
-		}
 		if len(b) > 0 {
 			if err := yaml.Unmarshal(b, &c.Manifest); err != nil {
 				return fmt.Errorf("%s: %w", file, err)
 			}
 		}
-		vars := c.Variables
-		for k, v := range env.ParseFiles() {
-			vars[k] = v
-		}
-		for k, v := range k3.DefaultEnv {
-			if _, ok := vars[k]; !ok {
-				vars[k] = v
-			}
-		}
-		if err := vars.Expand(); err != nil {
+		c.updateVariables()
+		if err := c.Variables.Expand(); err != nil {
 			return err
 		}
-		env.ExpandAll(&c.Manifest, vars)
+		env.ExpandAll(&c.Manifest, c.Variables)
 		c.Manifest.expandPaths(c.Root)
 		log.Debugf("project: using manifest %s\n", file)
 		return nil
@@ -984,6 +973,8 @@ func WithDefaults() ConfigOption {
 				log.Debugf("project: using lint file %s\n", c.LintFile)
 			}
 		}
+
+		c.updateVariables()
 		return nil
 	}
 }
@@ -996,6 +987,29 @@ func isRoot(root string) bool {
 		fs.IsDir(fs.JoinPath(root, "testcases")) ||
 		len(fs.Glob(fs.JoinPath(root, "*.cfg"))) > 0 ||
 		len(fs.Glob(fs.JoinPath(root, "*.parameters"))) > 0
+}
+
+// updateVariables updates the given variable with the variables from
+// environment files. Environment variables override environment files.
+// Environment files overwrite manifest variables.
+func (m *Manifest) updateVariables() {
+	if m.Variables == nil {
+		m.Variables = make(map[string]string)
+	}
+	for k, v := range env.ParseFiles() {
+		if s, ok := env.LookupEnv(k); ok {
+			v = s
+		}
+		m.Variables[k] = v
+	}
+	for k, v := range k3.DefaultEnv {
+		if _, ok := m.Variables[k]; !ok {
+			m.Variables[k] = v
+		}
+	}
+	if len(m.Variables) == 0 {
+		m.Variables = nil
+	}
 }
 
 func (m *Manifest) expandPaths(base string) {

@@ -536,6 +536,7 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 	}
 
 	t := k3r.NewTest(t3xf, job.Name)
+	t.Config = job.Suite.Config
 
 	var (
 		pars    map[string]string
@@ -555,6 +556,7 @@ func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
 	t.Dir = workingDir
 	t.LogFile = logFile
 	t.Env = append(t.Env, job.Suite.Variables.Slice()...)
+	t.Env = append(t.Env, env.Environ()...)
 	t.Env = append(t.Env, fmt.Sprintf("K3R_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("K3R_PATH")))
 	t.Env = append(t.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("LD_LIBRARY_PATH")))
 	for event := range t.RunWithContext(ctx) {

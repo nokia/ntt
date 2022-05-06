@@ -95,8 +95,19 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 		if t.LogFile == "" {
 			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
 		}
+
+		get := func(name string) string {
+			if s, ok := env.LookupEnv(name); ok {
+				return s
+			}
+			if t.Config != nil {
+				return t.Config.Variables[name]
+			}
+			return ""
+		}
+
 		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
-		if s := env.Getenv("K3RFLAGS"); s != "" {
+		if s := get("K3RFLAGS"); s != "" {
 			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
 		cmd.Dir = t.Dir
@@ -227,7 +238,6 @@ func NewTest(t3xf string, name string) *Test {
 	return &Test{
 		Job: &tests.Job{
 			Name: name,
-			Env:  os.Environ(),
 		},
 		T3XF:    t3xf,
 		Runtime: k3.Runtime(),
