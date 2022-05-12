@@ -91,7 +91,7 @@ function k3-hook()
 
 {{ if .Name           -}} export K3_NAME='{{ .Name }}'                      {{- end }}
 {{ if .HooksFile      -}} export K3_HOOKS_FILE='{{ .HooksFile }}'           {{- end }}
-{{ if .SourceDir      -}} export K3_SOURCE_DIR='{{ .SourceDir }}'           {{- end }}
+{{ if .Root           -}} export K3_SOURCE_DIR='{{ .Root }}'                {{- end }}
 
 {{ range .Environ }}export '{{.}}'
 {{end}}
