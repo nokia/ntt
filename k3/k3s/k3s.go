@@ -123,7 +123,6 @@ func nttCommand(p *project.Config, cmdName string, opts ...string) *exec.Cmd {
 	//     ntt <cmdName> [<args>] [<opts>]
 	cmd.Args = append(cmd.Args, cmdName)
 	cmd.Args = append(cmd.Args, nttArgs(p)...)
-	cmd.Args = append(cmd.Args, opts...)
 
 	if debug := env.Getenv("NTT_DEBUG"); debug != "" {
 		if strings.TrimSpace(strings.ToLower(debug)) == "all" {
@@ -132,6 +131,8 @@ func nttCommand(p *project.Config, cmdName string, opts ...string) *exec.Cmd {
 			cmd.Args = append(cmd.Args, "-v")
 		}
 	}
+
+	cmd.Args = append(cmd.Args, opts...)
 
 	return cmd
 }

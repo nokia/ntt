@@ -36,7 +36,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 			params := nttTestParams{
 				TestID: TestID{
 					URI:  file,
-					Name: ast.Name(n),
+					Name: tree.QualifiedName(n),
 					Pos:  n.Pos(),
 				},
 			}
