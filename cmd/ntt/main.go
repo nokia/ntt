@@ -49,6 +49,12 @@ var (
 				}
 			}
 
+			if cmd.Use == "ntt" {
+				// first arg is either an external subkommand of the form
+				// k3-Arg[0] or ntt-Arg[0] or unknown
+				return nil
+			}
+
 			files, _ := splitArgs(args, cmd.ArgsLenAtDash())
 			p, err := project.Open(files...)
 			if err != nil {
