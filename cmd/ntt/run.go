@@ -129,7 +129,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var err error
 	Basket, err = ntt.NewBasketWithFlags("list", cmd.Flags())
-	Basket.LoadFromEnv("NTT_LIST_BASKETS")
+	Basket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
 	if err != nil {
 		return err
 	}

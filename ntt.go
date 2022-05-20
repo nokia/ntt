@@ -163,9 +163,25 @@ func NewBasketWithFlags(name string, fs *pflag.FlagSet) (Basket, error) {
 	return b, nil
 }
 
-// Load baskets from given environment variable.
-func (b *Basket) LoadFromEnv(key string) error {
-	s := env.Getenv(key)
+// Load baskets from given environment variable from environment
+// or from configuration.
+func (b *Basket) LoadFromEnvOrConfig(c *project.Config, key string) error {
+	get := func(name string) string {
+		if s, ok := env.LookupEnv(name); ok {
+			return s
+		}
+
+		if c != nil {
+			if c.Variables[name] != "" {
+				return c.Variables[name]
+			}
+			if strings.HasPrefix(name, "NTT") {
+				return c.Variables[strings.Replace(name, "NTT", "K3", 1)]
+			}
+		}
+		return ""
+	}
+	s := get(key)
 	if s == "" {
 		return nil
 	}
@@ -175,7 +191,7 @@ func (b *Basket) LoadFromEnv(key string) error {
 		if name == "" {
 			continue
 		}
-		args := strings.Fields(env.Getenv(fmt.Sprintf("%s_%s", key, name)))
+		args := strings.Fields(get(fmt.Sprintf("%s_%s", key, name)))
 		if len(args) == 0 {
 			args = []string{"-R", "@" + name}
 		}
