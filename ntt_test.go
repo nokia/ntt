@@ -124,7 +124,7 @@ func TestLoadFromEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.LoadFromEnv("TEST_BASKET")
+	b.LoadFromEnvOrConfig(nil, "TEST_BASKET")
 	test := []struct {
 		name string
 		tags []string
