@@ -153,7 +153,7 @@ Running test %s in %q`, job.Name, job.Config.Root)
 
 		logDir, _ := k3s.Run(c.console, job.Config, job.Name)
 
-		if files := fs.Abs(fs.FindFilesRecursive(logDir)...); len(files) > 0 {
+		if files := fs.Abs(excludeFromListIfPresent("mtc_workspace", fs.FindFilesRecursive(logDir))...); len(files) > 0 {
 			fmt.Fprintf(c.console, `
 Content of log directory %q:
 ===============================================================================
@@ -164,4 +164,14 @@ Content of log directory %q:
 		c.messages <- tests.NewStopEvent(job, job.Name, "")
 	}()
 
+}
+
+func excludeFromListIfPresent(str string, input []string) []string {
+	ret := make([]string, 0, len(input))
+	for _, elem := range input {
+		if !strings.Contains(elem, str) {
+			ret = append(ret, elem)
+		}
+	}
+	return ret
 }
