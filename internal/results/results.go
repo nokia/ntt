@@ -16,7 +16,7 @@ import (
 func Latest() (*DB, error) {
 	b, err := fs.Open("test_results.json").Bytes()
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if os.IsNotExist(err) {
 			return nil, err
 		}
 	}
