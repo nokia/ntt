@@ -464,7 +464,7 @@ func (l *Runner) EnqueueJob(name string, suite *Suite) *Job {
 	return &job
 }
 
-func (l *Runner) Done(job *Job) {
+func (l *Runner) JobDone(job *Job) {
 	l.Lock()
 	defer l.Unlock()
 	delete(l.jobs, job.id)
@@ -509,7 +509,7 @@ func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 // execute runs a single test and sends the results to the channel.
 func (l *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 
-	defer l.Done(job)
+	defer l.JobDone(job)
 	var (
 		workingDir string
 		logFile    string
