@@ -492,7 +492,7 @@ func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 			defer log.Debugf("Worker %d finished.\n", i)
 
 			for job := range jobs {
-				l.run(ctx, job, results)
+				l.execute(ctx, job, results)
 			}
 		}(i)
 	}
@@ -507,7 +507,7 @@ func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 }
 
 // execute runs a single test and sends the results to the channel.
-func (l *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
+func (l *Runner) execute(ctx context.Context, job *Job, results chan<- Result) {
 
 	defer l.JobDone(job)
 	var (
