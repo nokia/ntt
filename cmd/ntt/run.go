@@ -101,17 +101,12 @@ func init() {
 	flags.StringVarP(&testsFile, "tests-file", "t", "", "read tests from FILE. When FILE is '-', read standard input")
 }
 
-// Run runs the given jobs in parallel.
-func run(cmd *cobra.Command, args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+// WithSignalHandler adds a signal handler for ^C to the context.
+func WithSignalHandler(ctx context.Context) (context.Context, context.CancelFunc) {
+	ctx2, cancel := context.WithCancel(context.Background())
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
-	defer func() {
-		signal.Stop(signalChan)
-		cancel()
-	}()
 	go func() {
 		select {
 		case <-signalChan: // first signal, cancel context
@@ -121,12 +116,26 @@ func run(cmd *cobra.Command, args []string) error {
 		<-signalChan // second signal, hard exit
 		os.Exit(2)
 	}()
+	return ctx2, func() {
+		signal.Stop(signalChan)
+		cancel()
+	}
+}
+
+// Run runs the given jobs in parallel.
+func run(cmd *cobra.Command, args []string) error {
+
+	ctx, cancel := WithSignalHandler(context.Background())
+	defer cancel()
+
+	// Init
 	if OutputDir != "" {
 		if err := os.MkdirAll(OutputDir, os.ModePerm); err != nil {
 			return fmt.Errorf("creating logs directory failed: %w", err)
 		}
 	}
 
+	// Setup baskets
 	var err error
 	Basket, err = ntt.NewBasketWithFlags("list", cmd.Flags())
 	Basket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
@@ -134,12 +143,15 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Build Suite and collect runtime directories.
 	suite, err := ntt.NewSuite(Project)
 	if err != nil {
 		return err
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
+
+	// Read Tests from file and prepend to args
 	if testsFile != "" {
 		tests, err := readTestsFromFile(testsFile)
 		if err != nil {
@@ -148,16 +160,21 @@ func run(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	ledger := ntt.NewRunner(MaxWorkers)
-	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
+	runner := ntt.NewRunner(MaxWorkers)
+
+	// Get jobs based on K3_RUN_POLICY, ids, ...
+	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, runner)
 	if err != nil {
 		return err
 	}
 
+	// Use k3s runner
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
 		return k3sRun(ctx, files, jobs)
 	}
-	return nttRun(ctx, jobs, ledger)
+
+	// Use k3 runner
+	return nttRun(ctx, jobs, runner)
 }
 
 func nttRun(ctx context.Context, jobs <-chan *ntt.Job, ledger *ntt.Runner) error {
