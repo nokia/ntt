@@ -128,13 +128,6 @@ func run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := WithSignalHandler(context.Background())
 	defer cancel()
 
-	// Init
-	if OutputDir != "" {
-		if err := os.MkdirAll(OutputDir, os.ModePerm); err != nil {
-			return fmt.Errorf("creating logs directory failed: %w", err)
-		}
-	}
-
 	// Setup baskets
 	var err error
 	Basket, err = ntt.NewBasketWithFlags("list", cmd.Flags())
