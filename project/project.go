@@ -523,6 +523,7 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 		// TODO(5nord) make this less quadratic.
 		for _, tc := range gc.Execute {
 			pattern, params := SplitTest(tc.Test)
+			log.Printf("testConf: %v, pattern: %q, params: %q\n", tc, pattern, params)
 			ok, err := filepath.Match(pattern, name)
 			if err != nil {
 				log.Verbosef("%s: %s\n", name, err.Error())
@@ -533,7 +534,9 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 				if params != "" {
 					tc.Test += "(" + params + ")"
 				}
-				list = append(list, tc)
+				if DoesTestcaseMatchPreset(&tc, presets) {
+					list = append(list, tc)
+				}
 			}
 		}
 	}
@@ -570,6 +573,49 @@ func SplitTest(name string) (string, string) {
 		return name[:i], name[i+1 : len(name)-1]
 	}
 	return name, ""
+}
+
+// DoesTestcaseMatchPreset: check whether testcase instance shall
+// be executed dependent on the specified presets
+func DoesTestcaseMatchPreset(tc *TestConfig, presets []string) bool {
+	ret := false
+	for _, p := range presets {
+		if tc.Only != nil {
+			if len(tc.Only.Presets) > 0 {
+				for _, presetFromFile := range tc.Only.Presets {
+					if presetFromFile == p {
+						ret = true
+						break
+					}
+				}
+			}
+		}
+		if ret {
+			break
+		}
+	}
+
+	for _, p := range presets {
+		if tc.Except != nil {
+			if len(tc.Except.Presets) > 0 {
+				for _, presetFromFile := range tc.Except.Presets {
+					if presetFromFile != p {
+						ret = true
+					} else {
+						ret = false
+						break
+					}
+				}
+			}
+		}
+		if !ret {
+			break
+		}
+	}
+	if len(presets) == 0 && tc.Except != nil && len(tc.Except.Presets) > 0 {
+		ret = true
+	}
+	return ret
 }
 
 // MergeParameters merges the given parameters. Scalar values from b override
