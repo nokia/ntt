@@ -128,14 +128,6 @@ func run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := WithSignalHandler(context.Background())
 	defer cancel()
 
-	// Setup baskets
-	var err error
-	Basket, err = ntt.NewBasketWithFlags("list", cmd.Flags())
-	Basket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
-	if err != nil {
-		return err
-	}
-
 	// Build Suite and collect runtime directories.
 	suite, err := ntt.NewSuite(Project)
 	if err != nil {
@@ -311,7 +303,13 @@ func k3sJobs(jobs <-chan *ntt.Job) io.Reader {
 }
 
 // GenerateIDs emits test IDs based on given file and and id list to a channel.
-func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b ntt.Basket) <-chan string {
+func GenerateIDs(ctx context.Context, ids []string, files []string, policy string) (<-chan string, error) {
+	b, err := ntt.NewBasketWithFlags("list", cmd.Flags())
+	b.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
+	if err != nil {
+		return err
+	}
+
 	policy = strings.ToLower(policy)
 	policy = strings.TrimSpace(policy)
 	switch {
