@@ -517,13 +517,23 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 		gc.TestConfig = MergeTestConfig(gc.TestConfig, tc)
 	}
 
-	var list []TestConfig
+	files, err := fs.TTCN3Files(c.Sources...)
+	if err != nil {
+		return nil, err
+	}
 
+	list := AcquireExecutables(&gc, files, presets)
+
+	gc.Execute = list
+	return &gc, nil
+}
+
+func AcquireExecutables(gc *Parameters, files []string, presets []string) []TestConfig {
+	var list []TestConfig
 	add := func(name string, comments string) {
 		// TODO(5nord) make this less quadratic.
 		for _, tc := range gc.Execute {
 			pattern, params := SplitTest(tc.Test)
-			log.Printf("testConf: %v, pattern: %q, params: %q\n", tc, pattern, params)
 			ok, err := filepath.Match(pattern, name)
 			if err != nil {
 				log.Verbosef("%s: %s\n", name, err.Error())
@@ -539,11 +549,6 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 				}
 			}
 		}
-	}
-
-	files, err := fs.TTCN3Files(c.Sources...)
-	if err != nil {
-		return nil, err
 	}
 
 	for _, file := range files {
@@ -562,9 +567,7 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 			return true
 		})
 	}
-
-	gc.Execute = list
-	return &gc, nil
+	return list
 }
 
 // SplitTest splits a test into its testcase name and parameters.
@@ -904,9 +907,7 @@ func AutomaticRoot(root string) ConfigOption {
 				path = eval
 			}
 
-			for _, dir := range fs.FindTTCN3DirectoriesRecursive(path) {
-				c.Imports = append(c.Imports, dir)
-			}
+			c.Imports = append(c.Imports, fs.FindTTCN3DirectoriesRecursive(path)...)
 		}
 		s = fmt.Sprintf("%v", c.Imports)
 		if len(s) > 200 {
