@@ -604,8 +604,6 @@ func DoesTestcaseMatchPreset(tc *TestConfig, presets []string) bool {
 				for _, presetFromFile := range tc.Except.Presets {
 					if presetFromFile != p {
 						ret = true
-					} else {
-						ret = false
 						break
 					}
 				}

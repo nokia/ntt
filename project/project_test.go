@@ -425,13 +425,13 @@ func TestPresets(t *testing.T) {
 		expected := unmarshal(`
         execute:
         - test: "foo.TC1"
-          timeout: 4
-          only:
+          timeout: 3
+          except:
             presets:
             - A
         - test: "foo.TC1"
-          timeout: 3
-          except:
+          timeout: 4
+          only:
             presets:
             - A`)
 		var p []project.TestConfig
