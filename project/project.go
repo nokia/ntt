@@ -547,7 +547,7 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 				if params != "" {
 					tc.Test += "(" + params + ")"
 				}
-				if DoesTestcaseMatchPreset(tc, presets) {
+				if DoesTestConfigMatchPresets(tc, presets...) {
 					list = append(list, tc)
 				}
 			}
@@ -583,43 +583,37 @@ func SplitTest(name string) (string, string) {
 
 // DoesTestcaseMatchPreset: check whether testcase instance shall
 // be executed dependent on the specified presets
-func DoesTestcaseMatchPreset(tc TestConfig, presets []string) bool {
-	ret := false
-	for _, p := range presets {
-		if tc.Only != nil {
-			if len(tc.Only.Presets) > 0 {
-				for _, presetFromFile := range tc.Only.Presets {
-					if presetFromFile == p {
-						ret = true
-						break
-					}
-				}
-			}
-		}
-		if ret {
-			break
-		}
-	}
-
-	for _, p := range presets {
-		if tc.Except != nil {
-			if len(tc.Except.Presets) > 0 {
-				for _, presetFromFile := range tc.Except.Presets {
-					if presetFromFile != p {
-						ret = true
-						break
-					}
-				}
-			}
-		}
-		if !ret {
-			break
-		}
+func DoesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
+	if tc.Except == nil && tc.Only == nil {
+		return true
 	}
 	if len(presets) == 0 && tc.Except != nil && len(tc.Except.Presets) > 0 {
-		ret = true
+		return true
 	}
-	return ret
+	return !MatchPresets(tc.Except, true, presets...) && MatchPresets(tc.Only, false, presets...)
+}
+
+func MatchPresets(c *ExecuteCondition, negation bool, presets ...string) bool {
+	if c == nil {
+		return !negation
+	}
+	if c.Presets == nil {
+		return !negation
+	}
+	for _, p := range presets {
+		for _, q := range c.Presets {
+			if negation {
+				if p != q {
+					return false
+				}
+			} else {
+				if p == q {
+					return true
+				}
+			}
+		}
+	}
+	return negation
 }
 
 // MergeParameters merges the given parameters. Scalar values from b override
