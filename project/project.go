@@ -528,6 +528,9 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 	return &gc, nil
 }
 
+// AcquireExecutables depending on the provided presets and on the availability
+// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
+// control parts) is returned
 func AcquireExecutables(gc *Parameters, files []string, presets []string) []TestConfig {
 	var list []TestConfig
 	add := func(name string, comments string) {
