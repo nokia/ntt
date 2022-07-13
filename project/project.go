@@ -547,7 +547,7 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 				if params != "" {
 					tc.Test += "(" + params + ")"
 				}
-				if DoesTestcaseMatchPreset(&tc, presets) {
+				if DoesTestcaseMatchPreset(tc, presets) {
 					list = append(list, tc)
 				}
 			}
@@ -583,7 +583,7 @@ func SplitTest(name string) (string, string) {
 
 // DoesTestcaseMatchPreset: check whether testcase instance shall
 // be executed dependent on the specified presets
-func DoesTestcaseMatchPreset(tc *TestConfig, presets []string) bool {
+func DoesTestcaseMatchPreset(tc TestConfig, presets []string) bool {
 	ret := false
 	for _, p := range presets {
 		if tc.Only != nil {
