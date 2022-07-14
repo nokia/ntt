@@ -590,30 +590,36 @@ func DoesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
 	if len(presets) == 0 && tc.Except != nil && len(tc.Except.Presets) > 0 {
 		return true
 	}
-	return !MatchPresets(tc.Except, true, presets...) && MatchPresets(tc.Only, false, presets...)
-}
-
-func MatchPresets(c *ExecuteCondition, negation bool, presets ...string) bool {
-	if c == nil {
-		return !negation
-	}
-	if c.Presets == nil {
-		return !negation
-	}
 	for _, p := range presets {
-		for _, q := range c.Presets {
-			if negation {
-				if p != q {
-					return false
-				}
-			} else {
-				if p == q {
-					return true
-				}
-			}
+		if NOR_MatchPreset(tc.Except, p) && OR_MatchPreset(tc.Only, p) {
+			return true
 		}
 	}
-	return negation
+	return false //!MatchPresets(tc.Except, true, presets...) && MatchPresets(tc.Only, false, presets...)
+}
+
+func NOR_MatchPreset(c *ExecuteCondition, preset string) bool {
+	if c == nil {
+		return true
+	}
+	for _, q := range c.Presets {
+		if preset == q {
+			return false
+		}
+	}
+	return true
+}
+
+func OR_MatchPreset(c *ExecuteCondition, preset string) bool {
+	if c == nil {
+		return true
+	}
+	for _, q := range c.Presets {
+		if preset == q {
+			return true
+		}
+	}
+	return false
 }
 
 // MergeParameters merges the given parameters. Scalar values from b override

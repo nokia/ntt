@@ -397,6 +397,21 @@ func TestPresets(t *testing.T) {
             only:
                 presets: [A, B]`)
 
+	multiPresets_except := unmarshal(`
+                timeout: 0
+                presets:
+                   "A":
+                      timeout: 1
+                      parameters:
+                          "mod1.p1": 1
+                   "B":
+                      timeout: 2
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    except:
+                        presets: [A, B]`)
+
 	t.Run("Preset_A", func(t *testing.T) {
 		expected := unmarshal(`
         execute:
@@ -485,6 +500,24 @@ func TestPresets(t *testing.T) {
 		assert.Equal(t, &expected, &project.Parameters{Execute: p})
 	})
 
+	t.Run("multiPresets_except_Preset_B", func(t *testing.T) {
+
+		//var p []project.TestConfig
+		p := project.AcquireExecutables(&multiPresets_except, []string{"bar://foo.ttcn3"}, []string{"B"})
+		assert.Nil(t, p)
+	})
+
+	t.Run("multiPresets_except_No_Preset", func(t *testing.T) {
+		expected := unmarshal(`
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    except:
+                      presets: [A, B]`)
+		var p []project.TestConfig
+		p = append(p, project.AcquireExecutables(&multiPresets_except, []string{"bar://foo.ttcn3"}, nil)...)
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
 }
 
 // equal returns true if a and b are equal string slices, order is ignored.
