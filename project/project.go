@@ -584,25 +584,35 @@ func SplitTest(name string) (string, string) {
 // DoesTestcaseMatchPreset: check whether testcase instance shall
 // be executed dependent on the specified presets
 func DoesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
-	if tc.Except == nil && tc.Only == nil {
+	if (tc.Except == nil || len(tc.Except.Presets) == 0) &&
+		(tc.Only == nil || len(tc.Only.Presets) == 0) {
 		return true
 	}
+	// in case there are no presets supplied but something is present within
+	// tc.Except branch
 	if len(presets) == 0 && tc.Except != nil && len(tc.Except.Presets) > 0 {
 		return true
 	}
+
 	for _, p := range presets {
-		if NOR_MatchPreset(tc.Except, p) && OR_MatchPreset(tc.Only, p) {
+		var res bool = true
+		if except := tc.Except; except != nil {
+			res = NORMatchPreset(except.Presets, p)
+		}
+		if only := tc.Only; only != nil {
+			res = res && ORMatchPreset(only.Presets, p)
+		}
+		if res {
 			return true
 		}
 	}
-	return false //!MatchPresets(tc.Except, true, presets...) && MatchPresets(tc.Only, false, presets...)
+	return false
 }
 
-func NOR_MatchPreset(c *ExecuteCondition, preset string) bool {
-	if c == nil {
-		return true
-	}
-	for _, q := range c.Presets {
+// NORMatchPreset: each entry of strs is compared with the preset
+// string. The result of each operation is NOR'ed
+func NORMatchPreset(strs []string, preset string) bool {
+	for _, q := range strs {
 		if preset == q {
 			return false
 		}
@@ -610,11 +620,10 @@ func NOR_MatchPreset(c *ExecuteCondition, preset string) bool {
 	return true
 }
 
-func OR_MatchPreset(c *ExecuteCondition, preset string) bool {
-	if c == nil {
-		return true
-	}
-	for _, q := range c.Presets {
+// ORMatchPreset: each entry of strs is compared with the preset
+// string. The result of each operation is OR'ed
+func ORMatchPreset(strs []string, preset string) bool {
+	for _, q := range strs {
 		if preset == q {
 			return true
 		}
