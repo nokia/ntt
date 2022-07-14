@@ -382,6 +382,21 @@ func TestPresets(t *testing.T) {
                          presets:
                          - A`)
 
+	multiPresets := unmarshal(`
+        timeout: 0
+        presets:
+           "A":
+              timeout: 1
+              parameters:
+                  "mod1.p1": 1
+           "B":
+              timeout: 2
+        execute:
+          - test: "foo.TC1"
+            timeout: 4
+            only:
+                presets: [A, B]`)
+
 	t.Run("Preset_A", func(t *testing.T) {
 		expected := unmarshal(`
         execute:
@@ -436,6 +451,37 @@ func TestPresets(t *testing.T) {
             - A`)
 		var p []project.TestConfig
 		p = append(p, project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"B", "A"})...)
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("multiPresets_Preset_A", func(t *testing.T) {
+		expected := unmarshal(`
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    only:
+                      presets: [A, B]`)
+		var p []project.TestConfig
+		p = append(p, project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, []string{"A"})...)
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("multiPresets_No_Preset", func(t *testing.T) {
+
+		//var p []project.TestConfig
+		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, nil)
+		assert.Nil(t, p)
+	})
+
+	t.Run("multiPresets_Preset_B", func(t *testing.T) {
+		expected := unmarshal(`
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    only:
+                      presets: [A, B]`)
+		var p []project.TestConfig
+		p = append(p, project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, []string{"B"})...)
 		assert.Equal(t, &expected, &project.Parameters{Execute: p})
 	})
 
