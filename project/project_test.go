@@ -249,9 +249,9 @@ func TestWithManifest(t *testing.T) {
 	})
 	t.Run("variables", func(t *testing.T) {
 		c, err := manifest("foo/bar/package.yml", `
-			variables:
-			  VAR: file
-			hooks_file: $VAR`)
+            variables:
+              VAR: file
+            hooks_file: $VAR`)
 		assert.Nil(t, err)
 		assert.Equal(t, "foo/bar/file", c.HooksFile)
 	})
@@ -346,6 +346,201 @@ func TestImportTasks(t *testing.T) {
 			t.Errorf("%v: %v, want %v", tt.path, actual, tt.result)
 		}
 	}
+
+}
+
+func TestPresets(t *testing.T) {
+	unmarshal := func(s string) project.Parameters {
+		var p project.Parameters
+		if err := yaml.Unmarshal([]byte(s), &p); err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	fs.SetContent("bar://foo.ttcn3", []byte(`module foo {
+    type component C0 {}
+    testcase TC1() runs on C0 system C0 {}
+}`))
+	a := unmarshal(`
+                timeout: 0
+                presets:
+                   "A":
+                      timeout: 1
+                      parameters:
+                          "mod1.p1": 1
+                   "B":
+                      timeout: 2
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 3
+                    except:
+                        presets:
+                        - A
+                  - test: "foo.TC1"
+                    timeout: 4
+                    only:
+                         presets:
+                         - A`)
+
+	multiPresets := unmarshal(`
+        timeout: 0
+        presets:
+           "A":
+              timeout: 1
+              parameters:
+                  "mod1.p1": 1
+           "B":
+              timeout: 2
+        execute:
+          - test: "foo.TC1"
+            timeout: 4
+            only:
+                presets: [A, B]`)
+
+	multiPresets_except := unmarshal(`
+                timeout: 0
+                presets:
+                   "A":
+                      timeout: 1
+                      parameters:
+                          "mod1.p1": 1
+                   "B":
+                      timeout: 2
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    except:
+                        presets: [A, B]`)
+
+	missing_presets := unmarshal(`
+                        timeout: 0
+                        presets:
+                           "A":
+                              timeout: 1
+                              parameters:
+                                  "mod1.p1": 1
+                           "B":
+                              timeout: 2
+                        execute:
+                          - test: "foo.TC1"
+                            timeout: 4
+                            only:
+                                presets:
+                          - test: "foo.TC1"
+                            timeout: 5
+                            only:
+                                presets: []`)
+
+	t.Run("Preset_A", func(t *testing.T) {
+		expected := unmarshal(`
+        execute:
+          - test: "foo.TC1"
+            timeout: 4
+            only:
+                 presets:
+                 - A`)
+		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"A"})
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("Preset_B", func(t *testing.T) {
+		expected := unmarshal(`
+        execute:
+          - test: "foo.TC1"
+            timeout: 3
+            except:
+                 presets:
+                 - A`)
+		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"B"})
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("No_Preset", func(t *testing.T) {
+		expected := unmarshal(`
+        execute:
+          - test: "foo.TC1"
+            timeout: 3
+            except:
+                 presets:
+                 - A`)
+		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{})
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("Preset_AB", func(t *testing.T) {
+		expected := unmarshal(`
+        execute:
+        - test: "foo.TC1"
+          timeout: 3
+          except:
+            presets:
+            - A
+        - test: "foo.TC1"
+          timeout: 4
+          only:
+            presets:
+            - A`)
+		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"B", "A"})
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("multiPresets_Preset_A", func(t *testing.T) {
+		expected := unmarshal(`
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    only:
+                      presets: [A, B]`)
+		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, []string{"A"})
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("multiPresets_No_Preset", func(t *testing.T) {
+		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, nil)
+		assert.Nil(t, p)
+	})
+
+	t.Run("multiPresets_Preset_B", func(t *testing.T) {
+		expected := unmarshal(`
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    only:
+                      presets: [A, B]`)
+		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, []string{"B"})
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("multiPresets_except_Preset_B", func(t *testing.T) {
+		p := project.AcquireExecutables(&multiPresets_except, []string{"bar://foo.ttcn3"}, []string{"B"})
+		assert.Nil(t, p)
+	})
+
+	t.Run("multiPresets_except_No_Preset", func(t *testing.T) {
+		expected := unmarshal(`
+                execute:
+                  - test: "foo.TC1"
+                    timeout: 4
+                    except:
+                      presets: [A, B]`)
+		p := project.AcquireExecutables(&multiPresets_except, []string{"bar://foo.ttcn3"}, nil)
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
+
+	t.Run("missingPresets_only_No_Preset", func(t *testing.T) {
+		expected := unmarshal(`
+            execute:
+              - test: "foo.TC1"
+                timeout: 4
+                only:
+                    presets:
+              - test: "foo.TC1"
+                timeout: 5
+                only:
+                    presets: []`)
+		p := project.AcquireExecutables(&missing_presets, []string{"bar://foo.ttcn3"}, nil)
+		assert.Equal(t, &expected, &project.Parameters{Execute: p})
+	})
 
 }
 

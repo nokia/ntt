@@ -517,8 +517,22 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 		gc.TestConfig = MergeTestConfig(gc.TestConfig, tc)
 	}
 
-	var list []TestConfig
+	files, err := fs.TTCN3Files(c.Sources...)
+	if err != nil {
+		return nil, err
+	}
 
+	list := AcquireExecutables(&gc, files, presets)
+
+	gc.Execute = list
+	return &gc, nil
+}
+
+// AcquireExecutables depending on the provided presets and on the availability
+// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
+// control parts) is returned
+func AcquireExecutables(gc *Parameters, files []string, presets []string) []TestConfig {
+	var list []TestConfig
 	add := func(name string, comments string) {
 		// TODO(5nord) make this less quadratic.
 		for _, tc := range gc.Execute {
@@ -533,14 +547,11 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 				if params != "" {
 					tc.Test += "(" + params + ")"
 				}
-				list = append(list, tc)
+				if DoesTestConfigMatchPresets(tc, presets...) {
+					list = append(list, tc)
+				}
 			}
 		}
-	}
-
-	files, err := fs.TTCN3Files(c.Sources...)
-	if err != nil {
-		return nil, err
 	}
 
 	for _, file := range files {
@@ -559,9 +570,7 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 			return true
 		})
 	}
-
-	gc.Execute = list
-	return &gc, nil
+	return list
 }
 
 // SplitTest splits a test into its testcase name and parameters.
@@ -570,6 +579,56 @@ func SplitTest(name string) (string, string) {
 		return name[:i], name[i+1 : len(name)-1]
 	}
 	return name, ""
+}
+
+// DoesTestcaseMatchPreset: check whether testcase instance shall
+// be executed dependent on the specified presets
+func DoesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
+	if (tc.Except == nil || len(tc.Except.Presets) == 0) &&
+		(tc.Only == nil || len(tc.Only.Presets) == 0) {
+		return true
+	}
+	// in case there are no presets supplied but something is present within
+	// tc.Except branch
+	if len(presets) == 0 && tc.Except != nil && len(tc.Except.Presets) > 0 {
+		return true
+	}
+
+	for _, p := range presets {
+		var res bool = true
+		if except := tc.Except; except != nil {
+			res = NORMatchPreset(except.Presets, p)
+		}
+		if only := tc.Only; only != nil {
+			res = res && ORMatchPreset(only.Presets, p)
+		}
+		if res {
+			return true
+		}
+	}
+	return false
+}
+
+// NORMatchPreset: each entry of strs is compared with the preset
+// string. The result of each operation is NOR'ed
+func NORMatchPreset(strs []string, preset string) bool {
+	for _, q := range strs {
+		if preset == q {
+			return false
+		}
+	}
+	return true
+}
+
+// ORMatchPreset: each entry of strs is compared with the preset
+// string. The result of each operation is OR'ed
+func ORMatchPreset(strs []string, preset string) bool {
+	for _, q := range strs {
+		if preset == q {
+			return true
+		}
+	}
+	return false
 }
 
 // MergeParameters merges the given parameters. Scalar values from b override
@@ -858,9 +917,7 @@ func AutomaticRoot(root string) ConfigOption {
 				path = eval
 			}
 
-			for _, dir := range fs.FindTTCN3DirectoriesRecursive(path) {
-				c.Imports = append(c.Imports, dir)
-			}
+			c.Imports = append(c.Imports, fs.FindTTCN3DirectoriesRecursive(path)...)
 		}
 		s = fmt.Sprintf("%v", c.Imports)
 		if len(s) > 200 {
