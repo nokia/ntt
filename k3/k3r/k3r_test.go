@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/k3r"
 	"github.com/nokia/ntt/project"
@@ -105,7 +106,9 @@ func TestEvents(t *testing.T) {
 			}
 
 			var actual []string
-			for e := range k3r.NewTest(t3xf, tt.input).RunWithContext(ctx) {
+			tst := k3r.NewTest(t3xf, tt.input)
+			tst.Env = append(tst.Env, env.Environ()...)
+			for e := range tst.RunWithContext(ctx) {
 				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "tests.")
 				switch e := e.(type) {
 				case tsts.StartEvent:
