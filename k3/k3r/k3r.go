@@ -111,7 +111,6 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
 		cmd.Dir = t.Dir
-		cmd.Env = append(cmd.Env, os.Environ()...)
 		cmd.Env = append(t.Env,
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 			fmt.Sprintf("K3_SESSION_ID=%d", sid),
