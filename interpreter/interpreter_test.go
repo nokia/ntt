@@ -374,6 +374,26 @@ func TestMapExpr(t *testing.T) {
 	}
 }
 
+func TestTemplateMatching(t *testing.T) {
+	t.Skip()
+
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{`match(true, true)`, true},
+		{`match(true, false)`, false},
+		{`match(true, ?)`, true},
+		{`match(false, *)`, true},
+	}
+
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		testBool(t, val, tt.expected)
+	}
+
+}
+
 func testEval(t *testing.T, input string) runtime.Object {
 	fset := loc.NewFileSet()
 	nodes, _, _, err := parser.Parse(fset, "<stdin>", input)
