@@ -39,6 +39,7 @@ const (
 	MAP          ObjectType = "map"
 	BUILTIN_OBJ  ObjectType = "builtin function"
 	VERDICT      ObjectType = "verdict"
+	TEMPLATE     ObjectType = "template"
 
 	Bit    Unit = 1
 	Hex    Unit = 4
@@ -69,6 +70,8 @@ var (
 	Undefined = &singelton{typ: UNDEFINED}
 	Break     = &singelton{typ: BREAK}
 	Continue  = &singelton{typ: CONTINUE}
+	Any       = &singelton{typ: TEMPLATE}
+	AnyOrNone = &singelton{typ: TEMPLATE}
 )
 
 type singelton struct {
@@ -359,6 +362,16 @@ func (v Verdict) hashKey() hashKey {
 	}
 	return hashKey{Type: v.Type(), Value: value}
 
+}
+
+type Template struct {
+	Object
+}
+
+func (t *Template) Type() ObjectType { return TEMPLATE }
+func (t *Template) Inspect() string  { return "template" }
+func (t *Template) Equal(obj Object) bool {
+	return false
 }
 
 type Builtin struct {

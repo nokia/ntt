@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/nokia/ntt/runtime"
+	_ "github.com/nokia/ntt/runtime/builtins"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
 )
@@ -78,9 +79,6 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		name := n.String()
 		if val, ok := env.Get(name); ok {
 			return val
-		}
-		if builtin, ok := runtime.Builtins[name]; ok {
-			return builtin
 		}
 		return runtime.Errorf("identifier not found: %s", name)
 
@@ -320,6 +318,11 @@ func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 			return runtime.Errorf("%s", err.Error())
 		}
 		return b
+	case token.MUL:
+		return runtime.AnyOrNone
+	case token.ANY:
+		return runtime.Any
+
 	}
 	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
 }

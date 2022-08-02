@@ -11,11 +11,16 @@ type Env struct {
 }
 
 func (env *Env) Get(name string) (Object, bool) {
-	val, ok := env.store[name]
-	if !ok && env.outer != nil {
-		val, ok = env.outer.Get(name)
+	if builtin, ok := builtins[name]; ok {
+		return builtin, true
 	}
-	return val, ok
+	if val, ok := env.store[name]; ok {
+		return val, true
+	}
+	if env.outer != nil {
+		return env.outer.Get(name)
+	}
+	return nil, false
 }
 
 func (env *Env) Set(name string, val Object) Object {
