@@ -138,8 +138,8 @@ func TestErrors(t *testing.T) {
 			t.Errorf("no error object returned. got=%T (%+v)", val, val)
 			continue
 		}
-		if err.Message != tt.expected {
-			t.Errorf("wrong error message. got=%q, want=%q", err.Message, tt.expected)
+		if err.Error() != tt.expected {
+			t.Errorf("wrong error message. got=%q, want=%q", err.Error(), tt.expected)
 		}
 	}
 }
@@ -279,8 +279,8 @@ func TestBuiltinFunction(t *testing.T) {
 				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
 				continue
 			}
-			if err.Message != expected {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Message, expected)
+			if err.Error() != expected {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected)
 			}
 		}
 	}
@@ -372,26 +372,6 @@ func TestMapExpr(t *testing.T) {
 		}
 		testInt(t, val, tt.expected)
 	}
-}
-
-func TestTemplateMatching(t *testing.T) {
-	t.Skip()
-
-	tests := []struct {
-		input    string
-		expected bool
-	}{
-		{`match(true, true)`, true},
-		{`match(true, false)`, false},
-		{`match(true, ?)`, true},
-		{`match(false, *)`, true},
-	}
-
-	for _, tt := range tests {
-		val := testEval(t, tt.input)
-		testBool(t, val, tt.expected)
-	}
-
 }
 
 func testEval(t *testing.T, input string) runtime.Object {

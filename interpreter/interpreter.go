@@ -3,8 +3,8 @@ package interpreter
 import (
 	"math/big"
 
+	_ "github.com/nokia/ntt/builtins"
 	"github.com/nokia/ntt/runtime"
-	_ "github.com/nokia/ntt/runtime/builtins"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/token"
 )

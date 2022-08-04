@@ -19,7 +19,6 @@ func Lengthof(args ...runtime.Object) runtime.Object {
 		return runtime.Int{Int: big.NewInt(int64(len(arg.Value)))}
 	case *runtime.Bitstring:
 		return runtime.Int{Int: big.NewInt(int64(arg.Value.BitLen() / int(arg.Unit)))}
-
 	}
 	return runtime.Errorf("%s arguments not supported", args[0].Type())
 }
@@ -74,7 +73,12 @@ func Match(args ...runtime.Object) runtime.Object {
 		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
 	}
 
-	return runtime.Bool(false)
+	b, err := match(args[0], args[1])
+	if err != nil {
+		return runtime.Errorf("match: %w", err)
+	}
+
+	return runtime.Bool(b)
 }
 
 func init() {
