@@ -66,7 +66,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			DocumentSymbolProvider:     true,
 			WorkspaceSymbolProvider:    false,
 			FoldingRangeProvider:       false,
-			HoverProvider:              false,
+			HoverProvider:              true,
 			DocumentHighlightProvider:  false,
 			DocumentLinkProvider:       protocol.DocumentLinkOptions{},
 			ReferencesProvider:         true,
