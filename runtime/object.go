@@ -39,6 +39,8 @@ const (
 	MAP          ObjectType = "map"
 	BUILTIN_OBJ  ObjectType = "builtin function"
 	VERDICT      ObjectType = "verdict"
+	ANY          ObjectType = "?"
+	ANY_OR_NONE  ObjectType = "*"
 
 	Bit    Unit = 1
 	Hex    Unit = 4
@@ -69,6 +71,8 @@ var (
 	Undefined = &singelton{typ: UNDEFINED}
 	Break     = &singelton{typ: BREAK}
 	Continue  = &singelton{typ: CONTINUE}
+	Any       = &singelton{typ: ANY}
+	AnyOrNone = &singelton{typ: ANY_OR_NONE}
 )
 
 type singelton struct {
@@ -86,22 +90,22 @@ func (s *singelton) Equal(obj Object) bool {
 }
 
 type Error struct {
-	Message string
+	Err error
 }
 
-func (e *Error) Error() string    { return e.Message }
+func (e *Error) Error() string    { return e.Err.Error() }
 func (e *Error) Type() ObjectType { return ERROR }
 func (e *Error) Inspect() string  { return fmt.Sprintf("Error: %s", e.Error()) }
 
 func (e *Error) Equal(obj Object) bool {
 	if other, ok := obj.(*Error); ok {
-		return e.Message == other.Message
+		return errors.Is(e, other)
 	}
 	return false
 }
 
 func Errorf(format string, a ...interface{}) *Error {
-	return &Error{Message: fmt.Sprintf(format, a...)}
+	return &Error{Err: fmt.Errorf(format, a...)}
 }
 
 func IsError(v interface{}) bool {
