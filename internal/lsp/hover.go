@@ -29,7 +29,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		}
 	}
 
-	hoverContents := protocol.MarkupContent{Kind: "plaintext", Value: comment}
+	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: comment}
 	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil
