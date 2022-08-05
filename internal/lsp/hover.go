@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"strings"
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
@@ -25,7 +26,8 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		if firstTok := ast.FirstToken(def.Node); firstTok == nil {
 			continue
 		} else {
-			comment = firstTok.Comments()
+			// make line breaks conform to markdown spec
+			comment = strings.ReplaceAll(firstTok.Comments(), "\n", "  \n")
 		}
 	}
 
