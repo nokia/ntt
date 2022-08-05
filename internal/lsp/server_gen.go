@@ -105,7 +105,7 @@ func (s *Server) Formatting(context.Context, *protocol.DocumentFormattingParams)
 }
 
 func (s *Server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
-	return s.hover(ctx, params), nil
+	return s.hover(ctx, params)
 }
 
 func (s *Server) Implementation(context.Context, *protocol.ImplementationParams) (interface{}, error) {

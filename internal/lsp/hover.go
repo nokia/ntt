@@ -9,7 +9,7 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
-func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (protocol.Hover, error) {
+func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	var (
 		file = string(params.TextDocument.URI.SpanURI())
 		line = int(params.Position.Line) + 1
@@ -24,8 +24,8 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (proto
 
 	comment := ast.FirstToken(x).Comments()
 
-	hoverContents := protocol.MarkupContent{Kind: "Plaintext", Value: comment}
-	hover := protocol.Hover{Contents: hoverContents}
+	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: comment}
+	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil
 }
