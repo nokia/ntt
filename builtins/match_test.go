@@ -24,8 +24,16 @@ func TestMatch(t *testing.T) {
 
 		// integers
 		{runtime.NewInt("1"), runtime.NewInt("2"), false},
+		{runtime.NewInt("1"), runtime.NewInt("2000"), false},
 		{runtime.NewInt("1"), runtime.NewInt("1"), true},
+		{runtime.NewInt("2000"), runtime.NewInt("2000"), true},
+		{runtime.NewInt("-1"), runtime.NewInt("-1"), true},
+		{runtime.NewInt("-1"), runtime.NewInt("2000"), false},
 		{runtime.NewInt("1"), runtime.AnyOrNone, true},
+		{runtime.NewInt("-1"), runtime.AnyOrNone, true},
+		{runtime.NewInt("1"), runtime.Any, true},
+		{runtime.NewInt("-1"), runtime.Any, true},
+		{runtime.NewInt("2000"), runtime.Any, true},
 	}
 
 	for _, test := range tests {
