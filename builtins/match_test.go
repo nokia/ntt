@@ -24,6 +24,7 @@ func TestMatch(t *testing.T) {
 
 		// integers
 		{runtime.NewInt("1"), runtime.NewInt("2"), false},
+		{runtime.NewInt("1"), runtime.NewInt("1"), true},
 		{runtime.NewInt("1"), runtime.AnyOrNone, true},
 	}
 
