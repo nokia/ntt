@@ -44,7 +44,8 @@ func TestMatch(t *testing.T) {
 		{runtime.NewFloat("2.2"), runtime.AnyOrNone, true},
 		{runtime.NewFloat("-2.2"), runtime.AnyOrNone, true},
 		{runtime.NewFloat("2.2"), runtime.Any, true},
-		{runtime.NewFloat("-2.2"), runtime.Any, true},
+		{runtime.NewFloat("2e2"), runtime.NewFloat("200"), true},
+		{runtime.NewFloat("2e-2"), runtime.NewFloat("0.02"), true},
 	}
 
 	for _, test := range tests {
