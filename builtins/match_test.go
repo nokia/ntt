@@ -46,6 +46,39 @@ func TestMatch(t *testing.T) {
 		{runtime.NewFloat("2.2"), runtime.Any, true},
 		{runtime.NewFloat("2e2"), runtime.NewFloat("200"), true},
 		{runtime.NewFloat("2e-2"), runtime.NewFloat("0.02"), true},
+
+		// Verdicts
+		{runtime.PassVerdict, runtime.PassVerdict, true},
+		{runtime.PassVerdict, runtime.FailVerdict, false},
+		{runtime.PassVerdict, runtime.ErrorVerdict, false},
+		{runtime.PassVerdict, runtime.InconcVerdict, false},
+		{runtime.PassVerdict, runtime.NoneVerdict, false},
+		{runtime.NoneVerdict, runtime.PassVerdict, false},
+
+		{runtime.FailVerdict, runtime.FailVerdict, true},
+		{runtime.FailVerdict, runtime.ErrorVerdict, false},
+		{runtime.FailVerdict, runtime.InconcVerdict, false},
+		{runtime.FailVerdict, runtime.NoneVerdict, false},
+
+		{runtime.ErrorVerdict, runtime.ErrorVerdict, true},
+		{runtime.ErrorVerdict, runtime.InconcVerdict, false},
+		{runtime.ErrorVerdict, runtime.NoneVerdict, false},
+
+		{runtime.InconcVerdict, runtime.InconcVerdict, true},
+		{runtime.InconcVerdict, runtime.NoneVerdict, false},
+
+		{runtime.NoneVerdict, runtime.NoneVerdict, true},
+
+		{runtime.PassVerdict, runtime.Any, true},
+		{runtime.FailVerdict, runtime.Any, true},
+		{runtime.ErrorVerdict, runtime.Any, true},
+		{runtime.InconcVerdict, runtime.Any, true},
+		{runtime.NoneVerdict, runtime.Any, true},
+		{runtime.PassVerdict, runtime.AnyOrNone, true},
+		{runtime.FailVerdict, runtime.AnyOrNone, true},
+		{runtime.ErrorVerdict, runtime.AnyOrNone, true},
+		{runtime.InconcVerdict, runtime.AnyOrNone, true},
+		{runtime.NoneVerdict, runtime.AnyOrNone, true},
 	}
 
 	for _, test := range tests {
