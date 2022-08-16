@@ -472,16 +472,16 @@ func NewMap() *Map {
 
 // TODO(5nord) For simplicity we reuse the Map implementation. We should implement proper record semantics later.
 type Record struct {
-	fields map[string]Object
+	Fields map[string]Object
 }
 
 func (r *Record) Get(name string) (Object, bool) {
-	val, ok := r.fields[name]
+	val, ok := r.Fields[name]
 	return val, ok
 }
 
 func (r *Record) Set(name string, val Object) Object {
-	r.fields[name] = val
+	r.Fields[name] = val
 	return nil
 }
 
@@ -489,7 +489,7 @@ func (r *Record) Type() ObjectType { return RECORD }
 func (r *Record) Inspect() string {
 	var buf bytes.Buffer
 	fields := []string{}
-	for key, val := range r.fields {
+	for key, val := range r.Fields {
 		fields = append(fields, fmt.Sprintf("%s := %s", key, val.Inspect()))
 	}
 	buf.WriteString("{")
@@ -504,12 +504,12 @@ func (r *Record) Equal(obj Object) bool {
 	if !ok {
 		return false
 	}
-	if len(r.fields) != len(other.fields) {
+	if len(r.Fields) != len(other.Fields) {
 		return false
 	}
 
-	for k, a := range r.fields {
-		b, ok := other.fields[k]
+	for k, a := range r.Fields {
+		b, ok := other.Fields[k]
 		if !ok {
 			return false
 		}
@@ -522,7 +522,7 @@ func (r *Record) Equal(obj Object) bool {
 }
 
 func NewRecord() *Record {
-	return &Record{fields: make(map[string]Object)}
+	return &Record{Fields: make(map[string]Object)}
 }
 
 // EqualObjects compares two Object slices for equality.

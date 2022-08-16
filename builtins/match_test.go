@@ -79,6 +79,34 @@ func TestMatch(t *testing.T) {
 		{runtime.ErrorVerdict, runtime.AnyOrNone, true},
 		{runtime.InconcVerdict, runtime.AnyOrNone, true},
 		{runtime.NoneVerdict, runtime.AnyOrNone, true},
+
+		// records
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
+			testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")), true},
+
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
+			testRecord("f1", runtime.NewInt("4"), "f2", runtime.NewInt("3")), false},
+
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
+			testRecord("f2", runtime.NewInt("4"), "f1", runtime.NewInt("3")), true},
+
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewBool(false)),
+			testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewBool(false)), true},
+
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewBool(false)),
+			testRecord("f1", runtime.NewInt("4"), "f2", runtime.NewBool(true)), false},
+
+		{testRecord(), testRecord(), true},
+		{testRecord(), testRecord("f1", runtime.NewFloat("2")), false},
+
+		{testRecord("f1", runtime.NewInt("3")), runtime.Any, true},
+		{testRecord("f1", runtime.NewInt("3")), runtime.AnyOrNone, true},
+
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
+			testRecord("f1", runtime.Any, "f2", runtime.Any), true},
+
+		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
+			testRecord("f1", runtime.NewInt("3"), "f2", runtime.AnyOrNone), true},
 	}
 
 	for _, test := range tests {
@@ -92,4 +120,12 @@ func TestMatch(t *testing.T) {
 			t.Errorf("Error verification not implemented yet. Sorry")
 		}
 	}
+}
+
+func testRecord(a ...interface{}) *runtime.Record {
+	r := runtime.NewRecord()
+	for i := 0; i < len(a); i += 2 {
+		r.Set(a[i].(string), a[i+1].(runtime.Object))
+	}
+	return r
 }
