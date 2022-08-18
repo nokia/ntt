@@ -130,6 +130,12 @@ func TestMatch(t *testing.T) {
 		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
 			testList(runtime.NewInt("1"), runtime.AnyOrNone, runtime.NewInt("3")), true},
 
+		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
+			testList(runtime.AnyOrNone, runtime.NewInt("1"), runtime.NewInt("3")), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.NewInt("3"), runtime.AnyOrNone), true},
+
 		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
 			testList(runtime.AnyOrNone), true},
 
