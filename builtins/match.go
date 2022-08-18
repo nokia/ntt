@@ -93,3 +93,42 @@ func matchIsASupersetB(a, b *runtime.List) (bool, error) {
 	}
 	return true, nil
 }
+
+/*
+Checks if List a is a Subset of List b.
+*/
+func matchIsASubsetB(a, b *runtime.List) (bool, error) {
+	var cloneB *runtime.List = b
+	isMissing, isAny := false, -1
+	for _, valueA := range a.Elements {
+		for i, valueB := range cloneB.Elements {
+			if valueB == runtime.AnyOrNone {
+				return true, nil
+			}
+			if valueB == runtime.Any {
+				isAny = i
+			} else if ok, _ := match(valueA, valueB); ok {
+				cloneB.Elements[i] = cloneB.Elements[len(cloneB.Elements)-1]
+				cloneB.Elements = cloneB.Elements[:len(cloneB.Elements)-1]
+				isMissing = false
+				isAny = -1
+				break
+			}
+			isMissing = true
+		}
+		if !isMissing {
+			continue
+		}
+		if isAny >= 0 {
+			cloneB.Elements[isAny] = cloneB.Elements[len(cloneB.Elements)-1]
+			cloneB.Elements = cloneB.Elements[:len(cloneB.Elements)-1]
+			isMissing = false
+			isAny = -1
+			continue
+		}
+		err := runtime.Errorf("At least one %s or '?' missing in second List", valueA)
+		return false, err
+	}
+
+	return true, nil
+}
