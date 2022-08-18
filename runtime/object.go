@@ -205,6 +205,10 @@ func (s *String) hashKey() hashKey {
 	return hashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
+func NewString(s string) *String {
+	return &String{Value: s}
+}
+
 type Bitstring struct {
 	Value *big.Int
 	Unit  Unit
@@ -290,6 +294,10 @@ func (l *List) Equal(obj Object) bool {
 		return EqualObjects(l.Elements, other.Elements)
 	}
 	return false
+}
+
+func NewList(i int) *List {
+	return &List{Elements: make([]Object, i)}
 }
 
 type Function struct {
