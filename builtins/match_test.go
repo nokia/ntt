@@ -107,6 +107,40 @@ func TestMatch(t *testing.T) {
 
 		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
 			testRecord("f1", runtime.NewInt("3"), "f2", runtime.AnyOrNone), true},
+
+		// set ofs
+
+		{testList(), testList(), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.NewInt("4"), runtime.NewInt("3")), false},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.NewInt("3")), false},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), false},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.NewInt("3"), runtime.AnyOrNone), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.AnyOrNone, runtime.NewInt("3")), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.AnyOrNone), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.Any, runtime.NewInt("3")), false},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.Any, runtime.Any), true},
+
+		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testList(runtime.NewInt("1"), runtime.Any), false},
 	}
 
 	for _, test := range tests {
@@ -126,6 +160,14 @@ func testRecord(a ...interface{}) *runtime.Record {
 	r := runtime.NewRecord()
 	for i := 0; i < len(a); i += 2 {
 		r.Set(a[i].(string), a[i+1].(runtime.Object))
+	}
+	return r
+}
+
+func testList(a ...interface{}) *runtime.List {
+	r := runtime.NewList(len(a))
+	for i := 0; i < len(a); i++ {
+		r.Elements[i] = a[i].(runtime.Object)
 	}
 	return r
 }
