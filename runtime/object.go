@@ -41,19 +41,15 @@ const (
 	VERDICT      ObjectType = "verdict"
 	ANY          ObjectType = "?"
 	ANY_OR_NONE  ObjectType = "*"
-
-	Bit    Unit = 1
-	Hex    Unit = 4
-	Octett Unit = 8
-
-	NoneVerdict   Verdict = "none"
-	PassVerdict   Verdict = "pass"
-	InconcVerdict Verdict = "inconc"
-	FailVerdict   Verdict = "fail"
-	ErrorVerdict  Verdict = "error"
 )
 
 type Unit int
+
+const (
+	Bit    Unit = 1
+	Hex    Unit = 4
+	Octett Unit = 8
+)
 
 func (u Unit) Base() int {
 	switch u {
@@ -272,9 +268,23 @@ func NewBitstring(s string) (*Bitstring, error) {
 	return nil, ErrSyntax
 }
 
+type ListType string
+
+const (
+	SET_OF      ListType = "set of"
+	COMPLEMENT  ListType = "complement"
+	SUBSET      ListType = "subset"
+	SUPERSET    ListType = "superset"
+	PERMUTATION ListType = "permutation"
+)
+
 type List struct {
-	Elements  []Object
-	Unordered bool
+	ListType
+	Elements []Object
+}
+
+func (l *List) IsOrdered() bool {
+	return l.ListType == ""
 }
 
 func (l *List) Type() ObjectType { return LIST }
@@ -303,32 +313,22 @@ func (l *List) Equal(obj Object) bool {
 	// makes untyped assignment lists easier to handle.
 	//
 	// We assume the proper semeantic checks are done before the runtime.
-	if l.Unordered || other.Unordered {
-		return EqualObjectSet(l.Elements, other.Elements)
+	if l.IsOrdered() && other.IsOrdered() {
+		return EqualObjects(l.Elements, other.Elements)
 	}
 
-	return EqualObjects(l.Elements, other.Elements)
+	return l.ListType == other.ListType && EqualObjectSet(l.Elements, other.Elements)
+
 }
 
-// NewList creates a new ordered list. If a size greater than zero is given,
-// NewList will initialize the List with runtime.Undefined objects.
-func NewList(size int) *List {
-	l := &List{}
-	for ; size > 0; size-- {
-		l.Elements = append(l.Elements, Undefined)
-	}
-	return l
-}
-
-func NewRecordOf() *List {
-	return NewList(0)
-}
-
-func NewSetOf() *List {
-	l := NewList(0)
-	l.Unordered = true
-	return l
-}
+// NewList creates a new ordered list.
+func NewList(objs ...Object) *List        { return &List{Elements: objs} }
+func NewRecordOf(objs ...Object) *List    { return &List{Elements: objs} }
+func NewSetOf(objs ...Object) *List       { return &List{Elements: objs, ListType: SET_OF} }
+func NewSuperset(objs ...Object) *List    { return &List{Elements: objs, ListType: SUPERSET} }
+func NewSubset(objs ...Object) *List      { return &List{Elements: objs, ListType: SUBSET} }
+func NewPermutation(objs ...Object) *List { return &List{Elements: objs, ListType: PERMUTATION} }
+func NewComplement(objs ...Object) *List  { return &List{Elements: objs, ListType: COMPLEMENT} }
 
 type Function struct {
 	Params *ast.FormalPars
@@ -373,6 +373,14 @@ func (r *ReturnValue) Equal(obj Object) bool {
 }
 
 type Verdict string
+
+const (
+	NoneVerdict   Verdict = "none"
+	PassVerdict   Verdict = "pass"
+	InconcVerdict Verdict = "inconc"
+	FailVerdict   Verdict = "fail"
+	ErrorVerdict  Verdict = "error"
+)
 
 func (v Verdict) Type() ObjectType { return VERDICT }
 func (v Verdict) Inspect() string  { return string(v) }

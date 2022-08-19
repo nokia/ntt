@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/nokia/ntt/runtime"
@@ -81,72 +82,32 @@ func TestMatch(t *testing.T) {
 		{runtime.NoneVerdict, runtime.AnyOrNone, true},
 
 		// records
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
-			testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")), true},
-
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
-			testRecord("f1", runtime.NewInt("4"), "f2", runtime.NewInt("3")), false},
-
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
-			testRecord("f2", runtime.NewInt("4"), "f1", runtime.NewInt("3")), true},
-
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewBool(false)),
-			testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewBool(false)), true},
-
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewBool(false)),
-			testRecord("f1", runtime.NewInt("4"), "f2", runtime.NewBool(true)), false},
-
-		{testRecord(), testRecord(), true},
-		{testRecord(), testRecord("f1", runtime.NewFloat("2")), false},
-
-		{testRecord("f1", runtime.NewInt("3")), runtime.Any, true},
-		{testRecord("f1", runtime.NewInt("3")), runtime.AnyOrNone, true},
-
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
-			testRecord("f1", runtime.Any, "f2", runtime.Any), true},
-
-		{testRecord("f1", runtime.NewInt("3"), "f2", runtime.NewInt("4")),
-			testRecord("f1", runtime.NewInt("3"), "f2", runtime.AnyOrNone), true},
+		{Record("f1", 3, "f2", 4), Record("f1", 3, "f2", 4), true},
+		{Record("f1", 3, "f2", 4), Record("f1", 4, "f2", 3), false},
+		{Record("f1", 3, "f2", 4), Record("f2", 4, "f1", 3), true},
+		{Record("f1", 3, "f2", false), Record("f1", 3, "f2", false), true},
+		{Record("f1", 3, "f2", false), Record("f1", 4, "f2", true), false},
+		{Record(), Record(), true},
+		{Record(), Record("f1", 2.0), false},
+		{Record("f1", 3), runtime.Any, true},
+		{Record("f1", 3), runtime.AnyOrNone, true},
+		{Record("f1", 3, "f2", 4), Record("f1", runtime.Any, "f2", runtime.Any), true},
+		{Record("f1", 3, "f2", 4), Record("f1", 3, "f2", runtime.AnyOrNone), true},
 
 		// set ofs
-
-		{testSetOf(), testSetOf(), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.NewInt("4"), runtime.NewInt("3")), false},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("3")), false},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), false},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("3"), runtime.AnyOrNone), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.AnyOrNone, runtime.NewInt("3")), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
-			testSetOf(runtime.AnyOrNone, runtime.NewInt("1"), runtime.NewInt("3")), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.NewInt("3"), runtime.AnyOrNone), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.AnyOrNone), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.Any, runtime.NewInt("3")), false},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.Any, runtime.Any), true},
-
-		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testSetOf(runtime.NewInt("1"), runtime.Any), false},
+		{List(runtime.SET_OF), List(runtime.SET_OF), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 1, 2, 3), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 1, 4, 3), false},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 3), false},
+		{List(runtime.SET_OF, 1, 3), List(runtime.SET_OF, 1, 2, 3), false},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 3, runtime.AnyOrNone), true},
+		{List(runtime.SET_OF, 1, 3), List(runtime.SET_OF, 1, runtime.AnyOrNone, 3), true},
+		{List(runtime.SET_OF, 1, 3), List(runtime.SET_OF, runtime.AnyOrNone, 1, 3), true},
+		{List(runtime.SET_OF, 1, 3), List(runtime.SET_OF, 1, 3, runtime.AnyOrNone), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, runtime.AnyOrNone), true},
+		{List(runtime.SET_OF, 1, 3), List(runtime.SET_OF, 1, runtime.Any, 3), false},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 1, runtime.Any, runtime.Any), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 1, runtime.Any), false},
 	}
 
 	for _, test := range tests {
@@ -162,26 +123,34 @@ func TestMatch(t *testing.T) {
 	}
 }
 
-func testRecord(a ...interface{}) *runtime.Record {
+func Record(a ...interface{}) *runtime.Record {
 	r := runtime.NewRecord()
 	for i := 0; i < len(a); i += 2 {
-		r.Set(a[i].(string), a[i+1].(runtime.Object))
+		r.Set(a[i].(string), makeObj(a[i+1]))
 	}
 	return r
 }
 
-func testSetOf(a ...interface{}) *runtime.List {
-	r := runtime.NewSetOf()
-	for _, v := range a {
-		r.Elements = append(r.Elements, v.(runtime.Object))
+func List(lt runtime.ListType, elems ...interface{}) *runtime.List {
+	l := runtime.NewList()
+	l.ListType = lt
+	for _, e := range elems {
+		l.Elements = append(l.Elements, makeObj(e))
 	}
-	return r
+	return l
 }
 
-func testRecordOf(a ...interface{}) *runtime.List {
-	r := runtime.NewRecordOf()
-	for _, v := range a {
-		r.Elements = append(r.Elements, v.(runtime.Object))
+func makeObj(v interface{}) runtime.Object {
+	switch v := v.(type) {
+	case string:
+		return runtime.NewString(v)
+	case int:
+		return runtime.NewInt(fmt.Sprint(v))
+	case bool:
+		return runtime.NewBool(v)
+	case float64:
+		return runtime.NewFloat(fmt.Sprint(v))
+	default:
+		return v.(runtime.Object)
 	}
-	return r
 }
