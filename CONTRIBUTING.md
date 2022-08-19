@@ -2,32 +2,70 @@
 
 :+1::tada: First off, thanks for taking the time to contribute! :tada::+1:
 
-We welcome contributions to NTT of any kind including documentation, plugins,
+We welcome contributions to this project of any kind including documentation, plugins,
 organization, tutorials, bug reports, issues, feature requests, feature
 implementations, pull requests, answering questions on the mailing list, helping
 to manage issues, etc.
 
-
-## Asking Support Questions
-
-We use mailing list [ntt@groups.io](mailto:ntt@groups.io) where users and
-developers can ask questions. Please don't use the GitHub issue tracker to ask
-questions.
+The first contribution can be scary, but there's no need to worry. Everyone has
+to start somewhere and we are all nice people who find it great when someone is
+interested in our project.
 
 
-## Reporting Issues
+**Reporting Issues**
 
 If you believe you have found an issue in ntt, please use the GitHub issue tracker
-to report the Problem. If you're not sure if it's a bug or not, start by asking
-on the mailing list [ntt@groups.io](mailto:ntt@groups.io).
+to report the problem. If you're not sure if it's a bug or not, start by asking.
 
 
-## Pull Requests
+**Asking Questions**
+
+Our mailing list [ntt@groups.io](mailto:ntt@groups.io) and [GitHub
+Discussions](https://github.com/nokia/ntt/discussions) are great places for
+asking questions and having discussions.
+
+## Contributing Code
+
+Use [GitHub pull requests](https://docs.github.com/en/get-started/quickstart/github-flow) to contribute code.
+
+If you are doing this the first time you'll probably have to setup your
+environment. There are many options, you can use [GitHub
+Codespaces](https://docs.github.com/en/codespaces) and develop in your browser
+remotely. Or you install everything on your machine and develop locally:
+
+**Installing Go**
+
+Install Go using your package manager or a manual installation as [described
+here](https://go.dev/doc/install).  
+You don't always need the latest version of Go, but you should not use versions
+older than two years either.
+
+
+**Installing Visual Studio Code**
+
+We suggest you install [Visual Studio Code](https://code.visualstudio.com/docs).  
+This is not a hard requirement, you can develop in any editor you like. But we
+find Visual Studio Code is the easiest to start with, especially when you are
+developing with a Microsoft Windows System.
+
+**Installing Git**
+
+We use Git for version control and collaborative development. Make sure you
+[Git installed](https://github.com/git-guides/install-git).
+
+**What you should know**
+
+This project's main programming language is Go. If you are new to Go, you'll
+find an introduction [here](https://go.dev/learn/).
+If you are not sure about the coding style have a look at [Effective Go](https://go.dev/doc/effective_go)
+and [Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
+
+Some basic understanding how to use Git will of great use.
 
 0. [Fork][fork] and clone the repository
 0. Create a new branch: `git checkout -b my-branch-name`
 0. Make your change and remember to add tests
-0. Build the project locally and run local tests
+0. Build the project locally and run local tests.
 0. Push to your fork and [submit a pull request][pr]
 0. Pat your self on the back and wait for your pull request to be reviewed and merged.
 
@@ -60,8 +98,28 @@ Labels help us track and manage issues and pull requests.
 ## Releasing
 
 Besides source we also provide pre-built binaries. Those binary releases are
-built using [GoReleaser](https://goreleaser.com/). If you want to release NTT
-manually you should install goreleaser and then try a dry-run:
+built using [GoReleaser](https://goreleaser.com/). 
+
+Everything is automated, if you want to release ntt, just push a git-tag to
+this repository. Have a look at existing tags to see how we name things.
+
+When your git-tag went through CI successfully, you'll find a new draft in the
+[releases section](https://github.com/nokia/ntt/releases). Edit this draft,
+select your tag and write some nice release notes.  
+
+Release notes should be relevant to our users:
+
+* Describe what the new feature is used for and what's problems is solves.
+* Add screenshots or screencasts to clarify.
+* When breaking compatibility explain why and how the user can fix resulting
+  issues.
+* Give shoutouts to our contributors, because we are a community!
+
+Again, have a look at previous releases to get some inspiration what to write.
+
+**Dry run**
+If you want to release ntt _manually_, install
+[goreleaser](https://goreleaser.com/) and try a dry-run first:
 
 	$ goreleaser --snapshot --skip-publish --rm-dist
 
