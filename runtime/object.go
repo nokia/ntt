@@ -296,7 +296,7 @@ func (l *List) Equal(obj Object) bool {
 		return false
 	}
 
-	// The order of elements is ignore, when at least one list is
+	// The order of elements is ignored, when at least one list is
 	// unordered.
 	//
 	// The standard explicitly forbids this. Relaxing this restriction
