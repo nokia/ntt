@@ -575,7 +575,7 @@ func EqualObjects(a, b []Object) bool {
 // EqualObjectSet compares two Object slices for equality ignoring the order of
 // the elements.
 //
-// Current implement is O(n^2).
+// Current implementation is O(n^2).
 func EqualObjectSet(a, b []Object) bool {
 	if len(a) != len(b) {
 		return false
