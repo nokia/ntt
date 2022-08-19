@@ -321,25 +321,14 @@ func (l *List) Equal(obj Object) bool {
 
 }
 
-// NewList creates a new ordered list. If a size greater than zero is given,
-// NewList will initialize the List with runtime.Undefined objects.
-func NewList(size int) *List {
-	l := &List{}
-	for ; size > 0; size-- {
-		l.Elements = append(l.Elements, Undefined)
-	}
-	return l
-}
-
-func NewRecordOf() *List {
-	return NewList(0)
-}
-
-func NewSetOf() *List {
-	l := NewList(0)
-	l.ListType = SET_OF
-	return l
-}
+// NewList creates a new ordered list.
+func NewList(objs ...Object) *List        { return &List{Elements: objs} }
+func NewRecordOf(objs ...Object) *List    { return &List{Elements: objs} }
+func NewSetOf(objs ...Object) *List       { return &List{Elements: objs, ListType: SET_OF} }
+func NewSuperset(objs ...Object) *List    { return &List{Elements: objs, ListType: SUPERSET} }
+func NewSubset(objs ...Object) *List      { return &List{Elements: objs, ListType: SUBSET} }
+func NewPermutation(objs ...Object) *List { return &List{Elements: objs, ListType: PERMUTATION} }
+func NewComplement(objs ...Object) *List  { return &List{Elements: objs, ListType: COMPLEMENT} }
 
 type Function struct {
 	Params *ast.FormalPars

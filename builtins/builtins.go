@@ -83,10 +83,7 @@ func Match(args ...runtime.Object) runtime.Object {
 
 func makeSet(lt runtime.ListType, args ...runtime.Object) func(...runtime.Object) runtime.Object {
 	return func(args ...runtime.Object) runtime.Object {
-		l := runtime.NewList(0)
-		l.ListType = lt
-		l.Elements = args
-		return l
+		return &runtime.List{ListType: lt, Elements: args}
 	}
 }
 
