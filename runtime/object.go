@@ -296,10 +296,11 @@ func (l *List) Equal(obj Object) bool {
 		return false
 	}
 
-	// If at least one list is unordered, we ignore the order of the elements.
+	// The order of elements is ignore, when at least one list is
+	// unordered.
 	//
-	// The standard explicitly forbids this. However, we do not enforce this
-	// restriction because make untyped composite literals easier to assign.
+	// The standard explicitly forbids this. Relaxing this restriction
+	// makes untyped assignment lists easier to handle.
 	//
 	// We assume the proper semeantic checks are done before the runtime.
 	if l.Unordered || other.Unordered {
