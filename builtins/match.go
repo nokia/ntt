@@ -12,17 +12,17 @@ func match(a, b runtime.Object) (bool, error) {
 		return false, runtime.Errorf("type mismatch: %s != %s", a.Type(), b.Type())
 	}
 
-	if r, ok := b.(*runtime.Record); ok {
-		return matchRecord(a.(*runtime.Record), r)
+	switch b := b.(type) {
+	case *runtime.Record:
+		return matchRecord(a.(*runtime.Record), b)
+	case *runtime.List:
+		return matchSetOf(a.(*runtime.List), b)
+	default:
+		return a.Equal(b), nil
 	}
-
-	if r, ok := b.(*runtime.List); ok {
-		return matchSetOf(a.(*runtime.List), r)
-	}
-
-	return a.Equal(b), nil
 }
 
+// matchRecord returns true given records match.
 func matchRecord(a, b *runtime.Record) (bool, error) {
 	if len(b.Fields) != len(a.Fields) {
 		return false, runtime.Errorf("Records don't have equal amounts of Fields")
@@ -40,10 +40,10 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 	return true, nil
 }
 
+// matchSetOf returns true given sets match.
 func matchSetOf(a, b *runtime.List) (bool, error) {
 	containsStar := false
-	var temp *runtime.List = runtime.NewList(len(b.Elements))
-	temp.Elements = temp.Elements[0:0]
+	temp := runtime.NewList(len(b.Elements))
 	for _, y := range b.Elements {
 		if y == runtime.AnyOrNone {
 			containsStar = true
@@ -60,12 +60,14 @@ func matchSetOf(a, b *runtime.List) (bool, error) {
 	return matchIsASupersetB(a, temp)
 }
 
-/*
-Checks if List a is a Superset of List b.
-*/
+// matchIsASupersetB returns true if a is a superset of b
 func matchIsASupersetB(a, b *runtime.List) (bool, error) {
-	var cloneA *runtime.List = a
-	isMissing, numOfAny := false, 0
+	var (
+		cloneA    = a
+		isMissing = false
+		numOfAny  = 0
+	)
+
 	for _, valueB := range b.Elements {
 		if valueB == runtime.AnyOrNone {
 			continue
@@ -94,12 +96,13 @@ func matchIsASupersetB(a, b *runtime.List) (bool, error) {
 	return true, nil
 }
 
-/*
-Checks if List a is a Subset of List b.
-*/
+// matchIsASubsetB returns true if a is a subset of b
 func matchIsASubsetB(a, b *runtime.List) (bool, error) {
-	var cloneB *runtime.List = b
-	isMissing, isAny := false, -1
+	var (
+		cloneB    = b
+		isMissing = false
+		isAny     = -1
+	)
 	for _, valueA := range a.Elements {
 		for i, valueB := range cloneB.Elements {
 			if valueB == runtime.AnyOrNone {
