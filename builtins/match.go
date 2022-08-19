@@ -43,7 +43,7 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 // matchSetOf returns true given sets match.
 func matchSetOf(a, b *runtime.List) (bool, error) {
 	containsStar := false
-	temp := runtime.NewList(len(b.Elements))
+	temp := runtime.NewSetOf()
 	for _, y := range b.Elements {
 		if y == runtime.AnyOrNone {
 			containsStar = true

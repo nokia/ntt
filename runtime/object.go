@@ -311,7 +311,11 @@ func (l *List) Equal(obj Object) bool {
 }
 
 func NewList(i int) *List {
-	return &List{Elements: make([]Object, i)}
+	l := &List{}
+	for ; i > 0; i-- {
+		l.Elements = append(l.Elements, Undefined)
+	}
+	return l
 }
 
 func NewRecordOf() *List {
