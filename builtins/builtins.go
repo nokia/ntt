@@ -81,6 +81,15 @@ func Match(args ...runtime.Object) runtime.Object {
 	return runtime.Bool(b)
 }
 
+func makeSet(lt runtime.ListType, args ...runtime.Object) func(...runtime.Object) runtime.Object {
+	return func(args ...runtime.Object) runtime.Object {
+		l := runtime.NewList(0)
+		l.ListType = lt
+		l.Elements = args
+		return l
+	}
+}
+
 func init() {
 	runtime.AddBuiltin("lengthof", Lengthof)
 	runtime.AddBuiltin("rnd", Rnd)
@@ -88,4 +97,8 @@ func init() {
 	runtime.AddBuiltin("float2int", Float2Int)
 	runtime.AddBuiltin("log", Log)
 	runtime.AddBuiltin("match", Match)
+	runtime.AddBuiltin("superset", makeSet(runtime.SUPERSET))
+	runtime.AddBuiltin("subset", makeSet(runtime.SUBSET))
+	runtime.AddBuiltin("permutation", makeSet(runtime.PERMUTATION))
+	runtime.AddBuiltin("complement", makeSet(runtime.COMPLEMENT))
 }
