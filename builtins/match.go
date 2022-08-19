@@ -7,7 +7,6 @@ func match(a, b runtime.Object) (bool, error) {
 	if a == runtime.Any || a == runtime.AnyOrNone || b == runtime.Any || b == runtime.AnyOrNone {
 		return true, nil
 	}
-
 	if a.Type() != b.Type() {
 		return false, runtime.Errorf("type mismatch: %s != %s", a.Type(), b.Type())
 	}
@@ -34,7 +33,6 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 			}
 		} else {
 			return false, runtime.Errorf("Value mismatch: field %s in second Record not found in first", k)
-
 		}
 	}
 	return true, nil
@@ -132,6 +130,5 @@ func matchIsASubsetB(a, b *runtime.List) (bool, error) {
 		err := runtime.Errorf("At least one %s or '?' missing in second List", valueA)
 		return false, err
 	}
-
 	return true, nil
 }
