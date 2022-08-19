@@ -350,7 +350,9 @@ func evalValueList(s []ast.Expr, env runtime.Scope) runtime.Object {
 	if len(objs) == 1 && runtime.IsError(objs[0]) {
 		return objs[0]
 	}
-	return &runtime.List{Elements: objs}
+	l := runtime.NewList(len(objs))
+	l.Elements = objs
+	return l
 }
 
 func evalMapAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {

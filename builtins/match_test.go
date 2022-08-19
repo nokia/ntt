@@ -110,43 +110,43 @@ func TestMatch(t *testing.T) {
 
 		// set ofs
 
-		{testList(), testList(), true},
+		{testSetOf(), testSetOf(), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.NewInt("4"), runtime.NewInt("3")), false},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.NewInt("4"), runtime.NewInt("3")), false},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.NewInt("3")), false},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("3")), false},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), false},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")), false},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.NewInt("3"), runtime.AnyOrNone), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("3"), runtime.AnyOrNone), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.AnyOrNone, runtime.NewInt("3")), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.AnyOrNone, runtime.NewInt("3")), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
-			testList(runtime.AnyOrNone, runtime.NewInt("1"), runtime.NewInt("3")), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
+			testSetOf(runtime.AnyOrNone, runtime.NewInt("1"), runtime.NewInt("3")), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.NewInt("3"), runtime.AnyOrNone), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.NewInt("3"), runtime.AnyOrNone), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.AnyOrNone), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.AnyOrNone), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.Any, runtime.NewInt("3")), false},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.Any, runtime.NewInt("3")), false},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.Any, runtime.Any), true},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.Any, runtime.Any), true},
 
-		{testList(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
-			testList(runtime.NewInt("1"), runtime.Any), false},
+		{testSetOf(runtime.NewInt("1"), runtime.NewInt("2"), runtime.NewInt("3")),
+			testSetOf(runtime.NewInt("1"), runtime.Any), false},
 	}
 
 	for _, test := range tests {
@@ -170,10 +170,18 @@ func testRecord(a ...interface{}) *runtime.Record {
 	return r
 }
 
-func testList(a ...interface{}) *runtime.List {
-	r := runtime.NewList(len(a))
-	for i := 0; i < len(a); i++ {
-		r.Elements[i] = a[i].(runtime.Object)
+func testSetOf(a ...interface{}) *runtime.List {
+	r := runtime.NewSetOf()
+	for _, v := range a {
+		r.Elements = append(r.Elements, v.(runtime.Object))
+	}
+	return r
+}
+
+func testRecordOf(a ...interface{}) *runtime.List {
+	r := runtime.NewRecordOf()
+	for _, v := range a {
+		r.Elements = append(r.Elements, v.(runtime.Object))
 	}
 	return r
 }

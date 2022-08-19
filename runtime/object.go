@@ -273,7 +273,8 @@ func NewBitstring(s string) (*Bitstring, error) {
 }
 
 type List struct {
-	Elements []Object
+	Elements  []Object
+	Unordered bool
 }
 
 func (l *List) Type() ObjectType { return LIST }
@@ -290,14 +291,37 @@ func (l *List) Inspect() string {
 }
 
 func (l *List) Equal(obj Object) bool {
-	if other, ok := obj.(*List); ok {
-		return EqualObjects(l.Elements, other.Elements)
+	other, ok := obj.(*List)
+	if !ok {
+		return false
 	}
-	return false
+
+	// The order of elements is ignored, when at least one list is
+	// unordered.
+	//
+	// The standard explicitly forbids this. Relaxing this restriction
+	// makes untyped assignment lists easier to handle.
+	//
+	// We assume the proper semeantic checks are done before the runtime.
+	if l.Unordered || other.Unordered {
+		return EqualObjectSet(l.Elements, other.Elements)
+	}
+
+	return EqualObjects(l.Elements, other.Elements)
 }
 
 func NewList(i int) *List {
 	return &List{Elements: make([]Object, i)}
+}
+
+func NewRecordOf() *List {
+	return NewList(0)
+}
+
+func NewSetOf() *List {
+	l := NewList(0)
+	l.Unordered = true
+	return l
 }
 
 type Function struct {
@@ -545,5 +569,24 @@ func EqualObjects(a, b []Object) bool {
 		}
 	}
 
+	return true
+}
+
+// EqualObjectSet compares two Object slices for equality ignoring the order of
+// the elements.
+//
+// Current implement is O(n^2).
+func EqualObjectSet(a, b []Object) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for _, v := range a {
+		for _, v2 := range b {
+			if !v.Equal(v2) {
+				return false
+			}
+		}
+	}
 	return true
 }
