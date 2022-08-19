@@ -310,8 +310,14 @@ func (l *List) Equal(obj Object) bool {
 	return EqualObjects(l.Elements, other.Elements)
 }
 
-func NewList(i int) *List {
-	return &List{Elements: make([]Object, i)}
+// NewList creates a new ordered list. If a size greater than zero is given,
+// NewList will initialize the List with runtime.Undefined objects.
+func NewList(size int) *List {
+	l := &List{}
+	for ; size > 0; size-- {
+		l.Elements = append(l.Elements, Undefined)
+	}
+	return l
 }
 
 func NewRecordOf() *List {

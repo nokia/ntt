@@ -350,7 +350,7 @@ func evalValueList(s []ast.Expr, env runtime.Scope) runtime.Object {
 	if len(objs) == 1 && runtime.IsError(objs[0]) {
 		return objs[0]
 	}
-	l := runtime.NewList(len(objs))
+	l := runtime.NewList(0)
 	l.Elements = objs
 	return l
 }
