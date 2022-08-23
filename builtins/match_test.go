@@ -108,6 +108,24 @@ func TestMatch(t *testing.T) {
 		{List(runtime.SET_OF, 1, 3), List(runtime.SET_OF, 1, runtime.Any, 3), false},
 		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 1, runtime.Any, runtime.Any), true},
 		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SET_OF, 1, runtime.Any), false},
+
+		// record ofs
+		{List(runtime.RECORD_OF), List(runtime.RECORD_OF), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2, 3), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 3, 2), false},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2), false},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2, runtime.Any), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, runtime.Any, 2, 3), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, runtime.Any), false},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2, runtime.AnyOrNone), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, runtime.AnyOrNone), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, runtime.AnyOrNone), true},
+		{List(runtime.RECORD_OF), List(runtime.RECORD_OF, runtime.AnyOrNone), true},
+		{List(runtime.RECORD_OF, 1, 2), List(runtime.RECORD_OF, 1, 2, runtime.AnyOrNone), true},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, runtime.AnyOrNone, 1, 2, 3), true},
+		{List(runtime.RECORD_OF, 1, 2, 3, 2, 3), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 3), true},
+		{List(runtime.RECORD_OF, 1, 2, 3, 2, 1), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 3), false},
+		{List(runtime.RECORD_OF, 1, 2, 4, 2, 3, 5, 4), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 2, 3, runtime.AnyOrNone, 4), true},
 	}
 
 	for _, test := range tests {

@@ -15,7 +15,12 @@ func match(a, b runtime.Object) (bool, error) {
 	case *runtime.Record:
 		return matchRecord(a.(*runtime.Record), b)
 	case *runtime.List:
-		return matchSetOf(a.(*runtime.List), b)
+		switch b.ListType {
+		case runtime.SET_OF:
+			return matchSetOf(a.(*runtime.List), b)
+		default:
+			return matchRecordOf(a.(*runtime.List), b)
+		}
 	default:
 		return a.Equal(b), nil
 	}
@@ -36,6 +41,71 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func matchRecordOf(a, b *runtime.List) (bool, error) {
+	/*
+	 * Backtrack to previous * on mismatch and retry starting one
+	 * object later in the list.  Because * matches all objects
+	 * (no exception for /), it can be easily proven that there's
+	 * never a need to backtrack multiple levels.
+	 */
+	var back_pat, back_str = -1, -1
+	str := a.Elements
+	pat := b.Elements
+
+	/*
+	 * Loop over each object in pat, matching
+	 * it against the remaining unmatched tail of str.  Return false
+	 * on mismatch, or true after matching the trailing nul bytes.
+	 */
+	for i, j := 0, 0; ; {
+		var (
+			aContinues                = len(str) > i
+			bContinues                = len(pat) > j
+			c, d       runtime.Object = runtime.Undefined, runtime.Undefined
+		)
+		if aContinues {
+			c = str[i]
+		}
+		if bContinues {
+			d = pat[j]
+		}
+		i++
+		j++
+
+		switch d {
+		case runtime.Any: /* Wildcard: anything but nul */
+			if !aContinues {
+				return false, runtime.Errorf("End of first RecordOf reached, second still continues")
+			}
+		case runtime.AnyOrNone: /* Any-length wildcard */
+			if moreAfter := len(pat) > j; !moreAfter { /* Optimize trailing * case */
+				return true, nil
+			}
+			back_pat = j
+			i-- /* Allow zero-length match */
+			back_str = i
+		default: /* Literal character */
+			if !aContinues && !bContinues {
+				return true, nil
+			}
+			if ok, _ := match(c, d); ok {
+				break
+			}
+			if !aContinues {
+				return false, runtime.Errorf("End of first RecordOf reached, second still continues")
+			}
+			if back_pat < 0 {
+				return false, runtime.Errorf("Pattern doesn't match, Element number %d mismatch", i-1) /* No Backtracking possible */
+			}
+
+			/* Try again from last *, one character later in str. */
+			j = back_pat
+			back_str++
+			i = back_str
+		}
+	}
 }
 
 // matchSetOf returns true given sets match.
