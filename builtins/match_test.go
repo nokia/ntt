@@ -126,6 +126,7 @@ func TestMatch(t *testing.T) {
 		{List(runtime.RECORD_OF, 1, 2, 3, 2, 3), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 3), true},
 		{List(runtime.RECORD_OF, 1, 2, 3, 2, 1), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 3), false},
 		{List(runtime.RECORD_OF, 1, 2, 4, 2, 3, 5, 4), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 2, 3, runtime.AnyOrNone, 4), true},
+		{List(runtime.RECORD_OF, 1, 2, 4, 2, 3, 4, 4), List(runtime.RECORD_OF, 1, runtime.AnyOrNone, 2, 3, runtime.AnyOrNone, 4), true},
 	}
 
 	for _, test := range tests {

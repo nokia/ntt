@@ -19,7 +19,7 @@ func match(a, b runtime.Object) (bool, error) {
 		case runtime.SET_OF:
 			return matchSetOf(a.(*runtime.List), b)
 		default:
-			return matchRecordOf(a.(*runtime.List), b)
+			return matchRecordOf(a.(*runtime.List).Elements, b.Elements)
 		}
 	default:
 		return a.Equal(b), nil
@@ -43,69 +43,61 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 	return true, nil
 }
 
-func matchRecordOf(a, b *runtime.List) (bool, error) {
-	/*
-	 * Backtrack to previous * on mismatch and retry starting one
-	 * object later in the list.  Because * matches all objects
-	 * (no exception for /), it can be easily proven that there's
-	 * never a need to backtrack multiple levels.
-	 */
-	var back_pat, back_str = -1, -1
-	str := a.Elements
-	pat := b.Elements
-
-	/*
-	 * Loop over each object in pat, matching
-	 * it against the remaining unmatched tail of str.  Return false
-	 * on mismatch, or true after matching the trailing nul bytes.
-	 */
-	for i, j := 0, 0; ; {
-		var (
-			aContinues                = len(str) > i
-			bContinues                = len(pat) > j
-			c, d       runtime.Object = runtime.Undefined, runtime.Undefined
-		)
-		if aContinues {
-			c = str[i]
-		}
-		if bContinues {
-			d = pat[j]
-		}
+func matchRecordOf(val, pat []runtime.Object) (bool, error) {
+	i, back_i := 0, -1
+	j, back_j := 0, -1
+	for i < len(val) && j < len(pat) {
+		valueAtI := val[i]
+		patternAtJ := pat[j]
 		i++
 		j++
 
-		switch d {
-		case runtime.Any: /* Wildcard: anything but nul */
-			if !aContinues {
-				return false, runtime.Errorf("End of first RecordOf reached, second still continues")
-			}
-		case runtime.AnyOrNone: /* Any-length wildcard */
-			if moreAfter := len(pat) > j; !moreAfter { /* Optimize trailing * case */
+		switch patternAtJ {
+		case runtime.AnyOrNone:
+			if j == len(pat) { // Optimize trailing * case
 				return true, nil
 			}
-			back_pat = j
-			i-- /* Allow zero-length match */
-			back_str = i
-		default: /* Literal character */
-			if !aContinues && !bContinues {
-				return true, nil
-			}
-			if ok, _ := match(c, d); ok {
+			back_j = j // Pattern Element after *
+			i--        // Allow zero-length match
+			back_i = i // First Value Element which could be matched with that *
+		default: // Literal character or ?
+			if ok, _ := match(valueAtI, patternAtJ); ok {
+				if j == len(pat) && i == len(val) { // if last element in both lists matched
+					return true, nil
+				}
 				break
 			}
-			if !aContinues {
-				return false, runtime.Errorf("End of first RecordOf reached, second still continues")
-			}
-			if back_pat < 0 {
+			if back_j < 0 {
 				return false, runtime.Errorf("Pattern doesn't match, Element number %d mismatch", i-1) /* No Backtracking possible */
 			}
+			if i == len(val) {
+				return false, runtime.Errorf("End of first RecordOf reached, second still continues")
+			}
 
-			/* Try again from last *, one character later in str. */
-			j = back_pat
-			back_str++
-			i = back_str
+			// Try again from last *, one character later in str.
+			j = back_j
+			back_i++
+			i = back_i
+		}
+		if j == len(pat) && i != len(val) {
+			if back_j < 0 {
+				return false, runtime.Errorf("Second RecordOf is matched entirely, first isn't")
+			}
+			j = back_j
+			back_i++
+			i = back_i
 		}
 	}
+	// reached if i == len(val) || j == len(pat)
+	if len(val) == i {
+		for ; j < len(pat); j++ {
+			if pat[j] != runtime.AnyOrNone {
+				return false, runtime.Errorf("First RecordOf is entirely matched, second isn't")
+			}
+		}
+		return true, nil
+	}
+	return true, nil
 }
 
 // matchSetOf returns true given sets match.
