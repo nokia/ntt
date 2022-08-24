@@ -271,6 +271,7 @@ func NewBitstring(s string) (*Bitstring, error) {
 type ListType string
 
 const (
+	RECORD_OF   ListType = "" //default
 	SET_OF      ListType = "set of"
 	COMPLEMENT  ListType = "complement"
 	SUBSET      ListType = "subset"
