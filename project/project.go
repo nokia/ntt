@@ -650,7 +650,7 @@ func MergeParameters(a, b Parameters) Parameters {
 	return result
 }
 
-// MergeTestConfig merges to test configurations. Scalar values from b override
+// MergeTestConfig merges two test configurations. Scalar values from b override
 // values from a. Maps are merged. Arrays are appended.
 func MergeTestConfig(a, b TestConfig) TestConfig {
 	result := TestConfig{}
