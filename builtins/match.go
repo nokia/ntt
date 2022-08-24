@@ -47,37 +47,24 @@ func matchRecordOf(val, pat []runtime.Object) (bool, error) {
 	i, back_i := 0, -1
 	j, back_j := 0, -1
 	for i < len(val) && j < len(pat) {
-		valueAtI := val[i]
-		patternAtJ := pat[j]
-		i++
-		j++
-
-		switch patternAtJ {
-		case runtime.AnyOrNone:
+		if pat[j] == runtime.AnyOrNone {
+			j++
+			back_j = j         // Pattern Element after *
+			back_i = i         // First Value Element which could be matched with that *
 			if j == len(pat) { // Optimize trailing * case
 				return true, nil
 			}
-			back_j = j // Pattern Element after *
-			i--        // Allow zero-length match
-			back_i = i // First Value Element which could be matched with that *
-		default: // Literal character or ?
-			if ok, _ := match(valueAtI, patternAtJ); ok {
-				if j == len(pat) && i == len(val) { // if last element in both lists matched
-					return true, nil
-				}
-				break
-			}
+		} else if ok, _ := match(val[i], pat[j]); !ok { // Literal character or ?
 			if back_j < 0 {
 				return false, runtime.Errorf("Pattern doesn't match, Element number %d mismatch", i-1) /* No Backtracking possible */
 			}
-			if i == len(val) {
-				return false, runtime.Errorf("End of first RecordOf reached, second still continues")
-			}
-
 			// Try again from last *, one character later in str.
 			j = back_j
 			back_i++
 			i = back_i
+		} else {
+			i++
+			j++
 		}
 		if j == len(pat) && i != len(val) {
 			if back_j < 0 {
@@ -97,7 +84,8 @@ func matchRecordOf(val, pat []runtime.Object) (bool, error) {
 		}
 		return true, nil
 	}
-	return true, nil
+	// reached if i != len(val) && j == len(pat) == 0 (non-zero case covered in loop)
+	return false, runtime.Errorf("Template empty")
 }
 
 // matchSetOf returns true given sets match.

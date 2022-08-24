@@ -114,6 +114,8 @@ func TestMatch(t *testing.T) {
 		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2, 3), true},
 		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 3, 2), false},
 		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2), false},
+		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF), false},
+		{List(runtime.RECORD_OF), List(runtime.RECORD_OF, 1, 2, 3), false},
 		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, 2, runtime.Any), true},
 		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, runtime.Any, 2, 3), true},
 		{List(runtime.RECORD_OF, 1, 2, 3), List(runtime.RECORD_OF, 1, runtime.Any), false},
