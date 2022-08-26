@@ -20,6 +20,8 @@ func match(a, b runtime.Object) (bool, error) {
 			return matchSetOf(a.(*runtime.List), b)
 		case runtime.SUPERSET:
 			return matchIsASupersetB(a.(*runtime.List), b)
+		case runtime.SUBSET:
+			return matchIsASubsetB(a.(*runtime.List), b)
 		default:
 			return matchRecordOf(a.(*runtime.List).Elements, b.Elements)
 		}
@@ -151,14 +153,16 @@ func matchIsASupersetB(a, b *runtime.List) (bool, error) {
 func matchIsASubsetB(a, b *runtime.List) (bool, error) {
 	var (
 		cloneB    = b
-		isMissing = false
+		isMissing = true
 		isAny     = -1
 	)
 	for _, valueA := range a.Elements {
+		isMissing = true
 		for i, valueB := range cloneB.Elements {
 			if valueB == runtime.AnyOrNone {
 				return true, nil
 			}
+
 			if valueB == runtime.Any {
 				isAny = i
 			} else if ok, _ := match(valueA, valueB); ok {
@@ -180,8 +184,7 @@ func matchIsASubsetB(a, b *runtime.List) (bool, error) {
 			isAny = -1
 			continue
 		}
-		err := runtime.Errorf("At least one %s or '?' missing in second List", valueA)
-		return false, err
+		return false, runtime.Errorf("At least one %s or '?' missing in second List", valueA)
 	}
 	return true, nil
 }

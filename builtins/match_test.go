@@ -146,6 +146,22 @@ func TestMatch(t *testing.T) {
 		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUPERSET, 1, 2, runtime.AnyOrNone), true},
 		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUPERSET, runtime.AnyOrNone), true},
 		{List(runtime.SET_OF), List(runtime.SUPERSET, runtime.AnyOrNone), true},
+
+		// Subsets
+		{List(runtime.SET_OF), List(runtime.SUBSET), true},
+		{List(runtime.SET_OF), List(runtime.SUBSET, 1, 2, 3), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET), false},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, 3), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, 3, 4, 5), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2), false},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, 3, runtime.Any), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, runtime.Any), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, runtime.Any), false},
+		{List(runtime.SET_OF), List(runtime.SUBSET, runtime.Any), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, 3, runtime.AnyOrNone), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, runtime.AnyOrNone), true},
+		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, runtime.AnyOrNone), true},
+		{List(runtime.SET_OF), List(runtime.SUBSET, runtime.AnyOrNone), true},
 	}
 
 	for _, test := range tests {
