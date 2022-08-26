@@ -18,6 +18,8 @@ func match(a, b runtime.Object) (bool, error) {
 		switch b.ListType {
 		case runtime.SET_OF:
 			return matchSetOf(a.(*runtime.List), b)
+		case runtime.SUPERSET:
+			return matchIsASupersetB(a.(*runtime.List), b)
 		default:
 			return matchRecordOf(a.(*runtime.List).Elements, b.Elements)
 		}
@@ -112,7 +114,7 @@ func matchSetOf(a, b *runtime.List) (bool, error) {
 func matchIsASupersetB(a, b *runtime.List) (bool, error) {
 	var (
 		cloneA    = a
-		isMissing = false
+		isMissing = true
 		numOfAny  = 0
 	)
 
@@ -124,6 +126,7 @@ func matchIsASupersetB(a, b *runtime.List) (bool, error) {
 			numOfAny++
 			continue
 		}
+		isMissing = true
 		for i, valueA := range cloneA.Elements {
 			if ok, _ := match(valueA, valueB); ok {
 				cloneA.Elements[i] = cloneA.Elements[len(cloneA.Elements)-1]
