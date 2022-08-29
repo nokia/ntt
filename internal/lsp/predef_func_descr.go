@@ -15,14 +15,14 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:          "int2char(...)",
 		InsertText:     "int2char(${1:invalue})$0",
-		Signature:      "int2char(in integer invalue) return charstring",
+		Signature:      "function int2char(in integer invalue) return charstring",
 		Documentation:  "## (TTCN-3)\nThe __int2char__ function converts an __integer__ value in the range of 0 to 127 (8-bit encoding) into a single-character-length\n __charstring__ value. The __integer__ value describes the 8-bit encoding of the character",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:      "int2unichar(...)",
 		InsertText: "int2unichar(${1:invalue})$0",
-		Signature: `int2unichar(
+		Signature: `function int2unichar(
 	in integer invalue
 ) return universal charstring`,
 		Documentation:  "## (TTCN-3)\nThe __int2unichar__ function n converts an __integer__ value in the range of 0 to 2147483647 (32-bit encoding) into a single-character-length __universal charstring__ value. The __integer__ value describes the 32-bit encoding of the character.",
@@ -31,7 +31,7 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:      "int2bit(...)",
 		InsertText: "int2bit(${1:invalue}, ${2:length})$0",
-		Signature: `int2bit(
+		Signature: `function function int2bit(
 	in integer invalue,
 	in integer length
 ) return bitstring`,
@@ -41,7 +41,7 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:      "int2enum(...)",
 		InsertText: "int2enum(${1:invalue}, ${2:outpar})$0",
-		Signature: `int2enum(
+		Signature: `function int2enum(
 	in integer inpar,
 	out Enumerated_type outpar)`,
 		Documentation:  "## (TTCN-3)\nThe __int2enum__ function converts an integer value into an enumerated value of a given enumerated type. The integer value shall be provided as in parameter and the result of the conversion shall be stored in an out parameter. The type of the out parameter determines the type into which the in parameter is converted.",
@@ -50,7 +50,7 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:      "int2hex(...)",
 		InsertText: "int2hex(${1:invalue},${2:length})$0",
-		Signature: `int2hex(
+		Signature: `function int2hex(
 	in integer invalue,
 	in integer length
 ) return hexstring`,
@@ -60,7 +60,7 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:      "int2oct(...)",
 		InsertText: "int2oct(${1:invalue},${2:length})$0",
-		Signature: `int2oct(
+		Signature: `function int2oct(
 	in integer invalue,
 	in integer length
 ) return octetstring`,
@@ -70,42 +70,42 @@ var PredefinedFunctions = []PredefFunctionDetails{
 	{
 		Label:          "int2str(...)",
 		InsertText:     "int2str(${1:invalue})$0",
-		Signature:      "int2str(in integer invalue) return charstring",
+		Signature:      "function int2str(in integer invalue) return charstring",
 		Documentation:  "## (TTCN-3)\nThe __int2str__ function converts the __integer__ value into its string equivalent (the base of the return string is always decimal). ",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "int2float(...)",
 		InsertText:     "int2float(${1:invalue})$0",
-		Signature:      "int2float(in integer invalue) return float",
+		Signature:      "function int2float(in integer invalue) return float",
 		Documentation:  "## (TTCN-3)\nThe __int2float__ function converts an __integer__ value into a __float__ value.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "float2int(...)",
 		InsertText:     "float2int(${1:invalue})$0",
-		Signature:      "float2int(in float invalue) return integer",
+		Signature:      "function float2int(in float invalue) return integer",
 		Documentation:  "## (TTCN-3)\nThe __float2int__ function converts a __float__ value into an __integer__ value by removing the fractional part of the argument and returning the resulting __integer__. Error causes are:\n*invalue is __infinity__, __-infinity__ or not_a_number.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "char2int(...)",
 		InsertText:     "char2int(${1:invalue})$0",
-		Signature:      "char2int(in charstring invalue) return integer",
+		Signature:      "function char2int(in charstring invalue) return integer",
 		Documentation:  "## (TTCN-3)\nThe __char2int__ function converts a single-character-length __charstring__ value into an __integer__ value in the range of 0 to 127. The __integer__ value describes the 8-bit encoding of the character. Error causes are:\n* length of invalue does not equal 1.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:          "char2oct(...)",
 		InsertText:     "char2oct(${1:invalue})$0",
-		Signature:      "char2oct(in charstring invalue) return octetstring",
+		Signature:      "function char2oct(in charstring invalue) return octetstring",
 		Documentation:  "## (TTCN-3)\nThe __char2oct__ function converts a __charstring__ invalue to an __octetstring__. Each octet of the octetstring will contain the Recommendation _ITU-T T.50 [4]_ codes (according to the IRV) of the appropriate characters of invalue.",
 		NrOfParameters: 1,
 		TextFormat:     protocol.SnippetTextFormat},
 	{
 		Label:      "unichar2int(...)",
 		InsertText: "unichar2int(${1:invalue})$0",
-		Signature: `unichar2int(
+		Signature: `function unichar2int(
 	in universal charstring invalue
 ) return integer`,
 		Documentation: `## (TTCN-3)
@@ -117,7 +117,7 @@ range of 0 to 2147483647. The __integer__ value describes the 32-bit encoding of
 	{
 		Label:      "unichar2oct(...)",
 		InsertText: "unichar2oct(${1:invalue})$0",
-		Signature: `unichar2oct(
+		Signature: `function unichar2oct(
 	in universal charstring invalue,
 	in charstring string_encoding := "UTF-8"
 ) return octetstring`,
@@ -134,7 +134,7 @@ a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"
 	{
 		Label:      "bit2int(...)",
 		InsertText: "bit2int(${1:invalue})$0",
-		Signature:  "bit2int(in bitstring invalue) return integer",
+		Signature:  "function bit2int(in bitstring invalue) return integer",
 		Documentation: `## (TTCN-3)
 The __bit2int__ function This function converts a single __bitstring__ value to a single __integer__ value.`,
 		NrOfParameters: 1,
@@ -142,7 +142,7 @@ The __bit2int__ function This function converts a single __bitstring__ value to 
 	{
 		Label:      "bit2hex(...)",
 		InsertText: "bit2hex(${1:invalue})$0",
-		Signature:  "bit2hex(in bitstring invalue) return hexstring",
+		Signature:  "function bit2hex(in bitstring invalue) return hexstring",
 		Documentation: `## (TTCN-3)
 The __bit2hex__ function converts a single __bitstring__ value to a single __hexstring__. The resulting __hexstring__
 represents the same value as the __bitstring__. For the purpose of this conversion, a __bitstring__ shall be converted into a
@@ -155,7 +155,7 @@ the order of groups of 4 bits in the __bitstring__`,
 	{
 		Label:      "bit2oct(...)",
 		InsertText: "bit2oct(${1:invalue})$0",
-		Signature:  "bit2oct(in bitstring invalue) return octetstring",
+		Signature:  "function bit2oct(in bitstring invalue) return octetstring",
 		Documentation: `## (TTCN-3)
 The __bit2oct__ function converts a single __bitstring__ value to a single __octetstring__. The resulting __octetstring__
 represents the same value as the __bitstring__. For the conversion the following holds: * bit2oct(value)=hex2oct(bit2hex(value)).`,
@@ -164,7 +164,7 @@ represents the same value as the __bitstring__. For the conversion the following
 	{
 		Label:      "bit2str(...)",
 		InsertText: "bit2str(${1:invalue})$0",
-		Signature:  "bit2str(in bitstring invalue) return charstring",
+		Signature:  "function bit2str(in bitstring invalue) return charstring",
 		Documentation: `## (TTCN-3)
 The __bit2str__ function converts a single __bitstring__ value to a single __charstring__.
 The resulting __charstring__ has the same length as the __bitstring__ and contains only the __characters__ '0' and '1'.`,
@@ -173,7 +173,7 @@ The resulting __charstring__ has the same length as the __bitstring__ and contai
 	{
 		Label:      "hex2int(...)",
 		InsertText: "hex2int(${1:invalue})$0",
-		Signature:  "hex2int(in hexstring invalue) return integer",
+		Signature:  "function hex2int(in hexstring invalue) return integer",
 		Documentation: `## (TTCN-3)
 The __hex2int__ function  converts a single __hexstring__ value to a single __integer__ value.
 For the purposes of this conversion, a __hexstring__ shall be interpreted as a positive base 16 __integer__ value. The
@@ -183,7 +183,7 @@ rightmost hexadecimal digit is least significant, the leftmost hexadecimal digit
 	{
 		Label:      "hex2bit(...)",
 		InsertText: "hex2bit(${1:invalue})$0",
-		Signature:  "hex2bit(in hexstring invalue) return bitstring",
+		Signature:  "function hex2bit(in hexstring invalue) return bitstring",
 		Documentation: `## (TTCN-3)
 The __hex2bit__ function converts a single __hexstring__ value to a single __bitstring__. The resulting __bitstring__
  represents the same value as the __hexstring__.`,
@@ -192,7 +192,7 @@ The __hex2bit__ function converts a single __hexstring__ value to a single __bit
 	{
 		Label:      "hex2oct(...)",
 		InsertText: "hex2oct(${1:invalue})$0",
-		Signature:  "hex2oct(in hexstring invalue) return octetstring",
+		Signature:  "function hex2oct(in hexstring invalue) return octetstring",
 		Documentation: `## (TTCN-3)
 The __hex2oct__ function This function converts a single __hexstring__ value to a single __octetstring__.
 The resulting __octetstring__ represents the same value as the __hexstring__.
@@ -205,7 +205,7 @@ of hex digits as in the __hexstring__. `,
 	{
 		Label:      "hex2str(...)",
 		InsertText: "hex2str(${1:invalue})$0",
-		Signature:  "hex2str(in hexstring invalue) return charstring",
+		Signature:  "function hex2str(in hexstring invalue) return charstring",
 		Documentation: `## (TTCN-3)
 The __hex2str__ function converts a single __hexstring__ value to a single __charstring__. The resulting __charstring__
 has the same length as the __hexstring__ and contains only the characters '0' to '9'and 'A' to 'F'.`,
@@ -214,7 +214,7 @@ has the same length as the __hexstring__ and contains only the characters '0' to
 	{
 		Label:      "oct2int(...)",
 		InsertText: "oct2int(${1:invalue})$0",
-		Signature:  "oct2int(in octetstring invalue) return integer",
+		Signature:  "function oct2int(in octetstring invalue) return integer",
 		Documentation: `## (TTCN-3)
 The __oct2int__ function converts a single __octetstring__ value to a single __integer__ value.
 For the purposes of this conversion, an __octetstring__ shall be interpreted as a positive base 16 integer value. The
@@ -226,7 +226,7 @@ hexadecimal digits 0 to F represent the decimal values 0 to 15 respectively.`,
 	{
 		Label:      "oct2bit(...)",
 		InsertText: "oct2bit(${1:invalue})$0",
-		Signature:  "oct2bit(in octetstring invalue) return bitstring",
+		Signature:  "function oct2bit(in octetstring invalue) return bitstring",
 		Documentation: `## (TTCN-3)
 The __oct2bit__ function converts a single __octetstring__ value to a single __bitstring__.
 The resulting __bitstring__ represents the same value as the octetstring.
@@ -237,7 +237,7 @@ For the conversion the following holds:
 	{
 		Label:      "oct2hex(...)",
 		InsertText: "oct2hex(${1:invalue})$0",
-		Signature:  "oct2hex(in octetstring invalue) return hexstring",
+		Signature:  "function oct2hex(in octetstring invalue) return hexstring",
 		Documentation: `## (TTCN-3)
 The __oct2hex__ function converts a single __octetstring__ value to a single __hexstring__.
 The resulting __hexstring__ represents the same value as the __octetstring__.
@@ -248,7 +248,7 @@ sequence of hex digits as the __octetstring__.`,
 	{
 		Label:      "oct2str(...)",
 		InsertText: "oct2str(${1:invalue})$0",
-		Signature:  "oct2str(in octetstring invalue) return charstring",
+		Signature:  "function oct2str(in octetstring invalue) return charstring",
 		Documentation: `## (TTCN-3)
 The __oct2str__ function converts an __octetstring__ invalue to an __charstring__ representing the string equivalent of the
 input value. The resulting __charstring__ shall have double the length as the incoming __octetstring__.
@@ -260,7 +260,7 @@ in the resulting __charstring__ is the same as the order of hex digits in the __
 	{
 		Label:      "oct2char(...)",
 		InsertText: "oct2char(${1:invalue})$0",
-		Signature:  "oct2char(in octetstring invalue) return charstring",
+		Signature:  "function oct2char(in octetstring invalue) return charstring",
 		Documentation: `## (TTCN-3)
 The __oct2char__ function converts an __octetstring__ invalue to a __charstring__. The input parameter invalue shall not
 contain octet values higher than __7F__. The resulting __charstring__ shall have the same length as the input
@@ -271,7 +271,7 @@ resulting characters are appended to the returned value.`,
 	{
 		Label:      "oct2unichar(...)",
 		InsertText: "oct2unichar(${1:invalue})$0",
-		Signature: `oct2unichar(
+		Signature: `function oct2unichar(
 	in octetstring invalue,
 	in charstring string_encoding := "UTF-8"
 ) return universal charstring`,
@@ -289,7 +289,7 @@ a) __"UTF-8"__ b) __"UTF-16"__ c) __"UTF-16LE"__ d) __"UTF-16BE"__ e) __"UTF-32"
 	{
 		Label:      "str2int(...)",
 		InsertText: "str2int(${1:invalue})$0",
-		Signature:  "str2int(in charstring invalue) return integer",
+		Signature:  "function str2int(in charstring invalue) return integer",
 		Documentation: `## (TTCN-3)
 The __str2int__ function converts a __charstring__ representing an __integer__ value to the equivalent integer.
 Error causes are:
@@ -300,7 +300,7 @@ Error causes are:
 	{
 		Label:      "str2hex(...)",
 		InsertText: "str2hex(${1:invalue})$0",
-		Signature:  "str2hex(in charstring invalue) return hexstring",
+		Signature:  "function str2hex(in charstring invalue) return hexstring",
 		Documentation: `## (TTCN-3)
 The __str2hex__ function converts a string of the type __charstring__ to a __hexstring__. The string invalue shall contain the
 "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e" "f", "A", "B", "C", "D", "E" or "F" graphical
@@ -313,7 +313,7 @@ Error cause is:
 	{
 		Label:      "str2oct(...)",
 		InsertText: "str2oct(${1:invalue})$0",
-		Signature:  "str2oct(in charstring invalue) return octetstring",
+		Signature:  "function str2oct(in charstring invalue) return octetstring",
 		Documentation: `## (TTCN-3)
 The __str2oct__ function converts a string of the type __charstring__ to an __octetstring__. The string invalue shall contain
 the "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e" "f", "A", "B", "C", "D", "E" or "F" graphical
@@ -327,7 +327,7 @@ charstring. In addition to the general error causes in clause 16.1.2, error caus
 	{
 		Label:      "str2float(...)",
 		InsertText: "str2float(${1:invalue})$0",
-		Signature:  "str2float(in charstring invalue) return float",
+		Signature:  "function str2float(in charstring invalue) return float",
 		Documentation: `## (TTCN-3)
 The __str2float__ function converts a __charstring__ comprising a number into a __float__ value. The format of the number in the
 __charstring__ shall follow rules of plain ttcn-3 float values with the following exceptions:
@@ -342,7 +342,7 @@ In addition to the general error causes in clause 16.1.2, error causes are:
 	{
 		Label:      "enum2int(...)",
 		InsertText: "enum2int(${1:invalue})$0",
-		Signature:  "enum2int(in Enumerated_type inpar) return integer",
+		Signature:  "function enum2int(in Enumerated_type inpar) return integer",
 		Documentation: `## (TTCN-3)
 The __enum2int__ function accepts an enumerated value and returns the integer value associated to the enumerated value.
 The actual parameter passed to inpar always shall be a typed object.`,
@@ -351,7 +351,7 @@ The actual parameter passed to inpar always shall be a typed object.`,
 	{
 		Label:      "any2unistr(...)",
 		InsertText: "any2unistr(${1:invalue})$0",
-		Signature: `any2unistr(
+		Signature: `function any2unistr(
 	in template any_type invalue,
 	in universal charstring format := ""
 ) return universal charstring`,
@@ -372,7 +372,7 @@ in assignment notation.
 	{
 		Label:      "lengthof(...)",
 		InsertText: "lengthof(${1:invalue})$0",
-		Signature: `lengthof(
+		Signature: `function lengthof(
 	in template (present) any_string_or_list_type inpar
 ) return integer`,
 		Documentation: `## (TTCN-3)
@@ -383,7 +383,7 @@ __octetstring__, __charstring__, __universal charstring__, __record of__, __set 
 	{
 		Label:      "sizeof(...)",
 		InsertText: "sizeof(${1:invalue})$0",
-		Signature: `sizeof(
+		Signature: `function sizeof(
 	in template (present) any_record_set_type inpar
 ) return integer`,
 		Documentation: `## (TTCN-3)
@@ -401,7 +401,7 @@ Error causes are:
 	{
 		Label:      "ispresent(...)",
 		InsertText: "ispresent(${1:invalue})$0",
-		Signature:  "ispresent(in template any_ type inpar) return boolean",
+		Signature:  "function ispresent(in template any_ type inpar) return boolean",
 		Documentation: `## (TTCN-3)
 The __ispresent__ function is allowed for templates of all data types and returns:
 * the value __true__ if the data object reference fulfils the (present) template restriction as described in clause 15.8;
@@ -411,7 +411,7 @@ The __ispresent__ function is allowed for templates of all data types and return
 	{
 		Label:      "ischosen(...)",
 		InsertText: "ischosen(${1:invalue})$0",
-		Signature: `ischosen(
+		Signature: `function ischosen(
 	in template any_union_type_field inpar
 ) return boolean`,
 		Documentation: `## (TTCN-3)
@@ -425,7 +425,7 @@ alternative of the anytype that is actually selected for the given data object;
 	{
 		Label:      "isvalue(...)",
 		InsertText: "isvalue(${1:invalue})$0",
-		Signature:  "isvalue(in template any_type inpar) return boolean",
+		Signature:  "function isvalue(in template any_type inpar) return boolean",
 		Documentation: `## (TTCN-3)
 The __isvalue__ function is allowed for templates of all data types, component and address types and default values. The function
 shall return __true__, if inpar is completely initialized and resolves to a specific value. If inpar is of __record__
@@ -438,7 +438,7 @@ The __null__ value assigned to default and component references shall be conside
 	{
 		Label:      "isbound(...)",
 		InsertText: "isbound(${1:invalue})$0",
-		Signature:  "isbound(in template any_type inpar) return boolean",
+		Signature:  "function isbound(in template any_type inpar) return boolean",
 		Documentation: `## (TTCN-3)
 The __isbound__ function is allowed for templates of all data types. The function shall return __true__, if inpar is at least partially
 initialized. If inpar is of a __record__ or __set__ type, omitted optional fields shall be considered as initialized, i.e. the
@@ -451,7 +451,7 @@ The __null__ value assigned to default and component references shall be conside
 	{
 		Label:      "istemplatekind(...)",
 		InsertText: "istemplatekind(${1:invalue}, ${2:kind})$0",
-		Signature: `istemplatekind (
+		Signature: `function istemplatekind (
 	in template any_type invalue,
 	in charstring kind
 ) return boolean`,
@@ -492,7 +492,7 @@ In all other cases the function returns __false__.
 	{
 		Label:      "regexp(...)",
 		InsertText: "regexp${1}(${2:inpar}, ${3:expression}, ${4:groupno})$0",
-		Signature: `regexp [@nocase] (
+		Signature: `function regexp [@nocase] (
 	in template (value) any_character_string_type inpar,
 	in template (present) any_character_string_type expression,
 	in integer groupno
@@ -515,7 +515,7 @@ by 1 and the whole substring matched by the expression is referenced by 0.
 	{
 		Label:      "substr(...)",
 		InsertText: "substr(${1:inpar}, ${2:index}, ${3:count})$0",
-		Signature: `substr(
+		Signature: `function substr(
 	in template (present) any inpar,
 	in integer index,
 	in integer count
@@ -567,7 +567,7 @@ Examples:
 	{
 		Label:      "replace(...)",
 		InsertText: "replace(${1:inpar}, (${2:index}, (${3:len}, (${4:repl})$0",
-		Signature: `replace(
+		Signature: `function replace(
 	in any inpar,
 	in integer index,
 	in integer len,
@@ -609,7 +609,7 @@ Examples:
 	{
 		Label:      "encvalue(...)",
 		InsertText: "encvalue(${1:inpar}, ${2:encoding_info}, ${3:dynamic_encoding})$0",
-		Signature: `encvalue(
+		Signature: `function encvalue(
 	in template (value) any inpar,
 	in universal charstring encoding_info := "",
 	in universal charstring dynamic_encoding := ""
@@ -633,7 +633,7 @@ _inpar_).`,
 	{
 		Label:      "decvalue(...)",
 		InsertText: "decvalue(${1:encoded_value}, ${2:decoded_value}, ${3:decoding_info}, ${4:dynamic_encoding})$0",
-		Signature: `decvalue(
+		Signature: `function decvalue(
 	inout bitstring encoded_value,
 	out any decoded_value,
 	in universal charstring decoding_info := "",
@@ -664,7 +664,7 @@ enough bits.`,
 	{
 		Label:      "encvalue_unichar(...)",
 		InsertText: "encvalue_unichar(${1:inpar}, ${2:string_serialization}, ${3:encoding_info}, ${4:dynamic_encoding})$0",
-		Signature: `encvalue_unichar(
+		Signature: `function encvalue_unichar(
 	in template (value) any inpar,
 	in charstring string_serialization := "UTF-8",
 	in universal charstring encoding_info := "",
@@ -711,7 +711,7 @@ The specific semantics of this function are explained by the following TTCN-3 de
 	{
 		Label:      "decvalue_unichar(...)",
 		InsertText: "decvalue_unichar(${1:encoded_value}, ${2:decoded_value}, ${3:string_serialization}, ${4:decoding_info}, ${5:dynamic_encoding},)$0",
-		Signature: `decvalue_unichar(
+		Signature: `function decvalue_unichar(
 	inout universal charstring encoded_value,
 	out any decoded_value,
 	in charstring string_serialization:= "UTF-8",
@@ -778,7 +778,7 @@ The semantics of the function can be explained by the following TTCN-3 function:
 	{
 		Label:      "encvalue_o(...)",
 		InsertText: "encvalue_o(${1:inpar}, ${2:encoding_info}, ${3:dynamic_encoding}, ${4:bit_length})$0",
-		Signature: `encvalue_o(
+		Signature: `function encvalue_o(
 	in template (value) any inpar,
 	in universal charstring encoding_info := "",
 	in universal charstring dynamic_encoding := "",
@@ -805,7 +805,7 @@ _inpar_).`,
 	{
 		Label:      "decvalue_o(...)",
 		InsertText: "decvalue_o(${1:encoded_value}, ${2:decoded_value}, ${3:decoding_info}, ${4:dynamic_encoding})$0",
-		Signature: `decvalue_o(
+		Signature: `function decvalue_o(
     inout octetstring encoded_value,
     out any decoded_value,
     in universal charstring decoding_info := "",
@@ -837,7 +837,7 @@ enough octets.
 	{
 		Label:      "get_stringencoding(...)",
 		InsertText: "get_stringencoding(${1:encoded_value})$0",
-		Signature: `get_stringencoding(
+		Signature: `function get_stringencoding(
 	in octettstring encoded_value
 ) return octettstring`,
 		Documentation: `## (TTCN-3)
@@ -860,7 +860,7 @@ Example:
 	{
 		Label:      "remove_bom(...)",
 		InsertText: "remove_bom(${1:encoded_value})$0",
-		Signature: `remove_bom(
+		Signature: `function remove_bom(
 	in octettstring encoded_value
 ) return octettstring`,
 		Documentation: `## (TTCN-3)
@@ -874,7 +874,7 @@ without change.`,
 	{
 		Label:      "rnd(...)",
 		InsertText: "rnd(${1:seed})$0",
-		Signature:  "rnd([in float seed]) return float",
+		Signature:  "function rnd([in float seed]) return float",
 		Documentation: `## (TTCN-3)
 The __rnd__ function returns a (pseudo) random number less than 1 but greater or equal to 0. The random number
 generator is initialized per test component and for the control part by means of an optional seed value (a numerical float
@@ -900,7 +900,7 @@ To produce a random integers in a given range, the following formula can be used
 	{
 		Label:      "testcasename()",
 		InsertText: "testcasename()$0",
-		Signature:  "testcasename() return charstring",
+		Signature:  "function testcasename() return charstring",
 		Documentation: `## (TTCN-3)
 The __testcasename__ function shall return the unqualified name of the actually executing test case.
 
@@ -912,7 +912,7 @@ empty string.`,
 	{
 		Label:      "hostid(...)",
 		InsertText: "hostid($1)$0",
-		Signature: `hostid(
+		Signature: `function hostid(
 	in charstring idkind := "Ipv4orIPv6"
 ) return charstring`,
 		Documentation: "## (TTCN-3)\nThe __hostid__ function shall return the host id of the test component or module control executing the hostid function	in form of a character string. The in parameter idkind allows to specify the expected id format to be returned.	Predefined _idkind_ values are:\n* \"Ipv4orIPv6\": The contents of the returned character string is an Ipv4 address. If no Ipv4 address, but an	Ipv6 address is available, a character string representation of the Ipv6 address is returned.\n* \"Ipv4\": The contents of the returned character string shall be an Ipv4 address.\n* \"Ipv6\": The contents of the returned characterstring shall be an Ipv6 address.",
@@ -921,7 +921,7 @@ empty string.`,
 	{
 		Label:      "match(...)",
 		InsertText: "match(${1:expression}, ${2:templateInstance})$0",
-		Signature: `match(
+		Signature: `function match(
 	in expression,
 	in template instance
 ) return boolean`,
@@ -938,7 +938,7 @@ expression against a template instance which evaluates to the omit matching mech
 	{
 		Label:      "setverdict(...)",
 		InsertText: "setverdict(${1:verdict})$0",
-		Signature: `setverdict(
+		Signature: `function setverdict(
 	in expression
 	{, in charstring|templateInstance reason})`,
 		Documentation: `## (TTCN-3)
