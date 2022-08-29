@@ -5,6 +5,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -40,6 +41,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		col       = int(params.Position.Character) + 1
 		comment   string
 		signature string
+		defFound  = false
 	)
 
 	tree := ttcn3.ParseFile(file)
@@ -47,17 +49,30 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	if x == nil {
 		return nil, nil
 	}
+	log.Debugf("Identifier: %v\n", x)
 	for _, def := range tree.LookupWithDB(x, &s.db) {
+		defFound = true
+
 		if firstTok := ast.FirstToken(def.Node); firstTok == nil {
 			continue
 		} else {
 			// make line breaks conform to markdown spec
 			comment = strings.ReplaceAll(firstTok.Comments(), "\n", "  \n")
-			signature = getSignature(def) + "\n"
+			signature = getSignature(def)
 		}
 	}
-
-	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(signature) + "```\n - - -\n" + comment}
+	if !defFound {
+		// look for predefined functions
+		if id := ast.Name(x); len(id) > 0 {
+			for _, predef := range PredefinedFunctions {
+				if predef.Label == id+"(...)" {
+					comment = predef.Documentation
+					signature = predef.Signature
+				}
+			}
+		}
+	}
+	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(signature) + "\n```\n - - -\n" + comment}
 	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil
