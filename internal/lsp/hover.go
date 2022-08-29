@@ -5,7 +5,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -49,7 +48,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	if x == nil {
 		return nil, nil
 	}
-	log.Debugf("Identifier: %v\n", x)
+
 	for _, def := range tree.LookupWithDB(x, &s.db) {
 		defFound = true
 
