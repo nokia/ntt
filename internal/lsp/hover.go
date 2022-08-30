@@ -29,6 +29,8 @@ func getSignature(def *ttcn3.Definition) string {
 			sig.WriteString("\n  ")
 			printer.Print(&sig, def.FileSet, node.Return)
 		}
+	case *ast.ValueDecl:
+		printer.Print(&sig, def.FileSet, node)
 	}
 	return sig.String()
 }
