@@ -772,6 +772,15 @@ func (p *printer) print(values ...interface{}) {
 			for _, item := range n {
 				p.print(item, ";", "\n")
 			}
+		case []*ast.Declarator:
+			for i, item := range n {
+				p.print(item)
+				if i < len(n)-1 {
+					p.print(",")
+				} else {
+					p.print(";", "\n")
+				}
+			}
 		case []*ast.WithStmt:
 			for _, item := range n {
 				p.print(item, ";", "\n")
@@ -838,7 +847,7 @@ func (p *printer) print(values ...interface{}) {
 			default:
 				fmt.Fprint(p.w, " ")
 			}
-			if p.printNewlineNext && n != ";" {
+			if p.printNewlineNext && (n != ";" && n != ",") {
 				p.printNewlineNext = false
 				p.print("\n")
 				p.print(n)
