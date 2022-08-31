@@ -5,6 +5,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -13,6 +14,7 @@ import (
 
 func getSignature(def *ttcn3.Definition) string {
 	var sig bytes.Buffer
+	var prefix = ""
 	switch node := def.Node.(type) {
 	case *ast.FuncDecl:
 		sig.WriteString(node.Kind.Lit + " " + node.Name.String())
@@ -29,10 +31,19 @@ func getSignature(def *ttcn3.Definition) string {
 			sig.WriteString("\n  ")
 			printer.Print(&sig, def.FileSet, node.Return)
 		}
-	case *ast.ValueDecl, *ast.TemplateDecl, *ast.FormalPar:
+	case *ast.ValueDecl, *ast.TemplateDecl, *ast.FormalPar, *ast.StructTypeDecl, *ast.ComponentTypeDecl, *ast.EnumTypeDecl, *ast.PortTypeDecl:
 		printer.Print(&sig, def.FileSet, node)
+	case *ast.Field:
+		if parent := def.ParentOf(node); parent != nil {
+			if _, ok := parent.(*ast.SubTypeDecl); ok {
+				prefix = "type "
+			}
+		}
+		printer.Print(&sig, def.FileSet, node)
+	default:
+		log.Debugf("getSignature: unknown Type:%T\n", node)
 	}
-	return sig.String()
+	return prefix + sig.String()
 }
 
 func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
