@@ -52,6 +52,7 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 	return true, nil
 }
 
+// matchRecordOf returns true if recordOfs match
 func matchRecordOf(val, pat sliceHolder) (bool, error) {
 	i, back_i := 0, -1
 	j, back_j := 0, -1
