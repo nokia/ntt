@@ -322,6 +322,14 @@ func (l *List) Equal(obj Object) bool {
 
 }
 
+func (l *List) Get(index int) Object {
+	return l.Elements[index]
+}
+
+func (l *List) Len() int {
+	return len(l.Elements)
+}
+
 // NewList creates a new ordered list.
 func NewList(objs ...Object) *List        { return &List{Elements: objs} }
 func NewRecordOf(objs ...Object) *List    { return &List{Elements: objs} }
