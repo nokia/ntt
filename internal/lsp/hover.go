@@ -3,6 +3,7 @@ package lsp
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/nokia/ntt/internal/log"
@@ -40,10 +41,19 @@ func getSignature(def *ttcn3.Definition) string {
 			}
 		}
 		printer.Print(&sig, def.FileSet, node)
+	case *ast.Module:
+		fmt.Fprintf(&sig, "module %s\n", node.Name)
 	default:
 		log.Debugf("getSignature: unknown Type:%T\n", node)
 	}
 	return prefix + sig.String()
+}
+
+func mdLinkForNode(def *ttcn3.Definition) string {
+	var mdLink bytes.Buffer
+	p := def.Position(def.Node.Pos())
+	fmt.Fprintf(&mdLink, "[module %s](%s#L%dC%d)", def.ModuleOf(def.Node).Name.String(), def.Filename(), p.Line, p.Column)
+	return mdLink.String()
 }
 
 func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
@@ -53,6 +63,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		col       = int(params.Position.Character) + 1
 		comment   string
 		signature string
+		posRef    string
 		defFound  = false
 	)
 
@@ -71,6 +82,9 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 			// make line breaks conform to markdown spec
 			comment = strings.ReplaceAll(firstTok.Comments(), "\n", "  \n")
 			signature = getSignature(def)
+			if tree.Root != def.Root {
+				posRef = "\n - - -\n" + mdLinkForNode(def)
+			}
 		}
 	}
 	if !defFound {
@@ -84,7 +98,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 			}
 		}
 	}
-	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(signature) + "\n```\n - - -\n" + comment}
+	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(signature) + "\n```\n - - -\n" + comment + posRef}
 	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil
