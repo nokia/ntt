@@ -6,41 +6,43 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/printer"
 )
 
 func getSignature(def *ttcn3.Definition) string {
 	var sig bytes.Buffer
 	var prefix = ""
+	fh := fs.Open(def.Filename())
+	content, _ := fh.Bytes()
 	switch node := def.Node.(type) {
 	case *ast.FuncDecl:
 		sig.WriteString(node.Kind.Lit + " " + node.Name.String())
-		printer.Print(&sig, def.FileSet, node.Params)
+		sig.Write(content[node.Params.Pos()-1 : node.Params.End()])
 		if node.RunsOn != nil {
 			sig.WriteString("\n  ")
-			printer.Print(&sig, def.FileSet, node.RunsOn)
+			sig.Write(content[node.RunsOn.Pos()-1 : node.RunsOn.End()])
 		}
 		if node.System != nil {
 			sig.WriteString("\n  ")
-			printer.Print(&sig, def.FileSet, node.System)
+			sig.Write(content[node.System.Pos()-1 : node.System.End()])
 		}
 		if node.Return != nil {
 			sig.WriteString("\n  ")
-			printer.Print(&sig, def.FileSet, node.Return)
+			sig.Write(content[node.Return.Pos()-1 : node.Return.End()])
 		}
 	case *ast.ValueDecl, *ast.TemplateDecl, *ast.FormalPar, *ast.StructTypeDecl, *ast.ComponentTypeDecl, *ast.EnumTypeDecl, *ast.PortTypeDecl:
-		printer.Print(&sig, def.FileSet, node)
+		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
 	case *ast.Field:
 		if parent := def.ParentOf(node); parent != nil {
 			if _, ok := parent.(*ast.SubTypeDecl); ok {
 				prefix = "type "
 			}
 		}
-		printer.Print(&sig, def.FileSet, node)
+		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
 	case *ast.Module:
 		fmt.Fprintf(&sig, "module %s\n", node.Name)
 	default:
