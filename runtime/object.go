@@ -182,27 +182,43 @@ func NewInt(s string) Int {
 }
 
 type String struct {
-	Value string
+	Value []rune
 }
 
 func (s *String) Type() ObjectType { return STRING }
-func (s *String) Inspect() string  { return s.Value }
+func (s *String) Inspect() string  { return string(s.Value) }
 
 func (s *String) Equal(obj Object) bool {
-	if other, ok := obj.(*String); ok {
-		return s.Value == other.Value
+	b, ok := obj.(*String)
+	if !ok || len(s.Value) != len(b.Value) {
+		return false
 	}
-	return false
+
+	for i, v := range s.Value {
+		if v != b.Value[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (s *String) hashKey() hashKey {
 	h := fnv.New64a()
-	h.Write([]byte(s.Value))
+	h.Write([]byte(string(s.Value)))
 	return hashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
+func (s *String) Len() int {
+	return len(s.Value)
+}
+
+func (s *String) Get(index int) Object {
+	return NewString(string(s.Value[index]))
+}
+
 func NewString(s string) *String {
-	return &String{Value: s}
+	return &String{Value: []rune(s)}
 }
 
 type Bitstring struct {
