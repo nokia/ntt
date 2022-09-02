@@ -162,6 +162,25 @@ func TestMatch(t *testing.T) {
 		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, 1, 2, runtime.AnyOrNone), true},
 		{List(runtime.SET_OF, 1, 2, 3), List(runtime.SUBSET, runtime.AnyOrNone), true},
 		{List(runtime.SET_OF), List(runtime.SUBSET, runtime.AnyOrNone), true},
+
+		// Strings
+		{makeObj(""), makeObj(""), true},
+		{makeObj(""), makeObj("abc"), false},
+		{makeObj("abc"), makeObj(""), false},
+		{makeObj("abc"), makeObj("abc"), true},
+		{makeObj("abc"), makeObj("abd"), false},
+		{makeObj("abc"), makeObj("ab?"), true},
+		{makeObj("abc"), makeObj("a?c"), true},
+		{makeObj(""), makeObj("?"), false},
+		{makeObj("abc"), makeObj("abc*"), true},
+		{makeObj("abc"), makeObj("*abc"), true},
+		{makeObj("abc"), makeObj("a*c"), true},
+		{makeObj("abc"), makeObj("a*"), true},
+		{makeObj("abc"), makeObj("*"), true},
+		{makeObj(""), makeObj("*"), true},
+		{makeObj("abcdef"), makeObj("a*d*ef"), true},
+		{makeObj("abcdcdefaf"), makeObj("a*de*f"), true},
+		{makeObj("abcdcdefab"), makeObj("a*de*f"), false},
 	}
 
 	for _, test := range tests {
