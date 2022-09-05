@@ -229,7 +229,7 @@ func TestString(t *testing.T) {
 			continue
 		}
 		if string(str.Value) != tt.expected {
-			t.Errorf("object has wrong value. got=%s, want=%s", str.Value, tt.expected)
+			t.Errorf("object has wrong value. got=%s, want=%s", string(str.Value), tt.expected)
 		}
 	}
 }
