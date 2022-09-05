@@ -1,8 +1,9 @@
-# Contributor Covenant Code of Conduct
+# Be excellent to each other
+
 
 ## Our Pledge
 
-In the interest of fostering an open and welcoming environment, we as
+In the interest of fostering an _open and welcoming_ environment, we as
 contributors and maintainers pledge to making participation in our project and
 our community a harassment-free experience for everyone, regardless of age, body
 size, disability, ethnicity, gender identity and expression, level of experience,
