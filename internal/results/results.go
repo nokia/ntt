@@ -16,9 +16,10 @@ import (
 func Latest() (*DB, error) {
 	b, err := fs.Open("test_results.json").Bytes()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return nil, err
+		if os.IsNotExist(err) {
+			return &DB{}, nil
 		}
+		return nil, err
 	}
 	var db DB
 	return &db, json.Unmarshal(b, &db)
