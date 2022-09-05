@@ -12,17 +12,25 @@ to start somewhere and we are all nice people who find it great when someone is
 interested in our project.
 
 
-**Reporting Issues**
+## Give us a star
+
+Stars help us grow. If you like this project, please give us a star :blush:
+
+[![Star on GitHub](https://img.shields.io/github/stars/jonsn0w/hyde.svg?style=social)](https://github.com/nokia/ntt/stargazers)
+
+
+## Reporting Issues
 
 If you believe you have found an issue in ntt, please use the GitHub issue tracker
 to report the problem. If you're not sure if it's a bug or not, start by asking.
 
 
-**Asking Questions**
+## Asking Questions
 
 Our mailing list [ntt@groups.io](mailto:ntt@groups.io) and [GitHub
 Discussions](https://github.com/nokia/ntt/discussions) are great places for
 asking questions and having discussions.
+
 
 ## Contributing Code
 
@@ -33,7 +41,7 @@ environment. There are many options, you can use [GitHub
 Codespaces](https://docs.github.com/en/codespaces) and develop in your browser
 remotely. Or you install everything on your machine and develop locally:
 
-**Installing Go**
+### Installing Go
 
 Install Go using your package manager or a manual installation as [described
 here](https://go.dev/doc/install).  
@@ -41,33 +49,85 @@ You don't always need the latest version of Go, but you should not use versions
 older than two years either.
 
 
-**Installing Visual Studio Code**
+### Installing Visual Studio Code
 
 We suggest you install [Visual Studio Code](https://code.visualstudio.com/docs).  
-This is not a hard requirement, you can develop in any editor you like. But we
-find Visual Studio Code is the easiest to start with, especially when you are
-developing with a Microsoft Windows System.
+This is not a hard requirement, you can develop in any editor you like; Vim for
+example works great, but we find Visual Studio Code is the easiest to start
+with, especially when you are developing with a Microsoft Windows System.
 
-**Installing Git**
+
+### Installing Git
 
 We use Git for version control and collaborative development. Make sure you
-[Git installed](https://github.com/git-guides/install-git).
+have [Git installed](https://github.com/git-guides/install-git) and [configured
+properly](https://docs.github.com/en/get-started/quickstart/set-up-git)(e.g.
+user name, email address, GitHub access, ...).
 
-**What you should know**
+
+### What you should know about Go
 
 This project's main programming language is Go. If you are new to Go, you'll
-find an introduction [here](https://go.dev/learn/).
-If you are not sure about the coding style have a look at [Effective Go](https://go.dev/doc/effective_go)
-and [Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
+find an introduction [here](https://go.dev/learn/). If you are not sure about
+the coding style you might find [Effective Go](https://go.dev/doc/effective_go)
+and [Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) helpful.
 
-Some basic understanding how to use Git will of great use.
 
-0. [Fork][fork] and clone the repository
-0. Create a new branch: `git checkout -b my-branch-name`
-0. Make your change and remember to add tests
-0. Build the project locally and run local tests.
-0. Push to your fork and [submit a pull request][pr]
-0. Pat your self on the back and wait for your pull request to be reviewed and merged.
+### A Pull Request Workflow
+
+Some basic understanding how to use Git will of great use. If you know any good
+tutorials, we'd love to link them here.
+
+For most steps I'll assume you will use a Linux environment, but steps should
+be similar for MacOS or Windows users. If you have difficulties don't hesitate
+to ask; we'll help gladly.
+
+Now it's time to get down to business! Please [Fork][fork] and then clone the
+repository. The process is described
+[here](https://docs.github.com/en/get-started/quickstart/fork-a-repo) in good
+detail.
+
+After you added the upstream remote you can configure git to pull from
+upstream, to push to your origin repository. This is optional, but I find it
+quite comfortable:
+
+	# Change the remote for from origin to upstream. Pull will use `upstream`:
+	git config branch.master.remote upstream
+
+	# Use `origin` for pushing changes.
+	git config branch.master.pushDefault origin
+
+
+Now you're ready to contribute:
+
+0. Create a new branch: `git checkout -b my-branch-name`. The branch name is
+   not important, for example choose something simple like
+   `fix-missing-imports`.
+0. Make your change and remember to add tests. Write initial tests first; this
+   makes it easier to become familiar the code base.
+0. It's a good habit to run all tests locally before creating a pull request:
+   `go run ./...`
+0. Push to your fork and [submit a pull request][pr]. When you push GitHub will
+   conveniently print the URL for creating a PR on the console. Create a Draft
+   PR, when your contribution is not ready yet. Write a [good
+   description](https://chris.beams.io/posts/git-commit/) so we know what the
+   pull request is about.
+0. Pat your self on the back and wait for your pull request to be reviewed and
+   merged. We will review any contribution timely. If you don't get any
+   reaction, please poke us because then we might have overlooked your PR are
+   very sorry about that.
+
+**Aftermath and a new Beginning**
+
+When your request has been merged and you want to create another pull request, don't forget to:
+
+0. checkout the `master` branch again.
+0. remove the local (`git branch -d my-branch-name`) and remote feature branch.
+0. pull the changes from upstream.
+0. synchronize your remote origin repository.
+
+
+**Tips**
 
 Here are a few things you can do that will increase the likelihood of your pull
 request being accepted:
