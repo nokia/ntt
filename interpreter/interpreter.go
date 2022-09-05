@@ -311,7 +311,7 @@ func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
-		return &runtime.String{Value: s}
+		return &runtime.String{Value: []rune(s)}
 	case token.BSTRING:
 		b, err := runtime.NewBitstring(n.Tok.Lit)
 		if err != nil {
@@ -482,7 +482,7 @@ func evalBinary(n *ast.BinaryExpr, env runtime.Scope) runtime.Object {
 		return evalBoolBinary(bool(x.(runtime.Bool)), bool(y.(runtime.Bool)), op, env)
 
 	case x.Type() == runtime.STRING:
-		return evalStringBinary(x.(*runtime.String).Value, y.(*runtime.String).Value, op, env)
+		return evalStringBinary(string(x.(*runtime.String).Value), string(y.(*runtime.String).Value), op, env)
 
 	case x.Type() == runtime.BITSTRING:
 		return evalBitstringBinary(x.(*runtime.Bitstring), y.(*runtime.Bitstring), op, env)
@@ -592,7 +592,7 @@ func evalBoolBinary(x bool, y bool, op token.Kind, env runtime.Scope) runtime.Ob
 
 func evalStringBinary(x string, y string, op token.Kind, env runtime.Scope) runtime.Object {
 	if op == token.CONCAT {
-		return &runtime.String{Value: x + y}
+		return &runtime.String{Value: []rune(string(x) + string(y))}
 	}
 	return runtime.Errorf("unknown operator: charstring %s charstring", op)
 
