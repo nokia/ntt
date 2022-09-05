@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"html"
 	"os"
@@ -65,7 +66,7 @@ func nodeID(n ast.Node) string {
 	if tok, ok := n.(ast.Token); ok {
 		return fmt.Sprintf("t%d", tok.Pos())
 	}
-	return fmt.Sprintf("n%p", n)
+	return fmt.Sprintf("n%p%s", n, base64.RawStdEncoding.EncodeToString([]byte(fmt.Sprintf("%T", n))))
 }
 
 func nodeProps(n ast.Node) string {

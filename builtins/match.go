@@ -36,6 +36,7 @@ func match(a, b runtime.Object) (bool, error) {
 				return true, nil
 			}
 			return false, runtime.Errorf("tried to match %d with %d", c.Value[0], b.Value[0])
+
 		}
 		return matchRecordOf(a.(*runtime.String), b)
 	default:
