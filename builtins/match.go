@@ -31,6 +31,8 @@ func match(a, b runtime.Object) (bool, error) {
 			return matchRecordOf(a.(*runtime.List), b)
 		}
 	case *runtime.String:
+		//Leaving out this Comparision would create an endless loop where the same
+		//function is called with the same parameters recursively
 		if c := a.(*runtime.String); c.Len() == 1 && b.Len() == 1 {
 			if b.Value[0] == rune('?') || b.Value[0] == rune('*') || b.Value[0] == c.Value[0] {
 				return true, nil
@@ -66,6 +68,8 @@ func matchRecordOf(val, pat sliceHolder) (bool, error) {
 	i, back_i := 0, -1
 	j, back_j := 0, -1
 	for i < val.Len() && j < pat.Len() {
+		// if pat is *runtime.String, Get(i) returns another *runtime.String
+		// whose Value array contains a single rune
 		if pat.Get(j) == runtime.AnyOrNone || pat.Get(j).Equal(runtime.NewString("*")) {
 			j++
 			back_j = j          // Pattern Element after *
