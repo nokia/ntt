@@ -75,7 +75,7 @@ func main() {
 	sort.Strings(data.ValueTokens)
 	sort.Strings(data.OtherTokens)
 
-	files, err := filepath.Glob("./internal/gen/templates/*")
+	files, err := filepath.Glob("./internal/gen/_templates/*")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
