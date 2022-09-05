@@ -1,8 +1,0 @@
-syntax = "proto3";
-option go_package = "github.com/nokia/ntt/protobuf";
-package ntt;
-
-message BinaryString {
-	bytes data = 1;
-	int32 nbits = 2;
-}

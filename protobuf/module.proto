@@ -1,7 +1,0 @@
-syntax = "proto3";
-option go_package = "github.com/nokia/ntt/protobuf";
-package ntt;
-
-message Module {
-	string name = 1;
-}

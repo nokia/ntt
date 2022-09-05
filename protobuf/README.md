@@ -1,3 +1,0 @@
-# Protobuf interfaces for ntt
-
-
