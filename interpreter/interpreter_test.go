@@ -228,7 +228,7 @@ func TestString(t *testing.T) {
 			t.Errorf("object is not runtime.String. got=%T (%+v)", val, val)
 			continue
 		}
-		if str.Value != tt.expected {
+		if string(str.Value) != tt.expected {
 			t.Errorf("object has wrong value. got=%s, want=%s", str.Value, tt.expected)
 		}
 	}
@@ -361,8 +361,8 @@ func TestMapExpr(t *testing.T) {
 		key      runtime.Object
 		expected int64
 	}{
-		{&runtime.String{Value: "foo"}, 1},
-		{&runtime.String{Value: "bar"}, 2},
+		{&runtime.String{Value: []rune("foo")}, 1},
+		{&runtime.String{Value: []rune("bar")}, 2},
 	}
 	for _, tt := range tests {
 		val, ok := m.Get(tt.key)
