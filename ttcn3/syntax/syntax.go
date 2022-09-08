@@ -6,7 +6,7 @@ package syntax
 import "fmt"
 
 var (
-	Invalid = Node{}
+	Nil = Node{}
 )
 
 // Node is a syntax node.
@@ -21,10 +21,20 @@ func (n Node) Kind() Kind {
 	return n.event().Kind()
 }
 
+// IsTerminal returns true if the node is a terminal node.
+func (n Node) IsTerminal() bool {
+	return n.Kind().IsTerminal()
+}
+
+// IsNonTerminal returns true if the node is a non-terminal node.
+func (n Node) IsNonTerminal() bool {
+	return n.Kind().IsNonTerminal()
+}
+
 // Parent returns the parent of the node or Invalid if the node is the root node.
 func (n Node) Parent() Node {
 	if n.idx == 0 {
-		return Invalid
+		return Nil
 	}
 	switch te := n.event(); te.Type() {
 
@@ -51,7 +61,7 @@ func (n Node) Parent() Node {
 		panicEvent(te)
 	}
 
-	return Invalid
+	return Nil
 }
 
 // FirstToken returns the first token of a syntax node which is not a trivia or Invalid if
@@ -69,18 +79,18 @@ func (n Node) FirstToken() Node {
 				return n.get(i)
 			}
 		}
-		return Invalid
+		return Nil
 
 	// If the node is already a token, we check for "trivianess" and return
 	case AddToken:
 		if te.Kind().IsTrivia() {
-			return Invalid
+			return Nil
 		}
 		return n
 	default:
 		panicEvent(te)
 	}
-	return Invalid
+	return Nil
 }
 
 // LastToken returns the last token of a syntax node which is not a trivia or Invalid if none is available.
@@ -92,16 +102,16 @@ func (n Node) LastToken() Node {
 				return n.get(i)
 			}
 		}
-		return Invalid
+		return Nil
 	case AddToken:
 		if te.Kind().IsTrivia() {
-			return Invalid
+			return Nil
 		}
 		return n
 	default:
 		panicEvent(te)
 	}
-	return Invalid
+	return Nil
 }
 
 // FirstChild returns the first child of the node or nil if there is none.
@@ -111,13 +121,13 @@ func (n Node) FirstChild() Node {
 		if c := n.get(n.idx + 1); c.event().Type() != CloseNode {
 			return c
 		}
-		return Invalid
+		return Nil
 	case AddToken:
-		return Invalid
+		return Nil
 	default:
 		panicEvent(te)
 	}
-	return Invalid
+	return Nil
 }
 
 // Next returns the next sibling node or Invalid if there is none.
@@ -127,17 +137,17 @@ func (n Node) Next() Node {
 		if i := te.skip() + 1; i < len(n.tree.events) && n.tree.events[i].Type() != CloseNode {
 			return n.get(i)
 		}
-		return Invalid
+		return Nil
 
 	case AddToken:
 		if i := n.idx + 1; n.tree.events[i].Type() != CloseNode {
 			return n.get(i)
 		}
-		return Invalid
+		return Nil
 	default:
 		panicEvent(te)
 	}
-	return Invalid
+	return Nil
 }
 
 // Inspect traverses the syntax tree in depth-first order. It calls f for each
@@ -146,16 +156,16 @@ func (n Node) Inspect(f func(n Node) bool) {
 	if !f(n) {
 		return
 	}
-	for c := n.FirstChild(); c != Invalid; c = c.Next() {
+	for c := n.FirstChild(); c != Nil; c = c.Next() {
 		c.Inspect(f)
 	}
-	f(Invalid)
+	f(Nil)
 }
 
 // Pos returns the position (offset) of the node in the source code. Or -1 if
 // no position was available.
 func (n Node) Pos() int {
-	if tok := n.FirstToken(); tok != Invalid {
+	if tok := n.FirstToken(); tok != Nil {
 		return int(tok.event().offset())
 	}
 	return -1
@@ -164,7 +174,7 @@ func (n Node) Pos() int {
 // End returns the end position of the node in the source code. Or -1 if none
 // was available.
 func (n Node) End() int {
-	if tok := n.LastToken(); tok != Invalid {
+	if tok := n.LastToken(); tok != Nil {
 		return int(tok.event().offset() + tok.event().length())
 	}
 	return -1
