@@ -42,15 +42,8 @@ func (k Kind) String() string {
 		Unknown:      "unknown token",
 		Malformed:    "malformed token",
 		Unterminated: "unterminated string",
-		Identifier:   "identifier",
 		Comment:      "comment",
 		Preproc:      "preprocessor directive",
-		Modifier:     "modifier",
-		Integer:      "integer",
-		Float:        "float",
-		String:       "string",
-		Bitstring:    "bitstring",
-		Unused:       "-",
 		{{range $name, $value := .TokenMap}}{{$name}}:"{{$value}}",
 		{{end}}
 		{{range .Productions}}{{.Name.String}}: "{{.Name.String}}",
@@ -71,29 +64,19 @@ const (
 	__errors_end
 	__tokens_begin
 	__literals_begin
-	Identifier
 	Comment
 	Preproc
-	Modifier
-	Integer
-	Float
-	String
-	Bitstring
-	__literals_end
-
-	__literal_values_begin
-	Unused
 	{{range .ValueTokens}}{{.}}
-	{{end}}
-	__literal_values_end
+	{{end -}}
+	__literals_end
 
 	__keywords_begin
 	{{range .KeywordTokens}}{{.}}
-	{{end}}
+	{{end -}}
 	__keywords_end
 
 	{{range .OtherTokens}}{{.}}
-	{{end}}
+	{{end -}}
 	__tokens_end
 
 	__nodes_begin

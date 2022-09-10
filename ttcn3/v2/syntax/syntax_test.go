@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestBuilder verifies that the builder produces the expected tree events.
 func TestBuilder(t *testing.T) {
 	b := Builder{}
 
@@ -37,6 +38,7 @@ func TestBuilder(t *testing.T) {
 	assert.Equal(t, expected, printEvents(b.events))
 }
 
+// TestNode verifies that the node methods for navgating the tree works.
 func TestNode(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		var b Builder

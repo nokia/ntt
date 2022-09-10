@@ -1,4 +1,3 @@
-// Package syntax provides a fast high fidelity parser for TTCN-3.
 package syntax
 
 //go:generate go run ./internal/gen
