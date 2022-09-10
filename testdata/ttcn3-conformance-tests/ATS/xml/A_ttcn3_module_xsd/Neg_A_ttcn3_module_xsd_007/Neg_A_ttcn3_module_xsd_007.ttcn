@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:A, Ensure the builtin XSD type NMTOKEN allows only valid values
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_A_ttcn3_module_xsd_007 {
+
+	import from XSD all;
+
+	template NMTOKEN m_msg := "string with whitespace";
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type component C {
+    }
+
+    testcase TC_Neg_A_ttcn3_module_xsd_007() runs on C system C {
+        // set a verdict before since valueof should throw error
+        setverdict(fail, "Should not be able to create an invalid value of the given built-in XSD type", m_msg);
+        log(valueof(m_msg)); // if testcase is compiling, valueof is expected to throw an testcase error since the value is invalid
+    }
+
+    control {
+        execute(TC_Neg_A_ttcn3_module_xsd_007(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

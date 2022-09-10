@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050202_name_conversion_rules_026"
+  xmlns:ns="schema:Pos_050202_name_conversion_rules_026">
+  <element name="MyType">
+    <complexType>
+      <choice>
+		<element name="history" type="integer"/>
+	    <element name="history中国" type="integer"/>
+		<element name="history日本" type="integer" />
+      </choice>
+    </complexType>  
+  </element>    
+</schema>

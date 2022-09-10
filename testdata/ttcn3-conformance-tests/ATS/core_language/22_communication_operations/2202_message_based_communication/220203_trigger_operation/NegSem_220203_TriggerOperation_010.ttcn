@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, attempting to store component name in redirect assignment
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Rules in clause 22.2.2 shall apply.
+// When the message is received on a connected port, only the component reference is
+// stored in the following the sender keyword, but the test system shall internally
+// store the component name too, if any (to be used in logging).
+
+module NegSem_220203_TriggerOperation_010 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_010() runs on GeneralComp system GeneralComp {
+        var charstring v_name;
+        connect(self:p, self:p);
+        p.send(10);
+        p.trigger(integer:?) -> sender v_name;
+        if (v_name == "MTC") { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_010(), 5.0);
+    }
+}

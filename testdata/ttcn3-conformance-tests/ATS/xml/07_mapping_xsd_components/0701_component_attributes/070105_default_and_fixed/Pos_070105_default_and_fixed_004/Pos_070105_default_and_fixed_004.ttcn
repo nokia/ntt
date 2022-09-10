@@ -1,0 +1,84 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:7.1.5, Verify that fixed value is automatically assigned to empty element by decoder
+ ** @verdict  pass accept, ttcn3verdict:pass
+***************************************************/
+// The following requirements are tested:
+// The fixed attribute applied to attribute or element elements shall be mapped
+// to a subtype definition with the single allowed value identical to the value
+// of the fixed attribute plus a "defaultForEmpty …" encoding instruction
+// identifying the value of the fixed attribute as well.
+// From B.3.7: This encoding instruction ... designates that the decoder shall
+// insert the value specified by freetext if the corresponding attribute is
+// omitted or when the corresponding element appears without any content in the
+// XML instance being decoded; it has no effect in other cases.
+////////////////////////////////////////////////////////////////////////////////
+
+module Pos_070105_default_and_fixed_004 {
+
+   import from schema_Pos_070105_default_and_fixed_004 language "XSD" all;
+
+   template MyType m_msg := {
+       foo := "foo"
+   };
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc Read a UTF-8 formated XML file from disc.
+     * @param p_referenceXmlFile the XML file
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference XML file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return the UTF-8 contents of p_referenceXmlFile
+     */
+    external function readFile(universal charstring p_referenceXmlFile, universal charstring p_referenceTTCN3File := __FILE__) return universal charstring;
+
+    testcase TC_Pos_070105_default_and_fixed_004() runs on C system C {
+        var Raw v_rcv;
+
+        map(self:p, system:p);
+
+        v_rcv := readFile("Pos_070105_default_and_fixed_004.xml");
+
+        // send the encoded the message
+        p.send(v_rcv);
+
+        alt {
+            []    p.check(receive(Raw:?) -> value v_rcv) {
+                log("XML message ", v_rcv);
+                alt {
+                    // decode the message
+                    [] p.receive(m_msg) {
+                        setverdict(pass, "Decoded value matches template");
+                    }
+                    [] p.receive {
+                        setverdict(fail, "XML decoding failure");
+                    }
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_070105_default_and_fixed_004(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.5, Assign values to pattern restricted character strings.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010205_StringPattern_002 {
+    type charstring MyString (pattern "abc?xyz");
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010205_StringPattern_002() runs on GeneralComp {
+        var MyString v_c;
+        v_c := "abc1xyz";
+        v_c := "abc:xyz";
+        v_c := "abc.xyz";
+        v_c := "abc*xyz";
+        v_c := "abc?xyz";
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010205_StringPattern_002());
+    }
+}

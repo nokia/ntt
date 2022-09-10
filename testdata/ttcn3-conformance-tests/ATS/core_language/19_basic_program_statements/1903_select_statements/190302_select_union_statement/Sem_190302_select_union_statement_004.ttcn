@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that else branch is executed if no case is defined for the selected alternative
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If no case exists for the chosen alternative, the StatementBlock of the else
+// branch, if it is present, is executed.
+
+module Sem_190302_select_union_statement_004 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        boolean boolOption,
+        bitstring bitOption
+    }
+
+    testcase TC_Sem_190302_select_union_statement_004() runs on GeneralComp {
+        var U v_un := { strOption := "abc" }
+        select union (v_un) {
+            case (intOption) {
+                setverdict(fail);
+            } case (bitOption) {
+                setverdict(fail);
+            } case else {
+                setverdict(pass);
+            }
+        }
+	}
+
+	control {
+		execute(TC_Sem_190302_select_union_statement_004());
+	}
+}

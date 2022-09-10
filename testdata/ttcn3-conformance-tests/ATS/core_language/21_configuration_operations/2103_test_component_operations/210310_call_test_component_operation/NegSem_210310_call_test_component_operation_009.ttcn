@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with a port element in a parameter
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Ports, defaults and timers shall not be passed into a function or altstep invoked in a call test
+// component operation. All formal parameter types of the behaviour shall neither be of a port,
+// default or timer type nor should contain a direct or indirect element or field of a port, default
+// or timer type.
+
+module NegSem_210310_call_test_component_operation_009 {
+    type port P message {
+	    inout integer;
+	}
+	type record R {
+	    P field1
+	}
+    type component GeneralComp {}
+
+	function f(R p_par) runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.call(f({ field1 := null }));
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_009(), 5.0);
+    }
+}

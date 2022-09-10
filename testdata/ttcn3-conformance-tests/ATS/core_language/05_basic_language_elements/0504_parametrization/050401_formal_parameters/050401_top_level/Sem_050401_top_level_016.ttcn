@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.4.1, verify that compatibility rules are used for passing in parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If parameters are passed by value (i.e. in case of in and out parameters), type compatibility
+// rules specified in 6.3 apply.
+
+module Sem_050401_top_level_016 {
+
+	type component GeneralComp {
+	}
+
+    type record R1 {
+        integer field1,
+        integer field2
+    }
+
+    type record R2 {
+        integer option1,
+        integer option2
+    }
+
+	function f(R2 p_rec) {
+        if (match(p_rec, {1, 2})) { setverdict(pass); }
+        else { setverdict(fail, "p_rec value not matching ", p_rec, R2:{1, 2}); }
+	}
+
+	testcase TC_Sem_050401_top_level_016() runs on GeneralComp {
+        var R1 v_rec := { field1 := 1, field2 := 2 };
+		f(v_rec);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_016());
+	}
+}

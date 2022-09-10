@@ -1,0 +1,134 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.3.2, Ensure that the getcall operation can be correctly restricted to a certain client
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_220302_GetcallOperation_003 {
+
+    /**
+    * @desc testing of inline return template for remote procedure call
+    * @param p_par1 only input parameter
+    * @param p_par2 must have value 4 at return
+    * @param p_par3 must have value 5 at return
+    * @return must return value 1
+    */
+    signature p_Sem_220302_GetcallOperation_003(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+
+    template p_Sem_220302_GetcallOperation_003 s_returnTemplate1 := {
+        p_par1 := -,
+        p_par2 := 4,
+        p_par3 := 5
+    }
+
+    template p_Sem_220302_GetcallOperation_003 s_returnTemplate2 := {
+        p_par1 := -,
+        p_par2 := 5,
+        p_par3 := 6
+    }
+
+    template p_Sem_220302_GetcallOperation_003 s_wrongTemplate := {
+        p_par1 := -,
+        p_par2 := 2,
+        p_par3 := 3
+    }
+
+    template p_Sem_220302_GetcallOperation_003 s_callTemplate(in integer i) := {
+        p_par1 := i,
+        p_par2 := -,
+        p_par3 := 3
+    }
+
+    type port remotePort procedure {
+        inout p_Sem_220302_GetcallOperation_003;
+    }
+
+    type component GeneralComp {
+        var GeneralComp v_clientAddress;
+        port remotePort PCO;
+    }
+
+    function f_ClientQuery(in integer p_i) runs on GeneralComp {
+        var boolean first:=true;
+
+        PCO.call(p_Sem_220302_GetcallOperation_003:s_callTemplate(p_i), 5.0) {
+
+            [first] PCO.getreply(s_returnTemplate1) {
+                first:=false;
+            }
+            [first] PCO.getreply(s_returnTemplate2) {
+                first:=false;
+            }
+            [] PCO.catch (timeout) {
+                // done
+            }
+        }
+    }
+
+    function f_ServerResponses(in GeneralComp p_client) runs on GeneralComp {
+        var integer v_par1;
+        var integer v_par3;
+        timer t_timeout:=30.0;
+        var boolean client1_received := false;
+        var boolean client2_received := false;
+
+        template p_Sem_220302_GetcallOperation_003 s_acceptTemplate := {
+            p_par1 := ?,
+            p_par2 := ?,
+            p_par3 := ?
+        };
+
+
+        t_timeout.start;
+
+
+        alt {
+            [not client1_received] PCO.getcall(p_Sem_220302_GetcallOperation_003:s_acceptTemplate) from p_client -> param(v_par1, - , v_par3) sender v_clientAddress {
+                PCO.reply(p_Sem_220302_GetcallOperation_003:{p_par1 := -, p_par2 := v_par1+v_par3, p_par3 := v_par1+v_par3+1} value v_par1) to v_clientAddress;  	//procedure return values are sent
+                setverdict(pass, "p_client got a message");
+                client1_received := true;
+                if (not client2_received) {
+	                repeat;
+                }
+            }
+            [not client2_received] PCO.getcall(p_Sem_220302_GetcallOperation_003:s_acceptTemplate) -> param(v_par1, - , v_par3) sender v_clientAddress {
+                PCO.reply(p_Sem_220302_GetcallOperation_003:{p_par1 := -, p_par2 := v_par1+v_par3, p_par3 := v_par1+v_par3+1} value v_par1) to v_clientAddress;  	//procedure return values are sent
+                // response for other clients
+                client2_received := true;
+                if (not client1_received) {
+	                repeat;
+                }
+            }
+            [] t_timeout.timeout {
+                setverdict(fail, "server received not enough messages: client 1 message received ",client1_received, " client 2 message received ",client2_received);
+            }
+        }
+
+    }
+
+    testcase TC_Sem_220302_GetcallOperation_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+        var GeneralComp client := GeneralComp.create("RemoteProcedure Client 1");
+        var GeneralComp client2 := GeneralComp.create("RemoteProcedure Client 2");
+        // map the PTCs to the system port
+        connect(server:PCO, client:PCO);
+        connect(server:PCO, client2:PCO);
+
+        server.start(f_ServerResponses(client));
+        client.start(f_ClientQuery(1));
+        client2.start(f_ClientQuery(2));
+
+        client.done;
+        client2.done;
+        server.stop;
+
+        disconnect(server:PCO);
+    }
+
+    control{
+        execute(TC_Sem_220302_GetcallOperation_003(), 5.0);
+    }
+
+}

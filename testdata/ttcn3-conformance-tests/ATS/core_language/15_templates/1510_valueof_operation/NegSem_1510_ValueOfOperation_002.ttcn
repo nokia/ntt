@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.10,  Ensure that the valueof function works correctly on templates with wildcards.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1510_ValueOfOperation_002 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer field1,
+	boolean field2
+}
+
+template ExampleType m_template := {
+	field1 := *,
+	field2 := ?
+}
+
+testcase TC_NegSem_1510_ValueOfOperation_002() runs on GeneralComp {
+	var ExampleType v_int := valueof(m_template);
+
+	// if we get here, something must be wrong as valueof on m_template shall cause an error
+	// due to the * and ? wildcards.
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1510_ValueOfOperation_002());
+}
+
+}

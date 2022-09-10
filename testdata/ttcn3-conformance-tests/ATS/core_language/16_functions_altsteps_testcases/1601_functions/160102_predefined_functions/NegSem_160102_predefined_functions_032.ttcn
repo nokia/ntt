@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that an error is generated when the parameter of the encvalue function contains a matching symbol
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// (C.5.1) When the actual parameter that is passed to inpar is a template, it shall resolve to
+// a specific value (the same restrictions apply as for the argument of the send statement).
+
+module NegSem_160102_predefined_functions_032 {
+
+type integer I with { variant "32 bit"};
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_032 () runs on GeneralComp {
+	template I v_test := ?;
+	var bitstring v_res := encvalue(v_test);
+	setverdict(fail, "The previous encvalue call should have caused an error");
+}
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_032());
+
+}
+
+}

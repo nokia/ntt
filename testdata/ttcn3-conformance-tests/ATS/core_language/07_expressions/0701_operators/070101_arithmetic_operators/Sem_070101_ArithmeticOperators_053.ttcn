@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 470 (updated by 521)
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, verify that arithmetic operators can handle special float values according to the rules of IEEE 754
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070101_ArithmeticOperators_053 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070101_ArithmeticOperators_053() runs on GeneralComp {
+	var float v_i := -infinity;
+	var float v_k :=2.0E0;
+
+	var float v_result := v_i * v_k;	// arithmetic operator with -infinity is allowed by IEEE 754
+
+	if (v_result == -infinity) { setverdict(pass); }
+	else { setverdict(fail); }
+}
+control{
+    execute(TC_Sem_070101_ArithmeticOperators_053());
+}
+
+}

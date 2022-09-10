@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.12, Ensure null assignment is accepted for addresses
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060212_AddressingEntitiesInsideSut_001 {
+    type integer address;
+
+    type component TestCaseComp {
+    }
+
+    testcase TC_Sem_060212_AddressingEntitiesInsideSut_001() runs on TestCaseComp system TestCaseComp {
+
+        var address v_int := null; // valid value for an address
+
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_060212_AddressingEntitiesInsideSut_001());
+    }
+}

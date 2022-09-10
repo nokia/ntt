@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.6.2, Assign invalid values to mixed restricted octet strings.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_0601020602_StringMixing_006 {
+    type octetstring MyString ('FF1111'O, '101010A3'O, 'FFFFFFFFFF'O) length (4);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_0601020602_StringMixing_006() runs on GeneralComp {
+        var MyString v_c := 'FF1111'O; // value lenght 3 not allowed
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0601020602_StringMixing_006());
+    }
+}

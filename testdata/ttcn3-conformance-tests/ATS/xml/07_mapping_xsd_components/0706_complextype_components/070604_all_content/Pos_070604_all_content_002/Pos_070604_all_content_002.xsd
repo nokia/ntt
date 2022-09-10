@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070604_all_content_002"
+  xmlns:ns="schema:Pos_070604_all_content_002">
+  <element name="MyType">
+    <complexType>
+      <all minOccurs="0">
+        <element name="foo" type="integer"/>
+        <element name="bar" type="float"/>
+        <element name="ding" type="string"/>
+      </all>
+    </complexType>
+  </element>
+</schema>

@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that the inline template definitions are correctly concatenated.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_010 {
+
+type component GeneralComp { }
+
+type record MyRecord {
+	charstring field1,
+	charstring field2
+}
+
+template MyRecord m_receiveTemplate := {
+	field1 := pattern "ab*de",
+	field2 := "ABC" & "DE*" & "F?"	//concatenation of literal characters
+}
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_010() runs on GeneralComp {
+	var MyRecord v_value := {
+		field1 := "ab*de",
+		field2 := "ABCDE1F1"
+	}
+
+	if (match(v_value, m_receiveTemplate)) {
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_010());
+}
+
+}

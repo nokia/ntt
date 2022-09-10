@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that default value of value formal parameters cannot reference component variables
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)
+// The expression shall not refer to elements of the component type of the optional runs on clause.
+
+module NegSem_05040101_parameters_of_kind_value_008 language "TTCN-3:2016" {
+	type component GeneralComp {
+        var integer vc_int := 0;
+	}
+
+    function f(in integer p_int := vc_int) runs on GeneralComp {
+    }
+
+	testcase TC_NegSem_05040101_parameters_of_kind_value_008() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040101_parameters_of_kind_value_008());
+	}
+}

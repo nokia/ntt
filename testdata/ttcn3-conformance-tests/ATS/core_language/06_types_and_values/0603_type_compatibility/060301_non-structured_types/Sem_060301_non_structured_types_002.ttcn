@@ -1,0 +1,74 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible size restrictions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060301_non_structured_types_002 {
+    type integer ConstrainedInt[1..2];
+    type float ConstrainedFloat[1..2];
+    type charstring ConstrainedChar length (1..2);
+    type universal charstring ConstrainedUChar length (1..2);
+    type bitstring ConstrainedBitString length (1..2);
+    type hexstring ConstrainedHexString length (1..2);
+
+type component GeneralComp {
+}
+/**
+ * @desc Equals method for floats
+ * @return true if abs(f1 - f2) < 1.E-6
+ */
+function f_isFloatNear(in float f1, in float f2) return boolean {
+  var float delta := f1-f2;
+  if (delta < 0.0) {
+    delta := 0.0 - delta;
+  }
+  return delta < 1E-6;
+}
+
+testcase TC_Sem_060301_non_structured_types_002() runs on GeneralComp {
+
+    var integer v_int[2]:={5,4};
+    var ConstrainedInt v_constrainedInt;
+    var float v_float[2]:={5.0,4.0};
+    var ConstrainedFloat v_constrainedFloat;
+    var charstring v_char := "jk";
+    var ConstrainedChar v_constrainedChar;
+    var universal charstring v_uChar := char(0, 0, 1, 112);
+    var ConstrainedUChar v_constrainedUChar;
+    var bitstring v_bitstr := '10'B;
+    var ConstrainedBitString v_constrainedBitstr;
+    var hexstring v_hexstr := '1B'H;
+    var ConstrainedHexString v_constrainedHexstr;
+
+
+    v_constrainedInt:=v_int;
+    v_constrainedFloat:=v_float;
+    v_constrainedChar:=v_char;
+    v_constrainedUChar:=v_uChar;
+    v_constrainedBitstr:=v_bitstr;
+    v_constrainedHexstr:=v_hexstr;
+
+    if (
+     (v_constrainedInt[1]==5) and
+     (v_constrainedInt[2]==4) and
+     (f_isFloatNear(v_constrainedFloat[1],5.0)) and
+     (f_isFloatNear(v_constrainedFloat[2],4.0)) and
+     (v_constrainedChar=="jk") and
+     (v_constrainedUChar==char(0, 0, 1, 112)) and
+     (v_constrainedBitstr=='10'B) and
+     (v_constrainedHexstr=='1B'H)
+    ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_060301_non_structured_types_002());
+}
+
+}

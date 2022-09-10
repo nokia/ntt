@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:7.1.4, a list with minOccurs 0 should not be mapped optional in TTCN-3
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_070104_minoccurs_and_maxoccurs_001 {
+
+    import from schema_Neg_070104_minoccurs_and_maxoccurs_001 language "XSD" all;
+
+	// foo_list should not be optional
+    template ElemE15b m_msg := {foo_list := omit, bar := 3.0}
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_070104_minoccurs_and_maxoccurs_001() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_070104_minoccurs_and_maxoccurs_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

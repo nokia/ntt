@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 409, modfied by TTF 014
+ ** @version  0.0.2
+ ** @purpose  1:16.1.3, Ensure that external functions can return templates
+ ** @verdict  pass accept, noexecution
+ ** @configuration  external_functions
+ ***************************************************/
+module Sem_160103_external_functions_005 {
+
+    type component GeneralComp {
+    }
+
+    external function xf_Sem_160103_external_functions_005() return template octetstring;	// external functions can return templates (in older TTCN-3 versions, it was not possible)
+
+    testcase TC_Sem_160103_external_functions_005 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_160103_external_functions_005());
+    }
+
+}

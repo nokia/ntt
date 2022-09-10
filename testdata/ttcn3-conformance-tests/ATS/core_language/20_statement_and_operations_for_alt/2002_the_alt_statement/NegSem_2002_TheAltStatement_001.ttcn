@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.2, dynamic error if a test component is completely blocked
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// The test case shall stop and indicate a dynamic error if a test component is
+// completely blocked. This means none of the alternatives can be chosen, no
+// relevant test component is running, no relevant timer is running and all
+// relevant ports contain at least one message, call, reply or exception that
+// do not match.
+
+module NegSem_2002_TheAltStatement_001 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+    template charstring m_test := "ping";
+
+    testcase TC_NegSem_2002_TheAltStatement_001() runs on GeneralComp {
+        timer t_tmr1;
+	    p.send(m_test);
+	    alt {
+		    [] p.receive("abc") {
+			    setverdict(pass);
+		    }
+            [] t_tmr1.timeout {
+                setverdict(pass);
+            }
+	    }
+    }
+
+    control {
+	    execute(TC_NegSem_2002_TheAltStatement_001());
+    }
+}

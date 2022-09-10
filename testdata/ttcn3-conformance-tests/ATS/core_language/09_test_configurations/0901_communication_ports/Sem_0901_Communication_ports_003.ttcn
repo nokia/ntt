@@ -1,0 +1,97 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the the IUT receives the message sent by mycompB and mycompC
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration  port:broadcast
+ ***************************************************/
+
+// 3 component message exchange
+module Sem_0901_Communication_ports_003{
+
+	type port myport message {
+	  inout integer
+	}
+
+
+type component Mysystem
+	{
+	timer t_rec,t_rec2;
+ 	port myport messagePort;
+	}
+function fsend() runs on Mysystem {
+	messagePort.send(2) to all component;
+	t_rec2.start(30.0);
+	alt {
+     [] messagePort.receive(3) {
+        setverdict(pass);
+         t_rec2.stop;
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    		[] t_rec2.timeout {
+			setverdict( inconc );
+		}
+		}
+t_rec2.stop;
+}
+function frec() runs on Mysystem {
+ t_rec.start( 10.0 );
+	alt {
+		[]  messagePort.receive(2) {
+			messagePort.send(3);
+			setverdict( pass );
+		}
+		[] messagePort.receive {
+			setverdict( fail );
+		}
+		[] t_rec.timeout {
+			setverdict( inconc );
+		}
+		}
+t_rec.stop;
+}
+
+testcase TC_Sem_0901_Communication_ports_003() runs on Mysystem system Mysystem {
+   var Mysystem MyCompA;
+   var Mysystem MyCompB;
+   var Mysystem MyCompC;
+
+MyCompA:=Mysystem.create;
+MyCompB:=Mysystem.create;
+MyCompC:=Mysystem.create;
+connect(MyCompA:messagePort,MyCompB:messagePort);
+connect(MyCompB:messagePort,MyCompA:messagePort);
+connect(MyCompA:messagePort,MyCompC:messagePort);
+connect(MyCompC:messagePort,MyCompA:messagePort);
+
+
+MyCompB.start(frec());
+MyCompC.start(frec());
+MyCompA.start(fsend());
+
+/*	alt {
+     [] messagePort.receive(3) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }*/
+
+// wait until all components finish
+MyCompB.done;
+MyCompC.done;
+MyCompA.done;
+
+MyCompB.stop;
+MyCompC.stop;
+MyCompA.stop;
+
+}
+control{
+    execute(TC_Sem_0901_Communication_ports_003());
+}
+}
+

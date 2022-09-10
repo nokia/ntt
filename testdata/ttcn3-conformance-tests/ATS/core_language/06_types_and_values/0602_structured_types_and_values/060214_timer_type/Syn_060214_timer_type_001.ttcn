@@ -1,0 +1,14 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.14, Constant of the timer type
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// TTCN 3 allows to define timer constants, variables and parameters. These constants, variables or parameters can contain
+// a reference to an existing timer or a special value null.
+
+module Syn_060214_timer_type_001 {
+	const timer c_nullTimer := null;
+}

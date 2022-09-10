@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, Ensure that inout parameters will be passed to the function by value, i.e. like in-parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Actual inout parameters will be passed to the function by value, i.e. like in-parameters.
+
+module Sem_210302_Start_test_component_013 {
+
+    type component GeneralComp { }
+	function f(inout integer v_in) runs on GeneralComp {
+    if(match(v_in,5)){ setverdict(pass); }
+
+    }
+
+    testcase TC_Sem_210302_Start_test_component_013() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var integer v_var:=5;
+		ptc:=GeneralComp.create alive;
+		ptc.start(f(v_var));
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210302_Start_test_component_013());
+    }
+}

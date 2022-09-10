@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.1, Ensure that the IUT correctly handles template matching with all from clause
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction D,E: Individual members of the template in the all from clause shall not resolve to any of the following matching mechanisms: AnyElementsOrNone, permutation.
+
+module NegSem_B010201_value_list_003 {
+
+	type record of integer RoI;
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2
+	}
+    template RoI m_RoI := {permutation(0,1,3,*),2};
+    template integer mw_RoI := (all from m_RoI);    //error: m_RoI contains permutation
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_NegSem_B010201_value_list_003() runs on GeneralComp {
+
+    var integer v_testMessage;
+     v_testMessage:= 2;
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_RoI) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_NegSem_B010201_value_list_003());
+}
+
+}

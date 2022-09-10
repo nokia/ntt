@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Neg_060105_enumeration_001"
+    xmlns:ns="schema:Neg_060105_enumeration_001">
+      <simpleType name="t1">
+        <restriction>
+          <simpleType>
+            <restriction base="integer">
+              <minInclusive value="1"/>
+              <maxInclusive value="10"/>
+            </restriction>
+          </simpleType>
+          <minExclusive value="5"/>
+        </restriction>
+      </simpleType>
+    <element name="e1" type="ns:t1"/>
+</schema>

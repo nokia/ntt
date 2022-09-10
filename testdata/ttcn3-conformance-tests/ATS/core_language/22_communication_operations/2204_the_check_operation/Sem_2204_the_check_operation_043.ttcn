@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of port.check(getcall) in case of successful match in standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_043 {
+
+	signature S(integer p_par1);
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+        p.check(getcall(S:{ p_par1 := (0..10)}) from mtc);
+		setverdict(pass, "Check operation successful");
+		p.getcall;
+		setverdict(pass, "Call still on the top of the queue");
+	}
+
+	testcase TC_Sem_2204_the_check_operation_043() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		p.call(S:{ p_par1 := 1 }, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_043(), 5.0);
+    }
+}

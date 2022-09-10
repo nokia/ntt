@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.3, Ensure that the IUT correctly handles component incompatibility due to differing list of constant definitions
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060303_component_types_001 {
+
+    type integer ConstrainedInteger(0..10);
+
+    type component TestCaseComp {
+        const integer c_integer:=2;
+    }
+
+    type component FunctionComp {
+        const integer c_integer:=2;
+        const ConstrainedInteger c_constrained:=2;
+    }
+
+    function f_testFunction(integer p_arg) runs on FunctionComp return integer {
+
+        var integer v_result;
+        v_result:=p_arg*c_integer;
+        return v_result;
+    }
+
+    testcase TC_NegSem_060303_component_types_001() runs on TestCaseComp {
+
+        var integer v_int:=1;
+
+        v_int := f_testFunction(v_int);
+        // runs on mtc with type TestCaseComp
+        // f_testFunction needs to run on FunctionComp
+        // which has 2 variables not 1 as TestCaseComp
+        setverdict (fail, "ERROR expected: function runs on mtc with type TestCaseComp f_testFunction needs to run on FunctionComp which has 2 variables not 1 as TestCaseComp");
+    }
+
+    control {
+        execute(TC_NegSem_060303_component_types_001());
+    }
+
+}

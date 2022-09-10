@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+module NegSyn_1603_testcases_001 {
+
+type port GeneralPortType message {
+    inout octetstring;
+}
+
+type component GeneralComp {
+    port GeneralPortType GeneralPort;
+}
+
+testcase TC_NegSyn_1603_testcases_001 (GeneralPortType genPort) runs on GeneralComp {
+    setverdict(pass);
+}
+
+control{
+
+    execute(TC_NegSyn_1603_testcases_001(GeneralPort)); //testcase parameter must not be port type
+
+}
+
+}

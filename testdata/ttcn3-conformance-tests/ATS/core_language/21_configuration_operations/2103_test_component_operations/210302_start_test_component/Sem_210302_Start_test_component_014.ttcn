@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, Ensure that inout parameters will be passed to the function by value, i.e. like in-parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Possible return values of a function invoked in a start test component operation,
+// i.e. templates denoted by return keyword or inout and out parameters, have no effect
+// when the started test component terminates.
+
+module Sem_210302_Start_test_component_014 {
+
+    type component GeneralComp {
+       var integer v_var:=5;
+    }
+
+    function f() runs on GeneralComp return integer {
+    v_var:=1;
+    return v_var;  // return value v_var:=1
+    }
+
+    testcase TC_Sem_210302_Start_test_component_014() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+
+		ptc:=GeneralComp.create alive;
+		ptc.start(f());
+
+         if(match(v_var,5)){
+             setverdict(pass);
+         }
+        else {
+            setverdict(fail,v_var);
+        }
+    }
+
+    control {
+        execute(TC_Sem_210302_Start_test_component_014());
+    }
+}

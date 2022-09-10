@@ -1,0 +1,10 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, boundary integers should be non negative integers
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_06010204_StringLenghtRestrict_001 {
+    type hexstring HexStrings1 length(0 .. -5); // negative boundary for length
+
+}

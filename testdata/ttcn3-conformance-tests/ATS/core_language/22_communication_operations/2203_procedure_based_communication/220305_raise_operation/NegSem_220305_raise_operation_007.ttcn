@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.5, value of incorrect type in the to clause of the raise operation
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// All AddressRef items in the to clause shall be of type address, component or of the
+// address type bound to the port type (see clause 6.2.9) of the port instance referenced
+// in the raise operation.
+
+module NegSem_220305_raise_operation_007 {
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    const charstring c_ptcName := "PTC";
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S:?);
+		p.raise(S, 1) to c_ptcName;
+        setverdict(pass);
+	}
+
+    testcase TC_NegSem_220305_raise_operation_007() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create(c_ptcName);
+		connect(self:p, v_ptc:p);
+        v_ptc.start(f());
+	    p.call(S:{}, nowait); // no processing of the exception to avoid possible errors in the catch operation
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_007(), 5.0);
+    }
+}

@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that value list notation can not be used for a union type.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_0602_TopLevel_001 {
+
+    type component GeneralComp {
+    }
+
+    type union MyUnion {
+        integer field1,
+        charstring field2,
+        float field3
+    }
+
+    testcase TC_NegSem_0602_TopLevel_001() runs on GeneralComp {
+
+        var MyUnion v_myUnion := {5}; //value list notation can not be used for a union type
+
+    }
+
+    control {
+        execute(TC_NegSem_0602_TopLevel_001());
+    }
+}

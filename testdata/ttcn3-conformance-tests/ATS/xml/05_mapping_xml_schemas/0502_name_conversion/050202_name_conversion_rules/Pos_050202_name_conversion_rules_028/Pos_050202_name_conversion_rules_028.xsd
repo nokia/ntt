@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050202_name_conversion_rules_028"
+  xmlns:ns="schema:Pos_050202_name_conversion_rules_028">
+  <complexType name="test">
+    <sequence>
+      <element name="foo" type="string" />
+      <element name="bar" type="string" />
+    </sequence>
+  </complexType>
+  <element name="field" type="ns:test" />
+  <element name="bar" type="ns:test" substitutionGroup="ns:field"/>
+  <element name="foo" type="ns:test" substitutionGroup="ns:field"/>
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <element ref="ns:field"/>
+      </sequence>
+    </complexType>
+  </element>  
+</schema>

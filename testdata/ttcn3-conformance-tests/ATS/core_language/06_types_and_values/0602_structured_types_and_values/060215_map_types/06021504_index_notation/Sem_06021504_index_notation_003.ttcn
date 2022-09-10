@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that an index notation can be used on the right hand side of an assignment
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The index notation, when used on the right-hand side, refers to the value element that the
+// map associates with the key given as the index.
+
+module Sem_06021504_index_notation_003 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021504_index_notation_003() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 };
+		var integer v_val := v_map["xyz"];
+		if (v_val == 5) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021504_index_notation_003());
+	}
+}

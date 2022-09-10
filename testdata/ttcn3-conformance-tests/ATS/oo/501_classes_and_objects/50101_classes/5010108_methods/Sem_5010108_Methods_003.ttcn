@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.8, Ensure that if a method shall not be overridden by any subclass, it can be declared as @final.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010108_Methods_003 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        var octetstring v_o;
+
+        public function @final doSomething() return integer {
+            return oct2int(this.v_o);
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+    }
+
+    testcase TC_Sem_5010108_Methods_003() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create('AAFF'O);
+        if (v_a.doSomething() == 43775) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010108_Methods_003());
+    }
+}

@@ -1,0 +1,20 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.1, Ensure that attributes for language elements are accepted.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+/* Restriction a) At most one display attribute shall be applied to each definition, each individual field reference or
+language element to which a with statement is associated.*/
+
+module NegSem_270101_ScopeOfAttributes_001 {
+
+    type record of integer IntegerList
+    with {
+     display "Blue"
+	 display "Bold"
+     extension "MyRule"
+    }
+
+}

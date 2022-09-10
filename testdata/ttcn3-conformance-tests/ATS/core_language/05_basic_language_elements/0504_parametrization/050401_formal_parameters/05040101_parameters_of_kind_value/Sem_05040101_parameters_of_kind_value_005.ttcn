@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that template definition can contain in value formal parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// TTCN 3 supports value parameterization according to the following rules:
+// - the language elements template, testcase, altstep and function support dynamic value
+// parameterization (i.e. this parameterization shall be resolved at runtime). Value formal
+// parameters may be in, inout or out parameters. The default for value formal parameters is
+// in parameterization which may optionally be denoted by the keyword in. Using of inout or out
+// kind of parameterization shall be specified by the keywords inout or out respectively.
+
+module Sem_05040101_parameters_of_kind_value_005 {
+
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+    template R m_t(integer p_int1, in integer p_int2) := {
+        field1 := p_int1,
+        field2 := p_int2
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_005() runs on GeneralComp {
+        log(m_t(3,4));
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_005());
+	}
+}

@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that parameterized template is imported together with parameter names
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction c:
+// A definition is imported together with its name and all local definitions.
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// Data template
+
+module Sem_08020301_GeneralFormatOfImport_011 {
+
+import from Sem_08020301_GeneralFormatOfImport_011_import { type R; template m_test1 };
+
+type component GeneralComp {}
+
+type record RLocal { // compatible type with Sem_08020301_GeneralFormatOfImport_011_import.R
+	integer field1,
+	integer field2
+}
+testcase TC_Sem_08020301_GeneralFormatOfImport_011() runs on GeneralComp {
+
+	// type compatibility is checked during parameter passing and template assignment:
+	// for this check, type information for the template parameters and template type
+	// should be available at this point to compile the script correctly
+	template RLocal m_res := m_test1(p_param2 := 10);
+	if (match({1, 10}, m_res)) // testing if parameter name is imported
+		{ setverdict(pass); }
+	else
+		{ setverdict(fail); }
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_011());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_011_import {
+	type record R {
+		integer field1,
+		integer field2
+	}
+	template R m_test1(integer p_param1 := 1 , integer p_param2 := 2) := {
+		field1 := p_param1,
+		field2 := p_param2
+	}
+}

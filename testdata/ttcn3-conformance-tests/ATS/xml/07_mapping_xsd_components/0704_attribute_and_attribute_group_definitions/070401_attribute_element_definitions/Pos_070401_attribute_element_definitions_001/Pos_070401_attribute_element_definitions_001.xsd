@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_070401_attribute_element_definitions_001"
+    xmlns:ns="schema:Pos_070401_attribute_element_definitions_001">
+  <attribute name="a1" type="string"/>
+  <complexType name="c1">
+        <sequence>
+            <element name="elem" type="string"/>
+        </sequence>
+        <attribute ref="ns:a1" />
+    </complexType>
+  <element name="e1" type="ns:c1" />
+</schema>

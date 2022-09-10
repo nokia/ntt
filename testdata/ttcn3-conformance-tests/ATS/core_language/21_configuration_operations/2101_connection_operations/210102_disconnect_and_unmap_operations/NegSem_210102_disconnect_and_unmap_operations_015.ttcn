@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Verify that the disconnect operation cannot contain a system port reference
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// d) The disconnect operation parameters shall not contain a system port reference.
+
+module NegSem_210102_disconnect_and_unmap_operations_015 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+    testcase TC_NegSem_210102_disconnect_and_unmap_operations_015() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+
+        connect(self:p, v_ptc:p);
+        disconnect(system:p); // system port reference: error expected
+    }
+    control{
+        execute(TC_NegSem_210102_disconnect_and_unmap_operations_015());
+    }
+}
+

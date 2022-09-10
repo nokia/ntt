@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_015 {
+    type enumerated EnumeratedType {e_black, e_white};
+    type enumerated EnumeratedTypeWithLabels1 {e_black (1), e_white};
+    type enumerated EnumeratedTypeWithLabels2 {e_black (-1), e_white};
+    type enumerated EnumeratedTypeWithLabels3 {e_black (-1), e_white , e_yellow (0) };
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_015 () runs on GeneralComp {
+        var EnumeratedTypeWithLabels2 vl_enum2_black := e_white;
+        var EnumeratedTypeWithLabels2 vl_enum2_white := e_black;
+
+        const EnumeratedTypeWithLabels2 c_enum2_black := e_black;
+        const EnumeratedTypeWithLabels2 c_enum2_white := e_white;
+
+        int2enum(-1, vl_enum2_black);
+        int2enum(0, vl_enum2_white);
+
+        setverdict(pass, "Both enumerated values matched");
+
+        if (vl_enum2_black != c_enum2_black) {
+            setverdict(fail, "black enumerated value not matching ", vl_enum2_black, c_enum2_black);
+        }
+        if (vl_enum2_white != c_enum2_white) {
+            setverdict(fail, "black enumerated value not matching ", vl_enum2_white, c_enum2_white);
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_015());
+    }
+}

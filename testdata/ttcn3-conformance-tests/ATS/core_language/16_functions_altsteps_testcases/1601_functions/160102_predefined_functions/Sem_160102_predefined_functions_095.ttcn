@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// The following requirements are tested: Using ischosen for anytype
+
+module Sem_160102_predefined_functions_095 {
+	type union U { integer f1, octetstring f2 }
+
+type component GeneralComp {
+}
+
+
+testcase TC_Sem_160102_predefined_functions_095 () runs on GeneralComp {
+	template U m_u4 := ({ f1 := 2 }, {f2 := 'AB'O });
+    template anytype mw_anytype := { U := m_u4 }
+	var boolean v_i;
+
+ 	v_i:=ischosen(mw_anytype.U);	//function returns true value
+		if(match(v_i,true)) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "Unexpected decoding result");
+		}
+}
+
+
+control{
+
+    execute(TC_Sem_160102_predefined_functions_095());
+
+}
+
+}

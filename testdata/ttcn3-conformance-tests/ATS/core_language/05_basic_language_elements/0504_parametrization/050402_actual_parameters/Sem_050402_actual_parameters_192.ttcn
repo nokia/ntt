@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that partially initialized values can be passed to inout formal parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Unless specified differently in the relevant clause(s), actual parameters
+// passed to in or inout formal parameters shall be at least partially
+// initialized (for an exemption see e.g. clause 16.1.2 of the present document).
+
+module Sem_050402_actual_parameters_192 {
+
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer field1,
+        integer field2 optional
+    }
+
+    function f_test (inout R p_val) {
+        if (match(p_val.field1, 1) and not isbound(p_val.field2)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_192() runs on GeneralComp {
+        var R v_rec;
+        v_rec.field1 := 1;
+        f_test(v_rec);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_192());
+	}
+}

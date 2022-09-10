@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that a template(omit) can be assigned to a template variable.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1508_TemplateRestrictions_011 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer a,
+	boolean b optional
+}
+
+template(omit) ExampleType exampleOmit := {1, omit};
+
+testcase TC_Sem_1508_TemplateRestrictions_011() runs on GeneralComp {
+	var template ExampleType v_template;
+
+	v_template := exampleOmit;
+
+	if (match(valueof(v_template.a), 1) and
+	    match(ispresent(v_template.b), false)
+	    ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_011());
+}
+
+
+}

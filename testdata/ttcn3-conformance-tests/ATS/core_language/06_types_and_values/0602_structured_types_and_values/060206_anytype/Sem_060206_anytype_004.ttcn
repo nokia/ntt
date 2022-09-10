@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype comprise verdicttype data type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_004 {
+ type component GeneralComp {
+
+var anytype Var1, Var2;
+var verdicttype c;
+
+}
+
+testcase TC_Sem_060206_anytype_004() runs on GeneralComp {
+
+Var1.verdicttype := pass;
+Var2.verdicttype:=fail;
+
+c :=Var1.verdicttype;
+
+      if (match(c, pass) and match(Var2.verdicttype, fail)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_004());
+}
+
+}

@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.5, Ensure that the IUT correctly handles cyclic imports
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_0505_cyclic_definitions_002 {
+   type integer MyInteger;
+   import from Sem_0505_cyclic_definitions_002_import { type MyIntegerList }
+
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_0505_cyclic_definitions_002() runs on GeneralComp {
+    var MyIntegerList v_list := {1,2};
+
+    if ( match(v_list, { 1, 2})) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_0505_cyclic_definitions_002());
+}
+
+}
+
+module Sem_0505_cyclic_definitions_002_import {
+   import from Sem_0505_cyclic_definitions_002 { type MyInteger }
+   type record of MyInteger MyIntegerList;
+}

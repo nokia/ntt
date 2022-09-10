@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 451, modified by STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.4, Ensure that self kill called in a functions stops non alive test comp.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// non alive test component calls function with self.kill
+
+module Sem_210304_kill_test_component_004 {
+
+    type component GeneralComp {
+    	timer t;
+    }
+	function f() runs on GeneralComp {
+	    self.kill;
+	    setverdict(fail);
+	}
+
+
+    testcase TC_Sem_210304_kill_test_component_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create;
+
+		ptc.start(f());
+		t.start(5.0);
+		alt {
+            [] ptc.killed { setverdict(pass); }
+            [] t.timeout { setverdict(fail); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210304_kill_test_component_004());
+    }
+}

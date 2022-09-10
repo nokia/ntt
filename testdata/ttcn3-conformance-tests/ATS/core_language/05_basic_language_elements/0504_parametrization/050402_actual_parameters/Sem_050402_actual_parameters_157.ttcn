@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that component timers can be passed to timer parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to formal timer parameters shall be component
+// timers, local timers or formal timer parameters of the current scope.
+
+module Sem_050402_actual_parameters_157 {
+
+    type component GeneralComp {
+        timer tc_tmr := 5.0;
+	}
+
+    function f_test(timer t_par) {
+        t_par.stop;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_157() runs on GeneralComp {
+        tc_tmr.start;
+        f_test(tc_tmr); // tested parameter passing
+        if (not tc_tmr.running) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_157());
+	}
+}

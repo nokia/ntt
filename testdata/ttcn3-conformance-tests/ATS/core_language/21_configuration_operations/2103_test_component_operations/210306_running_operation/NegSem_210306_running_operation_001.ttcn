@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Verify that error occurs when any from running is applied to single component
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction b
+// The ComponentArrayRef shall be a reference to a component array variable identifier.
+module NegSem_210306_running_operation_001 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_NegSem_210306_running_operation_001() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+        var GeneralComp v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+        v_isRunning := any from v_ptc.running;
+        if(v_isRunning){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from running operation didn't find running components");
+        }
+    }
+
+    control {
+        execute(TC_NegSem_210306_running_operation_001(), 5.0);
+    }
+}

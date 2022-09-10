@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the alt-statement supports local definitions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * If the alt statement contains local definitions before its first branch,
+ * these are evaluated before the snapshot is taken. When the alt statements executes the repeat operation, the
+ * whole alt statement, including the local definitions, is re-evaluated.
+ **/
+module Sem_2002_TheAltStatement_019 {
+
+	type port MyPort message {
+		inout charstring
+	}
+
+	type component GeneralComp {
+		port MyPort p;
+	}
+
+	template charstring m_test := "";
+
+	testcase TC_Sem_2002_TheAltStatement_019() runs on GeneralComp {
+		p.send(m_test);
+	    timer t_timer := 5.0;
+	    t_timer.start;
+		alt {
+	        var integer v_a := 2;    // local variable
+			[] p.receive {
+	            v_a := 1;    // change value of local variable and repeat
+	            repeat;
+			}
+	        [] t_timer.timeout{
+	          if(match(v_a, 2)){    // check that local variable value remains 2
+				    setverdict(pass);
+	            }else{
+	                setverdict(fail, v_a);
+	            }
+	        }
+		}
+	}
+
+	control {
+		execute(TC_Sem_2002_TheAltStatement_019());
+	}
+
+}

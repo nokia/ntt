@@ -1,0 +1,84 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:B.3.7, Verify that "escape as usi" for strings is correctly used.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * The "escape as usi" encoding instruction tells the encoder that all characters in the TTCN-3
+ * value shall be encoded using the USI-like escape sequence "\u<HHHH>".
+ * */
+
+module Pos_B307_escape_as_002 {
+
+    import from JSON all;
+
+       template String m_msg := "ab" & char(U7) & cu_ht & "cd" with { encode "JSON"; variant "escape as usi"};
+    // the json should be: { "string": "ab\u0007\u0009cd" }
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw with { encode "Text"};
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference JSON file and returns true if they represent the same JSON structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the JSON data
+     * @param p_referenceJsonFile the JSON data
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference JSON file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceJsonFile represent the same JSON data
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceJsonFile, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_B307_escape_as_002() runs on C system C {
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference JSON file
+            []  p.check(receive(Raw:?) -> value v_rcv) {
+                log("JSON message: ", v_rcv);
+                if (matchFile(v_rcv, "Pos_B307_escape_as_002.json", v_matchError)) {
+                    alt {
+                        // match decoded value to pass test
+                        [] p.receive(m_msg) {
+                            setverdict(pass, "Decoded value matches encoded template and reference JSON");
+                        }
+                        [] p.receive {
+                            setverdict(fail, "JSON decoding failure");
+                        }
+                    }
+                } else {
+                    setverdict(fail, v_matchError);
+                }
+
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_B307_escape_as_002(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

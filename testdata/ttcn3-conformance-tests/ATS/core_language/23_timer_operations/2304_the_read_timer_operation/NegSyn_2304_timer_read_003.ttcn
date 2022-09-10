@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.4, Ensure timer read syntax
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.4 The Read timer operation/Timer Read syntax
+
+
+module NegSyn_2304_timer_read_003 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_NegSyn_2304_timer_read_003() runs on TComp{
+		var float v_float;
+        v_float := read(t_timer);
+
+    }
+    control{
+
+            execute(TC_NegSyn_2304_timer_read_003())
+
+
+    }
+}

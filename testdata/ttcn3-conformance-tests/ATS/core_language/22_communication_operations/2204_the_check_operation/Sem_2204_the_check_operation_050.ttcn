@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that port.check(getreply) with assignment works correctly inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_050 {
+
+	signature S();
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+		p.getcall;
+		setverdict(pass, "Call received");
+		p.reply(S:{});
+	}
+
+	testcase TC_Sem_2204_the_check_operation_050() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create, v_src;
+		connect(self:p, v_ptc:p);
+		p.call(S:{}, nowait);
+		v_ptc.start(f());
+        alt
+		{
+        	[] p.check(getreply -> sender v_src) {
+				if (v_src == v_ptc) { setverdict(pass, "Check operation successful"); }
+				else { setverdict(fail, "Counterpart mismatch"); }
+			}
+		}
+		p.getreply;
+		setverdict(pass, "Reply still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_050(), 5.0);
+    }
+}

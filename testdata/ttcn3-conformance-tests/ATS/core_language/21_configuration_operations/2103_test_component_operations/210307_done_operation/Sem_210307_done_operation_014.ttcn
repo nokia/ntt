@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Ensure that @nodefault modifier with done works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+
+// Restrcition j): The @nodefault modifier is allowed only in stand-alone done statements.
+
+module Sem_210307_done_operation_014 {
+
+       type component GeneralComp {}
+       function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210307_done_operation_014() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+		ptc2.start(f1());
+
+        // same as @nodefault all component.done;
+	   	alt @nodefault {
+		    []	all component.done {setverdict(pass); }
+	    }
+
+
+
+    }
+
+    control {
+        execute(TC_Sem_210307_done_operation_014(), 5.0);
+    }
+}

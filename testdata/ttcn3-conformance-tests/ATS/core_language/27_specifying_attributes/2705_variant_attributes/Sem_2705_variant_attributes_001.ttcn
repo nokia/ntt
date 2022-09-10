@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.5, Verify that a single variant attribute can be defined
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// To specify a refinement of the currently specified encoding scheme instead of its replacement,
+// the variant attribute shall be used. The variant attributes are different from other attributes,
+// because they are closely related to encode attributes. Therefore, for variant attributes,
+// additional overwriting rules apply (see clause 27.1.2.1).
+
+module Sem_2705_variant_attributes_001 {
+
+    type component GeneralComp {
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with { variant "Rule A" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2705_variant_attributes_001 () runs on GeneralComp {
+		var RoUC v_variant := MyPDU.variant;
+		if(v_variant == { "Rule A" }) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_Sem_2705_variant_attributes_001());
+	}
+
+}

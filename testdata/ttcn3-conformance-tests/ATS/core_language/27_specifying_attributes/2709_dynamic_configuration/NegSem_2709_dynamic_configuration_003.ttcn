@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.9, Verify that the setencode cannot reference templates in the first parameter
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// The setencode operation can be used on a port or set of ports to dynamically select
+// for the affected ports a single encode attribute value to be used for a type that
+// has multiple encode attributes attached to it.
+
+module NegSem_2709_dynamic_configuration_003 {
+
+	type port P message {
+		inout MyPDU;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with {
+		encode "Codec 1";
+		encode "Codec 2";
+		encode "Codec 3"
+	}
+
+	template MyPDU m_msg := {
+		field1 := 1,
+		field2 := true
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2709_dynamic_configuration_003 () runs on GeneralComp {
+		p.setencode(m_msg, "Codec 1");
+		// Compilation and seamless execution tested.
+		// Actual effect not tested as it would require dedicated TCI implementation
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_2709_dynamic_configuration_003());
+	}
+
+}

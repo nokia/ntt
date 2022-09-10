@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.3.8, Verify that a map types are compatible
+ ** @verdict  pass accept, ttcn3verdict: pass
+ ***************************************************/
+
+// The following requirement is tested:
+// map types are only compatible with other map types. A value "b" of a map type "B" is compatible
+// with a map type "A" if the from type of  "A" is compatible with the from type of "B" and the to
+// type of "B" is compatible with the totype of "A".
+
+module Sem_060308_compatibility_of_map_types_001 {
+	type record R1 {
+		integer field1,
+		integer field2
+	}
+	type record R2 {
+		integer element1,
+		integer element2
+	}
+	type map from charstring to R1 TMap1;
+	type map from charstring to R2 TMap2;
+	type component C {}
+
+	testcase TC_Sem_060308_compatibility_of_map_types_001() runs on C {
+		var TMap1 v_map;
+		v_map["test"] := { 1, 2 };
+		v_map["xyz"] := { 5, 10};
+		var TMap2 v_map2 := v_map;
+		if (v_map2["test"] == { 1, 2 }) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060308_compatibility_of_map_types_001());
+	}
+}

@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Ensure that the alive keyword is properly evaluated
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_210308_killed_operation_003 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210308_killed_operation_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create;
+
+		ptc.start(f1());
+		ptc2.start(f1());
+
+		ptc.stop;
+		ptc2.stop;
+
+		alt {
+			[] all component.killed {setverdict(fail);} //ptc is alive only kill stops it
+			[] ptc2.killed {setverdict(pass);}
+		}
+
+
+    }
+
+    control {
+        execute(TC_Sem_210308_killed_operation_003());
+    }
+}

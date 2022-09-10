@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_060112_fraction_digits_001"
+    xmlns:ns="schema:Pos_060112_fraction_digits_001">
+	<simpleType name='celsiusBodyTemp'>
+	 <restriction base='decimal'>
+	 <totalDigits value='4'/>
+	 <fractionDigits value='1'/>
+	 </restriction>
+	</simpleType>
+	<element name='actualTemp' type='ns:celsiusBodyTemp'/> 
+</schema>

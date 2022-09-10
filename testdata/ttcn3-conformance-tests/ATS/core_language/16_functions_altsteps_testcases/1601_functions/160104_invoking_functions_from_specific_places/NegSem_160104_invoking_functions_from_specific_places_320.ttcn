@@ -1,0 +1,53 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.1.4, verify that a function called in guards of altsteps cannot contain fuzzy variables
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If value returning functions are called in receiving communication operations (in templates, template fields,
+// in-line templates, or as actual parameters), in guards or events of alt statements or altsteps (see clause 20.2),
+// or in initializations of altstep local definitions (see clause 16.2), the following operations shall not be
+// used in functions called in the cases specified above, in order to avoid side effects that cause changing the
+// state of the component or the actual snapshot and to prevent different results of subsequent evaluations
+// on an unchanged snapshot:
+// k) Calling functions and external functions with @fuzzy formal parameters and variables (see notes 4 and 9).
+
+module NegSem_160104_invoking_functions_from_specific_places_320 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test() return boolean {
+		var @fuzzy integer v_int := f_eval();
+		if (v_int > 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+    function f_eval() return integer {
+        return 100;
+    }
+
+    altstep a_rcv() runs on GeneralComp {
+        [f_test()] p.receive(integer:?) {}
+    }
+
+    testcase TC_NegSem_160104_invoking_functions_from_specific_places_320() runs on GeneralComp system GeneralComp {
+        connect(mtc:p, mtc:p);
+        p.send(1);
+		a_rcv();
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160104_invoking_functions_from_specific_places_320());
+	}
+}

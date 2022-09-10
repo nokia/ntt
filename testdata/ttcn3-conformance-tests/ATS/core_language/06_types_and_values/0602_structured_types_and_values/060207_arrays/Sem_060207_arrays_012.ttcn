@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, referencing element of uninitialized array (left-hand side)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// All elements in an array value that are not set explicitly are undefined. When
+// referencing an element of an uninitialized array value or field or omitted field
+// on the left hand side of an assignment, the rules for record of values specified
+// in 6.2.3 apply.
+
+module Sem_060207_arrays_012 {
+
+	type component GeneralComp {
+	}
+
+    type integer MyArrayType1[3] (1 .. 10);
+
+	testcase TC_Sem_060207_arrays_012() runs on GeneralComp {
+
+        var MyArrayType1 v_array1;
+        v_array1[2] := 2; // {-, -, 2}
+        if (not isbound(v_array1[0]) and
+            not isbound(v_array1[1]) and
+            match(v_array1[2], 2)) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+	control {
+		execute(TC_Sem_060207_arrays_012());
+	}
+
+}

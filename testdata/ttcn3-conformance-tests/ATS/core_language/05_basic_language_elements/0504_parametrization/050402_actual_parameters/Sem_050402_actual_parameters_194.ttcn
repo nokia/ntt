@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that Example 2 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_194 {
+
+    type component GeneralComp {
+	}
+
+    type integer MyTemplateType;
+
+    template MyTemplateType MyGlobalTemplate := ?;
+
+    function MyFunction(in template MyTemplateType MyValueParameter){
+        setverdict(pass);
+    };
+    // MyValueParameter is in parameter, the in keyword is optional
+
+    testcase TC_Sem_050402_actual_parameters_194() runs on GeneralComp {
+        // A function call with an actual parameter
+        MyFunction(MyGlobalTemplate);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_194());
+	}
+}

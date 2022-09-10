@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.2, Ensure that the IUT handle scope hieararchy with component booleans.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0502_Scope_002 {
+
+type component GeneralComp {
+    var boolean vc_bool := false;
+}
+
+testcase TC_Sem_0502_Scope_002_a() runs on GeneralComp {
+    if (vc_bool == false){
+		vc_bool := true;
+		setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+/*********************************************************************************************
+ ** @desc  Test case TC_Sem_0502_Scope_002_a shall not effect of the value of boolean vc_bool
+ ********************************************************************************************/
+testcase TC_Sem_0502_Scope_002_b() runs on GeneralComp {
+    if (vc_bool == false){
+		setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_0502_Scope_002_a());
+    execute(TC_Sem_0502_Scope_002_b());
+}
+
+}

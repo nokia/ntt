@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible size restrictions
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060301_non_structured_types_010 {
+    type universal charstring ConstrainedUChar length (1);
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060301_non_structured_types_010() runs on GeneralComp {
+
+    var universal charstring v_uChar := char(0, 0, 1, 112) & char(0, 0, 1, 112);
+    var ConstrainedUChar v_constrainedUChar;
+
+
+    v_constrainedUChar:=v_uChar; // length 2 charstring assigned to length 1 type
+}
+
+control{
+    execute(TC_NegSem_060301_non_structured_types_010());
+}
+
+}

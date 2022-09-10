@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that compatible values can be passed from out formal parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The type of each actual parameter shall be compatible with the type of each
+// corresponding formal parameter.
+
+module Sem_050402_actual_parameters_184 {
+
+    type component GeneralComp {
+	}
+
+    type record R1 {
+        integer field1,
+        integer field2 optional
+    }
+
+    type record R2 {
+        integer elem1,
+        integer elem2 optional
+    }
+
+    function f_test (out R1 p_val) {
+        p_val.field1 := 1;
+        p_val.field2 := 2;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_184() runs on GeneralComp {
+        var R2 v_rec;
+        f_test(v_rec);
+        if (v_rec == { elem1 := 1, elem2 := 2 }) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_184());
+	}
+}

@@ -1,0 +1,20 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26, Ensure that the alt/timeout construct in the control part is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_26_ModuleControl_011 {
+
+control{
+	timer t_timer;
+	t_timer.start(20E-3);
+	alt {
+		[] t_timer.timeout {
+			// do something
+		}
+	}
+}
+
+}

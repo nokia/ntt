@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.1, union alternative referencing itself
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Alternatives of union type definitions shall not reference themselves.
+
+module NegSem_06020501_referencing_fields_of_union_type_003 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		U.option2 option2
+	}
+
+    testcase TC_NegSem_06020501_referencing_fields_of_union_type_003() runs on GeneralComp {
+		var U v_union := { option1 := 1 };
+        if (v_union == { option1 := 1}) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_06020501_referencing_fields_of_union_type_003());
+	}
+}

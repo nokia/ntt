@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined function isvalue() works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * check that isvalue() predefined function works properly
+ */
+
+
+module Sem_160102_predefined_functions_084 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_084 () runs on GeneralComp {
+
+    var boolean v_res;
+
+    var GeneralComp MyComp;
+
+
+
+    v_res := isvalue(MyComp);        //component ,expected result: false
+
+
+
+     if ( match(v_res, false)) {setverdict(pass," isvalue(MyComp): ", v_res);}
+           else{setverdict(fail," isvalue(MyComp):", v_res, " expected result: false");}
+
+    }
+
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_084());
+    }
+}

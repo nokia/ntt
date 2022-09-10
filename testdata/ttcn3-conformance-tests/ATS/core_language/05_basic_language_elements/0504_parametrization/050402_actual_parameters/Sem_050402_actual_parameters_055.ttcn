@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that variable element reference can be used as inout formal value parameters of test cases
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module Sem_050402_actual_parameters_055 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        integer field1
+    }
+
+    testcase TC_Sem_050402_actual_parameters_055(inout integer p_val) runs on GeneralComp {
+        if (p_val == 10) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+        var R v_val := { field1 := 10 };
+		execute(TC_Sem_050402_actual_parameters_055(v_val.field1)); // tested parameter passing
+	}
+}

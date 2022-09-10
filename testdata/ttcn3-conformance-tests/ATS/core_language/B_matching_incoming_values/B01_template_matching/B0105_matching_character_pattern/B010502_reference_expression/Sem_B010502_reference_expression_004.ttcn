@@ -1,0 +1,77 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.5.2, Ensure that the IUT correctly handles template matching of character pattern reference expressions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010502_reference_expression_004 {
+
+    modulepar {
+     charstring MOD_REF:="modulepar reference";
+    }
+
+    type record MessageType {
+     charstring  	field1,
+     charstring		field2,
+     charstring		field3,
+     charstring  	field4,
+     charstring		field5,
+     charstring		field6,
+     charstring		field7
+    }
+
+    type port loopbackPort message {
+      inout MessageType
+    }
+
+      const charstring c_Ref:="constant reference";
+
+type component GeneralComp {
+      port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010502_reference_expression_004(charstring p_Ref) runs on GeneralComp {
+
+    var MessageType v_testMessage;
+    var charstring v_Ref:="variable reference";
+    template charstring m_Ref:= pattern "{c_Ref}";
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := pattern "{v_Ref}",
+  field2 := pattern "{c_Ref}",
+  field3 := pattern "{MOD_REF}",	//mismatch in this reference
+  field4 := pattern "{p_Ref}",
+  field5 := pattern "{m_Ref}",
+  field6 := pattern "{m_"&"Ref}!",
+  field7 := pattern "{v_Ref} and {c_Ref}"
+ };
+
+ v_testMessage:=  {
+  field1 := "variable reference",
+  field2 := "constant reference",
+  field3 := "modulepar reference ",
+  field4 := "parameter reference",
+  field5 := "constant reference",
+  field6 := "constant reference!",
+  field7 := "variable reference and constant reference"
+ };
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(fail);
+     }
+     [] messagePort.receive {
+        setverdict(pass);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010502_reference_expression_004("parameter reference"));
+}
+
+}

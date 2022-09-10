@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that arithmetic operators can handle special float values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+
+module Sem_070101_ArithmeticOperators_039 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070101_ArithmeticOperators_039() runs on GeneralComp {
+	var float v_i := infinity;
+	var float v_k :=2.0E0;
+
+	var float v_result := v_k / v_i;	// Infinity special float as denominator
+
+	if (v_result == 0.0) { setverdict(pass,"match") }
+	else { setverdict(fail,v_result) }
+
+
+}
+control{
+    execute(TC_Sem_070101_ArithmeticOperators_039());
+}
+
+}

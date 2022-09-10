@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.4, Ensure that modified parameterized inline templates are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1504_InlineTemplates_002 {
+
+type port MyMessagePortType message {
+	inout MyMessageType
+}
+
+type component GeneralComp {
+	port MyMessagePortType pt_myPort;
+}
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template MyMessageType m_myTemplate(integer p_myFormalParam):= {
+	field1 := p_myFormalParam,
+	field2 := pattern "abc*xyz",
+	field3 := true
+}
+
+testcase TC_Syn_1504_InlineTemplates_002() runs on GeneralComp {
+	pt_myPort.send(MyMessageType:modifies m_myTemplate(2) := {field2:="foobar"});
+	setverdict(pass);
+}
+
+control{
+    execute(TC_Syn_1504_InlineTemplates_002());
+}
+}

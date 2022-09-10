@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, using lower than allowed custom array index on the left hand side of assignments
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Indexed value notation can be used on both the right-hand side and left-hand
+// side of assignments. The index of the first element shall be zero or the lower
+// bound if an index range has been given.
+
+module NegSem_060207_arrays_023 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_NegSem_060207_arrays_023() runs on GeneralComp {
+        var integer v_arr[2..5] := { 2, 3, 4, 5 };
+        v_arr[0] := 0;
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_023());
+	}
+
+}

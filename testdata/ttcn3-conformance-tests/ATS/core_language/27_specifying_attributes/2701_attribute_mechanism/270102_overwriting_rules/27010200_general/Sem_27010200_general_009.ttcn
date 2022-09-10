@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that attributes of synonym types apply to fields with no existing attributes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// The attributes are applied to the fields or elements of synonym types only if the fields or elements have no
+// valid attributes.
+
+module Sem_27010200_general_009 {
+
+    type component GeneralComp {
+	}
+
+	type record SourceType1 {
+		integer field1,
+		integer field2
+	}
+
+	type SourceType1 SynonymType1 with { encode "Rule2" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_009 () runs on GeneralComp {
+		var RoUC v_enc1 := SynonymType1.encode,
+			v_enc2 := SynonymType1.field1.encode,
+			v_enc3 := SynonymType1.field2.encode;
+		if(lengthof(v_enc1) == 1 and v_enc1[0] == "Rule2" and
+		   lengthof(v_enc2) == 1 and v_enc2[0] == "Rule2" and
+		   lengthof(v_enc3) == 1 and v_enc3[0] == "Rule2") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_009());
+	}
+
+}

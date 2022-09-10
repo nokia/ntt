@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign range to boolean not permitted.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_006 {
+    // only restrictions for integer, float, charstring and universal charstring are allowed in ranges
+    type integer MyBooleanRange (false .. true); // should be rejected
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_006() runs on GeneralComp {
+        var MyBooleanRange v_b1;
+        v_b1 := true;
+        v_b1 := false;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_006());
+    }
+}

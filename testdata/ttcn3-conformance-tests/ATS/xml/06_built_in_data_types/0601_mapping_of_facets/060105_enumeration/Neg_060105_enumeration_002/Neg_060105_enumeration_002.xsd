@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Neg_060105_enumeration_002"
+    xmlns:ns="schema:Neg_060105_enumeration_002">
+      <simpleType name="t1">
+        <restriction>
+          <simpleType>
+            <restriction base="string">
+              <enumeration value="white"/>
+              <enumeration value="black"/>
+              <enumeration value="red"/>
+            </restriction>
+          </simpleType>
+          <minLength value="2"/>
+          <maxLength value="4"/>
+        </restriction>
+      </simpleType>
+    <element name="e1" type="ns:t1"/>
+</schema>

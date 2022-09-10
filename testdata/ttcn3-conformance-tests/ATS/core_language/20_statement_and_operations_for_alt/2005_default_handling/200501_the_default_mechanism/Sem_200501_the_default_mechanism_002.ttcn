@@ -1,0 +1,55 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that default are processed in interleave
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The default mechanism is evoked at the end of each alt statement, if due to the
+// actual snapshot none of the specified alternatives could be executed. An evoked
+// default mechanism invokes the first altstep in the list of defaults, i.e. the last
+// activated default, and waits for the result of its termination. The termination can
+// be successful or unsuccessful.
+
+// In particular, the test case is related to the NOTE 1:
+// An interleave statement is semantically equivalent to a nested set of alt statements
+// and the default mechanism also applies to each of these alt statements. This means,
+// the default mechanism also applies to interleave statements. Furthermore, the restrictions
+// imposed on interleave statements in clause 20.4 do not apply to altsteps that are
+// activated as default behaviour for interleave statements.
+
+module Sem_200501_the_default_mechanism_002 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(pass);
+		}
+	}
+
+	testcase TC_Sem_200501_the_default_mechanism_002() runs on GeneralComp {
+		activate(a());
+		p.send(integer:1);
+		p.send(integer:2);
+		interleave {
+			[] p.receive(integer:5) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+			[] p.receive(integer:2) { // not expected: the first default causes exit from interleave
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_Sem_200501_the_default_mechanism_002());
+	}
+}

@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that initialized formal parameters are not included in implicit constructor
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_003 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+       var integer v_i;
+       template integer t_myTemplate := 5; //integer template initialized
+    }
+
+    testcase TC_NegSem_5010105_Constructors_003() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create(1, 5); //not allowed, implicit constructor should have only one formal param
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_003());
+    }
+}

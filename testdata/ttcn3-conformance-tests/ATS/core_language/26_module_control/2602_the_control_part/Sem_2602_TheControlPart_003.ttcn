@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.2, Ensure that the selection of test cases can be achieven based on resulting verdict types.
+ ** @verdict  pass accept, ttcn3verdict:fail
+ *****************************************************************/
+
+module Sem_2602_TheControlPart_003 {
+
+    type component GeneralComp { }
+
+    testcase TC_Sem_2602_TheControlPart_003() runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_2602_TheControlPart_003_second() runs on GeneralComp {
+        setverdict(fail);
+    }
+
+    control {
+        var verdicttype v_result;
+        v_result := execute(TC_Sem_2602_TheControlPart_003());
+
+        if (v_result == pass) {
+            execute(TC_Sem_2602_TheControlPart_003_second());
+        }
+    }
+
+}

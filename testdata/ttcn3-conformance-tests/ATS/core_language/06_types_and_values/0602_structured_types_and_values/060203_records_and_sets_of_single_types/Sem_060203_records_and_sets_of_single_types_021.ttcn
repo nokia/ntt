@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3, referencing element of uninitialized record of value (left-hand side)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If an indexing operator at the left-hand side of an assignment refers to
+// a non-existent element, the value at the right-hand side is assigned to
+// the element and all elements with an index smaller than the actual index
+// and without assigned value are created with an undefined value.
+module Sem_060203_records_and_sets_of_single_types_021 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_021() runs on GeneralComp {
+
+		var RoI v_rec;
+		v_rec[2] := 2; // {-, -, 2}
+		if (not isbound(v_rec[0]) and
+			not isbound(v_rec[1]) and
+			match(v_rec[2], 2)) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_021());
+	}
+
+}

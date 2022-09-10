@@ -1,0 +1,49 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_005 {
+    type enumerated MyEnumeratedType {e_black, e_white, e_green};
+
+    type record MyRecord {
+        record {
+            boolean innerField1 optional,
+            integer innerField2 optional
+        } field1 optional,
+        integer field2,
+        integer field3,
+        MyEnumeratedType field4 optional
+    }
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_005 () runs on GeneralComp {
+        var MyRecord v_record1 := {
+				field1 := {},
+				field2 := 2,
+				field3 := 3,
+				field4 := omit
+			};
+        var bitstring v_encoded;
+        var MyRecord v_decoded;
+
+        v_encoded:=encvalue(v_record1);
+        if( match(decvalue(v_encoded,v_decoded), 0) and
+            match(v_record1,v_decoded)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    } with {
+        optional "implicit omit";
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_005());
+    }
+}

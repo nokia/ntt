@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that override directive overrides attribute from a reference
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// An attribute definition in a lower scope or those inherited from a referenced type can be overwritten
+// in a higher scope by using the override directive.
+
+module Sem_27010200_general_012 {
+
+    type component GeneralComp {
+	}
+
+	type record MyRecordA {
+		integer field1
+	} with { encode "RuleA" }
+
+	// In the following, fieldA of a MyRecordB instance is encoded according to RuleB
+	type record MyRecordB {
+		MyRecordA fieldA
+	} with { encode override "RuleB" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_012 () runs on GeneralComp {
+		var RoUC v_enc1 := MyRecordB.fieldA.encode;
+		if(lengthof(v_enc1) == 1 and v_enc1[0] == "RuleB") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_012());
+	}
+
+}

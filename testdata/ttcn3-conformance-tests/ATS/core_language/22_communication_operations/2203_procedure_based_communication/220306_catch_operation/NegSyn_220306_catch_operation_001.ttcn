@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.3.6, Verify that error occurs when using index redirection in port.catch operation
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction h
+// The index redirection shall only be used when the operation is used on an any from
+// port array construct.
+module NegSyn_220306_catch_operation_001 {
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S:?);
+		p.raise(S, 20);
+	}
+
+    testcase TC_NegSyn_220306_catch_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_index;
+		connect(self:p, v_ptc:p);
+		p.call(S:{}, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+        alt
+		{
+        	[] p.catch -> @index value v_index { setverdict(pass); }
+			[else] { setverdict(fail, "The any from catch operation didn't match for some reason"); }
+		}
+	}
+
+    control {
+        execute(TC_NegSyn_220306_catch_operation_001(), 5.0);
+    }
+}

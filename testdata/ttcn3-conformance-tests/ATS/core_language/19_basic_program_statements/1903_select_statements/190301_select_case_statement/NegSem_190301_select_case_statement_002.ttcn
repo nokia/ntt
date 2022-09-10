@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:19.3, Verify that two branches of the select-case statement cannot match the same value (list case)
+ ** @verdict  pass reject
+ ***************************************************/
+
+
+module NegSem_190301_select_case_statement_002 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_190301_select_case_statement_002 () runs on GeneralComp{
+ var integer v_i := 2;
+
+ select (v_i) {
+  case(1) {
+   setverdict(fail);
+  }
+  case(0, 2) {
+   setverdict(pass);
+  }
+  case(4, 5, 2) {
+   setverdict(fail);
+  }
+  case else {
+   setverdict(fail);
+  }
+ }
+}
+
+
+control{
+
+    execute(TC_NegSem_190301_select_case_statement_002());
+
+}
+
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070503_derivation_by_union_005"
+  xmlns:ns="schema:Pos_070503_derivation_by_union_005">
+  <simpleType name="e21unnamed">
+	<union>
+		<simpleType>
+			<restriction base="float"/>
+		</simpleType>
+		<simpleType>
+			<restriction base="integer"/>
+		</simpleType>
+		<simpleType>
+			<restriction base="string"/>
+		</simpleType>
+	</union>
+  </simpleType>
+  <simpleType name="e22"> 
+	<restriction base="ns:e21unnamed">
+		<enumeration value="20"/>
+		<enumeration value="50"/>
+		<enumeration value="small"/>
+	</restriction>
+  </simpleType>
+  <element name="MyType" type="ns:e22" />
+</schema>

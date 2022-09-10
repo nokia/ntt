@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:16.1.4, verify that the create operation cannot be used in a function called during receiving operation (in templates)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If value returning functions are called in receiving communication operations (in templates, template fields,
+// in-line templates, or as actual parameters), in guards or events of alt statements or altsteps (see clause 20.2),
+// or in initializations of altstep local definitions (see clause 16.2), the following operations shall not be
+// used in functions called in the cases specified above, in order to avoid side effects that cause changing the
+// state of the component or the actual snapshot and to prevent different results of subsequent evaluations
+// on an unchanged snapshot:
+// a) All component operations, i.e. create, start (component), stop (component), kill, running (component),
+// alive, done and killed (see notes 1, 3, 4 and 6).
+
+module NegSem_160104_invoking_functions_from_specific_places_005 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test() return template integer {
+        var GeneralComp v_ptc := GeneralComp.create;
+        return ?;
+	}
+
+    testcase TC_NegSem_160104_invoking_functions_from_specific_places_005() runs on GeneralComp system GeneralComp {
+        template @fuzzy integer mw_test := f_test();
+        connect(mtc:p, mtc:p);
+        p.send(1);
+        p.receive(mw_test);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160104_invoking_functions_from_specific_places_005());
+	}
+}

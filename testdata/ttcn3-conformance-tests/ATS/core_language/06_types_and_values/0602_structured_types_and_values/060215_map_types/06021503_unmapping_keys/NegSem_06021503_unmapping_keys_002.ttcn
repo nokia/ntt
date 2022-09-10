@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.3, Verify that unmapping a type-incompatible key causes an error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction a
+// SingleExpression shall be a value compatible with the key type of the map type of ValueRef.
+
+module NegSem_06021503_unmapping_keys_002 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021503_unmapping_keys_002() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 };
+		unmap(v_map, 1);
+		setverdict(pass);
+
+	}
+
+	control {
+		execute(TC_NegSem_06021503_unmapping_keys_002());
+	}
+}

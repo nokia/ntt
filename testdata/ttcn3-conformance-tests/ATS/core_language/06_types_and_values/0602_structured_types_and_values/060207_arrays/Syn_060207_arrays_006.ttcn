@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, array variable dimension specified as a range
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// Array dimensions may also be specified using ranges (with inclusive
+// boundaries only). In such cases, the lower and upper values of the range
+// define the lower and upper index values. Such an array is corresponding to
+// a record of with a fixed length restriction computed as the difference
+// between upper and lower index bound plus 1 and indexing starting from the
+// lower bound of the array definition.
+
+module Syn_060207_arrays_006 {
+
+    control {
+        var integer v_arr[1..3];
+    }
+}

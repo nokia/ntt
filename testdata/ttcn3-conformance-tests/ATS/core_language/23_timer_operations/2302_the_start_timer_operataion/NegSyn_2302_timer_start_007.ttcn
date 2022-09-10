@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure timer start  syntax
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/Start timer syntax
+
+
+module NegSyn_2302_timer_start_007 {
+    type component TComp{
+
+        timer t_timers[3] := {1.0, 1.0, 1.0};
+    }
+    testcase TC_NegSyn_2302_timer_start_007() runs on TComp{
+
+        t_timers[1] start(1.0);
+
+    }
+    control{
+
+            execute(TC_NegSyn_2302_timer_start_007())
+
+
+    }
+}

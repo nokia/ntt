@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.4.2, verify that reference to elements of formal template parameters can be used as out formal template parameters of test cases
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal template parameters shall be template variables,
+// formal template parameters or references to elements of template variables or formal template
+// parameters of structured types.
+
+module Sem_050402_actual_parameters_130 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        integer field1
+    }
+
+    testcase TC_Sem_050402_actual_parameters_130(out template integer p_val) runs on GeneralComp {
+        p_val := ?;
+        setverdict(pass);
+	}
+
+    function f_caller(in template R p_param) {
+        execute(TC_Sem_050402_actual_parameters_130(p_param.field1)); // tested parameter passing
+    }
+
+	control {
+        var template R mw_t := { field1 := 1 };
+		f_caller(mw_t);
+	}
+}

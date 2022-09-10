@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted integer with exclusive bounds.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_003 {
+    type integer MyIntegerRange1 (!0 .. 255);
+    type integer MyIntegerRange2 (0 .. !255);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_003() runs on GeneralComp {
+        var MyIntegerRange1 v_i1;
+        var MyIntegerRange2 v_i2;
+        v_i1 := 1; // 0 not allowed
+        v_i1 := 100;
+        v_i1 := 255;
+        v_i2 := 0;
+        v_i2 := 100;
+        v_i2 := 254; // 255 not allowed
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_003());
+    }
+}

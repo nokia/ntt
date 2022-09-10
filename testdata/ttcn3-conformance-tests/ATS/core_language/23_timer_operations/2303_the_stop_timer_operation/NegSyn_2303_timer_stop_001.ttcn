@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.3, Ensure timer stop syntax
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.3 The Stop timer operation/Timer stop syntax
+
+
+module NegSyn_2303_timer_stop_001 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_NegSyn_2303_timer_stop_001() runs on TComp{
+        t_timer.start;
+        t_timer stop;
+
+    }
+    control{
+
+            execute(TC_NegSyn_2303_timer_stop_001())
+
+
+    }
+}

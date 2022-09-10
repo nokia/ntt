@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype cannot be port type
+ ** @verdict  pass reject
+ ***************************************************/
+
+
+module NegSyn_060206_anytype_002 {
+
+
+type port MyPort message{
+	address integer;
+	inout integer;
+};
+
+type component GeneralComp {
+var anytype x;
+port MyPort PCO1;
+
+}
+
+
+testcase TC_NegSyn_060206_anytype_002() runs on GeneralComp {
+
+x.MyPort:= PCO1; // port type is not allowed with anytype
+
+
+}
+
+control {
+    execute(TC_NegSyn_060206_anytype_002());
+}
+
+}

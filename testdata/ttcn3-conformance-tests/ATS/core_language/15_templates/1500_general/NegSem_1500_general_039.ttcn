@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.0, verify that the predefined rnd function cannot be used in a function called during evaluation of a deterministic fuzzy template
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For a fuzzy template that is declared deterministic the template body shall fulfill the restrictions imposed
+// on content of functions used in special places given in clause 16.1.4.
+// The following operations shall not be used:
+// f) Calling the rnd predefined function (see notes 4 and 6).
+
+module NegSem_1500_general_039 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test() runs on GeneralComp return template integer {
+		if (rnd() > 0.5) { return ?; }
+		else { return 1; }
+	}
+
+    testcase TC_NegSem_1500_general_039() runs on GeneralComp system GeneralComp {
+        template @fuzzy @deterministic integer mw_test := f_test();
+		log(mw_test); // causes evaluation
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_1500_general_039());
+	}
+}

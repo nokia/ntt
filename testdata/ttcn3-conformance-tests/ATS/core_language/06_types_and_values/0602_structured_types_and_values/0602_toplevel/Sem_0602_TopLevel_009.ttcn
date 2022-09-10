@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that indexed notation can be used for an arrays.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0602_TopLevel_009 {
+
+    type component GeneralComp {
+    }
+
+    type integer MyArray [3];
+
+    testcase TC_Sem_0602_TopLevel_009() runs on GeneralComp {
+
+        var MyArray v_myArray := {1,2,3};
+        var integer Integer1 :=3;
+        v_myArray[0] := Integer1;
+        Integer1 := v_myArray[1];
+
+        if ( match(v_myArray, {3,2,3}) and match(Integer1, 2)) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_009());
+    }
+}

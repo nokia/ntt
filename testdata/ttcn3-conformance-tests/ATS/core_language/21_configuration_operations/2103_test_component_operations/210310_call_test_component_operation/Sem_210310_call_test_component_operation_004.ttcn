@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with catch stop
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// If the i incomplete execution occurs because the called component was stopped or killed and
+// a catch stop clause is added to the call operation, the StatementBlock of that clause is
+// executed before the call operation terminates.
+
+module Sem_210310_call_test_component_operation_004 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+	    stop;
+	}
+
+    testcase TC_Sem_210310_call_test_component_operation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var boolean v_stopped := false;
+        v_ptc.call(f()) catch (stop) {
+		    v_stopped := true;
+		}
+		if (v_stopped) {
+		    setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_210310_call_test_component_operation_004(), 5.0);
+    }
+}

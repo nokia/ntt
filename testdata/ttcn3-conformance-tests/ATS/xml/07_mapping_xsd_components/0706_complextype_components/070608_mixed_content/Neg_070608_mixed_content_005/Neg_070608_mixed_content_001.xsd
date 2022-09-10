@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Neg_070608_mixed_content_001"
+  xmlns:ns="schema:Neg_070608_mixed_content_001">
+  <element name="MyType">
+    <complexType mixed="true">
+      <all minOccurs="0">
+        <element name="a" type="string"/>
+        <element name="b" type="boolean"/>
+      </all>
+    </complexType>
+  </element>
+</schema>

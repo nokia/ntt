@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that module parameters cannot be used as inout formal value parameters of test cases
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module NegSem_050402_actual_parameters_046 {
+
+    type component GeneralComp {
+	}
+
+    modulepar integer PX_VAL := 2;
+
+    testcase TC_NegSem_050402_actual_parameters_046(inout integer p_val) runs on GeneralComp {
+        if (p_val == 2) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_046(PX_VAL)); // tested parameter passing
+	}
+}

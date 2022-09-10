@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 5.2 Scope rules
+ ** @purpose  1:5.2.1, Ensure that the IUT correctly handles scope of formal function parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_050201_Scope_of_parameters_002 {
+
+type component GeneralComp {
+}
+
+
+function f_formalParameterScope_inout(inout integer p_myParameter) {
+ p_myParameter := 1;
+}
+
+
+
+testcase TC_Sem_050201_Scope_of_parameters_002()  runs on GeneralComp  {
+
+    var integer v_int := 0;
+    f_formalParameterScope_inout(v_int);
+
+    if (v_int == 1) {
+	setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+
+control{
+    execute(TC_Sem_050201_Scope_of_parameters_002());
+}
+
+}

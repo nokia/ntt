@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that information about type of constant is imported together with constant
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// Possible referenced definitions for a signature: parameter types
+
+module Sem_08020301_GeneralFormatOfImport_016 {
+
+import from Sem_08020301_GeneralFormatOfImport_016_import { const c_test };
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_016() runs on GeneralComp {
+	// type compatibility is checked during assignment: for this check, the type information for c_test
+	// should be available at this point to compile the script correctly
+	var integer v_test := c_test;
+	if (v_test == 0) { setverdict(pass); }
+	else { setverdict(fail); }
+}
+
+control{
+	// testing if parameter names are imported
+    execute(TC_Sem_08020301_GeneralFormatOfImport_016());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_016_import {
+	const integer c_test := 0;
+}

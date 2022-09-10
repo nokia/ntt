@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:11.1, Define variables in module scope
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_1101_ValueVars_001 {
+    var integer v_i1 := 5;
+}

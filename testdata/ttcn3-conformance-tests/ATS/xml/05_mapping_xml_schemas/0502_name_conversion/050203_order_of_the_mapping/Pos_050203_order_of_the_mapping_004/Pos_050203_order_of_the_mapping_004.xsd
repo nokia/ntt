@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    xmlns:ns1="Pos_050203_order_of_the_mapping_004__MyNamespace"
+    xmlns:ns2="Pos_050203_order_of_the_mapping_004_MyNamespace"
+    targetNamespace="schema:Pos_050203_order_of_the_mapping_004"
+    xmlns:ns="schema:Pos_050203_order_of_the_mapping_004">
+  <import namespace="Pos_050203_order_of_the_mapping_004__MyNamespace" schemaLocation="Pos_050203_order_of_the_mapping_004_1.xsd"/>
+  <import namespace="Pos_050203_order_of_the_mapping_004_MyNamespace" schemaLocation="Pos_050203_order_of_the_mapping_004_2.xsd"/>
+  <element name="MyType">
+    <complexType>
+     <sequence>
+      <element name="f1" type="ns1:MyType1"/>
+      <element name="f2" type="ns2:MyType2"/>
+     </sequence>
+    </complexType>
+  </element>  
+</schema>

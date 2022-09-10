@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070702_the_anyattribute_element_005"
+  xmlns:ns="schema:Pos_070702_the_anyattribute_element_005">
+  <attribute name="foo" type="string"/>
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <element name="ding" type="string"/>
+      </sequence>
+      <attribute name="bar" type="string"/>
+      <anyAttribute namespace="##targetNamespace"/>
+    </complexType>
+  </element>
+</schema>

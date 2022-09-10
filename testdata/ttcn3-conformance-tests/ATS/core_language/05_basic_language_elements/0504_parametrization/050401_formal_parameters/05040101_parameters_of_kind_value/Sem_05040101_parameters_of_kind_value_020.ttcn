@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that system is suitable default value of formal value parameters of component type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction f)
+// Default values of component type formal parameters shall be one of the special values null,
+// mtc, self, or system.
+
+module Sem_05040101_parameters_of_kind_value_020 {
+
+	type component GeneralComp {
+	}
+
+    function f(GeneralComp p_comp := system) {
+        log(p_comp);
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_020() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_020());
+	}
+}

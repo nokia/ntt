@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that string constant cannot be used in an attribute definition
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// The syntax for the argument of the with statement (i.e. the actual attributes) is defined as a free text string.
+
+module NegSyn_2702_the_with_statement_001 {
+
+    type component GeneralComp {
+	}
+
+	const charstring c_enc := "RuleA";
+
+	type record R {
+	} with { encode c_enc }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSyn_2702_the_with_statement_001 () runs on GeneralComp {
+		var RoUC v_enc := R.encode;
+		if(v_enc[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_NegSyn_2702_the_with_statement_001());
+	}
+
+}

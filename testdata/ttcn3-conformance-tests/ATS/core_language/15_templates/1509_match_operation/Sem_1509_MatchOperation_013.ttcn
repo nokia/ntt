@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 521, updated by STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that if the expression-parameter evaluates to a literal value without explicit or implicit identification of its type, the type of the template instance-parameter shall be used as the type governor for the expression-parameter.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// Restriction C: If the expression-parameter evaluates to a literal value without explicit or implicit identification of its type, the type of the template instance-parameter shall be used as the type governor for the expression-parameter.
+
+
+module Sem_1509_MatchOperation_013 {
+
+type component GeneralComp { }
+
+const integer c_value := 1;
+
+testcase TC_Sem_1509_MatchOperation_013() runs on GeneralComp {
+
+	if (match(c_value, ?)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1509_MatchOperation_013());
+}
+
+}

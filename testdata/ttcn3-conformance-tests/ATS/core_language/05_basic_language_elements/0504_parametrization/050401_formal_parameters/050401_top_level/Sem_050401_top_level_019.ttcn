@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that @lazy modifier can be used for value parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal value or template parameters may be declared lazy using the @lazy modifier. The behaviour
+// of lazy parameters is defined in clause 3.1, definition of lazy values or templates.
+
+module Sem_050401_top_level_019 {
+
+	type component GeneralComp {
+	}
+
+	function f(@lazy integer p_int) {
+        if (p_int == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	testcase TC_Sem_050401_top_level_019() runs on GeneralComp {
+		f(1);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_019());
+	}
+}

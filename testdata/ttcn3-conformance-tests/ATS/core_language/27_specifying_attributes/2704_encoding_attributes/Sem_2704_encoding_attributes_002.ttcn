@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.4, Verify that multiple encode attributes can be defined
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// The with statement may contain more than one encode attribute. In this case, multiple encodings are
+// supported in the context where the attribute is used.
+
+module Sem_2704_encoding_attributes_002 {
+
+    type component GeneralComp {
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with { encode "Codec A" encode "Codec B" encode "Codec C" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2704_encoding_attributes_002 () runs on GeneralComp {
+		var RoUC v_enc := MyPDU.encode;
+		if(v_enc == { "Codec A", "Codec B", "Codec C" }) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_Sem_2704_encoding_attributes_002());
+	}
+
+}

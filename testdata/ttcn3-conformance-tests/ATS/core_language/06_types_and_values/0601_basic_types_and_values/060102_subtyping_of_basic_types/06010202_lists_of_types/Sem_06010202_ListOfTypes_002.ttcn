@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign values to list of types restricted hexstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010202_ListOfTypes_002 {
+    type hexstring HexStrings1 ('FE80'H, '01'H );
+    type hexstring HexStrings2 ('00'H, '7F'H, 'B8'H, 'A0'H);
+    type hexstring HexStrings_1_2 (HexStrings1, HexStrings2);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010202_ListOfTypes_002() runs on GeneralComp {
+        var HexStrings_1_2 v_b;
+        v_b := 'FE80'H;	 //FE80 value is defined by the type HexStrings1
+        v_b := '7F'H;	//7F value is defined by the type HexStrings2
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010202_ListOfTypes_002());
+    }
+}

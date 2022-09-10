@@ -1,0 +1,69 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_001 {
+    type enumerated EnumeratedType {e_black, e_white};
+
+    type component GeneralComp {
+    }
+
+    /**
+     * @desc Equals method for floats
+     * @return true if abs(f1 - f2) < 1.E-6
+     */
+    function f_isFloatNear(in float f1, in float f2) return boolean {
+        var float delta := f1-f2;
+        if (delta < 0.0) {
+            delta := 0.0 - delta;
+        }
+        return delta < 1E-6;
+    }
+
+    testcase TC_Sem_160102_predefined_functions_001 () runs on GeneralComp {
+        const universal charstring c_i:="i";
+        var integer v_result:=0;
+        var EnumeratedType v_enum:=e_white;
+
+        if( match(int2char(105), "i") and
+            match(int2unichar(105), c_i) and
+            match(int2bit(5,4), '0101'B) and
+            match(int2hex(55,4), '0037'H) and
+            match(int2oct(55,2), '0037'O) and
+            match(int2str(55), "55") and
+            (f_isFloatNear(int2float(5),5.0)) and
+            match(float2int(5.0), 5) and
+            match(char2int("i"), 105) and
+            match(char2oct("i"), '69'O) and
+            match(unichar2int(c_i), 105) and
+            match(bit2int('101'B), 5) and
+            match(bit2hex('110111'B), '37'H) and
+            match(bit2oct('110111'B), '37'O) and
+            match(bit2str('110111'B), "110111") and
+            match(hex2int('37'H), 55) and
+            match(hex2bit('37'H),'00110111'B) and
+            match(hex2oct('37'H), '37'O) and
+            match(hex2str('37'H), "37") and
+            match(oct2int('37'O), 55) and
+            match(oct2bit('37'O), '00110111'B) and
+            match(oct2hex('37'O), '37'H) and
+            match(oct2str('37'O), "37") and
+            match(oct2char('69'O), "i") and
+            match(str2int("55"),55) and
+            match(str2oct("55"), '55'O) and
+            (f_isFloatNear(str2float("5.5"),5.5)) and
+            match(enum2int(v_enum), 1)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_001());
+    }
+}

@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:23.6, removing random timeout when using any timer.timeout
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_2306_timer_timeout_009 {
+
+    type component TComp{
+        timer t_tmr := 0.5;
+    }
+
+    testcase TC_Sem_2306_timer_timeout_009() runs on TComp{
+        t_tmr.start;
+        any timer.timeout; // it should remove t_tmr timeout from the timeout table
+        alt {
+            [] t_tmr.timeout { setverdict(fail, "Timeout not removed by any timer.timeout"); }
+            [else] { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_Sem_2306_timer_timeout_009(), 5.0)
+    }
+}

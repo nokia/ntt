@@ -1,0 +1,22 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:27.1.1, Ensure that attributes for language elements are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_270101_ScopeOfAttributes_002 {
+
+    type record MyRecord {
+     integer field1,
+     record {
+	  integer innerField1,
+	  boolean innerField2
+     } field2
+    }
+    with {
+     display "colour red";
+     extension "MyRule"
+    }
+
+}

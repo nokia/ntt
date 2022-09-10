@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that the ispresent operator can be used with maps
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Presence of a mapping for a key can be checked by using the isbound, isvalue or ispresent
+// with an index notation as its argument.
+
+module Sem_06021504_index_notation_006 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021504_index_notation_006() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 };
+		if (ispresent(v_map["test"]) and not ispresent(v_map["abc"])) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021504_index_notation_006());
+	}
+}

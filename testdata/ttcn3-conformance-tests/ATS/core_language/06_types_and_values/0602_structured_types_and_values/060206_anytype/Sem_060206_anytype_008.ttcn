@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype is a valid value inside an union
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_008 {
+ type component GeneralComp {
+	var anytype c;
+}
+
+type union R
+	{
+	anytype cs1	//Union type R element is an anytype data
+	}
+
+
+testcase TC_Sem_060206_anytype_008() runs on GeneralComp {
+
+c.R.cs1.charstring := "abc";		// The element of Uninon R becomes a charstring
+
+      if (c.R.cs1.charstring =="abc") {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_008());
+}
+
+}

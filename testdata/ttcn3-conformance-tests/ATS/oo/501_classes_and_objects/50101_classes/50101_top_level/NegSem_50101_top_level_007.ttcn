@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that class type cannot be the contained value of an anytype value.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_007 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_anytype_class {
+        //empty class
+    }
+
+    testcase TC_NegSem_50101_top_level_007() runs on GeneralComp {
+        var t_class_anytype_class v_class := t_class_anytype_class.create();
+        var anytype v_Myanytype;
+        v_Myanytype.t_class_anytype_class := v_class; // not allowed
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_007());
+    }
+}

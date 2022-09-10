@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that template parameters cannot be used as in formal value parameters of functions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed by value to in formal value parameters shall be
+// variables, literal values, module parameters, constants, variables, value returning
+// (external) functions, formal value parameters (of in, inout or out parameterization)
+// of the current scope or expressions composed of the above.
+
+module NegSem_050402_actual_parameters_001 {
+
+    type component GeneralComp {
+	}
+
+    template integer m_msg := 1;
+
+    function f_test(in integer p_val) {
+        if (p_val == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_001() runs on GeneralComp {
+        f_test(m_msg); // tested parameter passing
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_001());
+	}
+}

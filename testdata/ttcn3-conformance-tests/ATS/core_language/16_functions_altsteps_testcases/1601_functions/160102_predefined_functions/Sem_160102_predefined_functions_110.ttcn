@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'encvalue_o' function works properly in case of encoding a variable to octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+
+- C.5.5 The encoding to octetstring function
+ * In case the encoded message is not octet-based and has a bit length not divisable by
+8, the encoded message will be left-aligned in the returned octetstring and the least significant (8 - (bit length mod 8))
+bits in the least significant octet will be 0. The bit length can be assigned to a variable by usage of the formal out
+parameter bit_length.
+*/
+
+
+module Sem_160102_predefined_functions_110 {
+
+    type component GeneralComp {
+
+    }
+
+    type bitstring MyPDU;
+
+
+
+    testcase TC_Sem_160102_predefined_functions_110 () runs on GeneralComp {
+
+    var MyPDU v_bitstr := '011'B;
+    var octetstring result := '0300000060'O;    // bit length not divisable by 8, the encoded message will be left-aligned in the returned octetstring and the least significant (8 - (bit length mod 8)) bits in the least significant octet will be 0.
+
+    //Encoding:
+    var octetstring v_enc := encvalue_o(v_bitstr); //encode the non octet based bitstring to octetstring
+
+    if (lengthof (v_enc) > 0 and match(v_enc,result)) {
+          setverdict(pass);
+    } else {
+          setverdict(fail,v_enc);
+    }
+
+   }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_110());
+
+    }
+
+}

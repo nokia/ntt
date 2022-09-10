@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050103_imports_001_1"
+  xmlns:ns2="schema:Pos_050103_imports_001_1">
+  <simpleType name="MyType">
+    <restriction base="integer" />
+  </simpleType>
+</schema>

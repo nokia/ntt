@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060312_byte_001"
+  xmlns:types="schema:Pos_060312_byte_001">
+    <simpleType name="t1">
+        <restriction base="byte"/>
+    </simpleType>
+    <element name="e1" type="types:t1"/>
+</schema>

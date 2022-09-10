@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.4, verify that a function called in guards of alt statements cannot reference fuzzy variables
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If value returning functions are called in receiving communication operations (in templates, template fields,
+// in-line templates, or as actual parameters), in guards or events of alt statements or altsteps (see clause 20.2),
+// or in initializations of altstep local definitions (see clause 16.2), the following operations shall not be
+// used in functions called in the cases specified above, in order to avoid side effects that cause changing the
+// state of the component or the actual snapshot and to prevent different results of subsequent evaluations
+// on an unchanged snapshot:
+// m) Referencing lazy or fuzzy variables, parameters or templates that have not been declared deterministic.
+
+module NegSem_160104_invoking_functions_from_specific_places_326 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+		var @fuzzy integer v_int := f_eval();
+	}
+
+	function f_test() return boolean runs on GeneralComp {
+		if (v_int > 0) {   //referencing a fuzzy variable from GeneralComp in an alt guard
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+    function f_eval() return integer runs on GeneralComp {
+        return 100;
+    }
+
+    testcase TC_NegSem_160104_invoking_functions_from_specific_places_326() runs on GeneralComp system GeneralComp {
+        connect(mtc:p, mtc:p);
+        p.send(1);
+		alt {
+            [f_test()] p.receive(integer:?) {}
+        }
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160104_invoking_functions_from_specific_places_326());
+	}
+}

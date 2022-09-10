@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.4, Ensure timer read syntax: disallow any timer.read
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.4 The Read timer operation/Timer Read syntax
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Disallow any timer.read
+
+module NegSyn_2304_timer_read_004 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_NegSyn_2304_timer_read_004() runs on TComp{
+		var float v_float;
+        v_float := any timer.read;
+        log ("any timer.read", v_float);
+    }
+    control{
+
+            execute(TC_NegSyn_2304_timer_read_004())
+
+
+    }
+}

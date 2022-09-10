@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Define variables in different scopes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1102_TemplateVars_001 {
+    type component GeneralComp {
+        timer t;
+        var template integer vc_i1 := omit;
+    }
+
+    altstep a_Sem_1102_TemplateVars_001() runs on GeneralComp {
+      var integer v_j := 12;
+      [] t.timeout {
+          var template integer v_k := ?;
+      }
+    }
+
+	function f_Sem_1102_TemplateVars_001() runs on GeneralComp {
+  		var template integer v_i := *;
+	}
+
+	testcase TC_Sem_1102_TemplateVars_001() runs on GeneralComp {
+  		var template integer v_i := (1, 2, 3);
+        f_Sem_1102_TemplateVars_001();
+
+        t.start(1.0);
+        alt {
+	        [] a_Sem_1102_TemplateVars_001();
+        }
+
+        setverdict(pass);
+	}
+
+    control {
+        var template integer v_i := (1..2);
+        execute(TC_Sem_1102_TemplateVars_001());
+    }
+}

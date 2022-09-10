@@ -1,0 +1,22 @@
+/***************************************************
+ * @author TTF T003
+ * @version 0.0.1
+ * @purpose 1.6.2.16, Ensure that the open type is forbidden in Constant declarations.
+ * @verdict pass reject
+ ***************************************************/
+
+module NegSem_060216_the_open_type_004 {
+	type component GeneralComp {
+	}
+
+	const any myOpenConst := 2;	//not allowed
+
+	testcase TC_Sem_060216_the_open_type_004() runs on GeneralComp {
+		//empty TC
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_060216_the_open_type_004());
+	};
+}

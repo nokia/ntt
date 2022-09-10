@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.10, Ensure that the IUT correctly handles return statements.
+ ** @verdict  pass reject
+ *****************************************************************/
+module NegSem_1910_return_statement_001 {
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_NegSem_1910_return_statement_001 () runs on GeneralComp{
+        setverdict(pass);
+        return 0;	//testcase cannot have a return statement
+
+    }
+
+
+    control{
+
+        execute(TC_NegSem_1910_return_statement_001());
+
+    }
+
+}

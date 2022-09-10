@@ -1,0 +1,17 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.1, Verify that templates of a map type are not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction a
+// Template definitions ... of type map ... are not allowed.
+
+
+module NegSem_06021501_map_type_definition_001 {
+	type map from charstring to integer TMap1;
+	template TMap1 m_test := {}
+
+}

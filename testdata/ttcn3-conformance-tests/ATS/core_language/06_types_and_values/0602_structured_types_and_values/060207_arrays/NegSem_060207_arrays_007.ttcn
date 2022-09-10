@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, array index greater than the upper bound (left-hand side)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The index shall not exceed the limitations given by either the length or the
+// upper bound of the index.
+
+module NegSem_060207_arrays_007 {
+
+	type component GeneralComp {
+	}
+
+    type integer MyArrayType1[5] (1 .. 10);
+
+	testcase TC_NegSem_060207_arrays_007() runs on GeneralComp {
+
+        var MyArrayType1 v_array1 := { 8, 9, 2, 3, 4};
+        v_array1[5] := 3; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_007());
+	}
+
+}

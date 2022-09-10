@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that identifiers of signatures are not imported together with signature templates
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The TTCN-3 import mechanism distinguishes between the identifier of a referenced
+// definition and the information necessary for the usage of a referenced definition
+// within the imported definition. For the usage, the identifier of a referenced
+// definition is not required and therefore not imported automatically.
+// Table 8:
+// Possible referenced definitions for a signature template: signatures
+
+module NegSem_08020301_GeneralFormatOfImport_024 {
+import from NegSem_08020301_GeneralFormatOfImport_024_import { template s_test };
+	// f_test should be undefined, because it is not automatically imported
+	template S s_test2 := { p := ? }
+}
+
+module NegSem_08020301_GeneralFormatOfImport_024_import {
+	signature S(integer p);
+	template S s_test := { p := 3 }
+}

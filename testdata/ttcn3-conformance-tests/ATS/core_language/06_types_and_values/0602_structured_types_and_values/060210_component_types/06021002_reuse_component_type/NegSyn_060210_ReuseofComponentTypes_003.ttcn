@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10, Ensure that extending a component that occurs name clash is not allowed
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+/* The following requirements are tested:
+ * When defining component types by extension, there shall be
+ * no name clash between the definitions being taken from the parent type
+ * and the definitions being added in the extended type
+ */
+
+module NegSyn_060210_ReuseofComponentTypes_003 {
+
+    type port loopbackPort message {
+        inout integer;
+        inout float;
+    }
+
+ type component MyCompA  {
+     port loopbackPort pt_myPortA;
+     var integer MyInt;
+    }
+
+
+ type component GeneralComp extends MyCompA  {
+        port loopbackPort pt_myPortB;
+        var integer MyInt;    //error: name clash from parent type
+    }
+
+    testcase TC_NegSyn_060210_ReuseofComponentTypes_003() runs on GeneralComp {
+
+     pt_myPortA.send(2);
+     pt_myPortB.send(2.0);
+  }
+
+    control{
+        execute(TC_NegSyn_060210_ReuseofComponentTypes_003());
+    }
+}

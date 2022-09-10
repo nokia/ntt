@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.4, Ensure that friend visibility works for a sample constant.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_080204_DefinitionOfFriendModules_001 {
+
+import from Sem_080204_DefinitionOfFriendModules_001_import all;
+
+type component GeneralComp {}
+
+testcase TC_Sem_080204_DefinitionOfFriendModules_001() runs on GeneralComp {
+	if (c_myconst == 32532) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_080204_DefinitionOfFriendModules_001());
+}
+}
+
+module Sem_080204_DefinitionOfFriendModules_001_import {
+	friend module Sem_080204_DefinitionOfFriendModules_001;
+
+	friend const integer c_myconst := 32532;
+}

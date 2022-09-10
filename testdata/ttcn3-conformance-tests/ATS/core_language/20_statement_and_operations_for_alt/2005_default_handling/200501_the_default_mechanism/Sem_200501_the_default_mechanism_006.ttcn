@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify repeat command behaviour in invoked default
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// In the case of a successful termination, ... the test component will take new
+// snapshot and re-evaluate the alt statement. The latter has to be specified by
+// means of a repeat statement.
+
+module Sem_200501_the_default_mechanism_006 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		var integer vc_messageCounter := 0;
+		port P p;
+	}
+
+	altstep a() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			vc_messageCounter := vc_messageCounter + 1;
+			setverdict(pass, "Default value -> repeating alt");
+			repeat;
+		}
+	}
+
+	testcase TC_Sem_200501_the_default_mechanism_006() runs on GeneralComp {
+		activate(a());
+		p.send(integer:5);
+		p.send(integer:1);
+		alt {
+			[] p.receive(integer:1) {
+				vc_messageCounter := vc_messageCounter + 1;
+				setverdict(pass);
+			}
+		}
+		if (vc_messageCounter != 2) {
+			setverdict(fail, "Different number of received messages (", vc_messageCounter, ") than expected (2)");
+		}
+	}
+
+	control{
+		execute(TC_Sem_200501_the_default_mechanism_006());
+	}
+}

@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.12, Ensure right type checking for address types in ports
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060212_AddressingEntitiesInsideSut_001 {
+    type integer address;
+
+    type port PortType1 message {
+        address charstring;
+        inout all;
+    }
+
+    type port PortType2 message {
+        inout all;
+    }
+
+    type component TestCaseComp {
+        port PortType1 p1;
+    }
+
+    testcase TC_NegSem_060212_AddressingEntitiesInsideSut_001() runs on TestCaseComp system TestCaseComp {
+
+        var address v_int := 1;
+        var PortType1.address v_char := "test";
+
+        // port 1 has charstring address, should not be accepted
+        p1.send(5) to v_int;
+
+        setverdict(fail);
+    }
+
+    control {
+        execute(TC_NegSem_060212_AddressingEntitiesInsideSut_001());
+    }
+}

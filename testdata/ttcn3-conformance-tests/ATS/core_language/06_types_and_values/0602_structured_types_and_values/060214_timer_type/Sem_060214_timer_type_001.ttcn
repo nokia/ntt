@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, variable of the timer type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// TTCN 3 allows to define timer constants, variables and parameters. These constants, variables or parameters can contain
+// a reference to an existing timer or a special value null.
+
+module Sem_060214_timer_type_001 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_060214_timer_type_001() runs on GeneralComp system GeneralComp {
+        timer t1 := 0.5, t2 := 0.2;
+		var timer v_tmr := t1;
+		t2.start;
+		v_tmr := t2;
+		v_tmr.timeout;
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_060214_timer_type_001());
+	}
+}

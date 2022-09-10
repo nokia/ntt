@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer can`t be used in module control parts when declared in components
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timers can be declared in component and used in test cases, functions, altsteps on this component
+ **/
+
+
+module NegSyn_12_toplevel_timer_001 {
+    type component TComp{
+        timer t_timer:=01.0;
+    }
+    testcase TC_NegSyn_12_toplevel_timer_001(integer f) runs on TComp{
+        if (f==0){
+        	setverdict(fail);
+        }
+        else{
+            setverdict(pass);
+        }
+    }
+    control{
+
+        t_timer.start;
+        if (t_timer.running){
+            execute(TC_NegSyn_12_toplevel_timer_001(0))
+        }
+        else{
+            execute(TC_NegSyn_12_toplevel_timer_001(1))
+        }
+
+    }
+}

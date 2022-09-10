@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.5, Ensure that the IUT recognizes explicit control functions
+ ** @verdict  pass accept
+ ***************************************************/
+
+// Tested restriction:
+// g) When invoking a module control function explicitly, the compatibility to the test component type of the invoking control component as described in clause 6.3.3 need to be fulfilled.
+
+module Sem_160105_explicit_control_functions_002 {
+
+    type component GeneralComp1 {
+        timer t_timer1;
+    }
+
+    type component GeneralComp2 {
+        timer t_timer1;
+    }
+
+    friend function @control f_Sem_160105_explicit_control_functions_002() runs on GeneralComp2 { //GeneralComp2 is compatible with GeneralComp1
+        execute(TC_Sem_160105_explicit_control_functions_002());
+    }
+
+    testcase TC_Sem_160105_explicit_control_functions_002 () runs on GeneralComp2 {
+        setverdict(pass);
+    }
+
+    function control() runs on GeneralComp1 {
+        f_Sem_160105_explicit_control_functions_002();
+    }
+
+}

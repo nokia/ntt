@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, set of index greater than the upper bound (left-hand side)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The index value shall not exceed the limitation placed by length subtyping.
+
+// Note: right-hand side is not tested, because such an element is non-existent
+// and it is impossible to find out whether expected error is caused by this
+// this requirement or the rule concerning referencing non-existent elements.
+
+module NegSem_060203_records_and_sets_of_single_types_012 {
+
+	type component GeneralComp {
+	}
+
+	type set length (0..3) of integer SoI;
+
+	testcase TC_NegSem_060203_records_and_sets_of_single_types_012() runs on GeneralComp {
+
+		var SoI v_set := { 0, 1, 2 };
+		v_set[3] := 3; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060203_records_and_sets_of_single_types_012());
+	}
+
+}

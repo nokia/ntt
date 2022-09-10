@@ -1,0 +1,11 @@
+The @configuration port:XYZ directive in the header indicates the type of adapter being used. 
+The two possible port: values are broadcast/loopback.
+For historical reasons, the absence of this directive means loopback adapter.
+Example:
+ ** @configuration  port:broadcast
+
+The following example indicates external functions used in the test case  
+ ** @configuration  external_functions
+
+
+- TODO: check that each match operation is used correctly (must not be used to compare templates!!)

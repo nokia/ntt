@@ -1,0 +1,78 @@
+/*****************************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:15.6.4, Test modification of signature parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_150604_ReferencingSignatureParameters_001 {
+
+/**
+ * @desc testing of inline return template for remote procedure call
+ * @param p_par1 only input parameter
+ * @param p_par2 must have value 4 at return
+ * @param p_par3 must have value 5 at return
+ * @return must return value 1
+ */
+
+signature p_Sem_150604_ReferencingSignatureParameters_001(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+template p_Sem_150604_ReferencingSignatureParameters_001 s_baseTemplate := {
+	p_par1 := -,
+	p_par2 := 4,
+	p_par3 := ?
+}
+
+template p_Sem_150604_ReferencingSignatureParameters_001 s_returnTemplate modifies s_baseTemplate := {
+	p_par3 := 5
+}
+
+template p_Sem_150604_ReferencingSignatureParameters_001 s_wrongTemplate modifies s_baseTemplate := {
+	p_par3 := 3
+}
+
+template p_Sem_150604_ReferencingSignatureParameters_001 s_callTemplate := {
+	p_par1 := 1,
+	p_par2 := -,
+	p_par3 := 3
+}
+
+    type port remotePort procedure {
+    	inout p_Sem_150604_ReferencingSignatureParameters_001;
+	}
+
+type component GeneralComp {
+	  port remotePort PCO;
+}
+
+function f_ptcBehaviour() runs on GeneralComp {
+    PCO.getcall(p_Sem_150604_ReferencingSignatureParameters_001:?);
+    PCO.reply(p_Sem_150604_ReferencingSignatureParameters_001:{-, 4, 5} value 1);
+}
+
+testcase TC_Sem_150604_ReferencingSignatureParameters_001() runs on GeneralComp system GeneralComp {
+ var GeneralComp v_ptc := GeneralComp.create("PTC");
+ connect (self:PCO, v_ptc:PCO);
+ v_ptc.start(f_ptcBehaviour());
+ PCO.call(p_Sem_150604_ReferencingSignatureParameters_001:s_callTemplate, 5.0) {
+
+	[] PCO.getreply(p_Sem_150604_ReferencingSignatureParameters_001:s_wrongTemplate value 1) {
+		setverdict(fail);
+	}
+	[] PCO.getreply(p_Sem_150604_ReferencingSignatureParameters_001:s_returnTemplate value 2) {
+		setverdict(fail);
+	}
+	[] PCO.getreply(p_Sem_150604_ReferencingSignatureParameters_001:s_returnTemplate value 1) {		//check that procedure is returning correct values
+		setverdict(pass);
+	}
+	[] PCO.catch (timeout) {
+		setverdict(fail);
+	}
+ }
+}
+
+control{
+    execute(TC_Sem_150604_ReferencingSignatureParameters_001());
+}
+
+}

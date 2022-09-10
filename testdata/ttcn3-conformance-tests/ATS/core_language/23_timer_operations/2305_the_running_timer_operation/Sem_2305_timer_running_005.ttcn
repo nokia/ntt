@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Ensure that correct number of timers from a timer array is still running
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_2305_timer_running_005 {
+    type component TComp {
+        timer t_TimerArray[2][2] :={{3.0,3.0}, {5.0,5.0}};
+    }
+    testcase TC_Sem_2305_timer_running_005() runs on TComp {
+
+        var integer v_foundIndex[2];
+        for (var integer i := 0; i < lengthof(t_TimerArray); i := i + 1) {
+            for (var integer j := 0; j < lengthof(t_TimerArray[i]); j := j + 1) {
+                t_TimerArray[i][j].start;
+            }
+        }
+        t_TimerArray[0][0].stop;
+        if (any from t_TimerArray.running -> @index value v_foundIndex and v_foundIndex[0] == 0 and v_foundIndex[1] == 1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail, "wrong number of timers running");
+        }
+    }
+
+    control    {
+        execute(TC_Sem_2305_timer_running_005())
+    }
+}

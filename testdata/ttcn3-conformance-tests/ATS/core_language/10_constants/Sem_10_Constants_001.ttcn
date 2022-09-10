@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:10, Assign and read constants
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_10_Constants_001 {
+
+    const integer c_i := 5;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_10_Constants_001() runs on GeneralComp {
+        const integer c_j := 5;
+
+    	if (c_i == c_j){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_10_Constants_001());
+    }
+}

@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Ensure timer running syntax
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.5 The Running timer operation/Timer running syntax
+
+
+module NegSyn_2305_timer_running_003 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.0};
+    }
+    testcase TC_NegSyn_2305_timer_running_003() runs on TComp{
+        var boolean v_bool;
+        v_bool := any timer running;
+
+    }
+    control{
+
+            execute(TC_NegSyn_2305_timer_running_003())
+
+
+    }
+}

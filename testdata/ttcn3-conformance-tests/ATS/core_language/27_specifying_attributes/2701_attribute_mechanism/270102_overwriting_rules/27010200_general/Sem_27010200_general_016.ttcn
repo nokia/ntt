@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that override directive applied to a synonym type overrides field attributes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Override attribute applied to a synonym type(clause 6.4) overrides attributes of all fields or
+// elements of the synonym type unless the synonym type definition contains an explicit attribute
+// definition for the field or element
+
+module Sem_27010200_general_016 {
+
+    type component GeneralComp {
+	}
+
+	// MyRecordG and its "field1" member will be encoded with "RuleB", but its field2 member
+	// will be encoded with "RuleA", because there's an encode attribute explicitly declared
+	// for this field.
+	type record MyRecordF {
+		integer field1,
+		integer field2
+	} with { encode "RuleA" }
+
+	type MyRecordF MyRecordG with {
+		encode override "RuleB";
+		encode(field2) "RuleA"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_016 () runs on GeneralComp {
+		var RoUC v_enc1 := MyRecordG.encode,
+			v_enc2 := MyRecordG.field1.encode,
+			v_enc3 := MyRecordG.field2.encode;
+		if(lengthof(v_enc1) == 1 and v_enc1[0] == "RuleB" and
+			lengthof(v_enc2) == 1 and v_enc2[0] == "RuleB" and
+			lengthof(v_enc3) == 1 and v_enc3[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_016());
+	}
+}

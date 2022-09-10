@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.4, incompatible value in the from clause
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// All AddressRef items in the from clause and all VariableRef items in the sender clause
+// shall be of type address, component or of the address type bound to the port type
+// (see clause 6.2.9) of the port instance referenced in the check operation.
+
+module NegSem_2204_the_check_operation_004 {
+
+    type integer address;
+
+    type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    testcase TC_NegSem_2204_the_check_operation_004() runs on GeneralComp {
+        var address v_addr := 2;
+		var charstring v_addr2 := "";
+        p.send(100) to v_addr;
+        alt {
+            [] p.check(from (v_addr, v_addr2)) { }
+            [] p.check {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_2204_the_check_operation_004(), 5.0);
+    }
+}

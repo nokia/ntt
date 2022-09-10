@@ -1,0 +1,73 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:14, Ensure that blocking calls needs response or exception handling
+ ** @verdict  pass reject
+ *****************************************************************/
+// Multiple calls requires response or exception handling if the signature is blocking
+
+module NegSem_1400_procedure_signatures_002 {
+
+   signature p_Sig1_001( in charstring key );  // noblock needed for multiple calls without response or exections
+
+
+    type port remotePort procedure {
+        inout  p_Sig1_001;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+		var integer MyComp;
+    }
+
+
+    function f_Server() runs on GeneralComp {
+	timer t_guard;
+
+	const charstring key[3] := {"My String1", "hello", "Probe string"};
+
+	t_guard.start( 5.0 );
+
+	for ( var integer i := 0; i < 3; i := i + 1 ) {
+		PCO.call( p_Sig1_001:{key[i]});}
+	setverdict(pass);
+
+		t_guard.timeout;
+		setverdict(fail);
+	}
+
+	function f_client() runs on GeneralComp {
+
+	}
+
+	testcase TC_NegSem_1400_procedure_signatures_002() runs on GeneralComp system GeneralComp {
+
+	   var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+	   var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+
+
+       connect(server:PCO, client:PCO);
+
+	    server.start(f_Server());
+		client.start(f_client());
+
+
+
+		       alt {
+           [] client.done {
+               server.stop;
+           }
+       }
+
+       alt {
+           [] all component.done {}
+       }
+
+       disconnect(server:PCO);
+   }
+
+    control{
+        execute(TC_NegSem_1400_procedure_signatures_002());
+    }
+
+}

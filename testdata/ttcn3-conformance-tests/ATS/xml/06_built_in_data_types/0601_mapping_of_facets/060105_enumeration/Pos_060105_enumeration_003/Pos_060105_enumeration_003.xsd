@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_060105_enumeration_003"
+    xmlns:ns="schema:Pos_060105_enumeration_003"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:simpleType name="t1">
+        <xsd:restriction base="xsd:integer">
+          <xsd:minInclusive value="1"/>
+          <xsd:maxInclusive value="10"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+      <element name="e1" type="ns:t1"/>
+</schema>

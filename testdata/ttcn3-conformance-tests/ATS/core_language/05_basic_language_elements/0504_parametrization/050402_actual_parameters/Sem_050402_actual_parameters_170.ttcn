@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that default parameters are evaluated in order of the formal parameter list (list notation)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If for some formal parameters no actual parameter has been provided, their default
+// values are taken and evaluated in the order of the formal parameter list.
+
+module Sem_050402_actual_parameters_170 {
+
+    type component GeneralComp {
+	}
+
+    function f_eval1() return integer {
+        setverdict(pass);
+        return 1;
+    }
+
+    function f_eval2() return integer {
+        if (getverdict != pass) { setverdict(fail); } // if f_eval was called, the verdict would be already pass
+        return 2;
+    }
+
+    function f_test(integer p_par1, integer p_par2 := f_eval1(), integer p_par3 := f_eval2()) {
+    }
+
+    testcase TC_Sem_050402_actual_parameters_170() runs on GeneralComp {
+        f_test(0, -, -); // tested feature: f_eval1 shall be called before f_eval2
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_170());
+	}
+}

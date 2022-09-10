@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Neg_060505_gregorian_year_and_month_001"
+  xmlns:types="schema:Neg_060505_gregorian_year_and_month_001">
+    <simpleType name="t1">
+        <restriction base="gYearMonth"/>
+    </simpleType>
+    <element name="e1" type="types:t1"/>
+</schema>

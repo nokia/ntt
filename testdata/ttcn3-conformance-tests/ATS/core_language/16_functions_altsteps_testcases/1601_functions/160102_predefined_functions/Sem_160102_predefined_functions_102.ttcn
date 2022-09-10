@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'encvalue_o' function works properly in case of encoding to octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+The optional encoding_info parameter is used for passing additional encoding
+information to the codec and, if it is omitted, no additional information is sent to the codec.
+- C.5.5 The encoding to octetstring function
+*/
+
+
+module Sem_160102_predefined_functions_102 {
+
+    type component GeneralComp {
+
+    }
+
+    testcase TC_Sem_160102_predefined_functions_102 () runs on GeneralComp {
+
+    var integer v_int := 10 with { variant "32 bit" };
+    var octetstring v_ref := '0A000000'O ;	// expected encoding
+
+    //Encoding:
+    var octetstring v_enc := encvalue_o(v_int, "encoding information"); 	//encode to octetstring
+
+    if (match(v_enc, v_ref)) {
+          setverdict(pass);
+    } else {
+          setverdict(fail,v_enc, v_ref);
+    }
+
+   }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_102());
+
+    }
+
+}

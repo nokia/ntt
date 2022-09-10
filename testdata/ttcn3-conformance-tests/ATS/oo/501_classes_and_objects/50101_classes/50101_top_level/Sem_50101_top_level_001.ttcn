@@ -1,0 +1,67 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that a class declare variables as its members.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50101_top_level_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_var_fields {
+       private var integer v_i := 1;
+       private var float v_f := 0.55;
+       private var bitstring v_bs := '1101'B;
+       private var hexstring v_hs := '1CD5'H;
+       private var octetstring v_os := '00FFCD58'O;
+       private var charstring v_cs := "abc";
+       private var universal charstring v_ucs := char(0, 0, 0, 97);
+       private var boolean v_b := true;
+
+       public function get_v_os() return octetstring {
+            return this.v_os;
+        }
+
+        public function get_v_b() return boolean {
+            return this.v_b;
+        }
+
+        public function get_v_i() return integer {
+            return this.v_i;
+        }
+
+        public function get_v_f() return float {
+            return this.v_f;
+        }
+
+        public function get_v_bs() return bitstring {
+            return this.v_bs;
+        }
+
+        public function get_v_hs() return hexstring {
+            return this.v_hs;
+        }
+
+        public function get_v_cs() return charstring {
+            return this.v_cs;
+        }
+
+        public function get_v_ucs() return universal charstring {
+            return this.v_ucs;
+        }
+    }
+
+    testcase TC_Sem_50101_top_level_001() runs on GeneralComp {
+        var t_class_var_fields v_a := t_class_var_fields.create();
+        if (v_a.get_v_i() == 1 and v_a.get_v_f() == 0.55 and v_a.get_v_bs() == '1101'B and v_a.get_v_hs() == '1CD5'H and v_a.get_v_os() == '00FFCD58'O and v_a.get_v_cs() == "abc" and v_a.get_v_ucs() == char(0,0,0,97) and v_a.get_v_b()) {
+            setverdict(pass)
+        } else {
+            setverdict(fail)
+        }
+    }
+
+    control {
+        execute(TC_Sem_50101_top_level_001());
+    }
+}

@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Access bitstring elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010101_AccessStringElements_004 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010101_AccessStringElements_004() runs on GeneralComp {
+        var bitstring v_b := ''B;
+        v_b[0] := '1'B;
+        v_b[1] := '0'B;
+        v_b[2] := '1'B;
+        v_b[3] := '0'B;
+        v_b[4] := '1'B;
+    	if (v_b == '10101'B){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_06010101_AccessStringElements_004());
+    }
+}

@@ -1,0 +1,22 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that the user error sets the verdict error correctly.
+ ** @verdict  pass accept, ttcn3verdict:error
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_008 {
+
+    type component GeneralComp { }
+
+    testcase TC_Sem_2601_ExecuteStatement_008() runs on GeneralComp {
+        testcase.stop("User error!");
+    }
+
+    control {
+        var verdicttype v_result;
+
+        execute(TC_Sem_2601_ExecuteStatement_008());
+    }
+
+}

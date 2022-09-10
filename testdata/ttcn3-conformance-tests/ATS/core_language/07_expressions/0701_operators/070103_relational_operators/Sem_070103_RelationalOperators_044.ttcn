@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that not equal to operator evaulates correctly infinity special float
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070103_RelationalOperators_044 {
+
+type component GeneralComp {
+}
+
+
+
+testcase TC_Sem_070103_RelationalOperators_044() runs on GeneralComp {
+
+    var float My_val := 1.0 * -infinity;    // My_val= -infinity
+
+	if (infinity != My_val) {
+		setverdict(pass, My_val);
+	} else {
+		setverdict(fail, My_val);
+	}
+}
+
+control{
+    execute(TC_Sem_070103_RelationalOperators_044());
+}
+
+}

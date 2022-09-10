@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.5, Ensure that the bitwise negation operator works as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070105_BitwiseOperators_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070105_BitwiseOperators_001() runs on GeneralComp {
+	var bitstring v_test := '1'B;
+	var bitstring v_result := not4b v_test;
+
+	if (v_result == '0'B) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070105_BitwiseOperators_001());
+}
+
+}

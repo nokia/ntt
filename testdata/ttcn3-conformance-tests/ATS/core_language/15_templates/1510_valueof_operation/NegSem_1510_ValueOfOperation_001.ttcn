@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.10, Ensure that the valueof function works correctly on omit.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1510_ValueOfOperation_001 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_1510_ValueOfOperation_001() runs on GeneralComp {
+	var template integer m_int := omit;
+	var integer v_int := valueof(m_int);
+
+	// if we get here, something must be wrong as valueof on m_int shall cause an error
+	// due to the omit.
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1510_ValueOfOperation_001());
+}
+
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_0608_anytype_and_anysimpletype_types_003"
+  xmlns:ns="schema:Pos_0608_anytype_and_anysimpletype_types_003">
+  <attribute name="attr" type="string" />
+  <element name="bar" type="string" />
+  <element name="foo" type="string" />
+  <element name="MyType" type="anyType" />
+</schema>

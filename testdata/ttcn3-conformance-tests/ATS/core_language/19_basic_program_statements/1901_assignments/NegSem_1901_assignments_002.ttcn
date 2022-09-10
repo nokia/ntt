@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.1, Ensure that the IUT properly evaluates assignment statements
+ ** @verdict  pass  reject
+ ***************************************************/
+module NegSem_1901_assignments_002 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_1901_assignments_002 () runs on GeneralComp system GeneralComp {
+ var integer v_i;
+
+ v_i:=1.5;	//assignment of incompatible expression
+
+}
+
+control{
+
+    execute(TC_NegSem_1901_assignments_002());
+
+}
+
+}

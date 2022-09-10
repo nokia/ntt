@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    attributeFormDefault="qualified"
+    targetNamespace="schema:Pos_070106_form_011"
+    xmlns:ns="schema:Pos_070106_form_011"
+    xmlns:ns2="schema:Pos_070106_form_011_2">
+  <import namespace="schema:Pos_070106_form_011_2" schemaLocation="Pos_070106_form_011_2.xsd" />
+  <element name="MyElement">
+	<complexType>
+       <sequence>
+            <element name="myField2" type="ns2:MyType"/>
+            <element ref="ns2:MyElement"/>
+       </sequence>
+        <attribute name="myField" type="integer" />
+    </complexType>
+  </element>
+</schema>

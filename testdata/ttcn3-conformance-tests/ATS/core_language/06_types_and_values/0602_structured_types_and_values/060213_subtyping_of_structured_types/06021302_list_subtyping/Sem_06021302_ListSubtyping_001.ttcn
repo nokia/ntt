@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.13.2, ensure that list subtyping check for record types is properly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06021302_ListSubtyping_001 {
+
+ type component GeneralComp {
+ }
+
+ type record MyRecord {
+  integer f1 optional,
+  charstring f2,
+  charstring f3
+ }
+
+ type MyRecord MyRecordSub1 (
+  { f1 := omit, f2 := "user", f3 := "password" },
+  { f1 := 1, f2 := "User", f3 := "Password" }
+  ); // a valid subtype of MyRecord containing 2 values
+
+
+testcase TC_Sem_06021302_ListSubtyping_001() runs on GeneralComp {
+ var MyRecordSub1 v_record := { f1 := 1, f2 := "User", f3 := "Password" };
+
+      if ( match(v_record,{ 1, "User", "Password" }) ) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_06021302_ListSubtyping_001());
+}
+
+}

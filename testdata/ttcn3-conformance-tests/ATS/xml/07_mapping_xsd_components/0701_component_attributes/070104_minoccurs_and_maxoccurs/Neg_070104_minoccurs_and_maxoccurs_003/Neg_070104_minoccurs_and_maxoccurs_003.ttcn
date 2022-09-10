@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:7.1.4, A restricted length list [5, 10] should not allow more than 10 elements
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_070104_minoccurs_and_maxoccurs_003 {
+
+    import from schema_Neg_070104_minoccurs_and_maxoccurs_003 language "XSD" all;
+
+    template ElemE15c m_msg := {foo_list := {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, bar := 3.0}
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_070104_minoccurs_and_maxoccurs_003() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_070104_minoccurs_and_maxoccurs_003(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

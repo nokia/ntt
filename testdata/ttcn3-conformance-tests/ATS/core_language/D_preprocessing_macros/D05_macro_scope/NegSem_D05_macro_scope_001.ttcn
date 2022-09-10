@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that __SCOPE__ replaces the actual higher named basic scope unit
+ ** @verdict  pass reject
+ *****************************************************************/
+// __SCOPE__ replaces the actual higher basic unit
+
+module NegSem_D05_macro_scope_001 {
+
+    type component GeneralComp {
+		var charstring variable1:=__SCOPE__; //variable1=="GeneralComp"
+    }
+
+	type record MyRecord {
+		charstring variable0 ("1","2",__SCOPE__) // variable0=="MyRecord"
+	}
+
+    testcase TC_NegSem_D05_macro_scope_001() runs on GeneralComp system GeneralComp {
+
+		template MyRecord Mytemplate:={
+			variable0:="__SCOPE__"  //Causes an error as __SCOPE__ is replaced with Mytemplate
+		}
+
+
+    }
+
+    control {
+        execute(TC_NegSem_D05_macro_scope_001());
+    }
+}

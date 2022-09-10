@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that template inout parameters cannot be used as in formal value parameters of altsteps
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed by value to in formal value parameters shall be
+// variables, literal values, module parameters, constants, variables, value returning
+// (external) functions, formal value parameters (of in, inout or out parameterization)
+// of the current scope or expressions composed of the above.
+
+module NegSem_050402_actual_parameters_015 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+    }
+
+    altstep a_test(integer p_val) runs on GeneralComp {
+        []t.timeout {
+            if (p_val == 5) { setverdict(pass); }
+            else { setverdict(fail); }
+        }
+    }
+
+    function f_caller(inout template integer p_val) runs on GeneralComp {
+        a_test(p_val); // tested parameter passing
+    }
+
+
+    testcase TC_NegSem_050402_actual_parameters_015() runs on GeneralComp {
+        var template integer v_val := 5;
+        t.start;
+        f_caller(v_val); // this parameter passing is not a subject of the test
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_015());
+	}
+}

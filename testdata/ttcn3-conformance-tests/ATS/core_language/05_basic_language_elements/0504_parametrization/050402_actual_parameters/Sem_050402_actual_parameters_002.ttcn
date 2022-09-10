@@ -1,0 +1,85 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, Ensure that the IUT accepts nested assignment of actual parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_002 {
+
+type enumerated MyEnumeratedType {e_black, e_white}
+type integer address;
+
+type record MyRecord {
+ integer field1,
+ boolean field2,
+ address field3,
+ MyEnumeratedType field4,
+ integer field5
+}
+
+template MyRecord m_parametrizedTemplate1
+ (
+  integer p_integer := 0,
+  boolean p_boolean := true,
+  address p_address := null,
+  MyEnumeratedType p_enumerated := e_black,
+  template integer p_integerTemplate := ?
+ ) := {
+  field1 := p_integer,
+  field2 := p_boolean,
+  field3 := p_address,
+  field4 := p_enumerated,
+  field5 := p_integerTemplate
+}
+
+
+template MyRecord m_parametrizedTemplate2
+ (
+  integer p_integer := 0,
+  boolean p_boolean := true,
+  address p_address := null,
+  MyEnumeratedType p_enumerated := e_black,
+  template integer p_integerTemplate := ?
+ ) := {
+  field1 := p_integer+1,		//this line is different from the previous template
+  field2 := not p_boolean,		//this line is different from the previous template
+  field3 := p_address,
+  field4 := p_enumerated,
+  field5 := p_integerTemplate
+}
+
+
+
+type component GeneralComp {
+
+}
+
+
+testcase TC_Sem_050402_actual_parameters_002(template MyRecord p_templateSelection) runs on GeneralComp {
+
+
+ var MyRecord ExpectedValues  := {
+  field1 := 1,
+  field2 := false,
+  field3 := 1,
+  field4 := e_white,
+  field5 := 1
+ }
+
+    if (match(ExpectedValues, p_templateSelection)) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+    execute(TC_Sem_050402_actual_parameters_002(m_parametrizedTemplate1(1,false,1,e_white,1)) );
+    execute(TC_Sem_050402_actual_parameters_002(m_parametrizedTemplate2(0,true,1,e_white,1)) );
+}
+
+}

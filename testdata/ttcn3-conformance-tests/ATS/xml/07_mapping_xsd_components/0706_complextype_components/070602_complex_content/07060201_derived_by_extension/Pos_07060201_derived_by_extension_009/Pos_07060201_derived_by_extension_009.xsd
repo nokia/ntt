@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_07060201_derived_by_extension_009"
+    xmlns:ns="schema:Pos_07060201_derived_by_extension_009">
+    <complexType name="c1">
+      <sequence>
+        <element name="x" type="string"/>
+        <element name="y" minOccurs="0">
+          <complexType>
+            <complexContent>
+              <extension base="ns:c1">
+                <sequence>
+                  <element name="z" type="string"/>
+                </sequence>
+              </extension>
+            </complexContent>
+          </complexType>
+        </element>
+      </sequence>
+    </complexType>
+    <element name="e1" type="ns:c1"/>
+</schema>

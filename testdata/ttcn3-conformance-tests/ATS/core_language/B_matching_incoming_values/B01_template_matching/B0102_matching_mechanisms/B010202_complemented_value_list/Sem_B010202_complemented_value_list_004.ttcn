@@ -1,0 +1,78 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.2, Ensure that the IUT correctly handles template matching of complemented value listing
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010202_complemented_value_list_004 {
+
+	type enumerated EnumeratedType {e_black, e_white, e_green};
+
+	type record RecordType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+	type union UnionType {
+ 	 integer  a,
+ 	 EnumeratedType  b,
+ 	 boolean  c
+	}
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2,
+  	 EnumeratedType field3,
+  	 RecordType		field4,
+  	 UnionType		field5
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010202_complemented_value_list_004() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := complement(1,2),
+  field2 := complement("test string","something else"),
+  field3 := complement(e_green,e_black),
+  field4 := complement({a:=1,b:=1,c:=false},{a:=1,b:=2,c:=true}),
+  field5 := complement({a:=1},{b:=e_white})
+ }
+
+ v_testMessage:=  {
+  field1 := 0,
+  field2 := "test ",
+  field3 := e_green,	//mismatching complement in the template
+  field4 := {a:=1,b:=2,c:=false},
+  field5 := {a:=2}
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(fail);
+     }
+     [] messagePort.receive {
+        setverdict(pass);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010202_complemented_value_list_004());
+}
+
+}

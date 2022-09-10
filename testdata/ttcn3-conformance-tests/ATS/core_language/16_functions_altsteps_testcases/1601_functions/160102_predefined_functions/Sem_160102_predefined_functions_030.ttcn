@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * This function converts an UTF-16 universal charstring value to a Little endian octetstring.*/
+
+module Sem_160102_predefined_functions_030 {
+
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_030 () runs on GeneralComp {
+
+    // universal charstring:
+        var universal charstring v_0 := "ABC";
+
+    // predefined function for universal charstring to octetstring conversion:
+        var octetstring v_encoded := unichar2oct(v_0, "UTF-16LE");      //"UTF-16" little endian, expected value:'4100 4200 4300'O;
+        var octetstring v_1 := '410042004300'O;
+
+
+        if( match(v_encoded,v_1)
+        ) {
+            setverdict(pass,"Encoded value for: ",v_0, " is ", v_encoded);
+        }
+        else {
+            setverdict(fail,"encoded value is: ", v_encoded, " expected ", v_1);
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_030());
+    }
+}

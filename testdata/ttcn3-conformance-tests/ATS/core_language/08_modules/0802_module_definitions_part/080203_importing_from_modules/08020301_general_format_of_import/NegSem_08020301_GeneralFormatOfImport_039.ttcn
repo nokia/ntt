@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that import clause cannot override language tag of imported module
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction g:
+// The language specification of the import statement shall not override the language
+// specification of the importing module.
+// Restriction h:
+// The language specification of the import statement shall be identical to the language
+// specification of the source module from which definitions are imported provided
+// a language specification is defined in the source module.
+
+module NegSem_08020301_GeneralFormatOfImport_039 {
+import from NegSem_08020301_GeneralFormatOfImport_039_import language "TTCN-3:2013" all;
+	type component GeneralComp {}
+
+	testcase TC_Sem_08020301_GeneralFormatOfImport_039() runs on GeneralComp {
+		if (c_test == 0) { setverdict(pass); }
+		else { setverdict(fail); }
+	}
+
+	control{
+		// testing if parameter names are imported
+	    execute(TC_Sem_08020301_GeneralFormatOfImport_039());
+	}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_039_import language "TTCN-3:2012" {
+	const integer c_test := 0;
+}

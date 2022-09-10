@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout operations: non-started timer does not timeout
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/Timeout operational semantics/Timeout unstarted timer
+
+
+module Sem_2306_timer_timeout_001 {
+    type component TComp{
+        timer t_unstarted_timer;
+        timer t_started_timer := 2.0;
+    }
+    testcase TC_Sem_2306_timer_timeout_001() runs on TComp{
+        t_started_timer.start;
+        alt
+        {
+            [] t_unstarted_timer.timeout {
+                setverdict(fail);
+            }
+            [] t_started_timer.timeout {
+                setverdict(pass);
+            }
+        }
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_001())
+
+
+    }
+}

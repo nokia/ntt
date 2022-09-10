@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that mapping an already connected port is not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*NOTE: see Figure 7(g): Two components (A and B). MycompA:p1 is connected to MycompB:p1.
+ * Therefore  mapping MycompB to TSI port p1 is not allowed
+ * */
+
+module NegSem_0901_Communication_ports_008 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1;
+    }
+
+    testcase TC_NegSem_0901_Communication_ports_008() runs on GeneralComp system GeneralComp {
+
+    // generate test components
+	var GeneralComp MycompA;
+	var GeneralComp MycompB;
+    MycompA := GeneralComp.create;
+    MycompB := GeneralComp.create;
+
+    connect(MycompA:p1,MycompB:p1);
+    map(MycompB:p1,system:p1); // not allowed, since MyCompB:p1 is already connected to MyCompA:p1
+
+    setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0901_Communication_ports_008());
+    }
+}
+

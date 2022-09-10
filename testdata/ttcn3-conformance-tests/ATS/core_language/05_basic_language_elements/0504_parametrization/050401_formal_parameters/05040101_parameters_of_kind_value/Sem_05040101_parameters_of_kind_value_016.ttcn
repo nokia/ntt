@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that in value formal parameters of modified template can used dash as default value
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal parameters of modified templates may inherit the default values from the corresponding
+// parameters of their parent templates; this shall explicitly be denoted by using a dash (don't
+// change) symbol at the place of the modified template parameters' default value.
+
+module Sem_05040101_parameters_of_kind_value_016 {
+
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+    template R m_t(integer p_int1 := 3, in integer p_int2 := 4) := {
+        field1 := p_int1,
+        field2 := p_int2
+    }
+
+    template R m_tmod(integer p_int1 := 10, in integer p_int2 := -) modifies m_t := {
+        field1 := p_int1,
+        field2 := p_int2
+    }
+}

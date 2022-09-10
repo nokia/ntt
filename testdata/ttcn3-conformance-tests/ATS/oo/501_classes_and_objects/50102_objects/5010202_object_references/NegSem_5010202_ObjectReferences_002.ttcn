@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.2, Ensure that in a structured type  field of a class type, this type is not seen as a data type and its values cannot be used for sending and receiving or as an argument to any expression other than the equality/inequality operator.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010202_ObjectReferences_002 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer x;
+
+        public function setX(integer x) {
+            this.x := x;
+        }
+
+        public function getX() return integer {
+            return this.x;
+        }
+    }
+
+    type record MyRecord {
+        integer x,
+        MyClass c
+    };
+
+    testcase TC_NegSem_5010202_ObjectReferences_002() runs on GeneralComp {
+        var MyClass v_class := MyClass.create(1);
+        var MyRecord v_rec := {5, v_class};
+        if (int2bit(v_rec.c.getX(), 1) == '1'B) { //not allowed
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010202_ObjectReferences_002());
+    }
+}

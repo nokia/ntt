@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.5, Ensure that of operator gives the most specific class instance.
+ ** @verdict pass reject
+*****************************************************************/
+module Sem_5010205_OfOperator_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        //empty class
+    }
+
+    type class MySubClass extends MySuperClass {
+        //empty class
+    }
+
+    testcase TC_Sem_5010205_OfOperator_001() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create();
+        if (v_a of MySubClass) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010205_OfOperator_001());
+    }
+}

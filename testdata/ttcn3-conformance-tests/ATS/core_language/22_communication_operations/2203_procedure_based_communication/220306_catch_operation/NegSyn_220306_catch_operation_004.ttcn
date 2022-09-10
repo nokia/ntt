@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.3.6, Verify that error occurs when any from catch is with @nodefault modifier in a non stand-alone statement
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction q)	The @nodefault modifier is allowed only in stand-alone catch statements.
+
+module NegSyn_220306_catch_operation_004 {
+    signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+	const integer c_portCount := 4;
+    type component GeneralComp
+	{
+		port P p[c_portCount];
+	}
+
+	function f() runs on GeneralComp
+	{
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			p[i].getcall;
+			if (i mod 2 == 1) { p[i].raise(S, 1) };
+		}
+	}
+    testcase TC_NegSyn_220306_catch_operation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			connect(self:p[i], v_ptc:p[i]);
+			p[i].call(S:{}, nowait);
+		}
+		v_ptc.start(f());
+		v_ptc.done;
+		alt
+		{
+        	[] @nodefault any from p.catch { setverdict(pass); }    // not allowed @nodefault modifier here
+			[else] { setverdict(fail, "The any from catch operation didn't match for some reason"); }
+		}
+    }
+
+    control {
+        // execute(TC_NegSyn_220306_catch_operation_004(), 5.0);
+    }
+}

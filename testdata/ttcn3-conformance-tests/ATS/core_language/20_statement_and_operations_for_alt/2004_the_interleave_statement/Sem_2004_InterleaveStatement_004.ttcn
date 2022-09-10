@@ -1,0 +1,67 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.1
+ ** @purpose  1:20.4, verify that a for loop can be used inside interleave
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction d)
+// The restricted use of the control transfer statements for, while, do-while, and goto within interleave
+// statements is allowed under the following conditions:
+// a. The loop statements for, while, and do-while can be used within statements blocks that do not
+// contain reception statements.
+
+
+module Sem_2004_InterleaveStatement_004 {
+
+    type port loopbackPort message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort pt_myPort1,pt_myPort2;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    testcase TC_Sem_2004_InterleaveStatement_004() runs on GeneralComp {
+
+        template MyMessageType MySig1 := {1,"aaa",true};
+        template MyMessageType MySig2 := {2,"bbb",true};
+        template MyMessageType MySig3 := {3,"ccc",true};
+
+        var integer v_i;
+        timer t_timer;
+        pt_myPort1.send(MyMessageType:{1, "aaa", true});
+		pt_myPort2.send(MyMessageType:{2, "bbb", true});
+        t_timer.start(1.0);
+
+        interleave {
+            [] pt_myPort1.receive(MySig1)
+            {
+                var integer v_counter := 0;
+                for(v_i:=1; v_i<10; v_i:= v_i+1) {				//control transfer statement is not allowed
+                    v_counter := v_counter + 1;
+                }
+                log (v_counter);
+		setverdict(pass);
+            }
+            [] pt_myPort2.receive(MySig2) 		//boolean guard must be empty
+            {
+                pt_myPort1.send(MySig3);
+            }
+
+        }
+
+
+    }
+
+    control{
+        execute(TC_Sem_2004_InterleaveStatement_004());
+    }
+}

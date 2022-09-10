@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that assignment notation can be used for a record of type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0602_TopLevel_002 {
+
+    type component GeneralComp {
+    }
+
+    type record of integer MyRecordOf;
+
+    testcase TC_Sem_0602_TopLevel_002() runs on GeneralComp {
+
+        var MyRecordOf v_allRecords := {
+            [0] := 1,
+            [1] := 2,
+            [2] := 3
+        };
+
+        if (v_allRecords=={1,2,3}) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_002());
+    }
+}

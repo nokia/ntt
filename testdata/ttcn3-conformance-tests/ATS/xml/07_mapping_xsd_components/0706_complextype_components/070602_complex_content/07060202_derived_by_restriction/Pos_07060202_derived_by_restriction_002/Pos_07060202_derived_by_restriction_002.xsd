@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_07060202_derived_by_restriction_002"
+    xmlns:ns="schema:Pos_07060202_derived_by_restriction_002">
+	<complexType name="complex-base-empty"/>
+
+	<complexType name="complex-restr-complex">
+		<complexContent>
+			<restriction base="ns:complex-base-empty" />
+		</complexContent>
+	</complexType>
+
+	<element name="elem-complex-restr-complex">
+			<complexType>
+				<complexContent>
+					<restriction base="ns:complex-base-empty" />
+			</complexContent>
+			</complexType>
+	</element>
+
+</schema>

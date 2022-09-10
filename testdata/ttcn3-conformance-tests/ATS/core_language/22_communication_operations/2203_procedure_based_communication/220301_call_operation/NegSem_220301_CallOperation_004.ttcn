@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.1, null component in the multicast list of the to clause of the call operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// No AddressRef in the to clause shall contain the special value null at the time
+// of the operation.
+
+module NegSem_220301_CallOperation_004 {
+
+    signature S();
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+
+    testcase TC_NegSem_220301_CallOperation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC"), v_compRef := null;
+        connect(self:p, v_ptc:p);
+        p.call(S:{}, nowait) to (v_ptc, v_compRef);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220301_CallOperation_004(), 5.0);
+    }
+
+}

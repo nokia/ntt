@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that an external function called during evaluation of a deterministic fuzzy parameter cannot contain fuzzy parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters passed to fuzzy or lazy formal parameters shall fulfill the restrictions imposed on content
+// of functions used in special places given in 16.1.4.
+// The following operations shall not be used:
+// k) Calling functions and external functions with @fuzzy formal parameters and variables (see notes 4 and 9).
+
+module NegSem_050402_actual_parameters_230 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	external function @deterministic f_test(@fuzzy integer p_par) return template integer;
+
+	function f_eval() return integer {
+        return 10;
+    }
+
+    function f_param(template @fuzzy @deterministic integer p_param) runs on GeneralComp  {
+        log(p_param); // causes validation
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_230() runs on GeneralComp system GeneralComp {
+        f_param(f_test(1));
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_230());
+	}
+}

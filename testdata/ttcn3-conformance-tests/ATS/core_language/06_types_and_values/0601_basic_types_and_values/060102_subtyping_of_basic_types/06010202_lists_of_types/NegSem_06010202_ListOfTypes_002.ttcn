@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted hexstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_002 {
+    type hexstring HexStrings1 ('FE80'H, '01'H );
+    type hexstring HexStrings2 ('00'H, '7F'H, 'B8'H, 'A0'H);
+    type hexstring HexStrings_1_2 (HexStrings1, HexStrings2);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_002() runs on GeneralComp {
+        var HexStrings_1_2 v_b;
+        v_b := 'FE70'H;	 //FE70 value is not defined by any hexstrings
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_002());
+    }
+}

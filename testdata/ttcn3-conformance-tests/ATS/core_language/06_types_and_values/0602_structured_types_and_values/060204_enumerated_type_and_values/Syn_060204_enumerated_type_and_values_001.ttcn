@@ -1,0 +1,18 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, enumerated type declaration
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// TTCN 3 supports enumerated types. Enumerated types are used to model types
+// that take only a distinct named set of values. Such distinct values are called
+// enumerated values. Each enumerated value shall have an identifier.
+
+module Syn_060204_enumerated_type_and_values_001 {
+
+    type enumerated MyFirstEnumType {
+        Monday, Tuesday, Wednesday, Thursday, Friday
+    };
+}

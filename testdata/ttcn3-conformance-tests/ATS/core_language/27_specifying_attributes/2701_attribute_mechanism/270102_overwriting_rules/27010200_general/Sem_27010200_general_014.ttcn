@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that explicit attribute declaration prevents overwriting
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// The override directive overrides the specified attribute for all declarations at all lower scopes
+// that do not also declare the specified attribute.
+
+module Sem_27010200_general_014 {
+
+    type component GeneralComp {
+	}
+
+	// In the following, rule "RuleB" is overridden by "RuleC" for fieldC, but it is
+	// not overridden by "RuleA" of the group because the direct attachment to fieldC and
+	// MyRecordC override the encode of the outer scope.
+	group myGroup {
+		type record MyRecordC {
+			integer field1
+		} with { encode override "RuleB" }
+
+		type record MyRecordD {
+			MyRecordC fieldC
+		} with { encode override (fieldC) "RuleC" }
+	} with { encode override "RuleA" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_014 () runs on GeneralComp {
+		var RoUC v_enc1 := MyRecordD.fieldC.encode;
+		if(lengthof(v_enc1) == 1 and v_enc1[0] == "RuleC") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_014());
+	}
+}

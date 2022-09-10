@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, storing verdict in all component.done operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The (optional) value clause for storing the final local verdict of a PTC shall not be used
+// in combination with all component or any component.
+
+module NegSem_210307_done_operation_009 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSem_210307_done_operation_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        var verdicttype v_verdict;
+        v_ptc.start(f());
+		alt {
+			[] all component.done -> value v_verdict {
+                setverdict(pass);
+            }
+		}
+    }
+
+    control {
+        execute(TC_NegSem_210307_done_operation_009(), 5.0);
+    }
+}

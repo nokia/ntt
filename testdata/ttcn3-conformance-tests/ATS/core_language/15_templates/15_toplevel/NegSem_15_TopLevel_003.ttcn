@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15, Ensure that a template shall not be of default type.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_15_TopLevel_003 {
+
+type record MyRecord {
+	default def
+}
+
+template MyRecord mw_myRecord := {
+    def := ?
+}
+
+}

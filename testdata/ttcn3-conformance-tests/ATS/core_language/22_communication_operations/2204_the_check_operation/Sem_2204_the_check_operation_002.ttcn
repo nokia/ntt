@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that port.check(receive) with assignment works correctly inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_002 {
+
+	type port P message {
+		inout integer;
+		address integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_Sem_2204_the_check_operation_002() runs on GeneralComp {
+		var integer v_addr;
+		p.send(integer:1) to 80;
+        alt
+		{
+        	[] p.check(receive -> sender v_addr) {
+				if (v_addr == 80) { setverdict(pass, "Check operation successful"); }
+				else { setverdict(fail, "Incorrect address value"); }
+			}
+		}
+		p.receive;
+		setverdict(pass, "Message still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_002(), 5.0);
+    }
+}

@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.2, Ensure that the raise and catch operations are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1502_DeclaringSignatureTemplates_004 {
+
+    type port MyProcedurePortType procedure {
+        inout p_Syn_1502_DeclaringSignatureTemplates_004;
+    }
+
+    type component GeneralComp {
+        port MyProcedurePortType pt_myPort;
+    }
+
+    signature p_Syn_1502_DeclaringSignatureTemplates_004(in integer p_par1, out integer p_par2, inout integer p_par3) return integer exception (integer);
+
+    template p_Syn_1502_DeclaringSignatureTemplates_004 m_myTemplate := {
+        p_par1 := 1,
+        p_par2 := 2,
+        p_par3 := 3
+    }
+
+    template p_Syn_1502_DeclaringSignatureTemplates_004 mw_myTemplate := {
+        p_par1 := 1,
+        p_par2 := ?,
+        p_par3 := ?
+    }
+
+    testcase TC_Syn_1502_DeclaringSignatureTemplates_004() runs on GeneralComp {
+        pt_myPort.raise(p_Syn_1502_DeclaringSignatureTemplates_004, integer:5);
+        pt_myPort.catch(p_Syn_1502_DeclaringSignatureTemplates_004, integer:5);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Syn_1502_DeclaringSignatureTemplates_004());
+    }
+
+}

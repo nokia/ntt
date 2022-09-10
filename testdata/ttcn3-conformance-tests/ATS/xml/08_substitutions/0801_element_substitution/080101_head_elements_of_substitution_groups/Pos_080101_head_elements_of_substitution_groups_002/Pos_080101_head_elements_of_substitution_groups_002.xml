@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:ize xmlns:ns="schema:Pos_080101_head_elements_of_substitution_groups_002" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="schema:Pos_080101_head_elements_of_substitution_groups_002 Pos_080101_head_elements_of_substitution_groups_002.xsd">
+<!-- allowed to send but causes a decoding failure if present in the received XML document ( the head element is abstract) -->
+<ns:head>anything</ns:head>
+<!-- OK to send and receive --> <ns:member1>any thing</ns:member1>
+<!-- allowed to send but causes a decoding failure if present in the received XML document ( the type of member2 is derived by restriction in XSD) -->
+<ns:member2>something</ns:member2>
+<!-- OK to send and receive (the type of member3 is derived by extension in XSD) --> <ns:member3>akarmi</ns:member3>
+<ns:member3 bar="5" >anything else</ns:member3>
+</ns:ize>

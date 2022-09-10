@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:6.2.12, Verify mapping of an anyURI type
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_060212_any_uri_002 {
+
+    import from schema_Neg_060212_any_uri_002 language "XSD" all;
+
+    template E1 m_msg := "http://etsi.org	";//String with no HT - Horizontal TAB
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_060212_any_uri_002() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_060212_any_uri_002(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:11.1, Ensure that @deterministic modifier is evaluated correctly.
+ ** @verdict pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+/* If a variable is declared fuzzy or lazy they can additionally declared with the @deterministic modifier to indicate
+ * that when used in a deterministic evaluation context, any evaluation of the variable would have no side effect and would
+ * yield the same result. - Restrictions f)
+ * */
+
+module Sem_1101_ValueVars_007 {
+    type component GeneralComp {}
+
+	testcase TC_Sem_1101_ValueVars_007() runs on GeneralComp {
+  		var integer v_i := 1;
+        var @fuzzy @deterministic integer v_j := v_i + 2;
+
+        v_i := v_j;
+        if(v_i == 3){
+        setverdict(pass);
+        }
+        else{
+          setverdict(fail);
+        }
+
+
+	}
+
+    control {
+        execute(TC_Sem_1101_ValueVars_007());
+    }
+}

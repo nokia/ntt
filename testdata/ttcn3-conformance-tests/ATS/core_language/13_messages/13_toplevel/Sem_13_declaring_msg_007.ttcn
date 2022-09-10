@@ -1,0 +1,136 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure instances of messages can be declared and passed via parameter
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * #reqname  /Requirements/13 Declaring messages/Sorts of message insances/Parameter as a message
+ **/
+
+
+module Sem_13_declaring_msg_007 {
+    type record CompositeType{
+        integer i
+    }
+    type set MySet{
+        integer int1,
+        charstring str1
+    }
+    type enumerated MyEnum{
+        Perl,Bash,Python
+    }
+    type integer MyArray[3];
+    type union MyUnion{
+        integer int,
+        float real
+    }
+    type record MsgType1{
+        integer i,
+        float k,
+        boolean b,
+        verdicttype v,
+        bitstring bs,
+        hexstring hs,
+        octetstring os,
+        charstring cs,
+        universal charstring ucs,
+        CompositeType rec1,
+        MySet set1,
+        MyUnion union1,
+        MyEnum enum1,
+        MyArray arr1
+    }
+    type record MsgType2{
+            integer j
+    }
+
+    type port MyPort1 message{
+        out MsgType1;
+        in MsgType2;
+    }
+    type port MyPort2 message{
+        out MsgType2;
+        in MsgType1;
+    }
+    type component Sender{
+        port MyPort1 src;
+    }
+
+    type component Receiver{
+        port MyPort2 dst;
+    }
+    type component MTC {}
+
+    function make_union() return MyUnion
+    {
+        var MyUnion result;
+        result.int := 1;
+        return result;
+    }
+
+    const MsgType1 c_message := {
+        i := 1,
+        k := 1.0,
+        b := true,
+        v := pass,
+        bs := '0101'B,
+        hs := '123ABD'H,
+        os := 'FF96'O,
+        cs := """ab""",
+        ucs := "the",
+        rec1 := {i:=1},
+        set1 := {int1:=1, str1:="the"},
+        union1 := make_union(),
+        enum1 := Bash,
+        arr1 := {1,2,3}
+    };
+
+    template MsgType1 global:= {i := 1, k:=1.0, b:=true, v:=pass, bs:='0101'B, hs:='123ABD'H,
+	    os:='FF96'O, cs:="""ab""", ucs:="the", union1 := make_union(),
+	    rec1:={i:=1}, set1:={int1:=1, str1:="the"},
+    	enum1:=Bash, arr1:={1,2,3}
+    };
+
+    function f_sender(in MsgType1 v_message) runs on Sender
+    {
+        src.send(v_message);
+    }
+
+	function f_receiver() runs on Receiver
+	{
+		var MsgType1 v_message;
+	    timer t_timer := 3.0;
+	    t_timer.start;
+	    alt
+	    {
+	        [] dst.receive(global) -> value v_message { setverdict(pass); }
+	        [] t_timer.timeout { setverdict(fail); }
+	    }
+	}
+
+    testcase TC_Sem_13_declaring_msg_007() runs on MTC system MTC
+    {
+        var MsgType1 v_message := {
+            i := 1, k:=1.0, b:=true, v:=pass,
+            bs:='0101'B, hs:='123ABD'H,
+            os:='FF96'O, cs:="""ab""", ucs:="the",
+            union1 := make_union(),
+            rec1:={i:=1}, set1:={int1:=1, str1:="the"},
+            enum1:=Bash, arr1:={1,2,3}
+        };
+		var Sender c_sender := Sender.create;
+		var Receiver c_receiver := Receiver.create;
+        connect(c_sender:src, c_receiver:dst);
+        c_sender.start(f_sender(v_message));
+        c_receiver.start(f_receiver());
+        c_sender.done;
+        c_receiver.done;
+    }
+    control{
+
+            execute(TC_Sem_13_declaring_msg_007())
+
+
+    }
+}

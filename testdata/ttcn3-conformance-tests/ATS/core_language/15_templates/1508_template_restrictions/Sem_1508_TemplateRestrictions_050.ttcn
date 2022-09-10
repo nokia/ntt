@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 470 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:15.8, ensure that symbols created during template expansion are checked against omit template restriction
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When referencing elements of templates or templates fields with the value or omit
+// restriction, the rules for referencing elements of values are used.
+
+// Note:
+// Older rules (TTCN-3:2014) didn't contain this restriction. This caused the following test
+// to end with a dynamic error
+
+module Sem_1508_TemplateRestrictions_050 {
+
+type component GeneralComp { }
+
+type record R {
+	integer field1,
+	integer field2
+}
+
+testcase TC_Sem_1508_TemplateRestrictions_050() runs on GeneralComp {
+	var omit R v_test := omit;
+	v_test.field1 := 0; // As the result of expansion, v_test value is { field1 := -, field2 := - }
+                        // After the field assignment it changes to { field1 := 0, field2 := - }
+                        // In the older versions, the result was { field1 := 0, field2 := ? }
+                        // which violated the omit restriction
+    if (valueof(v_test.field1) == 0 and not isbound(v_test.field2)) { setverdict(pass); }
+    else { setverdict(fail); }
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_050());
+}
+
+}

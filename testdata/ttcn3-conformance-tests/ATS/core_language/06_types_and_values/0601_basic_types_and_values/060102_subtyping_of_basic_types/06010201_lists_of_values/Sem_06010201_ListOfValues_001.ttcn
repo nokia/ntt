@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.1, Assign invalid values to restricted bitstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010201_ListOfValues_001 {
+    type bitstring MyListOfBitStrings ('01'B, '10'B, '11'B);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010201_ListOfValues_001() runs on GeneralComp {
+        var MyListOfBitStrings v_b := '10'B;
+    	if (v_b == '10'B){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_06010201_ListOfValues_001());
+    }
+}

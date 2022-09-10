@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_023 {
+	type union U { integer f1, octetstring f2 }
+
+type component GeneralComp {
+}
+
+
+testcase TC_Sem_160102_predefined_functions_023 () runs on GeneralComp {
+	template U template1 := ({ f1 := 2 }, {f2 := 'AB'O });
+	var boolean v_i;
+
+ 	v_i:=ischosen(template1.f1);	//function returns false value
+		if(v_i==false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "Unexpected decoding result");
+		}
+}
+
+
+control{
+
+    execute(TC_Sem_160102_predefined_functions_023());
+
+}
+
+}

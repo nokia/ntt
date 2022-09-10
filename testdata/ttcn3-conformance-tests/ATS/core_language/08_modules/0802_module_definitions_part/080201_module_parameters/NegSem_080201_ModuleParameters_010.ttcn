@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, verify that module parameter declarations that don't contain the template keyword cannot contain matching symbols
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction f)
+// The constant expression for the default value TemplateBody of a module parameter shall respect the limitations given in clause
+// 16.1.4. and shall be compatible with the Type of the declaration and conform to the given TemplateRestriction. If no template
+// modifier is present, the TemplateBody shall resolve to a value.
+
+module NegSem_080201_ModuleParameters_010 {
+
+    modulepar integer PX_INT := ?;
+
+    type component GeneralComp {
+	}
+
+	testcase TC_NegSem_080201_ModuleParameters_010() runs on GeneralComp {
+		log(PX_INT);
+	    setverdict(pass);
+	}
+
+    control {
+         execute(TC_NegSem_080201_ModuleParameters_010());
+    }
+}

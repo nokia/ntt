@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.2, Verify that listed encode attributes retain variants
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Explicitly listed encode attributes that occur on the higher scope and are not overwritten
+// will retain all variants related to them.
+
+module Sem_27010202_rules_for_multiple_encodings_001 {
+
+    type component GeneralComp {
+	}
+
+	type integer Int with {
+		encode "CodecA"; variant "CodecA"."Rule1";
+		encode "CodecB"; variant "CodecB"."Rule2";
+    }
+
+	// Modifying list of allowed encodings
+	type Int Int2 with {
+		encode "CodecA"; // variant "CodecA"."Rule1" is kept
+		encode "CodecC"; variant "CodecC"."Rule6"; // new encoding and related variant
+		// "CodecB" encoding together with its variant are discarded as "CodecB" is not
+		// explicitly referenced
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010202_rules_for_multiple_encodings_001 () runs on GeneralComp {
+		var RoUC v_var1 := Int2.variant("CodecA"),
+			v_var2 := Int2.variant("CodecC");
+		if(lengthof(v_var1) == 1 and v_var1[0] == "Rule1" and
+			lengthof(v_var2) == 1 and v_var2[0] == "Rule6") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_27010202_rules_for_multiple_encodings_001());
+	}
+
+}

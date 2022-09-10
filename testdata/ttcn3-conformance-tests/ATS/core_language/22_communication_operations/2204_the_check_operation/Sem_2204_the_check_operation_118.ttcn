@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of any port.check with assignment in case of successful match inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_118 {
+
+	signature S(integer p_par1);
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p1, p2;
+	}
+
+	function f() runs on GeneralComp {
+		var GeneralComp v_src;
+        alt
+		{
+        	[] any port.check(from GeneralComp:? -> sender v_src) {
+				if (v_src == mtc) { setverdict(pass, "Check operation successful"); }
+				else { setverdict(fail, "Incorrect sender"); }
+			}
+		}
+		any port.getcall;
+		setverdict(pass, "Call still on the top of the queue");
+	}
+
+	testcase TC_Sem_2204_the_check_operation_118() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p1, v_ptc:p1);
+		connect(self:p2, v_ptc:p2);
+		p2.call(S:{ p_par1 := 1 }, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_118(), 5.0);
+    }
+}

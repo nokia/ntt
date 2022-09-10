@@ -1,0 +1,60 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.2
+ ** @purpose  1:B.1.3.3, Ensure that all from clause operand can be a set of value
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+/* Restrciton e) Templates except AnyElementsOrNone listed in the permutation shall obey the present template restriction (see clause15.8).*/
+
+module Sem_B010303_permutation_009 {
+
+	type set of integer SoI;
+	type record of integer RoI;
+
+    type record MessageType {
+  	 record of integer  	field1
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+	template SoI t_source := { 1, 2 ,?};
+	template RoI t_perm1 := { permutation (all from t_source), 5 };    //using all from with ?
+
+	testcase TC_Sem_B010303_permutation_009() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := t_perm1
+ }
+
+ v_testMessage:=  {
+  field1 := {2,1,3,5}
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+	control{
+	    execute(TC_Sem_B010303_permutation_009());
+	}
+
+}

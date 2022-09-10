@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that map operation rejects ports with incompatible message type lists
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// c) The map operation (assuming PORT2 is the test system interface port) is allowed if
+// and only if:
+// outlist-PORT1 ⊆ outlist-PORT2 and inlist-PORT2 ⊆ inlist-PORT1.
+//
+// In this test, inlists and outlists are completely incompatible
+
+module NegSem_210101_connect_and_map_operations_003 {
+	type record R {
+		integer field1,
+		charstring field2
+	}
+
+	type port P1 message {
+		inout integer;
+		out R;
+	}
+
+	type port P2 message {
+	  out boolean;
+	  in bitstring;
+	}
+
+	type component GeneralComp {
+		port P1 p
+	}
+
+	type component SystemComp {
+		port P2 p;
+	}
+
+	testcase TC_NegSem_210101_connect_and_map_operations_003() runs on GeneralComp system SystemComp {
+		map(system:p, self:p);  // incompatible message types: error expected
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210101_connect_and_map_operations_003());
+	}
+}

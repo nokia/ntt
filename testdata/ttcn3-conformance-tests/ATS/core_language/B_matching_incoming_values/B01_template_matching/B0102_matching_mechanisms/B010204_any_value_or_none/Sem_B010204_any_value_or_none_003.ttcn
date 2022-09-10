@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.4, Ensure that AnyValueOrNone can be used for matching optional fields
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// At the time of matching, it shall be applied to optional fields of record and set
+// templates only.
+
+module Sem_B010204_any_value_or_none_003 {
+
+	type set Set1 {
+		integer field1,
+		integer field2 optional
+	}
+	template integer t_anyOrNone := *; // top-level static template
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_B010204_any_value_or_none_003() runs on GeneralComp {
+		var Set1 v_val := { field1 := 5, field2 := 23 };
+	    if (match(v_val.field2, t_anyOrNone)) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+	    execute(TC_Sem_B010204_any_value_or_none_003());
+	}
+
+}

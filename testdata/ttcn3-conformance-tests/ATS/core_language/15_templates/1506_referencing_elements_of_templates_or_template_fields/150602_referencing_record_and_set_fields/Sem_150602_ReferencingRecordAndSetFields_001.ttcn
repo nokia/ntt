@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.6.2, ? shall be returned for mandatory subfields and * shall be returned for optional subfields.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_150602_ReferencingRecordAndSetFields_001 {
+
+    type component GeneralComp { }
+
+    type record MyRecordTwo {
+        integer g1,
+        MyRecordTwo g2 optional
+    }
+
+    type record MyRecordOne {
+        integer f1 optional,
+        MyRecordTwo f2 optional
+    }
+
+    testcase TC_Sem_150602_ReferencingRecordAndSetFields_001() runs on GeneralComp {
+        var template MyRecordOne m_R1 := {
+            f1 := 0,
+            f2 := ?
+        }
+
+        // m_R2.g1 is mandatory, therefore it shall be ?
+        // m_R2.g2 is optional, therefore it shall be *
+        var template MyRecordTwo m_R2 := m_R1.f2;
+
+        var template(value) MyRecordTwo m_value := {
+            g1 := 5,
+            g2 := omit
+        }
+
+        // match against ?
+        var boolean v_matchRes1 := match(5, m_R2.g1);
+
+
+        if (v_matchRes1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail, "match against ?");
+        }
+
+    }
+
+    control{
+        execute(TC_Sem_150602_ReferencingRecordAndSetFields_001());
+    }
+
+
+}

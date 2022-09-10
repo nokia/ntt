@@ -1,0 +1,23 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that the timeout specified with the execute statement is respected.
+ ** @verdict  pass accept, ttcn3verdict:error
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_007 {
+
+    type component GeneralComp { }
+
+    testcase TC_Sem_2601_ExecuteStatement_007() runs on GeneralComp {
+        while(true) {
+        // infinite loop
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_2601_ExecuteStatement_007(), 2.0); // let the testcase execution timeout after 2 seconds
+    }
+
+}

@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, The constructor body shall not invoke any member function in the object being initialized.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_007 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer v_i;
+
+        create(integer v_i) {
+            this.set_vi(v_i); //not allowed, calling of a member function in constructor body
+        }
+
+        public function set_vi(integer v_i) {
+            this.v_i := v_i;
+        }
+
+        public function get_vi() return integer {
+            return this.v_i;
+        }
+    }
+
+    testcase TC_NegSem_5010105_Constructors_007() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create(1);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_007());
+    }
+}

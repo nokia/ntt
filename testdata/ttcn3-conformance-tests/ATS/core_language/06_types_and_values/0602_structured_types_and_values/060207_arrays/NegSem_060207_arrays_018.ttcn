@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, negative value in array dimension (range notation)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Array dimensions shall be specified using constant expressions, which shall
+// evaluate to a positive integer values. Constants used in the constant
+// expressions shall meet with the restrictions in clause 10.
+
+module NegSem_060207_arrays_018 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_NegSem_060207_arrays_018() runs on GeneralComp {
+        const integer c_lower := 2 - 4;
+        var integer v_arr[c_lower .. 1];
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_018());
+	}
+
+}

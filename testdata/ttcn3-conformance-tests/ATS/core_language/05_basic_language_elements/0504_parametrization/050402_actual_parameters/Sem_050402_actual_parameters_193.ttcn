@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that Example 1 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_193 {
+
+    type component GeneralComp {
+	}
+
+    // A function definition with a formal parameter list
+    function MyFunction(integer FormalPar1, boolean FormalPar2, bitstring FormalPar3) {
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_050402_actual_parameters_193() runs on GeneralComp {
+        // A function call with an actual parameter list
+        MyFunction(123, true,'1100'B);
+        // A function call with assignment notation for actual parameters
+        MyFunction(FormalPar1 := 123, FormalPar3 := '1100'B, FormalPar2 := true);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_193());
+	}
+}

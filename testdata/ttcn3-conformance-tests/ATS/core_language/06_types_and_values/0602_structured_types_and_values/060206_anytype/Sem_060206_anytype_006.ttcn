@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that ensure that anytype comprise octetstring and charstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_006 {
+
+ type component GeneralComp {
+
+var anytype MyVarOne, MyVarTwo;
+var octetstring MyVarThree;
+var charstring MyString1;
+}
+
+testcase TC_Sem_060206_anytype_006() runs on GeneralComp {
+
+MyVarOne.octetstring := 'FF70'O;		//a float in anytype
+MyVarTwo.charstring :="abc";	// a charstring in the same anytype
+
+MyVarThree:=MyVarOne.octetstring;
+MyString1:=MyVarTwo.charstring&"def"; // "abc" & "def" =>"abcdef"
+
+      if ( match(MyVarThree, 'FF70'O) and match(MyString1, "abcdef") ) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_006());
+}
+
+}

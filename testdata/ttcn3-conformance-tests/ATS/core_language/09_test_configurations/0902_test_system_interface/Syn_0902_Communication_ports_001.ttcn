@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that two component can be mapped by one system interface
+** @verdict  pass accept, noexecution
+ ***************************************************/
+ //Two components are mapped to the same system interface
+module Syn_0902_Communication_ports_001{
+
+    type port myPort message {
+	  inout integer
+		}
+
+
+type component MyTestSystemInterface
+	{
+ 	port myPort messagePort;
+	}
+
+// MyTestSystemInterface is the test system interface
+testcase TC_Syn_0902_Communication_ports_001() runs on MyTestSystemInterface system MyTestSystemInterface {
+// establishing the port connections
+	var MyTestSystemInterface MycompA;
+	var MyTestSystemInterface MycompB;
+MycompA := MyTestSystemInterface.create;
+MycompB := MyTestSystemInterface.create;
+
+map(MycompA:messagePort, system:messagePort);
+map(MycompB:messagePort, system:messagePort);
+
+}
+control{
+    execute(TC_Syn_0902_Communication_ports_001());
+}
+}

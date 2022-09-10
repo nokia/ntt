@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_07060201_derived_by_extension_007"
+    xmlns:ns="schema:Pos_07060201_derived_by_extension_007">
+    <complexType name="c1">
+      <complexContent>
+        <extension base="ns:e25seq">
+          <choice>
+            <element name="ageElemExt" type="integer"/>
+            <element name="birthdayElemExt" type="date"/>
+          </choice>
+          <attribute name="unitAttrExt" type="string"/>
+        </extension>
+      </complexContent>
+    </complexType>
+    <complexType name="e25seq">
+      <sequence>
+        <element name="titleElemBase" type="string"/>
+        <element name="forenameElemBase" type="string"/>
+        <element name="surnameElemBase" type="string"/>
+      </sequence>
+      <attribute name="genderAttrBase" type="integer"/>
+      <attributeGroup ref="ns:g25attr2"/>
+    </complexType>
+    <attributeGroup name="g25attr2">
+      <attribute name="jobPositionAttrGroup" type="string"/>
+    </attributeGroup>
+    <element name="e1" type="ns:c1"/>
+</schema>

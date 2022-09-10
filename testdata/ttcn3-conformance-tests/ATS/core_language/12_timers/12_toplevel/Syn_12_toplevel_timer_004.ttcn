@@ -1,0 +1,16 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer array initialization syntax
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/timer array values are non-neg float or minus
+ **/
+
+
+module Syn_12_toplevel_timer_004 {
+    type component TComp{
+        timer t_timer[5] := {1.0, -, 1.0, 1.0, 1.0};
+    }
+}

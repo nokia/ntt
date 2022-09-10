@@ -1,0 +1,17 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.8, Verify that it is possible to use a nested type as a key
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// TTCN-3 supports the definition of map types with nested structured types for the to part. The usage
+// of structured types (record, set, enumerated, setof, recordof and map) is allowed.
+
+module Sem_06021508_nested_type_definitions_001 {
+	type map from record {
+		integer field1,
+		charstring field2
+	} to integer TMap1;
+}

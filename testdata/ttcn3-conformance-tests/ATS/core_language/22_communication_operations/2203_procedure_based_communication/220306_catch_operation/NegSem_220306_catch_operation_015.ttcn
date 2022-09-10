@@ -1,0 +1,47 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.2
+ ** @purpose  1:22.3.6, incompatible template in the from clause of the catch operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// f) All AddressRef items in the from clause and all VariableRef items in the sender clause
+// shall be of type address, component or of the address type bound to the port type (see
+// clause 6.2.9) of the port instance referenced in the catch operation.
+
+module NegSem_220306_catch_operation_015 {
+
+	signature S() exception (charstring);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+        p.getcall(S:{});
+        p.raise(S, "exc");
+	}
+
+    testcase TC_NegSem_220306_catch_operation_015() runs on GeneralComp system GeneralComp {
+        var charstring v_addr := "addr";
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f());
+		p.call(S:{}) {
+            [] p.catch(S, charstring:?) from v_addr {} // error expected
+            [] p.catch {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220306_catch_operation_015(), 5.0);
+    }
+}

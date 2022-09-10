@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.4, verify that a runtime error is generated if the real sender is incompatible with the variable in sender redirect assignment
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// If the operation contains a sender clause but no from clause, the sender shall be type
+// compatible with the variable or parameter referenced in the sender clause.
+
+module NegSem_2204_the_check_operation_005 {
+
+    type integer address;
+
+    type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    testcase TC_NegSem_2204_the_check_operation_005() runs on GeneralComp {
+        var address v_addr := 2;
+		var GeneralComp v_ptc;
+        p.send(100) to v_addr;
+        alt {
+            [] p.check(-> sender v_ptc) { }
+            [] p.check {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_2204_the_check_operation_005()/*, 5.0*/);
+    }
+}

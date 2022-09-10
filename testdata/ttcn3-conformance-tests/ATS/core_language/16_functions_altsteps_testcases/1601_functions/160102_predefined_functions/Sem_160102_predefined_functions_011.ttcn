@@ -1,0 +1,84 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_011 {
+    type enumerated EnumeratedType {e_black, e_white};
+    type enumerated EnumeratedTypeWithLabels1 {e_black (1), e_white};
+    type enumerated EnumeratedTypeWithLabels2 {e_black (-1), e_white};
+    type enumerated EnumeratedTypeWithLabels3 {e_black (-1), e_white , e_yellow (0) };
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_011 () runs on GeneralComp {
+        var EnumeratedType vl_enum_black := e_black;
+        var EnumeratedType vl_enum_white := e_white;
+        var EnumeratedTypeWithLabels1 vl_enum1_black := e_white;
+        var EnumeratedTypeWithLabels1 vl_enum1_white := e_black;
+        var EnumeratedTypeWithLabels2 vl_enum2_black := e_white;
+        var EnumeratedTypeWithLabels2 vl_enum2_white := e_black;
+        var EnumeratedTypeWithLabels3 vl_enum3_black := e_white;
+        var EnumeratedTypeWithLabels3 vl_enum3_white := e_black;
+        var EnumeratedTypeWithLabels3 vl_enum3_yellow := e_black;
+
+        const EnumeratedType c_enum_black := e_black;
+        const EnumeratedType c_enum_white := e_white;
+        const EnumeratedTypeWithLabels1 c_enum1_black := e_black;
+        const EnumeratedTypeWithLabels1 c_enum1_white := e_white;
+        const EnumeratedTypeWithLabels2 c_enum2_black := e_black;
+        const EnumeratedTypeWithLabels2 c_enum2_white := e_white;
+        const EnumeratedTypeWithLabels3 c_enum3_black := e_black;
+        const EnumeratedTypeWithLabels3 c_enum3_white := e_white;
+
+        int2enum(0,vl_enum_black);
+        int2enum(1,vl_enum_white);
+        if( match(vl_enum_black, c_enum_black) and
+            match(vl_enum_white, c_enum_white)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail, "fail 0");
+        }
+
+        int2enum(1,vl_enum1_black);
+        int2enum(0,vl_enum1_white);
+        if( match(vl_enum1_black, c_enum1_black) and
+            match(vl_enum1_white, c_enum1_white)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail, "fail 1");
+        }
+
+        int2enum(-1,vl_enum2_black);
+        int2enum(0,vl_enum2_white);
+        if( match(vl_enum2_black, c_enum2_black) and
+            match(vl_enum2_white, c_enum2_white)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail, "fail 2");
+        }
+
+        int2enum(-1,vl_enum3_black);
+        int2enum(1,vl_enum3_white);
+        if( match(vl_enum3_black, c_enum3_black) and
+            match(vl_enum3_white, c_enum3_white)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail, "fail 3");
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_011());
+    }
+}

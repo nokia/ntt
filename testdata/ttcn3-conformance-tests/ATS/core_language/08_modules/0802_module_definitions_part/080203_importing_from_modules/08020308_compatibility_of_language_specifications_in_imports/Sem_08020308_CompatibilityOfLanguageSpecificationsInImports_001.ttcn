@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.8, Verify that modules with explicit language tag can import from older TTCN-3 versions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction c:
+// The TTCN-3 language specification in an import statement shall be lower or equal
+// to the TTCN-3 language specification of the importing module, i.e. a TTCN-3 module
+// can only import from earlier or same editions of TTCN-3 but not from later editions.
+
+module Sem_08020308_CompatibilityOfLanguageSpecificationsInImports_001 language "TTCN-3:2013" {
+
+import from Sem_08020308_CompatibilityOfLanguageSpecificationsInImports_001_import language "TTCN-3:2012" all;
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020308_CompatibilityOfLanguageSpecificationsInImports_001() runs on GeneralComp {
+	if (c_test == 0) { setverdict(pass); }
+	else { setverdict(fail); }
+}
+
+control{
+	// testing if parameter names are imported
+    execute(TC_Sem_08020308_CompatibilityOfLanguageSpecificationsInImports_001());
+}
+}
+
+module Sem_08020308_CompatibilityOfLanguageSpecificationsInImports_001_import {
+	const integer c_test := 0;
+}

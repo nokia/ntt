@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, assignment notation for union values with two items
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The assignment notation shall be used for union-s, and the notation shall assign
+// a value to one field only. This field becomes the chosen field.
+
+module NegSem_060205_top_level_001 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		charstring option2
+	}
+
+    testcase TC_NegSem_060205_top_level_001() runs on GeneralComp {
+		var U v_choice := { option1 := 1, option2 := "abc" };
+        if (ischosen(v_choice.option1) or ischosen(v_choice.option2)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_060205_top_level_001());
+	}
+}

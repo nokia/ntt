@@ -1,0 +1,75 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.4.2, Ensure that the IUT correctly handles template matching of ifpresent indicators
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010402_ifPresent_indicator_001 {
+
+	type enumerated EnumeratedType {e_black, e_white, e_green};
+
+	type record RecordType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+	type union UnionType {
+ 	 integer  a,
+ 	 EnumeratedType  b,
+ 	 boolean  c
+	}
+
+	type record MessageType {
+  	 integer  		field1 optional,
+  	 charstring  	field2 optional,
+  	 RecordType		field3,
+  	 UnionType		field4 optional
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010402_ifPresent_indicator_001() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := (0..2) ifpresent,
+  field2 := "[a-f]" ifpresent,
+  field3 := {a:=1,b:=(0..2) ifpresent,c:=true},
+  field4 := {a:=(0..2)} ifpresent
+ }
+
+ v_testMessage:=  {
+  field1 := omit,
+  field2 := omit,
+  field3 := {a:=1,b:=omit,c:=true},
+  field4 := omit
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010402_ifPresent_indicator_001());
+}
+
+}

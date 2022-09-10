@@ -1,0 +1,57 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:5.5, Verify that cyclic import containing cyclic function calls is allowed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Direct and indirect cyclic definitions are not allowed with the exception of the
+// following cases:
+// a) for recursive type definitions (see clause 6.2);
+// b) function and altstep definitions (i.e. recursive function or altstep calls);
+// c) cyclic import definitions, if the imported definitions only form allowed cyclic
+// definitions.
+// In particular, the combination of c and b is tested
+
+module Sem_0505_cyclic_definitions_003 {
+	import from Sem_0505_cyclic_definitions_003_import { function f_factImp; }
+	type component GeneralComp {
+	}
+
+	function f_fact(integer p_argument) return integer {
+	    if(p_argument==0) {
+	     return 1;
+	    }
+	    else {
+	     return p_argument*f_factImp(p_argument-1);
+	    }
+	}
+
+	testcase TC_Sem_0505_cyclic_definitions_003() runs on GeneralComp {
+	    if (f_fact(10) == 3628800) {		// checks 10!
+	        setverdict(pass);
+	    }
+	    else {
+	        setverdict(fail);
+	    }
+	}
+
+	control{
+	    execute(TC_Sem_0505_cyclic_definitions_003());
+	}
+
+}
+
+module Sem_0505_cyclic_definitions_003_import {
+	import from Sem_0505_cyclic_definitions_003 { function f_fact; }
+	function f_factImp(integer p_argument) return integer {
+	    if(p_argument==0) {
+	     return 1;
+	    }
+	    else {
+	     return p_argument*f_fact(p_argument-1);
+	    }
+	}
+
+}

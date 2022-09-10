@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that any port.check(receive) works correctly as standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_007 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_Sem_2204_the_check_operation_007() runs on GeneralComp {
+		p.send(integer:1);
+        any port.check(receive);
+		setverdict(pass, "Check operation successful");
+		any port.receive;
+		setverdict(pass, "Message still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_007(), 5.0);
+    }
+}

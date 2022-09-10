@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:21.3.2, altstep in test component start operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The start operation shall bind the required behaviour to the test component. This
+// behaviour is defined by reference to an already defined function or altstep.
+// NOTE: altstep support added in TTCN-3:2016 -> the test was changed to positive one.
+
+module Sem_210302_Start_test_component_011 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+        port P p;
+	}
+
+    altstep a_test() runs on GeneralComp {
+        [] p.receive(integer:?) {
+            setverdict(pass);
+        }
+    }
+
+	testcase TC_Sem_210302_Start_test_component_011() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+		p.send(1);
+        v_ptc.start(a_test());
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_210302_Start_test_component_011());
+	}
+}

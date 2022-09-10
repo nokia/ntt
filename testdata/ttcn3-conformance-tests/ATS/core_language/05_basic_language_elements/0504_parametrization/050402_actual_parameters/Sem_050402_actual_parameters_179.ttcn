@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that missing actual parameters at the end of list notation are considered to be skipped (multiple parameter)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// An actual parameter can also be skipped by just leaving it out if no other actual
+// parameter follows in the actual parameter list - either because the parameter is
+// last or because all following formal parameters have default values and are left out.
+
+module Sem_050402_actual_parameters_179 {
+
+    type component GeneralComp {
+        var integer vc_counter := 0;
+	}
+
+    function f_test (integer p_val1, integer p_val2 := 20, integer p_val3 := 30, integer p_val4 := 40) {
+        if (match(p_val1, 1) and match(p_val2, 20) and match(p_val3, 30) and match(p_val4, 40)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_179() runs on GeneralComp {
+        f_test(1, -);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_179());
+	}
+}

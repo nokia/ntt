@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, ensure that the inner type referencing is correctly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060203_records_and_sets_of_single_types_001 {
+
+ type component GeneralComp {
+ }
+
+ type record length (5) of record of integer ConstrainedStructure (1 .. 10);
+ type ConstrainedStructure[-] RecordOfInt; //references the inner record of integer(1..10)
+
+testcase TC_Sem_060203_records_and_sets_of_single_types_001() runs on GeneralComp {
+
+ var RecordOfInt v_rec := { 8, 1, 2, 3, 4, 5, 6, 7, 9 };  // any record length is allowed
+
+      if (v_rec[7]==7) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060203_records_and_sets_of_single_types_001());
+}
+
+}

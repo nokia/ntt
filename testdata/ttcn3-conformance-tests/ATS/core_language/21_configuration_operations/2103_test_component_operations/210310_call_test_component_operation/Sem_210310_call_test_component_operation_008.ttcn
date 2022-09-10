@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with a value clause
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Additionally, a redirect clause can be added to the operation which allows assignment of the return
+// result (in case that the called function has a return clause) to a variable via the value sub-clause
+// and also the assignment of the termination verdict of the called component via the verdict sub-clause.
+
+module Sem_210310_call_test_component_operation_008 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp return integer {
+		setverdict(pass);
+		return 1;
+	}
+
+    testcase TC_Sem_210310_call_test_component_operation_008() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_int;
+        v_ptc.call(f()) -> value v_int;
+		if (v_int == 1) {
+		    setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_210310_call_test_component_operation_008(), 5.0);
+    }
+}

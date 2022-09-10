@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.2
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible type ranges
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// integer and float assigments from compatible types.
+module Sem_060301_non_structured_types_001 {
+    type integer ConstrainedInt(1..10);
+    type float ConstrainedFloat(1.0 .. 1E1);
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_060301_non_structured_types_001() runs on GeneralComp {
+
+    var integer v_int:=5;
+    var ConstrainedInt v_constrainedInt;
+    var float v_float:=5.0;
+    var ConstrainedFloat v_constrainedFloat;
+
+
+
+    v_constrainedInt:=v_int;
+    v_constrainedFloat:=v_float;
+
+
+    if (
+     (v_constrainedInt==5) and
+     (v_constrainedFloat==5.0)
+    ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_060301_non_structured_types_001());
+}
+
+}

@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that modified template cannot used dash as default value when original template parameter had no default value
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal template parameters of modified templates may inherit their default templates from the
+// corresponding parameters of their parent templates; this shall explicitly be denoted by using
+// a dash (don't change) symbol at the place of the modified template parameter's default template.
+
+module NegSem_05040102_parameters_of_kind_template_002 {
+
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+    template R m_t(template integer p_int1, in template integer p_int2 := 4) := {
+        field1 := p_int1,
+        field2 := p_int2
+    }
+
+    template R m_tmod(template integer p_int1 := -, in template integer p_int2 := ?) modifies m_t := {
+        field1 := p_int1,
+        field2 := p_int2
+    }
+}

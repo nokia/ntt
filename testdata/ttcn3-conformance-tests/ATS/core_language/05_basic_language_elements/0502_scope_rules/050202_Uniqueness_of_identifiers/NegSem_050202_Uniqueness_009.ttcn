@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.2.2, Ensure that the IUT correctly handles the uniqueness of variable names in its scope
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_050202_Uniqueness_009 {
+	const integer repeatedIdentifier := 0;
+
+	type component GeneralComp {
+	}
+
+	function f_funcScope() {}
+
+	testcase TC_NegSem_050202_Uniqueness_009() runs on GeneralComp {
+		var boolean repeatedIdentifier := true;
+		f_funcScope();
+	}
+	control {
+		execute(TC_NegSem_050202_Uniqueness_009());
+	}
+}

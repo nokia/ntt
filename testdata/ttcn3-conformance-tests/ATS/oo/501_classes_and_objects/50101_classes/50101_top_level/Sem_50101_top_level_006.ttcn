@@ -1,0 +1,23 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that a class declare timer as its member.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50101_top_level_006 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_timer_field {
+        timer t_timer := 5.0;
+    }
+
+    testcase TC_Sem_50101_top_level_006() runs on GeneralComp {
+        var t_class_timer_field v_a := t_class_timer_field.create();
+    }
+
+    control {
+        execute(TC_Sem_50101_top_level_006());
+    }
+}

@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.5, Ensure that the IUT recognizes explicit control functions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// Tested restriction:
+// f) Module control functions used as an execution entry point shall have public visibility.
+
+module NegSem_160105_explicit_control_functions_008 {
+
+    type component GeneralComp {
+    }
+
+    friend function @control f_NegSem_160105_explicit_control_functions_008() runs on GeneralComp system GeneralComp mtc GeneralComp {
+        execute(TC_NegSem_160105_explicit_control_functions_008());
+    }
+
+    testcase TC_NegSem_160105_explicit_control_functions_008 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        f_NegSem_160105_explicit_control_functions_008();
+    }
+
+}

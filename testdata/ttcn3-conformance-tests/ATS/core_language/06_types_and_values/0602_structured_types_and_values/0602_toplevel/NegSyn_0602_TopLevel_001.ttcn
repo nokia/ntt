@@ -1,0 +1,13 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Invalid recursive union type definition causing an error
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_0602_TopLevel_001 {
+    // In case of union types, to avoid infinite recursion, at least one of the alternatives shall not reference its own type.
+	type union MyUnion {
+		MyUnion choice1,
+		MyUnion choice2
+	}
+}

@@ -1,0 +1,17 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.2, referencing alternative on left hand side of assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Optional fields are not allowed for the union type, which means that the optional
+// keyword shall not be used with union types.
+
+module NegSyn_06020502_option_and_union_001 {
+    type union U {
+		integer option1,
+		charstring option2 optional
+	}
+}

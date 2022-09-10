@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that default values are evaluated in the scope of the parameterized entity
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e
+// The [default value] expression may be any expression that is well-defined at the beginning of the scope
+// of the parameterized entity
+
+module Sem_05040101_parameters_of_kind_value_025 {
+	type component GeneralComp {
+        var integer vc_int := 1;
+	}
+
+    function f(in integer p_int := vc_int) runs on GeneralComp {
+        log(p_int);
+		if (p_int == vc_int) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_025() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+        vc_int := 100;
+		v_ptc.start(f()); // p_int defaults to 1 (vc_int of v_ptc) and not to 100 (vc_int of self)
+        v_ptc.done;
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_025());
+	}
+}

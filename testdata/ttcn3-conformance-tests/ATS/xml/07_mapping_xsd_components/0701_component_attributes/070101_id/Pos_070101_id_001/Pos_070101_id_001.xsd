@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_070101_id_001"
+    xmlns:ns="schema:Pos_070101_id_001">
+  <element name="MyType">
+	 <complexType id="ProductType">
+	   <sequence>
+	     <element name="name" type="string"/>
+	     <element name="price" type="string"/>
+	   </sequence>
+	 </complexType>
+  </element>  
+</schema>

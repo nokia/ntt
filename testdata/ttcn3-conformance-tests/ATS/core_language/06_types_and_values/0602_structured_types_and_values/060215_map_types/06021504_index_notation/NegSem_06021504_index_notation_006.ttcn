@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that an error is generated if a non-existent key is used on the right hand side
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction c
+// An index notation used on the right hand side with a key that has no associated value
+// shall result in an error.
+
+module NegSem_06021504_index_notation_006 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021504_index_notation_006() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 };
+		var charstring v_key := "abc";
+		var integer v_val := v_map[v_key] := 6.5;
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_06021504_index_notation_006());
+	}
+}

@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that assignment notation can be used for a record type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+ /* The following requirement is tested: Mandatory fields, not explicitly referred to in the notation or explicitely unspecified using the not used symbol "-", shall remain unchanged. */
+
+module Sem_0602_TopLevel_015 {
+
+
+    type component GeneralComp {
+    }
+
+    type record MyRecord {
+        integer field1,
+        charstring field2 optional,
+        float field3
+    }
+
+    testcase TC_Sem_0602_TopLevel_015() runs on GeneralComp {
+
+		var MyRecord v_myRecord := {
+			            field1 := 5,
+			            field2 := "hi",
+			            field3 := 3.14
+		};
+
+        // change value "field1" and "field3". Leave "field2" unchanged.
+		 v_myRecord := {
+            field1 := 3,
+            field3 := 2.0
+        };
+
+        if (match(v_myRecord, {3,"hi",2.0})) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_015());
+    }
+}

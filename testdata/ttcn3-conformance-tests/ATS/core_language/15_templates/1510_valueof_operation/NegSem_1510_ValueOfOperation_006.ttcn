@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.10, check that runtime error occurs if valueof is applied to partially initialized template
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The template shall be completely initialized and resolve to a specific value.
+
+module NegSem_1510_ValueOfOperation_006 {
+
+type component GeneralComp { }
+
+type record R {
+	integer field1,
+	integer field2
+}
+
+testcase TC_NegSem_1510_ValueOfOperation_006() runs on GeneralComp {
+	var template R v_test;
+	var R v_result;
+	v_test.field1 := 1; // field2 is left uninitialized
+	v_result := valueof(v_test);
+
+	// if we get here, something must be wrong as valueof on v_test shall cause an error
+	// as it is not a template.
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1510_ValueOfOperation_006());
+}
+
+}

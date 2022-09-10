@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that attributes from lower scopes override attribute from higher scopes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// An attribute definition that is directly attached to a lower scope unit will override a general attribute
+// definition in a higher scope and a type-specific attribute inherited from a type reference.
+
+module Sem_27010200_general_001 {
+
+    type component GeneralComp {
+	}
+
+	type record R {
+	} with { encode "RuleA" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_001 () runs on GeneralComp {
+		var RoUC v_enc := R.encode;
+		if(v_enc[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_27010200_general_001());
+	}
+
+} with { encode "GeneralRule" }

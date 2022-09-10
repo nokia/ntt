@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.4, Verify that out port parameters are not allowed
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Formal port parameters shall be inout parameters, which can optionally be indicated by the keyword inout.
+
+module NegSem_05040104_parameters_of_kind_port_004 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component C {
+        port P p;
+    }
+
+    function f_test(out P p_port) {
+        setverdict(pass);
+    }
+
+    testcase TC_NegSem_05040104_parameters_of_kind_port_004() runs on C {
+        f_test(p);
+    }
+
+    control {
+        execute(TC_NegSem_05040104_parameters_of_kind_port_004());
+    }
+}

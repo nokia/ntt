@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1, Ensure that the IUT correctly handles function definitions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1601_toplevel_001 {
+
+
+type component GeneralComp {
+}
+
+function f_test ( integer p_integer := 0 ) return integer {
+
+ return p_integer+1;
+ return p_integer+2;
+}
+
+testcase TC_Sem_1601_toplevel_001 () runs on GeneralComp {
+
+ 	if(f_test(1)==2) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+    execute(TC_Sem_1601_toplevel_001());
+
+}
+
+}

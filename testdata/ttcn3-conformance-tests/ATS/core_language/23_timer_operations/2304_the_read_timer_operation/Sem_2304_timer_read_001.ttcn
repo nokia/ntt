@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.4, Ensure timer read result of inactive timer is zero
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.4 The Read timer operation/Read on an inactive timer returns float zero
+
+
+module Sem_2304_timer_read_001 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_Sem_2304_timer_read_001() runs on TComp{
+        if (t_timer.read!=0.0){
+            setverdict(fail);
+			stop;
+        }
+        t_timer.start;
+        t_timer.stop;
+        if (t_timer.read!=0.0){
+            setverdict(fail);
+        } else {
+			setverdict(pass);
+		}
+
+    }
+    control{
+            execute(TC_Sem_2304_timer_read_001())
+    }
+}

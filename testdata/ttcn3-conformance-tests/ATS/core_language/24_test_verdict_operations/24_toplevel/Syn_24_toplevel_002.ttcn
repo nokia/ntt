@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure setverdict and getverdict are allowed in test cases
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions./Setverdict locations/Setverdict allowed in test cases
+ **/
+
+module Syn_24_toplevel_002 {
+	type component GeneralComp {};
+
+	testcase TC_Syn_24_toplevel_002_setverdict() runs on GeneralComp {
+		setverdict(none);
+		setverdict(pass);
+		setverdict(inconc);
+		setverdict(fail);
+	}
+
+	testcase TC_Syn_24_toplevel_002_getverdict() runs on GeneralComp {
+		var verdicttype v_verdict;
+
+		v_verdict := getverdict;
+	}
+
+	testcase TC_Syn_24_toplevel_002_return_getverdict() runs on GeneralComp {
+		const verdicttype c_v := getverdict;
+	}
+}

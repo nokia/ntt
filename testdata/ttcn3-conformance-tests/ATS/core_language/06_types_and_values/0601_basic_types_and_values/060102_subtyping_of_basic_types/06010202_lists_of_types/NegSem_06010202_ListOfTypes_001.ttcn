@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted bitstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_001 {
+    type bitstring BitStrings1 ('0'B, '1'B );
+    type bitstring BitStrings2 ('00'B, '01'B, '10'B, '10'B);
+    type bitstring BitStrings_1_2 (BitStrings1, BitStrings2);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_001() runs on GeneralComp {
+        var BitStrings_1_2 v_b := '11'B; // 11 is not defined by the type
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_001());
+    }
+}

@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:7.1.5, Verify constraint of type based on XSD definition with fixed attribute
+ ** @verdict  pass reject
+***************************************************/
+// The following requirements are tested:
+// The fixed attribute applied to attribute or element elements shall be mapped
+// to a subtype definition with the single allowed value identical to the value
+// of the fixed attribute plus a "defaultForEmpty …" encoding instruction
+// identifying the value of the fixed attribute as well. The fixed attribute
+// applied to XSD facets shall be ignored.
+
+module Neg_070105_default_and_fixed_001 {
+
+   import from schema_Neg_070105_default_and_fixed_001 language "XSD" all;
+
+   template MyType m_msg := "notFixedValue";
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_070105_default_and_fixed_001() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_070105_default_and_fixed_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

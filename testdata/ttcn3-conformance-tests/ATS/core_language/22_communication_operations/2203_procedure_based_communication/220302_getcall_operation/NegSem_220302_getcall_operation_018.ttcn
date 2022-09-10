@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.2
+ ** @purpose  1:22.3.2, incompatible template in the from clause of the getcall operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// f) All AddressRef items in the from clause and all VariableRef items in the sender clause
+// shall be of type address, component or of the address type bound to the port type (see
+// section 6.2.9) of the port instance referenced in the getcall operation.
+
+module NegSem_220302_getcall_operation_021 {
+
+	signature S() return integer;
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+        p.call(S:{}, nowait);
+	}
+
+    testcase TC_NegSem_220302_getcall_operation_021() runs on GeneralComp system GeneralComp {
+        var charstring v_addr := "addr";
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f());
+		alt {
+            [] p.getcall(S:?) from v_addr {} // error expected
+            [] p.getcall {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220302_getcall_operation_021(), 5.0);
+    }
+}

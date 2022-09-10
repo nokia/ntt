@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1, Verify that connect operation cannot contain a system port
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// In the case of connections between two test components, the connect operation shall be used.
+
+module NegSem_2101_TopLevel_001 {
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_NegSem_210101_TopLevel_001() runs on GeneralComp system GeneralComp {
+		connect(self:p, system:p); // error expected
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210101_TopLevel_001());
+	}
+}

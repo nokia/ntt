@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Verify that any from alive can be used inside expressions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// The index of the first component found alive can optionally be assigned to an integer
+// variable for  single-dimensional component arrays.
+module Sem_210305_alive_operation_010 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210305_alive_operation_010() runs on GeneralComp system GeneralComp {
+		var boolean v_isAlive;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		var integer v_index;
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i mod 2 == 0) { v_ptc[i].kill; } // kill components on even indices
+			else { v_ptc[i].start(f());} // activate PTC
+		}
+        v_isAlive := any from v_ptc.alive -> @index value v_index and v_index == 1;
+        if(v_isAlive){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from alive operation didn't find alive components");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210305_alive_operation_010(), 5.0);
+    }
+}

@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of port.check in case of successful match inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_113 {
+
+	type port P message {
+		inout integer;
+		address integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_Sem_2204_the_check_operation_113() runs on GeneralComp {
+		p.send(integer:1) to 80;
+        alt
+		{
+        	[] p.check(from P.address:(80, 8080)) { setverdict(pass, "Check operation successful"); }
+		}
+		p.receive(integer:?);
+		setverdict(pass, "Message still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_113(), 5.0);
+    }
+}

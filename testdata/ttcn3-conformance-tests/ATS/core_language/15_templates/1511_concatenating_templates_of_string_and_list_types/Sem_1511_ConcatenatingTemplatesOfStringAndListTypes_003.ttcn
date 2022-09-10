@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of bitstring types works as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_003 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_003() runs on GeneralComp {
+	var template bitstring v_myBitStr := '010'B & '*'B & '1?1'B;
+
+	if (match('010010101101'B, v_myBitStr)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_003());
+}
+
+}

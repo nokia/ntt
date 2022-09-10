@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="windows-1257" standalone="no"?>
+<!DOCTYPE log SYSTEM "logger.dtd">
+<log>
+<record>
+  <date>2015-10-05T15:13:38</date>
+  <millis>1444047218167</millis>
+  <sequence>0</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>&lt;init&gt;</method>
+  <thread>18</thread>
+  <message>XmlDiff.java:101:Reference file: C:\SVN\SVN 475\trunk\ATS\06_built_in_data_types\0601_mapping_of_facets\060101_length\Pos_060101_length_002\Pos_060101_length_002.xml, xsd file names: [Pos_060101_length_002.xsd], xsd search path: null</message>
+</record>
+<record>
+  <date>2015-10-05T15:13:38</date>
+  <millis>1444047218326</millis>
+  <sequence>1</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>findXsdFiles</method>
+  <thread>18</thread>
+  <message>XmlDiff.java:248:Looking for XSD file Pos_060101_length_002.xsd</message>
+</record>
+<record>
+  <date>2015-10-05T15:13:38</date>
+  <millis>1444047218327</millis>
+  <sequence>2</sequence>
+  <level>SEVERE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>&lt;init&gt;</method>
+  <thread>18</thread>
+  <message>XmlDiff.java:124:Missing XSD files [Pos_060101_length_002.xsd] in search path null</message>
+</record>
+</log>
+<?xml version="1.0" encoding="windows-1257" standalone="no"?>
+<!DOCTYPE log SYSTEM "logger.dtd">
+<log>
+<record>
+  <date>2017-04-03T15:17:08</date>
+  <millis>1491221828805</millis>
+  <sequence>0</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>&lt;init&gt;</method>
+  <thread>17</thread>
+  <message>XmlDiff.java:101:Reference file: C:\Work\STF\STF 521\Tmp\05_mapping_xml_schemas\0501_namespaces\050101_namespaces\Pos_050101_namespaces_003\Pos_050101_namespaces_003.xml, xsd file names: [test_data/Pos_050101_namespaces_003_merged.xsd], xsd search path: null</message>
+</record>
+<record>
+  <date>2017-04-03T15:17:09</date>
+  <millis>1491221829023</millis>
+  <sequence>1</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>findXsdFiles</method>
+  <thread>17</thread>
+  <message>XmlDiff.java:248:Looking for XSD file test_data/Pos_050101_namespaces_003_merged.xsd</message>
+</record>
+<record>
+  <date>2017-04-03T15:17:09</date>
+  <millis>1491221829294</millis>
+  <sequence>2</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>diff</method>
+  <thread>17</thread>
+  <message>XmlDiff.java:140:Looking for difference: reference file C:\Work\STF\STF 521\Tmp\05_mapping_xml_schemas\0501_namespaces\050101_namespaces\Pos_050101_namespaces_003\Pos_050101_namespaces_003.xml, input {&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;ns1:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="schema:Pos_050101_namespaces_003"&gt;3&lt;/ns1:MyType&gt;}</message>
+</record>
+<record>
+  <date>2017-04-03T15:17:09</date>
+  <millis>1491221829726</millis>
+  <sequence>3</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>diff</method>
+  <thread>17</thread>
+  <message>XmlDiff.java:155:No differences found between reference file C:\Work\STF\STF 521\Tmp\05_mapping_xml_schemas\0501_namespaces\050101_namespaces\Pos_050101_namespaces_003\Pos_050101_namespaces_003.xml and input {&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;ns1:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="schema:Pos_050101_namespaces_003"&gt;3&lt;/ns1:MyType&gt;}</message>
+</record>
+</log>
+<?xml version="1.0" encoding="windows-1257" standalone="no"?>
+<!DOCTYPE log SYSTEM "logger.dtd">
+<log>
+<record>
+  <date>2017-04-04T12:33:32</date>
+  <millis>1491298412165</millis>
+  <sequence>0</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>&lt;init&gt;</method>
+  <thread>18</thread>
+  <message>XmlDiff.java:101:Reference file: C:\Work\STF\STF 521\Tmp\07_mapping_xsd_components\0707_any_and_anyattribute\070701_the_any_element\Pos_070701_the_any_element_001\Pos_070701_the_any_element_001.xml, xsd file names: [Pos_070701_the_any_element_001.xsd], xsd search path: null</message>
+</record>
+<record>
+  <date>2017-04-04T12:33:32</date>
+  <millis>1491298412455</millis>
+  <sequence>1</sequence>
+  <level>FINE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>findXsdFiles</method>
+  <thread>18</thread>
+  <message>XmlDiff.java:248:Looking for XSD file Pos_070701_the_any_element_001.xsd</message>
+</record>
+<record>
+  <date>2017-04-04T12:33:32</date>
+  <millis>1491298412456</millis>
+  <sequence>2</sequence>
+  <level>SEVERE</level>
+  <class>org.etsi.mts.ttcn.part9.xmldiff.XmlDiff</class>
+  <method>&lt;init&gt;</method>
+  <thread>18</thread>
+  <message>XmlDiff.java:124:Missing XSD files [Pos_070701_the_any_element_001.xsd] in search path null</message>
+</record>
+</log>

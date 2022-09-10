@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that information about message types is imported together with port type
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// User defined type, port type
+
+module NegSem_08020301_GeneralFormatOfImport_007 {
+import from NegSem_08020301_GeneralFormatOfImport_007_import { type P };
+
+type component GeneralComp {
+	port P p1;
+}
+
+testcase TC_NegSem_08020301_GeneralFormatOfImport_007() runs on GeneralComp {
+	// Since the type of the sent message is not compatible with the allowed types of the imported
+	// port type, a type compatibility error shall be generated. This proves that the type information
+	// has been properly imported.
+	p1.send(charstring:"abc");
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSem_08020301_GeneralFormatOfImport_007());
+}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_007_import {
+	type port P message {
+		inout integer;
+	}
+}

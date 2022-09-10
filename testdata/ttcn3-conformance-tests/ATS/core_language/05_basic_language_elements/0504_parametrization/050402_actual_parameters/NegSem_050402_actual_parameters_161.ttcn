@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that function cannot have more actual than formal parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The number of actual parameters in the list notation shall not exceed the number of parameters
+// in the formal parameter list.
+
+module NegSem_050402_actual_parameters_161 {
+
+    type component GeneralComp {
+	}
+
+    testcase TC_NegSem_050402_actual_parameters_161(in integer p_val) runs on GeneralComp {
+        if (p_val == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_161(1, 2));
+	}
+}

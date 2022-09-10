@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060504_date_003"
+  xmlns:types="schema:Pos_060504_date_003">
+    <simpleType name="t1">
+        <restriction base="date"/>
+    </simpleType>
+    <element name="e1" type="types:t1"/>
+</schema>

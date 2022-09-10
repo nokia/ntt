@@ -1,0 +1,14 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Valid recursive record type definition
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_0602_TopLevel_002 {
+    // In case of record and set types, to avoid infinite recursion, fields referencing to its own type, shall be optional.
+    type record MyRecord {
+    	integer field1,
+        MyRecord field2 optional,
+    	float field3
+    }
+}

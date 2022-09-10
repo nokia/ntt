@@ -1,0 +1,53 @@
+/*****************************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:20.4, Validate that interleave statements are properly handled.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+module Syn_2004_InterleaveStatement_001 {
+    type port MyMessagePortType message {
+        inout MyMessageType;
+    }
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort1, pt_myPort2;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    testcase TC_Syn_2004_InterleaveStatement_001() runs on GeneralComp {
+
+        template MyMessageType MySig1 := {1, "abc", true}
+        template MyMessageType MySig2 := MySig1;
+        template MyMessageType MySig3 := MySig1;
+        template MyMessageType MySig4 := MySig1;
+        template MyMessageType MySig5 := MySig1;
+        template MyMessageType MySig6 := MySig1;
+
+        pt_myPort1
+        .send(MyMessageType:
+              {
+                  2,
+                  "abcxyz",
+                  true
+              });
+
+        interleave {
+            [] pt_myPort1.receive(MySig1) {
+                pt_myPort1.send(MySig2);
+                pt_myPort1.receive(MySig3);
+            }
+            [] pt_myPort2.receive(MySig4) {
+                pt_myPort2.send(MySig5);
+                pt_myPort2.receive(MySig6);
+            }
+        }
+    }
+    control {
+        execute(TC_Syn_2004_InterleaveStatement_001());
+    }
+}

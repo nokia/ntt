@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that a parameterized local template in a test case is accepted.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1503_GlobalAndLocalTemplates_004 {
+
+    type port MyMessagePortType message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    testcase TC_Sem_1503_GlobalAndLocalTemplates_004() runs on GeneralComp {
+        template MyMessageType m_myTemplate(integer p_myFormalParam):= {
+            field1 := p_myFormalParam,
+            field2 := "abcxyz",
+            field3 := true
+        }
+
+        pt_myPort.send(m_myTemplate(2));
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_1503_GlobalAndLocalTemplates_004());
+    }
+
+
+}

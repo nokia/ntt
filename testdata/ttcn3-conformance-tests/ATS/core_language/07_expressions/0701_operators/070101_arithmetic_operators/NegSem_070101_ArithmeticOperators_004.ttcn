@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that rem arithmetic operator can handle integer variables
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_070101_ArithmeticOperators_004 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_070101_ArithmeticOperators_004() runs on GeneralComp {
+	var float v_i := 2.0E1;
+	var float v_k :=2.0E0;
+
+	var integer v_result := v_i rem v_k;	// rem operator is only for integer type
+
+	setverdict(pass);
+}
+control{
+    execute(TC_NegSem_070101_ArithmeticOperators_004());
+}
+
+}

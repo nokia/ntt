@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted universal charstring with mixed bounds.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_008 {
+	//  Defines a string type of any length with each character within the range (111 or 112)
+    type universal charstring MyUCharString (char(0, 0, 1, 111) .. !char(0, 0, 1, 113));
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_008() runs on GeneralComp {
+        var MyUCharString v_uc1;
+        v_uc1 := char(0, 0, 1, 111);
+        v_uc1 := char(0, 0, 1, 112);
+        v_uc1 := char(0, 0, 1, 112) & char(0, 0, 1, 112);
+        v_uc1 := char(0, 0, 1, 112) & char(0, 0, 1, 111) & char(0, 0, 1, 112);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_008());
+    }
+}

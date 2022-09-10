@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that an unrestricted template can't be assigned to a template(value) variable if contains anyvalueornone(*)
+ ** @verdict  pass reject
+ *****************************************************************/
+
+
+module NegSem_1508_TemplateRestrictions_033 {
+
+    type record ExampleType {	// Exampletype record contains a charstring and a boolean
+       	charstring a optional,
+		boolean b
+       }
+
+	type component GeneralComp {
+	var template (value) ExampleType v_value;	//value restricted template variable
+	}
+
+
+	template ExampleType MyintTemplate :={	//actual template (without restriction) contains *
+		a := *,
+		b:= true
+	}
+
+
+
+
+	testcase TC_NegSem_1508_TemplateRestrictions_033() runs on GeneralComp {
+
+	v_value := MyintTemplate;	//error: v_value is value restricted, hence can not contain *
+
+		if (valueof(v_value.b) == false) {
+      		setverdict(pass);
+		} else {
+            setverdict(fail);
+       }
+ }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_033());
+    }
+}

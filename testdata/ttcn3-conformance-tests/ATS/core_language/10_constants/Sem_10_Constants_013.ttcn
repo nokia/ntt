@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:10, global constant can be a port type, but only with value null
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+    // The only value that can be assigned to global constants of default, component, port or timer type or
+    // component constants of default or component types is the special value null.
+
+    /* Note: This modification is added in ETSI ES201 873-1 V4.11.1 (2019-04),
+     * Section 10, by removing Restriction A)
+     * */
+
+
+module Sem_10_Constants_013 {
+
+     type port MyMessagePortType message
+	{
+		inout integer
+	}
+
+    const MyMessagePortType c_port:= null;
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_10_Constants_013() runs on GeneralComp {
+
+        if(match(c_port, null)){
+            setverdict(pass);
+        }else{
+            setverdict(fail);
+        }
+    }//end testcase
+
+    control{
+        execute(TC_Sem_10_Constants_013());
+    }
+}

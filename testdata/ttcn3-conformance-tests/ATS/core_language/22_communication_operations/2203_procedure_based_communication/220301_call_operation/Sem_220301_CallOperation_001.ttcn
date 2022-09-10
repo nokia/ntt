@@ -1,0 +1,120 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, Ensure that the IUT correctly handles procedure call operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_220301_CallOperation_001 {
+
+    /**
+    * @desc testing of inline return template for remote procedure call
+    * @param p_par1 only input parameter
+    * @param p_par2 must have value 4 at return
+    * @param p_par3 must have value 5 at return
+    * @return must return value 1
+    */
+    signature p_Sem_220301_CallOperation_001(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+    template p_Sem_220301_CallOperation_001 s_returnTemplate := {
+        p_par1 := -,
+        p_par2 := 4,
+        p_par3 := 5
+    }
+
+    template p_Sem_220301_CallOperation_001 s_wrongTemplate := {
+        p_par1 := -,
+        p_par2 := 2,
+        p_par3 := 3
+    }
+
+    template p_Sem_220301_CallOperation_001 s_callTemplate := {
+        p_par1 := 1,
+        p_par2 := -,
+        p_par3 := 3
+    }
+
+    type port remotePort procedure {
+        inout p_Sem_220301_CallOperation_001;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+    }
+
+    function f_ClientQuery() runs on GeneralComp {
+        var integer v_zero:=0;
+        var integer v_one:=1;
+
+        PCO.call(p_Sem_220301_CallOperation_001:s_callTemplate, 5.0) {
+
+            [] PCO.getreply(p_Sem_220301_CallOperation_001:s_wrongTemplate value 1) {
+                setverdict(fail);
+            }
+            [] PCO.getreply(p_Sem_220301_CallOperation_001:s_returnTemplate value 2) {
+                setverdict(fail);
+            }
+            [v_one>v_zero] PCO.getreply(p_Sem_220301_CallOperation_001:s_returnTemplate value 1) {		//check that boolean guard is correctly evaluated
+                setverdict(pass);
+            }
+            [] PCO.catch (timeout) {
+                setverdict(fail);
+            }
+        }
+    }
+
+    function f_ServerResponses() runs on GeneralComp {
+
+        var integer v_par1;
+        var integer v_par3;
+        timer t_timeout:=30.0;
+
+        template p_Sem_220301_CallOperation_001 s_acceptTemplate := {
+            p_par1 := ?,
+            p_par2 := ?,
+            p_par3 := ?
+        };
+
+
+        t_timeout.start;
+
+        alt {
+            [] PCO.getcall(p_Sem_220301_CallOperation_001:s_acceptTemplate) -> param(v_par1, - , v_par3) {
+                PCO.reply(p_Sem_220301_CallOperation_001:{p_par1 := -, p_par2 := v_par1+v_par3, p_par3 := v_par1+v_par3+1} value v_par1);  	//procedure return values are sent
+                repeat;
+            }
+            [] t_timeout.timeout {
+                setverdict(fail);
+            }
+        }
+
+    }
+
+
+    testcase TC_Sem_220301_CallOperation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+        var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+        // map the PTCs to the system port
+        connect(server:PCO, client:PCO);
+
+        server.start(f_ServerResponses());
+        client.start(f_ClientQuery());
+
+        alt {
+            [] client.done {
+                server.stop;
+            }
+        }
+
+        alt {
+            [] all component.done {}
+        }
+
+        disconnect(server:PCO);
+    }
+
+    control{
+        execute(TC_Sem_220301_CallOperation_001());
+    }
+
+}

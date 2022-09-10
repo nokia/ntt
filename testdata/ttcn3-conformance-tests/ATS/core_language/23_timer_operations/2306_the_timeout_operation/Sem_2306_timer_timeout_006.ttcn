@@ -1,0 +1,61 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure any timer.timeout operation handles timeout of any timer in the component, not only visible from a function or altstep
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/The any keyword used with the timeout operation succeeds if the timeout-list is not empty./Wait for timers that are outside of scope
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Allow any timer.timeout
+
+module Sem_2306_timer_timeout_006 {
+    const float PTC_TIMEOUT := 5.0;
+
+    type port MyPort message { inout charstring };
+
+    type component System {}
+
+    type component MTC {
+        port MyPort signalPort;
+    }
+
+    type component PTC {
+    	port MyPort signalPort;
+    }
+    function f_ptc1() runs on PTC
+    {
+        timer t_timer := PTC_TIMEOUT;
+        t_timer.start;
+
+        t_timer.timeout;
+        setverdict(fail, "The component was expected to be killed before this point");
+        signalPort.send("I'm timed out!");
+    }
+
+    altstep a_step() runs on MTC {
+        [] any timer.timeout {
+            setverdict(pass);
+        }
+        [] signalPort.receive {
+            // PTC timer out
+            setverdict(fail, "Any timer.timeout failed to see the timer outside altstep scope");
+        }
+    }
+
+    testcase TC_Sem_2306_timer_timeout_006() runs on MTC system System{
+        var PTC ptc := PTC.create;
+        timer t_timer;
+        connect(ptc:signalPort, mtc:signalPort);
+        ptc.start(f_ptc1());
+
+        // Start a timer outside of the scope of a_step
+        t_timer.start(1.0);
+        a_step();
+        ptc.kill;
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_006())
+
+
+    }
+}

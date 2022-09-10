@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.3, Ensure all timer stop syntax
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.3 The Stop timer operation/Timer stop syntax
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Allow all timer.stop
+
+module Syn_2303_timer_stop_007 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_Syn_2303_timer_stop_007() runs on TComp{
+        t_timer.start;
+        all timer.stop;
+        setverdict(pass);
+
+    }
+    control{
+
+            execute(TC_Syn_2303_timer_stop_007())
+
+
+    }
+}

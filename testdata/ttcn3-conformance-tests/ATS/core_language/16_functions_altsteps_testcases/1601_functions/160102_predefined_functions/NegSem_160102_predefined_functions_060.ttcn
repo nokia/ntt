@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// C.2.2 In addition to the general error causes in clause 16.1.2, error causes are:
+// 	the template passed to the inpar parameter is not of a record or set type.
+
+module NegSem_160102_predefined_functions_060 {
+
+    type component GeneralComp {
+	}
+
+    type union unionType {
+    charstring chocie1,
+    integer choice2};
+
+    template unionType MyUnion := {chocie1 := "111"};
+
+    testcase TC_NegSem_160102_predefined_functions_060() runs on GeneralComp {
+	var integer v_i;
+
+ 	v_i:=sizeof(MyUnion);		// error: template is an union
+ 	setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160102_predefined_functions_060());
+	}
+}

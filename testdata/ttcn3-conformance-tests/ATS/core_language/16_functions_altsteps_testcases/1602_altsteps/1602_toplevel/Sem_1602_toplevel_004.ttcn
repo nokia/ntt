@@ -1,0 +1,64 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.2, Ensure that the IUT recognizes interleave altstep definitions and correctly evaluates them
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1602_toplevel_004 {
+
+    type record MessageType {
+        integer  		field1,
+        charstring  	field2
+    }
+
+    type port loopbackPort message {
+        inout MessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    altstep interleave AltSet1(MessageType msgt1, MessageType msgt2) runs on GeneralComp {
+        template MessageType t_msg_1 := msgt1;
+        template MessageType t_msg_2 := msgt2;
+        var boolean msgt1Received := false;
+        var boolean msgt2Received := false;
+        [] messagePort.receive(t_msg_1) {
+            msgt1Received := true;
+            if (msgt2Received) {
+                setverdict(pass);
+            }
+        }
+        [] messagePort.receive(t_msg_2) {
+            msgt2Received := true;
+            if (msgt1Received) {
+                setverdict(pass);
+            }
+        }
+    }
+
+    testcase TC_Sem_1602_toplevel_004 () runs on GeneralComp {
+        var MessageType v_testMessage1:=  {
+            field1 := 1,
+            field2 := "test string"
+        }
+
+        var MessageType v_testMessage2:=  {
+            field1 := 2,
+            field2 := "test string"
+        }
+
+        messagePort.send(v_testMessage1);
+        messagePort.send(v_testMessage2);
+
+        AltSet1({1, "test string"}, {2, "test string"});
+    }
+
+    control{
+
+        execute(TC_Sem_1602_toplevel_004());
+
+    }
+
+}

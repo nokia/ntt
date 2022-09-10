@@ -1,0 +1,95 @@
+/***************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:27.7, Ensure that the IUT correctly handles attribute definitions and their scoping rules
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_2707_OptionalAttributes_001 {
+
+	type enumerated EnumeratedType {e_black, e_white};
+
+	type record RecordType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+	type set SetType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+	type record length (1..2) of integer IntegerList;
+
+	type set length (1..2) of integer IntegerUList;
+
+	type union UnionType {
+ 	 integer  a,
+ 	 EnumeratedType  b,
+ 	 boolean  c
+	}
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2,
+  	 boolean  		field3,
+  	 integer  		field4[4],
+  	 EnumeratedType field5,
+  	 RecordType		field6,
+  	 SetType		field7,
+  	 UnionType		field8,
+  	 IntegerList	field9,
+  	 IntegerUList	field10
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	} with { optional "implicit omit"}
+	// the optional keyword is forbidden here, because according to the restriction 27.7.a
+	// a port type shall not have an optional attribute associated to them directly.
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_NegSem_2707_OptionalAttributes_001() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := 1,
+  field2 := "test string",
+  field3 := true,
+  field4 := {1,2,3,4},
+  field5 := e_black,
+  field6 := {a:=1,b:=2,c:=true},
+  field7 := {a:=1,b:=2,c:=true},
+  field8 := {a:=1},
+  field9 := {1},
+  field10 := {1,2}
+ }
+
+ v_testMessage:=  {
+  field1 := 1,
+  field2 := "test string",
+  field3 := true,
+  field4 := {1,2,3,4},
+  field5 := e_black,
+  field6 := {a:=omit,b:=omit,c:=true},
+  field7 := {a:=omit,b:=omit,c:=true},
+  field8 := {a:=1},
+  field9 := {1},
+  field10 := {1,2}
+ }
+
+}
+
+control{
+    execute(TC_NegSem_2707_OptionalAttributes_001());
+}
+
+}

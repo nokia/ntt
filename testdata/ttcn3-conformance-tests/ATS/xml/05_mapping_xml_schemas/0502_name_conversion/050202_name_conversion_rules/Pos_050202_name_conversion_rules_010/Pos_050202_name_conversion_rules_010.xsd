@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050202_name_conversion_rules_010"
+  xmlns:ns="schema:Pos_050202_name_conversion_rules_010">
+  <element name="MyType">
+    <simpleType>
+      <restriction base="string">
+	    <enumeration value="红色01_red"/>
+        <enumeration value="橙色02_orange"/>
+	    <enumeration value="黄色03_yellow"/>
+	    <enumeration value="綠色04_green"/>
+	    <enumeration value="藍色05_blue"/>
+	    <enumeration value="靛色06_indigo"/>
+	    <enumeration value="雪青色07_violet"/>
+      </restriction>
+    </simpleType>  
+  </element>  
+</schema>

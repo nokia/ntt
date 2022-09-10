@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C.3.5)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * this test investigates that IUT correctly evaluates predefined function istemplateking().*/
+
+module Sem_160102_predefined_functions_056 {
+
+
+    type component GeneralComp {
+    }
+     /*Type definitions:*/
+    type record of integer MyRecofInt;
+
+    testcase TC_Sem_160102_predefined_functions_056 () runs on GeneralComp {
+
+    var template MyRecofInt v_9 := omit length (1 .. 6); // omit and length restriction
+
+    if ( match(istemplatekind(v_9, "omit"), true)) {setverdict(pass," omit: ", istemplatekind(v_9, "omit"));}
+           else{setverdict(fail," omit:",istemplatekind(v_9, "omit"), " expected result: true");}
+    }
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_056());
+
+    }
+
+}

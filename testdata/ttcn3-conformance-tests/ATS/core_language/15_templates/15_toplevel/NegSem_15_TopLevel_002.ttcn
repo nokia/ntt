@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15, Ensure that a template formed from a union is rejected when the union somehow contains a port type field.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_15_TopLevel_002 {
+
+type port MyPort message {inout integer};
+
+type record MyRecord {
+	MyPort myPort1
+}
+
+type union MyUnion {
+	integer choice1,
+	MyRecord choice2
+}
+
+template MyUnion m_integerChosen := {
+	choice1 := 5
+}
+
+}

@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.2, The dot notation used in set type definitions is correctly handled
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060202_SetTypeValues_001 {
+
+type component GeneralComp {
+}
+
+ type set S {
+  integer field1 (1 .. 10),
+  charstring field2 optional
+ }
+
+ type S ConstrainedSet ({1, omit}, {2, "xyz"}, {3, "zyx"}) ;
+
+ type ConstrainedSet.field1 MyInteger;
+
+testcase TC_NegSem_060202_SetTypeValues_001() runs on GeneralComp {
+
+ var MyInteger v_int := 11;  // assignment from outside of the carried over (1 .. 10) range constraint
+
+}
+
+control {
+    execute(TC_NegSem_060202_SetTypeValues_001());
+}
+
+}

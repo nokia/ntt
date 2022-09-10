@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.4, Ensure that the IUT properly evaluates for statements
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1904_for_statement_002 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_1904_for_statement_002 () runs on GeneralComp{
+ var integer v_i;
+
+ for(v_i:=1; v_i<10; v_i:= v_i+1) {
+  if(v_i==5) { break; }
+ }
+
+  if(v_i==5) { setverdict(pass); }
+  else  { setverdict(fail); }
+
+
+}
+
+
+control{
+
+    execute(TC_Sem_1904_for_statement_002());
+
+}
+
+}

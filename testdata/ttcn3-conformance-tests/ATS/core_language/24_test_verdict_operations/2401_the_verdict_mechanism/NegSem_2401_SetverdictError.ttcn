@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.1, Ensure that setverdict can't set error verdict
+ ** @verdict  pass reject, manual:"Ensure only one test case was executed "
+ *****************************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.1 The Verdict mechanism/Error verdict shall not be set with setverdict
+ **/
+
+module NegSem_2401_SetverdictError_001 {
+	type component GeneralComp {};
+
+	testcase TC_NegSem_2401_SetverdictError_001_setverdict(out boolean pb_error_occurred) runs on GeneralComp {
+		pb_error_occurred := true;
+		setverdict(error);
+		// Must abort here
+		pb_error_occurred := false;
+		setverdict(pass)
+	}
+
+	testcase TC_NegSem_2401_SetverdictError_001_check_error_occured(boolean b_error_occurred) runs on GeneralComp {
+		if (b_error_occurred) {
+			setverdict(pass);
+		} else {
+			setverdict(fail)
+		}
+	}
+
+	control {
+		var boolean b_error_occurred := true;
+		execute(TC_NegSem_2401_SetverdictError_001_setverdict(b_error_occurred));
+		execute(TC_NegSem_2401_SetverdictError_001_check_error_occured(b_error_occurred));
+	}
+}

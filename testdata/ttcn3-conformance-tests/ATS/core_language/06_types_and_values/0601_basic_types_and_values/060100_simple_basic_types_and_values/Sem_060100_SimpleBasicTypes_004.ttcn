@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign and read large float values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060100_SimpleBasicTypes_004 {
+
+    const float c_f := 5.23E200;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_610_SimpleBasicTypes_004() runs on GeneralComp {
+    	if (c_f > 1E200){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_610_SimpleBasicTypes_004());
+    }
+}

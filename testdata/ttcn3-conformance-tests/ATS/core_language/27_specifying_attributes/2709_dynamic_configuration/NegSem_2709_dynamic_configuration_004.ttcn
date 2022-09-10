@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.9, Verify that an error is generated if the second parameter of the setencode operation is not a universal charstring
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction b
+// The SingleExpression used in the second parameter of the setencode operation shall be
+// compatible with the universal charstring type.
+
+module NegSem_2709_dynamic_configuration_004 {
+
+	type port P message {
+		inout MyPDU;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with {
+		encode "Codec 1";
+		encode "Codec 2";
+		encode "Codec 3"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2709_dynamic_configuration_004 () runs on GeneralComp {
+		p.setencode(MyPDU, 1);
+		// Compilation and seamless execution tested.
+		// Actual effect not tested as it would require dedicated TCI implementation
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_2709_dynamic_configuration_004());
+	}
+
+}

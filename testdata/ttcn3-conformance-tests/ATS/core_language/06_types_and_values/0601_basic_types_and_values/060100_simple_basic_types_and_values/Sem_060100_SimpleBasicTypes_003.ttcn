@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign and read float values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060100_SimpleBasicTypes_003 {
+
+    const float c_f := 5.12E-5;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_610_SimpleBasicTypes_003() runs on GeneralComp {
+    	if (c_f > 5E-5){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_610_SimpleBasicTypes_003());
+    }
+}

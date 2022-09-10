@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Ensure that all component with done can check that at least one test component is not done
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Any component done to check that two test component finished.
+
+module Sem_210307_done_operation_001 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210307_done_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+		ptc2.start(f1());
+
+		all component.done;
+
+		alt {
+			[] all component.done {setverdict(pass);}
+		}
+
+
+    }
+
+    control {
+        execute(TC_Sem_210307_done_operation_001());
+    }
+}

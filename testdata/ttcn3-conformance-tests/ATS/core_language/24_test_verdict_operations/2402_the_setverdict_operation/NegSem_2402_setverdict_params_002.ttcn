@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure setverdict accepts parameters of verdicttype only
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.2 The Setverdict operation/Setverdict allowed verdict values
+ **/
+
+
+module NegSem_2402_setverdict_params_002 {
+    type component TComp {}
+    type record TRec { verdicttype field1 }
+
+    testcase TC_NegSem_2402_setverdict_params_002() runs on TComp {
+        var TRec v_pass := { field1 := pass };
+        setverdict(v_pass);
+    }
+
+    control {
+        execute(TC_NegSem_2402_setverdict_params_002())
+    }
+}

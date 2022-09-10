@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1, Ensure that the IUT correctly handles function definitions
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1601_toplevel_007 {
+
+
+type component GeneralComp {
+}
+
+function f_test ( integer p_integer := 0 ) system GeneralComp return integer {
+
+ return p_integer+1;
+}
+
+testcase TC_NegSem_1601_toplevel_007 () system GeneralComp {
+
+ 	if(f_test(1)==2) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+	f_test(1);	//attempt to invoke a function with system clause
+    execute(TC_NegSem_1601_toplevel_007());
+
+}
+
+}

@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.7, Ensure that class destructors can be used
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010107_Destructors_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+        port MyPort p1;
+    }
+
+    type port MyPort message {
+        inout integer;
+    }
+
+    type class MyClass {
+        var integer v_i;
+
+        create(integer v_i) {
+            this.v_i := v_i;
+        }
+
+        public function get_vi() return integer {
+            return this.v_i;
+        }
+    } finally {
+        this.v_i := 0;
+    }
+
+    testcase TC_Sem_5010107_Destructors_001() runs on GeneralComp {
+        var MyClass v_a := MyClass.create(7);
+        timer T1 := 5.0;
+        connect(self:p1, self:p1);
+        p1.send(v_a.get_vi());
+        alt {
+            [] p1.receive(7) { T1.stop; setverdict(pass); }
+            [] p1.receive { T1.stop; setverdict(fail); }
+            [] T1.timeout { setverdict(fail); }
+        }
+        disconnect(self:p1, self:p1);
+    }
+
+    control {
+        execute(TC_Sem_5010107_Destructors_001());
+    }
+
+}

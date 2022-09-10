@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that unsupported language concepts cannot be used when language is set by import clause
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction h:
+// If no [language specification is defined in the source module], the language
+// specification in the import statement is taken as the language specification
+// of the source module. If the source module uses however language concepts not
+// being part of that language specification, this causes an error for the import
+// statement.
+
+module NegSem_08020301_GeneralFormatOfImport_040 {
+import from NegSem_08020301_GeneralFormatOfImport_040_import language "TTCN-3:2012" all;
+	type component GeneralComp {}
+
+	testcase TC_Sem_08020301_GeneralFormatOfImport_040() runs on GeneralComp {
+		if (c_test == 0) { setverdict(pass); }
+		else { setverdict(fail); }
+	}
+
+	control{
+		// testing if parameter names are imported
+	    execute(TC_Sem_08020301_GeneralFormatOfImport_040());
+	}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_040_import {
+	type set of integer SoI;
+	template SoI m_src := {1, 2, 3};
+	// all from is a TTCN-3:2013 feature: it shall cause an import error
+	template integer m_test := ( 10, all from m_src );
+	const integer c_test := 0;
+}

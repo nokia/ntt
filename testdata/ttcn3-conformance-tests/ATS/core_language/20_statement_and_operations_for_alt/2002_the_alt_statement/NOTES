@@ -1,0 +1,3 @@
+NOTES: 
+1. Side effects (restrictions b, c, d) related to function calls are tested in 16.1.4 
+2. Side effects (restrictions b, c, d) related to direct calls of operations listed in 16.1.4 (such as create, running, alive etc.) are tested in this section

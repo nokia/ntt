@@ -1,0 +1,21 @@
+/*****************************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:8.2.3.1, Ensure that name handling of imported enumerations is properly handled
+ ** @verdict  pass reject
+ *****************************************************************/
+
+
+module NegSem_08020301_GeneralFormatOfImport_002 language "TTCN-3:2016"{
+	import from NegSem_08020301_GeneralFormatOfImport_002_import all;
+
+	const EnumType2 c_enum := enumX;
+
+	modulepar EnumType px_ModulePar := NegSem_08020301_GeneralFormatOfImport_002.c_enum; //type mismatch
+}
+
+module NegSem_08020301_GeneralFormatOfImport_002_import {
+	type enumerated EnumType {enumX, enumY, enumZ};
+	type enumerated EnumType2 {enumX, enumY, enumZ};
+
+}

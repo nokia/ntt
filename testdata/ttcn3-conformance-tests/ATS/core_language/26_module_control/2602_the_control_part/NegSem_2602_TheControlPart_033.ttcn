@@ -1,0 +1,22 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:26.2, Ensure that the create named component is not allowed in the control part.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2602_TheControlPart_033 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component MTCComp {
+        port MyPort p;
+    }
+
+    control {
+        var MTCComp v_myComp := MTCComp.create("component name");
+    }
+
+}

@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined decvalue_unichar function works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+
+ * this test focuses on the predefined functions decvalue_unichar (utf-16 big endian)*/
+
+
+
+module Sem_160102_predefined_functions_077 {
+
+    type component GeneralComp {
+
+    }
+
+    testcase TC_Sem_160102_predefined_functions_077 () runs on GeneralComp {
+
+
+    //encoded text:
+   var universal charstring v_enc := encvalue_unichar(123,"UTF-16BE");
+
+
+    //decode:
+    var integer v_test_dec;
+    var integer v_res:= decvalue_unichar(v_enc,v_test_dec,"UTF-16BE"); //decode (UTF-16 big endian)
+
+    if (v_res == 0) {
+          setverdict(pass, "Decoded ", v_enc , " with result ", v_res);
+    } else {
+          setverdict(fail, "Unexpected decoding result: Decoded ", v_enc , " with result ", v_res);
+    }
+
+   }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_077());
+
+    }
+
+}

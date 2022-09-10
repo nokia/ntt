@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of port.check in case of unsuccessful match inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_105 {
+
+	type port P message {
+		inout integer;
+		address integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_Sem_2204_the_check_operation_105() runs on GeneralComp {
+		p.send(integer:1) to 80;
+        alt
+		{
+        	[] p.check(from 8080) { setverdict(fail, "Incorrect match"); }
+			[] p.receive { setverdict(pass, "As expected, the check operation didn't match"); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_105(), 5.0);
+    }
+}

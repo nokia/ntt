@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.4, null component reference in from clause of check operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// No AddressRef shall contain the special value null at the time of the operation.
+
+module NegSem_2204_the_check_operation_001 {
+
+	type port P message {
+		inout integer;
+        address integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_2204_the_check_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_comp := null;
+        connect(self:p, self:p);
+        p.send(10);
+        alt {
+            [] p.check (from v_comp) {}
+            [] p.check {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_2204_the_check_operation_001(), 5.0);
+    }
+}

@@ -1,0 +1,11 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, Ensure that module parameter can be declared within the module definition part only.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+module NegSyn_080201_ModuleParameters_002 {
+modulepar integer MY_MODULE_PAR := 1;
+modulepar integer MY_MODULE_PAR := 2;    //error: not allowed to redeclare
+
+}

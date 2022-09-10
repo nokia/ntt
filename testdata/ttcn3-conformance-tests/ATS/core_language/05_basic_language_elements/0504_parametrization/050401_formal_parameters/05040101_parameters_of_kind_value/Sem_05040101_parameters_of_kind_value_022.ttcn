@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that passing by value and by reference works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// No specific requirement, just (slightly modified) example 6
+
+module Sem_05040101_parameters_of_kind_value_022 {
+
+	type component GeneralComp {
+	}
+
+    function f_byValue (in integer p_int1, in integer p_int2) {
+	  p_int2 := p_int2 + 1;
+	  log(p_int1);
+	  log(p_int2);
+	}
+
+	function f_byReference (inout integer p_int1, inout integer p_int2) {
+	  p_int2 := p_int2 + 1;
+	  log(p_int1);
+	  log(p_int2);
+	}
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_022() runs on GeneralComp {
+        var integer v_int := 1;
+	    f_byValue(v_int, v_int); // prints 1 and 2
+	    log(v_int); // prints 1
+        if (v_int == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+        f_byReference(v_int, v_int); // prints 2 and 2
+	    log(v_int); // prints 2
+        if (v_int == 2) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_022());
+	}
+}

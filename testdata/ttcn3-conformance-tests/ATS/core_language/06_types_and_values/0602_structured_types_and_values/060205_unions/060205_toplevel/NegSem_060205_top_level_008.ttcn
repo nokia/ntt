@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, The @default alternative shall not be of the anytype.
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+/*
+ * The @default alternative shall not be of the anytype.
+ * */
+
+module NegSem_060205_top_level_008 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		@default anytype option1,    // not allowed to use @default with anytype
+		charstring option2
+	}
+
+    testcase TC_NegSem_060205_top_level_008() runs on GeneralComp {
+		var U v_value;
+        v_value.option1.integer := 5;
+
+        if (match(v_value.option1.integer, 5)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_060205_top_level_008());
+	}
+}

@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Verify that type incompatibility in unmap parameters is detected
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction b:
+// If in a unmap operation a param clause is present, the actual parameters shall conform
+// to the unmap param clause of the port type declaration of the system port used.
+
+module NegSem_210102_disconnect_and_unmap_operations_005 {
+
+	type port P message {
+		inout integer;
+		unmap param (integer p_par1);
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_NegSem_210102_disconnect_and_unmap_operations_005() runs on GeneralComp system GeneralComp {
+		map(system:p, self:p);
+		unmap(self:p, system:p) param("5");
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210102_disconnect_and_unmap_operations_005());
+	}
+}

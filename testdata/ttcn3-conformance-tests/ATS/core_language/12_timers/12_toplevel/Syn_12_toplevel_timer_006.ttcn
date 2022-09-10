@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer declaration with expression
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer declaration syntax
+ **/
+
+
+module Syn_12_toplevel_timer_005 {
+    function one() return float
+    {
+        return 1.0;
+    }
+    control {
+        timer t_timer := one();
+    }
+}

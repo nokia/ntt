@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Ensure timer running operation works
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.5 The Running timer operation/The operation returns the value true if the timer is listed on the running list, false otherwise.
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Allow any timer.running
+
+module Sem_2305_timer_running_004 {
+    type component TComp{
+        timer t_timer := 5.0;
+    }
+    testcase TC_Sem_2305_timer_running_004() runs on TComp{
+        t_timer.start;
+        if (any timer.running){
+	        setverdict(pass);
+        } else {
+            setverdict(fail, "no timer running");
+        }
+        t_timer.stop;
+    }
+    control{
+            execute(TC_Sem_2305_timer_running_004())
+    }
+}

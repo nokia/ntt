@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, verify handling of index notation applied to record of values on right-hand side
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Indexed value notations can be used on the right-hand side of assignments.
+// The index notation, when used on the right hand side, refers to the value of
+// the identified element of a record of.
+module Sem_060203_records_and_sets_of_single_types_012 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_012() runs on GeneralComp {
+
+		var RoI v_rec := { 0, 1, 2 };
+		var integer i := v_rec[1];
+		if (i == 1 ) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_012());
+	}
+
+}

@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign and read integer values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060100_SimpleBasicTypes_001 {
+
+    const integer c_i := 5;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_610_SimpleBasicTypes_001() runs on GeneralComp {
+    	if (c_i == 5){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_610_SimpleBasicTypes_001());
+    }
+}

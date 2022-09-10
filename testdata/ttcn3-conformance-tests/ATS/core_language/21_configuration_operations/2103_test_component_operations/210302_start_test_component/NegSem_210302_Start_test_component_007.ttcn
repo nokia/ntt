@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, starting function with incompatible "runs on" clause
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// The function invoked in a start test component operation shall have a runs on
+// definition referencing a component type that is compatible with the newly
+// created component (see clause 6.3.3).
+
+module NegSem_210302_Start_test_component_007 {
+
+	type component GeneralComp {
+        var charstring vc_str := "abc";
+	}
+
+  	type component DifferentComp {
+          var integer vc_int := 0;
+	}
+
+
+    function f_ptcBehaviour() runs on DifferentComp {
+        setverdict(pass, "Executing PTC behaviour...");
+    }
+
+	testcase TC_NegSem_210302_Start_test_component_007() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC") alive;
+        v_ptc.start(f_ptcBehaviour());
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210302_Start_test_component_007());
+	}
+}

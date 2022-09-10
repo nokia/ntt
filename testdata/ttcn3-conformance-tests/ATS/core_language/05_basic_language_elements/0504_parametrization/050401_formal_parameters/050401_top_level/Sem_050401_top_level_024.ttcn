@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that @fuzzy parameters containing component variable references are properly evaluated
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal value or template parameters may be declared fuzzy using the @fuzzy modifier. The behaviour
+// of fuzzy parameters is defined in clause 3.1, definition of fuzzy values or templates.
+
+// Note: the test checks the situation described in NOTE 2:
+// The actual values of component variables used in the delayed evaluation of a lazy or fuzzy parameter
+// may differ from their values at the time, when the parameterized function or alstep was called.
+
+module Sem_050401_top_level_024 {
+
+	type component GeneralComp {
+        var integer vc_int := 20;
+	}
+
+	function f(@fuzzy integer p_int) runs on GeneralComp {
+        vc_int := 0;
+        if (p_int == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	testcase TC_Sem_050401_top_level_024() runs on GeneralComp {
+		f(vc_int + 1);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_024());
+	}
+}

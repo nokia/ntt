@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:10, Record type used as a constant
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_10_Constants_006 {
+
+    type record MyRecordType
+    {
+        bitstring field1,
+        boolean field2,
+        charstring field3
+    };
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_10_Constants_006() runs on GeneralComp {
+        const MyRecordType c_mRT1 := {'1010'B,true,"string"};
+        const MyRecordType c_mRT2 := {field1 := '1010'B,
+                                     field2 := true,
+                                     field3 := "string"};
+
+        if (c_mRT1==c_mRT2)
+            {
+                setverdict(pass);
+            }
+            else {
+                setverdict(fail);
+            }
+    }// end testcase
+
+    control{
+        execute(TC_Sem_10_Constants_006());
+    }
+}

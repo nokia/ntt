@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that an error is detected when the parameter of the encvalue function contains a partially initialized value
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// 16.1.2, restriction a.3: all actual in and inout parameters shall be initialized
+
+module NegSem_160102_predefined_functions_034 {
+
+type record R
+{
+	integer field1,
+	integer field2
+}
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_034 () runs on GeneralComp {
+	template R v_test := { field1 := 1, field2 := - }
+	var bitstring v_res := encvalue(v_test);
+	setverdict(fail, "The previous encvalue call should have caused an error");
+}
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_034());
+
+}
+
+}

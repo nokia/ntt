@@ -1,0 +1,64 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that default processing order is correct
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For each test component the defaults, i.e. activated altsteps, are stored as an ordered
+// list. The defaults are listed in the reversed order of their activation i.e. the last
+// activated default is the first element in the list of active defaults.
+
+// The default mechanism is evoked at the end of each alt statement, if due to the
+// actual snapshot none of the specified alternatives could be executed. An evoked
+// default mechanism invokes the first altstep in the list of defaults, i.e. the last
+// activated default, and waits for the result of its termination. The termination can
+// be successful or unsuccessful.
+
+// In the case of a successful termination, the default ... the main control flow of the
+// test component will continue immediately after the alt statement from which the default
+// mechanism was called...
+
+// Note:
+// In this test case, two altsteps are activated as defaults. The sooner activated
+// default leads to a test case failure, but because the last activated default takes
+// precedence, it should never happen.
+
+module Sem_200501_the_default_mechanism_004 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(fail, "First default");
+		}
+	}
+
+	altstep a2() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(pass, "Last default");
+		}
+	}
+
+	testcase TC_Sem_200501_the_default_mechanism_004() runs on GeneralComp {
+		activate(a1());
+		activate(a2());
+		p.send(integer:5);
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_Sem_200501_the_default_mechanism_004());
+	}
+}

@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'encvalue_o' function works properly in case of encoding a variable to octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+- C.5.5 The encoding to octetstring function
+* The optional dynamic_encoding parameter is used for dynamic selection of encode attribute of the inpar value for this single encvalue_o call.
+*/
+
+module Sem_160102_predefined_functions_111 {
+
+    type component GeneralComp {
+
+    }
+
+    type record MyPDU{
+        charstring a1
+    }with { encode "PayloadCodec1" };
+
+
+
+    testcase TC_Sem_160102_predefined_functions_111 () runs on GeneralComp {
+
+    var MyPDU v_rec := {a1 := "abcd"};
+
+    //Encoding:
+    var octetstring v_enc := encvalue_o(v_rec, "PayloadCodec1" );
+    if (lengthof (v_enc) > 0) {
+          setverdict(pass, v_enc);
+    } else {
+          setverdict(fail,v_enc);
+    }
+
+   }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_111());
+    }
+
+}

@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, verify handling of missing and ignored elements during an array re-assignment
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Elements to be left out from the assignment shall be explicitly skipped in the
+// list by using dash.
+
+module Sem_060207_arrays_004 {
+
+	type component GeneralComp {
+	}
+
+    type integer MyArrayType1[3] (1 .. 10);
+
+	testcase TC_Sem_060207_arrays_004() runs on GeneralComp {
+
+        var MyArrayType1 v_array1 := {
+            [0] := 8,
+            [1] := -,
+            [2] := 2
+        }
+
+        v_array1[1] := 1;
+
+        if (v_array1 == { 8, 1, 2 }) {
+	        setverdict(pass);
+        }
+        else {
+	        setverdict(fail);
+	    }
+
+}
+
+control {
+    execute(TC_Sem_060207_arrays_004());
+}
+
+}

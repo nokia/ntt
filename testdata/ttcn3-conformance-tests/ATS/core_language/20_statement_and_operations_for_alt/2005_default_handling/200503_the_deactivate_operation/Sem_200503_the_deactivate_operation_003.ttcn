@@ -1,0 +1,53 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that deactivate without parameter clear list of defaults
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// A deactivate operation without parameter deactivates all defaults of a test component.
+
+module Sem_200503_the_deactivate_operation_003 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:1) {
+			setverdict(fail, "Deactivated"); // should be deactivated at the time of default processing
+		}
+	}
+
+	altstep a2() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(fail, "Deactivated"); // should be deactivated at the time of default processing
+		}
+	}
+
+	testcase TC_Sem_200503_the_deactivate_operation_003() runs on GeneralComp {
+		timer t := 0.5;
+		t.start;
+		activate(a1());
+		activate(a2());
+		p.send(integer:1);
+		deactivate;
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+			[] t.timeout { // timer should provide enough time to take at least one snapshot
+				setverdict(pass);
+			}
+		}
+	}
+
+	control{
+		execute(TC_Sem_200503_the_deactivate_operation_003());
+	}
+}

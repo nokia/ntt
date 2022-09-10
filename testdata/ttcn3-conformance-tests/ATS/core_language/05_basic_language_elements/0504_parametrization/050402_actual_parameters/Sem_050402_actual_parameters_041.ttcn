@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that out value parameters can be used as inout formal value parameters of functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module Sem_050402_actual_parameters_041 {
+
+    type component GeneralComp {
+    }
+
+    function f_test(inout integer p_val) {
+        if (p_val == 7) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    function f_caller(out integer p_val) {
+        p_val := 7; // out parameter shall have a value before we can pass it to a function
+        f_test(p_val); // tested parameter passing
+    }
+
+
+    testcase TC_Sem_050402_actual_parameters_041() runs on GeneralComp {
+        var integer v_val;
+        f_caller(v_val); // this parameter passing is not a subject of the test
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_041());
+	}
+}

@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can comprise array type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_017 {
+
+type integer MyArray[1..3];		// MyArray type is an integer array with 3 elements
+
+
+type component GeneralComp {
+
+	var anytype x;	// Anytype x variable
+	var MyArray y := {1,2,4};	// y array follows type MyArray with values 1,2,4
+
+}
+
+
+testcase TC_Sem_060206_anytype_0017() runs on GeneralComp {
+
+x.MyArray := y;	// anytype x now follows type MyArray and gets the values of 1,2,4 as given in array y.
+
+
+      if (match(x.MyArray, {1,2,4}))  {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_0017());
+}
+
+}

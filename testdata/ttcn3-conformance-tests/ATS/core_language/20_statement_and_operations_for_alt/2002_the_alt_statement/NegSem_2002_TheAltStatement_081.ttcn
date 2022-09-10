@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.2
+ ** @purpose  1:20.2, verify that the component.running operation cannot be used in altstep declarations
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// d) The evaluation of an altstep invoked from an alt branch, if none of the alternatives in the altstep is chosen, shall
+// not have side effects. To avoid side effects the restrictions imposed on the contents of functions called from special
+// places (clause 16.1.4) shall apply to the actual parameters of the invoked altstep.
+
+module NegSem_2002_TheAltStatement_081 {
+
+    type port MyPort message {
+        inout boolean
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+    altstep a_rcv() runs on GeneralComp {
+        var boolean v_bool := mtc.running;
+        [v_bool] p.receive(boolean:?){
+		}
+    }
+
+    testcase TC_NegSem_2002_TheAltStatement_081() runs on GeneralComp system GeneralComp {
+        map(self:p, system: p);
+	    p.send(true);
+	    alt {
+		    [] a_rcv();
+            [] any timer.timeout {
+            }
+        }
+        setverdict(pass);
+    }
+
+    control {
+	    execute(TC_NegSem_2002_TheAltStatement_081());
+    }
+}

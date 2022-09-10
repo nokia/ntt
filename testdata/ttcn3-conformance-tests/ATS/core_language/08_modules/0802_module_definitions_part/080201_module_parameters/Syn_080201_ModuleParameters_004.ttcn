@@ -1,0 +1,13 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, module parameter of template type
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+// The following requirement is tested:
+// Module parameters are values or templates that are may be supplied by the test environment at runtime.
+
+module Syn_080201_ModuleParameters_001 {
+	modulepar template integer MY_INTEGER_MODULE_PARAMETER := ?;
+}

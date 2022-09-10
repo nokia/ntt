@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" d1p1:attr="def" xmlns:d1p1="schema:Pos_050104_attributes_of_the_xsd_schema_element_004" xmlns="schema:Pos_050104_attributes_of_the_xsd_schema_element_004">
+ <item xmlns="">abc</item>
+</MyType>

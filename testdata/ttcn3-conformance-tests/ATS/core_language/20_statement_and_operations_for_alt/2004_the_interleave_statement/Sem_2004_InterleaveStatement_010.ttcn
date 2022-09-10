@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.2
+ ** @purpose  1:20.4, return inside interleave
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// Background:
+// The return statement was forbidden inside interleave in TTCN-3:2016 and older
+
+module Sem_2004_InterleaveStatement_010 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    function f_interleave() runs on GeneralComp {
+        interleave {
+            [] p.receive(charstring:"bar") {
+                setverdict(pass);
+                return;
+            }
+            [] p.receive(charstring:"foo") {
+            }
+        }
+    }
+
+    testcase TC_Sem_2004_InterleaveStatement_010() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+        f_interleave();
+    }
+
+    control{
+        execute(TC_Sem_2004_InterleaveStatement_010());
+    }
+}

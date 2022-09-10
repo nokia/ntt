@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Verify that any from running assigns index
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// The index of the matched component can optionally be assigned to an integer variable
+// for single-dimensional component arrays...
+module Sem_210306_running_operation_007 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210306_running_operation_007() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		var integer v_index;
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i mod 2 == 0) { v_ptc[i].kill; } // kill components on even indices
+			else { v_ptc[i].start(f());} // activate v_ptc
+		}
+        v_isRunning := any from v_ptc.running -> @index value v_index;
+        if(v_index == 1){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Index incorrectly assigned");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210306_running_operation_007(), 5.0);
+    }
+}

@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Verify that templates cannot have timer parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal port, timer or default parameters, - with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040101_parameters_of_kind_value_028 {
+
+    type component C {
+    }
+
+    template boolean m_msg(timer p_timer) := p_timer.running;
+    }
+
+    testcase TC_NegSem_05040101_parameters_of_kind_value_028() runs on C system C {
+        timer t1 := 1.0;
+        t1.start;
+		log(m_msg(t1));
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040101_parameters_of_kind_value_028());
+    }
+}

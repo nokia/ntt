@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20, Ensure that alt-statements are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_20_TopLevel_001 {
+
+type port MyPort message {
+    inout charstring
+}
+
+type component GeneralComp {
+    port MyPort p;
+}
+
+template charstring m_test := "ping";
+
+testcase TC_Syn_20_TopLevel_001() runs on GeneralComp {
+    var boolean guard := false;
+    p.send(m_test);
+    alt {
+        [] p.receive(m_test) {
+            setverdict(pass);
+        }
+        [guard == true] p.receive(m_test) {
+            setverdict(fail);
+        }
+        [else] {
+            setverdict(fail);
+        }
+    }
+}
+
+}

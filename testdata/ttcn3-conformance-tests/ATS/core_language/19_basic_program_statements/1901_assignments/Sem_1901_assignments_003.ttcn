@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.1, Ensure that the right-hand side of the assignment of a structured value is evaulted correctly
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_1901_assignments_003{
+
+type component GeneralComp {
+}
+
+ type record Myrec{
+     integer field1,
+     float   field2
+ };
+
+testcase TC_Sem_1901_assignments_003 () runs on GeneralComp system GeneralComp {
+ var Myrec v_j :={11,1.1};    //fully initialized variable
+ var Myrec v_i;
+
+   v_i:=v_j;	//assignment
+
+ if (match(v_i,v_j)) {
+  setverdict(pass,v_i);
+ }
+ else {
+  setverdict(fail,v_i);
+ }
+}
+
+
+control{
+
+    execute(TC_Sem_1901_assignments_003());
+
+}
+
+}

@@ -1,0 +1,59 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:6.4.1, Verify number to integer decode is not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * Attempts to decode a JSON number value with either a fraction or an exponent part
+ * or both into this JSON.Integer type shall cause a decoding failure.
+ * */
+
+module Neg_0600401_json_numbers_001 {
+
+    import from JSON all;
+
+    template JSON.Number m_msg := 15.7 with { encode "JSON" }; // JSON:number
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw with { encode "Text" };
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_0600401_json_numbers_001() runs on C system C {
+
+        var JSON.Integer v_rcv;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        alt {
+                []  p.check(receive(m_msg) -> value v_rcv) {
+                        log("JSON message: ", v_rcv);
+                       // error: JSON:number can not be decoded as JSON:Integer
+                }
+                [] p.receive {
+                    setverdict(fail, "Raw decoding failure");
+                }
+            }
+
+            unmap(self:p, system:p);
+        }
+
+    control {
+        execute(TC_Neg_0600401_json_numbers_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

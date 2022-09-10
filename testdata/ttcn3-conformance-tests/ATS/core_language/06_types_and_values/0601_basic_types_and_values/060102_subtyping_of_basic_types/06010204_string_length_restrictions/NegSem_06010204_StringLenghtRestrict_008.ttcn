@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign invalid values to length restricted charstring
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010204_StringLenghtRestrict_008{
+    type charstring myStrings1 length(2);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010204_StringLenghtRestrict_008() runs on GeneralComp {
+        var myStrings1 v_b1;
+        v_b1 := "abc";	//2 characters length req.
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010204_StringLenghtRestrict_008());
+    }
+}

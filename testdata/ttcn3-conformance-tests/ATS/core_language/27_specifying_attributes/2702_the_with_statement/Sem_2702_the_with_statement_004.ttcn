@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that AllRef can be used to apply attributes to multiple module items
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// AllRef can be used to apply attributes to multiple language elements defined within the scope to
+// which the with statement is associated. AllRef provides a flexible mechanism to select all language
+// elements or all language elements of a certain kind defined in a given scope.
+
+module Sem_2702_the_with_statement_004 {
+
+    type component GeneralComp {
+	}
+
+	const integer c_int := 1;
+	modulepar integer PX_INT := 1;
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2702_the_with_statement_004 () runs on GeneralComp {
+		var RoUC v_enc1 := c_int.encode,
+			v_enc2 := PX_INT.encode;
+		if(v_enc1[0] == "RuleA" and lengthof(v_enc2) == 0) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_2702_the_with_statement_004());
+	}
+
+} with { encode(const all) "RuleA" }

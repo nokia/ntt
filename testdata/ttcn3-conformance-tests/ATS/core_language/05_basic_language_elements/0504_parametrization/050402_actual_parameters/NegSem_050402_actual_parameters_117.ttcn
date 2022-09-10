@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that error is generated when no actual parameter list is used for altsteps with no parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If the formal parameter list of TTCN-3 objects function, testcase, signature,
+// altstep or external function is empty, then the empty parentheses shall be
+// included both in the declaration and in the invocation of that object. In all
+// other cases the empty parentheses shall be omitted.
+
+module NegSem_050402_actual_parameters_117 {
+
+    type component GeneralComp {
+	}
+
+    altstep a_test () {
+        [] any timer.timeout { setverdict(pass); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_117() runs on GeneralComp {
+        timer t_instant := 0.0;
+        t_instant.start;
+        alt {
+            [] a_test {
+                setverdict(pass);
+            }
+        }
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_117());
+	}
+}

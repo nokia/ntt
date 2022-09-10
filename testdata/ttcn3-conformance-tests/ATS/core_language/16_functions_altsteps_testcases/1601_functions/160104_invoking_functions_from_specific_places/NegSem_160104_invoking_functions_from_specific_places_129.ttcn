@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:16.1.4, verify a function called during receiving operation cannot contain an inout parameter (in in-line templates)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If value returning functions are called in receiving communication operations (in templates, template fields,
+// in-line templates, or as actual parameters), in guards or events of alt statements or altsteps (see clause 20.2),
+// or in initializations of altstep local definitions (see clause 16.2), the following operations shall not be
+// used in functions called in the cases specified above, in order to avoid side effects that cause changing the
+// state of the component or the actual snapshot and to prevent different results of subsequent evaluations
+// on an unchanged snapshot:
+// j) Calling functions and deterministic external functions with out or inout parameters (see notes 7 and 8).
+
+module NegSem_160104_invoking_functions_from_specific_places_129 {
+	type record R {
+		integer field1
+	}
+
+    type port P message {
+        inout R;
+    }
+
+    type component GeneralComp {
+        port P p;
+		var integer vc_int;
+	}
+
+	function f_test(out integer p_out) runs on GeneralComp return template integer {
+		p_out := 1;
+		return ?;
+	}
+
+    testcase TC_NegSem_160104_invoking_functions_from_specific_places_129() runs on GeneralComp system GeneralComp {
+        var integer v_int := 0;
+        connect(mtc:p, mtc:p);
+        p.send(R:{ field1 := 1 });
+		p.receive(R:{ field1 := f_test(v_int) });
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160104_invoking_functions_from_specific_places_129());
+	}
+}

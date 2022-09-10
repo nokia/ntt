@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that uninitialized value cannot be used in select union header
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// [The TemplateInstance in the header of the select union statement] shall be
+// at least partially initialized.
+
+module NegSem_190302_select_union_statement_002 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        record {
+            integer field1,
+            integer field2
+        } recOption
+    }
+
+    type record R {
+        U field1,
+        integer field2
+    }
+
+    testcase TC_NegSem_190302_select_union_statement_002() runs on GeneralComp {
+        var R v_rec;
+        v_rec.field2 := 3;
+        select union (v_rec.field1) {
+            case (intOption) {
+                setverdict(fail);
+            } case (strOption) {
+                setverdict(fail);
+            } case (recOption) {
+                setverdict(pass);
+            }
+        }
+	}
+
+	control {
+		execute(TC_NegSem_190302_select_union_statement_002());
+	}
+}

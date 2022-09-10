@@ -1,0 +1,16 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure definition of a list of timers is allowed as a single declaration
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer declaration syntax
+ **/
+
+
+module Syn_12_toplevel_timer_003 {
+    type component TComp{
+        timer t_timer1, t_timer2 := 2.0, t_timer_array1[5], t_timer_array2[3] := {0.0, 1.0, 2.0};
+    }
+}

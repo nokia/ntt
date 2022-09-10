@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that referencing an element within a value list causes an error in the context of set of.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150603_ReferencingRecordOfAndSetElements_014 {
+
+    type component GeneralComp { }
+
+    type set of integer RoI;
+    type set of RoI RoRoI;
+
+    testcase TC_NegSem_150603_ReferencingRecordOfAndSetElements_014() runs on GeneralComp {
+        var template RoI m_one;
+        var template RoRoI m_two;
+        template RoRoI constraint_value := {{},{0},{0,0},{0,0,0}};
+
+        m_two := ( constraint_value, constraint_value ); // value list
+        m_one := m_two[0]; // shall cause an error as we access a value list
+
+        setverdict(fail);
+    }
+
+    control{
+        execute(TC_NegSem_150603_ReferencingRecordOfAndSetElements_014());
+    }
+
+}

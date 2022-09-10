@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, non-blocking unicast call
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// In case of non-blocking procedure-based communication the handling of exceptions to call operations
+// is done by using catch (see clause 22.3.6) operations as alternatives in alt statements.
+
+module Sem_220301_CallOperation_016 {
+
+	signature S() noblock;
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_Sem_220301_CallOperation_016() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f_called());
+		p.call(S:{});
+		alt {
+			[] p.getreply(S:?) {
+				setverdict(pass, "Reply received"); // success: reply received
+			}
+		}
+    }
+
+    control {
+        execute(TC_Sem_220301_CallOperation_016(), 5.0);
+    }
+}

@@ -1,0 +1,59 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.5, Ensure that template variables allow referencing alternatives inside a union template definition
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_150605_Referencing_union_alternatives_001 {
+
+    type union My_Union {
+        integer   u1,
+        float     u2
+    }
+
+    type record ExampleType {	// Exampletype record with union
+	    integer a,
+	    My_Union b
+       }
+
+    type port loopbackPort message{inout ExampleType};
+
+
+    type component GeneralComp {
+	  port loopbackPort messagePort
+    }
+
+
+    testcase TC_Sem_150605_Referencing_union_alternatives_001() runs on GeneralComp {
+
+
+
+
+    var template ExampleType m_template;
+
+    //assign values to template:
+
+		m_template.a:=10;
+		m_template.b.u1:=1;
+		m_template.b.u2:=2.0;
+
+
+  messagePort.send(m_template);	//send message
+
+    alt {
+     [] messagePort.receive(m_template) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+
+
+ }
+
+    control{
+        execute(TC_Sem_150605_Referencing_union_alternatives_001());
+    }
+}

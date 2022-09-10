@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that actual out template parameters of altsteps can be skipped if they are the last ones
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// An actual parameter can also be skipped by just leaving it out if no other actual parameter follows in the actual parameter
+// list - either because the parameter is last or because all following formal parameters are out parameters or have default
+// values and are left out.
+
+module Sem_050402_actual_parameters_226 {
+
+    type component GeneralComp {
+    }
+
+    altstep a_test(out template integer p_val) {
+        [] any timer.timeout {
+            p_val := ?
+        }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_226() runs on GeneralComp {
+        timer t_tmr := 0.1;
+        t_tmr.start;
+        a_test(); // tested parameter passing
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_226());
+	}
+}

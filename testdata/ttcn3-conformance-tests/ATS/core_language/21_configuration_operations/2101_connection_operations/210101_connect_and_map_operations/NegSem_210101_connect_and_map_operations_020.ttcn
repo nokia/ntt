@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that it is not possible to map two component ports
+ ** @verdict  pass reject
+ ***************************************************/
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected or mappde;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// c) The map operation is allowed if and only if:
+//   1) PORT1 is a component port reference and PORT2 is a system port reference; and
+//   2) outlist PORT1 ⊆ outlist-PORT2 and inlist-PORT2 ⊆ inlist-PORT1; and
+//   3) at least one of outlist-PORT1 or inlist-PORT2 is not empty
+
+module NegSem_210101_connect_and_map_operations_020 {
+
+    type port P message {
+        inout integer
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    // MyTestSystemInterface is the test system interface
+    testcase TC_NegSem_210101_connect_and_map_operations_020() runs on GeneralComp system GeneralComp {
+        // establishing the port connections
+		var GeneralComp v_ptc := GeneralComp.create;
+        map(mtc:p, v_ptc:p);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210101_connect_and_map_operations_020());
+    }
+}

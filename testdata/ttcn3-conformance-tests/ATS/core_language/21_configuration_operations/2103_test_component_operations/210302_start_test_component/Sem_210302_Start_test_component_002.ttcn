@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, component variable reference in start operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The start operation shall bind the required behaviour to the test component. This
+// behaviour is defined by reference to an already defined function.
+
+module Sem_210302_Start_test_component_002 {
+
+	type component GeneralComp {
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        setverdict(pass, "Executing PTC behaviour...");
+    }
+
+	testcase TC_Sem_210302_Start_test_component_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        v_ptc.start(f_ptcBehaviour());
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_210302_Start_test_component_002());
+	}
+}

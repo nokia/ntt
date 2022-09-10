@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that passing lazy parameter to formal parameter without modifier disables lazy evaluation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Lazy and fuzzy properties are valid only in the scope, where the parameters' names are visible.
+// For example, if a fuzzy parameter is passed to a formal parameter declared without a modifier, it
+// loses its fuzzy feature inside the called function. Similarly, if it is passed to a lazy formal
+// parameter, it becomes lazy within the called function.
+
+module Sem_050401_top_level_027 {
+
+	type component GeneralComp {
+        var integer vc_int := 20;
+	}
+
+    function fx(integer p_int) runs on GeneralComp {
+        vc_int := 0; // doesn't have effect on the parameter value anymore as the parameter is not lazy
+        if (p_int == 21) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+	function f(@lazy integer p_int) runs on GeneralComp {
+        fx(p_int); // causes evaluation of the value
+	}
+
+	testcase TC_Sem_050401_top_level_027() runs on GeneralComp {
+		f(vc_int + 1); // vc_int is equal to 20 at the time of function call
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_027());
+	}
+}

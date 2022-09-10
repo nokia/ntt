@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, value redirect assignment in receive any message statement
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// AddressRef for retrieving the sending entity shall be of type address, component or
+// of the type provided in the address declaration of the port type of the port instance
+// referenced in the receive operation.
+
+module NegSem_220203_TriggerOperation_012 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_012() runs on GeneralComp {
+        var integer v_val;
+        p.send(10);
+        p.trigger -> value v_val;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_012(), 5.0);
+    }
+}

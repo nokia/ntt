@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 451, STF 470
+ ** @version  0.0.2
+ ** @purpose  1:21.1.2, Ensure that umnap operation of a system and component port works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The ... unmap operations perform ... the unmapping of (previously mapped) ports of
+// test components and ports in the test system interface.
+
+module Sem_210102_unmap_operation_001 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+	function checkMapped(boolean p_stateActive) runs on GeneralComp
+	{
+		if(p.checkstate("Mapped") xor not p_stateActive) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+    testcase TC_Sem_210102_unmap_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc1 := GeneralComp.create;
+
+		map(self:p, system:p);
+		map(v_ptc1:p, system:p);
+
+		unmap(system:p, v_ptc1:p);
+
+		// verity that ports are really unmapped
+        checkMapped(true); // still mapped to system:p
+        v_ptc1.start(checkMapped(false)); // no active mapping
+		v_ptc1.done;
+    }
+
+    control{
+        execute(TC_Sem_210102_unmap_operation_001());
+    }
+}
+

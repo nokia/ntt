@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that type-incompatible value cannot be assigned to a map
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction b
+// When an index operation of a map value is used as the left-hand side of an assignment,
+// the assigned value shall be compatible with the to type of the map type.
+
+module NegSem_06021504_index_notation_005 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021504_index_notation_005() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 };
+		v_map["xyz"] := 6.5;
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_06021504_index_notation_005());
+	}
+}

@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.6, Ensure that cast an object into an other class.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010206_Casting_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        //empty class
+    }
+
+    type class MySubClass extends MySuperClass {
+        //empty class
+    }
+
+    testcase TC_Sem_5010206_Casting_001() runs on GeneralComp {
+        var MySuperClass v_a := MySubClass.create();
+        var MySubClass v_b := v_a => MySubClass;
+        if (v_b of MySubClass) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010206_Casting_001());
+    }
+}

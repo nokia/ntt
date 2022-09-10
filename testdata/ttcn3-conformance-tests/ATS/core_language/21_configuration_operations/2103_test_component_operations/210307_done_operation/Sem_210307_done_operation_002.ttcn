@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Verify that any from done is not triggered if no component has been started
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// When the any from component array notation is used, the components from the referenced array
+// are iterated over and individually checked for being stopped or killed from innermost to
+// outermost dimension from lowest to highest index for each dimension. The first component to
+// be found stopped or killed causes the done operation to succeed.
+module Sem_210307_done_operation_002 {
+
+    type component GeneralComp {}
+
+	testcase TC_Sem_210307_done_operation_002() runs on GeneralComp system GeneralComp {
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create;
+		}
+        alt
+		{
+        	[] any from v_ptc.done { setverdict(fail, "The any from done operation found stopped or killed component"); }
+			[else] { setverdict(pass); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210307_done_operation_002(), 5.0);
+    }
+}

@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, no type prefix in inline template
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// When defining the message in-line, the optional type part shall be used if there is
+// ambiguity of the type of the message being sent.
+
+
+module NegSem_220201_SendOperation_007 {
+
+    type record R1
+    {
+        integer field1,
+        integer field2
+    }
+
+    type record of integer RoI;
+
+	type port P message {
+		inout R1, RoI;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220201_SendOperation_007() runs on GeneralComp {
+        p.send({1, 2});
+        p.receive;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220201_SendOperation_007(), 5.0);
+    }
+}

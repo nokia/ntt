@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.3.4, Verify that any from getreply matches if at least one port contains enqueued reply
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// To getreply on any port from a specific port array,  use the any from PortArrayRef syntax where
+// PortArrayRef shall be a reference to a  port array identifier.
+// The first port which matches all the criteria will cause the operation to be successful even if
+// other ports in the array would also meet the criteria.
+module Sem_220304_getreply_operation_002 {
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+	const integer c_portCount := 4;
+    type component GeneralComp
+	{
+		port P p[c_portCount];
+	}
+
+	function f() runs on GeneralComp
+	{
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			p[i].getcall;
+			if (i mod 2 == 1) { p[i].reply(S:{}) };
+		}
+	}
+
+    testcase TC_Sem_220304_getreply_operation_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			connect(self:p[i], v_ptc:p[i]);
+			p[i].call(S:{}, nowait);
+		}
+		v_ptc.start(f());
+		v_ptc.done;
+		alt
+		{
+        	[] any from p.getreply { setverdict(pass); }
+			[else] { setverdict(fail, "The any from getreply operation didn't match for some reason"); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_220304_getreply_operation_002(), 5.0);
+    }
+}

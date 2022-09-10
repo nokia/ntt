@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, Ensure that the IUT correctly handles message receiving operations
+ ** @verdict  pass reject, ttcn3verdict:pass
+ ***************************************************/
+// The following requirements are tested:
+// Restriction p) The @nodefault modifier is allowed only in stand-alone receive statements.
+
+module NegSem_220202_ReceiveOperation_028 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_NegSem_220202_ReceiveOperation_028() runs on GeneralComp {
+
+ messagePort.send(2);
+
+    alt {
+     [] messagePort.receive(1) {
+        setverdict(fail);
+     }
+     [] @nodefault messagePort.receive(2) {	//error: @nodefault modifier is allowed only in stand-alone receive statements.
+
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_NegSem_220202_ReceiveOperation_028());
+}
+
+}

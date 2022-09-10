@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, using less indexes than array dimensions on the left hand side of assignments
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The use of array slices of multi-dimensional arrays, i.e. when the number of
+// indexes of the array value is less than the number of dimensions in the
+// corresponding array definition, is allowed. Indexes of array slices shall
+// correspond to the dimensions of the array definition from left to right (i.e.
+// the first index of the slice corresponds to the first dimension of the definition).
+// Slice indexes shall conform to the related array definition dimensions.
+
+module Sem_060207_arrays_023 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_060207_arrays_023() runs on GeneralComp {
+        var integer v_arr[2][2][3] := { { { 1, 2, 3 }, { 4, 5, 6 } },  { { 7, 8, 9 }, { 10, 11, 12 } } };
+        v_arr[0][1] := { 400, 500, 600 };
+        if (v_arr == { { { 1, 2, 3 }, { 400, 500, 600 } },  { { 7, 8, 9 }, { 10, 11, 12 } } }) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_060207_arrays_023());
+	}
+
+}

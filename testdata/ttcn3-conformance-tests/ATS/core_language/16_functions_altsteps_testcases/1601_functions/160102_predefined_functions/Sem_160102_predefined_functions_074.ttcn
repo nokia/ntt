@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 512)
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that predefined decvalue_unichar function works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+
+ * this test focuses on the predefined functions decvalue_unichar (utf-32)*/
+
+
+
+module Sem_160102_predefined_functions_074 {
+
+    type component GeneralComp {
+
+    }
+
+    type integer Int  with { variant "32 bit" }; // produces value that can be transformed to UTF-32
+    testcase TC_Sem_160102_predefined_functions_074 () runs on GeneralComp {
+        var Int v_src := 123;
+
+        //encoded text:
+        var universal charstring v_enc := encvalue_unichar(v_src, "UTF-32"); //encode UTF-32
+
+        //decode:
+        var Int v_test_dec;
+        var integer v_res:= decvalue_unichar(v_enc, v_test_dec, "UTF-32"); //decode (UTF-32)
+
+        if (v_res == 0) {
+            setverdict(pass, "Decoded ", v_enc , " with result ", v_res);
+        } else {
+            setverdict(fail, "Unexpected decoding result: Decoded ", v_enc , " with result ", v_res);
+        }
+    }
+
+    control {
+        execute(TC_Sem_160102_predefined_functions_074());
+    }
+
+}

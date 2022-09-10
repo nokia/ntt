@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure setverdict and getverdict are allowed in functions
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions./Setverdict locations/Setverdict in functions allowed
+ **/
+
+module Syn_24_toplevel_001 {
+	function f_test_setverdict()  {
+		setverdict(none);
+		setverdict(pass);
+		setverdict(inconc);
+		setverdict(fail);
+	}
+
+	function f_test_variable_assignment()  {
+		var verdicttype v_verdict;
+
+		v_verdict := getverdict;
+	}
+
+	function f_test_return_getverdict() return verdicttype {
+		return getverdict;
+	}
+
+	function f_test_const_init() {
+		const verdicttype c_v := getverdict;
+	}
+}

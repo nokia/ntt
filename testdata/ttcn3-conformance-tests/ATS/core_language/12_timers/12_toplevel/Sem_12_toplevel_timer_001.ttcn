@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer can be declared in components
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timers can be declared in component type
+ **/
+
+
+module Sem_12_toplevel_timer_001 {
+    type component TComp{
+    	timer t_timer:=10.0;
+    }
+    testcase TC_Sem_12_toplevel_timer_001() runs on TComp{
+        t_timer.start;
+        if (t_timer.running){
+            setverdict(pass)
+        }
+        else {
+            setverdict(fail)
+        }
+    }
+    control{
+        execute(TC_Sem_12_toplevel_timer_001())
+    }
+}

@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that definitions can be excluded if AllRef is used in the with clause on a module level
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Individual language elements that are not affected by an attribute can be excluded from a set of selected
+// language elements in the except clause.
+
+module Sem_2702_the_with_statement_007 {
+
+	group G {
+		type component GeneralComp {
+		}
+
+		const integer c_int1 := 1;
+		const integer c_int2 := 2;
+		const integer c_int3 := 3;
+	} with { encode(const all except {c_int2}) "RuleA" }
+
+	const integer c_int4 := 4;
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2702_the_with_statement_007 () runs on GeneralComp {
+		var RoUC v_enc1 := c_int1.encode,
+			v_enc2 := c_int2.encode,
+			v_enc3 := c_int3.encode,
+			v_enc4 := c_int4.encode;
+		if(v_enc1[0] == "RuleA" and lengthof(v_enc2) == 0 and v_enc3[0] == "RuleA" and lengthof(v_enc4) == 0) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_2702_the_with_statement_007());
+	}
+
+}

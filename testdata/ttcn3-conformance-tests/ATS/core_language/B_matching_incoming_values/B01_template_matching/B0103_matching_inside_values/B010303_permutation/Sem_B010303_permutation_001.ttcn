@@ -1,0 +1,62 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.3.3, Ensure that the IUT correctly handles template matching of ? symbols in value elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010303_permutation_001 {
+
+
+	type record MessageType {
+  	 record of integer  	field1,
+  	 record of integer  	field2,
+  	 record of integer  	field3,
+  	 record of integer  	field4
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010303_permutation_001() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := { permutation ( 1, 2, 3 ), 5 },
+  field2 := { permutation ( 1, 2, ? ), 5 },
+  field3 := { permutation ( 1, 2, 3 ), * },
+  field4 := { permutation ( (1,2,3), 2, 3 ), 5 }
+ }
+
+ v_testMessage:=  {
+  field1 := {2,1,3,5},
+  field2 := {2,1,8,5},
+  field3 := {3,2,1,8,8},
+  field4 := {3,2,2,5}
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010303_permutation_001());
+}
+
+}

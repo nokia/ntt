@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:10, Constant shall not be of port type
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_10_Constants_003 {
+
+    //only for negSyn constant shall not be of port  type
+    type port MyMessagePortType message
+	{
+		inout 	integer
+	}
+
+
+    type component GeneralComp {
+    }
+
+    testcase TC_NegSem_10_Constants_003() runs on GeneralComp {
+        const MyMessagePortType c_port:= 5;//error -  constant shall not be of port type
+    }//end testcase
+
+    control{
+        execute(TC_NegSem_10_Constants_003());
+    }
+}

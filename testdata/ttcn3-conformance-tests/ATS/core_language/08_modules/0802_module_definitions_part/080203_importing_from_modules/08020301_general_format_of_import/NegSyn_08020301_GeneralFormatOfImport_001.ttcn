@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Ensure that import statement cannot be used in test case blocks
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction a:
+// An import statement shall only be used in the module definitions part and not be used
+// within a control part, function definition, and alike.
+
+module NegSyn_08020301_GeneralFormatOfImport_001 {
+
+
+type component GeneralComp {}
+
+testcase TC_NegSyn_08020301_GeneralFormatOfImport_001() runs on GeneralComp {
+	import from NegSyn_08020301_GeneralFormatOfImport_001_import all;
+	log(c_test);
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSyn_08020301_GeneralFormatOfImport_001());
+}
+}
+
+module NegSyn_08020301_GeneralFormatOfImport_001_import {
+	const integer c_test := 5;
+}

@@ -1,0 +1,53 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that component type is imported together with constant, variable, timer and port names
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction c:
+// A definition is imported together with its name and all local definitions.
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// User-defined type, component type
+
+module Sem_08020301_GeneralFormatOfImport_009 {
+
+import from Sem_08020301_GeneralFormatOfImport_009_import { type GeneralComp };
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_009() runs on GeneralComp {
+	// type compatibility is checked during assignment:
+	// for this check, type information for constant and variable types
+	// should be available at this point to compile the script correctly
+	var integer v_test;
+	v_test := cc_test; // testing constant reference
+	log(v_test);
+	v_test := vc_test; // testing variable reference
+	log(v_test);
+	tc_test.start; // testing timer reference
+	p1.start; // testing port reference
+	setverdict(pass);
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_009());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_009_import
+{
+	type port P message {
+		inout integer;
+	}
+	type component GeneralComp
+	{
+		const integer cc_test := 0;
+		var integer vc_test := 1;
+		timer tc_test := 1.0;
+		port P p1;
+	}
+}

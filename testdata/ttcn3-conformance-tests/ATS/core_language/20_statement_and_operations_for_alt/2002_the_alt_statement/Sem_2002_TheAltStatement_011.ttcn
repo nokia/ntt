@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the behavior continues after the alt-statement (loopback case).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2002_TheAltStatement_011 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_2002_TheAltStatement_011() runs on GeneralComp {
+    timer t_timer;
+    var boolean v_altVisited := false;
+
+    t_timer.start(20E-3);
+    alt { // block until a timeout happens in 20ms
+        [] t_timer.timeout {
+            v_altVisited := true;
+        }
+    }
+
+    if (v_altVisited == true) {
+        setverdict(pass);
+    } else {
+        setverdict(fail); // for some reason the alt has not been processed correctly.
+    }
+}
+
+control {
+    execute(TC_Sem_2002_TheAltStatement_011(), 200E-3); // timeout in 100ms, then error
+}
+}

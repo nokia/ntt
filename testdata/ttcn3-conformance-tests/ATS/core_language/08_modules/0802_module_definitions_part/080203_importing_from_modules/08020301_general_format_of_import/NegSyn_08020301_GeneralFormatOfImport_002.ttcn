@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Ensure that import statement cannot be used in module control part
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction a:
+// An import statement shall only be used in the module definitions part and not be used
+// within a control part, function definition, and alike.
+
+module NegSyn_08020301_GeneralFormatOfImport_002 {
+
+
+type component GeneralComp {}
+
+testcase TC_NegSyn_08020301_GeneralFormatOfImport_002() runs on GeneralComp {
+	setverdict(pass);
+}
+
+control{
+	import from NegSyn_08020301_GeneralFormatOfImport_002_import all;
+	log(c_test);
+    execute(TC_NegSyn_08020301_GeneralFormatOfImport_002());
+}
+
+}
+
+module NegSyn_08020301_GeneralFormatOfImport_002_import {
+	const integer c_test := 5;
+}

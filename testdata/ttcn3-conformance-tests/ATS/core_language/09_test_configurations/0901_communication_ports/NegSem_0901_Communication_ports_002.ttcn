@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that it is not possible to connect a mapped port
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*NOTE: see Figure 7(f): connection of two TSI ports is not allowed
+ * */
+
+module NegSem_0901_Communication_ports_002{
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+	type port MyPort message {
+	  inout integer
+	}
+
+type component GeneralComp {
+	  port loopbackPort messagePort;
+	  port MyPort messagePortB;
+
+}
+
+testcase TC_NegSem_0901_Communication_ports_002() runs on GeneralComp {
+
+connect(mtc:messagePort,mtc:messagePortB); // not allowed
+
+}
+
+control{
+    execute(TC_NegSem_0901_Communication_ports_002());
+}
+
+}

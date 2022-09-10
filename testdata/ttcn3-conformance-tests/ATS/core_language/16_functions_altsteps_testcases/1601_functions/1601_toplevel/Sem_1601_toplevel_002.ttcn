@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1, Ensure that the IUT correctly handles function definitions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1601_toplevel_002 {
+
+    type component GeneralComp {
+    }
+
+    function f_test ( template octetstring p_ostring ) return template octetstring {
+
+        return p_ostring & p_ostring;
+    }
+
+    testcase TC_Sem_1601_toplevel_002 () runs on GeneralComp {
+
+        if( match('FFFFFFFF'O, f_test('FF?'O)) ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+
+    }
+
+
+    control{
+
+        execute(TC_Sem_1601_toplevel_002());
+
+    }
+
+}

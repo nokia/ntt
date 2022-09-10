@@ -1,0 +1,79 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.2, Ensure that the IUT supports all the nine scope units.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Syn_0502_Scope_001 {
+
+const integer c_intModule := 0;          // scope a) module definitions part
+type integer IntegerMod;
+
+type component GeneralComp {
+    const integer cl_int := 0;
+    var integer vc_int := 0;
+    var boolean vc_bool := false;
+    timer tc_timer := 0.1;                // scope c) component types
+}
+
+testcase TC_Syn_0502_Scope_001() runs on GeneralComp {  // scope f) test cases
+    f_funcScope();
+    tc_timer.start;
+    a_altstepScope();
+    if (c_intModule == 0){
+		setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+    if (cl_int == 0){
+		setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+group recordGroup {                       // scope g) statement block
+    type record RecScope {                // scope i) user defined named types
+      IntegerMod field1,
+      boolean field2
+    }
+}
+
+group templateGroup {
+    template RecScope m_scope := {  // scope h) templates
+      field1 := 0,
+      field2 := true
+    }
+}
+
+function f_funcScope() runs on GeneralComp {
+    vc_int := 1;                          // scope d) functions
+    if (vc_int == 1){
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+altstep a_altstepScope() runs on GeneralComp {
+    var integer v_intAltStep := 2;           // scope e) altsteps
+    []tc_timer.timeout{
+        if (v_intAltStep == 2) {
+            setverdict(pass);
+        } else {
+            setverdict(fail)
+        }
+    }
+}
+
+
+control{
+    var integer v_intControl := 0;       // scope b) control part of a module
+
+    execute(TC_Syn_0502_Scope_001());
+}
+
+}

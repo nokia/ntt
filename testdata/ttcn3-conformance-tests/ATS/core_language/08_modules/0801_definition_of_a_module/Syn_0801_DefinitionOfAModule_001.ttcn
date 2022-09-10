@@ -1,0 +1,10 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.1, Ensure that a "plain" module definition is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_0801_DefinitionOfAModule_001 {
+
+}

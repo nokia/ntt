@@ -1,0 +1,107 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  9:7.6.6.6, Verify that a wrapping optional record is decoded as omit if none of fields contained in it is present
+ ** @verdict  pass accept, ttcn3verdict:pass
+***************************************************/
+// The following requirements are tested:
+// When either or both the minOccurs and/or the maxOccurs attributes of the
+// sequence compositor specify a different value than "1", the following rules
+// shall apply:
+// a) First, the sequence compositor shall be mapped to a TTCN-3 record field
+// (as opposed to ignoring it in the previous clauses, when both minOccurs and
+// maxOccurs equal to 1) with the name "sequence".
+// b) The encoding instruction "untagged" shall be attached to the field
+// corresponding to sequence.
+// c) The procedures in clause 7.1.4 shall be applied to this record field.
+// d) Finally, clause 5.2.2 shall be applied to the name of the resulted field
+// and the field shall be added to the enframing TTCN-3 record (see clauses 7.6
+// and 7.6.6) or union field (see clause 7.6.5).
+
+module Pos_07060606_effect_of_minoccurs_and_maxoccurs_005 {
+
+   import from schema_Pos_07060606_effect_of_minoccurs_and_maxoccurs_005 language "XSD" all;
+
+   template Optionals_in_optional m_msg := {
+       sequence := {
+           elem1 := omit,
+           elem2 := omit,
+           elem3 := omit,
+           elem4 := omit,
+           elem5 := omit
+       }
+   };
+
+   template Optionals_in_optional m_rcv := {
+       sequence := omit
+   }
+
+
+
+	/**
+	 * @desc The timeout given in seconds after which the test case will be stopped.
+	 */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+	/**
+	 * @desc lexical compare the charstring p_textToMatch with the contents of the reference XML file and returns true if they represent the same XML structure
+	 * @param p_textToMatch text to be compared with the UTF-8 contents of the XML file
+	 * @param p_referenceXmlFile the XML file
+	 * @param p_xsdFileList the list of XSD files
+	 * @param p_matchError the error result in case it did not match
+	 * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference XML file relative to this path, by keeping the TTCN-3 code file system independent.
+	 * @return true if p_textToMatch and the contents of p_referenceXmlFile represent the same XML structure
+	 */
+ 	external function matchFile(Raw p_textToMatch, File p_referenceXmlFile, FileList p_xsdFileList, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_07060606_effect_of_minoccurs_and_maxoccurs_005() runs on C system C {
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+		// encode the message
+        p.send(m_msg);
+
+        alt {
+        	// compare the encoded message with the reference XML file
+            []	p.check(receive(Raw:?) -> value v_rcv) {
+            	log("XML message ", v_rcv);
+                if (matchFile(v_rcv, "Pos_07060606_effect_of_minoccurs_and_maxoccurs_005.xml", { "Pos_07060606_effect_of_minoccurs_and_maxoccurs_005.xsd" }, v_matchError)) {
+                    alt {
+                    	// match decoded value to pass test
+                        [] p.receive(m_rcv) { // The value has been changed by the encoder or decoder (in a predictable way)
+                        	setverdict(pass, "Decoded value matches encoded template and reference XML");
+                        }
+                        [] p.receive {
+                            setverdict(fail, "XML decoding failure");
+                        }
+                    }
+                } else {
+                    setverdict(fail, v_matchError);
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_07060606_effect_of_minoccurs_and_maxoccurs_005(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:e1 xmlns:xsi="http://www.w3.org/2001/XMLSchema"
+       xmlns:ns="schema:Pos_070401_attribute_element_definitions_001"
+ns:a1="test">
+  <elem>test1234</elem>
+</ns:e1>

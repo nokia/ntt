@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign values to list of types restricted hexstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010204_StringLenghtRestrict_002 {
+    type hexstring HexStrings1 length(1 .. 2);
+    type hexstring HexStrings2 length(4);
+    type hexstring HexStrings3 length(0 .. infinity);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010204_StringLenghtRestrict_002() runs on GeneralComp {
+        var HexStrings1 v_b1;
+        var HexStrings2 v_b2;
+        var HexStrings3 v_b3;
+        v_b1 := 'F'H;
+        v_b1 := 'FE'H;
+        v_b2 := 'FE80'H;
+        v_b3 := 'FFFFFFFFFF'H;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010204_StringLenghtRestrict_002());
+    }
+}

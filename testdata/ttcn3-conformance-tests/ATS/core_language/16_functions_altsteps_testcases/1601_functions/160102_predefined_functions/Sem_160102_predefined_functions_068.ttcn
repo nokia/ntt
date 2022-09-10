@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined encvalue_unichar function works properly in case of encoding universal charstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+
+ * this test focuses on the predefined functions encvalue_unichar (utf-32 little endian)*/
+
+
+
+module Sem_160102_predefined_functions_068 {
+
+    type component GeneralComp {
+
+    }
+
+    testcase TC_Sem_160102_predefined_functions_068 () runs on GeneralComp {
+
+    var charstring v_test := "abc";
+
+     //Encoding:
+
+    var universal charstring v_test_enc_32LE := encvalue_unichar(v_test,"UTF-32LE"); //encode to universal charstring UTF-32 little endian
+    setverdict(pass,"Encoded value: ", v_test_enc_32LE);
+
+    }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_068());
+
+    }
+
+}

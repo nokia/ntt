@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:e1 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:ns="schema:Pos_07060201_derived_by_extension_001"
+>
+  <titleElemBase>titleElemBase1</titleElemBase>
+  <forenameElemBase>forenameElemBase2</forenameElemBase>
+  <surnameElemBase>surnameElemBase3</surnameElemBase>
+  <ageElemExt>1</ageElemExt>
+  <familyStatusElemInGroup>familyStatusElemInGroup4</familyStatusElemInGroup>
+</ns:e1>

@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that the match operation refuses two templates as actual parameters.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1509_MatchOperation_001 {
+
+type component GeneralComp { }
+
+template integer m_lessThan10 := (-infinity..9);
+template integer m_second := (-20,-40);
+
+testcase TC_NegSem_1509_MatchOperation_001() runs on GeneralComp {
+	if (match(m_second, m_lessThan10)) { // shall fail as both actual parameters refer to templates
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_1509_MatchOperation_001());
+}
+
+}

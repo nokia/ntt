@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign and read charstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060101_TopLevel_004 {
+
+    const charstring c_s1 := "abcdef";
+    const charstring c_s2 := "ab""cdef";
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_611_TopLevel_004() runs on GeneralComp {
+    	if (c_s1 == "abcdef"){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    	if (lengthof(c_s2) == 7){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_611_TopLevel_004());
+    }
+}

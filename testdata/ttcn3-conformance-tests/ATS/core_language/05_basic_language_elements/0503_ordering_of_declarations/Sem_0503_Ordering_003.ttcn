@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 409, updated by STF 572
+ ** @version  0.0.2
+ ** @desc     Test cases for clause 5.2 Scope rules
+ ** @purpose  1:5.3, Ensure that declarations are in the allowed ordering
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0503_Ordering_003 {
+
+    type component GeneralComp {
+        var integer vc_component := 0;
+    }
+
+    function f_function() runs on GeneralComp {
+        var integer v_function := 0;
+    }
+
+    testcase TC_Sem_0503_Ordering_003() runs on GeneralComp  {
+        if(true) {
+            var integer v_int := 0;
+            if (v_int == 0) {
+                var integer v_statement_block_1 := 0;
+                v_statement_block_1 := v_statement_block_1 + 1;
+                var integer v_statement_block_2 := 0; // declaration in the middle of the block are allowed
+            }
+
+        }
+        setverdict(pass);
+    }
+
+    control {
+        var integer v_control := 0;
+        execute(TC_Sem_0503_Ordering_003());
+    }
+
+}

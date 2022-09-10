@@ -1,0 +1,14 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.2, constant definition of a record type.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_0602_TopLevel_004 {
+    type record MyRecord {
+    	integer field1,
+        charstring field2 optional,
+    	float field3
+    }
+    const MyRecord c_rec := { 5, "foo", 3.14 };
+}

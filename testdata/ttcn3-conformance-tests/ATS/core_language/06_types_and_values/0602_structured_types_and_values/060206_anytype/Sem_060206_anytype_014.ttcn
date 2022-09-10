@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can be record type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_014 {
+
+type record MyRec1{
+		charstring field1,
+		boolean field2 };
+
+
+type component GeneralComp {
+
+	var anytype x;	// anytype x variable
+
+	var MyRec1 y := {
+		field1:= "abc",
+		field2:= true };	// record y contains field1=abc and field2=true
+
+}
+
+
+testcase TC_Sem_060206_anytype_014() runs on GeneralComp {
+
+x.MyRec1 := y;	// anytype x now gets the type MyRec1 and the values given by y.
+
+
+      if (match(x.MyRec1.field1, "abc") and match(x.MyRec1.field2,true))  {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_014());
+}
+
+}

@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:6.5.4, Verify that the date type shall be translated to TTCN-3 using the pattern-restricted charstring
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_060504_date_004 {
+
+    import from schema_Neg_060504_date_004 language "XSD" all;
+
+    template E1 m_msg := "04-12-2014"; //wrong format must be 2014-04-12
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_060504_date_004() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_060504_date_004(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

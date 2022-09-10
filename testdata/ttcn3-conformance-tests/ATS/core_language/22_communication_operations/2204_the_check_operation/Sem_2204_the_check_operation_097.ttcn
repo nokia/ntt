@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that port.check works correctly inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_097 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_Sem_2204_the_check_operation_097() runs on GeneralComp {
+		p.send(integer:1);
+        alt
+		{
+        	[] p.check { setverdict(pass, "Check operation successful"); }
+		}
+		p.receive;
+		setverdict(pass, "Message still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_097(), 5.0);
+    }
+}

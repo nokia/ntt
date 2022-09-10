@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.7, Ensure that public methods shall be overridden only by public methods.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010107_Methods_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        var octetstring v_o;
+
+        public function doSomething() return integer {
+            return oct2int(this.v_o);
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+        private function doSomething() return integer { //not allowed
+            return 1;
+        }
+    }
+
+    testcase TC_NegSem_5010107_Methods_001() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create('AAFF'O);
+        if (v_a.doSomething() == 1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010107_Methods_001());
+    }
+}

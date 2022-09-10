@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, send operation on disconnected and unmapped ports
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Applying a send operation to an unmapped or disconnected port shall cause a test case
+// error.
+
+module NegSem_220201_SendOperation_011 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220201_SendOperation_011() runs on GeneralComp system GeneralComp {
+		p.send(0);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220201_SendOperation_011(), 5.0);
+    }
+}

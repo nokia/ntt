@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.4, Ensure that enumerated type definitions are automatically imported when needed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+module Sem_08020301_GeneralFormatOfImport_002 {
+
+import from Sem_08020301_GeneralFormatOfImport_002_import {
+	modulepar px_enum;
+};
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_002() runs on GeneralComp {
+
+	if (px_enum == enumX) { //this must be a recognized enum value
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_002());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_002_import {
+	import from Sem_08020301_GeneralFormatOfImport_002_import_2 all;
+
+	modulepar EnumType px_enum:=enumX;
+}
+
+
+module Sem_08020301_GeneralFormatOfImport_002_import_2 {
+	type enumerated EnumType {enumX, enumY, enumZ};
+}

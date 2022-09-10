@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.4, killing all PTCs from a PTC
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The all keyword can be used by the MTC only in order to stop and kill all running PTCs
+// but the MTC itself.
+
+module NegSem_210304_kill_test_component_003 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f() runs on GeneralComp {
+        all component.kill;
+	}
+
+    testcase TC_NegSem_210304_kill_test_component_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create;
+		ptc.start(f());
+        ptc.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210304_kill_test_component_003());
+    }
+}

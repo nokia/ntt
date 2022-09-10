@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that header part of select-union statements cannot contain anything else than union instances
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// In the header part of the select union statement a template instance of union
+// type shall be given.
+
+module NegSem_190302_select_union_statement_001 {
+
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer intOption optional,
+        charstring strOption optional,
+        boolean boolOption optional
+    }
+
+    testcase TC_NegSem_190302_select_union_statement_001() runs on GeneralComp {
+        var R v_rec := { intOption := omit, strOption := "abc", boolOption := omit }
+        select union (v_rec) {
+            case (intOption) {
+                setverdict(pass);
+            } case (strOption) {
+                setverdict(pass);
+            } case (boolOption) {
+                setverdict(pass);
+            }
+        }
+	}
+
+	control {
+		execute(TC_NegSem_190301_select_union_statement_002());
+	}
+}

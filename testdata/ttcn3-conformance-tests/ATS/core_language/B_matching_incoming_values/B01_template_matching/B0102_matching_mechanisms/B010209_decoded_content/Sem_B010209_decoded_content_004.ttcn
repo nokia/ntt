@@ -1,0 +1,55 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.8, Ensure that the IUT correctly handles content decoding
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+//Restriction a)
+/*It can be assigned to templates and template fields of bitstring, hexstring, octetstring,
+charstring and universal charstring types.*/
+
+
+module Sem_B010209_decoded_content_004 {
+
+    type record MessageType {
+        charstring payload
+    }
+
+    type integer MyInt with { encode "32bit" }
+
+    type port loopbackPort message{inout MessageType};
+
+
+    type component GeneralComp {
+	      port loopbackPort messagePort
+    }
+
+    const MyInt c_input := 1633837665;
+
+    template MessageType mw_matchingTemplate:= {
+        payload :=  decmatch MyInt:c_input
+    }
+
+    testcase TC_Sem_B010209_decoded_content_004() runs on GeneralComp {
+        var MessageType v_message;
+
+        v_message.payload := encvalue_unichar(c_input); //encode message to payload, charstring
+
+        messagePort.send(v_message); //send message
+
+        alt {
+            [] messagePort.receive(mw_matchingTemplate) {
+                setverdict(pass);
+            }
+            [] messagePort.receive {
+                setverdict(fail,mw_matchingTemplate);
+            }
+        }
+    }
+
+    control{
+        execute(TC_Sem_B010209_decoded_content_004());
+    }
+
+}

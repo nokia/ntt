@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.2, Ensure that use abstract classes correctly.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010102_abstractClasses_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class @abstract t_class_abstract {
+
+        public function doSomethingSpecial(integer v_arg) return integer;
+    }
+
+    public type class t_class_subclass extends t_class_abstract {
+
+        public function doSomethingSpecial(integer v_arg) return integer {
+            return v_arg + 1;
+        }
+    }
+
+    testcase TC_Sem_5010102_abstractClasses_001() runs on GeneralComp {
+        var t_class_subclass v_a := t_class_subclass.create();
+        if (v_a.doSomethingSpecial(64) == 65) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010102_abstractClasses_001());
+    }
+}

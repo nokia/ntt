@@ -1,0 +1,56 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.1
+ ** @purpose  1:7.2, Ensure that the IUT correctly handles field reference decoding
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/* The following requirement is tested:
+Decoded field reference is a specific notation that can be applied to expressions of bitstring, hexstring,
+octetstring, charstring or universal charstring types. It is used for accessing content of implicitly decoded payload fields.
+
+Restriction a) If the type operand is not enclosed into parentheses, only a built-in type or a type reference consisting of a
+single identifier can be used. Extended type references shall always use the extended syntax with parentheses.
+*/
+
+module Sem_0703_decoded_field_reference_001 {
+
+type component GeneralComp {
+}
+
+type bitstring PduHeader;
+type integer OuterPayloadHeader;
+
+type record PDU {
+		PduHeader header,
+		bitstring outerPayload
+}
+
+type record OuterPayload {
+		 charstring innerPayload
+}
+
+type charstring InnerPayload;
+
+testcase TC_Sem_0703_decoded_field_reference_001() runs on GeneralComp {
+    // outerPayload content is "test text"
+    var OuterPayload v_payload := { innerPayload := "test text" };
+    var bitstring v_test := encvalue(v_payload);
+
+	var PDU v_packet := {header:= '0110'B, outerPayload := v_test};
+    // log(v_packet.outerPayload);
+
+	var InnerPayload v_decodedPayload := v_packet.outerPayload => OuterPayload.innerPayload;  // decode bitstring "innerPayload"
+
+	if ( match(v_decodedPayload, "test text")) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_0703_decoded_field_reference_001());
+}
+
+}

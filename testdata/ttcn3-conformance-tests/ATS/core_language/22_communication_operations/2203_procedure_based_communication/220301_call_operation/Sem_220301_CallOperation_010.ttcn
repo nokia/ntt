@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, blocking broadcast call with response and exception handling part and subsequent alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// In case of a multicast or broadcast call operation of a blocking procedure, two options exist. Either,
+// only one response or exception is handled in the response and exception handling part of the call
+// operation. Then, further responses and exceptions can be handled in subsequent alt or interleave
+// statements.
+
+module Sem_220301_CallOperation_010 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_Sem_220301_CallOperation_010() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc1 := GeneralComp.create,
+			v_ptc2 := GeneralComp.create;
+		connect(self:p, v_ptc1:p);
+		connect(self:p, v_ptc2:p);
+		v_ptc1.start(f_called());
+		v_ptc2.start(f_called());
+		p.call(S:{}) to all component {
+			[] p.getreply(S:?) { setverdict(pass, "First reply received"); } // first reply
+		}
+		alt {
+			[] p.getreply(S:?) { setverdict(pass, "Second reply received"); } // second reply
+		}
+    }
+
+    control {
+        execute(TC_Sem_220301_CallOperation_010(), 5.0);
+    }
+}

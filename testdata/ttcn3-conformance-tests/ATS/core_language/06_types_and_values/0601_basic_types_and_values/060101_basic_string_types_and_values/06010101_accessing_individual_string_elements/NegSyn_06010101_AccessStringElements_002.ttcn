@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Access bitstring elements
+ ** @verdict  pass reject
+ ***************************************************/
+/* The following requirements are tested:
+ * For initializing an uninitialized string with a single element,
+ * the index value zero (0) can be used as index. Trying to assign a
+ * single element to an uninitialized string with an index which is
+ * not zero (0) shall cause an error.
+*/
+
+module NegSyn_06010101_AccessStringElements_002 {
+
+    type component GeneralComp {}
+
+    testcase TC_NegSyn_06010101_AccessStringElements_002() runs on GeneralComp {
+        var universal charstring v_b    := "";
+        v_b[2] := "AB";    //error: incorrect index
+    }
+
+    control{
+        execute(TC_NegSyn_06010101_AccessStringElements_002());
+    }
+}

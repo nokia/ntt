@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that default values in formal parameters of modified templates are working as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+//Restriction c)
+/*For templates, template fields and elements of record of and set of types, the above rules specified for
+records and sets apply with the following deviations:
+ * if the value list notation is used, only the number of elements listed in the modified template is inherited
+from the parent (i.e. the list is truncated at the last element of the list notation in the modified template)*/
+
+module Sem_1505_ModifiedTemplates_009 {
+
+type component GeneralComp { }
+
+type record of charstring MyMessageType;
+
+template MyMessageType m_templateOne := {"A","AB", "ABC", "ABCD","ABCDE","ABCDEF"};
+
+
+template MyMessageType m_templateTwo modifies m_templateOne := { "-", "AB",  "ABC"}	//after 3rd element no more elements are inherited from the parent
+
+testcase TC_Sem_1505_ModifiedTemplates_009() runs on GeneralComp {
+	if (match(valueof(m_templateTwo),{"-", "AB",  "ABC"}))
+    {
+		setverdict(pass,m_templateTwo);
+	} else {
+		setverdict(fail,m_templateTwo);
+	}
+}
+
+control{
+    execute(TC_Sem_1505_ModifiedTemplates_009());
+}
+
+}

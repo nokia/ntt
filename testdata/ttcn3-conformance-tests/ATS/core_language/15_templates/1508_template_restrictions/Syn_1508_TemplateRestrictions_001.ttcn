@@ -1,0 +1,17 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(omit) is accepted with value omitvalue.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1508_TemplateRestrictions_001 {
+
+type record ExampleType {
+	integer a,
+	boolean b optional
+}
+
+template(omit) ExampleType exampleOmit := omit;
+
+}

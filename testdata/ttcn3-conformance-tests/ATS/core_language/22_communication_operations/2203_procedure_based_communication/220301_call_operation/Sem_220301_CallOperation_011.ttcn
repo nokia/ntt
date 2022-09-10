@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, blocking broadcast call with response and exception handling part handling all replies
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// In case of a multicast or broadcast call operation of a blocking procedure, two options exist.
+// [2nd option:]
+// Several responses or exceptions are handled by the use of repeat statements in one or more of the
+// statement blocks of the response and exception handling part of the call operation: the execution
+// of a repeat statement causes the re-evaluation of the call body.
+
+module Sem_220301_CallOperation_011 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_Sem_220301_CallOperation_011() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc1 := GeneralComp.create,
+			v_ptc2 := GeneralComp.create;
+		var integer v_counter := 0;
+		connect(self:p, v_ptc1:p);
+		connect(self:p, v_ptc2:p);
+		v_ptc1.start(f_called());
+		v_ptc2.start(f_called());
+		p.call(S:{}) to all component {
+			[] p.getreply(S:?) {
+				v_counter := v_counter + 1;
+				if (v_counter < 2) {
+					repeat;
+				} else {
+					setverdict(pass, "Both replies received"); } // expected result
+				}
+		}
+    }
+
+    control {
+        execute(TC_Sem_220301_CallOperation_011(), 5.0);
+    }
+}

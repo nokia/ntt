@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that indexed notation can not be used for a record type.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_0602_TopLevel_002 {
+
+    type component GeneralComp {
+    }
+
+    type record MyRecord {
+        integer field1,
+        charstring field2,
+        float field3
+    }
+
+    testcase TC_NegSem_0602_TopLevel_002() runs on GeneralComp {
+
+        var MyRecord v_myRecord := {
+            field1 := 5,
+            field2 := "hi",
+            field3 := 3.14
+        };
+
+        var integer Integer1 :=3;
+        v_myRecord[0] := Integer1;//not possible to use index notation on a record type
+
+    }
+
+    control {
+        execute(TC_NegSem_0602_TopLevel_002());
+    }
+}

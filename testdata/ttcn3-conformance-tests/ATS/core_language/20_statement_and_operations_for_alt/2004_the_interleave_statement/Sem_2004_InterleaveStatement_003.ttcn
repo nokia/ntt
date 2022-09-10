@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.4, while loop inside interleave
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// If none of the alternatives of the interleave statement can be executed,
+// the default mechanism will be invoked. This means, according to the
+// semantics of the default mechanism, the actual snapshot will be used to
+// evaluate those altsteps that have been activated before entering the
+// interleave statement.
+
+module Sem_2004_InterleaveStatement_003 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    altstep a_receive() runs on GeneralComp {
+        [] p.receive(charstring:?) {
+            setverdict(pass, "default called");
+        }
+    }
+
+    testcase TC_Sem_2004_InterleaveStatement_003() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"ding");
+        p.send(charstring:"bar");
+        activate(a_receive());
+
+        interleave {
+            [] p.receive(charstring:"bar") { // should not be called, because the default is invoked instead
+                setverdict(fail, "default not used properly!!!");
+            }
+            [] p.receive(charstring:"foo") {
+                setverdict(pass, "foo received");
+            }
+        }
+    }
+
+    control{
+        execute(TC_Sem_2004_InterleaveStatement_003());
+    }
+}

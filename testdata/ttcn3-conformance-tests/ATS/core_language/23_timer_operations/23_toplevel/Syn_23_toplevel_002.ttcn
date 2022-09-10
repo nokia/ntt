@@ -1,0 +1,78 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure timer allowed in module control, test case, function, altstep
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/Usage of timers is allowed in test cases, functions, altsteps, module control/Positive syntax test
+
+module Syn_23_toplevel_002
+{
+    type port MyPort message
+    {
+        inout integer;
+    }
+
+    type component TComp
+    {
+    	port MyPort p_port;
+    }
+
+    function f_function()
+    {
+        var float v_float;
+        timer t_timer[5] := {1.0, 2.0, 3.0, 4.0, 5.0};
+
+        t_timer[0].start(1.0);
+        v_float := t_timer[1].read;
+        if (t_timer[2].running)
+        {
+            t_timer[3].timeout;
+        }
+        t_timer[4].stop;
+    }
+
+    altstep a_step() runs on TComp
+    {
+        timer t_timer[5] := {1.0, 2.0, 3.0, 4.0, 5.0};
+        [] p_port.receive {
+            var float v_float;
+
+            t_timer[0].start(1.0);
+            v_float := t_timer[1].read;
+            if (t_timer[2].running)
+            {
+                t_timer[3].timeout;
+            }
+            t_timer[4].stop;
+        }
+    }
+
+    testcase TC_Syn_23_toplevel_002() runs on TComp
+    {
+        var float v_float;
+        timer t_timer[5] := {1.0, 2.0, 3.0, 4.0, 5.0};
+
+        t_timer[0].start(1.0);
+        v_float := t_timer[1].read;
+        if (t_timer[2].running)
+        {
+            t_timer[3].timeout;
+        }
+        t_timer[4].stop;
+	}
+
+	control
+	{
+        var float v_float;
+        timer t_timer[5] := {1.0, 2.0, 3.0, 4.0, 5.0};
+
+        t_timer[0].start(1.0);
+        v_float := t_timer[1].read;
+        if (t_timer[2].running)
+        {
+            t_timer[3].timeout;
+        }
+        t_timer[4].stop;
+	}
+}

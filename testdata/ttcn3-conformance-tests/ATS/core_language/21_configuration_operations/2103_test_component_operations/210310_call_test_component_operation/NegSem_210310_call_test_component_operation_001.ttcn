@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with uncaught stop
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// In all other cases when theexecution is incomplete, the call operation ends with a test case error.
+
+module NegSem_210310_call_test_component_operation_001 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+	    stop;
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.call(f());
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_001(), 5.0);
+    }
+}

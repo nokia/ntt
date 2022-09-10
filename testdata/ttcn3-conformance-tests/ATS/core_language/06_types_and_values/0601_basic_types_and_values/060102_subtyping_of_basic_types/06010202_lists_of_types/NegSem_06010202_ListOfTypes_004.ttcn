@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted charstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_004 {
+    type charstring Firstcharstrings("abc", "def");
+    type charstring Secondcharstrings("ghi", "jkl");
+    type charstring charStrings_1_2 (Firstcharstrings,Secondcharstrings);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_004() runs on GeneralComp {
+        var charStrings_1_2 v_b;
+        v_b := "xyz";	// invalid charsting
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_004());
+    }
+}

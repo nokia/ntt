@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_080101_head_elements_of_substitution_groups_003"
+    xmlns:ns="schema:Pos_080101_head_elements_of_substitution_groups_003">
+	<!-- THE HEAD ELEMENT -->
+	<element name="headNoSubstition" type="string" block="#all"/>
+	<element name="groupMember1" type="string" substitutionGroup="ns:headNoSubstition"/>
+	<element name="groupMember2" type="string" substitutionGroup="ns:headNoSubstition"/>
+	<!-- TOP LEVEL ELEMENT TO DEMONSTRATE SUBSTITUTION -->
+	<element name="ize">
+		<complexType>
+			<sequence>
+				<element ref="ns:headNoSubstition" minOccurs="0" maxOccurs="unbounded"/>
+			</sequence>
+        </complexType>
+    </element>
+</schema>

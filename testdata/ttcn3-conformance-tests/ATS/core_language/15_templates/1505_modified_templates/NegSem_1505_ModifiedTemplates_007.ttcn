@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that the same parameter type is used when modifying the base template.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1505_ModifiedTemplates_007 {
+
+type component GeneralComp { }
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template MyMessageType m_templateOne(integer p_intValue) := {
+	field1 := p_intValue,
+	field2 := "Hello World",
+	field3 := true
+}
+
+// illegal as parameter type mismatch boolean defined in m_templateOne
+template MyMessageType m_templateTwo(boolean p_intValue) modifies m_templateOne := {
+	field1 := 5
+}
+
+}

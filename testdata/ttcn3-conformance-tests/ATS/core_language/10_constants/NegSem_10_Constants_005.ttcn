@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:10, Ensure that index notation of a field in a set of type, which actual value is null shall cause an error
+ ** @verdict  pass reject
+ ***************************************************/
+
+/* The following requirements are tested:
+Using the dot notation and index notation for referencing a field, alternative or element of an address value, which actual value is null shall cause an
+error.
+*/
+
+module NegSem_10_Constants_005 {
+
+    type integer address;
+    type default MyDef;
+    type set of address MySetofInt;
+
+    type component GeneralComp {
+    }
+
+    testcase TC_NegSem_10_Constants_005() runs on GeneralComp {
+
+   var MySetofInt R1:= {[0] := null};
+   var MyDef R2:=  null;
+
+   const default C2 := R2;       //allowed
+   const integer C1 := R1[0];    //error
+
+	if (match(C1,R1[0])) { setverdict(pass,"match") }
+		else { setverdict(fail) }
+    }
+
+    control{
+        execute(TC_NegSem_10_Constants_005());
+    }
+}

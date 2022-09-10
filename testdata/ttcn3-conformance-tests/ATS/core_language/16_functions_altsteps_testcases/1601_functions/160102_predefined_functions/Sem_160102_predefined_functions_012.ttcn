@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_012 {
+    type enumerated EnumeratedType {e_black, e_white};
+    type enumerated EnumeratedTypeWithLabels1 {e_black (-1), e_red (1), e_white(0) , e_yellow };  //e_yellow is 2
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_012 () runs on GeneralComp {
+        var EnumeratedType vl_enum_black := e_black;
+        var EnumeratedType vl_enum_white := e_white;
+        var EnumeratedTypeWithLabels1 vl_enum1_red := e_white;
+        var EnumeratedTypeWithLabels1 vl_enum1_yellow := e_black;
+
+        const EnumeratedType c_enum_black := e_black;
+        const EnumeratedType c_enum_white := e_white;
+        const EnumeratedTypeWithLabels1 c_enum1_red := e_red;
+        const EnumeratedTypeWithLabels1 c_enum1_yellow := e_yellow;
+
+        int2enum(1,vl_enum1_red);
+        int2enum(2,vl_enum1_yellow);
+
+        setverdict(pass);
+
+        if (vl_enum1_red != c_enum1_red) {
+            setverdict(fail, "cannot decode e_red");
+        }
+
+        if (vl_enum1_yellow != c_enum1_yellow) {
+            setverdict(fail, "cannot decode e_yellow");
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_012());
+    }
+
+}

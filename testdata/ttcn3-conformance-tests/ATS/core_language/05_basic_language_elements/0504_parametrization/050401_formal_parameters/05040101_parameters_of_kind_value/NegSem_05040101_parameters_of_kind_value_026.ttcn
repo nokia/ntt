@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Verify that test cases cannot have timer parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal port, timer, or default parameters, - with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040101_parameters_of_kind_value_026 {
+
+    type component C {
+    }
+
+    testcase TC_NegSem_05040101_parameters_of_kind_value_026(timer p_timer) runs on C { // should cause a compilation error
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040101_parameters_of_kind_value_026(null));
+    }
+}

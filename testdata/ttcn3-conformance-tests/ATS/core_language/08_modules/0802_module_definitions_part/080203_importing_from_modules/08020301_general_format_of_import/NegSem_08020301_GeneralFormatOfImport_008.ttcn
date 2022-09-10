@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that identifiers of module parameter types are not imported together with module parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The TTCN-3 import mechanism distinguishes between the identifier of a referenced
+// definition and the information necessary for the usage of a referenced definition
+// within the imported definition. For the usage, the identifier of a referenced
+// definition is not required and therefore not imported automatically.
+// Table 8:
+// Possible referenced definitions for a module parameter: module parameter type
+
+module NegSem_08020301_GeneralFormatOfImport_008 {
+import from NegSem_08020301_GeneralFormatOfImport_008_import { modulepar PX_TEST };
+	const MyType c_test := 1; // MyType should be undefined, because it is not automatically imported
+}
+
+module NegSem_08020301_GeneralFormatOfImport_008_import {
+	type integer MyType;
+	modulepar MyType PX_TEST;
+}

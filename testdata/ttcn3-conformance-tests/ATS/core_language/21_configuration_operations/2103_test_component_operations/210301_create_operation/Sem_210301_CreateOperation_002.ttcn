@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:21.3.1, Ensure that named components can be created
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_210301_CreateOperation_002 {
+
+    type component GeneralComp {
+        var NewComp vc_NewComp;
+        timer t := 5.0;
+    }
+
+    type component NewComp { }
+
+    function f_testComp() runs on GeneralComp {
+        var NewComp v_NewComp := NewComp.create("1 & * 5abc");
+        t.start;
+        a_createComp();
+        setverdict(pass);
+    }
+
+    function f_createComp() return NewComp {
+        return NewComp.create("some name");
+    }
+
+    altstep a_createComp() runs on GeneralComp {
+        [] t.timeout {
+            vc_NewComp := NewComp.create("component#" & int2str(2));
+            setverdict(pass);
+        }
+    }
+
+    testcase TC_Sem_210301_CreateOperation_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create("a component name");
+        ptc.start(f_testComp());
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210301_CreateOperation_002());
+    }
+
+}

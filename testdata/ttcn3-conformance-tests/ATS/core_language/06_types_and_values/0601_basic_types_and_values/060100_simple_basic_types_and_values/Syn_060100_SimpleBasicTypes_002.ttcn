@@ -1,0 +1,10 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign large integer values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060100_SimpleBasicTypes_002 {
+    const integer c_i1 := 10000000000000; // large positive 10^13
+	const integer c_i2 := -10000000000000; // large negative -10^13
+}

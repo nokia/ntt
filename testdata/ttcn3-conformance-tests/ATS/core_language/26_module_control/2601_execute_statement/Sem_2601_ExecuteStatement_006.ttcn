@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that the verdict inconc works correctly.
+ ** @verdict  pass accept, ttcn3verdict:inconc
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_006 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_2601_ExecuteStatement_006() runs on GeneralComp {
+	setverdict(inconc);
+}
+
+testcase TC_Sem_2601_ExecuteStatement_006_second(verdicttype p_verdict) runs on GeneralComp {
+	if (p_verdict == inconc) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control {
+	var verdicttype v_result;
+
+	v_result := execute(TC_Sem_2601_ExecuteStatement_006());
+	execute(TC_Sem_2601_ExecuteStatement_006_second(v_result));
+}
+
+}

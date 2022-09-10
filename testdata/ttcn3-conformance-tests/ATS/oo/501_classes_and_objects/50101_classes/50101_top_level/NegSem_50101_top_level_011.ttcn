@@ -1,0 +1,58 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that The mtc and system type of a class shall be mtc and system compatible with the mtc and system types of the superclass, respectively.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_011 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type port Myport message {
+        inout octetstring;
+    }
+
+    type component MessageComp {
+        port Myport p1;
+    }
+
+    public type class t_superclass_with_incompatible_system system GeneralComp {
+        var hexstring v_h := '1100FAD'H;
+    }
+
+    public type class t_subclass_system extends t_superclass_with_incompatible_system system MessageComp { // not allowed
+
+    }
+
+    public type class t_superclass_with_incompatible_mtc mtc GeneralComp {
+        var integer v_i := 9919;
+    }
+
+    public type class t_subclass_mtc extends t_superclass_with_incompatible_mtc mtc MessageComp { // not allowed
+
+    }
+
+    testcase TC_NegSem_50101_top_level_011_01() runs on MessageComp system GeneralComp {
+        var t_subclass_system v_a := t_subclass_system.create(); // not allowed
+        if (v_a.v_h == '1100FAD'H) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    testcase TC_NegSem_50101_top_level_011_02() runs on MessageComp {
+        var t_subclass_mtc v_a := t_subclass_mtc.create(); // not allowed
+        if (v_a.v_i == 9919) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_011_01());
+        execute(TC_NegSem_50101_top_level_011_02());
+    }
+}

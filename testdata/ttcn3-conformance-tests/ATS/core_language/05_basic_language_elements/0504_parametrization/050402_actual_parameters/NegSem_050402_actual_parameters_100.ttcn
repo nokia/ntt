@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that list notation containing actual parameters in wrong order is not accepted
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// When using list notation, the order of elements in the actual parameter list shall
+// be the same as their order in the corresponding formal parameter list.
+
+module NegSem_050402_actual_parameters_100 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (integer p_val1, charstring p_val2) {
+        if ( match(p_val1, 1) and match(p_val2, "test")) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_100() runs on GeneralComp {
+        f_test("test", 1);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_100());
+	}
+}

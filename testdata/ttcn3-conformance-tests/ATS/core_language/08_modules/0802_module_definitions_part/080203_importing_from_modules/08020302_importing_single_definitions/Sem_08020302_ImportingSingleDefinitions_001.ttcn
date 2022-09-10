@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.2, Ensure that the value of an explicitly imported constant can be read and carries the same value.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+module Sem_08020302_ImportingSingleDefinitions_001 {
+
+import from Sem_08020302_ImportingSingleDefinitions_001_import {
+	const c_myconst;
+};
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020302_ImportingSingleDefinitions_001() runs on GeneralComp {
+	if (c_myconst == 43532) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_08020302_ImportingSingleDefinitions_001());
+}
+}
+
+module Sem_08020302_ImportingSingleDefinitions_001_import {
+	const integer c_myconst := 43532;
+}

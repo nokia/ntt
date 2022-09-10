@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that address type is included to anytype (if it has been explicitly defined within that module)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_013 {
+
+
+type integer address;		// definition of address type globally
+
+
+type component GeneralComp {
+
+	var anytype x;
+}
+
+
+testcase TC_Sem_060206_anytype_013() runs on GeneralComp {
+
+x.address:=10;	// anytype x now address type with value integer 10
+
+
+      if (x.address==10)  {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_013());
+}
+
+}

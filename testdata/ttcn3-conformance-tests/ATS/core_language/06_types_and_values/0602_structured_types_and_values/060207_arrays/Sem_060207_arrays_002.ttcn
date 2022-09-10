@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, verify assignment of explicitly identified elements to arrays
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Values may be assigned individually by a value list notation or indexed notation
+// or more than one or all at once by a value list notation or index assignment
+// notation.
+// Elements to be left out from the assignment shall be explicitly skipped in the
+// list by using dash.
+
+module Sem_060207_arrays_002 {
+
+	type component GeneralComp {
+	}
+
+    type integer MyArrayType1[3] (1 .. 10);
+
+	testcase TC_Sem_060207_arrays_002() runs on GeneralComp {
+
+        var MyArrayType1 v_array1 := {
+            [0] := 8,
+            [1] := 1,
+            [2] := -
+        };
+
+		if (match(v_array1[0], 8) and match(v_array1[1], 1) and not isbound(v_array1[2])
+			and lengthof (v_array1 & {2}) == 4) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060207_arrays_002());
+	}
+
+}

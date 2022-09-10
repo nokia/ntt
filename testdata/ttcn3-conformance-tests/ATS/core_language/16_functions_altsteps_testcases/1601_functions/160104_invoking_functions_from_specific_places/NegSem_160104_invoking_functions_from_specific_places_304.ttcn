@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.1.4, verify that a function called during receiving operation cannot contain fuzzy variables (in template fields)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If value returning functions are called in receiving communication operations (in templates, template fields,
+// in-line templates, or as actual parameters), in guards or events of alt statements or altsteps (see clause 20.2),
+// or in initializations of altstep local definitions (see clause 16.2), the following operations shall not be
+// used in functions called in the cases specified above, in order to avoid side effects that cause changing the
+// state of the component or the actual snapshot and to prevent different results of subsequent evaluations
+// on an unchanged snapshot:
+// k) Calling functions and external functions with @fuzzy formal parameters and variables (see notes 4 and 9).
+
+module NegSem_160104_invoking_functions_from_specific_places_304 {
+	type record R {
+		integer field1
+	}
+
+    type port P message {
+        inout R;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test() return template integer {
+        var @fuzzy integer v_int := f_eval();
+		return (0..v_int);
+	}
+
+    function f_eval() return integer {
+        return 100;
+    }
+
+    testcase TC_NegSem_160104_invoking_functions_from_specific_places_304() runs on GeneralComp system GeneralComp {
+        template @fuzzy R mw_test := { field1 := f_test() };
+        connect(mtc:p, mtc:p);
+        p.send(R:{ field1 := 1 });
+		p.receive(mw_test);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160104_invoking_functions_from_specific_places_304());
+	}
+}

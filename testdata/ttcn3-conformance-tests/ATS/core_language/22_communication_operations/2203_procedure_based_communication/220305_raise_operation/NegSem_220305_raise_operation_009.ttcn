@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.5, raise operation on disconnected and unmapped ports
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Applying a raise operation to an unmapped or disconnected port shall cause a test case
+// error.
+
+module NegSem_220305_raise_operation_009 {
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S:?);
+        disconnect(self:p);
+		p.raise(S, 1);
+        setverdict(pass);
+	}
+
+    testcase TC_NegSem_220305_raise_operation_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+        v_ptc.start(f());
+	    p.call(S:{}, nowait); // no processing of the exception to avoid possible errors in the catch operation
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_009(), 5.0);
+    }
+}

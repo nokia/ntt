@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:5.5, Verify that an error is detected when two constants reference each other
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Direct and indirect cyclic definitions are not allowed with the exception of the
+// following cases:
+// a) for recursive type definitions (see clause 6.2);
+// b) function and altstep definitions (i.e. recursive function or altstep calls);
+// c) cyclic import definitions, if the imported definitions only form allowed cyclic
+// definitions.
+// The test is a copy of example 1 from the chapter 5.5
+module NegSem_0505_cyclic_definitions_001 {
+
+	type record ARecordType { integer a, integer b };
+	const ARecordType c_test1 := { 1 , c_test2.b}; // c_test1 refers to c_test2
+	const ARecordType c_test2 := { 1 , c_test1.b}; // c_test2 refers to c_test1
+
+}

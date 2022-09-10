@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, Ensure that the IUT correctly handles message receiving operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// Restriction p) The @nodefault modifier is allowed only in stand-alone receive statements.
+
+module Sem_220202_ReceiveOperation_031 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+    type component GeneralComp {
+	      port loopbackPort messagePort
+    }
+
+    function f1 ( ) runs on GeneralComp {
+             messagePort.send(2) to mtc;
+    }
+
+testcase TC_Sem_220202_ReceiveOperation_031() runs on GeneralComp system GeneralComp {
+
+    var integer MyInt := 2;
+
+    // create PTC
+    var GeneralComp ptc;
+    ptc:=GeneralComp.create;
+    connect(self:messagePort,ptc:messagePort);
+    ptc.start(f1());
+
+    // receive message
+    @nodefault messagePort.receive(MyInt);   // @nodefault modifier with stand-alone receive statement
+    setverdict(pass);
+
+    //remove PTC
+    disconnect(self:messagePort,ptc:messagePort);
+    ptc.stop;
+}
+
+control{
+    execute(TC_Sem_220202_ReceiveOperation_031());
+}
+
+}

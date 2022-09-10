@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.2.5, Ensure that test cases may have a finally block.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50205_test_cases_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    function f_raise() runs on GeneralComp exception (integer) {
+        raise 7;
+    }
+
+    testcase TC_Sem_50205_test_cases_001() runs on GeneralComp {
+        f_raise();
+        setverdict(fail);
+    } catch(integer e) {
+        setverdict(pass);
+    } finally {
+        log("This part is always executed!");
+    }
+
+    control {
+        execute(TC_Sem_50205_test_cases_001());
+    }
+}

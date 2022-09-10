@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that partially initialized value can be used in select union header
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// [The TemplateInstance in the header of the select union statement] shall be
+// at least partially initialized.
+
+module Sem_190302_select_union_statement_006 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        record {
+            integer field1,
+            integer field2
+        } recOption
+    }
+
+    testcase TC_Sem_190302_select_union_statement_006() runs on GeneralComp {
+        var U v_un := { recOption := { field1 := 1, field2 := - } }
+        select union (v_un) {
+            case (intOption) {
+                setverdict(fail);
+            } case (strOption) {
+                setverdict(fail);
+            } case (recOption) {
+                setverdict(pass);
+            }
+        }
+	}
+
+	control {
+		execute(TC_Sem_190302_select_union_statement_006());
+	}
+}

@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, Ensure that anytype can not be address type if not explicitly declareted in the module
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060206_anytype_002 {
+
+type component GeneralComp {
+
+	var anytype x;
+}
+
+
+testcase TC_NegSem_060206_anytype_002() runs on GeneralComp {
+
+x.address:=10;	// error: address type is not declarated in the module explicitly
+
+
+      if (x.address==10)  {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_NegSem_060206_anytype_002());
+}
+
+}

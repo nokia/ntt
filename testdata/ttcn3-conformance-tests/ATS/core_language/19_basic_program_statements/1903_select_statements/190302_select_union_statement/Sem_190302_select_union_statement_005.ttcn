@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that no branch is executed if the's no suitable case branch
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Otherwise [if no case exists for the chosen alternative and the else branch
+// is not present], the select union statement has no effect.
+
+module Sem_190302_select_union_statement_005 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        boolean boolOption,
+        bitstring bitOption
+    }
+
+    testcase TC_Sem_190302_select_union_statement_005() runs on GeneralComp {
+        var U v_un := { strOption := "abc" }
+        select union (v_un) {
+            case (intOption) {
+                setverdict(pass);
+            } case (bitOption) {
+                setverdict(fail);
+            }
+        }
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_190302_select_union_statement_005());
+	}
+}

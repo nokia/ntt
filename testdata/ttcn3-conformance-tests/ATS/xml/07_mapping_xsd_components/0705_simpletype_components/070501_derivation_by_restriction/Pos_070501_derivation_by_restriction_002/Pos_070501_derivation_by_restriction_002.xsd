@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070501_derivation_by_restriction_002"
+  xmlns:ns="schema:Pos_070501_derivation_by_restriction_002">
+	<simpleType name="simple-base">
+		<restriction base="integer"/>
+	</simpleType>
+
+	<simpleType name="simple-restr">
+		<restriction base="ns:simple-base"/>
+	</simpleType>
+
+	<element name="elem-simple-restr">
+		<simpleType>
+			<restriction base="ns:simple-base"/>
+		</simpleType>
+	</element>
+</schema>

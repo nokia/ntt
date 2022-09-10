@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070501_derivation_by_restriction_001"
+  xmlns:ns="schema:Pos_070501_derivation_by_restriction_001">
+  <simpleType name="type1">
+    <restriction>
+      <simpleType>
+        <restriction base="integer" />
+      </simpleType>
+      <minInclusive value="0"/>
+    </restriction>
+  </simpleType>
+  <element name="MyType" type="ns:type1"/>
+</schema>

@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that forbidden calls cannot appear in response and exception handling part guards
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// i) The evaluation of the Boolean expressions guarding the alternatives in the response
+// and exception handling part may have side effects. In order to avoid unexpected side
+// effects, the same rules as for the Boolean guards in alt statements shall be applied
+// (see clause 20.2).
+
+
+module NegSem_220301_CallOperation_016 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_NegSem_220301_CallOperation_016() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		timer t_tmr := 5.0;
+		t_tmr.start;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f_called());
+		p.call(S:{}) {
+			[t_tmr.read > 0.0] p.getreply(S:?) { setverdict(pass, "Reply accepted"); } // guard error expected
+		}
+    }
+
+    control {
+        execute(TC_NegSem_220301_CallOperation_016(), 5.0);
+    }
+}

@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that in call the ObjectReference shall be of a port type.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction n) the ObjectReference shall be of a port type.
+
+module NegSem_220301_CallOperation_021 {
+
+	signature S();
+
+    type component GeneralComp {
+		var anytype p;
+	}
+
+    testcase TC_NegSem_220301_CallOperation_021() runs on GeneralComp system GeneralComp {
+
+		p.call(S:{}) {    // error: non port type
+			[] p.getreply(S:?) { setverdict(pass); }    // error: non port type
+		}
+    }
+
+    control {
+        execute(TC_NegSem_220301_CallOperation_021(), 5.0);
+    }
+}

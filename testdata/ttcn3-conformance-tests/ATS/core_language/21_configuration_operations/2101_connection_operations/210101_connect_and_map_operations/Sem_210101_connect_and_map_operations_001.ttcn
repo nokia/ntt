@@ -1,0 +1,84 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Connect operation accepts ports with compatible message type list containing several types
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// b) The connect operation is allowed if and only if:
+// outlist-PORT1 ⊆ inlist-PORT2 and outlist-PORT2 ⊆ inlist-PORT1.
+//
+// In this test, outlist-PORT1 == inlist-PORT2 and outlist-PORT2 == inlist-PORT1
+
+module Sem_210101_connect_and_map_operations_001 {
+	type record R {
+		integer field1,
+		charstring field2
+	}
+
+	type port P1 message {
+		inout integer;
+		out R, charstring;
+	}
+
+	type port P2 message {
+	  in charstring, R, integer;
+	  out integer;
+	}
+
+	type component GeneralComp {
+	}
+
+	type component C1 {
+		port P1 p;
+	}
+
+	type component C2 {
+		port P2 p;
+	}
+
+	function f1() runs on C1
+	{
+		timer t := 1.0;
+		t.start;
+		if(p.checkstate("Connected")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+		t.timeout; // keep alive for 1 second
+	}
+
+	function f2() runs on C2
+	{
+		timer t := 1.0;
+		t.start;
+		if(p.checkstate("Connected")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+		t.timeout; // keep alive for 1 second
+	}
+
+	testcase TC_Sem_210101_connect_and_map_operations_001() runs on GeneralComp system GeneralComp {
+		var C1 v_ptc1 := C1.create;
+		var C2 v_ptc2 := C2.create;
+		connect(v_ptc1:p, v_ptc2:p); // compatible, 1:1 mapping
+		v_ptc1.start(f1());
+		v_ptc2.start(f2());
+		all component.done;
+	}
+
+	control{
+	    execute(TC_Sem_210101_connect_and_map_operations_001());
+	}
+}

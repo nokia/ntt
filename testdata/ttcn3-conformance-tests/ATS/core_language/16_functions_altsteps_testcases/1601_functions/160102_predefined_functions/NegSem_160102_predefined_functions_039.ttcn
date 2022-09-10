@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Ensure that integer value of an enum handled correctly
+
+module NegSem_160102_predefined_functions_039 {
+
+    type component GeneralComp {
+	}
+
+    type enumerated EDays {
+        Monday, Tuesday, Wednesday, Thursday, Friday(3..5)
+    };
+
+    testcase TC_NegSem_160102_predefined_functions_039() runs on GeneralComp {
+        var EDays v_enum := Friday(3);
+        int2enum(6,v_enum);    // error: not allowed value
+
+        if (match(enum2int(v_enum),6)) {
+		    setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+	}
+
+	control {
+		execute(TC_NegSem_160102_predefined_functions_039());
+	}
+}

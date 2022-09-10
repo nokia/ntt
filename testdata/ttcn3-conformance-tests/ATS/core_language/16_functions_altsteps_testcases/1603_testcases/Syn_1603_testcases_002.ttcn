@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases with system clause
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+
+//Enshure, that testcases may be executed from a function running on control component
+
+module Syn_1603_testcases_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_Syn_1603_testcases_001 () runs on GeneralComp system GeneralComp {
+    setverdict(pass);
+}
+
+function @control f_control() {
+    execute(TC_Syn_1603_testcases_001());
+}
+
+control{
+    f_control();
+}
+
+}

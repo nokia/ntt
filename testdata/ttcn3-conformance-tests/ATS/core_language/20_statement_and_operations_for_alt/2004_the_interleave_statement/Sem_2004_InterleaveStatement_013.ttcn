@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:20.4, Validate that interleave statements are properly handled with @nodefault clause.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/**
+ * b) If none of the alternatives of the interleave statement can be executed, the default mechanism will be invoked. This means, according to the semantics of the default mechanism, the actual snapshot will be used to evaluate those altsteps that have been activated before entering the interleave statement.
+ * If the interleave statement contains the @nodefault modifier, all active default alternatives are ignored for
+ * the execution of this interleave statement.
+ * NOTE 2: The complete semantics of the default mechanism within an interleave statement is given by replacing the interleave statement by an equivalent set of nested alt statements.
+ * If the interleave statement contains the @nodefault modifier, it is equivalent with all replacement alt statement having the @nodefault modifier. The default mechanism applies for each of these alt statements.
+ */
+
+module Sem_2004_InterleaveStatement_013 {
+
+   	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(fail, "altstep a() invocated.");
+            break;
+		}
+	}
+
+	testcase TC_Sem_2004_InterleaveStatement_013() runs on GeneralComp {
+        timer t := 3.0;
+		activate(a());
+        t.start;
+		p.send(integer:1);
+		interleave @nodefault {
+			[] p.receive(integer:5) {
+                // not expected: should lead to default invocation,
+                // due to @nodefualt altstep a() never called
+				setverdict(fail);
+			}
+            [] t.timeout{
+               setverdict(pass);
+               break;
+            }
+		}
+	}
+
+	control{
+		execute(TC_Sem_2004_InterleaveStatement_013());
+	}
+}

@@ -1,0 +1,95 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  9:7.6.8, Verify that an error is generated if there are too many items in the embed_values field
+ ** @verdict  pass reject
+***************************************************/
+// The following requirements are tested:
+// In TTCN-3 values the number of components of the embed_values field (the number
+// of strings to be inserted) shall not exceed the total number of components
+// present in the enclosing enframing record, corresponding to the child element
+// elements of the complexType with the mixed="true" attribute, i.e. ignoring fields
+// corresponding to attribute elements, the embed_values field itself and the order
+// field, if present (see clause 7.6.4), plus 1 (i.e. all components of enclosed
+// record of-s).
+
+module Neg_070608_mixed_content_001 {
+
+   import from schema_Neg_070608_mixed_content_001 language "XSD" all;
+
+   template MyType m_msg := {
+       embed_values:= { "Arrival status. ", "Wait for further information." },
+       order := {},
+       a:= omit,
+       b:= omit
+   };
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference XML file and returns true if they represent the same XML structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the XML file
+     * @param p_referenceXmlFile the XML file
+     * @param p_xsdFileList the list of XSD files
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference XML file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceXmlFile represent the same XML structure
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceXmlFile, FileList p_xsdFileList, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Neg_070608_mixed_content_001() runs on C system C {
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference XML file
+            []    p.check(receive(Raw:?) -> value v_rcv) {
+                log("XML message ", v_rcv);
+                if (matchFile(v_rcv, "Neg_070608_mixed_content_001.xml", { "Neg_070608_mixed_content_001.xsd" }, v_matchError)) {
+                    alt {
+                        // match decoded value to pass test
+                        [] p.receive(m_msg) {
+                            setverdict(pass, "Decoded value matches encoded template and reference XML");
+                        }
+                        [] p.receive {
+                            setverdict(fail, "XML decoding failure");
+                        }
+                    }
+                } else {
+                    setverdict(fail, v_matchError);
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Neg_070608_mixed_content_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

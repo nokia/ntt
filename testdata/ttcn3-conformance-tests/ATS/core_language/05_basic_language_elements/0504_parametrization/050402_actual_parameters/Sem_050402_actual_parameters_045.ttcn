@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that variables can be used as inout formal value parameters of altsteps
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module Sem_050402_actual_parameters_045 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+    }
+
+    altstep a_test(inout integer p_val) runs on GeneralComp {
+        []t.timeout {
+            if (p_val == 4) { setverdict(pass); }
+            else { setverdict(fail); }
+        }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_045() runs on GeneralComp {
+        var integer v_val := 4;
+        t.start;
+        a_test(v_val); // tested parameter passing
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_045());
+	}
+}

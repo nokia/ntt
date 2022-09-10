@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070608_mixed_content_005"
+  xmlns:ns="schema:Pos_070608_mixed_content_005">
+  <element name="MyComplexElem-14">
+    <complexType mixed="true">
+      <choice>
+        <element name="a" type="string"/>
+        <element name="b" type="boolean"/>
+      </choice>
+    </complexType>
+  </element>  
+</schema>

@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, restarting explicitly stopped non-alive component
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Stopping a non-alive-type test component (implicitly or explicitly) shall destroy
+// it and all resources associated with the test component shall be released.
+
+module NegSem_210303_Stop_test_component_001 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f() runs on GeneralComp {
+        p.receive(integer:?);
+	}
+
+    testcase TC_NegSem_210303_Stop_test_component_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create;
+		ptc.start(f());
+        ptc.stop;
+        ptc.start(f());
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210303_Stop_test_component_001());
+    }
+}

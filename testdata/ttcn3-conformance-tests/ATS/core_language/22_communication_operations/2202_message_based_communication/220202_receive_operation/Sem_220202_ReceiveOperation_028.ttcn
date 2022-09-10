@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, fuzzy variable in sender redirect
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// If a variable referenced in the value, sender or @index clause is a lazy or fuzzy
+// variable, the expression assigned to this variable is equal to the result produced
+// by the receive operation i.e. later evaluation of the lazy or fuzzy variable does not
+// lead to repeated invocation of the receive operation.
+
+module Sem_220202_ReceiveOperation_028 {
+    type integer address;
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    testcase TC_Sem_220202_ReceiveOperation_028() runs on GeneralComp {
+        var @fuzzy address v_addr;
+        p.send(1) to 1;
+        p.send(2) to 2;
+        p.send(3) to 3;
+        p.receive(integer:?) -> sender v_addr;
+        if (v_addr == 1) { // evaluation of @lazy (receive shall not be called again)
+            alt {
+                [] p.receive(integer:2) { setverdict(pass); }
+                [] p.receive { setverdict(fail); }
+            }
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_220202_ReceiveOperation_028(), 5.0);
+    }
+}

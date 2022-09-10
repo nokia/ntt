@@ -1,0 +1,71 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.7, Ensure that the IUT correctly handles label syntax.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1907_label_statement_001 {
+
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+function f_test ( integer p_integer := 0 ) runs on GeneralComp return integer {
+ label L1;
+ return p_integer+1;
+}
+
+
+altstep AltSet1() runs on GeneralComp {
+  var integer v_LocalVar := f_test();   // local variable
+
+     [] messagePort.receive {
+      label L_A;
+        setverdict(pass);
+      label L_B;
+     }
+
+}
+
+testcase TC_Syn_1907_label_statement_001 () runs on GeneralComp {
+ var MessageType v_testMessage;
+ timer t_timer;
+
+ v_testMessage:=  {
+  field1 := 1,
+  field2 := "test string"
+ }
+
+ messagePort.send(v_testMessage);
+ t_timer.start( 1.0 );
+ label L1;
+
+ alt {
+  [] AltSet1();
+  [] messagePort.receive {
+      label L2;
+      setverdict(pass);
+     }
+  [] t_timer.timeout {
+      label L3;
+     }
+ }
+ label L4;
+}
+
+control{
+    execute(TC_Syn_1907_label_statement_001());
+}
+
+}

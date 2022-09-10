@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that multiple attributes of the same kind can have the same modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction b
+// In case multiple attributes of the same type are allowed, all of them shall be without
+// an additional modifier (override, @local) or the modifier shall be the same for all
+// attributes.
+
+module Sem_2702_the_with_statement_008 {
+	type component GeneralComp {
+	}
+
+	type record R {
+		integer field1
+	} with {
+		encode @local "RuleA";
+		encode @local "RuleB"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2702_the_with_statement_008 () runs on GeneralComp {
+		var RoUC v_enc1 := R.encode,
+			v_enc2 := R.field1.encode;
+		if(v_enc1 == { "RuleA", "RuleB" } and
+			lengthof(v_enc2) == 0) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_2702_the_with_statement_008());
+	}
+
+}

@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that value list notation can be used for a set type and the values
+ **                  are assigned to the fields in the sequential order of the fields in the type definition.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0602_TopLevel_014 {
+
+    type component GeneralComp {
+    }
+
+    type set MySet {
+        integer field1,
+        charstring field2 optional,
+        float field3
+    }
+
+    testcase TC_Sem_0602_TopLevel_014() runs on GeneralComp {
+
+        var MySet v_mySet := {5,"hi",3.14};// SEE NOTE under 6.2.2
+
+        if (v_mySet=={5,"hi",3.14}) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_014());
+    }
+}

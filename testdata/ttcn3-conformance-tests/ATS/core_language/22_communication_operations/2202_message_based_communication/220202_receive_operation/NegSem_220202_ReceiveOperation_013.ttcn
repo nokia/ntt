@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, trying to store address when receiving on connected port
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Type mismatch at storing the received value or parts of the received value and storing
+// the sender shall cause an error.
+
+module NegSem_220202_ReceiveOperation_013 {
+
+	type port P message {
+		inout integer;
+        address integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220202_ReceiveOperation_013() runs on GeneralComp system GeneralComp {
+        var P.address v_addr;
+        connect(self:p, self:p);
+        p.send(10);
+        p.receive -> sender v_addr;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220202_ReceiveOperation_013(), 5.0);
+    }
+}

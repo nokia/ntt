@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that a modified template does not omit possible parameters of the base template.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1505_ModifiedTemplates_002 {
+
+type record of integer MyMessageType;
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template MyMessageType m_templateOne(integer p_value) := {
+	field1 := p_value,
+	field2 := "Hello World",
+	field3 := true
+}
+
+// illegal definition as the (integer p_value) formal parameter is missing and must
+// not be omitted.
+template MyMessageType m_templateTwo modifies m_templateOne := {
+	field3 := false
+}
+
+}

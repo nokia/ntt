@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign invalid values to restricted float.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_010 {
+	type float MyFloatRange (-infinity .. 0.0);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_010() runs on GeneralComp {
+        var MyFloatRange v_f := 1.0; // 1.0 is outside range
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_010());
+    }
+}

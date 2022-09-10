@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that arithmetic operators can handle same type of variables
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_070101_ArithmeticOperators_002 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_070101_ArithmeticOperators_002() runs on GeneralComp {
+	var integer v_i := 20;
+	var float v_k :=2.0E0;
+
+	var integer v_result := v_i*v_k;	// not allowed int*float
+
+	setverdict(pass);
+
+}
+control{
+    execute(TC_NegSem_070101_ArithmeticOperators_002());
+}
+
+}

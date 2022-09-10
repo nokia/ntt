@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that more than one component port can mapped to a single system port
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Figure 6: Allowed connections, connection scheme h)
+
+module Sem_0901_Communication_ports_008 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+	function checkMapped() runs on GeneralComp
+	{
+		if(p.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+    testcase TC_Sem_0901_Communication_ports_007() runs on GeneralComp system GeneralComp {
+		// components are created alive so that their mappings are not destroyed when behaviour stops
+		var GeneralComp v_ptc1 := GeneralComp.create alive,
+			v_ptc2 := GeneralComp.create alive;
+		map(self:p, system:p);
+		map(v_ptc1:p, system:p);
+		map(v_ptc2:p, system:p);
+		v_ptc1.start(checkMapped());
+		v_ptc2.start(checkMapped());
+		checkMapped();
+		all component.done;
+    }
+
+    control{
+        execute(TC_Sem_0901_Communication_ports_007());
+    }
+}
+

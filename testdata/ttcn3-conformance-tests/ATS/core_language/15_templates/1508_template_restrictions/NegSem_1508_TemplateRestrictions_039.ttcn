@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(present) can't be parameter to template(value) if it contains anyvalueornone(*)
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1508_TemplateRestrictions_039 {
+
+    type record ExampleType {	// Exampletype record integer and a boolean
+       	integer a,
+		boolean b
+       }
+
+	type component GeneralComp {
+	}
+
+
+
+	template (value) ExampleType m_baseTemplate(template (present) integer MyintTemplate := *) :={
+		a := MyintTemplate,	// template (present) MyintTemplate contains anyvalueornone(*), which is not allowed with value restriction
+		b := true
+	}
+
+	testcase TC_NegSem_1508_TemplateRestrictions_039() runs on GeneralComp {
+
+
+		if (ispresent(m_baseTemplate.a) == true) {
+      		setverdict(pass);
+		} else {
+            setverdict(fail);
+       }
+ }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_039());
+    }
+}

@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.3, Ensure that the IUT correctly processes repeat statements
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2003_the_repeat_statement_001 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    template charstring m_test := "ping";
+
+    testcase TC_NegSem_2003_the_repeat_statement_001() runs on GeneralComp {
+        var integer counter := 1;
+        p.send(m_test);
+        p.send(m_test);
+        alt {
+            [counter == 1] p.receive(m_test) {
+                counter := 2;
+                repeat;
+            }
+            [counter == 2] p.receive(m_test) {
+                setverdict(pass);
+            }
+        }
+        repeat;		//repeat statement is used outside of an alt or call structure
+    }
+
+    control {
+        execute(TC_NegSem_2003_the_repeat_statement_001());
+    }
+
+}

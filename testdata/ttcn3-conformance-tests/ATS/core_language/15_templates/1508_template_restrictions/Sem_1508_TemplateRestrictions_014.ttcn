@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that a template can be assigned to a template variable.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1508_TemplateRestrictions_014 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer a,
+	boolean b optional
+}
+
+template ExampleType exampleTemplate := {1, true};
+
+testcase TC_Sem_1508_TemplateRestrictions_014() runs on GeneralComp {
+	var template ExampleType v_template;
+
+	v_template := exampleTemplate;
+
+	if (match(valueof(v_template.a), 1) and
+	    match(valueof(v_template.b), true)
+	   ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_014());
+}
+
+
+}

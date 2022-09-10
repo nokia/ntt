@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that reply operation cannot be used on a message port
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// a) A reply operation shall only be used at a procedure-based port.
+
+module NegSem_220303_ReplyOperation_004 {
+
+    signature S() return integer;
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    testcase TC_NegSem_220303_ReplyOperation_004() runs on GeneralComp {
+        p.reply(S:{} value 1);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220303_ReplyOperation_004(), 5.0);
+    }
+
+}

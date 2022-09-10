@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Check that running operator provides information about mtc.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// // The following requirement is tested: The running operation returns true for the mtc and PTCs that have been started but not yet terminated or stopped.
+
+module Sem_210306_running_operation_013 {
+
+    type component GeneralComp {}
+
+    function f1 ( ) runs on GeneralComp {
+        while (true) {} // block forever
+    }
+
+    testcase TC_Sem_210306_running_operation_013() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        ptc:=GeneralComp.create alive;
+
+        ptc.start(f1());
+
+		// Check that ptc is running, and mtc component is running
+        if (match(ptc.running, true) and match(mtc.running, true)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+    control {
+        execute(TC_Sem_210306_running_operation_013());
+    }
+}

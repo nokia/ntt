@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Ensure that templates with "implicit omit" are evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+ /*The following requirement is tested: Restriction k) Using the dot notation (see clauses When using direct assignment notation in a scope where the optional
+attribute is set to "implicit omit", the uninitialized optional fields in the referenced value, shall implicitly be set
+to omit after the assignment in the new value, while mandatory fields shall remain unchanged
+*/
+
+module Sem_1102_TemplateVars_004 {
+
+ type set IntegerSet {
+  integer a1 optional,
+  integer a2 optional,
+  integer a3 optional
+ };
+
+    type port loopbackPort message {
+	  inout IntegerSet
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+
+testcase TC_Sem_1102_TemplateVars_004() runs on GeneralComp {
+	var template IntegerSet mw_pattern := {a1:=1,a2:=*} with { optional "implicit omit" };
+	var IntegerSet v_set := {a1:=1,a2:=2,a3:=omit}
+
+    messagePort.send(v_set);
+
+    alt {
+     [] messagePort.receive(mw_pattern) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+
+}
+
+control{
+    execute(TC_Sem_1102_TemplateVars_004());
+}
+
+}

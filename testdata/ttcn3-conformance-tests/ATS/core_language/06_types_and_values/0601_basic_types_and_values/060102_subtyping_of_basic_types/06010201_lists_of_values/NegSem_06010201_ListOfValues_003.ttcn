@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.1, Assign values to restricted octetstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010201_ListOfValues_003 {
+    type octetstring MyListOfOctetStrings ('01'O, '10'O);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010201_ListOfValues_003() runs on GeneralComp {
+        var MyListOfOctetStrings v_h := '00'O; // value is not defined by the type
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010201_ListOfValues_003());
+    }
+}

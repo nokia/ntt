@@ -1,0 +1,58 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:16.2.1, Ensure that altsteps  are correctly handled for dynamically mapped ports
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// Mycompport A is dynamically mapped
+module Sem_160201_invoking_altsteps_003{
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+	type port IntegerOutputPortType message {
+	  inout integer
+	}
+
+type component GeneralComp
+	{
+
+		port IntegerOutputPortType MycomportA
+	}
+
+type component MyTestSystemInterface
+	{
+ 		port loopbackPort messagePort
+	}
+
+altstep AltStep1() runs on GeneralComp {
+
+     [] MycomportA.receive {
+     }
+}
+
+
+// MyTestSystemInterface is the test system interface
+testcase TC_Sem_160201_invoking_altsteps_003() runs on GeneralComp system MyTestSystemInterface {
+ timer tc_timer := 1.0;
+ map(mtc:MycomportA, system:messagePort);
+
+
+ MycomportA.send(2);
+ tc_timer.start;
+ unmap(mtc:MycomportA);
+ setverdict(pass);
+
+    alt {
+     [] AltStep1();
+     [] tc_timer.timeout {
+        setverdict(pass);
+     }
+    }
+}
+control{
+    execute(TC_Sem_160201_invoking_altsteps_003());
+}
+}

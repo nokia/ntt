@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that a simple concatenation of non-wildcard octetstring must not yield in a non-even number of hexadecimals.
+ ** @verdict  pass reject
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_003 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_003() runs on GeneralComp {
+	var template octetstring v_str := 'AB'O & '0F'O & '2A'O & 'F'O;
+
+	// shall cause an error as the length of the concantenated octetstring is is uneven
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_003());
+}
+
+}

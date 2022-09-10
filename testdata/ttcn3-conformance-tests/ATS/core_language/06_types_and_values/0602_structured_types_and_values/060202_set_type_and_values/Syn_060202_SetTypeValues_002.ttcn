@@ -1,0 +1,10 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.2, Ensure that the IUT correctly handles empty set definitions.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060202_SetTypeValues_002 {
+    type set MySetType {
+	}
+}

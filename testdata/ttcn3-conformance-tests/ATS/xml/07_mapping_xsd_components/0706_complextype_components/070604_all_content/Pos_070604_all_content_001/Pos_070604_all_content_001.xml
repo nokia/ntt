@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_070604_all_content_001">
+ <bar>3.14</bar>
+ <ding>ding</ding>
+ <foo>5</foo>
+</ns:MyType>

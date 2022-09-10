@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(present) base templates are not allowed to be modfied to template(value)
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirement is tested:
+// Restriction d:
+// A modified template may have a less strict restriction than the base template according to table 13B.
+
+module NegSem_1508_TemplateRestrictions_058 {
+
+	type component GeneralComp { }
+
+    type record ExampleType {
+        integer a,
+        boolean b optional
+    }
+
+    template(present) ExampleType m_baseTemplate := {
+        a := 20,
+        b := true
+    }
+
+    template(value) ExampleType m_modifiedTemplate modifies m_baseTemplate := {
+        a := 21
+    }
+
+	testcase TC_NegSem_1508_TemplateRestrictions_058() runs on GeneralComp {
+        if (match({ 21, true }, m_modifiedTemplate)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_058());
+    }
+}

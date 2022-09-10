@@ -1,0 +1,56 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:B.3.13, Verify that "errorbehavior" variant is correctly used during decode.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * TTCN-3 predefined decoding functions ensure that the decoding trial of the inout
+ * parameter encoded_value will not cause a test case error, when the decoding fails
+ * or is incomplete. - ET_UNDEF:EB_IGNORE
+ * */
+
+// NOTE: the test is not executed as it would require dedicated errorbehavior support
+
+module Pos_B313_error_behaviour_001 {
+
+   import from JSON all;
+
+   type charstring MyChar with { encode "JSON"; variant "errorbehavior(ET_UNDEF:EB_IGNORE)"};
+   template MyChar myChar := "abc";
+
+
+    type component C {
+
+    }
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    testcase TC_Pos_B313_error_behaviour_001() runs on C system C {
+
+        var MyChar v_dec := "";
+       // var octetstring v_enc := encvalue_o(myChar, - , "JSON"); // '7B22506F735F423331335F6572726F725F6265686176696F75725F3030312E4D7943686172223A22616263227D'O
+       var octetstring v_enc := '7B'O;    // incomplete encoded JSON: '{'
+       log(v_enc);
+
+       // Note: since v_enc contains an incomplete JSON the decvalue_o() should fail, however due to error behavior:  it returns the undecoded JSON value to TTCN-3 as a universal charstring value.
+       var integer v_decresult := decvalue_o(v_enc, v_dec, "errorbehavior(ET_UNDEF:EB_IGNORE)" , "JSON");
+       log(v_dec);
+
+       if(match(v_dec,"{")){
+           setverdict(pass, v_dec);
+       }
+       else{
+           setverdict(fail, v_dec, v_decresult);
+       }
+   }
+
+
+    control {
+       // execute(TC_Pos_B313_error_behaviour_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

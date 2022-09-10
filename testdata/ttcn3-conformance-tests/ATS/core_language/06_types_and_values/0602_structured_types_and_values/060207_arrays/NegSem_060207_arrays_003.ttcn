@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, negative index applied to an array on the right hand side of an assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Indexed value notation can be used on both the right-hand side and left-hand
+// side of assignments. The index of the first element shall be zero or the lower
+// bound if an index range has been given.
+
+module NegSem_060207_arrays_003 {
+
+	type component GeneralComp {
+	}
+
+    type integer MyArrayType1[5] (1 .. 10);
+
+	testcase TC_NegSem_060207_arrays_003() runs on GeneralComp {
+
+        var MyArrayType1 v_array1 := { 8, 9, 2, 3, 4};
+		var integer i := v_array1[-1]; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_003());
+	}
+
+}

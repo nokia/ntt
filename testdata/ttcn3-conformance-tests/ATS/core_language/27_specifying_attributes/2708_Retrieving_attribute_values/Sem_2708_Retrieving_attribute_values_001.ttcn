@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.8, Ensure that the IUT correctly handles attribute definitions and their scoping rules
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The return value of the operations for retrieving attribute values is of a universal charstring type in case of attributes that can be present only once (display, optional). If such an attribute is not defined, the operation returns an empty string.
+
+// Restriction b) The Expression in optional parameter of the operation shall be of the universal charstring type.
+
+module Sem_2708_Retrieving_attribute_values_001 {
+    type component GeneralComp {}
+
+// MyPDU1 will be displayed as PDU
+	type record MyPDU1 {integer field1 } with {
+									display "testDisplayValue";
+									encode "Codec1";
+									variant "Codec1"."Rule1A";
+									variant "Codec1"."Rule1B";
+									encode "Codec2";
+									variant "Codec2"."Rule2A";
+									variant "Codec2"."Rule2B";
+									}
+
+	type record	of universal charstring RUC;
+
+
+
+testcase TC_Sem_2708_Retrieving_attribute_values_001() runs on GeneralComp {
+
+			var MyPDU1 v_pdu;
+			var universal charstring v_display;
+
+			var RUC v_encoding, v_variants;
+
+			v_display := v_pdu.display; 		// v_display will contain "testDisplayValue"
+			v_display := v_variants.display; 	// v_display will contain "" as no display attribute is given
+
+  			if (match(v_pdu.display, "testDisplayValue") and match(v_variants.display, "")) {
+          		setverdict(pass);
+		    } else {
+		        setverdict(fail);
+		    }
+}
+
+control{
+    execute(TC_Sem_2708_Retrieving_attribute_values_001());
+}
+
+}

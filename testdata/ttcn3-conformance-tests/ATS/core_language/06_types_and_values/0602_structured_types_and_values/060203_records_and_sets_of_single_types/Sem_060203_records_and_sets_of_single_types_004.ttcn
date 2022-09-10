@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, verify handling of missing elements in assignment notation for record of values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When the assignment notation is used for record of s, ...
+// fields, not referred to in the notation, shall remain unchanged....
+// At initialization ... elements not mentioned are implicitly left
+// uninitialized.
+module Sem_060203_records_and_sets_of_single_types_004 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_004() runs on GeneralComp {
+
+		var RoI v_rec := {
+			[1] := 1
+		};
+
+		if (not isbound(v_rec[0]) and match(v_rec[1], 1)) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_004());
+	}
+
+}

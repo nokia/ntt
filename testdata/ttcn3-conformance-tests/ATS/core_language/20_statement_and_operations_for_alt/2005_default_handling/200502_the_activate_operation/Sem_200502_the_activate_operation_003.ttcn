@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify passing of a component timer to an activated altstep
+ ** @verdict   pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// All timer instances in the actual parameter list shall be declared as component type local timers.
+
+module Sem_200502_the_activate_operation_003 {
+
+	type component GeneralComp {
+		timer tc_tmr := 0.5;
+	}
+
+	altstep a(timer t_tmr) runs on GeneralComp {
+		[] t_tmr.timeout {}
+	}
+
+	testcase TC_Sem_200502_the_activate_operation_003() runs on GeneralComp {
+		tc_tmr.start;
+		activate(a(tc_tmr));
+		any port.receive;
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_200502_the_activate_operation_003());
+	}
+}

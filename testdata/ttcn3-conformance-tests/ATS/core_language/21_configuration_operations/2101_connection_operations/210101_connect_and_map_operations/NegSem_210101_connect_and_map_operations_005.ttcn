@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that map parameters cannot be used when not declared in the port type
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction g:
+// If in a map operation a param clause is present, the actual parameters shall conform
+// to the map param clause of the port type declaration of the system port used.
+
+module NegSem_210101_connect_and_map_operations_005 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_NegSem_210101_connect_and_map_operations_005() runs on GeneralComp system GeneralComp {
+		map(system:p, self:p) param(5);
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210101_connect_and_map_operations_005());
+	}
+}

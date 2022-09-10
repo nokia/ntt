@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can not be a default type
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSyn_060206_anytype_001 {
+
+type default Mydef;
+
+type component GeneralComp {
+	var Mydef y:= null;
+	var anytype x;
+
+}
+
+
+testcase TC_NegSyn_060206_anytype_001() runs on GeneralComp {
+
+x.Mydef := y; // default type is not allowed with anytype
+
+
+
+      if (x.Mydef == null) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_NegSyn_060206_anytype_001());
+}
+
+}

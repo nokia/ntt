@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, @decoded redirect assignment of a universal charstring field
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// When assigning individual fields of a message, encoded payload fields can be
+// decoded prior to assignment using the @decoded modifier. In this case, the
+// referenced field on the right hand sided of the assignment shall be one of the
+// bitstring, hexstring, octetstring, charstring or universal charstring types. It
+// shall be decoded into a value of the same type as the variable on the left hand
+// side of the assignment.
+
+module Sem_220202_ReceiveOperation_015 {
+	type record R
+    {
+        integer id,
+        universal charstring payload
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_Sem_220202_ReceiveOperation_015() runs on GeneralComp {
+        var integer v_src := 1953719668, v_res with { encode "32bit" };
+        var universal charstring v_str := encvalue_unichar(v_src);
+        p.send(R:{ id := 1, payload := v_str });
+        alt {
+            [] p.receive(R:?) -> value (v_res := @decoded payload) {
+                if (v_res == 1953719668) { setverdict (pass); }
+                else { setverdict(fail); }
+            }
+            [] p.receive { setverdict(fail); }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220202_ReceiveOperation_015(), 5.0);
+    }
+}

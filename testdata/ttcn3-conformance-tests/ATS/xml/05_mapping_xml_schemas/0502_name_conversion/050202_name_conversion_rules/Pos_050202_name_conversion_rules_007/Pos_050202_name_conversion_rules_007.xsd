@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050202_name_conversion_rules_007"
+  xmlns:ns="schema:Pos_050202_name_conversion_rules_007">
+  <element name="MyType">
+    <complexType>
+      <sequence>
+	    <element name="Abc" type="integer"/>
+      </sequence>
+      <attribute name="Def" type="integer" />
+    </complexType>  
+  </element>
+</schema>

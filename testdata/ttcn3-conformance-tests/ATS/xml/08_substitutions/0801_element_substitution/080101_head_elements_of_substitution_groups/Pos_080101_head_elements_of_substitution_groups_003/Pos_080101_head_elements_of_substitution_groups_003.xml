@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:ize xmlns:ns="schema:Pos_080101_head_elements_of_substitution_groups_003" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="schema:Pos_080101_head_elements_of_substitution_groups_003 Pos_080101_head_elements_of_substitution_groups_003.xsd">
+<!-- OK to send and receive --> <ns:headNoSubstition>anything</ns:headNoSubstition>
+<!-- allowed to send but causes a decoding failure if present in the received XML document (all substitutions are disallowed) -->
+<ns:groupMember1>any thing</ns:groupMember1>
+<!-- allowed to send but causes a decoding failure if present in the received XML document (all substitutions are disallowed) -->
+<ns:groupMember2>something</ns:groupMember2>
+</ns:ize>

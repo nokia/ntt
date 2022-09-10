@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060107_mininclusive_005"
+  xmlns:types="schema:Pos_060107_mininclusive_005">
+    <simpleType name="t1">
+        <restriction base="float">
+        <minInclusive value="NaN"/>
+    </restriction>
+    </simpleType>
+    <element name="e1" type="types:t1"/>
+</schema>

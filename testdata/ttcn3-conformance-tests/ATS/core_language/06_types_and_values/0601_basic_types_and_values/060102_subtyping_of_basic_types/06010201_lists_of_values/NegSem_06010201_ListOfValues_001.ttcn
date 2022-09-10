@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.1, Assign values to restricted bitstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010201_ListOfValues_001 {
+    type bitstring MyListOfBitStrings ('01'B, '10'B, '11'B);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010201_ListOfValues_001() runs on GeneralComp {
+        var MyListOfBitStrings v_b := '00'B; // value is not defined by the type
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010201_ListOfValues_001());
+    }
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060606_effect_of_minoccurs_and_maxoccurs_005"
+  xmlns:ns="schema:Pos_07060606_effect_of_minoccurs_and_maxoccurs_005">
+<element name="optionals_in_optional">
+  <complexType>
+    <sequence minOccurs="0">
+      <element name="elem1" type="string" minOccurs="0"/>
+      <element name="elem2" type="integer" minOccurs="0"/>
+      <element name="elem3" type="decimal" minOccurs="0"/>
+      <element name="elem4" type="dateTime" minOccurs="0"/>
+      <element name="elem5" type="duration" minOccurs="0"/>
+    </sequence>
+  </complexType>
+</element>
+
+</schema>

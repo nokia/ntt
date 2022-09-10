@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Ensure timer running any timer identifier works
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.5 The Running timer operation/The any keyword may be used to check if any timer started on a component or module control is running
+
+
+module Sem_2305_timer_running_001 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.0};
+    }
+    testcase TC_Sem_2305_timer_running_001() runs on TComp{
+        t_timer[0].start;
+        t_timer[1].start;
+        all timer.stop;
+        if (any timer.running){
+            setverdict(fail);
+            stop;
+        }
+        setverdict(pass);
+
+    }
+    control{
+
+            execute(TC_Sem_2305_timer_running_001())
+
+
+    }
+}

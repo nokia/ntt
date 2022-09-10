@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.2.2, Ensure that the IUT correctly handles the uniqueness of variable names in its scope
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_050202_Uniqueness_003 {
+	type component GeneralComp {
+	}
+
+	function f_funcScope() {
+		const integer cl_int := 0;
+	}
+
+	testcase TC_Sem_050202_Uniqueness_003() runs on GeneralComp {
+		const integer cl_int := 1;
+		f_funcScope();
+		if (cl_int == 1) { // local value
+			setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+	}
+	control {
+		execute(TC_Sem_050202_Uniqueness_003());
+	}
+}

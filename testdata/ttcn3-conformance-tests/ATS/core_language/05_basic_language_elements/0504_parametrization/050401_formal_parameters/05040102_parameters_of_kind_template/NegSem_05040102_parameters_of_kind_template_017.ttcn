@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that inout formal template parameters cannot have fuzzy modifier
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction h)
+// Only in template parameters can be declared lazy or fuzzy.
+
+module NegSem_05040102_parameters_of_kind_template_017 {
+
+	type component GeneralComp {
+	}
+
+    function f(inout template @fuzzy integer p_int) {
+        p_int := ?;
+    }
+	testcase TC_NegSem_05040102_parameters_of_kind_template_017() runs on GeneralComp {
+        var template integer v_int := 0;
+        f(v_int);
+        log(v_int);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040102_parameters_of_kind_template_017());
+	}
+}

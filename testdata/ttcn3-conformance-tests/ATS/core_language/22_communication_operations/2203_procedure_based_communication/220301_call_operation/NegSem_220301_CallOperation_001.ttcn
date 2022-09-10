@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, Ensure that the IUT correctly handles procedure call operations
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_220301_CallOperation_001 {
+
+
+    type port loopbackPort message {
+        inout integer
+    }
+
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    testcase TC_NegSem_220301_CallOperation_001() runs on GeneralComp {
+
+        messagePort.call(2);   //cannot use call on a message based port
+
+        alt {
+            [] messagePort.receive {
+                setverdict(pass);
+            }
+            [] messagePort.receive {
+                setverdict(fail);
+            }
+        }
+    }
+
+    control{
+        execute(TC_NegSem_220301_CallOperation_001());
+    }
+
+}

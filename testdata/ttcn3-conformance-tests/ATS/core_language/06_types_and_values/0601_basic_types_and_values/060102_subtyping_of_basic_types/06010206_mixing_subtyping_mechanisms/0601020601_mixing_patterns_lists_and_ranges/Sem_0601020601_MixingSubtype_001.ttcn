@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.6.1, Assign values to mixed restricted floats.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0601020601_MixingSubtype_001 {
+    type float lessThanPiAndNaN (-infinity .. 3142E-3, not_a_number);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_0601020601_MixingSubtype_001() runs on GeneralComp {
+        var lessThanPiAndNaN v_f;
+        v_f := 3.14E0;
+        v_f := 0.0;
+        v_f := -4E40;
+        v_f := not_a_number;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_0601020601_MixingSubtype_001());
+    }
+}

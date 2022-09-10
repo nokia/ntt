@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that value list notation can be used for a set of type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0602_TopLevel_010 {
+
+    type component GeneralComp {
+    }
+
+    type set of integer MySetOf;
+
+    testcase TC_Sem_0602_TopLevel_010() runs on GeneralComp {
+
+        var MySetOf v_allSets := {1,2,3};
+
+        if (v_allSets=={1,2,3}) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_010());
+    }
+}

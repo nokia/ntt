@@ -1,0 +1,136 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:7.6.2.1, Verify mapping of complex type where both the base and the
+ **           extending types have the compositor sequence and multiple occurrences
+ **           are allowed.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Pos_07060201_derived_by_extension_005 {
+
+    import from schema_Pos_07060201_derived_by_extension_005 language "XSD" all;
+    // template for EXAMPLE 2: type element e26seqDoubleRecurrence and two records of sequence_list and one sequence_list_1
+    // and following type system shall be generated from xsd file:
+    /*
+        type record E26seqDoubleRecurrence {
+        // fields corresponding to attributes of the base and the extending type
+        // (in alphabetical order)
+        XSD.Integer genderAttrBase optional,
+        XSD.String jobPositionAttrGroup optional,
+        XSD.String unitOfAge optional,
+        // followed by a record of record field containing the fields corresponding to elements of
+        // the base type; the base type is a recurring sequence (see clause
+        // 7.6.6.6 for the
+        // mapping)
+        record of record {
+            XSD.String titleElemBase,
+            XSD.String forenameElemBase,
+            XSD.String surnameElemBase
+        } sequence_list,
+        // the extending sequence is recurring too(see clause
+        // 7.6.6.6 for the
+        // mapping)
+        record of record {
+            G25seq g25seq
+            XSD.Integer ageElemExt,
+        } sequence_list_1
+    }
+    with {
+        variant "name as uncapitalized";
+        variant(sequence_list, sequence_list_1) "untagged";
+        variant (genderAttrBase, jobPositionAttrGroup, unitOfAge) "attribute"
+    }
+      */
+    template E1 m_msg := {
+      genderAttrBase := omit,
+      jobPositionAttrGroup  := omit,
+      unitOfAge := omit,
+      sequence_list := {
+          {
+              titleElemBase := "titleElemBase",
+              forenameElemBase := "forenameElemBase",
+              surnameElemBase := "surnameElemBase"
+          },
+          {
+              titleElemBase := "titleElemBase1",
+              forenameElemBase := "forenameElemBase1",
+              surnameElemBase := "surnameElemBase1"
+          }
+      },
+      sequence_list_1 := {{
+          g25seq :={
+              familyStatusElemInGroup :="familyStatusElemInGroup",
+              spouseElemInGroup := omit
+          },
+          ageElemExt := 1
+      }}
+    }
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference XML file and returns true if they represent the same XML structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the XML file
+     * @param p_referenceXmlFile the XML file
+     * @param p_xsdFileList the list of XSD files
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference XML file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceXmlFile represent the same XML structure
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceXmlFile, FileList p_xsdFileList, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_07060201_derived_by_extension_005() runs on C system C {
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference XML file
+            []    p.check(receive(Raw:?) -> value v_rcv) {
+                log("XML message ", v_rcv);
+                if (matchFile(v_rcv, "Pos_07060201_derived_by_extension_005.xml", { "Pos_07060201_derived_by_extension_005.xsd" }, v_matchError)) {
+                    alt {
+                        // match decoded value to pass test
+                        [] p.receive(m_msg) {
+                            setverdict(pass, "Decoded value matches encoded template and reference XML");
+                        }
+                        [] p.receive {
+                            setverdict(fail, "XML decoding failure");
+                        }
+                    }
+                } else {
+                    setverdict(fail, v_matchError);
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_07060201_derived_by_extension_005(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, null component reference in from clause of trigger operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// No AddressRef shall contain the special value null at the time of the operation.
+
+module NegSem_220203_TriggerOperation_015 {
+
+	type port P message {
+		inout integer;
+        address integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_015() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_comp := null;
+        connect(self:p, self:p);
+        p.send(10);
+        alt {
+            [] p.trigger from v_comp {}
+            [else] {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_015(), 5.0);
+    }
+}

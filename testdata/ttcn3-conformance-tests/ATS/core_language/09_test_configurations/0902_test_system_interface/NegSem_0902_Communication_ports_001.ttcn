@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the IUT correctly handles the assoc. of two port to the same system interface
+ ** @verdict  pass reject
+ ***************************************************/
+//Two comp. ports are connected to the same system interface port (not allowed).
+module NegSem_0902_Communication_ports_001{
+
+    type port loopbackPort message {
+	  inout integer
+		}
+
+	type port MyMessagePortType message {
+	  inout integer
+		}
+
+
+type component GeneralComp
+	{
+		port MyMessagePortType MycomportA, MycomportB
+	}
+
+type component MyTestSystemInterface
+	{
+ 	port loopbackPort messagePort
+	}
+// MyTestSystemInterface is the test system interface
+testcase TC_NegSem_0902_Communication_ports_001() runs on GeneralComp system MyTestSystemInterface {
+// establishing the port connections
+map(mtc:MycomportA, system:messagePort);
+map(mtc:MycomportB, system:messagePort); // not allowed
+
+}
+control{
+    execute(TC_NegSem_0902_Communication_ports_001());
+}
+}

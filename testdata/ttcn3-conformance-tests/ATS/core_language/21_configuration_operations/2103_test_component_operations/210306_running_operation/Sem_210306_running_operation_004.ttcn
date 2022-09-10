@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Verify that any from running returns true if at least one component is running
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// When the any from component array notation is used, the components from the referenced array
+// are iterated over and individually checked for executing currently from innermost to outermost
+// dimension from lowest to highest index for each dimension. The first component to be found
+// executing causes the running operation to succeed.
+module Sem_210306_running_operation_004 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210306_running_operation_004() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i mod 2 == 0) { v_ptc[i].kill; } // kill components on even indices
+			else { v_ptc[i].start(f());} // activate v_ptc
+		}
+        v_isRunning := any from v_ptc.running;
+        if(v_isRunning){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from running operation didn't find running components");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210306_running_operation_004(), 5.0);
+    }
+}

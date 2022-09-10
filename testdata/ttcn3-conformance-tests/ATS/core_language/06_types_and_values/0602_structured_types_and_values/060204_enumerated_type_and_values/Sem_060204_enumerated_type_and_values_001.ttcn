@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, reusing enumerated value identifier in another enumerated type declaration
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// The identifiers of enumerated values shall only be reused within other structured
+// type definitions and shall not be used for identifiers of local or global
+// visibility at the same or a lower level of the same branch of the scope hierarchy
+// (see scope hierarchy in clause 5.2).
+
+module Sem_060204_enumerated_type_and_values_001 {
+
+    type enumerated MyFirstEnumType {
+        Monday, Tuesday, Wednesday, Thursday, Friday
+    };
+    type enumerated MySecondEnumType {
+        Saturday, Sunday, Monday
+    };
+}

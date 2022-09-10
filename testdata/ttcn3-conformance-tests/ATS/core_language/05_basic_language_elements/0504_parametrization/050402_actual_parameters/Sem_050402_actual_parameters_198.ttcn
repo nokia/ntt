@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the the Example 4 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_198 {
+
+    type component GeneralComp {
+	}
+
+    // A function definition with an empty parameter list shall be written as
+    function MyFunction() { setverdict(pass); }
+
+    // A record definition with an empty parameter list shall be written as
+    type record MyRecord { }
+    // and shall be used as
+    template MyRecord Mytemplate := { }
+
+    testcase TC_Sem_050402_actual_parameters_198() runs on GeneralComp {
+        // and shall be called as
+        MyFunction();
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_198());
+	}
+}

@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that default values in formal parameters of modified templates are working as expected
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+ //Restriction a)
+/*In case of templates, template fields or list elements of simple types, union and enumerated types, the
+matching mechanism specified in the modified template is simply replacing its corresponding content in its
+parent.*/
+
+module Sem_1505_ModifiedTemplates_005 {
+
+type component GeneralComp { }
+
+type union MyMessageType {
+	integer field
+}
+
+template MyMessageType m_templateOne := {	//union type
+	field :=2
+}
+
+template MyMessageType m_templateTwo(integer p_intValue := 10) modifies m_templateOne := {
+	field := p_intValue
+}
+
+testcase TC_Sem_1505_ModifiedTemplates_005() runs on GeneralComp {
+	if (match(valueof(m_templateTwo.field) , 10) ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1505_ModifiedTemplates_005());
+}
+
+}

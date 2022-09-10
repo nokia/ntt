@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.2
+ ** @purpose  1:20.2, verify that the timer.running operation cannot be used in alt branch events (in template parameters)
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// c) The evaluation of the event of an alt branch shall not have side effects. To avoid side effects that cause
+// an inconsistency between the actual snapshot and the state of the component or introduce indeterminism
+// in the evaluation of the following alt branches or the re-evaluation of the same alt branch, the restrictions
+// imposed on the contents of functions called from special places (clause 16.1.4) shall apply to expressions
+// occurring in the matching part of an alternative.
+
+module NegSem_2002_TheAltStatement_077 {
+
+    type port MyPort message {
+        inout boolean
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+	template boolean mw_msg (boolean p_par) := (false, p_par);
+
+    testcase TC_NegSem_2002_TheAltStatement_077() runs on GeneralComp system GeneralComp {
+        timer t_tmr := 1.0;
+        map(self:p, system: p);
+        t_tmr.start;
+	    p.send(true);
+	    alt {
+		    [] p.receive(mw_msg(t_tmr.running)) {
+			    setverdict(pass);
+		    }
+	    }
+    }
+
+    control {
+	    execute(TC_NegSem_2002_TheAltStatement_077());
+    }
+}

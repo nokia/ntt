@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that access to ifpresent fields is not allowed.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150603_ReferencingRecordOfAndSetElements_009 {
+
+    type component GeneralComp { }
+
+    type record of integer RoI;
+
+    testcase TC_NegSem_150603_ReferencingRecordOfAndSetElements_009() runs on GeneralComp {
+        var template RoI m_one;
+        var integer v_test;
+
+        m_one := {1 ifpresent,2,?};
+        v_test := valueof(m_one[0]); // shall cause an error due to the presence of ifpresent
+
+        setverdict(fail);
+    }
+
+    control{
+        execute(TC_NegSem_150603_ReferencingRecordOfAndSetElements_009());
+    }
+
+}

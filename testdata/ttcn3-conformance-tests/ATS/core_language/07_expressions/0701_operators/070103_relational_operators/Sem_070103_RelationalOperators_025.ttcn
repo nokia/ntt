@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that the equals operator on sets is evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070103_RelationalOperators_025 {
+
+type component GeneralComp {
+}
+
+ type set IntegerSet {
+  integer a1 optional,
+  integer a2 optional,
+  integer a3 optional
+ };
+
+testcase TC_Sem_070103_RelationalOperators_025() runs on GeneralComp {
+	const IntegerSet c_set := {a1:=0,a2:=omit,a3:=2};
+
+	if ( { a3:=2, a2:=omit, a1:=0 } == c_set ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070103_RelationalOperators_025());
+}
+
+}

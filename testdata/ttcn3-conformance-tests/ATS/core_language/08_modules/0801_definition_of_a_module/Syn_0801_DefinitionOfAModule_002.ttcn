@@ -1,0 +1,10 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.1, Ensure that a module definition with language specification is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_0801_DefinitionOfAModule_002 language "TTCN-3:2005" {
+
+}

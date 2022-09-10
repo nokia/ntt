@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.1, Verify that variant attributes can be overridden
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// A variant attribute overwrites a current variant attribute according to the rules defined
+// in clause 27.1.2;
+
+module Sem_27010201_rules_for_variant_attributes_001 {
+
+    type component GeneralComp {
+	}
+
+	type record MyRecordA {
+	} with { variant "VariantA" }
+
+	type record MyRecordB
+	{
+		MyRecordA field
+	} with { variant "VariantB" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010201_rules_for_variant_attributes_001 () runs on GeneralComp {
+		var RoUC v_var1 := MyRecordB.variant,
+		  v_var2 := MyRecordB.field.variant;
+		if(v_var1[0] == "VariantB" and
+			v_var2[0] == "VariantA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_27010201_rules_for_variant_attributes_001());
+	}
+
+} with { encode "GeneralRule" }

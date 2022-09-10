@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, standalone trigger as a shorthand for alt statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The trigger operation can be used as a stand-alone statement in a behaviour description.
+// In this latter case the receive operation is considered to be shorthand for an alt
+// statement with two alternatives (one alternative expecting the message and another
+// alternative consuming all other messages and repeating the alt statement, see
+// ES 201 873 4 [1]).
+
+module Sem_220203_TriggerOperation_022 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p1, p2;
+	}
+
+    altstep a() runs on GeneralComp {
+        [] p2.receive(integer:?) { setverdict(pass); }
+    }
+
+    testcase TC_Sem_220203_TriggerOperation_022() runs on GeneralComp {
+        activate(a()); // defaults should be processed as a part of alt
+        p1.send(1);
+        p2.send(2);
+        p1.trigger(integer:(10..20)); // no match here, but because the statement is actually an alt statement,
+                      // the default shall be automatically exectuted and accept the message
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_022(), 5.0);
+    }
+}

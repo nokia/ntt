@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.4, Ensure that if a class from one case is a superclass of a class from another case, then the case of the subclass shall be precede the case of the superclass.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010204_SelectClassStatement_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+    //empty class
+    }
+
+    type class MySubClass extends MySuperClass {
+    //empty class
+    }
+
+    testcase TC_NegSem_5010204_SelectClassStatement_001() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create();
+        select class (v_a) {
+            case (MySuperClass) { setverdict(fail); } //not allowed
+            case (MySubClass) { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010204_SelectClassStatement_001());
+    }
+}

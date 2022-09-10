@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'encvalue_o' function works properly in case of encoding a variable to octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+The encvalue_o function encodes a value or template into an octetstring. When the actual parameter that is passed
+to inpar is a template, it shall resolve to a specific value.
+- C.5.5 The encoding to octetstring function
+*/
+
+
+module Sem_160102_predefined_functions_104 {
+
+    type component GeneralComp {
+
+    }
+
+    type record MyPDU {
+    	charstring field1 optional,
+    	integer field2
+    	};
+
+
+
+    testcase TC_Sem_160102_predefined_functions_104 () runs on GeneralComp {
+
+    var template MyPDU v_temp := { "test",5};
+
+    //Encoding:
+    var octetstring v_enc := encvalue_o(v_temp); //encode the record to octetstring
+
+    if (lengthof (v_enc) > 0) {
+          setverdict(pass);
+    } else {
+          setverdict(fail,v_enc);
+    }
+
+   }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_104());
+
+    }
+
+}

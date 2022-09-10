@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that value variable element reference cannot be used as out formal template parameters of functions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal template parameters shall be template variables,
+// formal template parameters or references to elements of template variables or formal template
+// parameters of structured types.
+
+module NegSem_050402_actual_parameters_169 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        integer field1
+    }
+
+    function f_test(out template integer p_val) {
+        p_val := ?;
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_169() runs on GeneralComp {
+        var R v_val := { field1 := 10 };
+        f_test(v_val.field1); // tested parameter passing
+        if (match( { field1 := 0 }, v_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_169());
+	}
+}

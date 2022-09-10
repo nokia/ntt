@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.1
+ ** @purpose  1:7.2, Ensure that the IUT correctly handles field reference decoding
+ ** @verdict  pass reject
+ *****************************************************************/
+
+/* The following requirement is tested:
+In case the string operand is not a universal charstring, the optional parameter shall not be present.
+*/
+
+module NegSem_0703_decoded_field_reference_003 {
+
+type component GeneralComp {
+}
+
+type charstring PduHeader;
+type integer OuterPayloadHeader;
+
+type record PDU {
+		PduHeader header,
+		bitstring outerPayload        // bitstring
+}
+
+type record OuterPayload {
+	 charstring innerPayload
+}
+
+type charstring InnerPayload;
+
+testcase TC_NegSem_0703_decoded_field_reference_003() runs on GeneralComp {
+    // outerPayload content is "test text"
+    var charstring v_testText := "test text";
+    var bitstring v_test := encvalue(v_testText);
+
+    // convert universal charstring (UTF-8)
+	var PDU v_packet := {header:= "header", outerPayload := v_test};
+
+	var InnerPayload v_payload := v_packet.outerPayload => (OuterPayload.innerPayload, "UTF8"); // error: incorrect encoding parameter
+
+	if ( match(v_payload,"test text")) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_0703_decoded_field_reference_003());
+}
+
+}

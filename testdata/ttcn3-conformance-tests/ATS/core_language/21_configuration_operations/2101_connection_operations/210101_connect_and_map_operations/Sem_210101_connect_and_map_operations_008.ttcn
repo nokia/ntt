@@ -1,0 +1,61 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Map operation accepts ports with compatible message type list containing several types
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// c) The map operation (assuming PORT2 is the test system interface port) is allowed if
+// and only if:
+// outlist-PORT1 ⊆ outlist-PORT2 and inlist-PORT2 ⊆ inlist-PORT1.
+//
+// In this test, outlist-PORT1 ⊂ outlist-PORT2 and inlist-PORT2 ⊂ inlist-PORT1
+
+module Sem_210101_connect_and_map_operations_008 {
+	type record R {
+		integer field1,
+		charstring field2
+	}
+
+	type port P1 message {
+		in charstring, bitstring;
+		inout integer;
+		out R;
+	}
+
+	type port P2 message {
+	  out R, integer, boolean;
+	  in integer;
+	}
+
+	type component GeneralComp {
+		port P1 p
+	}
+
+	type component SystemComp {
+		port P2 p;
+	}
+
+	testcase TC_Sem_210101_connect_and_map_operations_008() runs on GeneralComp system SystemComp {
+		// self:p inlist is (integer, charstring, bitstring) and system:p inlist is (integer)
+		// self:p outlist is (integer, R) and system:p outlist is (integer, R, boolean)
+		map(system:p, self:p);
+		if(p.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+	    execute(TC_Sem_210101_connect_and_map_operations_008());
+	}
+}

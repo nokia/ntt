@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout syntax
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/Timer Timeout syntax
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Disallow all timer.timeout
+
+module NegSyn_2306_timer_timeout_007 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_NegSyn_2306_timer_timeout_006() runs on TComp{
+        t_timer.start;
+        all timer.timeout;
+
+    }
+    control{
+
+            execute(TC_NegSyn_2306_timer_timeout_006())
+
+
+    }
+}

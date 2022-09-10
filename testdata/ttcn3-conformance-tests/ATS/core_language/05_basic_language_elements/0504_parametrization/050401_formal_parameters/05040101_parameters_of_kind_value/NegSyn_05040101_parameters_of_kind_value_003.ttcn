@@ -1,0 +1,18 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that template variable definition cannot be parameterized
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction a)
+// Language elements which cannot be parameterized are: const, var, timer, control, record of,
+// set of, enumerated, port, component and subtype definitions, group and import.
+
+module NegSyn_05040101_parameters_of_kind_value_003 {
+
+    function f() {
+	    var template integer c_int(integer p_int) := p_int + 2;
+    }
+}

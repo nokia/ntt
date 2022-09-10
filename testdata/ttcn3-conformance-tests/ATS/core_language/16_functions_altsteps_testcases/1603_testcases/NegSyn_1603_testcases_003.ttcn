@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+module NegSyn_1603_testcases_003 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSyn_1603_testcases_003 (timer p_timer) runs on GeneralComp {
+    setverdict(pass);
+}
+
+control{
+    timer t_timer := 1.0;
+    execute(TC_NegSyn_1603_testcases_003(t_timer)); //testcase parameter must not be timer type
+
+}
+
+}

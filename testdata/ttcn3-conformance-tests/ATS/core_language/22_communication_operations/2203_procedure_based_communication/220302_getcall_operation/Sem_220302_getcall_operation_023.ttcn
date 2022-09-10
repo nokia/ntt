@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.3.2, Verify that getcall with @nodefault modifier works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction o) The @nodefault modifier is allowed only in stand-alone getcall statements.
+
+module Sem_220302_getcall_operation_023 {
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+         @nodefault p.getcall;    // stand-alone getcall with @nodefault
+         setverdict(pass);
+
+	}
+
+	testcase TC_Sem_220302_getcall_operation_023() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		p.call(S:{}, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_220302_getcall_operation_023(), 5.0);
+    }
+}

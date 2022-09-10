@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="Pos_050203_order_of_the_mapping_004__MyNamespace"
+    xmlns:ns="Pos_050203_order_of_the_mapping_004__MyNamespace">
+  <complexType name="MyType1">
+    <sequence>
+		<element name="a" type="integer"/>
+    </sequence>
+  </complexType>
+</schema>

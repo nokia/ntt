@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of any port.check(catch) in case of unsuccessful match inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_085 {
+
+	signature S() exception(integer);
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p1, p2;
+	}
+
+	function f() runs on GeneralComp {
+		p2.getcall;
+		setverdict(pass, "Call received");
+		p2.raise(S, integer:1);
+	}
+
+	testcase TC_Sem_2204_the_check_operation_085() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p1, v_ptc:p1);
+		connect(self:p2, v_ptc:p2);
+		p2.call(S:{}, nowait);
+		v_ptc.start(f());
+        alt
+		{
+        	[] any port.check(catch(S, integer:(100..200))) { setverdict(fail, "Incorrect match"); }
+			[] any port.catch { setverdict(pass, "As expected, the check operation didn't match"); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_085(), 5.0);
+    }
+}

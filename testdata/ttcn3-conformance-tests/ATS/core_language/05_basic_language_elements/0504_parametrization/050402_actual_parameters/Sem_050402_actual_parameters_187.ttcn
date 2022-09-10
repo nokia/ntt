@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that compatible templates can be passed to template parameters with present restriction
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters passed to restricted formal template parameters shall obey
+// the restrictions given in clause 15.8.
+
+module Sem_050402_actual_parameters_187 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (template(present) integer p_val) {
+        if (match(1, p_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_187() runs on GeneralComp {
+        f_test((0..10));
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_187());
+	}
+}

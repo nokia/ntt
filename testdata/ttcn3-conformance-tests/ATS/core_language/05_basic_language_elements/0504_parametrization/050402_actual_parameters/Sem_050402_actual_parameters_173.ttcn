@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that it is possible to use parametrized template with empty parentheses
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The empty brackets for instances of parameterized templates that have only parameters
+// with default values are optional when no actual parameters are provided, i.e. all
+// formal parameters use their default values.
+
+module Sem_050402_actual_parameters_173 {
+
+    type component GeneralComp {
+	}
+
+    template integer mw_int (integer p_val := 10):= (0..p_val);
+
+    testcase TC_Sem_050402_actual_parameters_173() runs on GeneralComp {
+        if (match(5, mw_int())) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_173());
+	}
+}

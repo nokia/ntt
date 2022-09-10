@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted floats.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_007 {
+    type float Float1 (1.0E0..9E0);	//float values between 1 and 9
+    type float Float2 (2.0E1..3.0E1);	//float values between 20 and 30
+    type float Float_1_2 (Float1, Float2);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_007() runs on GeneralComp {
+        var Float_1_2 v_b;
+        v_b := 15.5E0;	//invalid
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_007());
+    }
+}

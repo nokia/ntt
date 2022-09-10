@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, fuzzy variable in @index redirect
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// If a variable referenced in the value, sender or @index clause is a lazy or fuzzy
+// variable, the expression assigned to this variable is equal to the result produced
+// by the trigger operation i.e. later evaluation of the lazy or fuzzy variable does not
+// lead to repeated invocation of the trigger operation.
+
+module Sem_220203_TriggerOperation_028 {
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p[2];
+	}
+
+    testcase TC_Sem_220203_TriggerOperation_028() runs on GeneralComp {
+        var @fuzzy integer v_int;
+        p[1].send(1);
+        p[1].send(2);
+        p[1].send(3);
+        any from p.trigger(integer:?) -> @index value v_int;
+        if (v_int == 1) { // evaluation of @lazy (receive shall not be called again)
+            alt {
+                [] p[1].receive(integer:2) { setverdict(pass); }
+                [] any from p.receive { setverdict(fail); }
+            }
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_028(), 5.0);
+    }
+}

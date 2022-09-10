@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Combined value list and assignment notation not allowed in the same (immediate) context.
+ ** @verdict  pass reject
+ ***************************************************/
+/* The following requirements are tested:
+ * The assignment notation can be used for record, record of, set, setof and union value
+ * notations and for arrays. In this notation each field shall not appear more than once.
+*/
+
+module NegSyn_0602_TopLevel_007 {
+
+    type record of integer MyRecordOfType;
+        type component GeneralComp {
+    }
+
+testcase TC_NegSyn_0602_TopLevel_007() runs on GeneralComp {
+
+      var MyRecordOfType v_RoI := {
+        [0] := 1,
+        [1] := 2,
+        [1] := 3    // error already indexed
+    };
+
+        if ( match(v_RoI, {1,3})) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSyn_0602_TopLevel_007());
+    }
+}

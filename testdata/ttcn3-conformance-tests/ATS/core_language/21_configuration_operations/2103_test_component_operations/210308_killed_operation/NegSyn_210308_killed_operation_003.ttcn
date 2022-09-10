@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Verify that error occurs when using index redirection in all component.killed operation
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction c
+// The index redirection shall only be used when the operation is used on an any from
+// component array construct.
+module NegSyn_210308_killed_operation_003 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 1.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_NegSyn_210308_killed_operation_003() runs on GeneralComp system GeneralComp {
+		var integer v_index;
+        var GeneralComp v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+		alt
+		{
+        	[] all component.killed -> @index value v_index { setverdict(pass); }
+			[else] { setverdict(fail, "The any from killed operation didn't find killed components"); }
+		}
+    }
+
+    control {
+        execute(TC_NegSyn_210308_killed_operation_003(), 5.0);
+    }
+}

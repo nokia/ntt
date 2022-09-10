@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3, wrong index type applied to a record of value on the left hand side of an assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Implicit rule, formal requirement requested in CR 6646 (resolution expected
+// in TTCN-3:2014)
+module NegSem_060203_records_and_sets_of_single_types_009 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_NegSem_060203_records_and_sets_of_single_types_009() runs on GeneralComp {
+
+		var RoI v_rec := { 0, 1, 2 };
+		v_rec["0"] := 10; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060203_records_and_sets_of_single_types_009());
+	}
+
+}

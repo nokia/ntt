@@ -1,0 +1,17 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(value) is rejected with length restrictions.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1508_TemplateRestrictions_024 {
+
+type record ExampleType {
+	charstring b
+}
+
+template(value) ExampleType exampleOmitAny := {"abcde" ifpresent};
+
+
+}

@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:B.1.4.1, Verify that a length attribute attached to AnyElementsOrNone restricts the number of members
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If a length restriction is added to an AnyElementsOrNone matching mechanism, it constrains the number of elements matched
+// by this matching mechanism. The minimum and maximum number of elements matched by the AnyElementsOrNone matching mechanism
+// is equal to the lower bound and upper bound of the length restriction.
+
+module Sem_B010401_length_restrictions_005 {
+    type record of integer RoI;
+
+    type component GeneralComp {
+    }
+
+    template RoI mw_test := { 1, * length(2..5) }
+
+    testcase TC_Sem_B010401_length_restrictions_005() runs on GeneralComp {
+        var RoI v_roi1 := { 1, 2 },
+            v_roi2 := { 1, 2, 3, 4 },
+            v_roi3 := { 1, 2, 3, 4, 5, 6 },
+            v_roi4 := { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+        if (not match(v_roi1, mw_test) and
+          match(v_roi2, mw_test) and
+          match(v_roi3, mw_test) and
+          not match(v_roi4, mw_test)) {
+          setverdict(pass);
+      } else {
+          setverdict(fail);
+      }
+}
+
+control{
+    execute(TC_Sem_B010401_length_restrictions_005());
+}
+
+}

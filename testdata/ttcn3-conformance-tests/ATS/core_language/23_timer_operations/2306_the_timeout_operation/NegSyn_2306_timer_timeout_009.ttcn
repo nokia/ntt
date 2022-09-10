@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout raise error with @nodefault modifier
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+// The following requirements are tested:
+// Restriction g) The @nodefault modifier is allowed only in stand-alone timeout statements.
+
+module NegSyn_2306_timer_timeout_009 {
+    type component TComp{
+        timer t_unstarted_timer;
+        timer t_started_timer := 2.0;
+    }
+    testcase TC_NegSyn_2306_timer_timeout_009() runs on TComp{
+        t_started_timer.start;
+        alt
+        {
+            [] @nodefault t_unstarted_timer.timeout {    // error: @nodefault modifier not allowed here
+                setverdict(pass);
+            }
+            [] t_started_timer.timeout {
+                setverdict(pass);
+            }
+        }
+    }
+    control{
+            //execute(TC_NegSyn_2306_timer_timeout_009())
+    }
+}

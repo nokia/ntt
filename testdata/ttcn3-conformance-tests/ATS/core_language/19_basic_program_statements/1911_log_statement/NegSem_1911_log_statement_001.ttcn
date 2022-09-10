@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.11, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1911_log_statement_001 {
+
+type component GeneralComp {
+}
+
+function f_no_return(integer p_arg) {
+ var integer v_f;
+ v_f:=p_arg;
+}
+
+testcase TC_NegSem_1911_log_statement_001 () runs on GeneralComp{
+ var integer v_i;
+
+ for(v_i:=1; v_i<10; v_i:= v_i+1) {
+  log("Function without return value: ", f_no_return(v_i) );	//not allowed to use function without return value
+ }
+
+}
+
+
+control{
+
+    execute(TC_NegSem_1911_log_statement_001());
+
+}
+
+}

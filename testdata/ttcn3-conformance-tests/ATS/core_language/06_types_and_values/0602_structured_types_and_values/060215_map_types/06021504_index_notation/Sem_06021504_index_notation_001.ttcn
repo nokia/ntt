@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that a new key can be used as an index on the left hand side of an assignment
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When it is used at the left-hand side, only the value associated with the index key is changed,
+// values with other keys remain unchanged.
+
+module Sem_06021504_index_notation_001 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021504_index_notation_001() runs on C {
+		var TMap1 v_map;
+		v_map["test"] := 1;
+		v_map["xyz"] := 5;
+		if (v_map["test"] == 1 and v_map["xyz"] == 5) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021504_index_notation_001());
+	}
+}

@@ -1,0 +1,21 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that there's an error if no value is assigned in a local non-parameterized template declaration
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Both global and local templates are initialized at the place of their
+// declaration. This means, all template fields which are not affected by
+// parameterization shall receive a value or matching mechanism. Template
+// fields affected by parameterization are initialized at the time of
+// template use.
+module NegSyn_1503_GlobalAndLocalTemplates_002
+{
+	type component GeneralComp {
+	}
+	testcase TC_NegSyn_1503_GlobalAndLocalTemplates_002() runs on GeneralComp {
+		template integer t;
+	}
+}

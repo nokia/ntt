@@ -1,0 +1,55 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.12, Ensure that address type cannot be used in a to part of sender operation with connected ports
+ ** @verdict  pass reject
+ ***************************************************/
+
+/* The following requirements are tested:
+ * Restrictions c)	The address data type shall not be used in the to,
+ * from and sender parts of receive and send operations of connected ports,
+ * i.e, ports used for the communication among test components.*/
+
+
+module NegSem_060212_AddressingEntitiesInsideSut_004 {
+
+    type integer MyAddress;
+    type integer MyMessType;
+    type integer address;
+
+
+    type port PortType message {
+        address MyAddress;
+        inout MyMessType;
+    }
+
+    type component TestCaseComp {
+        port PortType p1;
+        port PortType p2;
+    }
+
+		function CheckConnected() runs on TestCaseComp
+	{
+		if(p1.checkstate("Connected")) {
+	        setverdict(pass,"Connected");
+        } else {
+			setverdict(fail,"Not connected");
+		}
+	}
+
+    testcase TC_NegSem_060212_AddressingEntitiesInsideSut_004() runs on TestCaseComp system TestCaseComp {
+
+        var PortType.address MySUTentity := 1;
+
+
+        connect(mtc:p1, mtc:p2);
+
+        p1.send(MyMessType: 1) to MySUTentity;    //error: address type is allowed in to part send operation
+
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_060212_AddressingEntitiesInsideSut_004());
+    }
+}

@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that a template(value) can be assigned to a template(present) variable.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1508_TemplateRestrictions_008 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer a,
+	boolean b optional
+}
+
+template(value) ExampleType exampleValue := {1, true};
+
+testcase TC_Sem_1508_TemplateRestrictions_008() runs on GeneralComp {
+	var template(present) ExampleType v_present;
+
+	v_present := exampleValue;
+
+	if (match(valueof(v_present.a), 1) and
+	    match(valueof(v_present.b), true)
+	   ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_008());
+}
+
+
+}

@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Ensure that disconnect operation with two parameters works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The disconnect ... operations perform the disconnection (of previously connected)
+// ports of test components...
+
+module Sem_210102_disconnect_and_unmap_operations_001{
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+	function checkConnected(boolean p_stateActive) runs on GeneralComp
+	{
+		if(p.checkstate("Connected") xor not p_stateActive) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+    testcase TC_Sem_210102_disconnect_and_unmap_operations_001() runs on GeneralComp system GeneralComp {
+        // components are created alive so that their connections are not destroyed when behaviour stops
+		var GeneralComp v_ptc1 := GeneralComp.create alive,
+			v_ptc2 := GeneralComp.create alive,
+			v_ptc3 := GeneralComp.create alive;
+
+		connect(v_ptc1:p, v_ptc2:p);
+		connect(v_ptc1:p, v_ptc3:p);
+
+		disconnect(v_ptc1:p, v_ptc2:p);
+
+		// verity that ports are really disconnected
+        v_ptc1.start(checkConnected(true)); // still connectected to v_ptc3:p
+        v_ptc2.start(checkConnected(false)); // no active connection
+		all component.done;
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_and_unmap_operations_001());
+    }
+}
+

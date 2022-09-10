@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign and read universal charstring using USI like notation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ The UCS sequence identifier-like (USI-like) notation using their short identifiers of code point. The USI-like notation is composed of the keyword char followed by parentheses. The
+parentheses enclose a comma-separated list of short identifiers . Each short identifier represents a single
+character and it shall be composed of a letter U or u followed by an optional "+" PLUS SIGN character,
+followed by 1..8 hexadecimal digits.
+*/
+
+module Sem_060101_TopLevel_007 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_060101_TopLevel_007() runs on GeneralComp {
+        var universal charstring v_a  :=  char(U0041);  //USI notation for character "A"
+        var universal charstring v_b  :=  char(U0171);  //USI notation for character "ű"
+        var universal charstring v_c  :=  char(U41);    //USI notation for character "A" without leading zeroes
+        var universal charstring v_d  :=  char(U+171,U41);  //USI notation for character "ű" and "A"  without leading zeroes and + sign notation
+
+
+
+    	if (match(v_a,"A") and
+            match(v_b,"ű") and
+            match(v_c,"A") and
+            match(v_d,"űA"))
+        {
+    		setverdict(pass,"v_a:",v_a, "v_b:",v_b, "v_c:",v_c,"v_d:",v_d);
+    	}
+    	else {
+    		setverdict(fail,"v_a:",v_a, "v_b:",v_b, "v_c:",v_c,"v_d:",v_d);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_060101_TopLevel_007());
+    }
+}

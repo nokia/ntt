@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.6, Ensure that if the class the object is being cast to is not in the set of superclasses or the concrete class of the object, the cast operation shall result in an error.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010206_Casting_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        //empty class
+    }
+
+    type class MySubClass extends MySuperClass {
+        //empty class
+    }
+
+    type class MyOtherClass {
+        const integer x:= 111;
+    }
+
+    testcase TC_NegSem_5010206_Casting_001 () runs on GeneralComp {
+        var MyOtherClass v_a := MyOtherClass.create();
+        var MySubClass v_b := v_a => MySubClass; //not allowed
+        if (v_b of MySubClass) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010206_Casting_001());
+    }
+}

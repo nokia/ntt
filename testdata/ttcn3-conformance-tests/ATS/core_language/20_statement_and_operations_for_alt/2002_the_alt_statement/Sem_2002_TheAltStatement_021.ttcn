@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the alt-statement supports local definitions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * constant as local definition
+ **/
+module Sem_2002_TheAltStatement_021 {
+
+	type port loopbackPort message {
+		inout charstring
+	}
+
+	type component GeneralComp {
+		port loopbackPort p;
+	}
+
+	template charstring m_test := "abc";
+
+	testcase TC_Sem_2002_TheAltStatement_021() runs on GeneralComp {
+		p.send(m_test);
+	    timer t_timer := 3.0;
+	    t_timer.start;
+		alt {
+	        const float c_i := 5.0;    // local definition of constant
+			[] p.receive(m_test) {
+	            repeat;
+			}
+	        [] t_timer.timeout {
+	            if(match(c_i, 5.0)){
+			        setverdict(pass);
+	            }
+	        }
+		}
+	}
+
+	control {
+		execute(TC_Sem_2002_TheAltStatement_021());
+	}
+
+}

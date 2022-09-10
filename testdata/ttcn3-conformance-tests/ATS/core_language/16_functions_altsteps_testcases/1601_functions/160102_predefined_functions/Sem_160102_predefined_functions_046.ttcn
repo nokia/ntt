@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521 and TTF T014)
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * this test investigates that IUT correctly evaluates predefined function any2unistr,
+ * the invalue parameter of the any2unistr function may be uninitialized or partially initialized;
+*/
+
+module Sem_160102_predefined_functions_046 {
+
+        type record MyRec {
+        integer field1,
+        boolean field2,
+        integer field3 optional
+    };
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_046 () runs on GeneralComp {
+        var template MyRec v_4 := {1,false,-}; // record containing integer, boolean and optional elements
+        // record containing integer, boolean and optional elements
+        // NOTE: different tools might use different whitespace formats
+        if(match(any2unistr(v_4), pattern "\s#(){\s#()field1\s#():=\s#()1\s#(),\s#()field2\s#():=\s#()false\s#(),\s#()field3\s#():=\s#()((UNINITIALIZED)|\-)\s#()}\s#()" )) {
+            setverdict(pass,"Result: ",any2unistr(v_4));
+        } else {
+            setverdict(fail,"Result is: ",any2unistr(v_4), " Expected:{ field1 := 1, field2 := false, field3 := UNINITIALIZED }");
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_046());
+    }
+}

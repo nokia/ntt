@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.12, Ensure that the identifier of the nested class can be used without dotted notation.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010112_ConstructorInvocation_004 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class Parent {
+    	var charstring v_name;
+
+		type class Child {
+
+			public function get_parent_name()  return charstring {
+				return v_name;
+			}
+		}
+
+		public function create_child() return Parent.Child {
+			var Child v_child := Child.create();
+			return v_child;
+		}
+    }
+
+    testcase TC_Sem_5010112_ConstructorInvocation_004 () runs on GeneralComp {
+    	var Parent v_parent := Parent.create("parent");
+    	var Parent.Child v_child := v_parent.create_child();
+
+		if (v_child.get_parent_name() == "parent") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_5010112_ConstructorInvocation_004());
+    }
+}

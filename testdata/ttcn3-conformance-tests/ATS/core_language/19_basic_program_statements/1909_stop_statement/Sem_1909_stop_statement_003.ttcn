@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.9, stop statement in a function called from a PTC
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// When invoked in a test case, altstep or function that are executed on a test
+// component, it terminates the relevant test component.
+
+module Sem_1909_stop_statement_003 {
+
+    type component GeneralComp {
+    }
+
+    function f_stop() runs on GeneralComp {
+        setverdict(pass);
+        stop;
+    }
+
+    function f_ptc() runs on GeneralComp {
+        f_stop();
+        setverdict(fail);
+    }
+
+    testcase TC_Sem_1909_stop_statement_003 () runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.start(f_ptc());
+        v_ptc.done;
+    }
+
+
+    control {
+        execute(TC_Sem_1909_stop_statement_003());
+    }
+
+}

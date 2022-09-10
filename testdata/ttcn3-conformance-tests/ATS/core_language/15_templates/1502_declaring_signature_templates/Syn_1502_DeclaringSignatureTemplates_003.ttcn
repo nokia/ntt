@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.2, Ensure that the basic operations call and getreply are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1502_DeclaringSignatureTemplates_003 {
+
+    type port MyProcedurePortType procedure {
+        inout p_Syn_1502_DeclaringSignatureTemplates_003;
+    }
+
+    type component GeneralComp {
+        port MyProcedurePortType pt_myPort;
+    }
+
+    signature p_Syn_1502_DeclaringSignatureTemplates_003(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+    template p_Syn_1502_DeclaringSignatureTemplates_003 m_myTemplate := {
+        p_par1 := 1,
+        p_par2 := 2,
+        p_par3 := 3
+    }
+
+    template p_Syn_1502_DeclaringSignatureTemplates_003 mw_myTemplate := {
+        p_par1 := 1,
+        p_par2 := ?,
+        p_par3 := ?
+    }
+
+    testcase TC_Syn_1502_DeclaringSignatureTemplates_003() runs on GeneralComp {
+        pt_myPort.call(p_Syn_1502_DeclaringSignatureTemplates_003:m_myTemplate, nowait);
+        pt_myPort.getreply(p_Syn_1502_DeclaringSignatureTemplates_003:m_myTemplate);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Syn_1502_DeclaringSignatureTemplates_003());
+    }
+
+}

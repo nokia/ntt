@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_070111_nillable_004">
+   <foo>1</foo>
+   <bar>abc</bar>
+</ns:MyType>

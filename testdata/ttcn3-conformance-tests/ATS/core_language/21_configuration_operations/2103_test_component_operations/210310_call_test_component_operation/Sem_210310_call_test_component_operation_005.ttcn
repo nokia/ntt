@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with catch timeout
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// If the started behaviour does not terminate in the given timeout duration and a catch timout
+// clause is added to the call operation, the called component is implicitly stopped and
+// the StatementBlock of the catch timeout clause is executed before the call operation terminates.
+
+module Sem_210310_call_test_component_operation_005 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+	    timer t := 3.0;
+		t.start;
+		t.timeout;
+		setverdict(fail); // call timeout should occur before this
+	}
+
+    testcase TC_Sem_210310_call_test_component_operation_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var boolean v_timeout := false;
+        v_ptc.call(f(), 1.0) catch(timeout) {
+		    v_timeout := true;
+		}
+		if (v_timeout) {
+		    setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_210310_call_test_component_operation_005(), 5.0);
+    }
+}

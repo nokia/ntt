@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that empty actual parameter list can be used for functions with no parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If the formal parameter list of TTCN-3 objects function, testcase, signature,
+// altstep or external function is empty, then the empty parentheses shall be
+// included both in the declaration and in the invocation of that object. In all
+// other cases the empty parentheses shall be omitted.
+
+module Sem_050402_actual_parameters_189 {
+
+    type component GeneralComp {
+	}
+
+    function f_test () {
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_050402_actual_parameters_189() runs on GeneralComp {
+        f_test();
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_189());
+	}
+}
