@@ -10,7 +10,7 @@ package span_test
 import (
 	"testing"
 
-	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/lsp/span"
 	"github.com/stretchr/testify/assert"
 )
 

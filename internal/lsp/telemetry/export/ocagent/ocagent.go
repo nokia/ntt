@@ -18,10 +18,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nokia/ntt/internal/telemetry"
-	"github.com/nokia/ntt/internal/telemetry/export"
-	"github.com/nokia/ntt/internal/telemetry/export/ocagent/wire"
-	"github.com/nokia/ntt/internal/telemetry/tag"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry/export"
+	"github.com/nokia/ntt/internal/lsp/telemetry/export/ocagent/wire"
+	"github.com/nokia/ntt/internal/lsp/telemetry/tag"
 )
 
 type Config struct {

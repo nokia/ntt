@@ -12,8 +12,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/nokia/ntt/internal/telemetry"
-	"github.com/nokia/ntt/internal/telemetry/metric"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry/metric"
 )
 
 func New() *Exporter {

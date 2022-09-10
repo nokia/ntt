@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	tellog "github.com/nokia/ntt/internal/telemetry/log"
-	"github.com/nokia/ntt/internal/telemetry/tag"
+	tellog "github.com/nokia/ntt/internal/lsp/telemetry/log"
+	"github.com/nokia/ntt/internal/lsp/telemetry/tag"
 )
 
 func init() {

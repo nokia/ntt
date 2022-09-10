@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nokia/ntt/internal/telemetry/unit"
+	"github.com/nokia/ntt/internal/lsp/telemetry/unit"
 )
 
 // Int64Measure is used to record integer values.

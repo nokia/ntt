@@ -10,10 +10,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/nokia/ntt/internal/telemetry"
-	"github.com/nokia/ntt/internal/telemetry/export"
-	"github.com/nokia/ntt/internal/telemetry/stats"
-	"github.com/nokia/ntt/internal/telemetry/tag"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry/export"
+	"github.com/nokia/ntt/internal/lsp/telemetry/stats"
+	"github.com/nokia/ntt/internal/lsp/telemetry/tag"
 )
 
 // Scalar represents the construction information for a scalar metric.

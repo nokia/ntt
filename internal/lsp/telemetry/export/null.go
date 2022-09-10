@@ -7,7 +7,7 @@ package export
 import (
 	"context"
 
-	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
 )
 
 // Null returns an observer that does nothing.

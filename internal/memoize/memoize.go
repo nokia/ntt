@@ -21,7 +21,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/nokia/ntt/internal/xcontext"
+	"github.com/nokia/ntt/internal/lsp/xcontext"
 )
 
 // Store binds keys to functions, returning handles that can be used to access
