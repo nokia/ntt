@@ -38,6 +38,7 @@ type JobError struct {
 func (e *JobError) Error() string {
 	return e.Err.Error()
 }
+
 func (e *JobError) Unwrap() error {
 	return e.Err
 }
