@@ -3,91 +3,83 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/spf13/cobra"
 )
 
 var (
-	rootCmd = &cobra.Command{
-		Use:   "ttcn3c",
-		Short: "ttcn3c parses TTCN-3 files and generates output based on the options given",
-		RunE:  run,
+	CompileCommand = &cobra.Command{
+		Use:   "compile",
+		Short: "Compile TTCN-3 sources and generate output for other tools",
+		Long:  `Compile TTCN-3 sources and generate output for other tools.`,
+
+		RunE: compile,
 	}
 
 	format string
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&format, "generator", "G", "stdout", "generator to use (default stdout)")
+	CompileCommand.Flags().StringVarP(&format, "generator", "G", "stdout", "generator to use (default stdout)")
 }
 
-func main() {
-	if err := rootCmd.Execute(); err != nil {
-		fatal(err)
-	}
-}
-
-func fatal(err error) {
-	fmt.Fprintln(os.Stderr, "ttcn3c: ", err.Error())
-	os.Exit(1)
-}
-
-func run(cmd *cobra.Command, args []string) error {
-
-	conf, err := project.Open(args...)
+func compile(cmd *cobra.Command, args []string) error {
+	srcs, err := fs.TTCN3Files(Project.Sources...)
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
-	srcs, err := fs.TTCN3Files(conf.Sources...)
+	imports, err := fs.TTCN3Files(Project.Imports...)
 	if err != nil {
-		fatal(err)
-	}
-
-	imports, err := fs.TTCN3Files(conf.Imports...)
-	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	files := append(srcs, imports...)
 
-	name := fmt.Sprintf("ttcn3c-gen-%s", format)
-	generator, err := exec.LookPath(name)
-	if err != nil {
-		fatal(fmt.Errorf("could not find generator %q", name))
+	if format == "stdout" {
+		writeSource(os.Stdout, files...)
+		return nil
 	}
 
+	generator, err := exec.LookPath(fmt.Sprintf("ntt-gen-%s", format))
+	if err != nil {
+		return fmt.Errorf("could not find generator %q", format)
+	}
 	proc := exec.Command(generator)
 	proc.Stdout = os.Stdout
 	proc.Stderr = os.Stderr
 	stdin, err := proc.StdinPipe()
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	go func() {
 		defer stdin.Close()
-		for _, file := range files {
-			src := buildSource(file)
-			b, err := json.Marshal(src)
-			if err != nil {
-				fatal(err)
-			}
-			stdin.Write(b)
-		}
+		writeSource(stdin, files...)
 	}()
 
 	if err := proc.Run(); err != nil {
-		fatal(err)
+		return err
 	}
 	return nil
+}
+
+func writeSource(w io.Writer, files ...string) {
+	for _, file := range files {
+		src := buildSource(file)
+		b, err := json.Marshal(src)
+		if err != nil {
+			fatal(err)
+		}
+		w.Write(b)
+	}
 }
 
 func buildSource(file string) ttcn3.Source {

@@ -50,7 +50,7 @@ var (
 			}
 
 			// Skip opening the project if we're running a custom command or version.
-			if cmd.Use == "ntt" || cmd.Use == "version" {
+			if cmd.Use == "ntt" || cmd.Use == "version" || cmd.Use == "stdout" {
 				// first arg is either an external subkommand of the form
 				// k3-Arg[0] or ntt-Arg[0] or unknown
 				return nil
@@ -134,6 +134,7 @@ func init() {
 	root.AddCommand(ReportCommand)
 	root.AddCommand(BuildCommand)
 	root.AddCommand(RunCommand)
+	root.AddCommand(CompileCommand)
 
 	ShowCommand.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 }
