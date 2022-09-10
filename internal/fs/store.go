@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/nokia/ntt/internal/cache"
-	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/lsp/span"
 )
 
 // A Store holds all open files.

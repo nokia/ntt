@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
 )
 
 // LogWriter returns an observer that logs events to the supplied writer.

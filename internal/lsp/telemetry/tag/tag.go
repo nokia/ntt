@@ -11,8 +11,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/nokia/ntt/internal/telemetry"
-	"github.com/nokia/ntt/internal/telemetry/export"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry/export"
 )
 
 //TODO: Do we need to do something more efficient than just store tags

@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
-	"github.com/nokia/ntt/internal/xcontext"
+	"github.com/nokia/ntt/internal/lsp/xcontext"
 	errors "golang.org/x/xerrors"
 )
 

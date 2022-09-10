@@ -6,7 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/lsp/span"
 )
 
 var store = Store{}

@@ -7,7 +7,7 @@ package export
 import (
 	"context"
 
-	"github.com/nokia/ntt/internal/telemetry"
+	"github.com/nokia/ntt/internal/lsp/telemetry"
 )
 
 // Multi returns an exporter that invokes all the exporters given to it in order.
