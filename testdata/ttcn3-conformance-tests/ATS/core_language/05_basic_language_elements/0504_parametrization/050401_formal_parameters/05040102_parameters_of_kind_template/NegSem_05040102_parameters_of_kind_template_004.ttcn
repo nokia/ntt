@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that template definitions cannot contain inout template formal parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction b)
+// Formal template parameters of templates ... shall always be in parameters.
+
+module NegSem_05040102_parameters_of_kind_template_004 {
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+    function f(inout template integer p_int) return template integer {
+        p_int := ?;
+        return p_int;
+    }
+
+    template R m_t(inout template integer p_int) := {
+        field1 := 0,
+        field2 := f(p_int)
+    }
+
+	testcase TC_NegSem_05040102_parameters_of_kind_template_004() runs on GeneralComp {
+        var template integer v_int := 1;
+        log(m_t(v_int));
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040102_parameters_of_kind_template_004());
+	}
+}

@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, ensure that the two dimensional array type referencing is correctly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060207_arrays_013 {
+
+// The following requirement is tested:
+// Individual elements of multi-dimensional arrays can be accessed by repeated use of
+// the index notation.
+// For assigning values to multi-dimensional arrays, each dimension that is assigned
+// shall resolve to a set of values enclosed in curly braces.
+
+ type component GeneralComp {
+ }
+
+
+ type integer MyArrayType1[2][3] (1 .. 10);
+
+
+testcase TC_Sem_060207_arrays_013() runs on GeneralComp {
+
+  var MyArrayType1 v_array1 := {{8, 10, 9},
+                                {2, 3, 4}};
+
+  if (v_array1[1][1]==3) {
+    setverdict(pass);
+  }
+  else {
+    setverdict(fail);
+  }
+
+}
+
+control {
+    execute(TC_Sem_060207_arrays_013());
+}
+
+}

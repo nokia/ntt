@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of octetstring types works as expected  (matching patterns in quotation).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_011 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_011() runs on GeneralComp {
+    var template octetstring v_myString1 := 'ABCC'O & 'DD*'O & 'EE?FF'O;
+    if (match('ABCCDD22EE11FF'O, v_myString1)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_011());
+}
+
+}

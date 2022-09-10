@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that opreation check occurs error if non port type is used
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction i) The ObjectReference shall be of a port type.
+
+module NegSem_2204_the_check_operation_006 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+        var anytype p2;
+	}
+
+	testcase TC_NegSem_2204_the_check_operation_006() runs on GeneralComp {
+		p.send(integer:1);
+        alt
+		{
+        	[] p2.check(receive) { // error: non port type
+                setverdict(pass, "Check operation successful");
+            }
+		}
+		p.receive;
+		setverdict(pass, "Message still on the top of the queue");
+    }
+
+    control {
+        execute(TC_NegSem_2204_the_check_operation_006(), 5.0);
+    }
+}

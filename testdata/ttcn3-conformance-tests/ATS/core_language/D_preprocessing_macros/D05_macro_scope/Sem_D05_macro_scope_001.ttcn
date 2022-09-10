@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 451 (updated by STF 521)
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that __SCOPE__ replaces the actual higher basic unit
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// __SCOPE__ replaces the actual higher basic unit (name of the test component)
+module Sem_D05_macro_scope_001 {
+	type component GeneralComp {
+		const charstring MyConst := __SCOPE__;
+	}
+
+	testcase TC_Sem_D05_macro_scope_001()
+		runs on GeneralComp system GeneralComp {
+
+
+		if (match(MyConst, "GeneralComp")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+	control {
+		execute(TC_Sem_D05_macro_scope_001());
+	}
+}

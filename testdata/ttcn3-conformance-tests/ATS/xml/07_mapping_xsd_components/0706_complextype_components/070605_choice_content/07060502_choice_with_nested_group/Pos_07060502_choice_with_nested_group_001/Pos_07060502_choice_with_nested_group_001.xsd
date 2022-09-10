@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060502_choice_with_nested_group_001"
+  xmlns:ns="schema:Pos_07060502_choice_with_nested_group_001">
+  <group name="Group1">
+    <sequence>
+      <element name="foo" type="string"/>
+      <element name="bar" type="string"/>
+    </sequence>
+  </group>
+  <element name="MyType">
+    <complexType>
+      <choice>
+        <group ref="ns:Group1"/>
+        <element name="ding" type="string"/>
+      </choice>
+	</complexType>
+  </element>
+</schema>

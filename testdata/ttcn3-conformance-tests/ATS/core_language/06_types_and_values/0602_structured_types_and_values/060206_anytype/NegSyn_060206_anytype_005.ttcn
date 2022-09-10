@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that timer type not allowed for anytype
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+/*
+ * The definition of the term known types is given in clause ,
+ * i.e. the anytype shall comprise all the known data types
+ * but not the port, component, default and timer types.
+ * */
+
+module NegSyn_060206_anytype_005 {
+
+type component MyComp{
+}
+
+type component GeneralComp extends MyComp {
+
+	var anytype c;
+
+}
+
+
+testcase TC_NegSyn_060206_anytype_005() runs on GeneralComp {
+
+
+c.timer := 10.0;  // timer type is not allowed with anytype.
+
+
+}
+
+control {
+    execute(TC_NegSyn_060206_anytype_005());
+}
+
+}

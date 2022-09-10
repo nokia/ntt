@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that a class extend an other class.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50101_top_level_007 "TTCN-3:2018 Object-Oriented" {
+
+type component GeneralComp{
+}
+
+public type class t_class_superclass {
+    const integer c_i := 15;
+
+    public function get_ci() return integer {
+        return this.c_i;
+    }
+}
+
+public type class t_class_subclass extends t_class_superclass {
+}
+
+testcase TC_Sem_50101_top_level_007() runs on GeneralComp {
+    var t_class_subclass v_a := t_class_subclass.create();
+    if (v_a.get_ci() == 15) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control {
+    execute(TC_Sem_50101_top_level_007());
+}
+
+}

@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that only 1:1 connection between component port and TSI are allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*NOTE: see Figure 7(d): MyCompA has a port (p1).
+ * ERROR: TSI have two ports p1 and p2. GeneralComp port S1 can not be connected to both p1 and p2.
+ * */
+
+module NegSem_0901_Communication_ports_006 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P S1;
+    }
+
+    type component MyComp
+    {
+        port P p1, p2;
+    }
+
+    testcase TC_NegSem_0901_Communication_ports_006() runs on GeneralComp system GeneralComp {
+
+// Creating test component:
+    var MyComp MycompA;
+    MycompA := MyComp.create;
+
+// make the connections between ports:
+    connect(self:S1,MycompA:p1);
+    connect(self:S1,MycompA:p2);     //not allowed, since p1 is already connected to S1
+
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0901_Communication_ports_006());
+    }
+}
+

@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.1, unknown union alternative in extended type reference
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Alternatives of a union type shall be referenced by the dot notation
+// TypeIdOrExpression.AlternativeId, where TypeIdOrExpression resolves to the name
+// of a union type or an expression of a union type such as variable, formal
+// parameter, module parameter, constant, template, or function invocation.
+// AlternativeId shall resolve to the name of an alternative in the union type.
+
+module NegSem_06020501_referencing_fields_of_union_type_002 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		charstring option2
+	}
+
+    type U.option3 UnionItem;
+
+    testcase TC_NegSem_06020501_referencing_fields_of_union_type_002() runs on GeneralComp {
+		var UnionItem v_val := 1;
+        if (v_val == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_06020501_referencing_fields_of_union_type_002());
+	}
+}

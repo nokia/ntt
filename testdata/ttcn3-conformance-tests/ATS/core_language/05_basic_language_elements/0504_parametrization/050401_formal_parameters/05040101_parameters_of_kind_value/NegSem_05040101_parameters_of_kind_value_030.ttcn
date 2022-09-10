@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Verify that templates cannot contain component parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// m) Only function, altstep and testcase definitions may have formal parameters of a
+//    component type or of a type that contains a direct or indirect element or field of a component type.
+
+module NegSem_05040101_parameters_of_kind_value_030 {
+
+    type port P message {
+        inout integer
+    }
+    type component C {
+        port P p;
+    }
+
+    template boolean m_msg(C p_component) := true;
+
+    function fun_start() runs on C {
+        setverdict(pass);
+    }
+
+    testcase TC_NegSem_05040101_parameters_of_kind_value_030() runs on C system C {
+        C myComponentRef;
+		log(m_msg(myComponentRef.start(fun_start())));
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040101_parameters_of_kind_value_030());
+    }
+}

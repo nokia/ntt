@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.4, Ensure that private definitions are not made visible by friend declarations (for a constant sample definition).
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_080204_DefinitionOfFriendModules_002 {
+
+import from NegSem_080204_DefinitionOfFriendModules_002_import all;
+
+type component GeneralComp {}
+
+testcase TC_NegSem_080204_DefinitionOfFriendModules_002() runs on GeneralComp {
+	if (c_myconst == 32532) { // c_myconst shall not be visible. The definition is private even though the module is a friend.
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_080204_DefinitionOfFriendModules_002());
+}
+}
+
+module NegSem_080204_DefinitionOfFriendModules_002_import {
+	friend module NegSem_080204_DefinitionOfFriendModules_001;
+
+	private const integer c_myconst := 32532;
+}

@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, Ensure that Each user-assigned integer number shall be distinct within a single enumerated type, all ranges of
+all the values lists shall be disjoint and shall not include any of the used single integer values.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+//The following requirement is tested:
+/* user-assigned integer number shall be distinct within a single enumerated type, all ranges of
+ * all the values lists shall be disjoint and shall not include any of the used single integer values.
+ * */
+
+module Sem_060204_enumerated_type_and_values_009 {
+
+    type component GeneralComp {
+	}
+
+    type enumerated EDays {
+        Monday(1), Tuesday(2, 4..255)
+    };
+    // note:  Monday(1), Tuesday(2), Wednesday(3), Thursday(28), Friday(255)
+
+    testcase TC_Sem_060204_enumerated_type_and_values_009() runs on GeneralComp {
+        var EDays v_day0 := Tuesday(5);
+
+		if (not match(v_day0, Tuesday((6..10), 15, (20..225)))){
+            setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060204_enumerated_type_and_values_009());
+	}
+}

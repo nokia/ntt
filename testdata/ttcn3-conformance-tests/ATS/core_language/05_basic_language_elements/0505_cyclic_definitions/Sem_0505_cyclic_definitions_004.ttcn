@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 470 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.5, Verify that cyclic altsteps are allowed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Direct and indirect cyclic definitions are not allowed with the exception of the
+// following cases:
+// b) ... altstep definitions (i.e. recursive ... altstep calls);
+
+module Sem_0505_cyclic_definitions_004 {
+	type port P message {
+		inout integer;
+	}
+	type component GeneralComp {
+		var integer vc_receiveCounter := 0;
+        timer t_tmr := 1.0;
+		port P p1;
+	}
+
+	altstep a_test() runs on GeneralComp {
+		[] p1.receive(integer:(0..3)) {
+			vc_receiveCounter := vc_receiveCounter + 1;
+			a_test();
+		}
+		[] p1.receive(integer:?) {
+			if (vc_receiveCounter == 4) {
+				setverdict(pass);
+			} else {
+				setverdict(fail);
+			}
+		}
+		[] t_tmr.timeout {
+			setverdict(fail);
+		}
+	}
+
+	testcase TC_Sem_0505_cyclic_definitions_004() runs on GeneralComp system GeneralComp {
+		connect(self:p1, self:p1);
+		for (var integer i := 0; i < 5; i := i + 1) {
+			p1.send(i);
+		}
+        t_tmr.start;
+	    a_test();
+	}
+
+	control{
+	    execute(TC_Sem_0505_cyclic_definitions_004());
+	}
+}

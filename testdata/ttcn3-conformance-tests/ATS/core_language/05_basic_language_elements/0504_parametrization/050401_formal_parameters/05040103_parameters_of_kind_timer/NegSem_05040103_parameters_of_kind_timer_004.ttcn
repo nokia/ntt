@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.3, Verify that templates cannot have timer parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal timer parameters, with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040103_parameters_of_kind_timer_004 {
+
+    type component C {
+    }
+
+	template boolean m_msg (timer p_tmr) := p_tmr.running;
+
+    testcase TC_NegSem_05040103_parameters_of_kind_timer_004() runs on C system C {
+    	timer t_tmr := 0.1;
+        t_tmr.start;
+		log(m_msg(t_tmr));
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040103_parameters_of_kind_timer_004());
+    }
+}

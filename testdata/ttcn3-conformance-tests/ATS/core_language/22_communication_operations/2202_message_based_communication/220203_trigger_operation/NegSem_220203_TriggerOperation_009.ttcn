@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, encoding parameter of @decoded redirect assignment applied to incorrect type
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Rules in clause 22.2.2 shall apply.
+// In case the referenced field is not a universal charstring, the optional
+// parameter shall not be present.
+
+module NegSem_220203_TriggerOperation_009 {
+	type record R
+    {
+        integer id,
+        octetstring payload
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_009() runs on GeneralComp {
+        var charstring v_src := "abc", v_res;
+        var octetstring v_os := bit2oct(encvalue(v_src));
+        p.send(R:{ id := 1, payload := v_os });
+        alt {
+            [] p.trigger(R:?) -> value (v_res := @decoded("UTF-8") payload) {
+                setverdict (pass);
+            }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_009(), 5.0);
+    }
+}

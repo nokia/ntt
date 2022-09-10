@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070502_derivation_by_list_002"
+  xmlns:ns="schema:Pos_070502_derivation_by_list_002">
+  <simpleType name="e20">
+	<restriction>
+		<simpleType>
+			<list itemType="float"/>
+		</simpleType>
+		<length value="3"/>
+	</restriction>
+  </simpleType>
+  <element name="MyType" type="ns:e20" />
+</schema>

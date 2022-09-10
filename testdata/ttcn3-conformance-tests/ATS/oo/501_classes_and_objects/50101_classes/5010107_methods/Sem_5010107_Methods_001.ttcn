@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.7, Ensure that use class methods.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010107_Methods_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer v_i;
+
+        create(integer v_i) {
+            this.v_i := v_i;
+        }
+
+        public function doSomething() return integer {
+            return this.v_i + 1;
+        }
+    }
+
+    testcase TC_Sem_5010107_Methods_001() runs on GeneralComp {
+        var MyClass v_a := MyClass.create(126);
+        if (v_a.doSomething() == 127) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010107_Methods_001());
+    }
+
+}

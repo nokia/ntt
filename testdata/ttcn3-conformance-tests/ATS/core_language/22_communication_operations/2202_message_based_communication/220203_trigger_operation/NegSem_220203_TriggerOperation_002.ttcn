@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, no type prefix in ambiguous inline template
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The matching criteria as defined in clause 22.2.2 apply also to the trigger operation.
+// An optional type field in the matching criteria to the [trigger] operation shall
+// be used to avoid any ambiguity of the type of the value being received.
+
+module NegSem_220203_TriggerOperation_002 {
+
+    type record of integer RoI;
+    type record R {
+        integer field1,
+        integer field2
+    }
+
+	type port P message {
+		inout R, RoI;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_002() runs on GeneralComp {
+        p.send(R:{1, 2});
+        alt {
+            [] p.trigger({?, 2}) { setverdict(pass); } // error (ambiguous type)
+            [else] { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_002(), 5.0);
+    }
+}

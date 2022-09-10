@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of any port.check(getreply) with assignment in case of unsuccessful match inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_062 {
+
+	signature S(out integer p_par1) return integer;
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p1, p2;
+	}
+
+	function f() runs on GeneralComp {
+		p2.getcall;
+		setverdict(pass, "Call received");
+		p2.reply(S:{ p_par1 := 1} value 5);
+	}
+
+	testcase TC_Sem_2204_the_check_operation_062() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_par, v_val;
+		connect(self:p1, v_ptc:p1);
+		connect(self:p2, v_ptc:p2);
+		p2.call(S:{ p_par1 := - }, nowait);
+		v_ptc.start(f());
+        alt
+		{
+        	[] any port.check(getreply(S:{p_par1 := ?} value (100..200)) -> value v_val param (v_par := p_par1)) {
+				setverdict(fail, "Incorrect match");
+			}
+			[] any port.getreply {
+				if (not isbound(v_par) and not isbound(v_val)) {
+					setverdict(pass, "As expected, the check operation didn't match");
+				}
+				else { setverdict(fail, "The v_par and v_val variables should still be undefined at this point"); }
+			}
+		}
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_062(), 5.0);
+    }
+}

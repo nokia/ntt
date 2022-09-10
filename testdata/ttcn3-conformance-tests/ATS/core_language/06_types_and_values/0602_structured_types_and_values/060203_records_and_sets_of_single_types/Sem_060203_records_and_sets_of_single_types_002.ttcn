@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, verify assignment of explicitly identified elements to record of values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When the assignment notation is used for record of s, elements
+// wished to be changed are identified explicitly and either a value
+// or the not used symbol "-" can be assigned to them...
+// At initialization, only the elements to be assigned values shall be
+// specified... It is also possible to leave fields explicitly unspecified
+// using the not used symbol "-".
+module Sem_060203_records_and_sets_of_single_types_002 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_002() runs on GeneralComp {
+
+		var RoI v_rec := {
+			[0] := 0,
+			[1] := 1,
+			[2] := -
+		};
+
+		if (match(v_rec[0], 0) and match(v_rec[1], 1) and not isbound(v_rec[2])) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_002());
+	}
+
+}

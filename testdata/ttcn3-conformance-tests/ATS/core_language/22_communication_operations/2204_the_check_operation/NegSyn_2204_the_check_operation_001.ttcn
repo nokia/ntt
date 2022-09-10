@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that port.check(receive) with @nodefault modifier raise error, if port.check is not a stand-alone statement.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction j) The @nodefault modifier is allowed only in stand-alone check statements.
+
+module NegSyn_2204_the_check_operation_001 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_NegSyn_2204_the_check_operation_001() runs on GeneralComp {
+		p.send(integer:1);
+        alt
+		{
+        	[] @nodefault p.check(receive) {
+                // error: @nodefault modifier is not allowed here
+                setverdict(pass, "Check operation successful"); }
+		}
+
+		setverdict(pass, "Message still on the top of the queue");
+    }
+
+    control {
+        //execute(TC_NegSyn_2204_the_check_operation_001(), 5.0);
+    }
+}

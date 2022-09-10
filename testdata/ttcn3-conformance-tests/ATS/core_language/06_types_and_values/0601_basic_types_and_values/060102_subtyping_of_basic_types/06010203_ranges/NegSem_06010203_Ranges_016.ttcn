@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Invalid value infinity for range constrained charstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_016 {
+    type charstring MyCharstringRange ("a"..infinity); // infinity not allowed for charstring
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_016() runs on GeneralComp {
+        var MyCharstringRange v_c1;
+        v_c1 := "abcgef";
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_016());
+    }
+}

@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.2.4, Ensure that altstep is extended with the optional exception, catch and finally clauses
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50204_altsteps_001 "TTCN-3:2018 Object-Oriented" {
+
+    type port Myport message {
+        inout charstring;
+    }
+
+    type component TestComp {
+        port Myport p1;
+    }
+
+    type integer MyInteger;
+
+    altstep MyAltStep(inout timer t) runs on TestComp exception(MyInteger) {
+        [] p1.receive("Hello") { setverdict(pass); }
+        [] p1.receive { setverdict(fail); }
+        [] t.timeout { setverdict(inconc); }
+    } catch(MyInteger e) {
+        log("Catch an MyInteger type exception.");
+    } finally {
+        log ("Finally block!");
+    }
+
+    testcase TC_Sem_50204_altsteps_001() runs on TestComp system TestComp {
+        map(self:p1,system:p1);
+        timer T1 := 5.0;
+        p1.send("Hello");
+        MyAltStep(T1);
+        unmap(self:p1,system:p1);
+    }
+
+    control {
+        execute(TC_Sem_50204_altsteps_001());
+    }
+}

@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Template variables should be assigned with unitialized variables
+ ** @verdict  pass reject
+ ***************************************************/
+
+/* The following requirements are tested:
+Restriction l) The template body at the right-hand side of the  assignment symbol shall evaluate to a value or template, which is type compatible with the variable being declared.
+*/
+
+
+module NegSyn_1102_TemplateVars_002 {
+    type component GeneralComp {}
+
+	testcase TC_NegSyn_1102_TemplateVars_002() runs on GeneralComp {
+  		var integer v_i1 := 1;
+        var template float v_i2 := v_i1; // error: v_i1 is integer, meanwhile template type is float
+
+        setverdict(pass);
+	}
+
+    control {
+        execute(TC_NegSyn_1102_TemplateVars_002());
+    }
+}

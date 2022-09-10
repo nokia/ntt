@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ *16.1.2 Restriction a.3:
+ * any_string or sequence_type parameters of the functions substr may be partially initialized; */
+
+
+module Sem_160102_predefined_functions_092 {
+
+    type component GeneralComp {}
+
+    type record of integer RoI;
+
+
+    testcase TC_Sem_160102_predefined_functions_092 () runs on GeneralComp {
+
+    var RoI v_Rec1;
+    var RoI v_res;
+
+       v_Rec1 :={-,0,-,2};      //partially initialized record of integers
+       v_res := substr(v_Rec1,1,1);            //expected result: {0}
+
+        if( match(v_res,{0}) ) {
+                    setverdict(pass,v_res);
+       } else {
+                    setverdict(fail,"The value of v_res:",v_res);
+              }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_092());
+    }
+
+}

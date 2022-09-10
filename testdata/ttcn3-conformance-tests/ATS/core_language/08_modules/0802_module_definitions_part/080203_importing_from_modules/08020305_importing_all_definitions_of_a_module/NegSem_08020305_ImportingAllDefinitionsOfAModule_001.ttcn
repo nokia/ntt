@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.5, Ensure that the constant is not visible after import with except.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_08020305_ImportingAllDefinitionsOfAModule_001 {
+
+import from NegSem_08020305_ImportingAllDefinitionsOfAModule_001_import all except {
+// everything is excluded again
+	group all;
+	type all;
+	template all;
+	const all;
+	testcase all;
+	altstep all;
+	function all;
+	signature all;
+	modulepar all;
+};
+
+type component GeneralComp {}
+
+testcase TC_NegSem_08020305_ImportingAllDefinitionsOfAModule_001() runs on GeneralComp {
+	if (c_myconst == 43532) { // should not be visible due to the const all exception
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_08020305_ImportingAllDefinitionsOfAModule_001());
+}
+}
+
+module NegSem_08020305_ImportingAllDefinitionsOfAModule_001_import {
+	const integer c_myconst := 43532;
+}

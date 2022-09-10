@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.4.1, verify that strong typing is used for passing inout parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When parameters are passed by reference, strong typing is required. Both the actual and formal
+// parameter shall be of the same type.
+
+module Sem_050401_top_level_018 {
+
+	type component GeneralComp {
+	}
+
+    type record R1 {
+        integer field1,
+        integer field2
+    }
+
+	function f(inout R1 p_rec) {
+        if (match(p_rec, {1, 2})) { setverdict(pass); }
+        else { setverdict(fail, "p_rec value not matching ", p_rec, R1:{1, 2}); }
+	}
+
+	testcase TC_Sem_050401_top_level_018() runs on GeneralComp {
+        var R1 v_rec := { field1 := 1, field2 := 2 };
+		f(v_rec);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_018());
+	}
+}

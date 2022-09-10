@@ -1,0 +1,49 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, Ensure that the IUT correctly handles message receiving operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_220202_ReceiveOperation_004 {
+
+    type charstring address;
+    type port loopbackPort message {
+        inout integer
+    }
+
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    const address c_address := "Tester";
+
+    testcase TC_Sem_220202_ReceiveOperation_004() runs on GeneralComp {
+        var address v_sender;
+
+        messagePort.send(2) to c_address;
+
+        alt {
+            [] messagePort.receive(2) -> sender v_sender {
+                messagePort.send(5) to v_sender;
+                alt {
+                    [] messagePort.receive(5) from v_sender {  //check that correct sender address has been assigned
+                        setverdict(pass);
+                    }
+                    [] messagePort.receive {
+                        setverdict(fail);
+                    }
+                }
+            }
+            [] messagePort.receive {
+                setverdict(fail);
+            }
+        }
+    }
+
+    control{
+        execute(TC_Sem_220202_ReceiveOperation_004());
+    }
+
+}

@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible type ranges
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// bitstring and hexstring assignments
+
+module Sem_060301_non_structured_types_004 {
+
+    type bitstring ConstrainedBitString ('01'B, '10'B, '11'B);
+    type hexstring ConstrainedHexString ('1A'H, '1B'H, '1C'H);
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_060301_non_structured_types_004() runs on GeneralComp {
+
+    var bitstring v_bitstr := '10'B;
+    var ConstrainedBitString v_constrainedBitstr;
+    var hexstring v_hexstr := '1B'H;
+    var ConstrainedHexString v_constrainedHexstr;
+
+    v_constrainedBitstr:=v_bitstr;
+    v_constrainedHexstr:=v_hexstr;
+
+    if (
+     (v_constrainedBitstr=='10'B) and
+     (v_constrainedHexstr=='1B'H)
+    ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_060301_non_structured_types_004());
+}
+
+}

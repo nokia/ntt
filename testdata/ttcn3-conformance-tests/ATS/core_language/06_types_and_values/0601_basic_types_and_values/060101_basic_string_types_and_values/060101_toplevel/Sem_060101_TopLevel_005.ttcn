@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign and read universal charstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060101_TopLevel_005 {
+
+    const universal charstring c_s1 := char (0, 0, 40, 48) & char ( 0, 0, 1, 113);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_611_TopLevel_005() runs on GeneralComp {
+    	if (lengthof(c_s1) == 2) {
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_611_TopLevel_005());
+    }
+}

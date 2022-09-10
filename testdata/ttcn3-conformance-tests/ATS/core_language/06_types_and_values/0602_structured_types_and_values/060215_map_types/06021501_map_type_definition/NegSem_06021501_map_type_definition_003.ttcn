@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.1, Verify that maps cannot be used inside expressions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction b
+// Operands of expressions shall not be of the map type or any structured type containing a field
+// or element of the map type on any level of nesting.
+
+module NegSem_06021501_map_type_definition_003 {
+    type map from charstring to integer TMap1;
+
+    type component GeneralComp {
+    }
+
+    testcase TC_NegSem_06021501_map_type_definition_003 () runs on GeneralComp {
+        var TMap1 v_map1 := {}, v_map2 := { };
+	    var boolean v_result := v_map1 == v_map2;
+        log (v_result);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_06021501_map_type_definition_003());
+    }
+}

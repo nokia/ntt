@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the IUT correctly handles message exch. between ports
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration  port:broadcast
+ ***************************************************/
+
+// GeneralComp has two ports. mess.portA sends a message to messageportB.
+module Sem_0901_Communication_ports_004{
+
+
+    type port IntegerPortType message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port IntegerPortType messagePortA,messagePortB
+}
+
+testcase TC_Sem_0901_Communication_ports_004() runs on GeneralComp {
+
+
+ messagePortA.send(2);  //can send also in-line template
+
+    alt {
+     [] messagePortB.receive(2) {
+        setverdict(pass);
+     }
+     [] messagePortB.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_0901_Communication_ports_004());
+}
+
+}

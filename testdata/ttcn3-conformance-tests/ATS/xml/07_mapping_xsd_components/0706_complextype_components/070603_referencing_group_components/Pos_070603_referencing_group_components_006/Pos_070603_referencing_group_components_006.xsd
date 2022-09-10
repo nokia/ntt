@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070603_referencing_group_components_006"
+  xmlns:ns="schema:Pos_070603_referencing_group_components_006">
+  <group name="shipAndBill">
+    <all>
+      <element name="shipTo" type="string"/>
+      <element name="billTo" type="string"/>
+    </all>
+  </group>
+  <element name="MyType">
+    <complexType>
+      <group ref="ns:shipAndBill" minOccurs="0"/>
+      <attribute name="attr" type="string" />
+    </complexType>
+  </element>    
+</schema>

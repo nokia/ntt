@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that the verdict none works correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_004 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_2601_ExecuteStatement_004() runs on GeneralComp {
+	setverdict(none);
+}
+
+testcase TC_Sem_2601_ExecuteStatement_004_second(verdicttype p_verdict) runs on GeneralComp {
+	if (p_verdict == none) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control {
+	var verdicttype v_result;
+
+	v_result := execute(TC_Sem_2601_ExecuteStatement_004());
+	execute(TC_Sem_2601_ExecuteStatement_004_second(v_result));
+}
+
+}

@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that mixed list and assignment notation index shall not appear more than once
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+/* In these notations this notation each assigned field or index shall not appear
+ * more than once and assignments to fields or indexes given in list notation are not allowed.
+ * */
+
+module NegSem_0602_TopLevel_009 {
+
+    type integer MyArrayType[3];
+
+    type component GeneralComp {
+    }
+
+testcase TC_NegSem_0602_TopLevel_009() runs on GeneralComp {
+
+     var MyArrayType v_myArray := { 1, [0] := 3, [2] := 3, [1] := 2};    // error: index 0 is already given
+
+}
+    control {
+        execute(TC_NegSem_0602_TopLevel_009());
+    }
+}

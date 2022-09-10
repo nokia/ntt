@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Verify that error occurs when using index redirection in function instance.alive operation
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction c
+// The index redirection shall only be used when the operation is used on an any from
+// component array construct.
+module NegSyn_210305_alive_operation_004 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+	function initComp() return GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+		return v_ptc;
+	}
+
+    testcase TC_NegSyn_210305_alive_operation_004() runs on GeneralComp system GeneralComp {
+		var boolean v_isAlive;
+		var integer v_index;
+        v_isAlive := initComp().alive -> @index value v_index;
+        if(v_isAlive){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from alive operation didn't find alive components");
+        }
+    }
+
+    control {
+        execute(TC_NegSyn_210305_alive_operation_004(), 5.0);
+    }
+}

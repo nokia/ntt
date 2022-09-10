@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15, Ensure that a simple template with a single charstring field is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_15_TopLevel_001 {
+
+type record MyRecord {
+	charstring field1
+}
+
+template MyRecord m_myTemplate := {
+	field1 := "Hello World!"
+}
+
+}

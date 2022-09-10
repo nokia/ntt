@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.2, Ensure that the list operator on set of is evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_070102_ListOperator_004 {
+
+type component GeneralComp {
+}
+
+type set of integer IntegerSet;
+
+testcase TC_Sem_070102_ListOperator_004() runs on GeneralComp {
+	var IntegerSet v_i := {0, 1, 6};
+	var IntegerSet v_j := {2, 4, 7};
+
+	var IntegerSet v_result := v_i & v_j;
+	var IntegerSet v_reference := {0, 1, 6, 2, 4, 7};
+	if (v_result == v_reference) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070102_ListOperator_004());
+}
+
+}

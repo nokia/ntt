@@ -1,0 +1,108 @@
+/*****************************************************************
+ * @author TTF 014
+ * @version 0.0.1
+ * @purpose 1:15.3, Ensure that signature templates with restriction e) are accepted.
+ * @verdict pass reject
+ *****************************************************************/
+/* The following requirements are tested:
+ * Signature templates that do not contain the @abstract modifier and fulfil the following condition:
+ * 		All in and inout procedure parameters are completely initialized and
+ * 		all out procedure parameters are either unitialized or marked as not relevant using the NotUsedSymbol.
+ *
+ * are safe to be used in call and getcall operations, but they shall not be used in reply and getreply operations.
+ *
+ * AND
+ *
+ * Signature templates that do not contain the @abstract modifier and fulfil the following condition:
+ * 		All out and inout procedure parameters are completely initialized and
+ * 		all in procedure parameters are either unitialized or marked as not relevant using the NotUsedSymbol.
+ *
+ * are safe to be used in reply and getreply operations, but they shall not be used in call and getcall operations.
+ *
+ *
+ */
+module Sem_1503_GlobalAndLocalTemplates_010 {
+	signature p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate(in integer p_in,
+										   inout integer p_inout,
+										   out integer p_out);
+
+
+	template p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate toBeUsedInCallTemplate := {
+		p_in := 1,
+		p_inout := 2,
+		p_out := -
+	}
+
+	template p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate toBeUsedInReplyTemplate := {
+		p_in := -,
+		p_inout := 2,
+		p_out := 3
+	}
+
+
+	type port remotePort procedure {
+		inout p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate;
+	}
+
+	type component GeneralComp {
+		port remotePort PCO;
+	}
+
+	function f_ClientQuery() runs on GeneralComp {
+
+		PCO.call(p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate:toBeUsedInCallTemplate, 5.0) {
+			[] PCO.getreply(p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate:toBeUsedInReplyTemplate) {
+					// reply is accepted
+					setverdict(pass);
+				}
+			[] PCO.catch(timeout) {
+					setverdict(fail);
+				}
+		};
+	}
+
+	function f_ServerResponses() runs on GeneralComp {
+
+		timer t_timeout := 30.0;
+
+		t_timeout.start;
+
+		alt {
+		[] PCO.getcall(p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate:toBeUsedInCallTemplate) {
+				PCO.reply(p_Sem_1503_GlobalAndLocalTemplates_010_SignatureTemplate:toBeUsedInReplyTemplate);
+				setverdict(pass);
+			}
+		[] t_timeout.timeout {
+				setverdict(fail);
+			}
+		}
+	}
+
+
+	testcase TC_Sem_1503_GlobalAndLocalTemplates_010()
+		runs on GeneralComp system GeneralComp {
+		var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+		var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+		// map the PTCs to the system port
+		connect(server:PCO, client:PCO);
+
+		server.start(f_ServerResponses());
+		client.start(f_ClientQuery());
+
+		alt {
+		[] client.done {
+				server.stop;
+			}
+		}
+
+		alt {
+		[] all component.done {}
+		}
+
+		disconnect(server:PCO);
+	}
+
+	control {
+		execute(TC_Sem_1503_GlobalAndLocalTemplates_010());
+	};
+}

@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that constructor body shall not use blocking operations
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_005 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer v_i;
+        timer t1 := 4.0;
+
+        create(integer v_i) {
+            this.v_i := v_i;
+            t1.start;
+            t1.timeout; //not allowed, timeout is blocking operation
+        }
+
+    }
+
+    testcase TC_NegSem_5010105_Constructors_005() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create(1);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_005());
+    }
+}

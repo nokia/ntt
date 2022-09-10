@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Access charstring elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010101_AccessStringElements_008 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010101_AccessStringElements_008() runs on GeneralComp {
+        var universal charstring v_b := char (0, 0, 40, 20);
+        v_b[0] := "d";
+    	if (v_b[0] == "d"){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_06010101_AccessStringElements_008());
+    }
+}

@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that restriction of port definitions are appropriately handles
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_060209_CommunicationPortTypes_002 {
+
+    type record MyType1 {
+        integer f1,
+        charstring f2
+    }
+
+	type record MyType2 {
+	    integer g1,
+	    charstring g2
+	}
+
+	type record MyType3 {
+	    boolean h1,
+        MyType3 h2 optional
+	}
+
+    type port MyMessagePortTypeOne message {
+        address MyType1;
+        inout integer;
+        map param (in integer p1, inout MyType2 p2);
+        map param (in integer p1, out MyType2 p2);	//more than one map parameter type
+        unmap param (in MyType3 p1, out integer p2);
+    }
+
+    type component GeneralComp {
+        port MyMessagePortTypeOne pt_myPort;
+    }
+
+    testcase TC_NegSem_060209_CommunicationPortTypes_002() runs on GeneralComp system GeneralComp {
+        setverdict(fail);
+    }
+
+    control{
+        execute(TC_NegSem_060209_CommunicationPortTypes_002());
+    }
+
+}

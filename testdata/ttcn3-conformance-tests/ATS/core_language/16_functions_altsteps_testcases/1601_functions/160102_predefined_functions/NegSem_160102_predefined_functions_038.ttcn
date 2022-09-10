@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+
+/* The following requirements are tested:
+ *In addition to the general error causes in clause 16.1.2, error causes are:
+ * inpar is a template of a binary string or sequence type or array and it contains other matching mechanism as
+ * specific value and AnyElement;
+ */
+
+module NegSem_160102_predefined_functions_038 {
+
+type component GeneralComp {
+}
+
+type integer MyArrayType1[3];
+type record of integer MyRecof;
+
+testcase TC_NegSem_160102_predefined_functions_038 () runs on GeneralComp {
+
+
+    var template MyArrayType1 MyArray :={ 7, 8, * };
+
+    var template MyRecof v_i;
+
+ 	v_i:=substr(MyArray,1,2);		//error: contains a matching mechanism *
+
+}
+
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_038());
+
+}
+
+}

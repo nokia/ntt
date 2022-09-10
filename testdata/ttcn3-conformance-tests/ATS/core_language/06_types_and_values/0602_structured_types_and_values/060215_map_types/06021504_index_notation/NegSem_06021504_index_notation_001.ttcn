@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that type-incompatible key used as an index of the left hand side causes an error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction a
+// The index expression used for index notation and index assignment notation shall be
+// completely initialized and compatible with the from type of the map type.
+
+module NegSem_06021504_index_notation_001 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021504_index_notation_001() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 };
+		v_map['152A'O] := 6;
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_06021504_index_notation_001());
+	}
+}

@@ -1,0 +1,58 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:B.3.13, Verify that "errorbehavior" variant is correctly used during decode.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * TTCN-3 predefined decoding functions ensure that the decoding trial of the inout
+ * parameter encoded_value will not cause a test case error, when the decoding fails
+ * or is incomplete. - ET_ALL:EB_IGNORE
+ * */
+
+// NOTE: the test is not executed as it would require dedicated errorbehavior support
+
+module Pos_B313_error_behaviour_006{
+
+    import from JSON all;
+
+    type component C {
+
+    }
+
+   type integer MyInt (3..10) with { encode "JSON"; variant "errorbehavior(ET_ALL:EB_IGNORE)"};
+   template MyInt m_msg := 3;
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    testcase TC_Pos_B313_error_behaviour_006() runs on C system C {
+
+    // encoded JSON
+    var octetstring v_enc := '7B22506F735F423331335F6572726F725F6265686176696F75725F3030352E4D79496E74223A327D'O;
+
+     /**
+     * {"Pos_B313_error_behaviour_005.MyInt":2}
+     */
+
+    log(v_enc);
+    // Decoding: MyInt: 2 casuses CONSTRAINT error
+    var MyInt v_dec;
+    var integer v_decresult := decvalue_o(v_enc, v_dec, "errorbehavior(ET_ALL:EB_IGNORE)" , "JSON");
+
+    if(match(v_decresult, 0)){
+           setverdict(pass, v_dec);
+        }
+        else {
+             setverdict(fail, v_dec);
+        }
+
+    }
+
+    control {
+       // execute(TC_Pos_B313_error_behaviour_006(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

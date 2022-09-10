@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7, function without return clause in expression
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Functions used in expressions shall have a return clause.
+
+module NegSem_07_toplevel_001
+{
+    type component GeneralComp {
+	}
+
+    function f()
+    {
+        var integer v_num := 1;
+    }
+
+    testcase TC_NegSem_07_toplevel_001() runs on GeneralComp {
+        var integer v_num := 3 * f();
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_07_toplevel_001());
+	}
+}

@@ -1,0 +1,10 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Accept float mantisa for float values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060100_SimpleBasicTypes_005 {
+    const float c_f1 := 2.0E2;
+    const float c_f2 := -2.1E-1;
+}

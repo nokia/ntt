@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'decvalue_o' function works properly in case of decoding an octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+The return value 2 indicates that decoding could not be completed as encoded_value did not contain
+enough octets.
+- C.5.6 The decoding from octetstring function
+*/
+
+
+module Sem_160102_predefined_functions_107 {
+
+    type component GeneralComp {}
+
+    type record MyPDU {
+    	charstring field1 optional,
+    	integer field2
+    	};
+
+    testcase TC_Sem_160102_predefined_functions_107 () runs on GeneralComp {
+
+        var integer v_dec with { variant "32 bit" };
+        var integer v_res;
+        var template MyPDU v_temp := {"testText",5};
+        var octetstring v_ref := encvalue_o(v_temp);
+        //log(v_ref);    //'74657374546578740005000000'O
+        v_ref := v_ref[1];	// trunk encoded octetstring
+
+    //Decoding:
+    v_res := decvalue_o(v_ref, v_dec); // try to decode octetstream
+
+    if (match(v_res, 2)) {
+    	// octetstring encoded_value did not contain enough octets.
+          setverdict(pass);
+    } else {
+          setverdict(fail,v_res,v_ref);
+    }
+
+   }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_107());
+
+    }
+
+}

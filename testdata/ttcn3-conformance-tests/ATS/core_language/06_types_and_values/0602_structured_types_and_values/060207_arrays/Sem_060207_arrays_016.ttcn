@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, predefined function in array dimension
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Array dimensions shall be specified using constant expressions, which shall
+// evaluate to a positive integer values. Constants used in the constant
+// expressions shall meet with the restrictions in clause 10.
+
+module Sem_060207_arrays_016 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_060207_arrays_016() runs on GeneralComp {
+        var integer v_arr[float2int(3.14159265359)] := { 0, 1, 2};
+        log(v_arr);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_060207_arrays_016());
+	}
+
+}

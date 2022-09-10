@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that a value can be assigned to a template(omit) variable.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1508_TemplateRestrictions_001 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1508_TemplateRestrictions_001() runs on GeneralComp {
+	var template(omit) integer v_omit;
+
+	v_omit := 20;
+
+	if (valueof(v_omit) == 20) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_001());
+}
+
+
+}

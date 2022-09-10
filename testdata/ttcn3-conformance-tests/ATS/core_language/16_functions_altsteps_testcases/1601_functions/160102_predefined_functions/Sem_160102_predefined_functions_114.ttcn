@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * When used on templates of character string types, specific value patterns that contain literal characters and the following metacharacters: "?", "*"
+ * are allowed in inpar and the function shall return the character representation of the matching mechanisms.
+ * */
+
+
+module Sem_160102_predefined_functions_114 {
+
+    type component GeneralComp {}
+
+    type universal charstring MyCharStringType;
+
+
+    testcase TC_Sem_160102_predefined_functions_114 () runs on GeneralComp {
+
+    template MyCharStringType v_template := pattern "c*";
+    var MyCharStringType v_res;
+    v_res := substr(v_template,1,1);        //expected result: "*"
+
+        if( match(v_res,"*") ) {
+                    setverdict(pass,v_res);
+       } else {
+                    setverdict(fail,"The value of v_res:",v_res);
+              }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_114());
+    }
+
+}

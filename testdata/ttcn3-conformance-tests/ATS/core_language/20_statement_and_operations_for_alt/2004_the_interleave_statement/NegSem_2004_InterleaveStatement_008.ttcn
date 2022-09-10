@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.4, repeat inside interleave
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Control transfer statements for, while, do-while, goto, activate,
+// deactivate, stop, repeat, return, direct call of altsteps as alternatives
+// and (direct and indirect) calls of user-defined functions, which include
+// reception statements, shall not be used in interleave statements.
+
+module NegSem_2004_InterleaveStatement_008 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    testcase TC_NegSem_2004_InterleaveStatement_008() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+
+        interleave {
+            [] p.receive(charstring:"bar") {
+                repeat;
+            }
+            [] p.receive(charstring:"foo") {
+            }
+        }
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_2004_InterleaveStatement_008());
+    }
+}

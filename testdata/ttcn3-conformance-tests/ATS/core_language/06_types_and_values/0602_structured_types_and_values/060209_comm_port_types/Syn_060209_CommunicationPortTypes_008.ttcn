@@ -1,0 +1,21 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that procedure-base port type definition can contain map parameter definition
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_060209_CommunicationPortTypes_008 {
+
+	signature S1();
+
+	type record MyType {
+	    integer f1
+	}
+
+    type port MyMessagePortTypeOne procedure {
+        inout S1;
+        map param (in MyType p1, out integer p2);
+    }
+
+}

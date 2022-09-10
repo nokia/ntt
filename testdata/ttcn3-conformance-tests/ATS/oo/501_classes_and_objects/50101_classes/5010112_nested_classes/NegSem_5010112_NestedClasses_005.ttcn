@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.12, Ensure that the type of the nested class can not be referenced directly.
+ ** @verdict pass accept
+*****************************************************************/
+module NegSem_5010112_ConstructorInvocation_003 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class Parent {
+    	var charstring v_name;
+
+		type class Child {
+
+			public function get_parent_name()  return charstring {
+				return v_name;
+			}
+
+		}
+    }
+
+    testcase TC_NegSem_5010112_ConstructorInvocation_003 () runs on GeneralComp {
+    	var Parent v_parent := Parent.create("parent");
+    	var Parent.Child v_child := v_parent.Child.create();
+
+		select class (v_child) {
+			case(Child) { setverdict(pass);}  //not allowed
+			case else {setverdict(fail);}
+		}
+    }
+
+    control {
+        execute(TC_NegSem_5010112_ConstructorInvocation_003());
+    }
+}

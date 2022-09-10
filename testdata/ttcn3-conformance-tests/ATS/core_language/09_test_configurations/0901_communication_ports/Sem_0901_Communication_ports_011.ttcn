@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 478
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that a component ports can be mapped to TSI ports
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/*    NOTE: figure 6(d): Ensure that component ports can be mapped to a TSI ports */
+
+module Sem_0901_Communication_ports_011 {
+
+    type port MyPort message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port MyPort p1,p2;
+    }
+
+    type component MyComp
+    {
+        port MyPort p1,p2;
+    }
+	function checkMapped() runs on MyComp
+	{
+		if(p1.checkstate("Mapped") and p2.checkstate("Mapped")) {
+			setverdict(pass,"Mapped");
+		} else {
+			setverdict(fail,"Mapped");
+		}
+	}
+
+    testcase TC_Sem_0901_Communication_ports_011() runs on MyComp system GeneralComp {
+
+       map(self:p1, system:p1);
+       map(self:p2, system:p2);
+
+       checkMapped();
+    }
+
+    control{
+        execute(TC_Sem_0901_Communication_ports_011());
+    }
+}

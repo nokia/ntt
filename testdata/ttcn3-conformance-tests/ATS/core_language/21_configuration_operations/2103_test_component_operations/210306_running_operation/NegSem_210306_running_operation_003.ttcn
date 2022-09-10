@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Verify that error occurs when any from running is applied to 1D array and index target has wrong type
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction d
+// If the index redirection is used for single-dimensional component arrays, the type
+// of the integer variable shall allow storing the highest index of the respective array.
+module NegSem_210306_running_operation_003 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_NegSem_210306_running_operation_003() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		var float v_index;
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i mod 2 == 0) { v_ptc[i].kill; } // kill components on even indices
+			else { v_ptc[i].start(f());} // activate v_ptc
+		}
+        v_isRunning := any from v_ptc.running -> @index value v_index;
+        if(v_index == 1.0){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from running operation didn't find running components");
+        }
+    }
+
+    control {
+        execute(TC_NegSem_210306_running_operation_003(), 5.0);
+    }
+}

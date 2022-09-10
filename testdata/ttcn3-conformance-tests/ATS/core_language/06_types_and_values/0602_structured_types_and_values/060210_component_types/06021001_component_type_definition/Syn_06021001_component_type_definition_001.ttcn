@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10.1, Component type with port instances only
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_06021001_component_type_definition_001 {
+	type port MyMessagePortType message {
+		inout 	integer
+	}
+
+    signature Proc1();
+
+	type port MyProcedurePortType procedure {
+		out		Proc1
+	}
+
+    type component MyPTCType {
+		port MyMessagePortType		pCO1, pCO4;
+		port MyProcedurePortType	pCO2;
+	}
+
+}

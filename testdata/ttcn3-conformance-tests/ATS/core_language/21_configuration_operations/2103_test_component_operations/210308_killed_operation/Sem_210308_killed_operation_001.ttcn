@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Ensure that all component kill can be checked with killed operator
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// all components are killed, than check the status with killed operator
+
+module Sem_210308_killed_operation_001 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210308_killed_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+		ptc2.start(f1());
+
+		all component.kill;
+
+		alt {
+			[] all component.killed {setverdict(pass);}
+		}
+
+
+    }
+
+    control {
+        execute(TC_Sem_210308_killed_operation_001());
+    }
+}

@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the first part of the Example 3 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_195 {
+
+    type component GeneralComp {
+	}
+
+    function MyFunction(inout boolean MyReferenceParameter)  {
+        // MyReferenceParameter is an inout parameter
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_050402_actual_parameters_195() runs on GeneralComp {
+        var boolean MyBooleanVariable := false;
+        // A function call with an actual parameter
+        MyFunction(MyBooleanVariable);
+        // The actual parameter can be read and set within the function
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_195());
+	}
+}

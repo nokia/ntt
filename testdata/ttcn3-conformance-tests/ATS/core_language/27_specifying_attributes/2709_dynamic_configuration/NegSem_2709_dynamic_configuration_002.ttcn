@@ -1,0 +1,56 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.9, Verify that the setencode can reference only fields of types listed in port definitions
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction a
+// If the setencode operation is applied to a single port, the referenced type shall be
+// either listed in the in or out type list of the related port type or it shall be
+// a reference to a field or element on any level of nesting of a type listed in the in
+// or out type list of the related port type.
+
+module NegSem_2709_dynamic_configuration_002 {
+
+	type port P message {
+		inout MyPDU;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with {
+		encode "Codec 1";
+		encode "Codec 2";
+		encode "Codec 3"
+	}
+
+	type record MyPDU2 {
+		charstring field1,
+		charstring field2
+	} with {
+		encode "Codec 1";
+		encode "Codec 2";
+		encode "Codec 3"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2709_dynamic_configuration_002 () runs on GeneralComp {
+		p.setencode(MyPDU2.field1, "Codec 1");
+		// Compilation and seamless execution tested.
+		// Actual effect not tested as it would require dedicated TCI implementation
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_2709_dynamic_configuration_002());
+	}
+
+}

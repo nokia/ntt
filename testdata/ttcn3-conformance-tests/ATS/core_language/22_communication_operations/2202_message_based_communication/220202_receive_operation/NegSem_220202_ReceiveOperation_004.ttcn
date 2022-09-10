@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, type mismatch in redirect assignment of message fields
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The variable or formal parameter shall be type compatible with the type on the
+// right hand side of the assignment symbol.
+
+module NegSem_220202_ReceiveOperation_004 {
+	type record R
+    {
+        integer field1[2],
+        charstring field2
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220202_ReceiveOperation_004() runs on GeneralComp {
+        var integer v_int;
+        var bitstring v_str;
+        p.send(R:{ field1 := { 1, 2 }, field2 := "abc" });
+        alt {
+            [] p.receive(R:?) -> value ( v_int := field1[1], v_str := field2) {
+                setverdict (pass);
+            }
+            [] p.receive { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_220202_ReceiveOperation_004(), 5.0);
+    }
+}

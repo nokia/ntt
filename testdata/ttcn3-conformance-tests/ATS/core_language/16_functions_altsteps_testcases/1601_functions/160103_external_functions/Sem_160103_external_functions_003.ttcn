@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.2
+ ** @purpose  1:16.1.3, Ensure that the IUT recognizes external functions
+ ** @verdict  pass accept, noexecution
+ ** @configuration  external_functions
+ ***************************************************/
+
+// Purpose: external functions returning templates were not allowed by the previous versions of the standard
+
+module Sem_160103_external_functions_003 {
+
+    type component GeneralComp {
+    }
+
+    external function xf_Sem_160103_external_functions_003() return template octetstring;
+
+    testcase TC_Sem_160103_external_functions_003 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_160103_external_functions_003());
+    }
+
+}

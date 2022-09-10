@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with a catch timeout clause but without a timeout value
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The optional catch timeout clause may be present only if the timeout value has been defined.
+
+module NegSem_210310_call_test_component_operation_019 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_019() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.call(f()) catch(timeout) {
+		}
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_019(), 5.0);
+    }
+}

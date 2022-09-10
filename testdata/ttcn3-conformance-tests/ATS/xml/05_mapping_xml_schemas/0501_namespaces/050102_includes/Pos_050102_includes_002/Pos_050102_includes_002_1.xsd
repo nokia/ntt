@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  xmlns:ns2="schema:Pos_050102_includes_002">
+  <element name="MyType" type="integer"/>
+</schema>

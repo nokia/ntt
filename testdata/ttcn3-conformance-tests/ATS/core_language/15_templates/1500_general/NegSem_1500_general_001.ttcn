@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.0, verify that lazy variables cannot be referenced in a function called during evaluation of a deterministic fuzzy template
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For a fuzzy template that is declared deterministic the template body shall fulfill the restrictions imposed
+// on content of functions used in special places given in clause 16.1.4.
+// The following operations shall not be used:
+// m) Referencing lazy or fuzzy variables, parameters or templates that have not been declared deterministic.
+
+module NegSem_1500_general_001 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+		var @lazy integer vc_int := 1;
+	}
+
+	function f_test() runs on GeneralComp return template integer {
+		log(vc_int); // forbidden reference
+        return ?;
+	}
+
+    testcase TC_NegSem_1500_general_001() runs on GeneralComp system GeneralComp {
+        template @fuzzy @deterministic integer mw_test := f_test();
+		log(mw_test); // causes evaluation
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_1500_general_001());
+	}
+}

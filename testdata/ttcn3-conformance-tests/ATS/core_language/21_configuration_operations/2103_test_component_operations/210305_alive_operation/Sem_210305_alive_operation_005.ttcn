@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Verify that any from alive returns false if no component is alive
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// When the any from component array notation is used, the components from the referenced array
+// are iterated over and individually checked for being inactive or running a function from
+// innermost to outermost dimension from lowest to highest index for each dimension. The first
+// component to be found being inactive or running a function causes the alive operation to
+// return the true value.
+module Sem_210305_alive_operation_005 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_210305_alive_operation_005() runs on GeneralComp system GeneralComp {
+		var boolean v_isAlive;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create;
+			v_ptc[i].kill;
+		}
+        v_isAlive := any from v_ptc.alive;
+        if(not v_isAlive){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from alive operation incorrectly detected an alive component");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210305_alive_operation_005(), 5.0);
+    }
+}

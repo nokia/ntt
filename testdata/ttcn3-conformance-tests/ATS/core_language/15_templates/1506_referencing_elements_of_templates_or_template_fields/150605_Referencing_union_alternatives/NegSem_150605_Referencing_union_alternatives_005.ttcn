@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.5, Ensure that referencing an alternative of a union template field to which the ifpresent attribute is attached, shall cause an error
+ ** @verdict  pass reject
+ *****************************************************************/
+
+//Restriction c)
+/*Ifpresent attribute: referencing an alternative of a union template field to which the ifpresent attribute is
+attached, shall cause an error (irrespective of the value or the matching mechanism to which ifpresent is
+appended).*/
+
+
+module NegSem_150605_Referencing_union_alternatives_005 {
+
+
+    type union My_Union {
+        integer  u1,
+        float    u2
+    }
+
+    type record My_Rec {
+        My_Union  r1 optional
+    }
+
+    type component GeneralComp {  }
+
+
+
+    testcase TC_NegSem_150605_Referencing_union_alternatives_005() runs on GeneralComp {
+
+     var template integer m_template;
+
+
+
+     var template My_Rec My_Template;
+     My_Template.r1 := {u1:=1} ifpresent;
+
+
+	 m_template := My_Template.r1.u1;	//error: ifpresent attribute is attached
+
+		setverdict(pass,m_template);
+
+
+ }
+
+    control{
+        execute(TC_NegSem_150605_Referencing_union_alternatives_005());
+    }
+}

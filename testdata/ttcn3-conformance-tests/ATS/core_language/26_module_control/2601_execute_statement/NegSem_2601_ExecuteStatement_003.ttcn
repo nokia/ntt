@@ -1,0 +1,22 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that host id can be only charstring.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2601_ExecuteStatement_003 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_2601_ExecuteStatement_003(integer p_value, charstring p_string, boolean p_bool) runs on GeneralComp {
+		setverdict(pass);
+}
+
+control {
+	var integer v_test := 20;
+	var octetstring v_host := '4469707379'O;	//not allowed host type
+	execute(TC_NegSem_2601_ExecuteStatement_003(v_test, "hello", true), -, v_host);
+}
+
+}

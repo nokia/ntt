@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of strings types yields an error if specified ranges are not fixed length.
+ ** @verdict  pass reject
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_002 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_002() runs on GeneralComp {
+    var template octetstring v_str := 'ABCD'O & * length(1..2) & pattern 'EE?FF';
+
+    // shall cause an error as the length attribute should be of fixed length
+    setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_002());
+}
+
+}

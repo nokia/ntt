@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that dot notation in the FreeText part in not possible for optional attributes
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction c
+// Dot notation in the FreeText part is allowed for variant attributes only.
+
+module NegSem_2702_the_with_statement_010 {
+	type component GeneralComp {
+	}
+
+	type record R {
+		integer field1,
+        integer field2
+	}
+
+    template R m_msg := {
+    } with {
+		optional "implicit omit"."";
+	}
+
+	testcase TC_NegSem_2702_the_with_statement_010 () runs on GeneralComp {
+		var universal charstring v_opt := m_msg.optional;
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_2702_the_with_statement_010());
+	}
+}

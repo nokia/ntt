@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, passing default to started component function
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Ports, defaults and timers shall not be passed into a function invoked in a start
+// test component operation.
+
+module NegSem_210302_Start_test_component_009 {
+
+	type component GeneralComp {
+	}
+
+    function f_behaviour(default p_default) runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    altstep a_timeout() {
+        [] any timer.timeout { }
+    }
+
+	testcase TC_NegSem_210302_Start_test_component_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        var default v_def := activate(a_timeout());
+        v_ptc.start(f_behaviour(v_def));
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210302_Start_test_component_009());
+	}
+}

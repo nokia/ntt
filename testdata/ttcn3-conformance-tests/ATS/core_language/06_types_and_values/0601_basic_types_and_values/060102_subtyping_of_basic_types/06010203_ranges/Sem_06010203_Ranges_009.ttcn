@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values with negative integer range.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+ /* The following requirement is tested: range with all negative integer numbers */
+
+module Sem_06010203_Ranges_009 {
+
+	type integer MyIntegerRange (-infinity .. -1);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_009() runs on GeneralComp {
+        var MyIntegerRange v_i;
+        v_i := -1;
+        v_i := -100;
+        v_i := -255;
+        v_i := -10000;
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_009());
+    }
+}

@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of octetstring types works as expected (variant 2).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_005 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_005() runs on GeneralComp {
+	var template octetstring v_template := 'ABCD'O & '??'O & 'EF'O;
+
+	if (match('ABCDAABBEF'O, v_template)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_005());
+}
+
+}

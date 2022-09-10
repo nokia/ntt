@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Access hexstring elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010101_AccessStringElements_005 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010101_AccessStringElements_005() runs on GeneralComp {
+        var hexstring v_b := '00000'H;
+        v_b[0] := '1'H;
+        v_b[1] := '0'H;
+        v_b[2] := '1'H;
+        v_b[3] := '0'H;
+        v_b[4] := '1'H;
+    	if (v_b == '10101'H){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_06010101_AccessStringElements_005());
+    }
+}

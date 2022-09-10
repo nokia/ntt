@@ -1,0 +1,22 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that there's an error for re-assignment of a global parameterized template
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Both global and local templates are initialized at the place of their
+// declaration. This means, all template fields which are not affected by
+// parameterization shall receive a value or matching mechanism. Template
+// fields affected by parameterization are initialized at the time of
+// template use.
+module NegSem_1503_GlobalAndLocalTemplates_003
+{
+	template integer t(in integer p) := (0..p);
+	type component GeneralComp {
+	}
+	testcase TC_NegSem_1503_GlobalAndLocalTemplates_003() runs on GeneralComp {
+		t := 2; // error expected
+	}
+}

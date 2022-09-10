@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with uncaught timeout
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// In all other cases when theexecution is incomplete, the call operation ends with a test case error.
+
+module NegSem_210310_call_test_component_operation_002 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+	    timer t := 3.0;
+		t.start;
+		t.timeout;
+		setverdict(fail); // call timeout should occur before this
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.call(f(), 1.0);
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_002(), 5.0);
+    }
+}

@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, mixed automatic and explicit numbering of enumerated items
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+/* For each enumerated value without an assigned integer value,
+  the system successively associates an integer number in the textual
+  order of the enumerated values, starting at the left-hand side,
+  beginning with zero, by step 1 and skipping any number occupied by any
+ of the enumerated values with a manually assigned value or value list.
+*/
+module Sem_060204_enumerated_type_and_values_007 {
+
+    type component GeneralComp {
+	}
+
+    type enumerated EDays {
+        Monday(1), Tuesday, Wednesday, Thursday(10), Friday(11..30)
+    };
+
+    testcase TC_Sem_060204_enumerated_type_and_values_007() runs on GeneralComp {
+        var EDays v_day0 := Monday, v_day2 := Wednesday, v_day4 := Friday(15);
+
+		if (enum2int(v_day0) == 1 and enum2int(v_day2) == 2 and enum2int(v_day4) == 15) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060204_enumerated_type_and_values_007());
+	}
+}

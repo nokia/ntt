@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify passing port parameter to activated altstep
+ ** @verdict   pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// An altstep that is activated as a default shall only have in parameters, port parameters, or timer parameters.
+
+module Sem_200502_the_activate_operation_004 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a(P p_port) runs on GeneralComp {
+		[] p_port.receive(integer:?) { setverdict(pass); }
+	}
+
+	testcase TC_Sem_200502_the_activate_operation_004() runs on GeneralComp {
+		activate(a(p));
+		p.send(integer:1);
+		alt {
+			[] p.receive(integer:0) { setverdict(fail); }
+		}
+	}
+
+	control{
+		execute(TC_Sem_200502_the_activate_operation_004());
+	}
+}

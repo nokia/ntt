@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.2, Ensure that Object References shall not be passed as actual parameter or part of an actual parameter.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010202_ObjectReferences_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer x;
+
+        public function setX(integer x) {
+            this.x := x;
+        }
+
+        public function getX() return integer {
+            return this.x;
+        }
+    }
+
+    function f_something(MyClass my) runs on GeneralComp {
+        my.setX(1);
+    }
+
+    testcase TC_NegSem_5010202_ObjectReferences_001() runs on GeneralComp {
+        var MyClass v_a := MyClass.create(7);
+        var GeneralComp v_MyGeneralComp := GeneralComp.create;
+       v_MyGeneralComp.start(f_something(v_a)); //not allowed
+        if (v_a.getX() == 7) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+    control {
+        execute(TC_NegSem_5010202_ObjectReferences_001());
+    }
+}

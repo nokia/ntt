@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:7, compound expression as an operand of set-of type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Assignment or list notations are used for expressions of record, set, record of, set of, array, union and anytype types.
+
+module Sem_07_toplevel_008
+{
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer     field1,
+        charstring  field2
+    }
+
+    testcase TC_Sem_07_toplevel_008() runs on GeneralComp {
+        var U v_union := { field2 := "abc" };
+
+        if (v_union == {field2 := "abc" }) { setverdict(pass); }
+        else { setverdict(fail,v_union); }
+	}
+
+	control {
+		execute(TC_Sem_07_toplevel_008());
+	}
+}

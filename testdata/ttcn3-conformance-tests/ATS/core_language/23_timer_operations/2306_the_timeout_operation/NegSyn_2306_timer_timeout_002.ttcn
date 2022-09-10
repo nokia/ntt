@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout can`t be used in boolean expressions
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/The timeout shall not be used in a boolean expression.
+
+
+module NegSyn_2306_timer_timeout_002 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.1};
+    }
+
+    testcase TC_NegSyn_2306_timer_timeout_002() runs on TComp{
+        t_timer[0].start;
+        if (t_timer[0].timeout){
+            setverdict(fail);
+        }
+        setverdict(pass);
+
+
+    }
+    control{
+
+            execute(TC_NegSyn_2306_timer_timeout_002())
+
+
+    }
+}

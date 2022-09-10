@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.4, Ensure that use final classes correctly.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010104_finalClasses_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class @final FinalClass {
+        function doSomething() return charstring  {
+            return "something";
+        }
+    }
+
+    testcase TC_Sem_5010104_finalClasses_001() runs on GeneralComp {
+        var FinalClass v_a := FinalClass.create();
+        if (v_a.doSomething() == "something") {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010104_finalClasses_001());
+    }
+}

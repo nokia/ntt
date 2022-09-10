@@ -1,0 +1,12 @@
+
+const integer wrongTopLevel := 1;
+
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5, Ensure that when the IUT loads a module containing some definitions before the module declaration then the module is rejected.
+ ** @verdict  pass reject
+ *****************************************************************/
+module NegSyn_05_TopLevel_001 {
+
+}

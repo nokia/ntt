@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, redirect assignment storing a component
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Rules in clause 22.2.2 shall apply.
+// It is also possible to retrieve and store the component reference or address of
+// the sender of a message. This is denoted by the keyword sender.
+
+module Sem_220203_TriggerOperation_017 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_Sem_220203_TriggerOperation_017() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_tc := null;
+        connect(self:p, self:p);
+        p.send(10);
+        p.trigger(integer:?) -> sender v_tc;
+        if (v_tc == self) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_017(), 5.0);
+    }
+}

@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.2, Verify that an error is generated for type-incompatible index assignment list values
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Values of type map can be denoted with the indexed assignment notation where the indices
+// are values of the key type of the map type and the right hand sides are values of the value type.
+
+module NegSem_06021502_indexed_assignment_notation_002 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021502_indexed_assignment_notation_002() runs on C {
+		var TMap1 v_map := { ["test"] := 2.5, ["xyz"] := true }
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_06021502_indexed_assignment_notation_002());
+	}
+}

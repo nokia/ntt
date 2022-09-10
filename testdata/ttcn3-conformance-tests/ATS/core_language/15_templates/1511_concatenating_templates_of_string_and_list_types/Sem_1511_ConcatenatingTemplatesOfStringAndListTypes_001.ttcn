@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of charstring types works as expected  (variant 1).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_001 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_001() runs on GeneralComp {
+    var template charstring v_myChar1 := pattern "ABC" & "D" & "*" & "E?F";
+    if (match("ABCD2E1F", v_myChar1)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_001());
+}
+
+}

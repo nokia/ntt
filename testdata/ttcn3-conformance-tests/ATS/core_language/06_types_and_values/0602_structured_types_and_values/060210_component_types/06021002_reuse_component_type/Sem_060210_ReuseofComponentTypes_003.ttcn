@@ -1,0 +1,90 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10, Ensure that extending a component with and extended component works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/* The following requirements are tested:
+ * It is allowed to have one component type extending several parent types in one definition,
+ * which have to be specified as a comma-separated list of types in the definition.
+ * Any of the parent types may also be defined by means of extension.
+ */
+
+module Sem_060210_ReuseofComponentTypes_003 {
+
+  //MyCompA has a port pt_myPortA
+  type component MyCompA {
+    port loopbackPort pt_myPortA;
+    var integer MyInt;
+  }
+
+  //MyComp has a port pt_myPortB and inherit a port (pt_myPortA) form MyCompA
+  type component MyCompB extends MyCompA {
+    port loopbackPort pt_myPortB;
+  }
+
+//Component GeneralComp has a timer and inherit two ports from MyCompB (pt_myPortA and pt_myPortB)
+  type component GeneralComp extends MyCompB {
+    timer t;
+  }
+
+  type port loopbackPort message {
+    inout integer;
+    inout float;
+  }
+
+
+  function loopback() runs on GeneralComp {
+    var integer v_i;
+    var float v_f;
+    while (true) {
+      alt {
+        [] pt_myPortA.receive(integer:?) -> value v_i { pt_myPortA.send(v_i); }
+        [] pt_myPortA.receive(float:?) -> value v_f { pt_myPortA.send(v_f); }
+        [] pt_myPortB.receive(integer:?) -> value v_i { pt_myPortB.send(v_i); }
+        [] pt_myPortB.receive(float:?) -> value v_f { pt_myPortB.send(v_f); }
+      }
+    }
+  }
+
+  testcase TC_Sem_060210_ReuseofComponentTypes_003() runs on GeneralComp system GeneralComp {
+
+    var GeneralComp v_server := GeneralComp.create;
+
+    connect(mtc:pt_myPortA, v_server:pt_myPortA);
+    connect(mtc:pt_myPortB, v_server:pt_myPortB);
+
+    v_server.start(loopback());
+
+    //Set a value to MyInt:
+    MyInt := 10;
+
+    //Send an integer from pt_myPortA:
+    pt_myPortA.send(2);
+    alt {
+      [] pt_myPortA.receive(2) {
+        setverdict(pass,"Receive successful");
+      }
+      [] pt_myPortA.receive {
+        setverdict(fail,"Unexpected result");
+      }
+    }
+
+    //Send an integer from pt_myPortB:
+    pt_myPortB.send(1.0);
+    alt {
+      [] pt_myPortB.receive(1.0) {
+        setverdict(pass,"Receive successful");
+      }
+      [] pt_myPortB.receive {
+        setverdict(fail,"Unexpected result");
+      }
+    }
+
+  }
+
+  control{
+    execute(TC_Sem_060210_ReuseofComponentTypes_003());
+  }
+}

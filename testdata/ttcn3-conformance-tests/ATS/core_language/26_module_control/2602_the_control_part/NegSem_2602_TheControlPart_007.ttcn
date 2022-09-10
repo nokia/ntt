@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.2
+ ** @purpose  1:26.2, Ensure that the alive operation is not allowed in the control part.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2602_TheControlPart_007 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component MTCComp {
+        port MyPort p;
+    }
+
+    function f_myBehavior() runs on MTCComp {
+        setverdict(fail);
+    }
+
+    function f_createComp() return MTCComp {
+        return  MTCComp.create;
+    }
+
+    control {
+        var MTCComp v_myComp := f_createComp(); // assume create was accepted
+        if (v_myComp.alive) {
+        // should be rejected
+        }
+    }
+
+}

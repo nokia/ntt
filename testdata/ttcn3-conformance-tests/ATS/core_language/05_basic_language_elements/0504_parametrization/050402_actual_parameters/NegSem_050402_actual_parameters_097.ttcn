@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that string item references cannot be used as inout formal value parameters of functions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+// (see also the NOTE from 5.4.2)
+
+module NegSem_050402_actual_parameters_097 {
+
+    type component GeneralComp {
+	}
+
+    function f_test(inout charstring p_val) {
+        if (p_val == "t") { setverdict(pass); }
+        else { setverdict(fail); }
+        p_val := "r";
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_097() runs on GeneralComp {
+        var charstring v_val := "test";
+        f_test(v_val[0]); // tested parameter passing
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_097());
+	}
+}

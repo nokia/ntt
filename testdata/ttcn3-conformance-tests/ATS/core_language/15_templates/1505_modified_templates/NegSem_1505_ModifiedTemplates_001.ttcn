@@ -1,0 +1,19 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that a modified template does not refer to itself.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1505_ModifiedTemplates_001 {
+
+type record of integer MyMessageType;
+
+template MyMessageType m_myBaseTemplate := { 0, 1, 2, 3, 4 };
+
+template MyMessageType m_myOtherTemplate modifies m_myOtherTemplate := {
+	[2]:=3, // switch the positions of 2 and 3
+	[3]:=2
+}
+
+}

@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, verify the first element of a record of value is accessible by an index notation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The index of the first element shall be zero.
+module Sem_060203_records_and_sets_of_single_types_016 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_016() runs on GeneralComp {
+
+		var RoI v_rec := { 0, 1, 2 };
+		v_rec[0] := 10; // first index on the left hand side
+		v_rec[1] := v_rec[0]; // first index on the right hand side
+		if (v_rec == { 10, 10, 2} ) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_016());
+	}
+
+}

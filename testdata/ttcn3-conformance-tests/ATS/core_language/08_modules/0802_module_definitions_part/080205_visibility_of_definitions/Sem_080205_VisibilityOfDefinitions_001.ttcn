@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.5, Ensure that explicitly defined public definitions (in this case a sample constant) are visible when imported.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_080205_VisibilityOfDefinitions_001 {
+
+import from Sem_080205_VisibilityOfDefinitions_001_import all;
+
+type component GeneralComp {}
+
+testcase TC_Sem_080205_VisibilityOfDefinitions_001() runs on GeneralComp {
+	if (c_myconst == 32532) { // c_myconst shall be visible on import when it is explicitly set to public.
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_080205_VisibilityOfDefinitions_001());
+}
+}
+
+module Sem_080205_VisibilityOfDefinitions_001_import {
+	public const integer c_myconst := 32532;
+}

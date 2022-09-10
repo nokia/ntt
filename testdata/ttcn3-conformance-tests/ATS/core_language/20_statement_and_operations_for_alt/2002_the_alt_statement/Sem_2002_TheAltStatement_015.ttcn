@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   TTF T003 (modified in TTF T014)
+ ** @version  0.0.1
+ ** @purpose  20.2, Ensure that the alt statement with @nodefault ignores all active default alternatives.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+module Sem_2002_TheAltStatement_015 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+        timer t_myTimer := 3.0;
+    }
+
+    altstep a_receive() runs on GeneralComp {
+		[] t_myTimer.timeout {
+			setverdict (fail);
+		}
+        [] p.receive {
+			setverdict(fail);
+		}
+    }
+
+    testcase TC_Sem_2002_TheAltStatement_015() runs on GeneralComp system GeneralComp {
+        map(self:p, system: p);
+	    p.send(charstring:"abc");
+
+		t_myTimer.start;
+
+        activate(a_receive());
+		alt @nodefault {
+            [else] {
+                setverdict(pass);
+            }
+	    }
+    }
+
+    control {
+	    execute(TC_Sem_2002_TheAltStatement_015());
+    }
+}

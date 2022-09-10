@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ns="schema:Pos_050203_order_of_the_mapping_005"
+	xmlns:ns1="Pos_050203_order_of_the_mapping_005__MyNamespace"
+	xmlns:ns2="Pos_050203_order_of_the_mapping_005_MyNamespace">
+	<ns1:Test1>1</ns1:Test1>
+	<ns2:Test2>2</ns2:Test2>
+</ns:MyType>

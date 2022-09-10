@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.6, Ensure that class constructor can be invoked with no actual parameter list.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010106_ConstructorInvocation_003 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+	type external class MyExternalClass {
+		//var integer v_id;
+
+		public function get_sum(integer x, integer y) return integer {
+			return x + y;
+		}
+	}
+
+    testcase TC_Sem_5010106_ConstructorInvocation_003() runs on GeneralComp {
+    	var MyExternalClass v_ext := MyExternalClass.create();
+
+    	if (v_ext.get_sum(1,2) == 3) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010106_ConstructorInvocation_003());
+    }
+}

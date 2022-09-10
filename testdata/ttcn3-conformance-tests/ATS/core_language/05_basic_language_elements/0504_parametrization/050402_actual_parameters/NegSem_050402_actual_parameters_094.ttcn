@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that referencing errors are detected in actual parameters passed to in formal template parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// When actual parameters that are passed to in formal value or template parameters
+// contain a value or template reference, rules for using references on the right hand
+// side of assignments apply.
+
+module NegSem_050402_actual_parameters_094 {
+
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer field1,
+        record {
+            integer subfield1,
+            integer subfield2
+        } field2 optional
+    }
+
+    template R mw_rec := {
+        field1 := 1,
+        field2 := *
+    }
+
+    function f_test(in template integer p_val) {
+        if (match(255, p_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_094() runs on GeneralComp {
+        f_test(mw_rec.field2.subfield1); // tested parameter passing (using referencing rules specified at 15.6.2)
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_094());
+	}
+}

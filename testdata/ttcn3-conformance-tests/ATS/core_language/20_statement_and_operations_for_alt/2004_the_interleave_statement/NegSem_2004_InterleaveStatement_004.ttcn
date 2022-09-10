@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.2
+ ** @purpose  1:20.4, verify that goto cannot be inside interleave if used together with reception statements
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction d)
+// The restricted use of the control transfer statements for, while, do-while, and goto within interleave
+// statements is allowed under the following conditions:
+// b. The goto statement can be used for defining unconditional jumps within statements blocks that do not
+// contain reception statements and for specifying unconditional jumps out of interleave statements.
+
+module NegSem_2004_InterleaveStatement_004 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    testcase TC_NegSem_2004_InterleaveStatement_004() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+		p.send(charstring:"ding");
+
+        interleave {
+            [] p.receive(charstring:"bar") {
+                goto L1;
+                label L1;
+                p.receive(charstring:"ding");
+            }
+            [] p.receive(charstring:"foo") {
+            }
+        }
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_2004_InterleaveStatement_004());
+    }
+}

@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(omit) is rejected with anyelement inside values.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1508_TemplateRestrictions_008 {
+
+type record ExampleType {
+	integer a,
+	charstring b
+}
+
+template(omit) ExampleType exampleOmitAny := {2, ?};
+
+
+}

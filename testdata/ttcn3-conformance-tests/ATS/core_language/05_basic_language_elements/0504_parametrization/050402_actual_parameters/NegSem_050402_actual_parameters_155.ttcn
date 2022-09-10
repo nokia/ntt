@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that module parameters cannot be used as actual out value parameters of altsteps
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal value parameters shall be (template) variables,
+// formal (template) parameters (of in, inout or out parameterization) or references to elements
+// of (template) variables or formal (template) parameters of structured types. Furthermore it is
+// allowed to use the dash symbol "-" as an actual out parameter, signifying that a possible result
+// for that parameter will not be passed back.
+
+module NegSem_050402_actual_parameters_155 {
+
+    type component GeneralComp {
+    }
+
+    modulepar integer PX_VAL := 2;
+
+    altstep a_test(out integer p_val) {
+        [] any timer.timeout {
+            p_val := 9
+        }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_155() runs on GeneralComp {
+        timer t_tmr := 0.1;
+        t_tmr.start;
+        a_test(PX_VAL);
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_155());
+	}
+}

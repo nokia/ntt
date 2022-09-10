@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+ /*
+  * activate operation -> The actual state is always set to activated.
+  */
+
+module Sem_1911_log_statement_008 {
+
+	type component GeneralComp {
+	}
+
+	altstep a() runs on GeneralComp
+	{
+		[] any port.receive {}
+	}
+
+	testcase TC_Sem_1911_log_statement_008() runs on GeneralComp {
+        log("Activate: ", activate(a()));
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_1911_log_statement_008());
+	}
+}

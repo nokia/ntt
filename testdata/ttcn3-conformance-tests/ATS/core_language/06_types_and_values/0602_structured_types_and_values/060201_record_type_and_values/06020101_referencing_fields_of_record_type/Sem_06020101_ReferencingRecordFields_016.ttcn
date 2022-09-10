@@ -1,0 +1,60 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.1.1, verify that referencing fields nested deep inside omitted record invokes expansion
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When referencing a field of an uninitialized record value or field or omitted field
+// (including omitting a field at a higher level of the embedding hierarchy) on the left
+// hand side of an assignment, the reference shall recursively be expanded up to and
+// including the depth of the referenced subfield as follows:
+// a) When expanding a value or value field of record type, the subfield referenced in
+// the dot notation shall be set to present and all unreferenced mandatory subfields shall
+// be left uninitialized; when the assignment is used in a scope where the optional
+// attribute is equal to "explicit omit", all unreferenced optional subfields shall be
+// left undefined. When the assignment is used in a scope where the optional attribute is
+// equal to "implicit omit", all unreferenced optional subfields shall be set to omit.
+// b) Expansion of record of/set of/array, union and set values and intermediate fields
+// shall follow the rules of item a) in clauses 6.2.3 and 6.2.5.1, and clause 6.2.2.1
+// correspondingly.
+// At the end of the expansion, the value at the right hand side of the assignment shall
+// be assigned to the referenced subfield.
+
+module Sem_06020101_ReferencingRecordFields_016 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        record {
+            record {
+                record {
+                    integer nested1,
+                    integer nested2
+                } subfield1,
+                integer subfield2
+            } field1,
+            charstring field2
+        } sub optional
+    }
+
+    testcase TC_Sem_06020101_ReferencingRecordFields_016() runs on GeneralComp {
+        var R v_rec;
+        v_rec.sub := omit;
+        v_rec.sub.field1.subfield1.nested1 := 0;
+        if (isbound(v_rec.sub) and isbound(v_rec.sub.field1) and not isbound(v_rec.sub.field2) and
+            isbound(v_rec.sub.field1.subfield1) and not isbound(v_rec.sub.field1.subfield2) and
+            match(v_rec.sub.field1.subfield1.nested1, 0) and not isbound(v_rec.sub.field1.subfield1.nested2)) {
+	        setverdict(pass);
+        } else {
+	        setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_06020101_ReferencingRecordFields_016());
+    }
+
+}

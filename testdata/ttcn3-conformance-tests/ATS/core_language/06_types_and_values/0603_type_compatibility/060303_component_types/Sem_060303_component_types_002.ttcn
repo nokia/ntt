@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.3, Ensure that the IUT correctly handles assignments from structures having compatible components
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060303_component_types_002 {
+
+    type integer ConstrainedInteger(0..10);
+
+    type component TestCaseComp {
+        const integer c_integer:=2;
+        const ConstrainedInteger c_constrained:=2;
+    }
+
+    type component FunctionComp {
+        const integer c_integer:=2;
+    }
+
+    function f_testFunction(integer p_arg) runs on FunctionComp return integer {
+
+        var integer v_result;
+        v_result:=p_arg*c_integer;
+        return v_result;
+    }
+
+    testcase TC_Sem_060303_component_types_002() runs on TestCaseComp {
+
+        var integer v_int:=2;
+
+        if ( f_testFunction(v_int)==4 ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_060303_component_types_002());
+    }
+
+}

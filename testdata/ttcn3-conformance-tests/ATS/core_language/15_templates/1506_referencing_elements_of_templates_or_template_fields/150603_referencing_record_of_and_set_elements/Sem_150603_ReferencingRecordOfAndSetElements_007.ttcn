@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that referencing an element within a record of, set of or array field to which omit is assigned works as expected
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+ //Restriction g)
+/*  AnyElementsOrNone: when referencing an element of a record of or set of template or field that contains AnyElementsOrNone, the result of an operation
+ *  is dependent on the position of AnyElementsOrNone, the referenced index and length attributes attached to AnyElementsOrNone.
+*/
+
+
+module Sem_150603_ReferencingRecordOfAndSetElements_007 {
+
+    type component GeneralComp { }
+
+    type record of integer RoI;
+
+    testcase TC_Sem_150603_ReferencingRecordOfAndSetElements_007() runs on GeneralComp {
+        var template RoI m_one;
+
+        m_one := {1,?, * length(1..3), 5};
+        m_one[1] := 2;
+        m_one[2] := 2;
+
+        // assignment should yield {1,2,2,?,?,5}
+
+        if (not match(1,m_one[0])) {
+            setverdict(fail,m_one);
+        }
+        if (not match(2,m_one[1])) {
+            setverdict(fail,m_one);
+        }
+        if (not match(2,m_one[2])) {
+            setverdict(fail,m_one);
+        }
+
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_150603_ReferencingRecordOfAndSetElements_007());
+    }
+
+}

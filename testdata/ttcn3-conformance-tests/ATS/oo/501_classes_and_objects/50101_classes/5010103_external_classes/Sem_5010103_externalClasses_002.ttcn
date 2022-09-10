@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.3, Ensure that external classes can extend non‑external classes
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010103_externalClasses_002 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class t_internal_class {
+        function add(integer v) {}
+    }
+
+    type external class Java_Int_List extends t_internal_class {
+        function get(integer index) return integer;
+    }
+
+
+
+    testcase TC_Sem_5010103_externalClasses_002() runs on GeneralComp {
+        //empty testcase
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_5010103_externalClasses_002());
+    }
+}

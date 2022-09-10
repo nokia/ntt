@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.2, Ensure that the list operator on arrays is evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070102_ListOperator_005 {
+
+type component GeneralComp {
+}
+
+type integer MyArrayType[3];
+type integer MyArrayTypeSix[6];
+
+testcase TC_Sem_070102_ListOperator_005() runs on GeneralComp {
+	var MyArrayType v_i := {0, 1, 6};
+	var MyArrayType v_j := {2, 4, 7};
+
+	var MyArrayTypeSix v_result := v_i & v_j;
+	var MyArrayTypeSix v_reference := {0, 1, 6, 2, 4, 7}; 	//order of elements is concatenated order
+	if (v_result == v_reference) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070102_ListOperator_005());
+}
+
+}

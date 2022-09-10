@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that DefinitionRef can be used to identify a field within a module
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// DefinitionRef and FieldReference identify a definition or field respectively which is within the module, group or
+// definition to which the with statement is associated.
+
+module Sem_2702_the_with_statement_001 {
+
+    type component GeneralComp {
+	}
+
+	type record R {
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2702_the_with_statement_001 () runs on GeneralComp {
+		var RoUC v_enc := R.encode;
+		if(v_enc[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_2702_the_with_statement_001());
+	}
+
+} with { encode(R) "RuleA" }

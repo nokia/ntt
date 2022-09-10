@@ -1,0 +1,79 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:14, Ensure that the IUT calls signature exception
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Exception is a charstring
+
+module Sem_1400_procedure_signatures_001 {
+
+    signature p_Sig1_001(in integer p_par1, out integer p_par2, inout integer p_par3) return integer
+	exception (charstring);  //execption is a string
+
+
+    type port remotePort procedure {
+        inout  p_Sig1_001;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+		var integer MyComp;
+    }
+
+
+    function f_Server() runs on GeneralComp {
+	PCO.raise(p_Sig1_001,"My string"); // raise exception
+	}
+
+	function f_client() runs on GeneralComp {
+	timer t_timeout:=30.0;
+
+		t_timeout.start;
+
+	 alt {
+	  [] PCO.catch(p_Sig1_001,charstring:"My string") {
+		setverdict(pass); // receive exception
+		}
+	  [] PCO.catch(p_Sig1_001,charstring:?)  // receive anything else
+	   {
+		setverdict(fail);
+	  }
+
+      [] t_timeout.timeout {
+        setverdict(fail);
+      }
+
+		}
+}
+
+	testcase TC_Sem_1400_procedure_signatures_001() runs on GeneralComp system GeneralComp {
+
+		var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+	   var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+
+
+       connect(server:PCO, client:PCO);
+
+
+       server.start(f_Server());
+	   client.start(f_client());
+
+		       alt {
+           [] client.done {
+               server.stop;
+           }
+       }
+
+       alt {
+           [] all component.done {}
+       }
+
+       disconnect(server:PCO);
+   }
+
+    control{
+        execute(TC_Sem_1400_procedure_signatures_001());
+    }
+
+}

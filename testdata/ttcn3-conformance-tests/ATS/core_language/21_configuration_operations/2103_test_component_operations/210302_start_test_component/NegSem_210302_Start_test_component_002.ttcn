@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, Ensure that only component type is allowed for ptc declaration
+ ** @verdict  pass reject
+ *****************************************************************/
+// VariableRef (being a component type variable, a component type parameter
+module NegSem_210302_Start_test_component_002 {
+
+    type component GeneralComp { }
+	type  record Rectype{}
+	function f() runs on GeneralComp {}
+    testcase TC_NegSem_210302_Start_test_component_002() runs on GeneralComp system GeneralComp {
+        var Rectype ptc;
+		ptc:=GeneralComp.create; // VariableRef (being a component type variable, a component type parameter
+
+		ptc.start(f());
+
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210302_Start_test_component_002());
+    }
+}

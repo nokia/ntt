@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of octetstring types yields an even number of digits.
+ ** @verdict  pass reject
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_001 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_001() runs on GeneralComp {
+	var template octetstring v_str := 'ABCD'O & '?'O & '?E'O;
+
+	// shall cause an error as it would denote 9 (i.e., uneven) number of digits
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_001());
+}
+
+}

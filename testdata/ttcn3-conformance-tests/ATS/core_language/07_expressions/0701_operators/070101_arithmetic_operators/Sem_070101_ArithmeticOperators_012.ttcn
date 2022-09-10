@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that the application of the modulo operator on integer variables is evaluated correctly when the integer value greater than the modulo value.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070101_ArithmeticOperators_012 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070101_ArithmeticOperators_012() runs on GeneralComp {
+	var integer v_i := 12;
+	var integer v_result := v_i mod 10;
+
+	if (v_result == 2) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070101_ArithmeticOperators_012());
+}
+
+}

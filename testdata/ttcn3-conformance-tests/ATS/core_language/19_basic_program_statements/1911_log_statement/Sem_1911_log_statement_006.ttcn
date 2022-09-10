@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:19.11, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+ /*
+ * create operation -> actual state and the component instance name, The actual state is always set to Inactive.
+ * */
+module Sem_1911_log_statement_006 {
+
+    type component GeneralComp {
+        var NewComp vc_NewComp;
+        timer t := 5.0;
+    }
+    type component NewComp { }
+
+testcase TC_Sem_1911_log_statement_006 () runs on GeneralComp system GeneralComp{
+
+    var GeneralComp ptc := GeneralComp.create;
+
+    log("Actual state and the component instance name : ", ptc);
+
+    setverdict(pass);
+
+}
+
+
+control{
+
+    execute(TC_Sem_1911_log_statement_006());
+
+}
+
+}

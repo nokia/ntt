@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign values to list of types restricted octetstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010204_StringLenghtRestrict_003 {
+    type octetstring ocStrings1 length(2 .. 4);
+    type octetstring ocStrings2 length(4);
+    type octetstring ocStrings3 length(0 .. infinity);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010204_StringLenghtRestrict_003() runs on GeneralComp {
+        var ocStrings1 v_b1;
+        var ocStrings2 v_b2;
+        var ocStrings3 v_b3;
+        v_b1 := 'FE80'O;	//2 octets
+        v_b1 := 'FE8001'O;	//3 octets
+        v_b2 := 'FE800201'O;	//4 octets
+        v_b3 := 'FE830043'O;	//4 octets
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010204_StringLenghtRestrict_003());
+    }
+}

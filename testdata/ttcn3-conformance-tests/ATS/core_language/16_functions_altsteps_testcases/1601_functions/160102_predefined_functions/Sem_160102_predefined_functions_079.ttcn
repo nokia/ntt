@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that predefined decvalue_unichar function works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+
+ * this test focuses on the predefined functions decvalue_unichar (utf-32 big endian)*/
+
+
+
+module Sem_160102_predefined_functions_079 {
+
+    type component GeneralComp {
+
+    }
+
+    type integer Int with { variant "32 bit" }; // standardized variant encodes into 4 octets
+    testcase TC_Sem_160102_predefined_functions_079 () runs on GeneralComp {
+        var Int v_test := 123;
+
+        //encoded text:
+        var universal charstring v_enc := encvalue_unichar(v_test, "UTF-32BE");
+
+        //decode:
+        var Int v_test_dec;
+        var integer v_res:= decvalue_unichar(v_enc,v_test_dec, "UTF-32BE"); //decode (UTF-32 big endian)
+
+        if (v_res == 0) {
+            setverdict(pass, "Decoded ", v_enc , " with result ", v_res);
+        } else {
+            setverdict(fail, "Unexpected decoding result: Decoded ", v_enc , " with result ", v_res);
+        }
+
+   }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_079());
+
+    }
+
+}

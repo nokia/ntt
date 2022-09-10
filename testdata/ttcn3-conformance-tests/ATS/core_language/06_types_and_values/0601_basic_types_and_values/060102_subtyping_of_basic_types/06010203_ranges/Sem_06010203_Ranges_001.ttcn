@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted integer.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_001 {
+    type integer MyIntegerRange (0 .. 255);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_001() runs on GeneralComp {
+        var MyIntegerRange v_i;
+        v_i := 0;
+        v_i := 100;
+        v_i := 255;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_001());
+    }
+}

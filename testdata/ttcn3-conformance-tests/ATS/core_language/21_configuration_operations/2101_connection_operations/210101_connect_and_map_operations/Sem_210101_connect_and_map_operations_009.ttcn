@@ -1,0 +1,53 @@
+/*****************************************************************
+ ** @author   STF 433, STF 470
+ ** @version  0.0.2
+ ** @purpose  1:21.1.1, Ensure that map param statements are allowed in testcase block
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_210101_connect_and_map_operations_009 {
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType1 {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    type port MyMessagePortType message {
+        inout integer;
+        map param (in MyMessageType1 p1, inout charstring p2);
+    }
+
+    const MyMessageType1 c_myTemplate1 := {
+        field1 := 2,
+        field2 := "foobar",
+        field3 := true
+    }
+
+    testcase TC_Sem_210101_connect_and_map_operations_009() runs on GeneralComp system GeneralComp {
+        var charstring v_varString := "foobar";
+
+        map(mtc:pt_myPort, system:pt_myPort) param(c_myTemplate1, v_varString);
+
+        pt_myPort.send(13);
+        log("Map inout parameter: ", v_varString);
+
+		if(pt_myPort.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+
+        unmap(mtc:pt_myPort, system:pt_myPort);
+
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_210101_connect_and_map_operations_009());
+    }
+}

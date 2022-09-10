@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.2.2, assignment notation for sets containing union with @default
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+ // The following requirement is tested:
+// using the @default modifier before the type of the alternative. For unions with a default alternative, special type compatibility rules apply (see clause 6.3.2.4) which allow using the union value as compatible with the type of the default alternative.
+
+module Sem_060202_SetTypeValues_009 {
+
+type component GeneralComp {
+}
+
+type union U {
+		@default integer option1,
+		charstring option2
+	}
+
+ type set S {
+  integer field1 (1 .. 10),
+  U field2
+ }
+
+ type S ConstrainedSet ({1, 1}, {2, { option2 := "xyz" }});	// implicit usage of the default modifier to assign value
+
+ type ConstrainedSet.field2 MyInteger;
+
+testcase TC_Sem_060202_SetTypeValues_009() runs on GeneralComp {
+
+ var MyInteger v_int := 2;
+
+      if (match(v_int,2)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060202_SetTypeValues_009());
+}
+
+}

@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, multidimensional index redirect in any from port.trigger statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// It is also possible to store the index of a port in a single-dimensional port array
+// at which the operation was successful to a variable of type integer or, in case of
+// multi-dimensional port arrays the index of the successful port to an integer array
+// or record of integer variable. When checking the port array for matching messages,
+// the port indices to be checked are iterated from lowest to highest. If the port
+// array is multi-dimensional, then the ports are iterated over from innermost to
+// outermost array dimension from lowest to highest index for each dimension, e.g.
+// [0][0], [0][1], [1][0], [1][1]. The first port which matches all the criteria will
+// cause the operation to be successful even if other ports in the array would also
+// meet the criteria.
+
+module Sem_220203_TriggerOperation_021 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p [2][3];
+        port P altP;
+	}
+
+    type record of integer RoI;
+
+    testcase TC_Sem_220203_TriggerOperation_021() runs on GeneralComp {
+        var RoI v_index;
+        p[0][2].send(10);
+        altP.send(1);
+        alt {
+            [] any from p.trigger(integer:?) -> @index value v_index {
+                if (v_index == { 0, 2 }) { setverdict(pass); }
+                else { setverdict(fail, "v_index: ", v_index); }
+            }
+            [] any port.receive { setverdict(fail); }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_021(), 5.0);
+    }
+}

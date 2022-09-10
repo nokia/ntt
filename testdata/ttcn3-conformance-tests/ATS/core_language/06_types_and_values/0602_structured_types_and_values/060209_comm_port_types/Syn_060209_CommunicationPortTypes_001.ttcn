@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that message-based ports are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_060209_CommunicationPortTypes_001 {
+
+    type record MsgType1 {
+        integer f1,
+        octetstring f2
+    }
+
+	type boolean MsgType2;
+
+	type charstring MsgType3;
+
+    // Message-based port which allows types MsgType1 and MsgType2 to be received at, MsgType3 to be
+    // sent via and any integer value to be send and received over the port
+    type port MyMessagePortTypeOne message {
+        in MsgType1, MsgType2;
+        out MsgType3;
+        inout integer
+    }
+
+}

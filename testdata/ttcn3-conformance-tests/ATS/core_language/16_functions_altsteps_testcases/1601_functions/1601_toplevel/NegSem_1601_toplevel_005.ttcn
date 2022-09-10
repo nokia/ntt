@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:16.1, Ensure that the IUT correctly handles function definitions
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1601_toplevel_005 {
+
+
+type component GeneralComp {
+}
+
+function f_test (inout integer p_integer := 10 ) return integer {
+  if (p_integer > 5) {
+          p_integer := 5;
+          return p_integer;
+  }
+ // there is no return value if comparison is false
+
+}
+
+testcase TC_NegSem_1601_toplevel_005 () runs on GeneralComp {
+
+ 	if(f_test(2)==2) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+    execute(TC_NegSem_1601_toplevel_005());
+
+}
+
+}

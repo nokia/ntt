@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Verify that the param part can be skipped in unmap operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction b:
+// In unmap operations, param clauses are optional.
+
+module Sem_210102_disconnect_and_unmap_operations_012 {
+
+	type port P message {
+		inout integer;
+		unmap param (integer p_par1);
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_Sem_210102_disconnect_and_unmap_operations_012() runs on GeneralComp system GeneralComp {
+		map(system:p, self:p);
+		unmap(self:p, system:p);
+		if(not p.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+
+	}
+
+	control{
+	    execute(TC_Sem_210102_disconnect_and_unmap_operations_012());
+	}
+}

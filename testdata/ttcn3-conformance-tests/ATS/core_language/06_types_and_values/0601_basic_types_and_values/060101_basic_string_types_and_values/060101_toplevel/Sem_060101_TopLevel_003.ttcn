@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign and read octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060101_TopLevel_003 {
+
+    const octetstring c_o := 'E1F30A'O;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_611_TopLevel_003() runs on GeneralComp {
+    	if (c_o == 'e1f30a'O){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_611_TopLevel_003());
+    }
+}

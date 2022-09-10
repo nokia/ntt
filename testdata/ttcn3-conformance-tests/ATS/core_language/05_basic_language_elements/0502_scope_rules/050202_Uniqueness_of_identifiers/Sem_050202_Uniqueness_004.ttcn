@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.2.2, Ensure that identifiers for fields of structured types, enumerated values and groups do not have to be globally unique.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/* The following requirements are tested:
+ * Within the same module,they shall only be reused for enumerated values within other enumerated types or as identifiers for fields of structured types. In addition, enumeration values shall not be used as names of value or
+ * template definitions of imported enumeration types, defining the given enumeration value
+ */
+
+module Sem_050202_Uniqueness_004 {
+	type component GeneralComp {
+	}
+	type enumerated MyFirstEnumType {MyFirstEnumValue,MySecondEnumValue};
+    type enumerated MySecondEnumType{MyFirstEnumValue,MySecondEnumValue}; //enumerated values within other enumerated types or as identifiers for fields of structured types
+
+    testcase TC_Sem_050202_Uniqueness_004() runs on GeneralComp {
+
+        var MyFirstEnumType     v_enum    :=  MySecondEnumValue;
+        var MySecondEnumType    v_enum_2  :=  MySecondEnumValue;
+
+        if (match(v_enum,MySecondEnumValue) and match(v_enum_2,MySecondEnumValue)) { // local value
+			setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+	}
+	control {
+		execute(TC_Sem_050202_Uniqueness_004());
+	}
+}

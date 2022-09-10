@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Concatenating charstring templates: the @nocase modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// If one of the single templates is a pattern with the @nocase modifier, then all other single templates
+// shall also be patterns with the @nocase modifier and the resulting pattern will also have the @nocase
+// modifier.
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_033 {
+    type component GeneralComp { }
+    template charstring m_str := pattern @nocase "ABC";
+    template charstring m_str2 := m_str & pattern "DE";
+
+    testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_033() runs on GeneralComp {
+        log(m_str2);
+        if (match("aBcDe", m_str2)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_033());
+    }
+}

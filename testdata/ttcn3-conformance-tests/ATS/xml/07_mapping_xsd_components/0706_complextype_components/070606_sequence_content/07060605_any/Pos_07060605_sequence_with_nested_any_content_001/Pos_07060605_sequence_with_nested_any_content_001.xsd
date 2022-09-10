@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060605_sequence_with_nested_any_content_001"
+  xmlns:ns="schema:Pos_07060605_sequence_with_nested_any_content_001">
+  <element name="test" type="string"/>
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <element name="foo" type="string"/>
+        <any namespace="##targetNamespace"/>
+      </sequence>
+    </complexType>
+  </element>
+</schema>

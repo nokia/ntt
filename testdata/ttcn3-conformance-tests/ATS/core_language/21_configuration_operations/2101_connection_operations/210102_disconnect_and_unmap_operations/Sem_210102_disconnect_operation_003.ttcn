@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 451 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:21.1.2, Ensure that mapped port cannot disconnect
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// System and component interface cannot disconnect
+module Sem_210102_disconnect_operation_003 {
+
+    type port myport message {
+        inout integer
+    }
+
+
+    type component Mysystem
+    {
+        port myport messagePort;
+    }
+    function f() runs on Mysystem {}
+
+    testcase TC_Sem_210102_disconnect_operation_003() runs on Mysystem system Mysystem {
+        var Mysystem MyCompA;
+
+        MyCompA:=Mysystem.create;
+
+        map(MyCompA:messagePort,system:messagePort);
+
+        MyCompA.start(f());
+
+        disconnect(MyCompA:messagePort); // should not cause any error
+		setverdict(pass);
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_operation_003());
+    }
+}
+

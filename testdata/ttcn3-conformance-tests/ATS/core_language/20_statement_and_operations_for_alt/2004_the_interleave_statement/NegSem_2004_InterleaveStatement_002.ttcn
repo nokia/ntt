@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.2
+ ** @purpose  1:20.4, verify a while loop cannot be used inside interleave together with reception statements
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction d)
+// The restricted use of the control transfer statements for, while, do-while, and goto within interleave
+// statements is allowed under the following conditions:
+// a. The loop statements for, while, and do-while can be used within statements blocks that do not
+// contain reception statements.
+
+module NegSem_2004_InterleaveStatement_002 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    testcase TC_NegSem_2004_InterleaveStatement_002() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+		for(var integer i := 0; i < 5; i := i + 1) {
+			p.send("ding");
+		}
+
+        interleave {
+            [] p.receive(charstring:"bar") {
+                var integer v_counter := 0;
+                while(v_counter < 5) {
+                    v_counter := v_counter + 1;
+					p.receive;
+                }
+            }
+            [] p.receive(charstring:"foo") {
+            }
+        }
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_2004_InterleaveStatement_002());
+    }
+}

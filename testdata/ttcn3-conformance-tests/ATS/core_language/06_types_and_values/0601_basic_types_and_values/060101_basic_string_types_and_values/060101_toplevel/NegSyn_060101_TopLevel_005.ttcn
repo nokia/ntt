@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign string to hexstring values
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060101_TopLevel_005 {
+    const hexstring c_b1 := "010"; // not an hexstring value
+}

@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.1, Ensure that a simple record-based message template with a wildcard ? is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1501_DeclaringMessageTemplates_002 {
+
+type record MyMessageType {
+	integer field1 optional
+}
+
+template MyMessageType m_myTemplate := {
+	field1 := ?
+}
+
+}

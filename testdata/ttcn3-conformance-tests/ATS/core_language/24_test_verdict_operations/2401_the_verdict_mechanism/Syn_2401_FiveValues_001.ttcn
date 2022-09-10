@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.1, Ensure that there are five values of verdicttype
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.1 The Verdict mechanism/Five different values of verdict
+ **/
+
+
+module Syn_2401_FiveValues_001 {
+    control {
+		var verdicttype v_v;
+
+		v_v := none;
+		v_v := pass;
+		v_v := inconc;
+		v_v := fail;
+		v_v := error;
+    }
+}

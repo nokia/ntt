@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.6.1, Ensure that the referencing of individual string elements inside templates or template fields is forbidden.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150601_ReferencingIndividualStringElements_001 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_150601_ReferencingIndividualStringElements_001() runs on GeneralComp {
+	var template charstring m_char1 := "MYCHAR1";
+	var template charstring m_char2;
+
+	// illegal acchess. Instead, substr should be used.
+	m_char2 := m_char1[1];
+
+	if (m_char2 == "Y") {
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_150601_ReferencingIndividualStringElements_001());
+}
+
+}

@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can comprise set of and record of types
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_018 {
+
+type record of integer FirstRecordOf;	// record of integers
+type set of boolean FirstSetOf;		// set of booleans
+
+
+type component GeneralComp {
+
+	var anytype x;	// Anytype x and y variables
+	var anytype y;
+
+	var FirstRecordOf MyVar1 := { 0, 5, 2, -, 6 };	 // MyVar1 follows type FirstRecordOf with values 0,5,2,-,6
+	var FirstSetOf MyVar2 := { true, -,-, false, true}; // MyVar2 follows type FirstSetOf with values true,-,-,false,true
+
+}
+
+
+testcase TC_Sem_060206_anytype_0018() runs on GeneralComp {
+
+x.FirstRecordOf := MyVar1;	// anytype x is now a record of type with values of MyVar1
+y.FirstSetOf := MyVar2;	// anytype x is now a set of type with values of MyVar2
+
+      if (match(x.FirstRecordOf[0], 0) and match(x.FirstRecordOf[4], 6)
+      and  match(y.FirstSetOf[0], true) and  match(y.FirstSetOf[3], false) )  {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_0018());
+}
+
+}

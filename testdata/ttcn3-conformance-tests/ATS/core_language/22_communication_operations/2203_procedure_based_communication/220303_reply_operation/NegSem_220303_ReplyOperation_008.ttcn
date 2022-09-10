@@ -1,0 +1,78 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that error is issued for a missing to clause in a reply operation in case of one-to-many connections
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// c) A to clause shall be present in case of one-to-many connections.
+
+module NegSem_220303_ReplyOperation_008 {
+
+    signature S();
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    function f_ClientQuery() runs on GeneralComp {
+
+        p.call(S:{}, 1.0) {
+
+            [] p.getreply(S:{}) {
+            }
+            [] p.catch (timeout) {
+            }
+        }
+		setverdict(pass);
+    }
+
+    function f_ServerResponses() runs on GeneralComp {
+        var GeneralComp v_client1 := null, v_client2 := null;
+
+        alt {
+            [v_client1 == null] p.getcall(S:{}) -> sender v_client1 {
+                if (v_client2 == null) { repeat; }
+            }
+            [v_client2 == null] p.getcall(S:{}) -> sender v_client2 {
+                if (v_client1 == null) { repeat; }
+            }
+        }
+        p.reply(S:{}); // to clause missing, but there are 2 clients!
+		setverdict(pass);
+    }
+
+    testcase TC_NegSem_220303_ReplyOperation_008() runs on GeneralComp system GeneralComp {
+        var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+        var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+        var GeneralComp client2 := GeneralComp.create("RemoteProcedure Client");
+        // map the PTCs to the system port
+        connect(server:p, client:p);
+        connect(server:p, client2:p);
+
+        server.start(f_ServerResponses());
+
+        client2.start(f_ClientQuery());
+        client.start(f_ClientQuery());
+
+        interleave {
+            [] client.done {}
+            [] client2.done {}
+        }
+        server.stop;
+
+        alt {
+            [] all component.done {}
+        }
+    }
+
+    control{
+        execute(TC_NegSem_220303_ReplyOperation_008());
+    }
+
+}

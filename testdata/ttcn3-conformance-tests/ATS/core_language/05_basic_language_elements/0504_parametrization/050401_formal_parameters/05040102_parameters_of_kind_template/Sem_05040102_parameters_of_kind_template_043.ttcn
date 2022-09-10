@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that deterministic fuzzy template parameters can be declared and used in deteministic context
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction j
+// If a lazy or fuzzy template parameter is used in deterministic contexts (i.e. during the evaluation of a snapshot or initialization
+// of global non-fuzzy templates), it shall be declared @deterministic.
+
+module Sem_05040102_parameters_of_kind_template_043 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test(template @fuzzy @deterministic integer p_param1) runs on GeneralComp {
+		p.send(1);
+		p.receive(p_param1);
+	}
+
+    testcase TC_Sem_05040102_parameters_of_kind_template_043() runs on GeneralComp system GeneralComp {
+        connect(mtc:p, mtc:p);
+		f_test(?);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_05040102_parameters_of_kind_template_043());
+	}
+}

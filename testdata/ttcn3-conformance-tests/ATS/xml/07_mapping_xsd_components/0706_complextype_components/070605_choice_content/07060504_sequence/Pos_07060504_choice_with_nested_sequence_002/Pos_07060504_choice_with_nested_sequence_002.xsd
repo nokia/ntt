@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060504_choice_with_nested_sequence_002"
+  xmlns:ns="schema:Pos_07060504_choice_with_nested_sequence_002">
+  <element name="MyType">
+    <complexType>
+      <choice>
+        <sequence>
+          <sequence>
+            <element name="foo" type="string"/>
+            <element name="bar" type="string"/>
+          </sequence>
+          <element name="ding" type="string"/>
+          <element name="foo" type="string"/>
+          <element name="bar" type="string"/>
+        </sequence>
+        <element name="ding" type="string"/>
+      </choice>
+	</complexType>
+  </element>
+</schema>

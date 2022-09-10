@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that definition from inside an imported function cannot be referenced
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction f:
+// When importing a function, altstep or test case the corresponding behaviour
+// specifications and all definitions used inside the behaviour specifications
+// remain invisible for the importing module.
+
+module NegSem_08020301_GeneralFormatOfImport_038 {
+import from NegSem_08020301_GeneralFormatOfImport_038_import { function f_test };
+	// c_test should be undefined, because it is invisible for the importing module
+	const integer c_test2 := c_test;
+}
+
+module NegSem_08020301_GeneralFormatOfImport_038_import {
+	function f_test() {
+		const integer c_test := 1;
+	}
+}

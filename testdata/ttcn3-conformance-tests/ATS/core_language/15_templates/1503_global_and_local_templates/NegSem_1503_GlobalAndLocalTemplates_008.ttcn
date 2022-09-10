@@ -1,0 +1,92 @@
+/*****************************************************************
+ * @author TTF 014
+ * @version 0.0.1
+ * @purpose 1:15.3, Ensure that signature templates with restriction e) are accepted.
+ * @verdict pass reject
+ *****************************************************************/
+/* The following requirements are tested:
+ * After completing initialization, signature templates that do not contain the @abstract modifier
+ * and fulfil the following condition:
+ * 		All out and inout procedure parameters are completely initialized and
+ * 		all in procedure parameters are either unitialized or marked as not relevant using the NotUsedSymbol.
+ *
+ * Are safe to be used in replay and getreplay operations, but they shall not be used in call and getcall operations.
+ */
+module NegSem_1503_GlobalAndLocalTemplates_008 {
+	signature p_NegSem_1503_GlobalAndLocalTemplates_008_SignatureTemplate(in integer p_in,
+										   inout integer p_inout,
+										   out integer p_out);
+
+
+	template p_NegSem_1503_GlobalAndLocalTemplates_008_SignatureTemplate s_notToUseInCallTemplate := {
+		p_in := 1, //NotUsedSymbol?
+		p_inout := 2,
+		p_out := 3
+	}
+
+
+	type port remotePort procedure {
+		inout p_NegSem_1503_GlobalAndLocalTemplates_008_SignatureTemplate;
+	}
+
+	type component GeneralComp {
+		port remotePort PCO;
+	}
+
+	function f_ClientQuery() runs on GeneralComp {
+
+		PCO.call(p_NegSem_1503_GlobalAndLocalTemplates_008_SignatureTemplate:s_notToUseInCallTemplate, 5.0) { //Error: shall not be used in call
+			[] PCO.getreply(p_NegSem_1503_GlobalAndLocalTemplates_008_SignatureTemplate:?) {
+					// any reply is accepted
+					setverdict(pass);
+				}
+			[] PCO.catch(timeout) {
+					setverdict(fail);
+				}
+		};
+	}
+
+	function f_ServerResponses() runs on GeneralComp {
+
+		timer t_timeout := 30.0;
+
+		t_timeout.start;
+
+		alt {
+		[] PCO.getcall(p_NegSem_1503_GlobalAndLocalTemplates_008_SignatureTemplate:s_notToUseInCallTemplate) { //Error: shall not be used in getcall
+				setverdict(fail);
+			}
+		[] t_timeout.timeout {
+				setverdict(fail);
+			}
+		}
+	}
+
+
+	testcase TC_NegSem_1503_GlobalAndLocalTemplates_008()
+		runs on GeneralComp system GeneralComp {
+		var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+		var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+		// map the PTCs to the system port
+		connect(server:PCO, client:PCO);
+
+		server.start(f_ServerResponses());
+		client.start(f_ClientQuery());
+
+		alt {
+		[] client.done {
+				server.stop;
+			}
+		}
+
+		alt {
+		[] all component.done {}
+		}
+
+		disconnect(server:PCO);
+	}
+
+	control {
+		execute(TC_NegSem_1503_GlobalAndLocalTemplates_008());
+	};
+}

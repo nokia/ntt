@@ -1,0 +1,17 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, enumerated type declaration with user-assigned values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// Each enumerated value may optionally have a user-assigned integer value, which
+// is defined after the name of the enumerated value in parenthesis.
+
+module Syn_060204_enumerated_type_and_values_002 {
+
+    type enumerated MyFirstEnumType {
+        Monday, Tuesday(2), Wednesday(-1), Thursday, Friday
+    };
+}

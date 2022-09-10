@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.9, Ensure that the IUT correctly handles stop statements.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_1909_stop_statement_002 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_1909_stop_statement_002 () runs on GeneralComp{
+  setverdict(pass);
+}
+
+testcase TC_not_to_be_executed () runs on GeneralComp{
+  setverdict(fail);
+}
+
+
+control{
+    execute(TC_Sem_1909_stop_statement_002());
+    stop;
+    execute(TC_not_to_be_executed());
+}
+
+}

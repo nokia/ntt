@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// C4.2. In addition to the general error causes in clause 16.1.2, error causes are:
+// the template passed to the invalue parameter is not of type bitstring, hexstring, octetstring, charstring, universal charstring,record of, set of, or array.
+
+module NegSem_160102_predefined_functions_050 {
+
+    type component GeneralComp {
+	}
+
+
+    testcase TC_NegSem_160102_predefined_functions_050() runs on GeneralComp {
+	var universal charstring v_i;
+    template boolean MyBoolean := true;
+
+ 	v_i:=substr(MyBoolean, 0, 1);		// error: in_par template is a boolean
+ 	setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160102_predefined_functions_050());
+	}
+}

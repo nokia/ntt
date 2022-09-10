@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, stop.self in MTC
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// A component can stop its own behaviour by using a simple stop execution statement
+// (see clause 19.9) or by addressing itself in the stop operation, e.g. by using the
+// self operation.
+//
+// If the stopped test component is the MTC, resources of all existing PTCs shall be
+// released, the PTCs shall be removed from the test system and the test case shall
+// terminate (see clause 26.1).
+
+module Sem_210303_Stop_test_component_004 {
+
+    type component GeneralComp {
+    }
+
+	function f() runs on GeneralComp {
+        timer t_tmr := 2.0;
+        t_tmr.start;
+        t_tmr.timeout;
+        setverdict(fail); // in case the stop operation doesn't work
+	}
+
+    testcase TC_Sem_210303_Stop_test_component_004() runs on GeneralComp system GeneralComp {
+        var boolean v_cond := true;
+        var GeneralComp v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+		if (v_cond) { // to prevent "unreachable statement" errors
+            setverdict(pass);
+            self.stop; // stops the MTC and as a consequence the PTC is stopped too
+        }
+        setverdict(fail); // this statement shall never be reached
+    }
+
+    testcase TC_Sem_210303_Stop_test_component_004_next() runs on GeneralComp system GeneralComp {
+        timer t_tmr := 2.5;
+        t_tmr.start;
+        t_tmr.timeout;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210303_Stop_test_component_004());
+        // run another test case to make sure the PTC is not active and doesn't influence its result
+        execute(TC_Sem_210303_Stop_test_component_004_next());
+    }
+}

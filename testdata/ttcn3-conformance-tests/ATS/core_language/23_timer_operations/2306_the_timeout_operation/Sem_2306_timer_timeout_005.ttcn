@@ -1,0 +1,65 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure any timer.timeout operation for timeouts that are not in scope
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/The any keyword used with the timeout operation succeeds if the timeout-list is not empty./Any timer ignores timeouts in other components
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Allow any timer.timeout
+
+module Sem_2306_timer_timeout_005 {
+    const float PTC_TIMEOUT := 1.0;
+
+    type port MyPort message { inout charstring };
+
+    type component System {}
+
+    type component MTC {
+        port MyPort signalPort;
+    }
+
+    type component PTC {
+    	port MyPort signalPort;
+    }
+    function f_wait_for_mtc_timeout() runs on PTC
+    {
+        timer t_timer := PTC_TIMEOUT;
+        t_timer.start;
+
+        alt {
+            [] signalPort.receive {
+                // any timer.timeout happend in MTC
+                setverdict(fail, "MTC detected timeout happened in PTC -- it is wrong!");
+            }
+            [] t_timer.timeout {
+                setverdict(pass);
+                signalPort.send("I'm timed out!");
+            }
+        }
+    }
+
+    altstep a_step() runs on MTC {
+        [] any timer.timeout {
+            setverdict(fail, "MTC detected timeout happened in PTC -- it is wrong!");
+            signalPort.send("I saw your timeout?");
+        }
+        [] signalPort.receive {
+            // PTC timer out
+            setverdict(pass);
+        }
+    }
+
+    testcase TC_Sem_2306_timer_timeout_005() runs on MTC system System{
+        var PTC ptc := PTC.create;
+        connect(ptc:signalPort, mtc:signalPort);
+        ptc.start(f_wait_for_mtc_timeout());
+
+        a_step();
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_005())
+
+
+    }
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_0710_identity_constraint_definition_schema_components_002"
+  xmlns:ns="schema:Pos_0710_identity_constraint_definition_schema_components_002">
+  <complexType name="unitInventory">
+    <sequence>
+      <element name="item" minOccurs="0" maxOccurs="unbounded">
+        <complexType>
+          <attribute name="itemId" type="integer"/>
+        </complexType>
+      </element>
+    </sequence>
+    <attribute name="unitId" type="integer"/>
+  </complexType>
+
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <element name="unitInventory" type="ns:unitInventory" minOccurs="0" maxOccurs="unbounded"/>
+      </sequence>
+    </complexType>
+    <key name="unitKey">
+      <selector xpath="ns:unitInventory"/>
+      <field xpath="@unitId"/>
+    </key>
+  </element>
+</schema>

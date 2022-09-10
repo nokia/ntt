@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070701_the_any_element_006"
+  xmlns:ns="schema:Pos_070701_the_any_element_006">
+  <element name="fruit" type="string"/>
+  <element name="vegetable" type="string"/>
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <any namespace="schema:Pos_070701_the_any_element_006" minOccurs="0" maxOccurs="unbounded"/>
+      </sequence>
+    </complexType>
+  </element>  
+</schema>

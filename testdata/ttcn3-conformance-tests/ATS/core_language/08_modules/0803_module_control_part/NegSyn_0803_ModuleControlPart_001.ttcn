@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.3, Ensure that there is not more than one control part.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSyn_0803_ModuleControlPart_001 {
+
+control {
+	var integer count := 0;
+}
+
+control {
+	var integer count := 0;
+}
+
+}

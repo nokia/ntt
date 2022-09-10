@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, Ensure that a port, default or component types cannot be module parameters.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+/* Restriction B: Module parameters shall not be of port type,
+ * default type or component type and shall not be of a structured type that contains a sub-element of
+ * port type at any level of nesting.*/
+
+module NegSem_080201_ModuleParameters_002 {
+
+   type port MyMessagePortType message
+	{
+		in		integer;
+		out		integer;
+		inout 	integer
+	}
+
+   type component My_component_type{
+        port MyMessagePortType pCO1;
+
+	}
+
+
+modulepar My_component_type MY_COMP;    // not allowed
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_080201_ModuleParameters_002() runs on GeneralComp {
+
+    if (MY_COMP.running) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_080201_ModuleParameters_002());
+}
+
+}

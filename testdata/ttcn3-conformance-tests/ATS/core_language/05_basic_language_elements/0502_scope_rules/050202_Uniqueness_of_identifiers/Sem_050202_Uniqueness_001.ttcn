@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.2.2, Ensure that the IUT correctly handles the uniqueness of variable names in its scope
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050202_Uniqueness_001 {
+	import from Sem_050202_Uniqueness_001_import {
+	    const all;
+	}
+
+	type component GeneralComp {
+	}
+
+	function f_funcScope() {
+		var boolean repeatedIdentifier := true;
+
+		if(repeatedIdentifier==true) { setverdict(pass); }
+	}
+
+	testcase TC_Sem_050202_Uniqueness_001() runs on GeneralComp {
+		f_funcScope();
+	}
+	control {
+		execute(TC_Sem_050202_Uniqueness_001());
+	}
+}
+
+module Sem_050202_Uniqueness_001_import {
+    const integer repeatedIdentifier := 0; 	  // repeated indentifier from imported module is allowed
+}

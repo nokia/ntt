@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_006 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_006 () runs on GeneralComp {
+        var float v_random1;
+
+        v_random1:=rnd(0.0);
+        if( match(rnd(0.0), v_random1) and not match(rnd(1.0), v_random1) ) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_006());
+    }
+
+}

@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that inout formal value parameters cannot have lazy modifier
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction j)
+// Only in parameters can be declared lazy or fuzzy.
+
+module NegSem_05040101_parameters_of_kind_value_016 {
+
+	type component GeneralComp {
+	}
+
+    function f(inout @lazy integer p_int) {
+        p_int := 6;
+    }
+	testcase TC_NegSem_05040101_parameters_of_kind_value_016() runs on GeneralComp {
+        var integer v_int := 0;
+        f(v_int);
+        log(v_int);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040101_parameters_of_kind_value_016());
+	}
+}

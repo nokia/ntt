@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, standalone receive as a shorthand for alt statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The receive operation can be used as a stand-alone statement in a behaviour description.
+// In this latter case the receive operation is considered to be shorthand for an alt
+// statement with the receive operation as the only alternative.
+
+module Sem_220202_ReceiveOperation_022 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    altstep a() runs on GeneralComp {
+        [] p.receive(10) { setverdict(pass); }
+    }
+
+    testcase TC_Sem_220202_ReceiveOperation_022() runs on GeneralComp {
+        activate(a()); // defaults should be processed as a part of alt
+        p.send(10);
+        p.receive(0); // no match here, but because the statement is actually an alt statement,
+                      // the default shall be automatically exectuted and accept the message
+    }
+
+    control {
+        execute(TC_Sem_220202_ReceiveOperation_022(), 5.0);
+    }
+}

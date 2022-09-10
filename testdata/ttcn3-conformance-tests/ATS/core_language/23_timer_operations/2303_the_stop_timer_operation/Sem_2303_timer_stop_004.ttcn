@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.3, Ensure can be stopped after timeout
+ ** @verdict  pass accept, ttcn3verdict:none
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.3 The Stop timer operation/Stopping inactive timer is ok, but unobservable
+
+
+module Sem_2303_timer_stop_004 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    altstep a_step() runs on TComp{
+        []t_timer.timeout{
+            t_timer.stop;
+        }
+    }
+    testcase TC_Sem_2303_timer_stop_004() runs on TComp{
+        t_timer.start;
+        a_step();
+
+    }
+    control{
+
+            execute(TC_Sem_2303_timer_stop_004())
+
+
+    }
+}

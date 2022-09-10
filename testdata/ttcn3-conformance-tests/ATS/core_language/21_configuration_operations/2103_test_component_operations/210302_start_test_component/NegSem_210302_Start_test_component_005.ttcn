@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, starting behaviour on already running non-alive component
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Starting a second behaviour function on a non-alive PTC or starting a function
+// on a PTC that is still running results in a test case error.
+
+module NegSem_210302_Start_test_component_005 {
+
+	type component GeneralComp {
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        timer t_tmr := 10.0;
+        t_tmr.start;
+        t_tmr.timeout;
+    }
+
+	testcase TC_NegSem_210302_Start_test_component_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        v_ptc.start(f_ptcBehaviour());
+        v_ptc.start(f_ptcBehaviour());
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210302_Start_test_component_005());
+	}
+}

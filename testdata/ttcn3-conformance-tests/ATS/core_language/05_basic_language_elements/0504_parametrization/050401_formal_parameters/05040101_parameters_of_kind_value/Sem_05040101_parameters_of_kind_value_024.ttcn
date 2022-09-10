@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.2
+ ** @purpose  1:5.4.1.1, verify that default value of value formal parameters can invoke functions with runs on clause
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// Background:
+// Prior to the version TTCN-3:2017, the expression could not contain the invocation of functions with a runs on clause.
+
+module Sem_05040101_parameters_of_kind_value_024 {
+	type component GeneralComp {
+        var integer vc_int := 1;
+	}
+
+    function fx() runs on GeneralComp return integer {
+        return vc_int + 1;
+    }
+
+    function f(in integer p_int := fx()) runs on GeneralComp {
+        log(p_int);
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_024() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_024());
+	}
+}

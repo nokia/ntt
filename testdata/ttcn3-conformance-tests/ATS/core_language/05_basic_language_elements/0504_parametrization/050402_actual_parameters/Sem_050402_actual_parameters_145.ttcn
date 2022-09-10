@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that template out parameters can be used as inout formal template parameters of test cases
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal template parameters shall be variables,
+// template variables, formal value or template parameters (of in, inout or out
+// parameterization) of the current scope or references to elements of (template) variables
+// or formal (template) parameters of structured types.
+
+module Sem_050402_actual_parameters_145 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_050402_actual_parameters_145(inout template integer p_val) runs on GeneralComp {
+        if (match(4, p_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+    function f_caller(out template integer p_val) {
+        p_val := 4; // out parameter shall have a value before we can pass it to a function
+        execute(TC_Sem_050402_actual_parameters_145(p_val)); // tested parameter passing
+    }
+
+	control {
+        var template integer vm_val;
+        f_caller(vm_val);
+	}
+}

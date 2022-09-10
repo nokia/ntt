@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author STF 521
+ ** @version  0.0.1
+ ** @purpose 1:6.5.2, Ensure that union is initialized by anytype dot notation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/*The following requirement is tested:
+ * AlternativeId shall resolve to the name of an alternative in the union type or
+ * in case of an anytype value or template AlternativeId shall resolve to a known type name
+ * or a known type name qualified with a module name.
+ */
+
+module Sem_06020501_referencing_fields_of_union_type_008 {
+	type union MyUnionType
+	{
+		integer 		number,
+		anytype 		string
+	};
+    type integer My_Int;
+
+	type component GeneralComp {
+	};
+
+
+	testcase TC_Sem_06020501_referencing_fields_of_union_type_008 () runs on GeneralComp {
+		var MyUnionType v_mut ;
+		v_mut.string.My_Int := 3;    // AlternativeID shall resolve type e.g. My_Int
+
+		if (v_mut.string.My_Int == 3) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06020501_referencing_fields_of_union_type_008());
+	}
+}

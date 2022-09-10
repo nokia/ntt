@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050202_name_conversion_rules_023/"
+  xmlns:ns1="schema:Pos_050202_name_conversion_rules_023/">
+  <element name="MyType" type="string"/>
+</schema>

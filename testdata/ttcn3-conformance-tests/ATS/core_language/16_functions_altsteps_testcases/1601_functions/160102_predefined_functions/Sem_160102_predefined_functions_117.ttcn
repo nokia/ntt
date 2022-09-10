@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF T014
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the actual parameter of the lengthof function can be a map
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// (C.2.1) For values of the map type, the fuction returns the number of key value pairs in the map.
+
+module Sem_160102_predefined_functions_117 {
+
+    type component GeneralComp {
+	}
+    type map from charstring to integer TMap;
+
+    testcase TC_Sem_160102_predefined_functions_117() runs on GeneralComp {
+	    var TMap v_map := {
+            ["blue"] := 1,
+            ["black"] := 2,
+            ["white"] := 3
+        };
+        if (lengthof(v_map) == 3) {
+ 	        setverdict(pass);
+	    } else {
+            setverdict(fail, "Invalid length value");
+        }
+    }
+
+	control {
+		execute(TC_Sem_160102_predefined_functions_117());
+	}
+}

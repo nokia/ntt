@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, Ensure that the IUT correctly handles message trigger operations
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restection l) TemplateInstance shall be of a data type.
+
+module NegSem_220203_TriggerOperation_026 {
+
+
+    type port loopbackPort message {
+      inout anytype
+    }
+
+type component GeneralComp {
+    port loopbackPort messagePort;
+}
+
+testcase TC_NegSem_220203_TriggerOperation_026() runs on GeneralComp system GeneralComp {
+
+    timer t_timeout := 1.0;
+    t_timeout.start;
+    var anytype MyType;
+    MyType.integer := 2;
+
+    var GeneralComp ptc;
+	ptc:=GeneralComp.create alive;
+
+    messagePort.send(MyType);
+
+    alt {
+     [] messagePort.trigger(ptc) {  // error: TemplateInstance shall be of a data type, not component
+         setverdict(pass);
+     }
+    }
+}
+
+control{
+    execute(TC_NegSem_220203_TriggerOperation_026());
+}
+
+}

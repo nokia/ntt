@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070503_derivation_by_union_003"
+  xmlns:ns="schema:Pos_070503_derivation_by_union_003">
+	<simpleType name="test">
+		<union memberTypes="time dateTime">
+			<simpleType>
+				<restriction base="date">
+					<minInclusive value="2003-01-01"/>
+				</restriction>
+			</simpleType>
+		</union>
+	</simpleType>
+	<element name="MyType" type="ns:test" />
+</schema>

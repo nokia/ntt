@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.3, Ensure that constants listed as exceptions in imported groups are not accessible.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_08020303_ImportingGroups_001 {
+
+import from NegSem_08020303_ImportingGroups_001 {
+	group CONST_GROUP except {
+		const c_myotherconst;
+	}
+};
+type component GeneralComp {}
+testcase TC_NegSem_08020303_ImportingGroups_001() runs on GeneralComp {
+	if ( match(c_myotherconst, 123456) ) { // c_myotherconst is excluded and shall not be accessible
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_08020303_ImportingGroups_001());
+}
+}
+
+module NegSem_08020303_ImportingGroups_001_import {
+	group CONST_GROUP {
+		const integer c_myconst := 43532;
+		const integer c_myotherconst := 123456;
+	}
+}

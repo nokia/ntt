@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify that activate operation can be used as standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The activate operation can be called without saving the returned default reference.
+// This form is useful in test cases which do not require explicit deactivation
+// of the activated default, i.e. deactivation of a default is done implicitly at
+// MTC termination.
+
+// Note:
+// An activate operation saving the returned default reference is tested in the section
+// 6.2.8.
+
+module Sem_200502_the_activate_operation_001 {
+
+	type component GeneralComp {
+	}
+
+	altstep a() runs on GeneralComp
+	{
+		[] any port.receive {}
+	}
+
+	testcase TC_Sem_200502_the_activate_operation_001() runs on GeneralComp {
+		activate(a());
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_200502_the_activate_operation_001());
+	}
+}

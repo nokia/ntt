@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.3.8, Verify that map types are not compatible if their key types are not compatible
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// map types are only compatible with other map types. A value "b" of a map type "B" is compatible
+// with a map type "A" if the from type of  "A" is compatible with the from type of "B" and the to
+// type of "B" is compatible with the totype of "A".
+
+module NegSem_060308_compatibility_of_map_types_002 {
+	type record R1 {
+		charstring addr,
+		integer portVal
+	}
+
+	type record R2 {
+		charstring id1,
+		integer id2 optional
+	}
+    // R1 and R2 are not compatible, because there's a difference in optionality of the 2nd field
+	type map from R1 to integer TMap1;
+	type map from R2 to integer TMap2;
+	type component C {}
+
+	testcase TC_NegSem_060308_compatibility_of_map_types_002() runs on C {
+		var TMap1 v_map;
+		v_map[{"127.0.0.1", 80}] := 1;
+		v_map[{"127.0.0.1", 443}] := 2;
+		var TMap2 v_map2 := v_map;
+		log(v_map2);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060308_compatibility_of_map_types_002());
+	}
+}

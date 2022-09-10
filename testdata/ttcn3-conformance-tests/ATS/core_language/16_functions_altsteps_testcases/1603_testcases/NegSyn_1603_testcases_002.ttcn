@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+module NegSyn_1603_testcases_002 {
+
+altstep a_default() runs on GeneralComp {
+    [] GeneralPort.receive() { break }
+}
+
+type component GeneralComp {
+    port GeneralPortType GeneralPort;
+}
+
+testcase TC_NegSyn_1603_testcases_002 (default p_default) runs on GeneralComp {
+    setverdict(pass);
+}
+
+control{
+    var default v_default = activate(a_default);
+    execute(TC_NegSyn_1603_testcases_002(v_default)); //testcase parameter must not be default type
+
+}
+
+}

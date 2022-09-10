@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.3, Verify that test cases cannot have timer parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal timer parameters, with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040103_parameters_of_kind_timer_003 {
+
+    type component C {
+    }
+
+    testcase TC_NegSem_05040103_parameters_of_kind_timer_003(timer p_tmr) runs on C {
+        p_tmr.timeout;
+        setverdict(pass);
+    }
+
+    control {
+		timer t_tmr := 0.1;
+        t_tmr.start;
+        execute(TC_NegSem_05040103_parameters_of_kind_timer_003(t_tmr));
+    }
+}

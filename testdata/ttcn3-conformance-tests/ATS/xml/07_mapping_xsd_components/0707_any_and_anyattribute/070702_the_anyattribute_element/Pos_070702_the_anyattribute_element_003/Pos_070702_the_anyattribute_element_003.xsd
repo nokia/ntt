@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070702_the_anyattribute_element_003"
+  xmlns:ns="schema:Pos_070702_the_anyattribute_element_003">
+  <attribute name="foo" type="string"/>
+  <attribute name="bar" type="string"/>
+  <element name="MyType">
+    <complexType>
+      <simpleContent>
+        <extension base="string">
+          <attribute name="attr" type="string"/>
+          <anyAttribute namespace="##any"/>
+        </extension>
+      </simpleContent>
+    </complexType>
+  </element>  
+</schema>

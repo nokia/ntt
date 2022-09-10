@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<e1 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="schema:Pos_07060102_restricting_simple_content_001"
+bar="1" foo="2.0">some</e1>

@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined function for removing Byte order mark works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * check that reomve_bom() function successfully removes the byte order mark present at the beginning of a stream of serialized (encoded) universal character strings
+ UCS encoding scheme
+ */
+
+
+module Sem_160102_predefined_functions_082 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_082 () runs on GeneralComp {
+
+
+    var octetstring v_test_1 :='FEFF0AC2'O ;
+    var octetstring v_test_2 :='C0'O ;
+
+    var octetstring v_remove := remove_bom(v_test_1);    // expected result: v_remove := '0AC2'O
+    var octetstring v_remove_2 := remove_bom(v_test_2);  // expected result: v_remove := 'C0'O
+
+	if (match(v_remove,'0AC2'O) and match(v_remove_2, 'C0'O)) {
+			setverdict(pass,"Results are: ",v_remove, " and ",v_remove_2 );
+		} else {
+			setverdict(fail,"Failed,the results are: ",v_remove, " and ",v_remove_2, "Expected: '0AC2'O and 'C0'O");
+		}
+    }
+
+
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_082());
+    }
+}

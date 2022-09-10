@@ -1,0 +1,56 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.2, Ensure that the IUT recognizes altstep definitions and correctly evaluates them
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1602_toplevel_003 {
+
+    type record MessageType {
+        integer  		field1,
+        charstring  	field2
+    }
+
+    type port loopbackPort message {
+        inout MessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    function f_test() return boolean {
+        setverdict(inconc);		//setting verdict within a function for altstep variable initialization
+        return true;
+    }
+
+
+    altstep AltSet1() runs on GeneralComp {
+        var boolean v_LocalVar := f_test();
+
+        [] messagePort.receive {
+            setverdict(pass);
+        }
+
+    }
+
+    testcase TC_NegSem_1602_toplevel_003 () runs on GeneralComp {
+        var MessageType v_testMessage;
+        v_testMessage:=  {
+            field1 := 1,
+            field2 := "test string"
+        }
+
+        messagePort.send(v_testMessage);
+
+        AltSet1();
+
+    }
+
+    control{
+
+        execute(TC_NegSem_1602_toplevel_003());
+
+    }
+
+}

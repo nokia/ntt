@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:19.3, Verify that two branches of the select-case statement cannot match the same value (simple case)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction b:
+// When all templateInstances of all branches can be statically evaluated in compile time to specific values or
+// value ranges no two branches shall match the same value
+
+module NegSem_190301_select_case_statement_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_190301_select_case_statement_001 () runs on GeneralComp{
+ var integer v_i := 2;
+
+ select (v_i) {
+  case(1) {
+   setverdict(fail);
+  }
+  case(2) {
+   setverdict(pass);
+  }
+  case(2) {
+   setverdict(fail);
+  }
+  case else {
+   setverdict(fail);
+  }
+ }
+}
+
+
+control{
+
+    execute(TC_NegSem_190301_select_case_statement_001());
+
+}
+
+}

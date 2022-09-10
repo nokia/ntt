@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that expressions cannot be used as inout formal template parameters of functions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal template parameters shall be variables,
+// template variables, formal value or template parameters (of in, inout or out
+// parameterization) of the current scope or references to elements of (template) variables
+// or formal (template) parameters of structured types.
+
+module NegSem_050402_actual_parameters_079 {
+
+    type component GeneralComp {
+    }
+
+    function f_ret() return integer {
+        return 4;
+    }
+
+    function f_test(inout template integer p_val) {
+        if (match(9, p_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_079() runs on GeneralComp {
+        var integer v_val := 5;
+        f_test(10 + f_ret() - v_val); // tested parameter passing
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_079());
+	}
+}

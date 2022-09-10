@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign values to list of types restricted charstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010204_StringLenghtRestrict_004 {
+    type charstring myStrings1 length(2 .. 4); //length between 2 and 4 characters
+    type charstring myStrings2 length(4); //fixed length 4 characters
+    type charstring myStrings3 length(0 .. infinity); //unlimited character length
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010204_StringLenghtRestrict_004() runs on GeneralComp {
+        var myStrings1 v_b1;
+        var myStrings2 v_b2;
+        var myStrings3 v_b3;
+        v_b1 := "ab";	//2 characters
+        v_b1 := "abc";	//3 characters
+        v_b2 := "efgh";	//fixed 4 characters
+        v_b3 := "abcdefghijklm";	//unlimited
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010204_StringLenghtRestrict_004());
+    }
+}

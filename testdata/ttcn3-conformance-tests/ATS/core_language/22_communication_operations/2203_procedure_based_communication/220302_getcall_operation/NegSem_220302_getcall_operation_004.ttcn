@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.3.2, Verify that error occurs when any from getcall is applied to single port
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction g
+// The PortArrayRef shall be a reference to a port array variable identifier.
+module NegSem_220302_getcall_operation_004 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+		var integer v_index;
+        alt
+		{
+        	[] any from p.getcall { setverdict(pass); }
+			[else] { setverdict(fail, "The any from getcall operation didn't match for some reason"); }
+		}
+	}
+
+    testcase TC_NegSem_220302_getcall_operation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		p.call(S:{}, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220302_getcall_operation_004(), 5.0);
+    }
+}

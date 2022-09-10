@@ -1,0 +1,18 @@
+/***************************************************
+ ** @author   STF 409, re-numbering done by STF470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, The omit keyword shall not be used for mandatory fields.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060201_RecordTypeValues_001 {
+    type record MyRecord {
+        integer field1,
+        MyRecord field2 optional,
+        integer field3
+    }
+    const MyRecord c_rec := {
+        field1 := 5,
+        field2 := omit,
+        field3 := omit // not optional
+    };
+}

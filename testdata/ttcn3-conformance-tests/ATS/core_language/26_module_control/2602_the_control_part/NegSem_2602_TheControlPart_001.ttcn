@@ -1,0 +1,16 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.2, Ensure that setverdict statements are not allowed in the control part.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2602_TheControlPart_001 {
+
+    type component GeneralComp { }
+
+    control {
+        setverdict(pass);
+    }
+
+}

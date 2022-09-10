@@ -1,0 +1,14 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.1, Verify map types can be defined
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// The Type following the from keyword is the type of the keys of the map type. The Type following
+// the to keyword is the type of the values of the map type.
+
+module Sem_06021501_map_type_definition_001 {
+	type map from charstring to integer TMap1;
+}

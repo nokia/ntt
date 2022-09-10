@@ -1,0 +1,38 @@
+/***************************************************
+ * @author TTF 014
+ * @version 0.0.1
+ * @purpose 1:15.12, The present operation
+ * @verdict pass accept
+ ***************************************************/
+/* The following requirements are tested:
+ * present restriction:
+ * The present operatoion checks if a template instance fullfils conditions of the present template restriction.
+ */
+module Sem_1512_ThePresentOperation_001 {
+	type component GeneralComp {
+	}
+
+	type record ExampleType {
+		integer a, boolean b optional
+	}
+
+	template ExampleType m_originalValue := {1, true}
+	template(present) ExampleType m_targetValue := present(m_originalValue);
+
+	testcase TC_Sem_1512_ThePresentOperation_001() runs on GeneralComp {
+		var template(present) ExampleType v_present;
+
+		v_present := m_targetValue;
+
+		if (match(valueof(v_present.a), 1) and
+			match(valueof(v_present.b), true)) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_1512_ThePresentOperation_001());
+	};
+}

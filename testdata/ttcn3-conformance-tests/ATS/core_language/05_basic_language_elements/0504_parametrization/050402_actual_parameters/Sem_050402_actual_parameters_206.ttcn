@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that out value parameters can be used as actual out value parameters of functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal value parameters shall be (template) variables,
+// formal (template) parameters (of in, inout or out parameterization) or references to elements
+// of (template) variables or formal (template) parameters of structured types. Furthermore it is
+// allowed to use the dash symbol "-" as an actual out parameter, signifying that a possible result
+// for that parameter will not be passed back.
+
+module Sem_050402_actual_parameters_206 {
+
+    type component GeneralComp {
+    }
+
+    function f_test(out integer p_val) {
+        p_val := 9
+    }
+
+    function f_caller(out integer p_val) {
+        f_test(p_val); // tested parameter passing
+        if (p_val == 9) {
+            setverdict(pass);
+        }else {
+            setverdict(fail);
+        }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_206() runs on GeneralComp {
+        var integer v_val;
+        f_caller(v_val);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_206());
+	}
+}

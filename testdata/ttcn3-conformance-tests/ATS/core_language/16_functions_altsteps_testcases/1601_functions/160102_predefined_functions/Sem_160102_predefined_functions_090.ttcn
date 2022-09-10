@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C.4.1)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * Check that regexp predefined function with @nocase modfier evaluates the charstrings case insensitive way
+ *
+ * */
+
+module Sem_160102_predefined_functions_090 {
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_090 () runs on GeneralComp {
+        var charstring v_example_1:="example text string";
+        var charstring v_example_2:="ExAmPlE TeXt StRinG";
+
+        var charstring v_i,v_j;
+
+		v_i := regexp @nocase(v_example_1,charstring:"?+(TeXt)?+",0);    //capital letters in expression
+        v_j := regexp @nocase(v_example_2,charstring:"?+(text)?+",0);    //captial letters in inpar
+
+        if(match(v_i,"text") and match(v_j,"TeXt")) {
+			setverdict(pass,"Results are: ",v_i, " and ", v_j);
+		} else {
+			setverdict(fail,"Results are: ",v_i, " and ", v_j);
+		}
+    }
+
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_090());
+
+    }
+
+}

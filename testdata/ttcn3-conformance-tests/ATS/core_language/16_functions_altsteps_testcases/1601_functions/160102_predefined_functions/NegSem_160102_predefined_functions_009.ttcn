@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_160102_predefined_functions_009 {
+	type enumerated MyEnumeratedType {e_black, e_white};
+
+	type record MyRecord {
+	 boolean field1,
+	 record of integer field2,
+	 integer field3,
+	 MyEnumeratedType field4 optional
+	}
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_009 () runs on GeneralComp {
+	template MyRecord template1 := { true, { permutation(2, 3) }, * }
+	var integer v_i;
+
+ 	v_i:=sizeof(template1);		//undetermined record length
+
+}
+
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_009());
+
+}
+
+}

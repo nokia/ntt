@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Verify that the running operation applied to a non-timer reference produces an error
+ ** @verdict  pass reject
+ ***************************************************/
+// The following requirement is tested
+// a) The ObjectReference (in the timer running operation) shall be of the timer type.
+
+module NegSem_2305_the_running_timer_operation_001 {
+    type component TComp{
+	    timer t_tmr;
+    }
+    testcase TC_NegSem_2305_the_running_timer_operation_001() runs on TComp{
+        var float v_duration := 1.0;
+        t_tmr.start(v_duration);
+		var boolean v_running := v_duration.running;
+	    setverdict(pass);
+    }
+    control {
+        execute(TC_NegSem_2305_the_running_timer_operation_001())
+    }
+}

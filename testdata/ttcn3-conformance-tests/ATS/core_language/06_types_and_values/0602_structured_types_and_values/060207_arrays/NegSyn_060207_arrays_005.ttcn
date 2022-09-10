@@ -1,0 +1,15 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, Ensur that arrays upper value shall not be lesser than the corresponding lower value
+ ** @verdict  pass reject
+ ***************************************************/
+/*The following requirement is tested:
+ * The upper value shall not be lesser than the corresponding lower value.
+ */
+module NegSyn_060207_arrays_005 {
+
+    control {
+        var integer v_arr[5..1];    // error: . The upper value shall not be lesser than the corresponding lower value
+    }
+}

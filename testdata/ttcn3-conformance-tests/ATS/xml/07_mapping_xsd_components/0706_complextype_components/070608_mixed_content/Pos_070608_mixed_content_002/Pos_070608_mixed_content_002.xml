@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_070608_mixed_content_002">The ordered<a>car</a>has arrived<b>false</b>the ordered<a>bicycle</a>has arrived!<b>true</b>Wait for further information.</ns:MyType>

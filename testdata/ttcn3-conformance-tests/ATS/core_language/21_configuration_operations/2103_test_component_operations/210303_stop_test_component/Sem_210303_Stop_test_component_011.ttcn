@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, stopping all PTCs
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The all keyword can be used by the MTC only in order to stop all running PTCs but
+// the MTC itself.
+
+module Sem_210303_Stop_test_component_011 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f() runs on GeneralComp {
+        p.receive(integer:?); // infinite blocking
+	}
+
+    testcase TC_Sem_210303_Stop_test_component_011() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc1 := GeneralComp.create, ptc2 := GeneralComp.create;
+		ptc1.start(f());
+        ptc2.start(f());
+        all component.stop;
+		interleave {
+            [] ptc1.done {}
+            [] ptc2.done {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210303_Stop_test_component_011());
+    }
+}

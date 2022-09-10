@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.4.2, verify that function calls cannot be used as out formal template parameters of functions
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal template parameters shall be template variables,
+// formal template parameters or references to elements of template variables or formal template
+// parameters of structured types.
+
+module NegSem_050402_actual_parameters_060 {
+
+    type component GeneralComp {
+    }
+
+    function f_ret() return integer {
+        return 5;
+    }
+
+    function f_test(out template integer p_val) {
+        p_val := ?;
+        setverdict(pass);
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_060() runs on GeneralComp {
+        f_test(f_ret()); // tested parameter passing
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_060());
+	}
+}

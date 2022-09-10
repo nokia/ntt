@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, index redirection in any port.receive
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The index redirection shall only be used when the operation is used on an any from port
+// array construct.
+
+module NegSem_220202_ReceiveOperation_018 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220202_ReceiveOperation_018() runs on GeneralComp {
+        var integer v_int;
+        p.send(10);
+        any port.receive(integer:?) -> @index value v_int;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220202_ReceiveOperation_018(), 5.0);
+    }
+}

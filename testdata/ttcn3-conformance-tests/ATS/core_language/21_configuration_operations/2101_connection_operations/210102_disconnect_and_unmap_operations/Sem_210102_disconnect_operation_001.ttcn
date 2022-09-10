@@ -1,0 +1,59 @@
+/***************************************************
+ ** @author   STF 451, STF 470
+ ** @version  0.0.2
+ ** @purpose  1:21.1.2, Ensure that all component notation work correctly in disconnect operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The all component keyword shall only be used in combination with the all port
+// keyword, i.e. all component:all port, and shall only be used by the MTC. Furthermore,
+// the all component:all port argument shall be used as the one and only argument of a
+// disconnect or unmap operation and it allows to release all connections and mappings
+// of the test configuration.
+
+module Sem_210102_disconnect_operation_001{
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+	function f() runs on GeneralComp
+	{
+		timer t := 1.0;
+		t.start;
+		if(not p.checkstate("Connected")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+		t.timeout; // keep alive for 1 second
+	}
+
+    testcase TC_Sem_210102_disconnect_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc1 := GeneralComp.create,
+			v_ptc2 := GeneralComp.create,
+			v_ptc3 := GeneralComp.create;
+
+		connect(v_ptc1:p, v_ptc2:p);
+		connect(v_ptc1:p, v_ptc3:p);
+		connect(v_ptc2:p, v_ptc3:p);
+
+		disconnect(all component:all port);
+
+		// verity that ports are really disconnected
+        v_ptc1.start(f());
+        v_ptc2.start(f());
+		v_ptc3.start(f());
+		all component.done;
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_operation_001());
+    }
+}
+

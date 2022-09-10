@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that the operator precedence is evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070101_ArithmeticOperators_024 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070101_ArithmeticOperators_024() runs on GeneralComp {
+	var integer v_i := 4;
+	var integer v_j := 12;
+	var integer v_k := 18;
+	var integer v_l := 3;
+
+	var integer v_result := v_i+v_j-v_k / v_l;
+
+	if (v_result == 10) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070101_ArithmeticOperators_024());
+}
+
+}

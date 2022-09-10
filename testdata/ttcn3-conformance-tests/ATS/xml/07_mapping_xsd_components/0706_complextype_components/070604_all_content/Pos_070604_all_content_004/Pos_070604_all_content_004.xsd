@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070604_all_content_004"
+  xmlns:ns="schema:Pos_070604_all_content_004">
+  <attribute name="attrGlobal" type="token"/>
+
+  <attributeGroup name="attrGroup">
+    <attribute name="attrInGroup2" type="token"/>
+    <attribute name="attrInGroup1" type="token"/>
+  </attributeGroup>
+
+  <element name="MyType">
+    <complexType>
+      <all>
+        <element name="foo" type="integer"/>
+        <element name="bar" type="float"/>
+        <element name="ding" type="string"/>
+      </all>
+      <attribute name="attrLocal" type="integer"/>
+      <attribute ref="ns:attrGlobal"/>
+      <attributeGroup ref="ns:attrGroup"/>
+    </complexType> 
+  </element>
+</schema>

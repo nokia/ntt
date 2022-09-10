@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that the less than or equal to operator on enumerations is evaluated correctly with differing values.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070103_RelationalOperators_020 {
+
+type component GeneralComp {
+}
+
+type enumerated MyEnumType {
+	e_monday, e_tuesday, e_wednesday, e_thursday, e_friday
+};
+
+testcase TC_Sem_070103_RelationalOperators_020() runs on GeneralComp {
+	var MyEnumType v_first := e_monday;
+	var MyEnumType v_second := e_tuesday;
+
+	if (v_second >= v_first) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070103_RelationalOperators_020());
+}
+
+}

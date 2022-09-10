@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the timeout branch is taken as expected (loopback case).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2002_TheAltStatement_010 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_2002_TheAltStatement_010() runs on GeneralComp {
+	timer t_timer;
+
+	t_timer.start(20E-3);
+
+	alt { // block until a timeout happens in 20ms
+		[] t_timer.timeout {
+			setverdict(pass);
+		}
+	}
+}
+
+control {
+	execute(TC_Sem_2002_TheAltStatement_010(), 200E-3); // timeout in 100ms, then error
+}
+}

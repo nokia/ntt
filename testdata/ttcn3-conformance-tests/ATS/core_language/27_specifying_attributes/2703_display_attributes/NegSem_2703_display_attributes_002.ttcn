@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.3, Verify that only one display attribute can be defined for a field
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction a
+// At most one display attribute shall be applied to each definition, each individual field reference or
+// language element to which a with statement is associated.
+
+module NegSem_2703_display_attributes_002 {
+
+    type component GeneralComp {
+	}
+
+	type record MyService {
+		integer i,
+		float f
+	} with { display(f) "ServiceCall" display(f) "blue"}
+
+	testcase TC_NegSem_2703_display_attributes_002 () runs on GeneralComp {
+		var universal charstring v_display := MyService.f.display;
+		if(v_display == "ServiceCall") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_NegSem_2703_display_attributes_002());
+	}
+
+}

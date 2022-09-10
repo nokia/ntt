@@ -1,0 +1,25 @@
+There are no tests for the following rules:
+
+1. 
+Default references are used in deactivate operations (see clause 20.5.3) in order to 
+identify the default to be deactivated.
+
+Reason: No reason for a dedicated test, tested in 20.5.3.
+
+2. 
+Default references have meaning only within the test component instances they are 
+activated, i.e. a default reference assigned to a default variable in test component 
+instance "a1" of type "A" has no meaning in test component instance "a2" of type "A".
+
+Reason: No meaningful test for the rule. The most common way to use defaults is 
+deactivate operation specified in 20.5.3 which contains a dedicated test related
+to this requirement.
+
+3.
+The actual data representation of the default type shall be resolved externally by the 
+test system. This allows abstract test cases to be specified independently of any real 
+TTCN-3 runtime environment, in other words TTCN-3 does not restrict the implementation 
+of a test system with respect to the handling and identification of defaults.
+
+Reason: This rule is only declaratory and doesn't set any binding requirements which
+could be verified.

@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Concatenating charstring templates: ? length(0..infinity)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Single templates of charstring and universal charstring types shall contain evaluate only to specific values only,
+// AnyValue with or without a length modifier, AnyValueOrNone with a length modifier or pattern.
+// The concatenation of templates of character string types results in the sequential concatenation of the single templates
+// from left to right. In case all operands are specific values, the result of concatenation will be a specific value.
+// In all other cases, if possible, a pattern will be produced. When producing the pattern, the templates are first
+// transformed to a character string according to table 14. In the next step, the strings are concatenated and a pattern is
+// created from the concatenation result.
+// Concatenation operand: ? length(0..infinity)
+// Transformed string: *
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_018 {
+    type component GeneralComp { }
+    template charstring m_str := "ABC";
+    template charstring m_str2 := m_str & ? length(0..infinity);
+
+    testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_018() runs on GeneralComp {
+        log(m_str2);
+        if (match("ABCXYZ", m_str2) and match("ABC", m_str2)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_018());
+    }
+}

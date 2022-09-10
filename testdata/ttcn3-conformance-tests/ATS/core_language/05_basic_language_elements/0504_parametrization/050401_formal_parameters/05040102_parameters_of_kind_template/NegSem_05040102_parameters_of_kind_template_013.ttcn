@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that error is generated if formal template parameter of test case contains dash
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction g)
+// The dash (don't change) symbol shall be used with formal parameters of modified templates only
+
+module NegSem_05040102_parameters_of_kind_template_013 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_NegSem_05040102_parameters_of_kind_template_013(omit integer p_int := -) runs on GeneralComp {
+        log(p_int);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040102_parameters_of_kind_template_013(1));
+	}
+}

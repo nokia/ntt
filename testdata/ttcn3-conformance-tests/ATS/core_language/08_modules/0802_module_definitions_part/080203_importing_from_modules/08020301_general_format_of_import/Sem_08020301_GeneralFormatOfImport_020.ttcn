@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that prefixed type is evaluated as expected
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+/*In cases where there are no ambiguities the prefixing need not (but may) be present when the imported definitions are
+used. When the definition is referenced in the same module where it is defined, the module identifier of the module (the
+current module) also may be used for prefixing the identifier of the definition.*/
+
+module Sem_08020301_GeneralFormatOfImport_020 {
+
+	import from Sem_08020301_GeneralFormatOfImport_020_import {type My_type};
+
+	type float My_type;	//float type
+
+	type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_020() runs on GeneralComp {
+
+	var My_type v_1 := 2.5;		//prefixed type
+	var Sem_08020301_GeneralFormatOfImport_020_import.My_type v_2 := 1;    //prefix and the identifier
+
+	if( (match(v_1,2.5)) and (match(v_2,1)))
+	{
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+
+}
+
+control{
+	// testing if parameter names are imported
+    execute(TC_Sem_08020301_GeneralFormatOfImport_020());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_020_import {
+ 	type integer My_type;		//integer type
+
+}

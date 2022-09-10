@@ -1,0 +1,17 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer declaration with expression
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer declaration syntax
+ **/
+
+
+module Syn_12_toplevel_timer_006 {
+    control {
+        var anytype v_any := { float := 1.0 };
+        timer t_timer := v_any.float;
+    }
+}

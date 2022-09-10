@@ -1,0 +1,60 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.5, Ensure that template variables allow referencing with an Anyvalue union template
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+//Restriction b)
+/*when referencing an alternative of a union template or template field to which AnyValue is
+assigned, at the right hand side of an assignment, AnyValue shall be returned.*/
+
+module Sem_150605_Referencing_union_alternatives_002{
+
+    type union My_Union {
+        integer   u1,
+        float     u2
+    }
+
+    type record ExampleType {	// Exampletype record with union
+	    integer a,
+	    My_Union b optional
+       }
+
+    type port loopbackPort message{inout ExampleType};
+
+
+    type component GeneralComp {
+	  port loopbackPort messagePort
+    }
+
+
+    testcase TC_Sem_150605_Referencing_union_alternatives_002() runs on GeneralComp {
+
+
+
+
+
+    var template ExampleType m_template;
+    var template integer m_template_2;
+
+    //assign values to template:
+
+		m_template.a:=10;
+		m_template.b := ?;
+
+		m_template_2 := m_template.b.u1;	//m_template_2 :=?
+
+      if (ispresent(m_template_2))
+	    {
+		setverdict(pass,m_template_2);
+	} else {
+		setverdict(fail,m_template_2);
+	}
+
+ }
+
+    control{
+        execute(TC_Sem_150605_Referencing_union_alternatives_002());
+    }
+}

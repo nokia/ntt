@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_070701_the_any_element_004"><test xmlns="schema:Pos_070701_the_any_element_004_1">Hello world</test></ns:MyType>

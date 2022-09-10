@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// test enum2int predefined function with labels
+
+module Sem_160102_predefined_functions_010 {
+    type enumerated EnumeratedType {e_black, e_white};
+    type enumerated EnumeratedTypeWithLabels1 {e_black (1), e_white};
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_010 () runs on GeneralComp {
+        var EnumeratedType vl_enum_black := e_black;
+        var EnumeratedType vl_enum_white := e_white;
+        var EnumeratedTypeWithLabels1 vl_enum1_black := e_black;
+        var EnumeratedTypeWithLabels1 vl_enum1_white := e_white;
+
+        if( match(enum2int(vl_enum_black), 0) and
+            match(enum2int(vl_enum_white), 1)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail, "fail 0");
+        }
+
+        if( match(enum2int(vl_enum1_black), 1) and
+            match(enum2int(vl_enum1_white), 0)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail, "fail 1");
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_010());
+    }
+}

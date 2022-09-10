@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Access universal charstring elements
+ ** @verdict  pass reject
+ ***************************************************/
+/* The following requirements are tested:
+ * For assigning an element to the end of a string, the length of the string should be used as
+ * index. Trying to assign an element to the end of a string with an index larger than the
+ * length of the string shall cause an error.
+*/
+
+module NegSyn_06010101_AccessStringElements_001 {
+
+    type component GeneralComp {}
+
+    testcase TC_NegSyn_06010101_AccessStringElements_001() runs on GeneralComp {
+        var universal charstring v_b := "AbCdE";
+
+        v_b[1] := "FF";        // incorrect legth
+    }
+
+    control{
+        execute(TC_NegSyn_06010101_AccessStringElements_001());
+    }
+}

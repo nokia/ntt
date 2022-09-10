@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that it is not possible to connect a port with a port owned by the same component
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*NOTE: see Figure 7(e): GeneralComp have two ports (p1 and p2).
+ * ERROR: Port p1 is connected to p1 (self), therefore connection between p1 and p2 gives an error
+ * */
+
+
+module NegSem_0901_Communication_ports_005 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1, p2;
+    }
+
+    testcase TC_NegSem_0901_Communication_ports_005() runs on GeneralComp system GeneralComp {
+
+		connect(self:p1, self:p1);
+        connect(self:p1, self:p2); // error expected here, since p1 is already connected to p1.
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0901_Communication_ports_005());
+    }
+}
+

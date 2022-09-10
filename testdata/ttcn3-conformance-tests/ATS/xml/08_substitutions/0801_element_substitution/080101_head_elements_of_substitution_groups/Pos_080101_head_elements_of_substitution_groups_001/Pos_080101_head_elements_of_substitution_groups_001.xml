@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:ize xmlns:ns="schema:Pos_080101_head_elements_of_substitution_groups_001" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="schema:Pos_080101_head_elements_of_substitution_groups_001 Pos_080101_head_elements_of_substitution_groups_001.xsd"> <ns:head>anything</ns:head>
+<ns:member1>any thing</ns:member1> <ns:member2>something</ns:member2> <ns:member3 bar="5" >anything else</ns:member3>
+</ns:ize>

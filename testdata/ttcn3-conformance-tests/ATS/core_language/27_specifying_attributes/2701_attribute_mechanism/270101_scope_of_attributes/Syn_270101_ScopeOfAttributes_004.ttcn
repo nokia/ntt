@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:27.1.1, Ensure that attributes for individual fields are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_270101_ScopeOfAttributes_004 {
+
+    type record MyRecord {
+     integer field1,
+     record {
+	  integer innerField1,
+	  boolean innerField2
+     } field2
+    }
+    with {
+     display "colour red";
+     extension "MyRule"
+    }
+
+   const MyRecord c_record := {0,{1,true}}
+    with {
+     display (field2.innerField1) "colour green"
+    }
+
+
+}

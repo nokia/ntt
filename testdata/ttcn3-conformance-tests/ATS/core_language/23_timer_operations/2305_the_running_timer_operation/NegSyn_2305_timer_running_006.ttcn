@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Ensure timer running syntax: disallow all timer.running
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.5 The Running timer operation/Timer running syntax
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Disallow all timer.running
+
+module NegSyn_2305_timer_running_006 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.0};
+    }
+    testcase TC_NegSyn_2305_timer_running_006() runs on TComp{
+        var boolean v_bool;
+        v_bool := all timer.running;
+
+    }
+    control{
+
+            execute(TC_NegSyn_2305_timer_running_006())
+
+
+    }
+}

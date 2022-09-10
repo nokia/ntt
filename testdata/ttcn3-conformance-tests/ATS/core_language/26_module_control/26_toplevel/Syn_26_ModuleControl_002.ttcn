@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26, Ensure that if-else constructs in the control part are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_26_ModuleControl_002 {
+
+control{
+	if (1 == 1) {
+		// do something
+	} else {
+		// do something else
+	}
+}
+
+}

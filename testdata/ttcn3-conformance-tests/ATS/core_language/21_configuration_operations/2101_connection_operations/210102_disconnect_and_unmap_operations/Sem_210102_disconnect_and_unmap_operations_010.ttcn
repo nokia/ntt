@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Verify that no error is generated when unmapping ports that are not mapped
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// An ... unmap operation has only an effect if the ... mapping to be removed
+// has been created beforehand.
+
+module Sem_210102_disconnect_and_unmap_operations_010 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+    testcase TC_Sem_210102_disconnect_and_unmap_operations_010() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc1 := GeneralComp.create;
+
+		connect(self:p, v_ptc1:p);
+		unmap( v_ptc1:p, system:p); //no effect, ports not mapped
+		setverdict(pass);
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_and_unmap_operations_010());
+    }
+}
+

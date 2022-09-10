@@ -1,0 +1,66 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.2.1, Ensure that the IUT recognizes altstep definitions and correctly evaluates them
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_160201_invoking_altsteps_001 {
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+    type port simplePort message {
+	  inout integer
+	}
+
+	type component GeneralComp {
+	  port loopbackPort messagePort
+	}
+
+	type component AltComp {
+	  port simplePort messagePort
+	}
+
+
+
+altstep AltSet1() runs on AltComp { 	//incompatible component with GeneralComp
+
+     [] messagePort.receive {
+        setverdict(pass);
+     }
+
+}
+
+testcase TC_NegSem_160201_invoking_altsteps_001 () runs on GeneralComp {
+ var MessageType v_testMessage;
+ timer t_timer;
+ v_testMessage:=  {
+  field1 := 1,
+  field2 := "test string"
+ }
+
+ messagePort.send(v_testMessage);
+ t_timer.start( 1.0 );
+
+ alt {
+  [] AltSet1();
+  [] t_timer.timeout {
+        setverdict(pass);
+     }
+ }
+
+}
+
+control{
+
+    execute(TC_NegSem_160201_invoking_altsteps_001());
+
+}
+
+}

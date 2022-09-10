@@ -1,0 +1,82 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.3, Ensure that the IUT correctly handles template matching of ? values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010203_any_value_001 {
+
+	type enumerated EnumeratedType {e_black, e_white, e_green};
+
+	type record RecordType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+	type union UnionType {
+ 	 integer  a,
+ 	 EnumeratedType  b,
+ 	 boolean  c
+	}
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2,
+  	 EnumeratedType field3,
+  	 RecordType		field4,
+  	 UnionType		field5,
+  	 RecordType		field6,
+  	 UnionType		field7
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010203_any_value_001() runs on GeneralComp {
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := ?,
+  field2 := ?,
+  field3 := ?,
+  field4 := ?,
+  field5 := ?,
+  field6 := {a:=1,b:=?,c:=true},
+  field7 := {a:=?}
+ }
+
+ var MessageType v_testMessage:=  {
+  field1 := 2,
+  field2 := "test string",
+  field3 := e_black,
+  field4 := {a:=1,b:=omit,c:=true},
+  field5 := {a:=1},
+  field6 := {a:=1,b:=2,c:=true},
+  field7 := {a:=1}
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010203_any_value_001());
+}
+
+}

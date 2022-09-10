@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure getverdict is not allowed in variable definition in control part.
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions.
+ **/
+
+module NegSem_24_toplevel_003 {
+	type component GeneralComp {}
+
+	testcase TC_NegSem_24_toplevel_003(verdicttype v_param) runs on GeneralComp {
+		setverdict(fail);
+	}
+
+	control {
+		var verdicttype v_verdict := getverdict;
+		execute(TC_NegSem_24_toplevel_003())
+	}
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_060105_enumeration_001"
+    xmlns:ns="schema:Pos_060105_enumeration_001">
+    <simpleType name="t1">
+     <restriction base="string">
+      <enumeration value="off"/>
+      <enumeration value="on"/>
+     </restriction>
+    </simpleType>
+    <element name="e1" type="ns:t1"/>
+</schema>

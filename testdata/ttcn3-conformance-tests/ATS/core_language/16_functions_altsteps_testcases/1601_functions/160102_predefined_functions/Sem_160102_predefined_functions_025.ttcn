@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C.33)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160102_predefined_functions_025 {
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_025 () runs on GeneralComp {
+        var charstring v_example:="example text string";
+        var charstring v_i;
+
+        v_i:=regexp(v_example,universal charstring: "?+(text)?+",0);	//works according to resolution of CR 6424
+		if(v_i=="text") {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "Unexpected matching result");
+		}
+    }
+
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_025());
+
+    }
+
+}

@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.4, Verify that test cases cannot have port parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal port parameters, - with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040104_parameters_of_kind_port_005 {
+
+    type port P message {
+        inout integer
+    }
+    type component C {
+        port P p;
+    }
+
+	testcase TC_Test(P p_port) runs on C { // should cause a compilation error
+		p_port.send(1);
+        setverdict(pass);
+    }
+
+    testcase TC_NegSem_05040104_parameters_of_kind_port_005(P p_port) runs on C {
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040104_parameters_of_kind_port_005());
+    }
+}

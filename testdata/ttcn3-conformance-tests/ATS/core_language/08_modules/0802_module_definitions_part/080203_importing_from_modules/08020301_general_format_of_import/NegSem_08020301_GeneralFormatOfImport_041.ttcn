@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, verify that original name of a renamed imported module cannot be referenced
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction i:
+// If an imported module is renamed in the import clause, the original module name
+// is not imported and cannot be used for referencing the imported module.
+// The imported module can be referenced using the new local name only.
+
+module NegSem_08020301_GeneralFormatOfImport_041 {
+    import from NegSem_08020301_GeneralFormatOfImport_041_import -> Imported all;
+	type component GeneralComp {}
+
+	testcase TC_Sem_08020301_GeneralFormatOfImport_041() runs on GeneralComp {
+        log(NegSem_08020301_GeneralFormatOfImport_041_import.c_int);
+		setverdict(pass);
+	}
+
+	control{
+		// testing if parameter names are imported
+	    execute(TC_Sem_08020301_GeneralFormatOfImport_041());
+	}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_041_import {
+	const integer c_int := 1;
+}

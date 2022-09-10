@@ -1,0 +1,111 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Ensure that the IUT accepts port parametrization types for functions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_05040101_parameters_of_kind_value_028 {
+
+    type enumerated MyEnumeratedType {e_black, e_white}
+    type integer address;
+
+    type record MyRecord {
+        integer field1,
+        boolean field2,
+        address field3,
+        MyEnumeratedType field4,
+        integer field5
+    }
+
+    type port TestPort message {
+        inout MyRecord
+    }
+
+    type component GeneralComp {
+        port TestPort generalPort;
+        port TestPort otherPort;
+    }
+
+    function f_parametrizationCheck (
+        MyRecord ExpectedMatch,
+        timer p_timer,
+        integer p_integer := 0,
+        boolean p_boolean := true,
+        address p_address := null,
+        MyEnumeratedType p_enumerated := e_black,
+        template integer p_integerTemplate := ?,
+        TestPort p_port
+    ) runs on GeneralComp {
+        var template MyRecord ReceivedRecordTemplate := {p_integer, p_boolean, p_address, p_enumerated, p_integerTemplate};
+
+        p_port.send(ExpectedMatch);
+    }
+
+    testcase Sem_05040101_parameters_of_kind_value_028_a (
+        MyRecord ExpectedMatch,
+        integer p_integer := 0,
+        boolean p_boolean := true,
+        address p_address := null,
+        MyEnumeratedType p_enumerated := e_black,
+        template integer p_integerTemplate := ?
+    ) runs on GeneralComp {
+
+        timer t_check;
+        t_check.start(5.0);
+        f_parametrizationCheck(ExpectedMatch, t_check, p_integer, p_boolean, p_address, p_enumerated, p_integerTemplate,generalPort);
+        alt {
+            [] generalPort.receive {
+                setverdict(pass);
+            }
+            [] t_check.timeout {
+                setverdict(fail);
+            }
+        }
+
+        t_check.stop;
+
+    }
+
+    testcase Sem_05040101_parameters_of_kind_value_028_b (
+        MyRecord ExpectedMatch,
+        integer p_integer := 0,
+        boolean p_boolean := true,
+        address p_address := null,
+        MyEnumeratedType p_enumerated := e_black,
+        template integer p_integerTemplate := ?
+    ) runs on GeneralComp {
+
+        timer t_check;
+        t_check.start(1.0);
+        f_parametrizationCheck(ExpectedMatch, t_check, p_integer, p_boolean, p_address, p_enumerated, p_integerTemplate,otherPort);
+        alt {
+            [] otherPort.receive {
+                setverdict(pass);
+            }
+            [] t_check.timeout {
+                setverdict(fail);
+            }
+        }
+
+        t_check.stop;
+
+    }
+
+
+    control{
+
+        var MyRecord ModifiedValues  := {
+            field1 := 1,
+            field2 := false,
+            field3 := 1,
+            field4 := e_white,
+            field5 := 1
+        }
+
+        //the following testcases will call same function with different port parameter values
+        execute(Sem_05040101_parameters_of_kind_value_028_a(ModifiedValues,1,false,1,e_white,1));
+        execute(Sem_05040101_parameters_of_kind_value_028_b(ModifiedValues,1,false,1,e_white,1));
+
+    }
+
+}

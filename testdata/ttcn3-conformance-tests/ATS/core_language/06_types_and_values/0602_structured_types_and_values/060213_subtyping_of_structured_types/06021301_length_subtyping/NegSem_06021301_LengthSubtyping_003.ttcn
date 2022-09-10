@@ -1,0 +1,12 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.13.1, The length subtyping check for 'record of' or 'set of' types
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06021301_LengthSubtyping_003 {
+   type record length(0..!10) of integer RecordOfLengthLessThan10;	//only inclusive boundary is allowed
+
+   type RecordOfLengthLessThan10 RecordOfLength4To5 length(4..5);
+
+}

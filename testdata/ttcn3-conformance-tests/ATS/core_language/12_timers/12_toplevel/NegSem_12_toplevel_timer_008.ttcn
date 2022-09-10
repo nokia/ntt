@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer declaration syntax -- reject array of timers initizlized with a single float value
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer declaration syntax
+ **/
+
+
+module NegSyn_12_toplevel_timer_008 {
+    type component TComp{
+        timer t_timer[4] := 1.0;
+    }
+    testcase TC_NegSyn_12_toplevel_timer_008() runs on TComp{
+        t_timer[0].start;
+    }
+    control{
+
+            execute(TC_NegSyn_12_toplevel_timer_008())
+
+
+    }
+}

@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.2, Ensure that referencing a field of an address type, which actual value is null shall cause rejection.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+//Restriction d)
+/*Special value null: referencing a field of an address type, which actual value is null shall cause an error.*/
+
+module NegSem_150602_ReferencingRecordAndSetFields_006 {
+
+type component GeneralComp { }
+
+type integer address;
+
+type record MyRecordOne {
+	address f1
+}
+
+testcase TC_NegSem_150602_ReferencingRecordAndSetFields_006() runs on GeneralComp {
+	var template MyRecordOne m_R1 := {
+		f1 := null
+	}
+	var template MyRecordOne m_R2 := {
+		f1 := m_R1.f1.f1 // access to a field with null shall cause an error!
+	}
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSem_150602_ReferencingRecordAndSetFields_006());
+}
+
+
+
+}

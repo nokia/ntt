@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that the runs on type of a class shall be runs on compatible with the runs on type of the behaviour creating a class.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_009 "TTCN-3:2018 Object-Oriented" {
+
+    type port MyPort message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+    }
+
+    type component TestComp {
+        const charstring c_cstr := "Sunday";
+        port MyPort p1;
+    }
+
+    public type class t_class_non_compatible runs on GeneralComp {
+
+        public function f_skip_weekend() return charstring {
+            return "Monday";
+        }
+    }
+
+    testcase TC_NegSem_50101_top_level_009() runs on TestComp {
+        var t_class_non_compatible v_a := t_class_non_compatible.create(); // not allowed
+        if (v_a.f_skip_weekend() == "Monday") {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_009());
+    }
+}

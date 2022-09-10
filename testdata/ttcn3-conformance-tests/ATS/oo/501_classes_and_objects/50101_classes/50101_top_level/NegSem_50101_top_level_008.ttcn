@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that the functions of a class shall not have a runs on, mtc or system clause.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_008 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_with_utility_functions {
+
+        public function isRightCharstring(in charstring arg_cstr) runs on GeneralComp return boolean { //not allowed
+            if (arg_cstr == "def") {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public function isPositive(in integer arg_int) mtc GeneralComp return boolean { //not allowed
+            if (arg_int > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        public function isNegative(in integer arg_int) system GeneralComp return boolean { //not allowed
+            if (arg_int < 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        const integer c_int := 5057;
+    }
+
+    testcase TC_NegSem_50101_top_level_008() runs on GeneralComp {
+        var t_class_with_utility_functions v_a := t_class_with_utility_functions.create();
+        if (v_a.c_int == 5057) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_008());
+    }
+}

@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that identifiers of component types are not imported together with altsteps
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The TTCN-3 import mechanism distinguishes between the identifier of a referenced
+// definition and the information necessary for the usage of a referenced definition
+// within the imported definition. For the usage, the identifier of a referenced
+// definition is not required and therefore not imported automatically.
+// Table 8:
+// Possible referenced definitions for an altstep: component types (runs on)
+
+module NegSem_08020301_GeneralFormatOfImport_034 {
+import from NegSem_08020301_GeneralFormatOfImport_034_import { altstep a_test };
+	// C should be undefined, because it is not automatically imported
+	testcase TC_01() runs on C { }
+}
+
+module NegSem_08020301_GeneralFormatOfImport_034_import {
+	type component C {};
+	altstep a_test() runs on C {
+		[] any port.receive {}
+	}
+}

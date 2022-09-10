@@ -1,0 +1,10 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.2.1, Ensure that the IUT correctly handles empty record definitions.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060201_RecordTypeValues_002 {
+    type record MyRecordType {
+	}
+}

@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.3, Ensure timer stop sets elapsed time to zero
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.3 The Stop timer operation/stopped timer is inactive and elapsed time is 0
+
+
+module Sem_2303_timer_stop_002 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.0};
+    }
+    testcase TC_Sem_2303_timer_stop_002() runs on TComp{
+        t_timer[0].start;
+        t_timer[1].start;
+        t_timer[0].stop;
+        if (t_timer[0].read!=0.0){
+            setverdict(fail);
+        }
+        setverdict(pass);
+
+    }
+    control{
+
+            execute(TC_Sem_2303_timer_stop_002())
+
+
+    }
+}

@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:11.1, Ensure that dot notation referencing to a field, which actual value is null shall cause an error.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+/* The following requirements are tested:
+Restriction h. : Using the dot notation and index notation for referencing a field, alternative or element of an address value, which actual value is null shall cause an
+error.
+*/
+
+module NegSem_1101_ValueVars_003 {
+
+type component GeneralComp {
+}
+
+    type integer address;
+    type record MyRecordType
+    {
+        address field1,
+        integer field2 optional
+    };
+
+
+testcase TC_NegSem_1101_ValueVars_003() runs on GeneralComp {
+   var MyRecordType R1:= {field1 := null,
+                          field2 := -};
+
+    var integer Myvar := R1.field1;    //error
+
+	if (match(Myvar, R1.field1)) { setverdict(pass,"match") }
+		else { setverdict(fail) }
+    }
+
+
+control{
+    execute(TC_NegSem_1101_ValueVars_003());
+}
+
+}

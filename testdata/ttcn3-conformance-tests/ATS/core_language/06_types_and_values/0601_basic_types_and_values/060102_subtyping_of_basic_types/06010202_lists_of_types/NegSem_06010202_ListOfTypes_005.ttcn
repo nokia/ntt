@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted universal charstrings.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_005 {
+  type universal charstring unicharString1 ("0" .. "9","A".."Z"); // charstring between "0" and "9" and "A".."Z"
+  type universal charstring unicharString2 ("a".."z"); // charstring between "a" to "z"
+  type universal charstring unicharStrings_1_2 (unicharString1, unicharString2);
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_005() runs on GeneralComp {
+        var unicharStrings_1_2 v_b;
+        v_b:="?"; // invalid
+      	setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_005());
+    }
+}

@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 451 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:21.1.1, Ensure that the the IUT allows connecting ports with empty outlists
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// NOTE: the test shall pass as empty set (in this case a list of allowed out types) is always a subset
+// of another set (in this case a list of allowed in types). For that reason, the test was changed
+// into a positive one as it does not violate any TTCN-3 requirement.
+// Of course it doesn't make much sense to connect these two ports as communication is not possible
+// between them. A CR7607 was submitted to mantis to add a new restriction to the core language standard.
+
+module Sem_210101_connect_and_map_operations_011 {
+
+	type port myport message {
+	  in integer
+	}
+
+    type component Mysystem	{
+ 	    port myport messagePort;
+	}
+
+    testcase TC_Sem_210101_connect_and_map_operations_011() runs on Mysystem system Mysystem {
+        var Mysystem MyCompA := Mysystem.create,
+        MyCompB := Mysystem.create;
+        connect(MyCompA:messagePort, MyCompB:messagePort);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210101_connect_and_map_operations_011(), 5.0);
+    }
+}
+

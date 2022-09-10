@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:e1  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xmlns:ns="schema:Pos_070607_attribute_definitions_attribute_and_attributegroup_references_001"
+bar="5.0">
+<ding>text</ding>
+</ns:e1>

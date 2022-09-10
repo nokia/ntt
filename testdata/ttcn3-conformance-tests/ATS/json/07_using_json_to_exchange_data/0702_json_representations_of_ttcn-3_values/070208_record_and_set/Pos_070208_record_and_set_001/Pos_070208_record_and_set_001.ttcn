@@ -1,0 +1,97 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:7.2.8, Ensure that record and set values shall be encoded as JSON.Objects
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ The body of TTCN-3 record and set values shall be encoded to JSON objects.
+ * At TTCN-3 to JSON conversion the order of the object members shall be the same as the order of the fields in the TTCN-3 value, for both records and sets.
+ * */
+
+module Pos_070208_record_and_set_001 {
+
+    import from JSON all;
+
+
+    type record MyRecordType{
+        integer int,
+        charstring MyCharString
+    } with { encode "JSON" };
+
+    template MyRecordType m_msg := {5, "abcdef"}; // encoding record as JSON.Object
+    /* { "Pos_070208_record_and_set_002.MyRecordType":
+						{
+							"int":5,
+							"MyCharString" : "abcdef"
+						}
+     * }
+    */
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw with { encode "Text" };
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference JSON file and returns true if they represent the same JSON structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the JSON data
+     * @param p_referenceJsonFile the JSON data
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference JSON file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceJsonFile represent the same JSON data
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceJsonFile, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_070208_record_and_set_001() runs on C system C {
+
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference JSON file
+            []  p.check(receive(Raw:?) -> value v_rcv) {
+                log("JSON message: ", v_rcv);
+                if (matchFile(v_rcv, "Pos_070208_record_and_set_001.json", v_matchError)) {
+                    alt {
+                        // match decoded value to pass test
+                        [] p.receive(m_msg) {
+                            setverdict(pass, "Decoded value matches encoded template and reference JSON");
+                        }
+                        [] p.receive {
+                            setverdict(fail, "JSON decoding failure");
+                        }
+                    }
+                } else {
+                    setverdict(fail, v_matchError);
+                }
+
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_070208_record_and_set_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

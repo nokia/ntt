@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign and read verdicts
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060100_SimpleBasicTypes_005 {
+
+    const verdicttype c_v := inconc;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_610_SimpleBasicTypes_005() runs on GeneralComp {
+    	if (c_v == inconc){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_610_SimpleBasicTypes_005());
+    }
+}

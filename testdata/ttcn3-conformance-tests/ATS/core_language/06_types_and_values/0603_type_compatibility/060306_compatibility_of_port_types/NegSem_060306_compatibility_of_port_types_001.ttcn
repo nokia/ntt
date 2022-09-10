@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.3.6, verify that port type is not compatible with a non-port type
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For variables, constants and parameters of port types, the reference to a port "b" of type "B" is compatible to type "A"
+// if type "B" and type "A" are equal or synonym types.
+
+module NegSem_060306_compatibility_of_port_types_001 {
+    type port P message {
+		inout integer
+	}
+
+    type component GeneralComp {
+	}
+
+	testcase TC_NegSem_060306_compatibility_of_port_types_001() runs on GeneralComp {
+        var P v_port := self;
+	    setverdict(pass);
+	}
+
+    control {
+         execute(TC_NegSem_060306_compatibility_of_port_types_001());
+    }
+}

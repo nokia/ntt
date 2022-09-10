@@ -1,0 +1,18 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(value) is rejected with permutation inside values.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1508_TemplateRestrictions_022 {
+
+type record ExampleType {
+	set of integer a,
+	charstring b
+}
+
+template(value) ExampleType exampleOmitAny := {permutation(2,4,6),"abcde"};
+
+
+}

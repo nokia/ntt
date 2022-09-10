@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.5, Ensure that the constant is not visible after import with except.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction b
+// In the set of except statements for an all import, only one except statement per
+// kind of definition (i.e. for a group, type, etc.) is allowed.
+
+module NegSem_08020305_ImportingAllDefinitionsOfAModule_002 {
+
+import from NegSem_08020305_ImportingAllDefinitionsOfAModule_002_import all except {
+// everything is excluded again
+	group all;
+	type all;
+	template all;
+	const c_test1;
+	testcase all;
+	altstep all;
+	function all;
+	signature all;
+	modulepar all;
+	const c_test2; // error: const present more than once in the except part
+};
+
+type component GeneralComp {}
+
+testcase TC_NegSem_08020305_ImportingAllDefinitionsOfAModule_002() runs on GeneralComp {
+	if (c_myconst == 43532) {
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_08020305_ImportingAllDefinitionsOfAModule_002());
+}
+}
+
+module NegSem_08020305_ImportingAllDefinitionsOfAModule_002_import {
+	const integer c_myconst := 43532;
+	const integer c_test1 := 0;
+	const integer c_test2 := 1;
+}

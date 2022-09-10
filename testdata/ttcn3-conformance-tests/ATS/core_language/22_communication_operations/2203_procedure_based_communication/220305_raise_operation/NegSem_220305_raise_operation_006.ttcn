@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.5, exception procedure signature not in the port list
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// The type definition of the port shall include in its list of accepted procedure calls the
+// name of the procedure to which the exception belongs.
+
+module NegSem_220305_raise_operation_006 {
+	signature S1() exception(integer);
+    signature S2() exception(integer);
+
+	type port P procedure {
+		inout S1;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S1:?);
+		p.raise(S2, 1);
+        setverdict(pass);
+	}
+
+    testcase TC_NegSem_220305_raise_operation_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+        v_ptc.start(f());
+	    p.call(S1:{}, nowait); // no processing of the exception to avoid possible errors in the catch operation
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_006(), 5.0);
+    }
+}

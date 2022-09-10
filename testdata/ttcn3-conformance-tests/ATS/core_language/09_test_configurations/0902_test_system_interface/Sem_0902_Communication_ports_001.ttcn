@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the IUT port correctly mapped with a system interface
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// Mycompport A is mapped with a system interface
+module Sem_0902_Communication_ports_001{
+
+    type port loopbackPort message {
+	  inout integer
+		}
+type port IntegerOutputPortType message {
+	  inout integer
+	}
+
+type component GeneralComp
+	{
+
+		port IntegerOutputPortType MycomportA
+	}
+
+type component MyTestSystemInterface
+	{
+ 	port loopbackPort messagePort
+	}
+// MyTestSystemInterface is the test system interface
+testcase TC_Sem_0902_Communication_ports_001() runs on GeneralComp system MyTestSystemInterface {
+// establishing the port connections
+map(mtc:MycomportA, system:messagePort);
+
+
+ MycomportA.send(2);  //can send also in-line template
+
+    alt {
+     [] MycomportA.receive(2) {
+        setverdict(pass);
+     }
+     [] MycomportA.receive {
+        setverdict(fail);
+     }
+    }
+}
+control{
+    execute(TC_Sem_0902_Communication_ports_001());
+}
+}

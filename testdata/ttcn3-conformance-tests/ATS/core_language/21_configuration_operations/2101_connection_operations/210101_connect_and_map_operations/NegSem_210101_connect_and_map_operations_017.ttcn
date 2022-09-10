@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 451 (updated by STF 521 and 572)
+ ** @version  0.0.3
+ ** @purpose  1:21.1.1, Ensure that the the IUT doesn't allow connecting ports with empty outlists
+ ** @verdict  pass reject
+ ***************************************************/
+// The following requirements are tested:
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected or mappde;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// b) The connect operation is allowed if and only if:
+//   1) outlist-PORT1 ⊆ inlist-PORT2 and outlist-PORT2 ⊆ inlist-PORT1; and
+//   2) neither PORT1 nor PORT2 are system port references; and
+//   3) at least one of outlist-PORT1 or outlist-PORT2 is not empty.
+//
+// In this test, both outlists are empty
+
+module NegSem_210101_connect_and_map_operations_017 {
+
+	type port myport message {
+	  in integer
+	}
+
+    type component Mysystem	{
+ 	    port myport messagePort;
+	}
+
+    testcase TC_NegSem_210101_connect_and_map_operations_017() runs on Mysystem system Mysystem {
+        var Mysystem MyCompA := Mysystem.create,
+        MyCompB := Mysystem.create;
+        connect(MyCompA:messagePort, MyCompB:messagePort);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210101_connect_and_map_operations_017(), 5.0);
+    }
+}
+

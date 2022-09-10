@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * this test investigates that IUT correctly evaluates predefined function any2unistr,
+ * the invalue parameter of the any2unistr function may be uninitialized or partially initialized;
+*/
+
+module Sem_160102_predefined_functions_045 {
+
+    type record of integer MyRoI;
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_045 () runs on GeneralComp {
+
+        template MyRoI v_3 := *;     //template record of integer anyvalue
+
+        //template record of integer anyvalue (*)
+        if(match(any2unistr(v_3),"*")) { setverdict(pass,"Result: ",any2unistr(v_3));}
+         else{setverdict(fail,"Result is: ",any2unistr(v_3), " Expected:*");}
+
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_045());
+    }
+}

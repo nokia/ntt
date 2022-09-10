@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.2
+ ** @purpose  1:24.1, Ensure overwriting rules for local verdict: pass can overwrite none.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.1 The Verdict mechanism/Overwriting rules for setverdict
+ **/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.2 The Setverdict operation/The value of the local verdict is changed with the setverdict operation.
+ **/
+
+
+module Sem_2401_LocalVerdict_001 {
+	type component GeneralComp {}
+
+    testcase TC_Sem_2401_LocalVerdict_001() runs on GeneralComp {
+		setverdict(none);
+		setverdict(pass);
+
+		// The verdict is evaluated by the validation tool according to @verdict header
+    }
+
+    control{
+        execute(TC_Sem_2401_LocalVerdict_001());
+    }
+}

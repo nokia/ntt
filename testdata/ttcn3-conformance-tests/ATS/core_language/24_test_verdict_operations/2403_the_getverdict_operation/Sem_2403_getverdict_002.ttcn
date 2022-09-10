@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.3, Ensure getverdict returns the actual verdict inconc
+ ** @verdict  pass accept, ttcn3verdict:inconc
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.3  The Getverdict operation/Getverdict returns local verdict value
+ **/
+
+module Sem_2403_getverdict_002 {
+    type component TComp {}
+
+    testcase TC_Sem_2403_getverdict_002() runs on TComp {
+        var verdicttype v_verdict;
+        setverdict(inconc);
+        v_verdict := getverdict;
+        if (v_verdict != inconc)
+        {
+            setverdict(fail);
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_2403_getverdict_002())
+    }
+}

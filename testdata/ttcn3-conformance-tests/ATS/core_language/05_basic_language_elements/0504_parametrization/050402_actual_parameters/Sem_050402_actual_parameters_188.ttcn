@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that it is possible to use nested actual parameter lists
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// All parameterized entities specified as an actual parameter shall have their
+// own parameters resolved in the top-level actual parameter list.
+
+module Sem_050402_actual_parameters_188 {
+
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer field1,
+        integer field2
+    }
+
+    template integer mw_int (integer p_upper) := (0..p_upper);
+
+    template R mw_rec(template integer p_field2) := {
+        field1 := 1,
+        field2 := p_field2
+    }
+
+    function f_test (template R p_match) {
+        if (match({1, 5}, p_match)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_188() runs on GeneralComp {
+        f_test(mw_rec(mw_int(10)));
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_188());
+	}
+}

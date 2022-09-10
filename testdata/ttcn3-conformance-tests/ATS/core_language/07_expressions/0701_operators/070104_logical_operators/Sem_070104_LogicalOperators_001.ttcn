@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.4, Ensure that the boolean operator supports negation.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070104_LogicalOperators_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070104_LogicalOperators_001() runs on GeneralComp {
+	var boolean v_test := true;
+	v_test := not v_test;
+
+	if (v_test == false) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070104_LogicalOperators_001());
+}
+
+}

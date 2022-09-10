@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign invalid values to length restricted hexstring
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010204_StringLenghtRestrict_003 {
+    type hexstring HexStrings1 length(3); //3 hexadecimal digits
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010204_StringLenghtRestrict_003() runs on GeneralComp {
+        var HexStrings1 v_b1;
+        v_b1 := 'FE00'H;	//invalid length 4
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010204_StringLenghtRestrict_003());
+    }
+}

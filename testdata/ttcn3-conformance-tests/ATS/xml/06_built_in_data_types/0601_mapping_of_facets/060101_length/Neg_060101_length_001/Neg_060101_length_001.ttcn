@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:6.1.1, Verify that a length-restricted XSD type shall be mapped to a corresponding length restricted TTCN 3 type.
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_060101_length_001 {
+
+    import from schema_Neg_060101_length_001 language "XSD" all;
+
+    template E1 m_msg := {"A","B","C","D"}; //length is 3
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_060101_length_001() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_060101_length_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

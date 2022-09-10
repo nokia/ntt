@@ -1,0 +1,14 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.3, Ensure that an empty control part is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_0803_ModuleControlPart_003 {
+
+control {
+
+}
+
+}

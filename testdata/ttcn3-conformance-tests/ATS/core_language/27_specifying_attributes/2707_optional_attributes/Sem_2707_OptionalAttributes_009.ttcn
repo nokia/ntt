@@ -1,0 +1,105 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.7, Ensure that the IUT correctly handles attribute definitions and their scoping rules
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+ // Restriction b) At most one optional attribute shall be applied to each definition, each individual field reference or language element to which a with statement is associated.
+
+module Sem_2707_OptionalAttributes_009 {
+
+	type enumerated EnumeratedType {e_black, e_white};
+
+	type record RecordType {
+ 	 integer  a optional,
+ 	 integer  b optional
+	}
+
+	type set SetType {
+ 	 integer  a optional,
+ 	 integer  b optional
+	}
+
+	type record length (1..2) of integer IntegerList;
+
+	type set length (1..2) of integer IntegerUList;
+
+	type union UnionType {
+ 	 integer  a,
+ 	 EnumeratedType  b,
+ 	 boolean  c
+	}
+
+	type record MessageType {
+  	 integer  		field1,
+  	 charstring  	field2,
+  	 boolean  		field3,
+  	 integer  		field4[4],
+  	 EnumeratedType field5,
+  	 RecordType		field6,
+  	 SetType		field7,
+  	 UnionType		field8,
+  	 IntegerList	field9,
+  	 IntegerUList	field10
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := 1,
+  field2 := "test string",
+  field3 := true,
+  field4 := {1,2,3,4},
+  field5 := e_black,
+  field6 := {a:=omit,b:=omit},
+  field7 := {a:=omit,b:=omit},
+  field8 := {a:=1},
+  field9 := {1},
+  field10 := {1,2}
+ }
+
+     function f_function() runs on GeneralComp return MessageType {
+		 var MessageType v_testMessage:=  {
+						  field1 := 1,
+						  field2 := "test string",
+						  field3 := true,
+						  field4 := {1,2,3,4},
+						  field5 := e_black,
+						  field6 := {a:=-,b:=-},
+						  field7 := {a:=-,b:=-},
+						  field8 := {a:=1},
+						  field9 := {1},
+						  field10 := {1,2}
+ 		}
+ 	return v_testMessage;
+} with {optional "implicit omit"}
+
+testcase TC_Sem_2707_OptionalAttributes_009() runs on GeneralComp {
+
+  var MessageType v_testMessage;
+
+
+ v_testMessage:=  f_function();
+
+	if(match(v_testMessage,mw_matchingTemplate)){
+		setverdict(pass);
+	}
+	else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_2707_OptionalAttributes_009());
+}
+
+}

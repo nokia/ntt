@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible size restrictions
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060301_non_structured_types_007 {
+    type integer ConstrainedInt[1];
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060301_non_structured_types_007() runs on GeneralComp {
+
+    var integer v_int[2]:={5,4};
+    var ConstrainedInt v_constrainedInt;
+
+
+    v_constrainedInt:=v_int; // length 2 array assigned to length 1 array type
+}
+
+control{
+    execute(TC_NegSem_060301_non_structured_types_007());
+}
+
+}

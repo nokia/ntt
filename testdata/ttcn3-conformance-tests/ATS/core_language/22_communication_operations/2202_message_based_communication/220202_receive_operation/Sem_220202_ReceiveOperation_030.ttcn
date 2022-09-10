@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, verify that a variable of a different but compatible type can be used in a redirect assignment
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The assignment part in a receiving operation is optional. For message-based ports it is used when it is
+// required to store received messages. In the case of procedure-based ports it is used for storing the in
+// and inout parameters of an accepted call, for storing the return value or for storing exceptions.
+// For the message or parameter value assignment part strong typing is not required, e.g. the variable used
+// for storing a message shall be type-compatible to the type of the incoming message.
+
+module Sem_220202_ReceiveOperation_030 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type integer UInt8 (0..255);
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_Sem_220202_ReceiveOperation_030() runs on GeneralComp {
+        var UInt8 v_int;
+        p.send(10);
+        p.receive(integer:?) -> value v_int;
+        if (v_int == 10) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    control {
+        execute(TC_Sem_220202_ReceiveOperation_030(), 5.0);
+    }
+}

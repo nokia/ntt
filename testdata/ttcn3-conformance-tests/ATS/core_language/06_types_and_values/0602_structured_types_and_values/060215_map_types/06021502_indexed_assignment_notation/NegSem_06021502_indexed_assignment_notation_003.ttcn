@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.2, Verify that an error is generated if there are two equal keys in an index assignment list
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction a
+// In the index assignment notation, every index expression shall evaluate to a different value than
+// all the other ones.
+
+module NegSem_06021502_indexed_assignment_notation_003 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021502_indexed_assignment_notation_003() runs on C {
+		var charstring v_str := "test";
+		var TMap1 v_map := { ["test"] := 1, [v_str] := 5 }
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_06021502_indexed_assignment_notation_003());
+	}
+}

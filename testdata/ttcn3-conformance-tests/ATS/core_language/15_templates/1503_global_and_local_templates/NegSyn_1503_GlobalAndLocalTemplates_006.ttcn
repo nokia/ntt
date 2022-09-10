@@ -1,0 +1,23 @@
+/*****************************************************************
+ ** @author 	TTF 014
+ ** @version 	0.0.1
+ ** @purpose 	1:15.3, Ensure that signature templates with restriction e) are accepted.
+ ** @verdict 	pass rejected
+ *****************************************************************/
+/* The following requirements are tested:
+ * After completing initialization, global and local signature templates that do not contain the @abstract modifier
+ * shall fulfil the following conditions:
+ * All in and inout procedure parameters OR all out and inout parameter are completely initialized
+ */
+module NegSyn_1503_GlobalAndLocalTemplates_006 {
+	signature p_NegSyn_1503_SignatureTemplate(in integer p_in,
+										   inout integer p_inout,
+										   out integer p_out) return integer;
+
+	//Error: Either in or out procedure parameters need to be completely initialized
+	template p_NegSyn_1503_SignatureTemplate s_myTemplate := {
+		p_in := -,
+		p_inout := 2,
+	    p_out := -
+	}
+}

@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.4, Ensure timer read result is non-negative float
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.4 The Read timer operation/Read returns elapsed time that is non-neg float
+
+
+module Sem_2304_timer_read_003 {
+    type component TComp{
+        timer t_aux := 1.0;
+        timer t_aux2 := 1.05;
+        timer t_timer := 20.0;
+    }
+    testcase TC_Sem_2304_timer_read_003() runs on TComp{
+        var float v_elapsed;
+
+        t_aux2.start;
+
+        t_timer.start;
+
+		// wait for 1 second
+        t_aux.start;
+		t_aux.timeout;
+
+        v_elapsed:=t_timer.read;
+        if (v_elapsed < 1.0){
+            setverdict(fail);
+        } else {
+			setverdict(pass);
+        }
+        if (t_aux2.running) {
+            if (v_elapsed <= 1.05) {
+                setverdict(pass);
+            } else {
+            	setverdict(fail);
+            }
+        }
+    }
+    control{
+
+            execute(TC_Sem_2304_timer_read_003())
+
+
+    }
+}

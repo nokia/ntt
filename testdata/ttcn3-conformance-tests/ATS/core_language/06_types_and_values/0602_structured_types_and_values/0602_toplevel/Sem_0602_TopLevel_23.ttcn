@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that mixed list and assignment notation can be used for a set of type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+//The following requirement is tested:
+/* Values of these types (record, set, record of , set of, array) may be given using an explicit assignment notation or a
+ * short-hand value list notation or in a mixed list and assignment notation.
+ * */
+
+module Sem_0602_TopLevel_23
+{
+    type component GeneralComp {
+    }
+
+    type set MySet {
+        integer field1,
+        charstring field2,
+        float field3
+    }
+
+    type set of MySet MySo;
+
+    testcase TC_Sem_0602_TopLevel_023() runs on GeneralComp {
+
+		var MySo v_mySetOf := {
+                {5, field3 := 3.14, field2 := "ABCD"},
+                {6, field3 := 6.28, field2 := "EFGH"},
+                [2] := {7, field3 := 12.56, field2 := "IJKL"}
+                };    // mixed notation (assignment + list)
+
+        if (match(v_mySetOf,
+                {{5, field3 := 3.14, field2 := "ABCD"},
+                {6, field3 := 6.28, field2 := "EFGH"},
+                {7, field3 := 12.56, field2 := "IJKL"}})) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+   control {
+        execute(TC_Sem_0602_TopLevel_023());
+    }
+}

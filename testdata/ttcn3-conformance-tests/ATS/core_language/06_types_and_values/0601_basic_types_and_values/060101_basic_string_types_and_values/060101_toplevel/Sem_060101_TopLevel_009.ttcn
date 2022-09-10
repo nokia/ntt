@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Ensure that whitespaces, control characters and backslash will be ignored for the bitstring length calculation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * Within the quotes any number of whitespaces or any sequence of the following C0 control characters:
+ * LF(10), VT(11), FF(12), CR(13) which constitutes a newline  may be included. The newline shall be preceded by a backslash ("\").
+ * Such whitespaces, control characters and backslash will be ignored for the value and length calculation.
+*/
+
+module Sem_060101_TopLevel_009 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_060101_TopLevel_009() runs on GeneralComp {
+        var bitstring v_a  := '0101\
+                                1010'B;
+
+    	if (match(lengthof(v_a), 8))
+        {
+    		setverdict(pass,"Size of v_a is:",lengthof(v_a));
+    	}
+    	else {
+    		setverdict(fail,"Size of v_a is:",lengthof(v_a));
+    	}
+    }
+
+    control{
+        execute(TC_Sem_060101_TopLevel_009());
+    }
+}

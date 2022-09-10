@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7, expression composed of several expressions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Expressions may be built from other (simple) expressions.
+
+module Sem_07_toplevel_001
+{
+    type component GeneralComp {
+	}
+
+    function f() return integer
+    {
+        return 5;
+    }
+
+    testcase TC_Sem_07_toplevel_001() runs on GeneralComp {
+        var integer v_num := 3;
+        var integer v_res := -v_num + f() * 2 - 3;
+        if (v_res == 4) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_07_toplevel_001());
+	}
+}

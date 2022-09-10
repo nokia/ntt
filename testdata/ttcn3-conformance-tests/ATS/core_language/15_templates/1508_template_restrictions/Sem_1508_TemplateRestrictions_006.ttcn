@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that a value can be assigned to a template(present) variable.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1508_TemplateRestrictions_006 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1508_TemplateRestrictions_006() runs on GeneralComp {
+	var template(present) integer v_present;
+
+	v_present := 20;
+
+	if (valueof(v_present) == 20) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_006());
+}
+
+
+}

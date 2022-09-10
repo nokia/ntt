@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.4, Ensure that the right class can be chosen in a select class-statement.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010204_SelectClassStatement_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+    //empty class
+    }
+
+    type class MySubClass extends MySuperClass {
+    //empty class
+    }
+
+    testcase TC_Sem_5010204_SelectClassStatement_001() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create();
+        var MySuperClass v_b := MySubClass.create();
+        select class (v_a) {
+            case (MySubClass) { setverdict(pass); }
+            case (MySuperClass) { setverdict(fail); }
+        }
+        select class (v_b) {
+            case (MySubClass) { setverdict(pass); }
+            case (MySuperClass) { setverdict(fail); }
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010204_SelectClassStatement_001());
+    }
+}

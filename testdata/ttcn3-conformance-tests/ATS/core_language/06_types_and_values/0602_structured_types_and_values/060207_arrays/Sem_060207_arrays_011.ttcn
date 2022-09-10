@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, index notation applied to omitted array field on left hand side of assignment
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// All elements in an array value that are not set explicitly are undefined.
+// When referencing an element of an uninitialized array value or field or
+// omitted field on the left hand side of an assignment, the rules for record
+// of values specified in 6.2.3 apply.
+
+module Sem_060207_arrays_011 {
+
+	type component GeneralComp {
+	}
+
+    type record R {
+        integer field1[3] optional
+    }
+
+	testcase TC_Sem_060207_arrays_011() runs on GeneralComp {
+
+        var R v_rec := { field1 := omit };
+        v_rec.field1[2] := 3;
+
+		if (not isbound(v_rec.field1[0]) and not isbound(v_rec.field1[1]) and
+            v_rec.field1[2] == 3) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060207_arrays_011());
+	}
+
+}

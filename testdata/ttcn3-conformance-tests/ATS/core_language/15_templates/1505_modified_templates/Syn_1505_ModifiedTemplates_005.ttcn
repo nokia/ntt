@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that templates without @abstract modifier are not accepted if it is not fully initialized.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+// Restriction e)	After completing initialization, modified global and local templates that do not contain the @abstract modifier shall be fully initialized
+
+module Syn_1505_ModifiedTemplates_005 {
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template @abstract MyMessageType m_templateOne(integer p_intValue:=2) := {
+	field1 := p_intValue,
+	field2 := "Hello World"
+}
+
+template @abstract MyMessageType m_templateTwo(integer p_intValue := -) modifies m_templateOne := {
+	field1 := p_intValue
+    // field2 and field3 is not filled, modified template is an abstract template
+}
+
+}

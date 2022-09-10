@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:C.6.2, Ensure that the IUT correctly handles the testcasename function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_C0602_The_testcasename_function_001 {
+
+    type component GeneralComp {
+    }
+
+	// add a second testcase in order to see that the right TC name is returned
+    testcase TC_Sem_C0602_The_testcasename_function_001_other() runs on GeneralComp {
+    }
+
+    testcase TC_Sem_C0602_The_testcasename_function_001() runs on GeneralComp {
+        var charstring v_TCname := testcasename();
+        if (match(v_TCname, "TC_Sem_C0602_The_testcasename_function_001")) {
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Expected TC name TC_Sem_C0602_The_testcasename_function_001 observer " & v_TCname);
+        }
+    }
+
+    control{
+        execute(TC_Sem_C0602_The_testcasename_function_001());
+    }
+
+}

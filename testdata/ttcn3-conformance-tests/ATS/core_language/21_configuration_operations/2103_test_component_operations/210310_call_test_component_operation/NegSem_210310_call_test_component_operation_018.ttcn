@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with incompatible value in the timeout parameter
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The optional SimpleExpression representing the timer value shall be of a float type.
+
+module NegSem_210310_call_test_component_operation_018 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_018() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.call(f(), "2.0");
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_018(), 5.0);
+    }
+}

@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT rejects assignments between incompatible structures
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060302_structured_types_016 {
+
+    type set SetType {
+        integer  a,
+        integer  b optional,
+        integer  c
+    }
+
+    type set of integer IntegerList;
+
+
+    type component GeneralComp {
+    }
+
+    testcase TC_NegSem_060302_structured_types_016() runs on GeneralComp {
+
+		var SetType v_set := { 1, omit, 2};
+		var IntegerList v_IntList;
+		var integer v_array[2];
+
+        v_array:=v_set;  //assignment between incompatible types
+
+    }
+
+    control{
+        execute(TC_NegSem_060302_structured_types_016());
+    }
+
+}

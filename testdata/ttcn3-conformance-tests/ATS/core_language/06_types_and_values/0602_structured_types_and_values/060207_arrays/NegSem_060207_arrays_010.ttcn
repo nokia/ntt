@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, ensure that the value limitation is correctly handled within array
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The values of array elements shall be compatible with the corresponding
+// variable or type declaration.
+
+module NegSem_060207_arrays_010 {
+
+ type component GeneralComp {
+ }
+
+ type integer MyArrayType1[5] (1 .. 10);
+
+testcase TC_NegSem_060207_arrays_010() runs on GeneralComp {
+
+ var MyArrayType1 v_array1 := {
+     [0] := 8,
+     [1] := 0,// error expected, value shall be between 1..10
+     [2] := 2,
+     [2] := 3,
+     [2] := 4
+     };
+
+}
+
+control {
+    execute(TC_NegSem_060207_arrays_010());
+}
+
+}

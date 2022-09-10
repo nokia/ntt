@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.2.3, Ensure that raising an exception with the raise exception statement.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50203_invoking_functions_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type integer MyIntegerType;
+
+
+    function f_exception(in integer e) runs on GeneralComp return integer {
+        if (e > 10) {
+            raise 1;
+        } else {
+            return 1;
+        }
+    } catch(integer) {
+        return 0;
+    }
+
+    testcase TC_Sem_50203_invoking_functions_001() runs on GeneralComp {
+        if (f_exception(12) == 0) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_50203_invoking_functions_001());
+    }
+}

@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3, fixed-size record-of as a record-of value index on right hand side (less items than record-of dimension)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For nested record of or set of types, an array or record of integer restricted
+// to a single size can be used as a short-hand notation for a nested index
+// notation.
+
+module NegSem_060203_records_and_sets_of_single_types_018 {
+
+	type component GeneralComp {
+	}
+
+    type record length(3) of integer Indexer;
+	type record of record of integer RoRoI;
+
+	testcase TC_NegSem_060203_records_and_sets_of_single_types_018() runs on GeneralComp {
+
+		var RoRoI v_rec := {{0, 1}, {2, 3}};
+        var Indexer v_index := { 1, 0, 0 }
+		if (v_rec[v_index] == 2) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_NegSem_060203_records_and_sets_of_single_types_018());
+	}
+
+}

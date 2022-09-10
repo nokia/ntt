@@ -1,0 +1,18 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Combined value list and assignment notation not allowed in the same (immediate) context.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_0602_TopLevel_003 {
+    type record MyRecord {
+        integer field1,
+        charstring field2 optional,
+        float field3
+    }
+    const MyRecord c_rec := {
+        field1 := 5,
+        "hi", // combined value list and assignment notation not allowed in the same (immediate) context.
+        field3 := 3.14
+    };
+}

@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Ensure that the only top-level visible definitions of a module may be imported.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction b:
+// Only top-level visible definitions of a module may be imported. Definitions which
+// are top-level but invisible to the importing module or which occur at a lower scope
+// (e.g. local constants defined in a function) shall not be imported.
+
+module NegSem_08020301_GeneralFormatOfImport_006 {
+import from NegSem_08020301_GeneralFormatOfImport_006_import { const c_test };
+
+type component GeneralComp {}
+
+testcase TC_NegSem_08020301_GeneralFormatOfImport_006() runs on GeneralComp {
+	log(c_test);
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSem_08020301_GeneralFormatOfImport_006());
+}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_006_import {
+	control {
+		const integer c_test := 5;
+	}
+}

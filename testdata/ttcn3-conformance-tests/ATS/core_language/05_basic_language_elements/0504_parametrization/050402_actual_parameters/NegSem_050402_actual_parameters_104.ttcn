@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that assignment notation followed by list notation is not allowed in parameterized calls (skipped actual parameter)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters can be provided ... in a mixed notation where the first parameters are given in list notation
+// and additional parameters in assignment notation.
+
+module NegSem_050402_actual_parameters_104 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (integer p_val1, charstring p_val2 := "test") {
+        if ( match(p_val1, 1) and match(p_val2, "test")) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_104() runs on GeneralComp {
+        f_test(p_val1 := 1, -);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_104());
+	}
+}

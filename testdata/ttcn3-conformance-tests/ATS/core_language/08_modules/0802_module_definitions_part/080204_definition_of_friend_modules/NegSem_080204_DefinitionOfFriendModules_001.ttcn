@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.4, Ensure that friend visibility works for a sample constant.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_080204_DefinitionOfFriendModules_001 {
+
+import from NegSem_080204_DefinitionOfFriendModules_001_import all;
+
+type component GeneralComp {}
+
+testcase TC_NegSem_080204_DefinitionOfFriendModules_001() runs on GeneralComp {
+	if (c_myconst == 32532) { // c_myconst shall not be visible. A friend module statement is missing in NegSem_080204_DefinitionOfFriendModules_001_import.
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_080204_DefinitionOfFriendModules_001());
+}
+}
+
+module NegSem_080204_DefinitionOfFriendModules_001_import {
+	friend const integer c_myconst := 32532;
+}

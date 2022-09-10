@@ -1,0 +1,64 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.3.4, Verify that any from getreply index redirection for multi-D arrays requires arrays of correct size
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction h:
+// If the index redirection is used for multi-dimensional component arrays, the size
+// of the integer array or record of integer type shall exactly be the same as the dimension
+// of the respective array, and its type shall allow storing the highest index (from all
+// dimensions) of the array.
+module NegSem_220304_getreply_operation_004 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+	const integer c_portCount := 3;
+    type component GeneralComp
+	{
+		port P p[c_portCount][c_portCount];
+	}
+
+	function f() runs on GeneralComp
+	{
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			for(var integer j := 0; j < c_portCount; j := j + 1) {
+				p[i][j].getcall(S:?);
+				if (i == 1 and j == 2 or i == 2 and j == 1) { p[i][j].reply(S:{}); }
+			}
+		}
+	}
+
+
+    testcase TC_NegSem_220304_getreply_operation_004() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc := GeneralComp.create, v_src;
+		var integer v_index[1];
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			for(var integer j := 0; j < c_portCount; j := j + 1) {
+				connect(self:p[i][j], v_ptc:p[i][j]);
+				p[i][j].call(S:{}, nowait);
+			}
+		}
+		v_ptc.start(f());
+		v_ptc.done;
+        alt
+		{
+        	[] any from p.getreply(S:{}) -> sender v_src @index value v_index {
+				if(v_index[0] == 1 and v_index[1] == 2){
+		            setverdict(pass);
+		        } else {
+		            setverdict(fail, "Indices or parameter value incorrectly assigned");
+		        }
+			}
+			[else] { setverdict(fail, "The any from getreply operation didn't match for some reason");  }
+		}    }
+
+    control {
+        execute(TC_NegSem_220304_getreply_operation_004(), 5.0);
+    }
+}

@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, ensure that the value limitation is correctly handled within array
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060207_arrays_001 {
+
+ type component GeneralComp {
+ }
+
+ type integer MyArrayType1[5] (1 .. 10);
+
+testcase TC_NegSem_060207_arrays_001() runs on GeneralComp {
+
+ var MyArrayType1 v_array1 := { 8, 11, 2, 3, 4};  // syntax error expected, value shall be between 1..10
+
+}
+
+control {
+    execute(TC_NegSem_060207_arrays_001());
+}
+
+}

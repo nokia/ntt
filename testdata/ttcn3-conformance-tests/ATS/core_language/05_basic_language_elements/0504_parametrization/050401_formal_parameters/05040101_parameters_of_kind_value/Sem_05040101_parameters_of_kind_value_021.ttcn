@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that null can be used as default value of formal value parameters of default type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction g)
+// Default values of default type formal parameters shall be the special value null.
+
+module Sem_05040101_parameters_of_kind_value_021 {
+
+	type component GeneralComp {
+	}
+
+    function f(default p_def := null) {
+        log(p_def);
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_021() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_021());
+	}
+}

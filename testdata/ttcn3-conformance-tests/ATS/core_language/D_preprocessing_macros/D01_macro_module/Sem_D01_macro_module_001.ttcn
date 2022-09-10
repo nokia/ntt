@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that __MODULE__ replaces the module name
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The name of the module is stored in __MODULE__ macro
+module Sem_D01_macro_module_001 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_D01_macro_module_001() runs on GeneralComp system GeneralComp {
+
+	const charstring MyConst:= __MODULE__;
+
+	if(match(MyConst, "Sem_D01_macro_module_001")){
+	    setverdict(pass);}
+	else {
+	    setverdict(fail);}
+    }
+
+    control {
+        execute(TC_Sem_D01_macro_module_001());
+    }
+}

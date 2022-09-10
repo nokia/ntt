@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.5, Verify that a variant with no encoding references is not allowed for multiple encodings
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// It is not allowed to define variant attributes with no encoding reference if multiple encodings
+// are used.
+
+module NegSem_2705_variant_attributes_001 {
+
+    type component GeneralComp {
+	}
+
+	type charstring Multi3 with {
+		encode "Codec1"; encode "Codec2";
+		variant "Rule1";
+	} // the statement will produce an error as there are multiple encodings and the
+	// variant attribute doesn't specify encoding reference
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2705_variant_attributes_001 () runs on GeneralComp {
+		var RoUC v_variant := Multi3.variant;
+		if(v_variant == { "Rule1" }) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_NegSem_2705_variant_attributes_001());
+	}
+
+}

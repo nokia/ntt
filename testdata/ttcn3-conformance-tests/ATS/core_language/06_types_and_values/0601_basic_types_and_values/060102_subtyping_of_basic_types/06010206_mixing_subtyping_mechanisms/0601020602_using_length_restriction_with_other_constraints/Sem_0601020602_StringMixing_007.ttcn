@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.6.2, Assign values to pattern restricted character strings using @nocase modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+When the "@nocase" modifier is used after the pattern keyword, the matching is evaluated in a case insensitive way
+*/
+
+module Sem_0601020602_StringMixing_007 {
+    type charstring unicharString (pattern "[a-z]#(1,5)") length (1..5); // charstring between "a".."z" and length from 1 to 5
+    type charstring unicharString_nocase (pattern @nocase "[a-z]#(1,5)") length (1..5); // with @nocase modifier now characters from "A...Z" is also allowed
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_0601020602_StringMixing_007() runs on GeneralComp {
+        var unicharString v_a;        //without @nocase modifier
+        var unicharString_nocase v_b; //with @nocase modifier
+        v_a :="abxyz";
+        v_b :=v_a;        //v_b :="abxyz";
+        v_b :="AbXyZ";
+
+      	setverdict(pass,"The result is: ",v_b);
+    }
+
+    control{
+        execute(TC_Sem_0601020602_StringMixing_007());
+    }
+}

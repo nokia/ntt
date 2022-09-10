@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.5, Verify that a dot notation is available for variant attributes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// If multiple encodings (see clause 27.4) are used, the variant attribute value shall be composed
+// of two parts separated by a dot. Such variant attributes are called encoding related variant
+// attributes. The first part of the attribute specifies the encodings the variant is related to.
+// One possible notation is a simple string when the variant is related to a single encode attribute.
+// The second part of the attribute (following the dot symbol) is a simple string that specifies the
+// variant value.
+
+module Sem_2705_variant_attributes_003 {
+
+    type component GeneralComp {
+	}
+
+	type charstring Multi with {
+		encode "Codec1"; variant "Codec1"."Rule1";
+		encode "Codec2"; variant "Codec2"."Rule3";
+	}; // multiple encodings ("Codec1", "Codec2"), the variant "Rule1" is valid
+	// for the "Codec1" encoding only, while the variant "Rule3" applies only
+	// for the "Codec2" encoding
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2705_variant_attributes_003 () runs on GeneralComp {
+		var RoUC v_variant1 := Multi.variant("Codec1"),
+            v_variant2 := Multi.variant("Codec2");
+		if(v_variant1 == { "Rule1" } and v_variant2 == { "Rule3" }) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_Sem_2705_variant_attributes_003());
+	}
+
+}

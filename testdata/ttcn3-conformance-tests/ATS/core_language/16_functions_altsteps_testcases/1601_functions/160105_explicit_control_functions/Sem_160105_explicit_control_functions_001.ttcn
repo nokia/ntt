@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.5, Ensure that the IUT recognizes explicit control functions
+ ** @verdict  pass accept
+ ***************************************************/
+
+module Sem_160105_explicit_control_functions_001 {
+
+    type component GeneralComp {
+    }
+
+    function @control f_Sem_160105_explicit_control_functions_001() {
+        execute(TC_Sem_160105_explicit_control_functions_001());
+    }
+
+    testcase TC_Sem_160105_explicit_control_functions_001 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        f_Sem_160105_explicit_control_functions_001();
+    }
+
+}

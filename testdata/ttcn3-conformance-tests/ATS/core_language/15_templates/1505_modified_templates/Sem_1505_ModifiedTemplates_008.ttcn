@@ -1,0 +1,53 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by TTF T014)
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that the values of plain modified template definitions are as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/*A modified template may also be declared fuzzy using the @fuzzy modifier.
+If a fuzzy modified template modifies a non-fuzzy unparameterized template, the inherited fields before modification will be the same for every evaluation of the fuzzy template.*/
+
+module Sem_1505_ModifiedTemplates_008 {
+
+type port MyMessagePortType message {
+	inout MyMessageType
+}
+
+type component GeneralComp {
+	port MyMessagePortType pt_myPort;
+}
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template @abstract MyMessageType m_templateOne := {
+	field1 := 2,
+	field2 := "Hello World",
+	field3 := -
+}
+
+template @fuzzy MyMessageType m_templateTwo modifies m_templateOne := {
+	field1 := 4,
+    field3 := true
+}
+
+testcase TC_Sem_1505_ModifiedTemplates_008() runs on GeneralComp {
+	if ((valueof(m_templateTwo.field1) == 4) and
+	    (valueof(m_templateTwo.field2) == "Hello World") and
+	    (valueof(m_templateTwo.field3) == true)
+	   ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1505_ModifiedTemplates_008());
+}
+
+}

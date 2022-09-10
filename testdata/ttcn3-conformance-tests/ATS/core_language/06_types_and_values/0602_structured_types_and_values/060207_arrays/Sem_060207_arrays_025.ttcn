@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, verify that arrays can be used as a formal parameter of a function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+//The following requirement is tested:
+ /* Arrays can be used in TTCN-3 as a shorthand notation to specify record of types.
+  * They may be specified also at the point of a variable, formal parameter or function return
+  * value declaration.
+ */
+
+module Sem_060207_arrays_025 {
+
+ type component GeneralComp {
+ }
+
+    function getArray(integer v_in[3]) return integer[3] { // array definition in function return type declaration
+        return v_in;
+}
+
+
+testcase TC_Sem_060207_arrays_025() runs on GeneralComp {
+
+      var integer v_input[3] := {
+            [0] := 8,
+            [1] := 1,
+            [2] := 2
+      }
+      var integer v_res[3] := getArray(v_input);
+	  setverdict(pass, v_res);
+}
+
+control {
+    execute(TC_Sem_060207_arrays_025());
+}
+
+}

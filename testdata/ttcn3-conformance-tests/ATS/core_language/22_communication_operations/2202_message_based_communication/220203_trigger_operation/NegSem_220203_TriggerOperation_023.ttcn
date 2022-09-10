@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.2.3, incompatible decmatch and @decoded value redirect
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// When assigning implicitly decoded message fields (by using the @decoded modifier) in
+// cases where the value or template to be matched uses the MatchDecodedContent (decmatch)
+// matching for the field to be stored, the type of the template in the MatchDecodedContent
+// matching shall be type-compatible to the type of the variable the decoded field is stored into.
+
+module NegSem_220203_TriggerOperation_023 {
+
+    type record R {
+        integer id,
+        octetstring payload
+    }
+
+    type record Wrapped {
+        integer num
+    }
+
+    type port P message {
+		inout R;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_023() runs on GeneralComp {
+        var Wrapped v_res;
+        var R v_rec := { id := 0, payload := bit2oct(encvalue(5)) };
+		timer t_tmr := 1.0;
+		t_tmr.start;
+        p.send(v_rec);
+        alt {
+            [] p.trigger(R:{ id := ?, payload := decmatch integer:? }) -> value (v_res := @decoded payload) {}
+            [] t_tmr.timeout {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_023(), 5.0);
+    }
+}

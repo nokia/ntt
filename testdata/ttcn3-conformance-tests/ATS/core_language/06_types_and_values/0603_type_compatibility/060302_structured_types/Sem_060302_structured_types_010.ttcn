@@ -1,0 +1,51 @@
+/***************************************************
+ * @author TTF T003
+ * @version 0.0.1
+ * @purpose 1.6.2.16, Verify that existing TTCN-3 types are compatible with the open type.
+ * @verdict pass accept
+ ***************************************************/
+module Sem_060302_structured_type_010 {
+	type component GeneralComp {
+	}
+
+	type record MyRecord {float field1, float field2 optional};
+	type set of integer MySet;
+	type enumerated MyEnum {e_key1};
+
+	/**
+	 * @return always true
+	 */
+	external function xf_my_external_function(in any p_any) return boolean;
+
+	testcase TC_Sem_060302_structured_type_010()
+		runs on GeneralComp {
+		var integer v_i := 4;
+		var MyRecord v_record := { 1.0, 2.0 };
+		var MySet v_set := { 0, 1, 2};
+		var MyEnum v_enum := e_key1;
+		var anytype v_any := { charstring := "Hello" };
+
+		if (xf_my_external_function(p_any := v_i)/* and   			//integer
+			xf_my_external_function(p_any := int2float(v_i)) and   	//float
+			xf_my_external_function(p_any := int2char(v_i)) and  	//char
+			xf_my_external_function(p_any := int2str(v_i)) and   	//charstring
+			xf_my_external_function(p_any := int2unichar(v_i)) and	//universal charstring
+			xf_my_external_function(p_any := int2bit(v_i,4)) and   	//bitstring
+			xf_my_external_function(p_any := int2hex(v_i,4)) and   	//hexstring
+			xf_my_external_function(p_any := int2oct(v_i,4)) and 	//octetstring
+			xf_my_external_function(p_any := v_record) and 			//MyRecord
+			xf_my_external_function(p_any := v_set) and    			//MySet
+			xf_my_external_function(p_any := v_enum) and 			//MyEnum
+			xf_my_external_function(p_any := v_any)*/ 				//anytype
+		) {
+            log(v_i);
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060302_structured_type_010());
+	};
+}

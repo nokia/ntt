@@ -1,0 +1,5 @@
+- NOTE: rules involving message based communications are tested as part of section 22.2
+- NOTE: rules involving procedure based communications are tested as part of section 22.3
+- NOTE: rules for using addresses are tested as a part of the section 6.2.12
+- NOTE: rules for using map parameters are tested as a part of the section 21.1.1
+- NOTE: rules for using unmap parameters are tested as a part of the section 21.1.1

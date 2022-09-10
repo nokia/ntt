@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign string to bitstring values
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060101_TopLevel_002 {
+    const bitstring c_b1 := "1"; // not an bitstring value
+}

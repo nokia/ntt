@@ -1,0 +1,60 @@
+/*****************************************************************
+ ** @author   STF 433 (updated by STF 470 and STF 521)
+ ** @version  0.0.3
+ ** @purpose  1:21.1.2, Ensure that unmap param statements are allowed in testcase block
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_210102_disconnect_and_unmap_operations_011 {
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType1 {
+        boolean h1,
+        MyMessageType1 h2 optional
+    }
+
+    type record MyMessageType2 {
+        integer g1,
+        charstring g2
+    }
+
+    type port MyMessagePortType message {
+        inout all;
+        unmap param (in MyMessageType1 p1, inout MyMessageType2 p2);
+    }
+
+    const MyMessageType1 c_myTemplate1 := {
+        h1 := false,
+        h2 := {
+            h1:= true,
+            h2 := omit
+        }
+    }
+
+    const MyMessageType2 c_myTemplate2 := {
+        g1 := 2,
+        g2 := "foo"
+    }
+
+    testcase TC_Sem_210102_disconnect_and_unmap_operations_011() runs on GeneralComp system GeneralComp {
+        var MyMessageType2 v_myTemplate2 := c_myTemplate2;
+        timer t_tmr := 0.2;
+        t_tmr.start;
+        map(mtc:pt_myPort, system:pt_myPort);
+
+        pt_myPort.send(13);
+        t_tmr.timeout; // give adapter some time to enqueue the message
+
+        unmap(mtc:pt_myPort, system:pt_myPort) param(c_myTemplate1, v_myTemplate2);
+        log("Unmap inout parameter", v_myTemplate2);
+
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_210102_disconnect_and_unmap_operations_011());
+    }
+}

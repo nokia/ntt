@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:23.3, Verify that the stop operation applied to a non-timer reference produces an error
+ ** @verdict  pass reject
+ ***************************************************/
+// The following requirement is tested
+// a) The ObjectReference (in the timer stop operation) shall be of the timer type.
+
+module NegSem_2303_timer_stop_001 {
+    type component TComp{
+	    timer t_tmr;
+    }
+    testcase TC_NegSem_2303_timer_stop_001() runs on TComp{
+        var float v_duration := 1.0;
+        t_tmr.start(v_duration);
+		v_duration.stop;
+        setverdict(pass);
+    }
+    control {
+        execute(TC_NegSem_2303_timer_stop_001())
+    }
+}

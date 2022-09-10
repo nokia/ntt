@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.3, Verify that unmapping a non-existent key is possible
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If the map variable did not associate the given key with a value, the operation has no effect.
+
+module Sem_06021503_unmapping_keys_002 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021503_unmapping_keys_002() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 }
+		unmap(v_map, "abc");
+		if (v_map["test"] == 1 and v_map["xyz"] == 5) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021503_unmapping_keys_002());
+	}
+}

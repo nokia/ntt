@@ -1,0 +1,57 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Ensure that unmap operation with no parameters works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The usage of an ... unmap operation without any parameters is a shorthand
+// form for using the operation with the parameter self:all port. It ...
+// unmaps all ports of the component that calls the operation.
+
+module Sem_210102_disconnect_and_unmap_operations_008 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1, p2;
+    }
+
+	function checkPortMapped(boolean p_stateActive, P p_port)
+	{
+		if(p_port.checkstate("Mapped") xor not p_stateActive) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+	function checkMapped(boolean p_stateActive) runs on GeneralComp
+	{
+		checkPortMapped(p_stateActive, p1);
+		checkPortMapped(p_stateActive, p2);
+	}
+
+    testcase TC_Sem_210102_disconnect_and_unmap_operations_008() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc1 := GeneralComp.create;
+
+		map(self:p1, system:p1);
+		map(self:p2, system:p2);
+		map(v_ptc1:p1, system:p1);
+		map(v_ptc1:p2, system:p2);
+
+		unmap;
+
+		// verity that ports are really unmapped
+        checkMapped(false); // no active mapping
+        v_ptc1.start(checkMapped(true)); // still mapped to system:p1 and system:p2
+		all component.done;
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_and_unmap_operations_008());
+    }
+}
+

@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that anyvalueornone fields in the context of record of is rejected.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150603_ReferencingRecordOfAndSetElements_003 {
+
+    type component GeneralComp { }
+
+    type record of integer RoI;
+
+    testcase TC_NegSem_150603_ReferencingRecordOfAndSetElements_003() runs on GeneralComp {
+        var template RoI m_one;
+        var integer v_test;
+
+        m_one := {0,*,1,2};
+        v_test := valueof(m_one[1]); // shall cause an error as element one is an "any value or none" field
+
+        setverdict(fail);
+    }
+
+    control{
+        execute(TC_NegSem_150603_ReferencingRecordOfAndSetElements_003());
+    }
+
+
+
+}

@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.3.8, Verify that map types are not compatible with arrays
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// map types are only compatible with other map types. A value "b" of a map type "B" is compatible
+// with a map type "A" if the from type of  "A" is compatible with the from type of "B" and the to
+// type of "B" is compatible with the totype of "A".
+
+module NegSem_060308_compatibility_of_map_types_001 {
+	type map from integer to charstring TMap1;
+	type component C {}
+
+	testcase TC_NegSem_060308_compatibility_of_map_types_001() runs on C {
+		var TMap1 v_map;
+		v_map[0] := "test1";
+		v_map[1] := "test2";
+		var integer v_arr[2] := v_map;
+		log(v_arr);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060308_compatibility_of_map_types_001());
+	}
+}

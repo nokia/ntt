@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that the not equal to operator on address with value null is evaulated correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/* Restriction c)	With the exception of the equality and non-equality operators, the special value null shall not be used as an operand of expressions (see clause 7.1.3).*/
+
+
+module Sem_070101_ArithmeticOperators_052 {
+
+type component GeneralComp {
+}
+
+type integer address;
+
+testcase TC_Sem_070101_ArithmeticOperators_052() runs on GeneralComp {
+
+    var address My_address := 1;
+
+
+	if (My_address != null)
+    {
+		setverdict(pass, My_address);
+	} else {
+		setverdict(fail,My_address);
+	}
+}
+
+control{
+    execute(TC_Sem_070101_ArithmeticOperators_052());
+}
+
+}

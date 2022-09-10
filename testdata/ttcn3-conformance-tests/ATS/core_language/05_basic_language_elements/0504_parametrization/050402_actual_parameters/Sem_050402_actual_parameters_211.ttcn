@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that dash can be used as an actual out value parameter of functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal value parameters shall be (template) variables,
+// formal (template) parameters (of in, inout or out parameterization) or references to elements
+// of (template) variables or formal (template) parameters of structured types. Furthermore it is
+// allowed to use the dash symbol "-" as an actual out parameter, signifying that a possible result
+// for that parameter will not be passed back.
+
+module Sem_050402_actual_parameters_211 {
+
+    type component GeneralComp {
+    }
+
+    function f_test(out integer p_val) {
+        p_val := 9
+    }
+
+    testcase TC_Sem_050402_actual_parameters_211() runs on GeneralComp {
+        f_test(-); // tested parameter passing
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_211());
+	}
+}

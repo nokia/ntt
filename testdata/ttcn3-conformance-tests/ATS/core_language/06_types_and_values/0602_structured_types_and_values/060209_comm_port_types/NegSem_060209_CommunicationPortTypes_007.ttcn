@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Verify that an error is generated when a signature port definition contains multiple map clauses
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction b:
+// At most one map parameter list should be defined for a port type.
+
+module NegSem_060209_CommunicationPortTypes_007 {
+
+    type record MyType1 {
+        integer f1,
+        charstring f2
+    }
+
+	type record MyType2 {
+	    integer g1,
+	    charstring g2
+	}
+
+	type record MyType3 {
+	    boolean h1,
+        MyType3 h2 optional
+	}
+
+	signature S() return integer;
+
+    type port MyMessagePortTypeOne procedure {
+        address MyType1;
+        in S;
+        map param (in integer p1, inout MyType2 p2);
+        unmap param (in MyType3 p1, out integer p2);
+		map param (in integer p1, inout MyType2 p2); // more than 1 map clause
+    }
+
+    type component GeneralComp {
+        port MyMessagePortTypeOne pt_myPort;
+    }
+
+    testcase TC_NegSem_060209_CommunicationPortTypes_007() runs on GeneralComp system GeneralComp {
+        setverdict(fail);
+    }
+
+    control{
+        execute(TC_NegSem_060209_CommunicationPortTypes_007());
+    }
+
+}

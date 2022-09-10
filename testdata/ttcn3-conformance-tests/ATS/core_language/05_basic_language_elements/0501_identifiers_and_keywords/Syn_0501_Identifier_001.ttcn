@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.1, Ensure that the IUT handle the identifiers case sensitively.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Syn_0501_Identifier_001 {
+
+type component IdComp {
+    const integer cl_int := 0;
+}
+
+testcase TC_Syn_0501_Identifier_001() runs on IdComp {
+    const integer cl_iNT := 1;
+    if ( match(cl_int, 0) ){
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Syn_0501_Identifier_001(), 1.0);
+}
+
+}

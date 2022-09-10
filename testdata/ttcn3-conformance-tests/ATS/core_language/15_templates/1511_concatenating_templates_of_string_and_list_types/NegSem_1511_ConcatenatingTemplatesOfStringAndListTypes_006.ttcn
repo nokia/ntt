@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of octetstring types and ? patterns works as expected.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_006 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_006() runs on GeneralComp {
+    var template octetstring v_myString1 := 'ABCD'O & ? length(2) length (6);  //missing parenthesis
+    if (match('ABCD12'O, v_myString1)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_006());
+}
+
+}

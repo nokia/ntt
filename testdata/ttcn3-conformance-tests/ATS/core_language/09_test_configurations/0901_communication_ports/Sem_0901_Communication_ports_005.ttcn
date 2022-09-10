@@ -1,0 +1,100 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the the IUT receives the message sent by mycompA
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration  port:broadcast
+ ***************************************************/
+
+//Mycomp A has two ports and MycompB has two ports.
+module Sem_0901_Communication_ports_005{
+
+	type port myport message {
+	  inout integer
+	}
+
+
+type component Mysystem
+	{
+	timer t_rec,t_rec2;
+ 	port myport messagePort1,messagePort2;
+	}
+function fsend() runs on Mysystem {
+messagePort1.send(1);
+messagePort2.send(2);
+	t_rec2.start(20.0);
+	alt {
+     [] messagePort1.receive(3) {
+        setverdict(pass);
+     }
+     [] messagePort1.receive {
+        setverdict(fail);
+     }
+    		[] t_rec2.timeout {
+			setverdict( inconc );
+		}
+		}
+	alt {
+     [] messagePort2.receive(4) {
+        setverdict(pass);
+     }
+     [] messagePort2.receive {
+        setverdict(fail);
+     }
+    		[] t_rec2.timeout {
+			setverdict( inconc );
+		}
+		}
+t_rec2.stop;
+}
+function frec() runs on Mysystem {
+ t_rec.start( 20.0 );
+	alt {
+		[]  messagePort1.receive(1) {
+			messagePort1.send(3);
+			setverdict( pass );
+		}
+		[] messagePort1.receive {
+			setverdict( fail );
+		}
+		[] t_rec.timeout {
+			setverdict( inconc );
+		}
+		}
+		alt {
+		[]  messagePort2.receive(2) {
+			messagePort2.send(4);
+			setverdict( pass );
+		}
+		[] messagePort2.receive {
+			setverdict( fail );
+		}
+		[] t_rec.timeout {
+			setverdict( inconc );
+		}
+		}
+t_rec.stop;
+}
+
+testcase TC_Sem_0901_Communication_ports_005() runs on Mysystem system Mysystem {
+   var Mysystem MyCompA;
+   var Mysystem MyCompB;
+
+MyCompA:=Mysystem.create;
+MyCompB:=Mysystem.create;
+connect(MyCompA:messagePort1,MyCompB:messagePort1);
+connect(MyCompB:messagePort2,MyCompA:messagePort2);
+
+
+MyCompB.start(frec());
+MyCompA.start(fsend());
+
+// MyCompB.stop;
+// MyCompA.stop;
+MyCompB.done;
+MyCompA.done;
+}
+control{
+    execute(TC_Sem_0901_Communication_ports_005());
+}
+}

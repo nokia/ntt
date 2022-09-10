@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.5, Ensure that template variables does not allow referencing alternatives inside an union with list
+ ** @verdict  pass reject
+ *****************************************************************/
+
+ //Restriction a)
+/*referencing an alternative of a union template
+or template field to which Omit, AnyValueOrNone, a template list or a complemented list is assigned, at the right hand side of an assignment, shall cause an error.*/
+
+
+module NegSem_150605_Referencing_union_alternatives_003 {
+
+    type union My_Union {
+        integer   u1,
+        float     u2
+    }
+
+    type record ExampleType {	// Exampletype record with union
+	    integer a,
+	    My_Union b optional
+       }
+
+
+
+    type component GeneralComp {  }
+
+
+    testcase TC_NegSem_150605_Referencing_union_alternatives_003() runs on GeneralComp {
+
+
+
+
+    var template ExampleType m_template;
+    var template integer m_template_2;
+
+    //assign values to template:
+
+		m_template.a:=10;
+		m_template.b.u1:=(1,2);
+		m_template.b.u2:=2.0;
+
+		m_template_2 := m_template.b.u1;		//error: value list
+
+      setverdict(pass);
+
+
+ }
+
+    control{
+        execute(TC_NegSem_150605_Referencing_union_alternatives_003());
+    }
+}

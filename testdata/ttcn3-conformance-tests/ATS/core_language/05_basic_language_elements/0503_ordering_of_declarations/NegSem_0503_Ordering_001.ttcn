@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 5.2 Scope rules
+ ** @purpose  1:5.3, Ensure that declarations are in the allowed ordering
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_0503_Ordering_001 {
+
+    type component GeneralComp {
+        var integer vc_component := 0;
+    }
+
+    function f_function() runs on GeneralComp {
+        var integer v_function := 0;
+    }
+
+    testcase TC_NegSem_0503_Ordering_001() runs on GeneralComp  {
+        if(true) {
+            var integer v_statement := 0;
+            if (v_nested_statement == 0) {		// attempt to access a variable defined in the next scope
+                var integer v_nested_statement := 0;
+            }
+
+        }
+    }
+
+    control {
+        var integer v_control := 0;
+        execute(TC_NegSem_0503_Ordering_001());
+    }
+
+}

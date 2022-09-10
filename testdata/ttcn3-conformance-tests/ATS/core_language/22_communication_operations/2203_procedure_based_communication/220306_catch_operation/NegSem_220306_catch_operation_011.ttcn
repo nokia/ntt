@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.6, value of wrong type in @decoded redirect value assignment
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Any other value shall cause an error.
+
+module NegSem_220306_catch_operation_011 {
+	type record R {
+        integer id,
+        universal charstring payload
+    }
+
+    signature S() exception (R);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    function f_server() runs on GeneralComp {
+        var integer v_src := 1953719668 with { encode "32bit" };
+        var R v_rec := { id := 5, payload := encvalue_unichar(v_src) };
+        p.getcall(S:?);
+        p.raise(S, v_rec);
+    }
+
+    testcase TC_NegSem_220306_catch_operation_011() runs on GeneralComp system GeneralComp {
+        var integer v_res, v_enc := 32 with { encode "32bit" };
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}) {
+            [] p.catch(S, R:?) -> value (v_res := @decoded(v_enc) payload) {
+                setverdict (pass);
+            }
+            [] p.catch { setverdict(pass); }
+        }
+
+    }
+
+    control {
+        execute(TC_NegSem_220306_catch_operation_011(), 5.0);
+    }
+}

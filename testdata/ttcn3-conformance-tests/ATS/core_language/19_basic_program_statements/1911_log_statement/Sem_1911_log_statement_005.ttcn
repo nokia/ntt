@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.11, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1911_log_statement_005 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_1911_log_statement_005 () runs on GeneralComp{
+ var integer v_i;
+ timer t_1;
+
+ t_1.start(1.0);
+ log("Actual timer state: ", t_1);			//running state is expected, log output is not validated by the script
+ log("Is timer running? ", t_1.running);	//true is expected, log output is not validated by the script
+
+ for(v_i:=1; v_i<10; v_i:= v_i+1) {
+  log("Actual timer value: ", t_1.read);	//actual timer value is expected, log output is not validated by the script
+ }
+
+ t_1.stop;
+ log("Actual timer state: ", t_1);			//stopped state is expected, log output is not validated by the script
+ log("Is timer running? ", t_1.running);	//false is expected, log output is not validated by the script
+
+ setverdict(pass)
+
+}
+
+
+control{
+
+    execute(TC_Sem_1911_log_statement_005());
+
+}
+
+}

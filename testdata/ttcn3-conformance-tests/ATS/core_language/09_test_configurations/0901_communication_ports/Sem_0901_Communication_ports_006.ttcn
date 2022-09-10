@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that a port can connect to itself
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Figure 6: Allowed connections, connection scheme e)
+
+module Sem_0901_Communication_ports_006 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p;
+    }
+
+    testcase TC_Sem_0901_Communication_ports_006() runs on GeneralComp system GeneralComp {
+		connect(self:p, self:p);
+		if(p.checkstate("Connected")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+    }
+
+    control{
+        execute(TC_Sem_0901_Communication_ports_006());
+    }
+}
+

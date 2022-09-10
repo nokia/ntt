@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer.timeout syntax
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+
+ // The following requirement is tested: The timeout operation does not return any value and therefore shall not be used in an expression.
+
+module NegSyn_2306_timer_timeout_008 {
+
+ type component TComp{
+
+    }
+
+ testcase TC_NegSyn_2306_timer_timeout_008() runs on TComp{
+        timer t_started_timer := 2.0;
+        t_started_timer.start;
+
+        var integer v_res = t_started_timer.timeout + 1;	// error: The timeout operation does not return any value and therefore shall not be used in an expression
+
+ 		if(v_res == 0){
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+ }
+
+   control{
+            execute(TC_NegSyn_2306_timer_timeout_008());
+    }
+}

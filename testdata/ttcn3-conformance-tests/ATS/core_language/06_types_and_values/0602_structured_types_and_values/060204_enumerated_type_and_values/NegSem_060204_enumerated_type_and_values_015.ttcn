@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, using enumerated value with assigned expression
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+/* Each user assigned expression shall be statically bound, known in compilation
+ * time, and evaluate to an integer value.
+ * */
+
+module NegSem_060204_enumerated_type_and_values_015{
+
+    type component GeneralComp {
+	}
+
+    type integer v_int;    // unbound value
+
+    type enumerated EDays {
+        Monday(v_int), Tuesday(1), Wednesday(2), Thursday(3), Friday(5)
+    };    // error: assigned expression shall be integer value
+
+    testcase TC_NegSem_060204_enumerated_type_and_values_015() runs on GeneralComp {
+
+    }
+
+	control {
+		execute(TC_NegSem_060204_enumerated_type_and_values_015());
+	}
+}

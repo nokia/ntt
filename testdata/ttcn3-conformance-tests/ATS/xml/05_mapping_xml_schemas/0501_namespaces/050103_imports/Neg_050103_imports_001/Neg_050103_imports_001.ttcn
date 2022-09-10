@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:5.1.3, Verify that it is not allowed to import imports from XSD schemas
+ ** @verdict  pass reject
+***************************************************/
+// The following requirements are tested:
+// It is not allowed to import XSD import statements to TTCN-3 (i.e. there is no transitive import
+// of XSD import statements as defined for TTCN-3, see clause 8.2.3.7 of ES 201 873-1 [1]).
+
+module Neg_050103_imports_001 {
+
+   import from schema_Neg_050103_imports_001 language "XSD" { import all };
+
+   template MyType m_msg := 1;
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_050103_imports_001() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_050103_imports_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

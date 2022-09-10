@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060101_extending_simple_content_002" 
+  xmlns:ns="schema:Pos_07060101_extending_simple_content_002">
+
+	<complexType name="complex-base-simple">
+		<simpleContent>
+			<extension base="integer"/>
+		</simpleContent>
+	</complexType>
+
+	<complexType name="complex-ext-simple">
+		<simpleContent>
+			<extension base="ns:complex-base-simple"/>
+		</simpleContent>
+	</complexType>
+
+	<element name="elem-complex-ext-simple">
+		<complexType>
+			<simpleContent>
+				<extension base="ns:complex-base-simple"/>
+			</simpleContent>
+		</complexType>
+	</element>
+
+</schema>

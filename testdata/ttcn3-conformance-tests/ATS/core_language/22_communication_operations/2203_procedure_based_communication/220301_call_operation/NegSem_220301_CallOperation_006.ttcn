@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that non-blocking calls cannot have a response and exception handling part
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// In case of non-blocking procedure-based communication the handling of exceptions
+// to call operations is done by using catch (see clause 22.3.6) operations as
+// alternatives in alt statements.
+// A non-blocking procedure has no out and inout parameters, no return value and the
+// non-blocking property is indicated in the corresponding signature definition by means
+// of a noblock keyword. Possible exceptions raised by non-blocking procedures have to be
+// removed from the port queue by using catch operations in subsequent alt or interleave
+// statements.
+
+module NegSem_220301_CallOperation_006 {
+
+    signature S() noblock;
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_NegSem_220301_CallOperation_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+		v_ptc.start(f_called);
+        p.call(S:{}) {
+			[] p.getreply(S:?) {}
+		}
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220301_CallOperation_006(), 5.0);
+    }
+
+}

@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that signature that are not listed in the port inout and out list cannot be used in call operations
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// a) The call operation shall only be used on procedure-based ports. The type definition
+// of the port at which the call operation takes place shall include the procedure name
+// in its out or inout list i.e. it shall be allowed to call this procedure at this port.
+
+module NegSem_220301_CallOperation_007 {
+
+    signature S1() noblock;
+	signature S2() noblock;
+
+    type port P procedure {
+        inout S1;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    testcase TC_NegSem_220301_CallOperation_007() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        p.call(S2:{}); // error expected
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220301_CallOperation_007(), 5.0);
+    }
+
+}

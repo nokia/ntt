@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.1.1, verify that dot notation can be used for referencing elements on the right hand side of an assignement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Elements of a record shall be referenced by the dot notation TypeIdOrExpression.ElementId,
+// where TypeIdOrExpression resolves to the name of a structured type or an expression of
+// a structured type such as variable, formal parameter, module parameter, constant, template,
+// or function invocation. ElementId shall resolve to the name of a field in the structured
+// type.
+
+module Sem_06020101_ReferencingRecordFields_005 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        integer field1 (1 .. 10),
+        charstring field2 optional
+    }
+
+    testcase TC_Sem_06020101_ReferencingRecordFields_005() runs on GeneralComp {
+        var R v_rec := { field1 := 5, field2 := "abc" };
+        if (v_rec.field1 == 5) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_06020101_ReferencingRecordFields_005());
+    }
+
+}

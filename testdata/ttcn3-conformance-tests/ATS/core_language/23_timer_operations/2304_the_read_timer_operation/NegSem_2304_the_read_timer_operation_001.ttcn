@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:23.4, Verify that the read operation applied to a non-timer reference produces an error
+ ** @verdict  pass reject
+ ***************************************************/
+// The following requirement is tested
+// a) The ObjectReference (in the timer read operation) shall be of the timer type.
+
+module NegSem_2304_the_read_timer_operation_001 {
+    type component TComp {
+	    timer t_tmr;
+    }
+    testcase TC_NegSem_2304_the_read_timer_operation_001() runs on TComp {
+        var float v_duration := 1.0;
+        t_tmr.start(v_duration);
+		var float v_elapsed := v_duration.read;
+        setverdict(pass);
+    }
+    control {
+        execute(TC_NegSem_2304_the_read_timer_operation_001())
+    }
+}

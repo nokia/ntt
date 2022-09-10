@@ -1,0 +1,12 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure timer operations are not allowed outside of module control, test case, function, altstep
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/Usage of timers is allowed in test cases, functions, altsteps, module control/Timer stop is not allowed in module definitions
+
+module NegSyn_23_toplevel_001
+{
+    all timer.stop;
+}

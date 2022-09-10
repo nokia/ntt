@@ -1,0 +1,57 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.4, incompatible decmatch and @decoded value redirect
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// When assigning implicitly decoded parameters (by using the @decoded modifier)
+// in cases where the value or template to be matched uses the MatchDecodedContent
+// (decmatch) matching for the parameter to be stored, the type of the template in
+// the MatchDecodedContent matching shall be type-compatible to the type of the
+// variable the decoded field is stored into.
+
+module NegSem_220304_getreply_operation_020 {
+	type record R {
+        integer id,
+        bitstring payload
+    }
+    signature S() return R;
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    type record Wrapped {
+        integer num
+    }
+
+    function f_server() runs on GeneralComp {
+        var integer v_src := 5;
+        var R v_rec := { id := 1, payload := encvalue(v_src) };
+        p.getcall(S:?);
+        p.reply(S:{} value v_rec);
+    }
+
+    testcase TC_NegSem_220304_getreply_operation_020() runs on GeneralComp system GeneralComp {
+        var Wrapped v_res;
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}) {
+            [] p.getreply(S:{} value R:{ id := ?, payload := decmatch integer:? }) -> value (v_res := @decoded payload) {
+                setverdict (pass);
+            }
+            [] p.getreply { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_220304_getreply_operation_020(), 5.0);
+    }
+}

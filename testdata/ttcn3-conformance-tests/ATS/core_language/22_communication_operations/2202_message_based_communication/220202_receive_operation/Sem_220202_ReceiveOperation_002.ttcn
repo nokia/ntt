@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, Ensure that the IUT correctly handles message receiving operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_220202_ReceiveOperation_002 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_220202_ReceiveOperation_002() runs on GeneralComp {
+
+ messagePort.send(2);
+
+    alt {
+     [] messagePort.receive {   //must remove message from queue
+        setverdict(pass);
+     }
+     [] messagePort.receive {	//this alt is only selected if message not removed from the queue
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_220202_ReceiveOperation_002());
+}
+
+}

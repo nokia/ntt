@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:10, Declaring constant with @default unions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+ /*The following requirement is tested: Restriction c) Using the dot notation (see clauses When using direct assignment notation in a scope where the optional
+attribute is set to "implicit omit", the uninitialized optional fields in the referenced value, shall implicitly be set
+to omit after the assignment in the new value, while mandatory fields shall remain unchanged
+*/
+
+module Sem_10_Constants_012 {
+
+      type union U {
+		@default integer option1,
+		charstring option2
+	}
+
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_10_Constants_012() runs on GeneralComp {
+        const U c_mST3 := 12345; // implicit usage of the default alternative: c_mST3 := { option1 := 12345 }
+
+        if (match(c_mST3, 12345))
+            {
+                setverdict(pass);
+            }
+            else {
+                setverdict(fail);
+            }
+    }
+
+    control{
+        execute(TC_Sem_10_Constants_012());
+    }
+}

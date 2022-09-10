@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060110_maxexclusive_003"
+  xmlns:types="schema:Pos_060110_maxexclusive_003">
+    <simpleType name="e2">
+        <restriction base="float">
+        <minInclusive value="-5.0"/>
+    </restriction>
+    </simpleType>
+    <element name="e2el" type="types:e2"/>
+</schema>

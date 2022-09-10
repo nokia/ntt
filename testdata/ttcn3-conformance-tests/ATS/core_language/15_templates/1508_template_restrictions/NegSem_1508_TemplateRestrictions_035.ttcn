@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that an unrestricted template can't be assigned to a template(present)variable if omit
+ ** @verdict  pass reject
+ *****************************************************************/
+
+
+module NegSem_1508_TemplateRestrictions_035 {
+
+    type record ExampleType {	// Exampletype record contains a charstring and a boolean
+       	charstring a ,
+		boolean b optional
+       }
+
+	type component GeneralComp {
+	var template (present) ExampleType v_present;	//value restricted template variable
+	}
+
+
+	template ExampleType MyintTemplate := omit;	//actual template is omit
+
+
+
+
+	testcase TC_NegSem_1508_TemplateRestrictions_035() runs on GeneralComp {
+
+	v_present := MyintTemplate;	//error: v_present is present restricted, hence can not be omit
+
+		if (valueof(v_present.b) == false) {
+      		setverdict(pass);
+		} else {
+            setverdict(fail);
+       }
+ }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_035());
+    }
+}

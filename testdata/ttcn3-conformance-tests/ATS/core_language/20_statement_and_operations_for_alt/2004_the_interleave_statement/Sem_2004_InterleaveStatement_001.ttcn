@@ -1,0 +1,66 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:20.4, Validate that interleave statements are properly handled.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2004_InterleaveStatement_001 {
+
+    type port loopbackPort message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort pt_myPort1,pt_myPort2;
+        timer t_timer;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    altstep checkTimeout(timer t_timer){
+        [] t_timer.timeout {
+            setverdict(fail);
+        }
+    }
+
+    testcase TC_Sem_2004_InterleaveStatement_001() runs on GeneralComp system GeneralComp {
+
+        template MyMessageType MySig1 := {1,"aaa",true};
+        template MyMessageType MySig2 := {2,"bbb",true};
+        template MyMessageType MySig3 := {3,"ccc",true};
+
+        map(mtc:pt_myPort1, system:pt_myPort1);
+        map(mtc:pt_myPort2, system:pt_myPort2);
+
+	    activate(checkTimeout(t_timer));
+        pt_myPort1.send(MyMessageType:{1, "aaa", true});
+        t_timer.start(3.0);
+
+        interleave {
+            [] pt_myPort1.receive(MySig1)
+            {
+                pt_myPort2.send(MySig2);
+                alt {
+                    [] pt_myPort1.receive(MySig3) {
+                        setverdict(pass);
+                    }
+                }
+            }
+            [] pt_myPort2.receive(MySig2)
+            {
+                pt_myPort1.send(MySig3);
+            }
+        }
+
+
+    }
+
+    control{
+        execute(TC_Sem_2004_InterleaveStatement_001());
+    }
+}

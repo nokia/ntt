@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that any port.check(getcall) with assignment works correctly as standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_032 {
+
+	signature S();
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p1, p2;
+	}
+
+	function f() runs on GeneralComp {
+        var GeneralComp v_src;
+		any port.check(getcall -> sender v_src);
+		if (v_src == mtc) { setverdict(pass, "Check operation successful"); }
+		else { setverdict(fail, "Unexpected sender value"); }
+		any port.getcall;
+		setverdict(pass, "Call still on the top of the queue");
+	}
+
+	testcase TC_Sem_2204_the_check_operation_032() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p1, v_ptc:p1);
+		connect(self:p2, v_ptc:p2);
+		p2.call(S:{}, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_032(), 5.0);
+    }
+}

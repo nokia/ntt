@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from incompatible type ranges
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060301_non_structured_types_005 {
+    type bitstring ConstrainedBitString ('01'B, '10'B, '11'B);
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060301_non_structured_types_005() runs on GeneralComp {
+
+    var bitstring v_bitstr := '00'B;
+    var ConstrainedBitString v_constrainedBitstr;
+
+
+    v_constrainedBitstr:=v_bitstr; // value '00'B not in ConstrainedBitString type
+
+}
+
+control{
+    execute(TC_NegSem_060301_non_structured_types_005());
+}
+
+}

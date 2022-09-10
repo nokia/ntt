@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Verify that all component.running produces true if some components haven't been started
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// When the all keyword is used with the running operation, it will return true if all PTCs started
+// but not stopped explicitly by another component are executing their behaviour. Otherwise it
+// returns false.
+// Interpretation according to the following note:
+// The difference between the running operation applied to a single ptc and the usage of the all
+// keyword leads to the situation that ptc.running is false if the ptc has never been started but
+// all component.running is true at the same time as it considers only those components that ever
+// have been started.
+module Sem_210306_running_operation_012 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210306_running_operation_012() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i mod 2 == 1) { v_ptc[i].start(f());} // start only components with odd index
+		}
+        v_isRunning := all component.running; // only once started components shall be considered
+        if(v_isRunning){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from running operation didn't find running components");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210306_running_operation_012(), 5.0);
+    }
+}

@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.5, Ensure that the IUT recognizes explicit control functions
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+
+// Tested restriction:
+// d) Parameters and the return type of module control functions shall not be of a default type and shall not be of a structured type that contais fields of a default type on any level of nesting.
+
+module NegSem_160105_explicit_control_functions_006 {
+
+
+    type component GeneralComp {
+        timer t1 := 1.0;
+    }
+
+    altstep  a_default() runs on GeneralComp {
+        [] t1.timeout() { setverdict(pass) }
+    }
+
+
+    function @control f_NegSem_160105_explicit_control_functions_006() runs on GeneralComp return default {
+        var default d1 = activate(a_defalut());
+        execute(TC_Sem_160105_explicit_control_functions_006());
+        return d1;
+    }
+
+    testcase TC_NegSem_160105_explicit_control_functions_006 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        var default d = f_NegSem_160105_explicit_control_functions_006();
+    }
+
+}

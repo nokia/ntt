@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that unmap param allows data types only.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+// Restriction d:
+// Formal parameters of map param and unmap param declarations shall be value parameters of a data type.
+
+module NegSyn_060209_CommunicationPortTypes_009 {
+
+    type record MyType1 {
+        integer f1,
+        charstring f2
+    }
+
+	type timer t1;
+
+
+	type record MyType3 {
+	    boolean h1,
+        MyType3 h2 optional
+	}
+
+	signature S1();
+	signature S2(in integer p_par1);
+	signature S3(in charstring p_par1);
+
+    type port MyMessagePortTypeOne procedure {
+        inout S1, S2, S3;
+        unmap param (in integer p1, inout t1 p2);    // error: timer type not allowed for unmap param
+        address MyType1;
+    }
+
+}

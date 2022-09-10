@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that modified templates with same restrictions are supported.
+ ** @verdict  pass accept
+ *****************************************************************/
+// The following requirement is tested:
+// b) Restrictions on referencing elements of templates or template fields are described in clause
+//EXAMPLE 8
+
+
+module Sem_1505_ModifiedTemplates_016 {
+
+    type component GeneralComp {
+    }
+
+    type record MyRecordType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+	template (value) MyRecordType m_myValueRecTemplate1 :=
+	{
+		field1 := 123,
+		field2 := "A string",
+		field3 := true
+	}
+
+    testcase TC_Sem_1505_ModifiedTemplates_016() runs on GeneralComp {
+		template (value) MyRecordType m_myValueRecTemplate2 modifies m_myValueRecTemplate1 :=	{
+			field2 := "A modified string" // field1, field3 is unchanged
+		}
+
+        if(
+	        valueof(m_myValueRecTemplate2.field1) == valueof(m_myValueRecTemplate1.field1) and
+			valueof(m_myValueRecTemplate2.field2) == "A modified string" and
+			valueof(m_myValueRecTemplate2.field3) == valueof(m_myValueRecTemplate1.field3)
+		){
+         setverdict(pass);
+        }else{
+         setverdict(fail);
+        }
+
+    }
+
+    control{
+        execute(TC_Sem_1505_ModifiedTemplates_016());
+    }
+
+
+}

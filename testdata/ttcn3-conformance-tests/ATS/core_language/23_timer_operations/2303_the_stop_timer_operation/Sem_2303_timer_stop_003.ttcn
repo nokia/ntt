@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.3, Ensure timer all timer identifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.3 The Stop timer operation/all keyword can be used for timers in component or module control
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Allow all timer.stop
+
+module Sem_2303_timer_stop_003 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.0};
+    }
+    testcase TC_Sem_2303_timer_stop_003() runs on TComp{
+        t_timer[0].start;
+        t_timer[1].start;
+        all timer.stop;
+        if (t_timer[0].read!=0.0 or t_timer[1].read!=0.0){
+            setverdict(fail);
+        }
+        setverdict(pass);
+
+    }
+    control{
+
+            execute(TC_Sem_2303_timer_stop_003())
+
+
+    }
+}

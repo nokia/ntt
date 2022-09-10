@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.2.2, Ensure that external functions is extended with an optional exception clause.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50202_ExternalFunctions_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type integer MyIntegerType;
+
+    external function f_external() exception(MyIntegerType);
+
+    testcase TC_Sem_50202_ExternalFunctions_001() runs on GeneralComp {
+        //empty testcase
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_50202_ExternalFunctions_001());
+    }
+}

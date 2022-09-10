@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.3, Verify that display attribute can be defined
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// All TTCN-3 language elements can have display attributes to specify how particular language elements shall be
+// displayed in.
+
+module Sem_2703_display_attributes_001 {
+
+    type component GeneralComp {
+	}
+
+	type record MyService {
+		integer i,
+		float f
+	} with { display "ServiceCall" } // MyRecord will be displayed as a ServiceCall
+
+	testcase TC_Sem_2703_display_attributes_001 () runs on GeneralComp {
+		var universal charstring v_display := MyService.display;
+		if(v_display == "ServiceCall") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_Sem_2703_display_attributes_001());
+	}
+
+}

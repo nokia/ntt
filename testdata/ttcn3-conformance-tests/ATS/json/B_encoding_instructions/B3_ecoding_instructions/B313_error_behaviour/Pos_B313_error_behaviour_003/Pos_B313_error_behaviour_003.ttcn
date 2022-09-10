@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:B.3.13, Verify that "errorbehavior" variant is correctly used during decode.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * TTCN-3 predefined decoding functions ensure that the decoding trial of the inout
+ * parameter encoded_value will not cause a test case error, when the decoding fails
+ * or is incomplete. - ET_INCOMPL_MSG:EB_IGNORE
+ * */
+
+// NOTE: the test is not executed as it would require dedicated errorbehavior support
+
+module Pos_B313_error_behaviour_003 {
+
+    import from JSON all;
+
+    type component C {
+
+    }
+
+   template charstring m_msg := "firstItem" with { encode "JSON"; variant "errorbehavior(ET_INCOMPL_MSG:EB_IGNORE)"};
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    testcase TC_Pos_B313_error_behaviour_003() runs on C system C {
+
+   // var octetstring v_enc := encvalue_o(m_msg, "errorbehavior(ET_INCOMPL_MSG:EB_ERROR)" , "JSON");
+      var octetstring v_enc := '7B2263686172737472696E6722'O;    // incomplete encoded JSON
+
+    // Decoding.
+    var charstring v_dec;
+    var integer v_decresult := decvalue_o(v_enc, v_dec, "errorbehavior(ET_INCOMPL_MSG:EB_IGNORE)" , "JSON");
+
+    if(match(v_dec, "{" & char(U022)& "charstring" & char(U022))){
+           setverdict(pass);
+        }
+        else {
+             setverdict(fail);
+        }
+
+    }
+
+    control {
+     //   execute(TC_Pos_B313_error_behaviour_003(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

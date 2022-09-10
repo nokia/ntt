@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470 (changed to positive by STF 572)
+ ** @version  0.0.2
+ ** @purpose  1:20.5.2, verify no error is generated when passing local timer
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// In TTCN-3:2018 and earlier versions of the core language standard, there was a restriction
+// on local timers:
+// All timer instances in the actual parameter list shall be declared as component type local timers.
+//
+// The restriction is no longer present and local timers can be used as actual parameters.
+
+module Sem_200502_the_activate_operation_007 {
+
+	type component GeneralComp {
+	}
+
+	altstep a(timer t_tmr) runs on GeneralComp {
+		[] t_tmr.timeout {}
+	}
+
+	testcase TC_Sem_200502_the_activate_operation_007() runs on GeneralComp {
+		if (true) {
+			timer t_local := 0.5;
+			t_local.start;
+			activate(a(t_local));
+		}
+		any port.receive;
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_200502_the_activate_operation_007());
+	}
+}

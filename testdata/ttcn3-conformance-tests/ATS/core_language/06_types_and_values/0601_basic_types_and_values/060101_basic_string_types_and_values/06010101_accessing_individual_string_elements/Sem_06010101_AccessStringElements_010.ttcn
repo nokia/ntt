@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Ensure that For initializing an uninitialized string with a single element, the index value zero (0) can be used as index.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010101_AccessStringElements_010 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010101_AccessStringElements_010() runs on GeneralComp {
+        var universal charstring v_b :="";
+        v_b[0] := "a";
+    	if (v_b == "a"){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_06010101_AccessStringElements_010());
+    }
+}

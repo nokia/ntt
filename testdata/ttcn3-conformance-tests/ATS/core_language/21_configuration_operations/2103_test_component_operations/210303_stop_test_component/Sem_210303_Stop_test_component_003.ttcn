@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, stopping MTC from PTC
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// By using the stop test component statement a test component can stop the execution
+// of its own currently running test behaviour or the execution of the test behaviour
+// running on another test component. If a component does not stop its own behaviour,
+// but the behaviour running on another test component in the test system, the component
+// to be stopped has to be identified by using its component reference.
+//
+// If the stopped test component is the MTC, resources of all existing PTCs shall be
+// released, the PTCs shall be removed from the test system and the test case shall
+// terminate (see clause 26.1).
+
+module Sem_210303_Stop_test_component_003 {
+
+    type component GeneralComp {
+    }
+
+	function f() runs on GeneralComp {
+        var boolean v_cond := true;
+        if (v_cond) { // to prevent "unreachable statement" errors
+            setverdict(pass);
+            mtc.stop; //stops the MTC and as a consequence the PTC is stopped too
+        }
+        setverdict(fail); // in case the stop operation doesn't work
+	}
+
+    testcase TC_Sem_210303_Stop_test_component_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+		v_ptc.done;
+        setverdict(fail); // this statement shall never be reached
+    }
+
+    control {
+        execute(TC_Sem_210303_Stop_test_component_003());
+    }
+}

@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that matching symbols cannot be used in out signature parameters in reply operations
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// b) All out and inout parameters of the signature shall have a specific value i.e.
+// the use of matching mechanisms such as AnyValue is not allowed.
+
+module NegSem_220303_ReplyOperation_006 {
+
+	type record R {
+		integer field1,
+		integer field2
+	}
+
+    signature S(out R par1);
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    function f_server() runs on GeneralComp {
+		var template R v_rec := { field1 := 0, field2 := ? }
+        p.getcall(S:?);
+        p.reply(S:{par1 := v_rec});
+    }
+
+    testcase TC_NegSem_220303_ReplyOperation_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{-}, nowait);
+        alt {
+			[] p.getreply {}
+			[] v_ptc.done {}
+		}
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220303_ReplyOperation_006(), 5.0);
+    }
+
+}

@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.3, Ensure that the verdict returned from a test case to the control-part does not influence the execution of a second test case. The result of the last test case execution corresponds to the overall test verdict.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_0803_ModuleControlPart_001 {
+
+type component GeneralComp {}
+
+testcase TC_Sem_0803_ModuleControlPart_001() runs on GeneralComp {
+	setverdict(pass);
+}
+
+testcase TC_Sem_0803_ModuleControlPart_001_second(verdicttype p_passthroughVerdict) runs on GeneralComp {
+	if (match(p_passthroughVerdict, getverdict) and match(getverdict, none) ) { // verdict should be none.
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+
+control {
+	var verdicttype v_myverdict;
+	v_myverdict := execute(TC_Sem_0803_ModuleControlPart_001());
+	execute(TC_Sem_0803_ModuleControlPart_001_second(v_myverdict));
+}
+
+}

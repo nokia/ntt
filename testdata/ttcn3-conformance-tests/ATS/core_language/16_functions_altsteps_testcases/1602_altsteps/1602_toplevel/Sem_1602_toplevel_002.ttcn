@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:16.1, verify that altstep with a runs on clause can be started as component behaviour
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction f)
+// Altsteps started by using the start test component operation shall always have a runs on clause (see clause 22.5)
+// and are considered to be invoked in the component to be started, i.e. not locally. However, the start test component
+// operation may be invoked within behaviours without a runs on clause.
+
+module Sem_1602_toplevel_002 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+    altstep a_test() runs on GeneralComp{
+        [] any port.receive {
+            setverdict(pass);
+        }
+    }
+
+    testcase TC_Sem_1602_toplevel_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        connect(mtc:p, v_ptc:p);
+        p.send(1);
+        v_ptc.start(a_test());
+        v_ptc.done;
+	}
+
+	control {
+		execute(TC_Sem_1602_toplevel_002());
+	}
+}

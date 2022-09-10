@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that the dash in default parameter values of a modified templates is only accepted when the base template actually has a default value.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1505_ModifiedTemplates_005 {
+
+type component GeneralComp { }
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template MyMessageType m_templateOne(integer p_intValue) := {
+	field1 := p_intValue,
+	field2 := "Hello World",
+	field3 := true
+}
+
+// illegal as p_intValue does not have a default value that can be referred to with the "-".
+template MyMessageType m_templateTwo(integer p_intValue := -) modifies m_templateOne := {
+	field1 := p_intValue
+}
+
+}

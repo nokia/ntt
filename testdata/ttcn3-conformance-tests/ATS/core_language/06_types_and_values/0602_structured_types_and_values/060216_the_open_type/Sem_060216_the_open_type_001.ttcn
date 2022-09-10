@@ -1,0 +1,26 @@
+/***************************************************
+ * @author TTF T003
+ * @version 0.0.1
+ * @purpose 1.6.2.16, Verify that it is possible to use the open type as a formal parameter.
+ * @verdict pass accept, ttcn3verdict:pass
+ ***************************************************/
+// The following requirement is tested:
+// The open type is represented by the keyword any.
+// It shall only be used in formal parameters of external and predefined functions.
+module Sem_060216_the_open_type_001 {
+  type component GeneralComp {
+  }
+
+  external function xf_my_external_function(in any p_any);
+
+  testcase TC_Sem_060216_the_open_type_001() runs on GeneralComp {
+    var integer v_i := 123;
+
+    xf_my_external_function(v_i);
+    setverdict(pass);
+  }
+
+  control {
+    execute(TC_Sem_060216_the_open_type_001());
+  };
+}

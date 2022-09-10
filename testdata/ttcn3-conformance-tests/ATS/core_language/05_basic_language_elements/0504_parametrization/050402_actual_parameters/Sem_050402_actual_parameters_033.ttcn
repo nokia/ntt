@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that variables can be used as in formal value parameters of test cases
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed by value to in formal value parameters shall be
+// variables, literal values, module parameters, constants, variables, value returning
+// (external) functions, formal value parameters (of in, inout or out parameterization)
+// of the current scope or expressions composed of the above.
+
+module Sem_050402_actual_parameters_033 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_050402_actual_parameters_033(in integer p_val) runs on GeneralComp {
+        if (p_val == 4) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+        var integer v_val := 4;
+		execute(TC_Sem_050402_actual_parameters_033(v_val)); // tested parameter passing
+	}
+}

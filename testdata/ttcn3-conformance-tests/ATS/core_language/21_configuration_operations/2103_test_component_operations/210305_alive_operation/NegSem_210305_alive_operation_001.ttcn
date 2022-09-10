@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Verify that error occurs when any from alive is applied to single component
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction b
+// The ComponentArrayRef shall be a reference to a component array variable identifier.
+module NegSem_210305_alive_operation_001 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_NegSem_210305_alive_operation_001() runs on GeneralComp system GeneralComp {
+		var boolean v_isAlive;
+        var GeneralComp v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+        v_isAlive := any from v_ptc.alive;
+        if(v_isAlive){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "The any from alive operation didn't find alive components");
+        }
+    }
+
+    control {
+        execute(TC_NegSem_210305_alive_operation_001(), 5.0);
+    }
+}

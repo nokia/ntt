@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// valueof operation -> the given value
+
+module Sem_1911_log_statement_010 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_1911_log_statement_010() runs on GeneralComp {
+        var integer v_i := 1;
+
+        log("valueOf operation: ", valueof(v_i));
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_1911_log_statement_010());
+	}
+}

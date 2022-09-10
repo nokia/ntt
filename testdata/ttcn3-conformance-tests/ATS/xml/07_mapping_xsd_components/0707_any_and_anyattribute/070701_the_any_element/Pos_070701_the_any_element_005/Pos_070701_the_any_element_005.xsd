@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070701_the_any_element_005"
+  xmlns:ns="schema:Pos_070701_the_any_element_005">
+  <element name="test" type="string"/>
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <any namespace="##targetNamespace"/>
+      </sequence>
+    </complexType>
+  </element>  
+</schema>

@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.2
+ ** @purpose  1:5.4.1.2, verify that default template instance of template formal parameters can reference component elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// Background:
+// Prior to the version TTCN-3:2017, the template instance could not refer to elements of the component type referenced in the runs on clause.
+
+module Sem_05040102_parameters_of_kind_template_039 {
+	type component GeneralComp {
+        var template integer vc_int := ?;
+	}
+
+    function f(in template integer p_int := vc_int) runs on GeneralComp {
+    }
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_039() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040102_parameters_of_kind_template_039());
+	}
+}

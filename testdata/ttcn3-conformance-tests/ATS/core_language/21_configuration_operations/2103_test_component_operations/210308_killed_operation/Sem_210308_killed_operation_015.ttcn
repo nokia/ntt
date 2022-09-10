@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Ensure that @nodefault modifier works properly with killed operator
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+
+// Restrcition j): The @nodefault modifier is allowed only in stand-alone killed statements.
+
+module Sem_210308_killed_operation_015 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210308_killed_operation_015() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+		ptc:=GeneralComp.create alive;
+
+		ptc.start(f1());
+	    ptc.kill;
+
+        // killed as stand-alone statement:
+        @nodefault ptc.killed;
+        setverdict(pass);
+
+    }
+
+    control {
+        execute(TC_Sem_210308_killed_operation_015());
+    }
+}

@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.4, Verify that a single encode attribute can be defined
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Encoding rules define how a particular value, template, etc. shall be encoded and transmitted
+// over a communication port and how received signals shall be decoded. TTCN-3 does not have
+// a default encoding mechanism. This means that encoding rules or encoding directives are defined
+// in some external manner to TTCN-3.
+// The encode attribute allows the association of some referenced encoding rule or encoding
+// directive to be made to a TTCN-3 definition.
+
+module Sem_2704_encoding_attributes_001 {
+
+    type component GeneralComp {
+	}
+
+	type charstring MyType; // Normally encoded according to the "Global encoding rule"
+	group myRecords {
+		type record MyPDU1 {
+			integer field1, // field1 will be encoded according to "Rule 3"
+			boolean field2, // field2 will be encoded according to "Rule 3"
+			MyType field3 // field3 will be encoded according to "Rule 2"
+		} with { encode (field1, field2) "Rule 3" }
+	} with { encode "Rule 2" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2704_encoding_attributes_001 () runs on GeneralComp {
+		var RoUC v_enc := MyPDU1.encode;
+		if(v_enc == { "Rule 2" }) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_Sem_2704_encoding_attributes_001());
+	}
+
+} with { encode "Global encoding rule" }

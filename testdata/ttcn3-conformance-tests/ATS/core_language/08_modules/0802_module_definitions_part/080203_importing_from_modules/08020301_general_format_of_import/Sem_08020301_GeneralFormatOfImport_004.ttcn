@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Make sure that imported enumeration values take precedence over local definition
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// There is one exception to this rule: when in the context of an enumerated type
+// (see clause 6.2.4), an enumerated value is clashing with the name of a definition in
+// the importing module, the enumerated value shall take precedence and the definition
+// in the importing module shall be referenced by using its qualified name.
+
+module Sem_08020301_GeneralFormatOfImport_004 {
+
+import from Sem_08020301_GeneralFormatOfImport_004_import all;
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_004() runs on GeneralComp {
+	var integer enumX := 1;
+	if (c_enumVal == enumX) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_004());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_004_import
+{
+	type enumerated EnumType {enumX, enumY, enumZ};
+	const EnumType c_enumVal := enumX;
+}

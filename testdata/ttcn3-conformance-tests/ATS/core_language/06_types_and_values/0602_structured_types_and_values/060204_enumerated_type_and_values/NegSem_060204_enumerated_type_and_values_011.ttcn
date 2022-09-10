@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, parameterized template with default parameters and the same name as one of enumerated values of the imported parent type
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// When a TTCN-3 module parameter, formal parameter, constant, variable,
+// non-parameterized template or parameterized template with all formal
+// parameters having default values of an imported enumerated type is defined,
+// the name of that definition shall not be the same as any of the enumerated
+// values of that type.
+
+module NegSem_060204_enumerated_type_and_values_011 {
+
+    import from NegSem_060204_enumerated_type_and_values_011_import all;
+
+    type component GeneralComp {
+	}
+
+    template EDays Monday(EDays p_par1 := Tuesday) := ( Friday, p_par1 );
+
+    testcase TC_NegSem_060204_enumerated_type_and_values_011() runs on GeneralComp {
+        log(Monday);
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060204_enumerated_type_and_values_011());
+	}
+}
+
+module NegSem_060204_enumerated_type_and_values_011_import {
+    type enumerated EDays {
+        Monday, Tuesday, Wednesday, Thursday, Friday
+    };
+}

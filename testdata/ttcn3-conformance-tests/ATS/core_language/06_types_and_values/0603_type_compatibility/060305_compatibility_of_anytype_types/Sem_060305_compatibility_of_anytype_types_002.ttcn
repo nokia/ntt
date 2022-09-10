@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.3.0.6, ensure that anytype types are only compatible with other anytype types.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/*The following requirement is tested:
+ * An anytype value "a" of anytype type "A" is compatible with anytype type "B"
+ * if the alternative selected in "a"is also contained in "B".
+*/
+
+module Sem_060305_compatibility_of_anytype_types_002 {
+    type integer I (0..9);
+    type charstring C;
+    type anytype Atype ({I:=?},{C:=?},{integer:=?});
+    type anytype Btype ({float:=?},{integer:=?});
+
+    type component GeneralComp {
+}
+
+
+testcase TC_Sem_060305_compatibility_of_anytype_types_002() runs on GeneralComp {
+    var Atype v_x;
+    var Btype v_y;
+    v_x.I := 8;
+    v_y.integer := 8;
+
+
+      if (match(v_x.I,8) and match(v_y.integer,8) and v_x != v_y) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail,v_x,v_y);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060305_compatibility_of_anytype_types_002());
+}
+
+}

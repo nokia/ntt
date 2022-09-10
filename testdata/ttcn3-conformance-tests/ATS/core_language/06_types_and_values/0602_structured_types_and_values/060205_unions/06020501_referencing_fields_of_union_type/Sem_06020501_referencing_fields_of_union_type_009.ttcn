@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author STF 548
+ ** @version  0.0.1
+ ** @purpose 1:6.5.2, Ensure that union with record containing "implicit omit" handled correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/*The following requirement is tested:
+ * Restriction B: Expansion of record, record of, set, set of, and array values and intermediate fields shall follow
+ * the rules of item a) in clauses When using direct assignment notation in a scope where the optional
+ * attribute is set to "implicit omit", the uninitialized optional fields in the referenced value, shall
+ * implicitly be set to omit after the assignment in the new value, while mandatory fields shall remain unchanged
+ */
+
+module Sem_06020501_referencing_fields_of_union_type_009 {
+
+	type record R {
+  		integer f1,
+  		charstring f2 optional
+ 	}
+
+
+	type union MyUnionType
+	{
+		integer number,
+		R 	rec
+	};
+
+	type component GeneralComp {
+	};
+
+
+	testcase TC_Sem_06020501_referencing_fields_of_union_type_009 () runs on GeneralComp {
+		var MyUnionType v_mut;
+
+		var R myRec := {1, - } with { optional "implicit omit" };
+
+		 v_mut.rec := myRec;
+
+		if (match(v_mut.rec, { 1, omit })) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06020501_referencing_fields_of_union_type_009());
+	}
+}

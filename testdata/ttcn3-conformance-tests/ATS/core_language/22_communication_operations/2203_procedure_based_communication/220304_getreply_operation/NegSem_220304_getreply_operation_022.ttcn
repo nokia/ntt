@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.4, trying to store an incompatible component value in the sender clause of a getreply operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// j) If the operation contains a sender clause but no from clause, the sender shall be type
+// compatible with the type of the variable or parameter referenced in the sender clause.
+
+module NegSem_220304_getreply_operation_022 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+        var integer vc_int;
+		port P p;
+	}
+
+    type component AltComp {
+		var charstring vc_str;
+        port P px;
+	}
+
+	function f() runs on GeneralComp {
+        p.getcall(S:?);
+        p.reply(S:{});
+	}
+
+    testcase TC_NegSem_220304_getreply_operation_022() runs on GeneralComp system GeneralComp {
+        var AltComp v_compRef := null;
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f());
+		p.call(S:{}) {
+	        [] p.getreply(S:{}) -> sender v_compRef { } // error expected
+            [] p.getreply(S:{}) { }
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220304_getreply_operation_022(), 5.0);
+    }
+}

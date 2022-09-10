@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that a class declare port as its member.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50101_top_level_005 "TTCN-3:2018 Object-Oriented" {
+
+    type port PortType message {
+        inout integer;
+    }
+
+    type component TestComp {
+    }
+
+    public type class t_class_port_field {
+        port PortType p1;
+    }
+
+    //TODO: if port members in classes are not allowed this testcase is unnecessary.
+    testcase TC_Sem_50101_top_level_005() runs on TestComp {
+        var t_class_port_field myClass := t_class_port_field.create();
+    }
+
+    control {
+        execute(TC_Sem_50101_top_level_005());
+    }
+}

@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:27.1.1, Ensure that attributes for individual fields are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_270101_ScopeOfAttributes_003 {
+
+    type record of integer IntegerList
+    with {
+     display "colour red";
+     extension "MyRule"
+    }
+
+   const IntegerList c_MyIntegers1 := {0,1,2,3}
+    with {
+     display ([-]) "colour green"
+    }
+
+   const IntegerList c_MyIntegers2 := {0,1,2,3}
+    with {
+     display ([0]) "colour black";
+    }
+
+}

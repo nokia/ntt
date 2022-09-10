@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  9:6.1.4, Verify that correct constraint is generated for the pattern facet
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_060104_pattern_001 {
+
+    import from schema_Neg_060104_pattern_001 language "XSD" all;
+
+    template Test m_msg := "aUser@iNstitute"; // should fail as the pattern doesn't allow capital N
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_060104_pattern_001() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_060104_pattern_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

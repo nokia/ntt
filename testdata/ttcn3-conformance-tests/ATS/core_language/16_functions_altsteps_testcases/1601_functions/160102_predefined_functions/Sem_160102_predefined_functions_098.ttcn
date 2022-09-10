@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// The following requirements are tested:
+// The optional decoding_info parameter is used for passing additional encoding information to the codec and, if it is omitted, no additional information is sent to the codec.
+
+module Sem_160102_predefined_functions_098 {
+
+type component GeneralComp {
+}
+
+ type integer I with { variant "32 bit"};
+
+
+    testcase TC_Sem_160102_predefined_functions_098 () runs on GeneralComp {
+        var template I v_test := 0;
+		var bitstring v_enc := encvalue(v_test, "encoding_info_text");
+
+       if (match(decvalue(v_enc,v_test,"decoding_info_text"), 0)){
+			setverdict(pass,v_enc);
+		} else {
+			setverdict(fail, "Invalid encoding length");
+		}
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_098());
+    }
+
+}

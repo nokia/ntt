@@ -1,0 +1,63 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify unsuccessful default termination
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For each test component the defaults, i.e. activated altsteps, are stored as an ordered
+// list. The defaults are listed in the reversed order of their activation i.e. the last
+// activated default is the first element in the list of active defaults.
+
+// The default mechanism is evoked at the end of each alt statement, if due to the
+// actual snapshot none of the specified alternatives could be executed. An evoked
+// default mechanism invokes the first altstep in the list of defaults, i.e. the last
+// activated default, and waits for the result of its termination. The termination can
+// be successful or unsuccessful.
+
+// In the case of an unsuccessful termination, the default mechanism invokes the next
+// default in the list. If the last default in the list has terminated unsuccessfully,
+// the default mechanism will return to the place in the alt statement in which it
+// has been invoked, i.e. at the end of the alt statement, and indicate an unsuccessful
+// default execution. An unsuccessful default execution will also be indicated if the list
+// of defaults is empty. An unsuccessful default execution may cause a new snapshot or
+// a dynamic error if the test component is blocked.
+
+module NegSem_200501_the_default_mechanism_001 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:2) { // no match
+			setverdict(pass, "First default");
+		}
+	}
+
+	altstep a2() runs on GeneralComp {
+		[] p.receive(integer:1) { // no match
+			setverdict(fail, "Last default");
+		}
+	}
+
+	testcase TC_NegSem_200501_the_default_mechanism_001() runs on GeneralComp {
+		activate(a1());
+		activate(a2());
+		p.send(integer:5);
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+		} // defaults are terminated unsuccessfully -> dynamic test case error
+	}
+
+	control{
+		execute(TC_NegSem_200501_the_default_mechanism_001(), 1.0);
+	}
+}

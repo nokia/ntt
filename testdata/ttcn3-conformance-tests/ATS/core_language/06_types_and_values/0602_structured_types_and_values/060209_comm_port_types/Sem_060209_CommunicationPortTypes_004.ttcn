@@ -1,0 +1,74 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that map and unmap param and local port address are allowed in a testcase block
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_060209_CommunicationPortTypes_004 {
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType1 {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    type record MyMessageType2 {
+        integer g1,
+        charstring g2
+    }
+
+    type record MyMessageType3 {
+        boolean h1,
+        MyMessageType3 h2 optional
+    }
+
+    type port MyMessagePortType message {
+        address MyMessageType1;
+        inout all;
+        map param (in integer p1, inout charstring p2);
+        unmap param (in MyMessageType3 p1, inout MyMessageType2 p2);
+    }
+
+    const MyMessageType1 c_myTemplate1 := {
+        field1 := 2,
+        field2 := "foobar",
+        field3 := true
+    }
+
+    const MyMessageType2 c_myTemplate2 := {
+        g1 := 2,
+        g2 := "foo"
+    }
+
+    const MyMessageType3 c_myTemplate3 := {
+        h1 := false,
+        h2 := {
+            h1:= true,
+            h2 := omit
+        }
+    }
+
+    testcase TC_Sem_060209_CommunicationPortTypes_004() runs on GeneralComp system GeneralComp {
+        var charstring v_varString := "foobar";
+        var MyMessageType2 v_myTemplate2 := c_myTemplate2;
+
+        map(mtc:pt_myPort, system:pt_myPort) param(5, v_varString);
+
+        pt_myPort.send(13) to c_myTemplate1;
+        log("Map inout parameter", v_varString);
+
+        unmap(mtc:pt_myPort, system:pt_myPort) param(c_myTemplate3, v_myTemplate2);
+        log("Unmap inout parameter", v_myTemplate2);
+
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_060209_CommunicationPortTypes_004());
+    }
+}

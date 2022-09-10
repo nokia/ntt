@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign values to list of types restricted charstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010202_ListOfTypes_004 {
+    type charstring Firstcharstrings("abc", "def");
+    type charstring Secondcharstrings("ghi", "jkl");
+    type charstring charStrings_1_2 (Firstcharstrings,Secondcharstrings);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010202_ListOfTypes_004() runs on GeneralComp {
+        var charStrings_1_2 v_b;
+        v_b := "abc";
+        v_b := "jkl";
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010202_ListOfTypes_004());
+    }
+}

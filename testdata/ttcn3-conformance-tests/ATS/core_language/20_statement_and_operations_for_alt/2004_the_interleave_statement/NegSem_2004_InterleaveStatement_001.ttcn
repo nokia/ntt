@@ -1,0 +1,63 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:20.4, Validate that interleave statements are properly handled.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2004_InterleaveStatement_001 {
+
+    type port loopbackPort message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort pt_myPort1,pt_myPort2;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    testcase TC_NegSem_2004_InterleaveStatement_001() runs on GeneralComp {
+
+        template MyMessageType MySig1 := {1,"aaa",true};
+        template MyMessageType MySig2 := {2,"bbb",true};
+        template MyMessageType MySig3 := {3,"ccc",true};
+
+        var integer v_i;
+        timer t_timer;
+        pt_myPort1.send(MyMessageType:{1, "aaa", true});
+        t_timer.start(1.0);
+
+        interleave {
+            [] pt_myPort1.receive(MySig1)
+            {
+                for(v_i:=1; v_i<10; v_i:= v_i+1) {				//control transfer statement is not allowed
+                    pt_myPort2.send(MySig2);
+                }
+                alt {
+                    [] pt_myPort1.receive(MySig3) {
+                        setverdict(pass);
+                    }
+                    [] t_timer.timeout {
+                        setverdict(fail);
+                    }
+                }
+            }
+            [] pt_myPort2.receive(MySig2) 		//boolean guard must be empty
+            {
+                pt_myPort1.send(MySig3);
+            }
+
+        }
+
+
+    }
+
+    control{
+        execute(TC_NegSem_2004_InterleaveStatement_001());
+    }
+}

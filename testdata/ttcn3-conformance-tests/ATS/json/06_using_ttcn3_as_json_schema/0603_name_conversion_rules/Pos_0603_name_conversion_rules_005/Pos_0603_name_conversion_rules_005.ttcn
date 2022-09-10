@@ -1,0 +1,103 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:6.3, Verify that character substitutions is applied correctly (each character string being mapped to a TTCN-3 name).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * The following character substitutions shall be applied, in order that each character string being mapped to a TTCN-3 name,
+ * where each substitution (except the first) shall be applied to the result of the previous transformation:
+ * e)	if a character string is empty, it shall be replaced by "x" (Latin Small Letter X);
+ * */
+
+module Pos_0603_name_conversion_rules_005 {
+
+    import from JSON all;
+
+    type record MyRec {
+        charstring x
+    }
+    with {
+        encode "JSON";
+        variant(x)
+        "name as '%@'"
+    };
+    /* Note: The reference JSON contains this:
+     *
+     * {  "Pos_0603_name_conversion_rules_005.MyRec":{"%@": "5"}
+     */
+
+
+    template MyRec m_msg := {
+        x := "5"
+    }
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw with {
+        encode "Text"
+    };
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference JSON file and returns true if they represent the same JSON structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the JSON data
+     * @param p_referenceJsonFile the JSON data
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference JSON file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceJsonFile represent the same JSON data
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceJsonFile, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_0603_name_conversion_rules_005() runs on C system C {
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self: p, system: p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference JSON file
+            [] p.check(receive(Raw: ? ) -> value v_rcv) {
+                    log("JSON message: ", v_rcv);
+                    if (matchFile(v_rcv, "Pos_0603_name_conversion_rules_005.json", v_matchError)) {
+                        alt {
+                            // match decoded value to pass test
+                            [] p.receive(m_msg) {
+                                    setverdict(pass, "Decoded value matches encoded template and reference JSON");
+                                }
+                                [] p.receive {
+                                    setverdict(fail, "JSON decoding failure");
+                                }
+                        }
+                    } else {
+                        setverdict(fail, v_matchError);
+                    }
+
+                }
+                [] p.receive {
+                    setverdict(fail, "Raw decoding failure");
+                }
+        }
+    }
+
+    control {
+        execute(TC_Pos_0603_name_conversion_rules_005(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+} //end module

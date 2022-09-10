@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_07060202_derived_by_restriction_001"
+    xmlns:ns="schema:Pos_07060202_derived_by_restriction_001">
+  <complexType name="c1">
+    <complexContent>
+      <restriction base="anyType">
+        <sequence>
+           <element name="size" type="nonPositiveInteger"/>
+           <element name="unit" type="NMTOKEN"/>
+        </sequence>
+      </restriction>
+    </complexContent>
+  </complexType>
+  <element name="e1" type="ns:c1"/>
+</schema>

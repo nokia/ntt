@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7, uninitialized value in an expression
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// At the point, when an expression is evaluated, the evaluated values of the
+// operands used in expressions shall be completely initialized except where
+// explicitly stated otherwise in the specific clause of the operator.
+
+module NegSem_07_toplevel_003
+{
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer field1,
+        integer field2 optional
+    }
+
+    testcase TC_NegSem_07_toplevel_003() runs on GeneralComp {
+        var R v_rec;
+        v_rec.field1 := 1;
+        if (10 + v_rec.field2 != -1) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_NegSem_07_toplevel_003());
+	}
+}

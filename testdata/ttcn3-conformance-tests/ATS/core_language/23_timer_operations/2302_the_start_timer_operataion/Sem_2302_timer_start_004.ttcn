@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:23, Ensure timer with value 0.0 expires immediately
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/Timer with the timer value 0.0 times out immediately.
+
+
+module Sem_2302_timer_start_004 {
+    type component TComp{
+        timer t_timer := 0.0;
+        timer t_timer_with_long_default := 100.0;
+    }
+
+    testcase TC_Sem_2302_timer_start_004() runs on TComp{
+        t_timer.start;
+        if (t_timer.running)
+        {
+            setverdict(fail);
+        }
+        else
+        {
+            setverdict(pass);
+        }
+
+        t_timer_with_long_default.start(0.0);
+        if (t_timer_with_long_default.running)
+        {
+            setverdict(fail);
+        }
+        else
+        {
+            setverdict(pass);
+        }
+
+
+    }
+    control{
+
+            execute(TC_Sem_2302_timer_start_004())
+
+
+    }
+}

@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  9:6.2.1, Use of the xmlHeader parameter in the enc_value function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Pos_B0329_xml_header_control_001 {
+
+    import from schema_Pos_B0329_xml_header_control_001 language "XSD" all;
+
+    template Test m_msg := "abc";
+
+	type component C {
+	}
+
+	testcase TC_Pos_B0329_xml_header_control_001() runs on C {
+		var universal charstring v_encoded := encvalue_unichar(m_msg, -, "xmlHeader");
+		// Naive test for XML header presence. If needed, more complicated one should be implemented
+		if (lengthof(v_encoded) >= 5 and substr(v_encoded, 0, 5) == "<?xml") { setverdict(pass, "XML header detected"); }
+		else { setverdict(fail, "XML header not found"); }
+	}
+
+	control {
+		execute(TC_Pos_B0329_xml_header_control_001());
+	}
+}

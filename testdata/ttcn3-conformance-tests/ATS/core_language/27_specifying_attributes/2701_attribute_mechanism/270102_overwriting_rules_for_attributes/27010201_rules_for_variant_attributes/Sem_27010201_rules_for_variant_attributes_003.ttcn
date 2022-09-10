@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.1, Verify that encode attribute repeating doesn't disable existing variant attributes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// An encoding attribute, which overwrites a current encoding attribute according to
+// the rules defined in clause 27.1.2, also overwrites a corresponding current variant
+// attribute, i.e. no new variant attribute is provided, but the current variant attribute
+// becomes inactive.
+
+module Sem_27010201_rules_for_variant_attributes_003 {
+
+    type component GeneralComp {
+	}
+
+	type record MyRecordA {
+	} with { encode "GeneralRule" } // the same as in upper scope, variant should not change
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010201_rules_for_variant_attributes_003 () runs on GeneralComp {
+		var RoUC v_var := MyRecordA.variant;
+		if(lengthof(v_var) == 1 and v_var[0] == "Variant1") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_27010201_rules_for_variant_attributes_003());
+	}
+
+} with { encode "GeneralRule" variant "Variant1" }

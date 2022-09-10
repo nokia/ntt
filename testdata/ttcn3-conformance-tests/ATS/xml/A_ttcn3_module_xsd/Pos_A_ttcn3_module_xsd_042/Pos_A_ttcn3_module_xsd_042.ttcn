@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:A, Ensure the module XSD is available and contains the builtin XSD type IDREFS
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Pos_A_ttcn3_module_xsd_042 {
+
+	import from XSD all;
+
+	template IDREFS m_msg := {"123"}
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type component C {
+    }
+
+    testcase TC_Pos_A_ttcn3_module_xsd_042() runs on C system C {
+
+        // encode the message
+        if (isvalue(m_msg)) {
+            setverdict(pass, "Built-in XSD type was found and TCI value was created");
+        } else {
+            setverdict(fail, "Failure to create a value of the given built-in XSD type");
+        }
+    }
+
+    control {
+        execute(TC_Pos_A_ttcn3_module_xsd_042(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

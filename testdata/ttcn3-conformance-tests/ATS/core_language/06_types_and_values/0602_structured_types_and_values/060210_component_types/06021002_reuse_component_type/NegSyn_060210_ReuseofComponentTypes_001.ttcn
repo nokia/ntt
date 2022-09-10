@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10, Ensure that cyclic extension is not allowed
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+/* The following requirements are tested:
+ * Restriction c.: It is allowed to extend component types that are defined by means of extension,
+ * as long as no cyclic chain of definition is created.
+ */
+
+module NegSyn_060210_ReuseofComponentTypes_001 {
+
+    type port loopbackPort message {
+        inout integer;
+        inout float;
+    }
+
+ type component MyCompA extends GeneralComp {
+       port loopbackPort pt_myPortA;
+    }
+
+
+ type component MyCompB extends MyCompA {
+      var integer MyInt;
+    }
+
+
+ type component GeneralComp extends MyCompB { //error: cyclic extension
+        port loopbackPort pt_myPortB;
+    }
+
+    testcase TC_NegSyn_060210_ReuseofComponentTypes_001() runs on GeneralComp {
+
+     pt_myPortB.send(2);
+  }
+
+    control{
+        execute(TC_NegSyn_060210_ReuseofComponentTypes_001());
+    }
+}

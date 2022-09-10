@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7, template used as expression operand
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The operands of the operators used in an expression shall be values and their root
+// types shall be the types specified for the appropriate operator in the subsequent
+// clauses.
+
+module NegSem_07_toplevel_002
+{
+    type component GeneralComp {
+	}
+
+    function f()
+    {
+        var integer p_num := 1;
+    }
+
+    testcase TC_NegSem_07_toplevel_002() runs on GeneralComp {
+        var template(value) integer vm_num := 3;
+        var integer p_num := 3 * vm_num;
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_07_toplevel_002());
+	}
+}

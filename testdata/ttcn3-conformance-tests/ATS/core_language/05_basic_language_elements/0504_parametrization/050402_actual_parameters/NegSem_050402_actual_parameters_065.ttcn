@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.4.2, verify that constants cannot be used as out formal template parameters of altsteps
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal template parameters shall be template variables,
+// formal template parameters or references to elements of template variables or formal template
+// parameters of structured types.
+
+module NegSem_050402_actual_parameters_065 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+	}
+
+    const integer c_val := 3;
+
+    altstep a_test(out template integer p_val) runs on GeneralComp {
+        []t.timeout {
+            p_val := ?;
+            setverdict(pass);
+        }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_065() runs on GeneralComp {
+        t.start;
+        a_test(c_val); // tested parameter passing
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_065());
+	}
+}

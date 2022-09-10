@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:test xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ns="schema:Pos_060208_idref_001">
+  <item>abc</item>
+  <itemref>abc</itemref>
+</ns:test>

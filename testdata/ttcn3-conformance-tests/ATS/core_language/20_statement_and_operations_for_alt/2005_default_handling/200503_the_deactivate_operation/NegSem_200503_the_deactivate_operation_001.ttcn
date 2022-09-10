@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that deactivate deactivated default causes error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Calling a deactivate operation with an undefined default reference, e.g. an old reference
+// to a default that has already been deactivated, shall cause a runtime error.
+
+module NegSem_200503_the_deactivate_operation_001 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(pass);
+		}
+	}
+
+	testcase TC_NegSem_200503_the_deactivate_operation_001() runs on GeneralComp {
+		var default v_default := activate(a1());
+		p.send(integer:1);
+		deactivate(v_default); // correct deactivation
+		deactivate(v_default); // v_default is deactivated at this point -> runtime error
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_NegSem_200503_the_deactivate_operation_001(), 1.0);
+	}
+}

@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure timer start  syntax
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/Start timer syntax
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Disallow all timer.start
+
+
+module NegSyn_2302_timer_start_013 {
+    type component TComp{
+
+        timer t_timers[3] := {1.0, 1.0, 1.0};
+    }
+    testcase TC_NegSyn_2302_timer_start_013() runs on TComp{
+        // This is not allowed by the TTCN3 grammar
+        all timer.start(1.0);
+
+    }
+    control{
+
+            execute(TC_NegSyn_2302_timer_start_013())
+
+
+    }
+}

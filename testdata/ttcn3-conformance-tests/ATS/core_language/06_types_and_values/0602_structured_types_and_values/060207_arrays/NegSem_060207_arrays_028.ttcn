@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, referencing element of omitted arrays on the right hand side of assignments
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// : If the value of the element indicated by the index at the right hand of
+// an assignment is undefined or if the index notation is applied to an uninitialized
+// or omitted array value on the right hand side of an assignment, error shall be
+// caused.
+
+module NegSem_060207_arrays_028 {
+
+	type component GeneralComp {
+	}
+
+    type record R {
+        integer field1[3] optional,
+        boolean field2
+    }
+
+	testcase TC_NegSem_060207_arrays_028() runs on GeneralComp {
+        var R v_rec := { omit, true }
+        var integer v_int := v_rec.field1[0];
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_028());
+	}
+
+}

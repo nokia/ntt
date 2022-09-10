@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.5, Assign values to pattern restricted character strings without @nocase modifier.
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+
+module NegSyn_06010205_StringPattern_001 {
+    type charstring MyString (pattern "abc*xyz"); //without @nocase
+
+    type component GeneralComp {}
+
+    testcase TC_NegSyn_06010205_StringPattern_001() runs on GeneralComp {
+        var MyString v_c;
+        v_c := "ABc1234xYz";    //error value is out of constraint: ABc
+    }
+
+    control{
+        execute(TC_NegSyn_06010205_StringPattern_001());
+    }
+}

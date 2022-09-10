@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.3, Ensure that an internal class shall not extend an external class (Restriction d)
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010103_externalClasses_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type external class Java_Int_List {
+
+        /*
+        function add(integer v) {
+            log("Add v to integer list"); //not alloed
+        }
+        function get(integer index) return integer;
+        const charstring c_a := "ret"; //not allowed
+        */
+    }
+
+    type class Internal_Java_Int_List extends Java_Int_List { //not allowed
+
+    }
+
+
+
+    testcase TC_NegSem_5010103_externalClasses_001() runs on GeneralComp {
+        //empty testcase
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010103_externalClasses_001());
+    }
+}

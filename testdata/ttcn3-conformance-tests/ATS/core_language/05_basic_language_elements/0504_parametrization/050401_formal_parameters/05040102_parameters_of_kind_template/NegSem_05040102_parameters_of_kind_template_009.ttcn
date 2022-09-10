@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that default template instance of template formal parameters cannot reference other parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)
+// The template instance shall not refer to other parameters in the same parameter list.
+
+module NegSem_05040102_parameters_of_kind_template_009 {
+	type component GeneralComp {
+	}
+
+    function f(in template integer p_int, in template integer p_int2 := p_int) runs on GeneralComp {
+    }
+
+	testcase TC_NegSem_05040102_parameters_of_kind_template_009() runs on GeneralComp {
+        f(?);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040102_parameters_of_kind_template_009());
+	}
+}

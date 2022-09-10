@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, TemplateInstance shall be of a data type in send operation
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restection h) TemplateInstance shall be of a data type.
+
+module NegSem_220201_SendOperation_013 {
+
+
+     type port loopbackPort message {
+	      inout anytype
+	   }
+
+
+    type component GeneralComp {
+	      port loopbackPort messagePort
+    }
+
+    testcase TC_NegSem_220201_SendOperation_013() runs on GeneralComp system GeneralComp {
+
+        var GeneralComp ptc;
+		ptc:=GeneralComp.create alive;
+
+        messagePort.send(ptc);  //error: template instance shall be of a data type, not component
+        setverdict(pass);
+
+    }
+
+    control {
+       // execute(TC_NegSem_220201_SendOperation_013());
+    }
+}

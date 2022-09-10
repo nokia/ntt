@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:21.3.1, Ensure that named components on hosts are accepted
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+// only syntactic test since it cannot be tested if "localhost" is not supported for component creation
+module Syn_210301_CreateOperation_001 {
+    const charstring hostname := "localhost";
+
+    type component GeneralComp {
+        var NewComp vc_NewComp;
+        timer t := 5.0;
+    }
+
+    type component NewComp { }
+
+    function f_testComp() runs on GeneralComp {
+        var NewComp v_NewComp := NewComp.create("1 & * 5abc", hostname);
+        t.start;
+        a_createComp();
+        setverdict(pass);
+    }
+
+    function f_createComp() return NewComp {
+        return NewComp.create(-, "localhost");
+    }
+
+    altstep a_createComp() runs on GeneralComp {
+        [] t.timeout {
+            vc_NewComp := NewComp.create("component#" & int2str(2), hostname);
+            setverdict(pass);
+        }
+    }
+
+    testcase TC_Syn_210301_CreateOperation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create("a component name", "localhost");
+        ptc.start(f_testComp());
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Syn_210301_CreateOperation_001());
+    }
+}

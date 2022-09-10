@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C.3.5)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * this test investigates that IUT correctly evaluates predefined function istemplateking().*/
+
+module Sem_160102_predefined_functions_053 {
+
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_053 () runs on GeneralComp {
+
+     var template integer v_6 := (-100 .. -1);  // tamplate with ranged values
+
+       if ( match(istemplatekind(v_6, "range"), true)) {setverdict(pass," range: ", istemplatekind(v_6, "range"));}
+           else{setverdict(fail," range:",istemplatekind(v_6, "range"), " expected result: true");}
+    }
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_053());
+
+    }
+
+}

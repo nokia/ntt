@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, wrong index type applied to a record of value on the right hand side of an assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If the value of the element indicated by the index at the right-hand of an
+// assignment is undefined (uninitialized), this shall cause a semantic or
+// run-time error.)
+module NegSem_060203_records_and_sets_of_single_types_014 {
+
+	type component GeneralComp {
+	}
+
+	type set of integer SoI;
+
+	testcase TC_NegSem_060203_records_and_sets_of_single_types_014() runs on GeneralComp {
+
+		var SoI v_set := { 0, 1, 2 };
+		var integer i := v_set[3]; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060203_records_and_sets_of_single_types_014());
+	}
+
+}

@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that it is possible to use a select union statement with several branches
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If the template instance has type anytype, each branch shall start with the case keyword followed by one or more type names (a list branch) or the else keyword (an else branch) and a statement block.
+
+module Sem_190301_select_union_statement_007 {
+
+    type component GeneralComp {
+	}
+
+    testcase TC_Sem_190301_select_union_statement_007() runs on GeneralComp {
+        var anytype v_any;
+        v_any.integer := 2;
+        v_any.charstring := "abc";
+        v_any.float := 1.2;
+
+        select union (v_any) {
+            case (charstring) {
+                if(match(v_any.charstring,"abc"))
+                {setverdict(pass, v_any.charstring);}
+            } case (integer) {
+                if(match(v_any.integer,2))
+                {setverdict(pass, v_any.integer);}
+            } case (float) {
+                if(match(v_any.float,1.2))
+                {setverdict(pass, v_any.float);}
+            }
+               case else {
+                setverdict(fail);
+            }
+        }
+	}
+
+	control {
+		execute(TC_Sem_190301_select_union_statement_007());
+	}
+}

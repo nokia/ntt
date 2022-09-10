@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that there's an error for re-assignment of a local parameterized template
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+// The following requirement is tested:
+// d)	After completing initialization, global and local templates that do not contain the @abstract modifier shall be fully initialized.
+
+module NegSyn_1503_GlobalAndLocalTemplates_005
+{
+	type component GeneralComp {}
+
+    type record MyMessageType {
+	    integer field1,
+	    charstring field2,
+	    boolean field3
+    }
+
+    testcase TC_NegSyn_1503_GlobalAndLocalTemplates_005() runs on GeneralComp {
+
+        // non-abstract template
+        template MyMessageType m_myTemplate(integer p_myFormalParam):= {
+	       field1 := p_myFormalParam,
+	       field3 := true
+           // error: not fully initialized template (field2 is missing), but not an abstract
+        }
+
+        if (valueof(m_myTemplate(2).field1) == 2) {
+		   setverdict(pass);
+	    } else {
+		    setverdict(fail);
+	    }
+    }
+control{
+    execute(TC_NegSyn_1503_GlobalAndLocalTemplates_005());
+}
+}

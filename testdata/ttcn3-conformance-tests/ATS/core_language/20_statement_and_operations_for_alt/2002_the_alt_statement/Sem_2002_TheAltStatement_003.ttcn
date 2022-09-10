@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the alt-statement processes the alternatives in order (loopback case).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2002_TheAltStatement_003 {
+
+type port MyPort message {
+	inout charstring
+}
+
+type component GeneralComp {
+	port MyPort p;
+}
+
+template charstring m_test := "ping";
+
+testcase TC_Sem_2002_TheAltStatement_003() runs on GeneralComp {
+	p.send(m_test);
+	alt {
+		[] p.receive(m_test) {
+			setverdict(pass);
+		}
+		[] p.receive(m_test) {
+			setverdict(fail);
+		}
+		[] p.receive(m_test) {
+			setverdict(fail);
+		}
+	}
+}
+
+control {
+	execute(TC_Sem_2002_TheAltStatement_003());
+}
+
+}

@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that error is generated when deactivated reference is on incorrect type
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// A deactivate operation will remove the referenced default from the list of defaults.
+
+module NegSem_200503_the_deactivate_operation_003 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(pass);
+		}
+	}
+
+	testcase TC_NegSem_200503_the_deactivate_operation_003() runs on GeneralComp {
+		var GeneralComp v_ptc := null;
+		p.send(integer:1);
+		deactivate(v_ptc); // incorrect type -> error
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_NegSem_200503_the_deactivate_operation_003());
+	}
+}

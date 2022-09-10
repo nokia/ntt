@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign invalid hexstring value
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060101_TopLevel_010 {
+    const octetstring c_b1 := '1FAH'O; // not an octetstring value, H not valid
+}

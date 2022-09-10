@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:23, Ensure timer runs from zero to stated value
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/timer clock runs from 0 to the value set
+
+module Sem_2302_timer_start_001 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+    testcase TC_Sem_2302_timer_start_001() runs on TComp{
+        timer t_short, t_long;
+        var float v_elapsed;
+        var float v_last := 0.0;
+
+        t_long.start(2.0);
+        t_timer.start(1.0);
+        t_short.start(0.5);
+
+		while (t_short.running) {
+			v_elapsed := t_timer.read;
+			log("t_timer.read = ", v_elapsed);
+			if (v_elapsed<0.0 or v_elapsed < v_last){
+				setverdict(fail)
+			}
+			v_last := v_elapsed;
+		}
+		while (t_timer.running) {
+			v_elapsed := t_long.read;
+			log("t_long.read = ", v_elapsed);
+			if (v_elapsed < v_last){
+				setverdict(fail)
+			}
+			v_last := v_elapsed;
+		}
+        setverdict(pass);
+
+    }
+    control{
+        execute(TC_Sem_2302_timer_start_001())
+    }
+}

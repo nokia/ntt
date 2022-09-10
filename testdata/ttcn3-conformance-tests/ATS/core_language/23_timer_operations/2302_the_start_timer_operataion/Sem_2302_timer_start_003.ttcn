@@ -1,0 +1,74 @@
+/***************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:23, Ensure timer default value can be modified by start value
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/timer clock runs from 0 to the value set
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/Overridden timer value applies only to current instance
+
+module Sem_2302_timer_start_003 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+
+    testcase TC_Sem_2302_timer_start_003() runs on TComp{
+        timer t_short := 0.95, t_long := 1.05;
+
+        t_long.start;
+        t_timer.start(0.9);
+        t_short.start;
+
+        // t_timer is expected to expire before other timers: its duration 0.9 < t_short < t_long
+        alt {
+            []t_timer.timeout {
+                setverdict(pass);
+            }
+            []t_short.timeout {
+                setverdict(fail);
+                stop;
+            }
+            []t_long.timeout {
+                setverdict(fail);
+                stop;
+            }
+        }
+
+        t_short.timeout;
+        t_long.timeout;
+
+        t_long.start;
+        t_timer.start;
+        t_short.start;
+        // t_timer is expected to expire before between t_short and t_long timers:
+        // its default duration t_short < 1.0 < t_long
+        alt {
+            []t_short.timeout {
+                setverdict(pass);
+            }
+            []t_timer.timeout {
+                setverdict(fail);
+                stop;
+            }
+            []t_long.timeout {
+                setverdict(fail);
+                stop;
+            }
+        }
+        alt {
+            []t_timer.timeout {
+                setverdict(pass);
+            }
+            []t_long.timeout {
+                setverdict(fail);
+                stop;
+            }
+        }
+    }
+    control{
+
+            execute(TC_Sem_2302_timer_start_003())
+
+
+    }
+}

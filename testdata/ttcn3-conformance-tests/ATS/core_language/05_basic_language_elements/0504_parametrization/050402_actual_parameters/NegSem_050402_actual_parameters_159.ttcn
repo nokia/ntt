@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that templates cannot have more actual than formal parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The number of actual parameters in the list notation shall not exceed the number of parameters
+// in the formal parameter list.
+
+module NegSem_050402_actual_parameters_159 {
+
+    type component GeneralComp {
+	}
+
+    template integer mw_range (integer p_par) := (0..p_par);
+
+    testcase TC_NegSem_050402_actual_parameters_159() runs on GeneralComp {
+        log(mw_range(1, 2)); // tested parameter passing
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_159());
+	}
+}

@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that the base tamplate and modified template cannot be the same
+ ** @verdict  pass reject, noexectuion
+ *****************************************************************/
+//Restriction a)
+/*A modified template shall not refer to itself, either directly or indirectly, i.e. recursive derivation is not
+allowed.*/
+
+module NegSyn_1505_ModifiedTemplates_001{
+
+type component GeneralComp { }
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template MyMessageType m_templateOne(integer p_intValue) := {
+	field1 := p_intValue,
+	field2 := "Hello World",
+	field3 := true
+}
+
+template MyMessageType m_templateTwo(integer p_intValue) modifies m_templateOne := {
+	field1 := 5
+}
+
+//error: not allowed to modify itself
+template MyMessageType m_templateTwo(integer p_intValue) modifies m_templateTwo := {
+	field1 := 10
+}
+
+}

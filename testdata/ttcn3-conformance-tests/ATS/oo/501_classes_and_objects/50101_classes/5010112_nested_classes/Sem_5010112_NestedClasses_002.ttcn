@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.12, Ensure that nested class can access named entities of the containing class.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010112_ConstructorInvocation_002 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class Parent {
+    	var charstring v_name;
+
+		type class Child {
+
+			public function get_parent_name()  return charstring {
+				return v_name;
+			}
+
+		}
+    }
+
+    testcase TC_Sem_5010112_ConstructorInvocation_002 () runs on GeneralComp {
+    	var Parent v_parent := Parent.create("parent");
+    	var Parent.Child v_child := v_parent.Child.create();
+
+		if (v_child.get_parent_name() == "parent") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_5010112_ConstructorInvocation_002());
+    }
+}

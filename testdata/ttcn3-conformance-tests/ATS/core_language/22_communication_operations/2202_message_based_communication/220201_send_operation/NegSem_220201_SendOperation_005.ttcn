@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, missing to clause in case of one-to-many connections
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Unicast, multicast and broadcast communication can be determined by the optional to clause
+// in the send operation.  A to clause can be omitted in case of a one-to-one connection where
+// unicast communication is used and the message receiver is uniquely determined by the test
+// system structure.
+// A to clause shall be present in case of one-to-many connections.
+
+module NegSem_220201_SendOperation_005 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f(integer p_expected) runs on GeneralComp
+	{
+        alt {
+            [] p.receive(p_expected) { setverdict(pass); }
+            [] p.receive { setverdict(fail); }
+        }
+	}
+
+    const integer c_ptcCount := 2;
+
+    testcase TC_NegSem_220201_SendOperation_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptcs[c_ptcCount];
+        for (var integer i := 0; i < c_ptcCount; i := i + 1) {
+            v_ptcs[i] := GeneralComp.create;
+            connect(self:p, v_ptcs[i]:p);
+            v_ptcs[i].start(f(0));
+        }
+		p.send(0);
+        all component.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220201_SendOperation_005(), 5.0);
+    }
+}

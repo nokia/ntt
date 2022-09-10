@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 451 and 470
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of octetstring types and ? patterns works as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_012 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_012() runs on GeneralComp {
+    var template octetstring v_myString1 := 'AB'O & 'CD'O & ? & ? length(1) & 'EF'O;  //results in 'ABCD*?EF'O
+    if (match('ABCD2233EF'O, v_myString1)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_012());
+}
+
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050202_name_conversion_rules_020"
+  xmlns:ns="schema:Pos_050202_name_conversion_rules_020">
+  <element name="MyType">
+    <simpleType>
+      <restriction base="string">
+        <enumeration value="red"/>
+        <enumeration value="红色red"/>
+	    <enumeration value="blue"/>
+	    <enumeration value="藍色blue"/>
+      </restriction>
+    </simpleType>  
+  </element>    
+</schema>

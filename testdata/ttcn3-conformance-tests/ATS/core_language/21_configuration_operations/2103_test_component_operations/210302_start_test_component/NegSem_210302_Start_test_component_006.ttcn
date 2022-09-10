@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, function invocation in the start operation doesn't return a component
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// The variable associated with VariableRef (being a component type variable,
+// a component type parameter, etc.) or the return type associated with
+// FunctionInstance shall be of component type.
+
+module NegSem_210302_Start_test_component_006 {
+
+	type component GeneralComp {
+	}
+
+    type record R {
+        GeneralComp comp
+    }
+
+    function f_create() return R {
+        var R v_rec := { GeneralComp.create("PTC") }
+        return v_rec;
+    }
+
+    function f_ptcBehaviour() runs on GeneralComp {
+    }
+
+	testcase TC_NegSem_210302_Start_test_component_006() runs on GeneralComp system GeneralComp {
+        f_create().start(f_ptcBehaviour());
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210302_Start_test_component_006());
+	}
+}

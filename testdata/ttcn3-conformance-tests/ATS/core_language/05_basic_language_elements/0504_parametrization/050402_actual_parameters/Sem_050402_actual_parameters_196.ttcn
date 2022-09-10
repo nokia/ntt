@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the third part of the Example 3 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_196 {
+
+    type component GeneralComp {
+	}
+
+    type record of integer RoI;
+
+    function f_swapElements (inout integer p_int1, inout integer p_int2) {
+        var integer v_tmp := p_int1;
+        p_int1 := p_int2;
+        p_int2 := v_tmp;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_196() runs on GeneralComp {
+        var RoI v_roi := { 0, 1, 2, 3, 4, 5 };
+        f_swapElements(v_roi[0], v_roi[5]); // after the function call, v_roi is { 5, 1, 2, 3, 4, 0 }
+        if (v_roi == { 5, 1, 2, 3, 4, 0 }) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_196());
+	}
+}

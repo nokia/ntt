@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.5, Assign values to pattern restricted character strings with @nocase modifier.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+When the "@nocase" modifier is used after the pattern keyword, the matching is evaluated in a case insensitive way.
+*/
+
+module Sem_06010205_StringPattern_003 {
+    type charstring MyString (pattern @nocase "abc*xyz"); // with @nocase modifier now characters from "A...Z" is also allowed
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010205_StringPattern_003() runs on GeneralComp {
+
+        var MyString v_c;
+
+        //valid:
+        v_c := "ABc1234xyz";
+        v_c := "aBC:xYz";
+        v_c := "AbC.xyZ";
+        v_c := "ABc*xYZ";
+        v_c := "ABC?XYZ";
+		setverdict(pass,"The resuls is: ",v_c);
+    }
+
+    control{
+        execute(TC_Sem_06010205_StringPattern_003());
+    }
+}

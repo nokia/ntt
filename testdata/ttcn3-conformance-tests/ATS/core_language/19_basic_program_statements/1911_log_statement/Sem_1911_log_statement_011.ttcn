@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// getverdict operation -> the given verdict (pass)
+
+module Sem_1911_log_statement_011 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_1911_log_statement_011() runs on GeneralComp {
+        setverdict(pass);
+        log("getverdict operation: ", getverdict);
+
+	}
+
+	control{
+		execute(TC_Sem_1911_log_statement_011());
+	}
+}

@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.9, Verify that an extended type reference can be used in the setencode operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// It is allowed to reference a field or element of a type using an extended type
+// reference in the setencode operation.
+
+module Sem_2709_dynamic_configuration_004 {
+
+	type port P message {
+		inout MyPDU;
+	}
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with {
+		encode "Codec 1";
+		encode "Codec 2";
+		encode "Codec 3"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2709_dynamic_configuration_004 () runs on GeneralComp {
+		p.setencode(MyPDU.field1, "Codec 1");
+		// Compilation and seamless execution tested.
+		// Actual effect not tested as it would require dedicated TCI implementation
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_2709_dynamic_configuration_004());
+	}
+
+}

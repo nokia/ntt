@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that port.check(receive) with @nodefault works correctly inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction j) The @nodefault modifier is allowed only in stand-alone check statements.
+
+module Sem_2204_the_check_operation_121 {
+
+	type port P message {
+		inout integer;
+		address integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    function f1 ( ) runs on GeneralComp {
+             p.send(2) to mtc;
+    }
+
+	testcase TC_Sem_2204_the_check_operation_121() runs on GeneralComp system GeneralComp {
+		var integer v_rec;
+
+        // create PTC
+        var GeneralComp ptc;
+        ptc:=GeneralComp.create;
+        connect(self:p,ptc:p);
+        ptc.start(f1());
+
+       @nodefault p.check(receive(integer:?) -> value v_rec);    // check with @nodefault modifier
+
+        if(v_rec == 2){
+         setverdict(pass, "Check operation successful");
+        }
+        else{
+            setverdict(fail);
+        }
+
+       // remove PTC
+        disconnect(self:p,ptc:p);
+        ptc.stop;
+
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_121(), 5.0);
+    }
+}

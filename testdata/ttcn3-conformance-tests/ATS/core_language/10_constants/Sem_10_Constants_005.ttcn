@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:10, Constant used within predefined function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_10_Constants_005 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_10_Constants_005() runs on GeneralComp {
+
+        const integer c_j := 5;
+        const charstring c_str_j := int2str(c_j);
+
+        if (c_str_j=="5"){
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }//end testcase
+
+    control{
+        execute(TC_Sem_10_Constants_005());
+    }
+}

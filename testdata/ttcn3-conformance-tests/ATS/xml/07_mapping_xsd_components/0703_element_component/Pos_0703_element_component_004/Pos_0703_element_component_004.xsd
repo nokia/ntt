@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_0703_element_component_004"
+  xmlns:ns1="schema:Pos_0703_element_component_004"
+  xmlns:ns2="schema:Pos_0703_element_component_004_1">
+  <import namespace="schema:Pos_0703_element_component_004_1" schemaLocation="Pos_0703_element_component_004_1.xsd" />  
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <element ref="ns2:imported" />
+      </sequence>
+    </complexType>
+  </element>
+</schema>

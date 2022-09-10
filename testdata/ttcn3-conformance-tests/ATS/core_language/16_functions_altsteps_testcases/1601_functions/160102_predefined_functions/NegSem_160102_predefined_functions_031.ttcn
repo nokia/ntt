@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_160102_predefined_functions_031 {
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_031 () runs on GeneralComp {
+	var float v_random1;
+
+	v_random1:=rnd(infinity);		//cannot have infinity as a seed
+ 	if( match(rnd(infinity), v_random1) and not match(rnd(1.0), v_random1) ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_031());
+
+}
+
+}

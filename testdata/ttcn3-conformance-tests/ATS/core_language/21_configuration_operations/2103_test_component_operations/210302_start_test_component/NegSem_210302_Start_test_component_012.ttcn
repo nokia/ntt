@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, passing default to started component function
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// All formal parameter types of the function shall neither be of port or default type
+// or should contain a direct or indirect element or field of port or default type.
+
+module NegSem_210302_Start_test_component_012 {
+
+    type record R {
+        default def
+    }
+
+	type component GeneralComp {
+	}
+
+    function f_behaviour(R p_def) runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    altstep a_timeout() {
+        [] any timer.timeout { }
+    }
+
+	testcase TC_NegSem_210302_Start_test_component_012() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        var R v_def := { def := activate(a_timeout()) };
+        v_ptc.start(f_behaviour(v_def));
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210302_Start_test_component_012());
+	}
+}

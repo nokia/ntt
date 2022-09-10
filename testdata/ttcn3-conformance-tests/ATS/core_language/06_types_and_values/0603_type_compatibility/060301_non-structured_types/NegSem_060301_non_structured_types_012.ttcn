@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible size restrictions
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060301_non_structured_types_012 {
+    type hexstring ConstrainedHexString length (1);
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060301_non_structured_types_012() runs on GeneralComp {
+
+    var hexstring v_hexstr := '1B'H;
+    var ConstrainedHexString v_constrainedHexstr;
+
+    v_constrainedHexstr:=v_hexstr; // length 2 string assigned to length 1 type
+}
+
+control{
+    execute(TC_NegSem_060301_non_structured_types_012());
+}
+
+}

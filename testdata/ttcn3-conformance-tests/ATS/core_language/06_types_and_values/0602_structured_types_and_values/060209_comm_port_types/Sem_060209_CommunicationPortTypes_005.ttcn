@@ -1,0 +1,241 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:6.2.9, Ensure that parameter MessageType of the port shall be data type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/* The following requirements are tested:
+ * 6.2.9 Communication port types - Restriction e. MessageType shall be a data type as defined in clause 3.1.
+ */
+
+module Sem_060209_CommunicationPortTypes_005 {
+
+    type component GeneralComp {
+        port loopbackPort pt_myPort;
+    }
+
+   type record MyRec{float field1};
+   type set MySet{};
+   type record of integer MyRoI;
+   type set of integer MySoI;
+   type enumerated MyEnumType {a,b,c};
+   type union MyUnionType
+	{
+		integer 		number,
+		charstring 		string
+	};
+
+    type port loopbackPort message {
+        //allowed MessageTypes given in clause 3.1:
+        inout integer;
+        inout float;
+        inout boolean;
+        inout verdicttype;
+        inout bitstring;
+        inout octetstring;
+        inout hexstring;
+        inout charstring;
+        inout universal charstring;
+        inout anytype;
+        inout MyRec;
+        inout MyRoI;
+        inout MySet;
+        inout MySoI;
+        inout MyEnumType;
+        inout MyUnionType;
+    }
+
+
+    testcase TC_Sem_060209_CommunicationPortTypes_005() runs on GeneralComp {
+
+      var anytype v_a;
+      var integer j := 100;
+      var boolean       v_2 := true;
+      var verdicttype   v_3 := pass;
+      var universal charstring    v_4 := "\q{0,0,1,113}";
+      var MyRec MyR :={field1 := 1.0};
+      var MySet MyS :={};
+      var MyRoI RoI := {1,2,3};
+      var MySoI SoI := {1,2,3};
+      var MyEnumType enu :=a;
+      var MyUnionType uni :={number:=1};
+      v_a.integer :=1;
+
+//send integer via port
+    pt_myPort.send(j);
+    alt {
+     [] pt_myPort.receive(j) {
+        setverdict(pass,"Send success, received:", j);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"integer sent failed",j);
+     }
+    }
+//send float via port
+        pt_myPort.send(int2float(j));
+            alt {
+     [] pt_myPort.receive(int2float(j)) {
+        setverdict(pass,"Send success,received:", int2float(j));
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"float sent failed", int2float(j));
+     }
+    }
+//send character via port
+      pt_myPort.send(int2char(j));
+               alt {
+     [] pt_myPort.receive(int2char(j)) {
+        setverdict(pass,"Send success,received:", int2char(j));
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"character sent failed", int2char(j));
+     }
+    }
+ //send bitstring via port
+        pt_myPort.send(int2bit(j,8));
+             alt {
+     [] pt_myPort.receive(int2bit(j,8)) {
+        setverdict(pass,"Send success,received:", int2bit(j,8));
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"bitstring sent failed", int2bit(j,8));
+     }
+    }
+//send octetstring via port
+        pt_myPort.send(int2oct(j,4));
+          alt {
+     [] pt_myPort.receive(int2oct(j,4)) {
+        setverdict(pass,"Send success,received:", int2oct(j,4));
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"octetstring sent failed", int2oct(j,4));
+     }
+    }
+//send hexstring via port
+      pt_myPort.send(int2hex(j,4));
+         alt {
+     [] pt_myPort.receive(int2hex(j,4)) {
+        setverdict(pass,"Send success,received:",int2hex(j,4));
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"octetstring sent failed",int2hex(j,4));
+     }
+    }
+//send charstring via port
+      pt_myPort.send(int2str(j));
+          alt {
+     [] pt_myPort.receive(int2str(j)) {
+        setverdict(pass,"Send success,received:",int2str(j));
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"charstring sent failed",int2str(j));
+     }
+    }
+//send boolean via port
+      pt_myPort.send(v_2);
+                      alt {
+     [] pt_myPort.receive(v_2) {
+        setverdict(pass,"Send success,received:",v_2);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"charstring sent failed", v_2);
+     }
+    }
+//send verdicttype via port
+      pt_myPort.send(v_3);
+                              alt {
+     [] pt_myPort.receive(v_3) {
+        setverdict(pass,"Send success,received:",v_3);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"verdict type sent failed", v_3);
+     }
+    }
+//send universal charstring via port
+      pt_myPort.send(v_4);
+       alt {
+     [] pt_myPort.receive(v_4) {
+        setverdict(pass,"Send success,received:",v_4);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"universal charstring sent failed", v_4);
+     }
+    }
+//send anytype via port
+      pt_myPort.send(v_a.integer);
+        alt {
+     [] pt_myPort.receive(v_a.integer) {
+        setverdict(pass,"Send success,received:",v_a.integer);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"anytype sent failed", v_a.integer);
+     }
+    }
+//send record via port
+      pt_myPort.send(MyR);
+        alt {
+     [] pt_myPort.receive(MyR) {
+        setverdict(pass,"Send success,received:",MyR);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"Record sent failed", MyR);
+     }
+    }
+//send set via port
+              pt_myPort.send(MyS);
+        alt {
+     [] pt_myPort.receive(MyS) {
+        setverdict(pass,"Send success,received:",MyS);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"Set sent failed", MyS);
+     }
+    }
+//send record of integers via port
+      pt_myPort.send(RoI);
+        alt {
+     [] pt_myPort.receive(RoI) {
+        setverdict(pass,"Send success,received:",RoI);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"Record of integers sent failed", RoI);
+     }
+    }
+//send set of integers via port
+      pt_myPort.send(SoI);
+        alt {
+     [] pt_myPort.receive(SoI) {
+        setverdict(pass,"Send success,received:",SoI);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"Record of integers sent failed", SoI);
+     }
+    }
+//send enum via port
+      pt_myPort.send(enu);
+       alt {
+     [] pt_myPort.receive(enu) {
+        setverdict(pass,"Send success,received:",enu);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"Enum sent failed", enu);
+     }
+    }
+//send union via port
+      pt_myPort.send(uni);
+                 alt {
+     [] pt_myPort.receive(uni) {
+        setverdict(pass,"Send success,received:",uni);
+     }
+     [] pt_myPort.receive {
+        setverdict(fail,"Union sent failed", uni);
+     }
+    }
+
+  }
+
+    control{
+        execute(TC_Sem_060209_CommunicationPortTypes_005());
+    }
+}

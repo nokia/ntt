@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 409 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:6.3.2, Ensure that the IUT rejects assignments from incompatible types or type ranges
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060302_structured_types_009 language "TTCN-3:2016"{
+
+	type enumerated EnumeratedType {e_black, e_white};
+	type enumerated EnumeratedRedefinition {e_black, e_white};
+
+	type union UnionType {
+ 	 integer  a(0..10),
+ 	 EnumeratedType  b,
+ 	 boolean  c
+	}
+	type union ModifiedUnion {
+ 	 integer  a,
+ 	 boolean  c,
+ 	 EnumeratedRedefinition  b
+	}
+
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060302_structured_types_009() runs on GeneralComp {
+
+	var ModifiedUnion v_union1:={b:=e_black};
+	var UnionType v_union2;
+
+    v_union2:=v_union1;	//enumerated type mismatch
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSem_060302_structured_types_009());
+}
+
+}

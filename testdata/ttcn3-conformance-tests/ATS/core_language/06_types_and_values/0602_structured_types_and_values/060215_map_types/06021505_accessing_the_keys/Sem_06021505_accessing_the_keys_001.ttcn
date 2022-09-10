@@ -1,0 +1,16 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.5, Verify that it is possible to derive a set of keys from a map type
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// If the MapValue is a value of type MapValueType defined as map fromAtoB then MapValue.from yields
+// a result compatible with type setof A that contains all the key values from MapValue. This type
+// can also be referenced as MapValueType.from.
+
+module Sem_06021505_accessing_the_keys_001 {
+	type map from charstring to integer TMap1;
+	template TMap1.from m_keys := {"abc", "def" }
+}

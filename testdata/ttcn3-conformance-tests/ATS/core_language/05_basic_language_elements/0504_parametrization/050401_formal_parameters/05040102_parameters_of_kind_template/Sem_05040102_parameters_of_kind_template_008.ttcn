@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that template formal parameters can be used in the same way as templates or template variables
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal template parameters can be used within the parameterized object the same way as
+// templates and template variables.
+
+module Sem_05040102_parameters_of_kind_template_008 {
+
+	type component GeneralComp {
+	}
+
+    function f(template integer p_int1, in template integer p_int2) {
+        p_int1 := ?; // modification
+        if (match(1, p_int2)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_008() runs on GeneralComp {
+        f(*, (0..5));
+	}
+
+	control{
+		execute(TC_Sem_05040102_parameters_of_kind_template_008());
+	}
+}

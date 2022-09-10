@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.13.2, ensure that list subtyping check for array types is properly handled
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+/* Subtypes defined by a list subtyping restrict the allowed values of the subtype to the values matched by at least one of
+ * the constraints in the list. In case of list subtyping of record, set, record of, set of, union and anytype
+ * types, and arrays, the list may contain both subtypes and possibly partial templates of the parent types.
+ * */
+
+module NegSem_06021302_ListSubtyping_003 {
+
+type charstring MyArray[1 .. 3];
+
+type MyArray MyArraySub1 (
+            { "aa", "bb", "cc" },
+            { "dd", "ee", "ff" }
+); // valid subtype of MyArray
+
+
+type MyArraySub1 MyValidSubArray (
+       { "dd", "ee", "ff" }
+  ); //valid subtype
+
+type MyArraySub1 MyInValidSubArray (
+       { "dd", "ee", "gg" }
+  ); //invalid subtype
+
+
+}

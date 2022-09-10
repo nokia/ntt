@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.5, Verify that it is possible to get a set of keys from a map value
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If the MapValue is a value of type MapValueType defined as map fromAtoB then MapValue.from yields
+// a result compatible with type setof A that contains all the key values from MapValue. This type
+// can also be referenced as MapValueType.from.
+
+module Sem_06021505_accessing_the_keys_002 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021505_accessing_the_keys_002() runs on C {
+		var TMap1 v_map;
+		v_map["test"] := 1;
+		v_map["xyz"] := 5;
+		if (match(v_map.from, { "test", "xyz" })) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021505_accessing_the_keys_002());
+	}
+}

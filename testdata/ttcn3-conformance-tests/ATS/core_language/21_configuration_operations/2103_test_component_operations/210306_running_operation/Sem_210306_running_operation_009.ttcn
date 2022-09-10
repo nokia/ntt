@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Verify that any from running index redirection works for multidimensional arrays
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction e:
+// If the index redirection is used for multi-dimensional component arrays, the size
+// of the integer array or record of integer type shall exactly be the same as the dimension
+// of the respective array, and its type shall allow storing the highest index (from all
+// dimensions) of the array.
+module Sem_210306_running_operation_009 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210306_running_operation_009() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+		const integer c_size := 3;
+        var GeneralComp v_ptc[c_size][c_size];
+		var integer v_index[2];
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			for (var integer j := 0; j < c_size; j := j + 1) {
+				v_ptc[i][j] := GeneralComp.create; // created components are inactive
+				if (i mod 2 == 0 or j mod 2 == 1) { v_ptc[i][j].kill; } // kill components on even i or odd j
+				else { v_ptc[i][j].start(f());} // activate v_ptc
+			}
+		}
+        v_isRunning := any from v_ptc.running -> @index value v_index;
+        if(v_index[0] == 1 and v_index[1] == 0){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Index incorrectly assigned");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210306_running_operation_009(), 5.0);
+    }
+}

@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   TTF 014
+ ** @version  0.0.1
+ ** @purpose  1:15.12, The present operation
+ ** @verdict  pass reject
+ ***************************************************/
+
+ /* The following requirements are tested:
+ * omiut restriction:
+ * A template with the omit restriction shall cause an error if the operand not fulfils
+ * conditions of the omit template restriction
+ */
+
+module NegSem_1512_ThePresentOperation_002 {
+	type component GeneralComp {
+    }
+
+	type record ExampleType {
+		integer a,
+		boolean b optional
+	}
+
+	testcase TC_NegSem_1512_ThePresentOperation_002()	runs on GeneralComp {
+
+		template ExampleType m_originalAnyOrNone := *;
+
+		template (omit) ExampleType m_targetAny := present(m_originalAnyOrNone); // causes error
+
+		setverdict(fail);
+	}
+
+	control {
+		execute(TC_NegSem_1512_ThePresentOperation_002());
+	};
+}

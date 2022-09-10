@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that __SCOPE__ replaces the actual higher basic unit
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// __SCOPE__ replaces the actual higher basic unit
+module Sem_D05_macro_scope_002 {
+
+    type component GeneralComp {
+        var charstring variable1:=__SCOPE__; //variable1=="GeneralComp"
+    }
+
+    type record MyRecord {
+        charstring variable0 ("1","2",__SCOPE__)
+    }
+
+    testcase TC_Sem_D05_macro_scope_002() runs on GeneralComp system GeneralComp {
+
+        template MyRecord Mytemplate:={
+            variable0:="MyRecord"  //MyRecord is a legal element because of __SCOPE__
+        }
+
+        if(match(variable1, "GeneralComp")){
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_D05_macro_scope_002());
+    }
+}

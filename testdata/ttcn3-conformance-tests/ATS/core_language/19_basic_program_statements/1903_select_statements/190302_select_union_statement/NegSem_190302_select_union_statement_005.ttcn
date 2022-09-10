@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that the same alternative cannot be used in two case statements (list item)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// No two cases in a select union statement shall have the same case Identifier.
+
+module NegSem_190302_select_union_statement_005 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        record {
+            integer field1,
+            integer field2
+        } recOption
+    }
+
+    testcase TC_NegSem_190302_select_union_statement_005() runs on GeneralComp {
+        var U v_un := { intOption := 10 }
+        select union (v_un) {
+            case (intOption, strOption) {
+                setverdict(pass);
+            } case (recOption, intOption) {
+                setverdict(fail);
+            }
+        }
+	}
+
+	control {
+		execute(TC_NegSem_190302_select_union_statement_005());
+	}
+}

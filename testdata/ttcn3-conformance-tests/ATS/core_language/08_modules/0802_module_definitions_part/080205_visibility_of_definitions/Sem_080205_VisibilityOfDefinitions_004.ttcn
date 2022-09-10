@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.5, Ensure that explicitly defined public definitions (in this case a sample constant) are visible when imported through a group of a friend module.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_080205_VisibilityOfDefinitions_004 {
+
+import from Sem_080205_VisibilityOfDefinitions_004_import {
+	group CONST_GROUP;
+};
+
+type component GeneralComp {}
+
+testcase TC_Sem_080205_VisibilityOfDefinitions_004() runs on GeneralComp {
+	if (c_myconst == 32532) { // c_myconst shall be visible on import when it is explicitly set to public.
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_080205_VisibilityOfDefinitions_004());
+}
+}
+
+module Sem_080205_VisibilityOfDefinitions_004_import {
+	friend module Sem_080205_VisibilityOfDefinitions_004;
+
+	group CONST_GROUP {
+		public const integer c_myconst := 32532;
+	}
+}

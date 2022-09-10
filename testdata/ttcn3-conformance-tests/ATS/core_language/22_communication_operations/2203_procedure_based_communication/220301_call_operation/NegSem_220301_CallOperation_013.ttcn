@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that type mismatch error is issued for incorrect call timer values
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// g) CallTimerValue shall be of type float.
+
+module NegSem_220301_CallOperation_013 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_NegSem_220301_CallOperation_013() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f_called());
+		p.call(S:{}, 2) {  // error expected as 2 is an integer literal
+			[] p.getreply(S:?) {}
+			[] p.catch(timeout) {}
+		}
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220301_CallOperation_013(), 5.0);
+    }
+}

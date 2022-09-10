@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that @abstract modifier works properly.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+// Restriction d:
+//	After completing initialization, global and local templates that do not contain the @abstract modifier shall be fully initialized.
+
+module Syn_1503_GlobalAndLocalTemplates_007 {
+
+    type port MyMessagePortType message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    function f_testTemplate() {
+        template @abstract MyMessageType m_myTemplate(integer p_myFormalParam):= {
+            field1 := p_myFormalParam,
+            field2 := pattern "abc*xyz",
+            field3 := true
+        }    // syntactically correct: fully initialized template with @abstract modifier
+    }
+
+}

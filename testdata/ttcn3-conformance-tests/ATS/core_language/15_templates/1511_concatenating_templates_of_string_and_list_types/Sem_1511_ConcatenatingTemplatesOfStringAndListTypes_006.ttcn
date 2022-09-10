@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that a concatenation of charstrings with a fixed length AnyValueOrNone be matched.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_006 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_006() runs on GeneralComp {
+    var template charstring m_str := pattern "ABC?#3" & "E?F";  //equivalent to ABC???E?F pattern
+
+    if (match("ABCXYZE2F", m_str)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_006());
+}
+
+}

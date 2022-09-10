@@ -1,0 +1,61 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that connect operation rejects ports with only partially compatible message type lists
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// c) The map operation (assuming PORT2 is the test system interface port) is allowed if
+// and only if:
+// outlist-PORT1 ⊆ outlist-PORT2 and inlist-PORT2 ⊆ inlist-PORT1.
+//
+// In this test, one pair in outlist-PORT1 and inlist-PORT2 is incompatible (using
+// strong typing rules)
+
+module NegSem_210101_connect_and_map_operations_004 {
+	type record R {
+		integer field1,
+		charstring field2
+	}
+
+	type record R2 {
+		integer field1,
+		charstring field2
+	}
+
+	type port P1 message {
+		in integer;
+		inout R;
+	}
+
+	type port P2 message {
+	  in integer, R;
+	  out R2;
+	}
+
+	type component GeneralComp {
+		port P1 p
+	}
+
+	type component SystemComp {
+		port P2 p;
+	}
+
+	testcase TC_NegSem_210101_connect_and_map_operations_004() runs on GeneralComp system SystemComp {
+		// R2 and R are compatible types, but strong typing is required in case of connection operation
+		map(system:p, self:p);  // incompatible message types: error expected
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210101_connect_and_map_operations_004());
+	}
+}

@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that complex port definition are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_060209_CommunicationPortTypes_007 {
+
+    type record MyType1 {
+        integer f1,
+        charstring f2
+    }
+
+	type record MyType2 {
+	    integer g1,
+	    charstring g2
+	}
+
+	type record MyType3 {
+	    boolean h1,
+        MyType3 h2 optional
+	}
+
+    type port MyMessagePortTypeOne message {
+        address MyType1;
+        inout integer, charstring;
+        map param (in integer p1, inout MyType2 p2);
+        unmap param (in MyType3 p1, out integer p2);
+    }
+
+}

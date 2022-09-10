@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:26.2, Ensure that the selection/deselection of test cases using boolean conditions works as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2602_TheControlPart_001 {
+
+    type component GeneralComp { }
+
+    testcase TC_Sem_2602_TheControlPart_001() runs on GeneralComp {
+        setverdict(fail);
+    }
+
+    testcase TC_Sem_2602_TheControlPart_001_second() runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control {
+        if (false) {
+            execute(TC_Sem_2602_TheControlPart_001());
+        }
+
+        if (true) {
+            execute(TC_Sem_2602_TheControlPart_001_second());
+        }
+
+        if (not(1 == 1)) {
+            execute(TC_Sem_2602_TheControlPart_001());
+        }
+    }
+
+}

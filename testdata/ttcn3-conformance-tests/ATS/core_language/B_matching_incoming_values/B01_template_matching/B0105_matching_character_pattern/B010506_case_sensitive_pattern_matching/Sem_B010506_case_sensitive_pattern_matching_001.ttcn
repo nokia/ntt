@@ -1,0 +1,87 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:B.1.5.6, Ensure that the IUT correctly handles character pattern compatibility rules of template case sensitive matching (@nocase)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+When the "@nocase" modifier is used after the pattern keyword, the matching is evaluated in a case insensitive way
+*/
+
+module Sem_B010506_case_sensitive_pattern_matching_001 {
+
+    modulepar {
+     charstring MOD_REF:="modulepar reference";
+    }
+
+    type record MessageType {
+     universal charstring  		field1,
+     universal charstring		field2,
+     universal charstring		field3,
+     universal charstring  		field4,
+     universal charstring		field5,
+     universal charstring		field6,
+     universal charstring		field7,
+     universal charstring       field8
+    }
+
+    type port loopbackPort message {
+      inout MessageType
+    }
+
+    const charstring c_Ref:="constant reference";
+
+
+type component GeneralComp {
+      port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010506_case_sensitive_pattern_matching_001(charstring p_Ref) runs on GeneralComp {
+
+    var MessageType v_testMessage;
+    var charstring v_Ref:="variable reference";
+    template charstring m_Ref:= pattern "{c_Ref}";
+    template charstring m_RefExp_p1 := "{m_";
+    template charstring m_RefExp_p2 := "Ref}!";
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := pattern @nocase "{v_Ref}",
+  field2 := pattern @nocase"{c_Ref}",
+  field3 := pattern @nocase"{MOD_REF}",
+  field4 := pattern @nocase"{p_Ref}",
+  field5 := pattern @nocase"{m_Ref}",
+  field6 := pattern @nocase"{m_"&"Ref}!",
+  field7 := pattern @nocase"{m_RefExp_p1}{m_RefExp_p2}",
+  field8 := pattern @nocase"var*?e"
+ }
+
+ v_testMessage:=  {
+  field1 := "VaRiAbLe ReFeReNcE",
+  field2 := "conSTant ReFeReNcE",
+  field3 := "modulepar ReFeReNcE",
+  field4 := "PARAMETER ReFeReNcE",
+  field5 := "CONStant ReFeReNcE",
+  field6 := "consTANT ReFeReNcE!",
+  field7 := "{m_ref}!",
+  field8 := "VaRiAbLe ReFeReNcE"
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass,v_testMessage);
+     }
+     [] messagePort.receive {
+        setverdict(fail,v_testMessage);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010506_case_sensitive_pattern_matching_001("parameter reference"));
+}
+
+}

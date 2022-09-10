@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that test case definition can contain in, out and inout template formal parameters with present restriction
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal template parameters can be restricted to accept actual parameters containing a restricted
+// set of matching mechanisms only. Such limitations can be expressed by the restrictions omit,
+// present, and value.
+
+module Sem_05040102_parameters_of_kind_template_024 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_024(
+        template(present) integer p_int1, in template(present) integer p_int2,
+        out template(present) integer p_int3, inout template(present) integer p_int4) runs on GeneralComp {
+        setverdict(pass);
+	}
+
+	control {
+        var template(present) integer v_int1, v_int2 := 20;
+		execute(TC_Sem_05040102_parameters_of_kind_template_024((0..5), 2, v_int1, v_int2));
+	}
+}

@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer can be declared in altsteps
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer can be declared in module control, test cases, functions, altsteps
+ **/
+
+
+module Sem_12_toplevel_timer_003 {
+    type component TComp{
+        timer aux_t;
+    }
+    altstep a_step () runs on TComp{
+                   timer t_timer:=3.0;
+                   [] aux_t.timeout{
+                       t_timer.start;
+                       if (t_timer.running){
+                           setverdict(pass);
+                           stop;
+                       }
+                       else{
+                           setverdict(fail);
+                           stop;
+                       }
+                       t_timer.stop;
+                   }
+
+    };
+    testcase TC_Sem_12_toplevel_timer_003() runs on TComp{
+        aux_t.start(0.0);
+        a_step();
+    }
+    control{
+       execute(TC_Sem_12_toplevel_timer_003())
+    }
+}

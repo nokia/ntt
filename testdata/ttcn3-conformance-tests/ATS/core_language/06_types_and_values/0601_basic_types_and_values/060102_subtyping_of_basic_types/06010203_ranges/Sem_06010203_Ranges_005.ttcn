@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted cahrstring with exclusive bounds.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_005 {
+    type charstring MyCharstringRange (!"a"..!"f");
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_005() runs on GeneralComp {
+        var MyCharstringRange v_c1;
+        v_c1 := "b";
+        v_c1 := "c";
+        v_c1 := "d";
+        v_c1 := "e";
+        v_c1 := "bcde";
+        v_c1 := "bbeeebccdee";
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_005());
+    }
+}

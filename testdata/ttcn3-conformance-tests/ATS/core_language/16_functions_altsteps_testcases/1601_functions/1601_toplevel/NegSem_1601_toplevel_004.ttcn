@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1, Ensure that the IUT correctly handles function definitions
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1601_toplevel_004 {
+
+
+type component GeneralComp {
+}
+
+function f_test ( integer p_integer := 0 ) runs on GeneralComp return integer {
+
+ return p_integer+1;
+}
+
+testcase TC_NegSem_1601_toplevel_004 () runs on GeneralComp {
+
+ 	if(f_test(1)==2) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+	f_test(1);	//attempt to invoke a function with runs on clause
+    execute(TC_NegSem_1601_toplevel_004());
+
+}
+
+}

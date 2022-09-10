@@ -1,0 +1,11 @@
+Tests Sem_2401_GlobalVerdict_xxx validate the following requirements:
+	there is a global test case verdict instantiated and handled by the test system that is
+	updated when each test component (i.e. the MTC and each and every PTC)
+	terminates execution (see figure 14).
+	... The test case verdict is implicitly updated on the termination of a test 
+	component. The effect of this implicit operation shall also follow the overwriting rules listed in table 30
+	... The value of this verdict shall be returned by the test case when it terminates execution.
+	
+Tests Sem_2401_LocalVerdict_xxx validate the following requirements:
+	When changing the value of the local verdict (i.e. using the setverdict operation) the effect of this change shall 
+	follow the overwriting rules listed in table 30.

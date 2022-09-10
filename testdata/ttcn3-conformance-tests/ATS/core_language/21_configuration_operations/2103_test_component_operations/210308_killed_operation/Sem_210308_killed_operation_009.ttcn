@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Verify that any from killed is not triggered if all components are executing function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// When the any from component array notation is used, the components from the referenced array
+// are iterated over and individually checked for being killed from innermost to outermost
+// dimension from lowest to highest index for each dimension. The first component to be found
+// killed causes the killed operation to succeed.
+module Sem_210308_killed_operation_009 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+	testcase TC_Sem_210308_killed_operation_009() runs on GeneralComp system GeneralComp {
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create alive;
+			v_ptc[i].start(f());
+		}
+        alt
+		{
+        	[] any from v_ptc.killed { setverdict(fail, "The any from killed operation found killed component"); }
+			[else] { setverdict(pass); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210308_killed_operation_009(), 5.0);
+    }
+}

@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that the match operation works as expected on a template with range restriction when the tested value is inside the range.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1509_MatchOperation_001 {
+
+type component GeneralComp { }
+
+template integer m_lessThan10 := (-infinity..9);
+
+testcase TC_Sem_1509_MatchOperation_001() runs on GeneralComp {
+	var integer v_value := -20;
+
+	if (match(v_value, m_lessThan10)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1509_MatchOperation_001());
+}
+
+}

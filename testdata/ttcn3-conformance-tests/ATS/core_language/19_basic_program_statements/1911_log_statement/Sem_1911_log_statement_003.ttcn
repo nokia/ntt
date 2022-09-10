@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.11, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1911_log_statement_003 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_1911_log_statement_003 () runs on GeneralComp{
+ const integer c_i:=1;
+
+  log("Actual value of c_i: ", c_i);	//expected to print 1 for c_i constant value, log output is not validated by the script
+
+ setverdict(pass)
+
+}
+
+
+control{
+
+    execute(TC_Sem_1911_log_statement_003());
+
+}
+
+}

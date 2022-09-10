@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Verify any from done index redirection to lazy variable
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction g
+// If a variable referenced in the @index clause is a lazy or fuzzy variable, the expression
+// assigned to this variable is equal to the result produced by the done operation. Later
+// evaluation of the lazy or fuzzy variable does not lead to repeated invocation of the
+// done operation.
+module Sem_210307_done_operation_009 {
+
+    type component GeneralComp {}
+
+	function f(float p_time) runs on GeneralComp {
+		timer t := p_time;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210307_done_operation_009() runs on GeneralComp system GeneralComp {
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		var @lazy integer v_index;
+		timer t := 2.0;
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i == 2) { v_ptc[i].start(f(1.0)); }
+			else { v_ptc[i].start(f(100.0)); }
+		}
+		t.start;
+		t.timeout;
+        alt
+		{
+        	[] any from v_ptc.done -> @index value v_index {
+				v_ptc[0].kill; // component at position 0 is killed after the redirect assignment
+				if(v_index == 2){ // no done call during evaluation, v_index remains equal to 2
+		            setverdict(pass);
+		        } else {
+		            setverdict(fail, "Index incorrectly assigned");
+		        }
+			}
+			[else] { setverdict(fail, "The any from done operation didn't found stopped or killed component"); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210307_done_operation_009(), 5.0);
+    }
+}

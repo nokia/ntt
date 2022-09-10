@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, Ensure that the referenced value associated with ValueRef or the return type associated with FunctionInstance followed
+by the receive keyword, shall be of a port type.
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction o)	TemplateInstance shall be of a data type.
+
+module NegSem_220202_ReceiveOperation_027 {
+
+
+    type port loopbackPort message {
+	  inout anytype
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_NegSem_220202_ReceiveOperation_027() runs on GeneralComp system GeneralComp {
+    var anytype Myint;
+    Myint.integer := 2;
+    messagePort.send(Myint);
+
+    var GeneralComp ptc;
+	ptc:=GeneralComp.create alive;
+
+    alt {
+     [] messagePort.receive(ptc) {   // error: it should be TemplateInstance not component
+         setverdict(pass);
+     }
+
+    }
+}
+
+control{
+ execute(TC_NegSem_220202_ReceiveOperation_027());
+}
+
+}

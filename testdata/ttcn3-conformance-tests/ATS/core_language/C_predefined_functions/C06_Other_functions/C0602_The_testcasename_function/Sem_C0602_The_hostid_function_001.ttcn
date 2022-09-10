@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:C.6.2, Ensure that the IUT correctly handles the hostid function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * check that  hostid function correctly evaluates the IPv4 or IPv6 address of the host.
+ * The output of this test must be manually validated. Todo for future STF: automated validation via external function.
+ * */
+
+module Sem_C0602_The_hostid_function_001 {
+
+    type component GeneralComp {}
+    type charstring IPaddressV4 (pattern "[0-9,.]#(7,15)");  // size of charstring is limited to 7-15 and contains numbers from 1-9 and "."
+    type charstring IPaddressV6 (pattern @nocase "[0-9,a-f,:]#(1,37)");    // contains numbers from 1-9, a-f and ":". The size of chastring is limited to 37
+
+    testcase TC_Sem_C0602_The_hostid_function_001() runs on GeneralComp {
+
+    var IPaddressV4 v_ipv4hostid;
+    var IPaddressV6 v_ipv6hostid;
+
+    if ((lengthof(hostid("IPv4")) == 0) or (lengthof(hostid("IPv6"))==0 ))    // in case of no ip address is given
+        {
+            setverdict(pass, "No ip address on interface");
+        }
+
+    else{
+
+        v_ipv4hostid := hostid("IPv4");    // check IPv4 address with subtyping
+              setverdict(pass, v_ipv4hostid);
+
+        v_ipv6hostid := hostid("IPv6");    // check IPv6 address with subtyping
+                setverdict(pass, v_ipv6hostid);
+        }
+
+
+ }
+    control{
+    //  execute(TC_Sem_C0602_The_hostid_function_001(), -, "127.0.0.1"); //not supported by TestCast
+        execute(TC_Sem_C0602_The_hostid_function_001());
+
+    }
+
+}

@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.0, verify a function called during evaluation of a deterministic fuzzy template cannot contain an assignment of a component variable
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For a fuzzy template that is declared deterministic the template body shall fulfill the restrictions imposed
+// on content of functions used in special places given in clause 16.1.4.
+// The following operations shall not be used:
+// g) Changing of component variables, i.e. using component variables on the left-hand side of assignments,
+// and in the instantiation of out and inout parameters (see notes 4 and 6).
+
+module NegSem_1500_general_040 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+		var integer vc_int;
+	}
+
+	function f_test() runs on GeneralComp return template integer {
+		vc_int := 1;
+		return ?;
+	}
+
+    testcase TC_NegSem_1500_general_040() runs on GeneralComp system GeneralComp {
+        template @fuzzy @deterministic integer mw_test := f_test();
+		log(mw_test); // causes evaluation
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_1500_general_040());
+	}
+}

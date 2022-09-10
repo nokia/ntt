@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.4, Verify that functions with port parameters cannot be used in component.start operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal port parameters, - with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040104_parameters_of_kind_port_001 {
+
+    type port P message {
+        inout integer
+    }
+    type component C {
+        port P p;
+    }
+
+    function f_test(P p_port) runs on C {
+        p_port.send(1);
+        setverdict(pass);
+    }
+
+    testcase TC_NegSem_05040104_parameters_of_kind_port_001() runs on C system C {
+        var C v_ptc := C.create;
+        v_ptc.start(f_test(p));
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_05040104_parameters_of_kind_port_001());
+    }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060106_whitespace_001"
+  xmlns:ns="schema:Pos_060106_whitespace_001">
+    <element name="test">
+      <simpleType>
+        <restriction base="string">
+          <whiteSpace value="preserve"/>
+        </restriction>
+      </simpleType>
+	</element>
+</schema>

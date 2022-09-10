@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the Example 7 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_201 {
+
+    type component GeneralComp {
+        var integer v_id;
+        port MyPortType P;
+    }
+
+    type record MyMessage { integer id, float number }
+    type port MyPortType message { inout MyMessage }
+
+    function sendLazy(@lazy MyMessage pdu) runs on GeneralComp {
+        for (v_id := 1; v_id<9; v_id:=v_id+1){
+        P.send(pdu); // the actual parameter passed to the formal parameter pdu is evaluated only in
+        // the first loop;let say rnd() returns 0.924946; the message { 1, 0.924946 } is
+        // sent out 8 times
+        }
+        setverdict(pass,"messages has been sent out")
+    }
+    function sendFuzzy(@fuzzy MyMessage pdu) runs on GeneralComp {
+        for (v_id := 1; v_id<9; v_id:=v_id+1){
+        P.send(pdu); // the actual parameter passed to the formal parameter pdu is evaluated in each
+        // loop; let say rnd() returns 0.924946, 0.680497, 0.630836, 0.648681, 0.428501,
+        // 0.262539, 0.646990, 0.265262 in subsuent calls; the messages 1, 0.924946 },
+        // {{ 2, 0.680497 }, { 3, 0.630836 }, { 4, 0.648681 }, { 5, 0.428501 },
+        // { 6, 0.262539 }, { 7, 0.646990 } and { 8, 0.265262 } are sent out in sequence
+    }
+    setverdict(pass,"messages has been sent out")
+    }
+
+    testcase TC_Sem_050402_actual_parameters_201() runs on GeneralComp system GeneralComp {
+        connect(self:P,self:P);
+        sendLazy({v_id, rnd()}); //note that at this point v_id is unintialized yet
+        sendFuzzy({v_id, rnd()})
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_201());
+	}
+}

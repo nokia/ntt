@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:10, Single expression and constant values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_10_Constants_003 {
+
+    const float c_p :=3.0;
+    const float c_i :=0.14;
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_10_Constants_003() runs on GeneralComp {
+
+        const float c_pi := (c_p+c_i);
+
+        if (c_pi == 3.14){
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }//end testcase
+
+    control{
+        execute(TC_Sem_10_Constants_003());
+    }
+}

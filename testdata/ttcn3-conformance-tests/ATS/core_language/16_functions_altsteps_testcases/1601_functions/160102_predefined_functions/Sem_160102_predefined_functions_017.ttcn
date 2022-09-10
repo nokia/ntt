@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined decvalue function performs full decoding correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// (C.5.2)
+// The decvalue function decodes a bitstring into a value. The test system shall suppose that
+// the bitstring encoded_value represents an encoded instance of the actual type of decoded_value.
+// If the decoding was successful, then the used bits are removed from the parameter encoded_value,
+// the rest is returned (in the parameter encoded_value), and the decoded value is returned
+// in the parameter decoded_value. The function shall return an integer value to indicate success
+// or failure of the decoding below:
+// • The return value 0 indicates that decoding was successful.
+
+module Sem_160102_predefined_functions_017 {
+    type integer I with { variant "32 bit"};
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_017 () runs on GeneralComp {
+        var bitstring v_test := int2bit(0, 32);
+		var I v_decoded;
+		var integer v_res := decvalue(v_test, v_decoded);
+		// expected result:
+		// v_res: 0 (success)
+		// v_decoded: 0
+		// v_test: ''B (fully decoded)
+		if (match(v_res, 0) and match(v_decoded, 0) and match(lengthof(v_test), 0)) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "Unexpected decoding result");
+		}
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_017());
+    }
+}

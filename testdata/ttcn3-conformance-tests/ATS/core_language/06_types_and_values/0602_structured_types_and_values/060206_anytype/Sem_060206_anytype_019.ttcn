@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype (as a user defined type) can be imported from another module
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060206_anytype_019 {
+import from Sem_060206_anytype_019_import all;		// this contains a type (anytype) MyAnyType
+
+type component GeneralComp {
+var MyAnyType x;	// MyAnyType is an anytype defined in module Sem_060206_anytype_017_import
+var MyAnyType y;
+}
+
+
+testcase TC_Sem_060206_anytype_019() runs on GeneralComp {
+
+x.float := 10.0E0;		//anytype x is now a float with value 10.0
+y.bitstring := '1010'B; //anytype y is now a bitstring with value 1010
+
+      if (match(x.float, 10.0E0) and match(y.bitstring, '1010'B)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_019());
+}
+
+}
+
+
+module Sem_060206_anytype_019_import
+{
+
+	type anytype MyAnyType;
+
+
+
+}

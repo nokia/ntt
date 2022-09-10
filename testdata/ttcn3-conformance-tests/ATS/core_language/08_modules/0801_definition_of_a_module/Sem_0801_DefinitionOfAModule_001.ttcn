@@ -1,0 +1,21 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:8.1, Ensure that a module definition with invalid language specification is ignored.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// invalid language should fallback to compiler default language
+
+module Sem_0801_DefinitionOfAModule_001 language "TTCN-3:9999" {
+
+	type component GeneralComp {}
+
+	testcase TC_Sem_0801_DefinitionOfAModule_001() runs on GeneralComp {
+	    setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_0801_DefinitionOfAModule_001());
+	}
+}

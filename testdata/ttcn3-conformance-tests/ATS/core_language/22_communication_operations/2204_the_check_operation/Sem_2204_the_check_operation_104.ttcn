@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that any port.check(catch) with assignment works correctly as standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_104 {
+
+	signature S() exception(integer);
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p1, p2;
+	}
+
+	function f() runs on GeneralComp {
+		p2.getcall;
+		setverdict(pass, "Call received");
+		p2.raise(S, integer:1);
+	}
+
+	testcase TC_Sem_2204_the_check_operation_104() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create, v_src;
+		connect(self:p1, v_ptc:p1);
+		connect(self:p2, v_ptc:p2);
+		p2.call(S:{}, nowait);
+		v_ptc.start(f());
+        any port.check(-> sender v_src);
+		if (v_src == v_ptc) { setverdict(pass, "Check operation successful"); }
+		else { setverdict(fail, "Counterpart mismatch"); }
+		any port.catch;
+		setverdict(pass, "Exception still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_104(), 5.0);
+    }
+}

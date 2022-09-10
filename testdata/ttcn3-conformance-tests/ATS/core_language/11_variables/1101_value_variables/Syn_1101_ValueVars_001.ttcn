@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:11.1, Define variables in different scopes
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_1101_ValueVars_001 {
+    type component GeneralComp {
+        var integer vc_i1 := 10;
+    }
+
+    altstep a_Syn_1101_ValueVars_001() runs on GeneralComp {
+      var integer v_j := 12;
+      [] any timer.timeout {
+          var integer v_k := 13;
+      }
+    }
+
+	function f_Syn_1101_ValueVars_001() runs on GeneralComp {
+  		var integer v_i := 2;
+	}
+
+	testcase TC_Syn_1101_ValueVars_001() runs on GeneralComp {
+  		var integer v_i := 3;
+	}
+
+    control {
+        var integer v_i := 1;
+    }
+}

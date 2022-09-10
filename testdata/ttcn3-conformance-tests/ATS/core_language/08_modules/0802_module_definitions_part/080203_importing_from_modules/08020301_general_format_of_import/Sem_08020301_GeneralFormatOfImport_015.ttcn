@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that information about module parameter type is imported together with module parameter
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// Module parameter
+
+module Sem_08020301_GeneralFormatOfImport_015 {
+
+import from Sem_08020301_GeneralFormatOfImport_015_import { modulepar PX_TEST };
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_015() runs on GeneralComp {
+	// type compatibility is checked during assignment: for this check, the type information for PX_TEST
+	// should be available at this point to compile the script correctly
+	var integer v_test := PX_TEST;
+	if (v_test == 0) { setverdict(pass); }
+	else { setverdict(fail); }
+}
+
+control{
+	// testing if parameter names are imported
+    execute(TC_Sem_08020301_GeneralFormatOfImport_015());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_015_import {
+	modulepar integer PX_TEST := 0;
+}

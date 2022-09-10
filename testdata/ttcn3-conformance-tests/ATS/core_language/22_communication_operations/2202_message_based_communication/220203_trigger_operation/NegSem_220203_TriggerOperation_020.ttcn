@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, insufficient array dimension of variable in index redirection
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// If the index redirection is used for multi-dimensional port arrays, the size of the
+// integer array or record of integer type shall exactly be the same as the dimension of
+// the respective array, and its type shall allow storing the highest index (from all
+// dimensions) of the array.
+
+module NegSem_220203_TriggerOperation_020 {
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p[3][2][3];
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_020() runs on GeneralComp {
+        var integer v_indices[2];
+        p[0][1][2].send(100);
+        any from p.trigger(integer:?) -> @index value v_indices;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_020(), 5.0);
+    }
+}

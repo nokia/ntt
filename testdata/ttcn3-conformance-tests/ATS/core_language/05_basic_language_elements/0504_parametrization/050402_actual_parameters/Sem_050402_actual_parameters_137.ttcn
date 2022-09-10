@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that template variables can be used as inout formal template parameters of altsteps
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal template parameters shall be variables,
+// template variables, formal value or template parameters (of in, inout or out
+// parameterization) of the current scope or references to elements of (template) variables
+// or formal (template) parameters of structured types.
+
+module Sem_050402_actual_parameters_137 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+	}
+
+    altstep a_test(inout template integer p_val) runs on GeneralComp {
+        []t.timeout {
+            if (match(2, p_val)) { setverdict(pass); }
+            else { setverdict(fail); }
+        }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_137() runs on GeneralComp {
+        var template integer vm_msg := 2;
+        t.start;
+        a_test(vm_msg); // tested parameter passing
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_137());
+	}
+}

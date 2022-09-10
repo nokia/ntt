@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that lazy in param used in determinstic context mustbe declared @deteministic
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction n)
+// If a lazy or fuzzy value parameter is used in deterministic contexts (i.e. during the evaluation of a snapshot or
+// initialization of global non-fuzzy templates), it shall be declared @deterministic.
+
+module NegSem_05040101_parameters_of_kind_value_031 {
+
+	type component GeneralComp {
+	}
+
+    template integer t_int;
+
+    function f(in @lazy integer p_int) {
+        t_int := p_int;    //template deterministic, in param lazy -> error
+    }
+	testcase TC_NegSem_05040101_parameters_of_kind_value_031() runs on GeneralComp {
+        var integer v_int := 0;
+        f(v_int);
+        log(v_int);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040101_parameters_of_kind_value_031());
+	}
+}

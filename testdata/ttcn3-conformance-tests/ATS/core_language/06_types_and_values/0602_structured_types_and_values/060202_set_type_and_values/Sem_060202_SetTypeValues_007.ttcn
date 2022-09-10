@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF470
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 6.2
+ ** @purpose  1:6.2, Ensure that assignments with "implicit omit" attribute are correctly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060202_SetTypeValues_007 {
+
+type component GeneralComp {
+}
+
+ type record S {
+  integer f1,
+  integer f2 optional,
+  integer f3,
+  integer f4 optional,
+  integer f5 optional
+ }
+
+testcase TC_Sem_060202_SetTypeValues_007() runs on GeneralComp {
+
+ var S v_assigned := { 1, 2, 3 } with { optional "implicit omit" }
+
+      if ( match(v_assigned.f1,1)
+           and match(v_assigned.f3,3)
+           and not ispresent(v_assigned.f4)
+           and not ispresent(v_assigned.f5) ) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060202_SetTypeValues_007());
+}
+
+}

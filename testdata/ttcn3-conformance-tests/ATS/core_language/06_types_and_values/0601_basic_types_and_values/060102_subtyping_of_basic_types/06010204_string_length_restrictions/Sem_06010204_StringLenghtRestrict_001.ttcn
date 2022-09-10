@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign values to list of types restricted bitstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010204_StringLenghtRestrict_001 {
+    type bitstring BitStrings1 length(1 .. 2);
+    type bitstring BitStrings2 length(5);
+    type bitstring BitStrings3 length(0 .. infinity);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010204_StringLenghtRestrict_001() runs on GeneralComp {
+        var BitStrings1 v_b1;
+        var BitStrings2 v_b2;
+        var BitStrings3 v_b3;
+        v_b1 := '10'B;
+        v_b1 := '1'B;
+        v_b2 := '10000'B;
+        v_b3 := '111111'B;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010204_StringLenghtRestrict_001());
+    }
+}

@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that record values can be anytype
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_009 {
+
+	type record MyRec
+	{
+		anytype cs1 //Record type MyRec element is an anytype data
+	}
+
+	type component GeneralComp {
+		var MyRec R;
+		var anytype c,d;
+}
+
+
+
+
+testcase TC_Sem_060206_anytype_009() runs on GeneralComp {
+
+
+R.cs1.charstring:= "abc";	// cs1 in R record is now charstring
+c.charstring :=R.cs1.charstring;	// anytype c becomes a charstring
+
+R.cs1.integer:= 15;		// cs1 in R record now integer
+d.integer := R.cs1.integer; //anytype d becomes integer
+
+
+      if ( match(c.charstring, "abc") and match(d.integer, 15)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_009());
+}
+
+}

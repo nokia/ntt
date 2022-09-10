@@ -1,0 +1,43 @@
+ /***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.5, verify that matching mechanisms can be modified in inline templates
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The modifies keyword denotes the parent template from which the new modified template shall be derived.
+// This parent template may be either an original template or a modified template or also a matching mechanism.
+
+module Sem_1505_ModifiedTemplates_012 {
+    type port P message {
+        inout R;
+    }
+    type component GeneralComp {
+        port P p;
+	}
+
+    type record R {
+        integer field1,
+        integer field2
+    }
+
+    template R mw_test modifies ? := { field1 := 5};
+
+    testcase TC_Sem_1505_ModifiedTemplates_012() runs on GeneralComp system GeneralComp {
+        map(self:p, system:p);
+        p.send(R:{ field1 := 5, field2 := 10 });
+        alt {
+		    [] p.receive(R:modifies ? := { field1 := 5}) {
+		        setverdict(pass);
+            }
+            [] p.receive {
+                setverdict(fail);
+            }
+        }
+	}
+
+	control {
+		execute(TC_Sem_1505_ModifiedTemplates_012());
+	}
+}

@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, Ensure that the IUT correctly handles message sending operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_220201_SendOperation_003 {
+
+	type record RecordType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+	type set SetType {
+ 	 integer  a optional,
+ 	 integer  b optional,
+ 	 boolean  c
+	}
+
+    type port loopbackPort message {
+	  inout RecordType, SetType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_220201_SendOperation_003() runs on GeneralComp {
+
+
+ messagePort.send(RecordType:{1,2,true});  //can send also in-line template
+
+    alt {
+     [] messagePort.receive(RecordType:{1,2,true}) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_220201_SendOperation_003());
+}
+
+}

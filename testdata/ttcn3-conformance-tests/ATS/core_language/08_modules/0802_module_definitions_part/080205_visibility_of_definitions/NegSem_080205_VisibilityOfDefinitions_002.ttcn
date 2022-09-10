@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.5, Ensure that private definition (in this case a sample constant) is not visible using an import of a friend module.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_080205_VisibilityOfDefinitions_002 {
+
+import from NegSem_080205_VisibilityOfDefinitions_002_import all;
+
+type component GeneralComp {}
+
+testcase TC_NegSem_080205_VisibilityOfDefinitions_002() runs on GeneralComp {
+	if (c_myconst == 32532) { // c_myconst shall not be visible on import as the definition is private.
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_NegSem_080205_VisibilityOfDefinitions_002());
+}
+}
+
+module NegSem_080205_VisibilityOfDefinitions_002_import {
+	friend module NegSem_080205_VisibilityOfDefinitions_002;
+
+	private const integer c_myconst := 32532;
+}

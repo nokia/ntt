@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * This function converts an UTF-32 universal charstring value to a Big endian octetstring.*/
+
+module Sem_160102_predefined_functions_033 {
+
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_033 () runs on GeneralComp {
+
+    // universal charstring:
+        var universal charstring v_0 := "AB";
+
+    // predefined function for universal charstring to octetstring conversion:
+        var octetstring v_encoded := unichar2oct(v_0, "UTF-32BE");      //"UTF-32" Big endian, expected value:'00 00 00 41 00 00 00 42'O
+        var octetstring v_1 := '0000004100000042'O;
+
+
+        if( match(v_encoded,v_1)
+        ) {
+            setverdict(pass,"Encoded value for: ",v_0, " is ", v_encoded);
+        }
+        else {
+            setverdict(fail,"encoded value is: ", v_encoded, " expected ", v_1);
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_033());
+    }
+}

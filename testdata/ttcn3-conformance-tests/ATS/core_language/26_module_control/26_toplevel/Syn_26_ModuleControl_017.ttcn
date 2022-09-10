@@ -1,0 +1,19 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26, Ensure that the execute construct in the control part is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_26_ModuleControl_017 {
+
+type component GeneralComp { }
+
+testcase t_myTestCase() runs on GeneralComp {
+}
+
+control{
+	execute(t_myTestCase());
+}
+
+}

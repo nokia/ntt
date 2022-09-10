@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.2
+ ** @purpose  1:15.11, Ensure that concatenations of record of charstrings are accepted.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_007 {
+
+type component GeneralComp { }
+
+type record of charstring RecOfChar;
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_007() runs on GeneralComp {
+    var template RecOfChar m_concatenation := {"ABC"} & {pattern "D*", pattern "E?" & "F"};
+
+    var RecOfChar m_reference := {"ABC","D213","E2F"}; // some value that matches
+
+    if (match(m_reference,m_concatenation)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_007());
+}
+
+}

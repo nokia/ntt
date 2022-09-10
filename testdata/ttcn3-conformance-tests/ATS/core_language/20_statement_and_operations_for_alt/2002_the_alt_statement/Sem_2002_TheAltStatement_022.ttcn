@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the alt-statement supports local definitions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * template as local definition
+ **/
+module Sem_2002_TheAltStatement_022 {
+
+	type port loopbackPort message {
+		inout charstring
+	}
+
+	type component GeneralComp {
+		port loopbackPort p;
+	}
+
+    function fsend(in charstring tSend) runs on GeneralComp {
+        p.send(tSend) to all component;
+    }
+
+	template charstring m_test := "abc";
+
+	testcase TC_Sem_2002_TheAltStatement_022() runs on GeneralComp system GeneralComp {
+
+        var GeneralComp newComp1 := GeneralComp.create;      // create parallel test component
+
+        connect(mtc:p, newComp1:p);
+        connect(newComp1:p, mtc:p);
+        newComp1.start(fsend("abc"));
+
+	    timer t_timer := 3.0;
+	    t_timer.start;
+		alt {
+	    template charstring m_rec := "def";    // local definition of template
+			[] p.receive(m_test) {
+	   			if(match(valueof(m_rec), "def")){    // match local template definition inside alt statement
+                   setverdict(pass);
+                }
+            }
+
+		}
+	}
+
+	control {
+		execute(TC_Sem_2002_TheAltStatement_022());
+	}
+
+}

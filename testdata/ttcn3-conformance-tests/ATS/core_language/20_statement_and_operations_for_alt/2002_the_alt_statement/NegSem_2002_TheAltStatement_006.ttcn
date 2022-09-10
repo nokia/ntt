@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:20.2, verify that the activate operation cannot be used in guard statements
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// b) The evaluation of a Boolean expression guarding an alternative shall not have side effects. To avoid side effects
+// that cause an inconsistency between the actual snapshot and the state of the component, the same restrictions
+// as the restrictions for the initialization of local definitions within altsteps (clause 16.2) and the restrictions
+// imposed on the contents of functions called from special places (clause 16.1.4) shall apply.
+
+module NegSem_2002_TheAltStatement_006 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+    template charstring m_test := "ping";
+
+    altstep a_timeout() {
+        [] any timer.timeout {
+        }
+    }
+
+    testcase TC_NegSem_2002_TheAltStatement_006() runs on GeneralComp system GeneralComp {
+        map(self:p, system: p);
+	    p.send(m_test);
+	    alt {
+		    [activate(a_timeout()) != null] p.receive(charstring:?) {
+			    setverdict(pass);
+		    }
+	    }
+    }
+
+    control {
+	    execute(TC_NegSem_2002_TheAltStatement_006());
+    }
+}

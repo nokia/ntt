@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT rejects assignments from incompatible types or type ranges
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060302_structured_types_006 {
+
+
+	type record of integer IntegerList(0..10);
+	type record of integer ModifiedList;
+
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060302_structured_types_006() runs on GeneralComp {
+
+	var ModifiedList v_list1:={2,14,8};
+	var IntegerList v_list2;
+
+    v_list2:=v_list1;
+	setverdict(pass);
+
+}
+
+control{
+    execute(TC_NegSem_060302_structured_types_006());
+}
+
+}

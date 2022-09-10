@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070503_derivation_by_union_004"
+  xmlns:ns="schema:Pos_070503_derivation_by_union_004">
+	<element name="MyType">
+		<simpleType>
+			<union memberTypes="nonNegativeInteger">
+				<simpleType>
+					<restriction base="token">
+						<enumeration value="unbounded"/>
+					</restriction>
+				</simpleType>
+			</union>
+		</simpleType>
+	</element>
+    <element name="MyType2">
+		<simpleType>
+			<restriction>
+				<simpleType>
+					<restriction base="string">
+						<maxLength value="10"/>
+		            </restriction>
+				</simpleType>
+				<minLength value="3"/>
+            </restriction>
+		</simpleType>
+	</element>
+</schema>

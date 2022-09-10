@@ -1,0 +1,11 @@
+[
+	{
+		"MyCharString" : "Hello World!"
+	},
+	{
+		"int" : 42
+	},
+	{
+		"int" : 24
+	}
+]

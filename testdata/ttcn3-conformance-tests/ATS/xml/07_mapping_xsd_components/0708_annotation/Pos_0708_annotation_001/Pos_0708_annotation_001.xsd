@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_0708_annotation_001"
+  xmlns:ns="schema:Pos_0708_annotation_001">
+  <annotation>
+    <appinfo>Note</appinfo>
+    <documentation xml:lang="en">This is a helping note!</documentation>
+  </annotation>
+  <element name="MyType" type="string" />
+</schema>

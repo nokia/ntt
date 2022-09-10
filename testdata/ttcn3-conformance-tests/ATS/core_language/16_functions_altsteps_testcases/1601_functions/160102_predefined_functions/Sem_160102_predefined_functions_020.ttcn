@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined decvalue function works properly in case of not enough bits
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// (C.5.2)
+// The decvalue function decodes a bitstring into a value. The test system shall suppose that
+// the bitstring encoded_value represents an encoded instance of the actual type of decoded_value.
+// If the decoding was unsuccessful, the actual parameters for encoded_value and decoded_value are
+// not changed. The function shall return an integer value to indicate success or failure of the
+// decoding below:
+// The return value 2 indicates that decoding could not be completed as encoded_value did not
+// contain enough bits.
+
+module Sem_160102_predefined_functions_020 {
+    type integer I with { variant "32 bit"};
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_020 () runs on GeneralComp {
+        var bitstring v_test := int2bit(0, 16);
+		var I v_decoded;
+		var integer v_res := decvalue(v_test, v_decoded);
+		// expected result:
+		// v_res: 2 (failed, not enough bits) -> there are only 16 bits available, while 32 is needed
+		// v_decoded: uninitialized
+		// v_test: original 16-bit value
+		if (match(v_res, 2) and not isbound(v_decoded) and match(lengthof(v_test), 16)) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "Unexpected decoding result");
+		}
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_020());
+    }
+}

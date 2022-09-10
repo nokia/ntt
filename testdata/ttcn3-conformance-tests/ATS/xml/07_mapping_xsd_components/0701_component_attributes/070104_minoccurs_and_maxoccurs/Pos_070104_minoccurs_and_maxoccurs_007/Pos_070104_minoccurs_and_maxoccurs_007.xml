@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:ElemE15c xmlns:ns="schema:Pos_070104_minoccurs_and_maxoccurs_007" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <foo>1</foo>
+  <foo>2</foo>
+  <foo>3</foo>
+  <foo>4</foo>
+  <foo>5</foo>
+  <foo>6</foo>
+  <foo>7</foo>
+  <bar>15.0</bar>
+</ns:ElemE15c>

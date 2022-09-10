@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Neg_B_top_level_001"
+  xmlns:ns="schema:Neg_B_top_level_001">
+	<simpleType name="test">
+		<restriction base="integer"/>
+	</simpleType>
+</schema>

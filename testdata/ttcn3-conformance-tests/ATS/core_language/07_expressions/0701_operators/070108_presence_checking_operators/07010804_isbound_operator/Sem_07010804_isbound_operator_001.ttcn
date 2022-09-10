@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:7.1.8.4, Ensure that the IUT recognizes isbound operator and correctly evaluates it
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_07010804_isbound_operator_001 {
+
+	type component GeneralComp {
+	}
+
+
+	testcase TC_Sem_07010804_isbound_operator_001() runs on GeneralComp {
+
+		var charstring v_char;
+		var boolean checkResult := isbound(v_char); // yields false as v_char is uninitialized
+		if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as v_char is uninitialized");
+		}
+
+		v_char := "ABCD";                           // initialized with a specific value
+		checkResult := isbound(v_char);             // yields true
+		if(checkResult) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield true as v_char is initialized");
+		}
+
+	}
+
+	control {
+		execute(TC_Sem_07010804_isbound_operator_001());
+	}
+}

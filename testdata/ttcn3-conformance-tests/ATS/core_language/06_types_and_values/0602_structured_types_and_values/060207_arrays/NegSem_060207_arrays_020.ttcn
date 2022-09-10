@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, integer array with too many items as multidimensional array index
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// An array or record of integer restricted to a single size can be used in the
+// index notation as a short-hand for the repeated index notation.
+
+module NegSem_060207_arrays_020 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_NegSem_060207_arrays_020() runs on GeneralComp {
+        var integer v_rhindexes[3] := { 0, 1, 0 }, v_lhindexes[3] := { 1, 2, 0 }
+        var integer v_arr[2][3] := { { 1, 2, 3 }, { 4, 5, 6 } };
+        // testing both RH and LH side:
+        v_arr[v_lhindexes] := v_arr[v_rhindexes];
+        if (v_arr == { { 1, 2, 3 }, { 4, 5, 2} }) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_020());
+	}
+
+}

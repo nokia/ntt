@@ -1,0 +1,67 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.2.1, Ensure that the IUT recognizes altstep definitions and correctly evaluates them
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// If the @nodefault modifier is placed before a stand-alone altstep call, the implicit alt statement also contains the @nodefault modifier.
+
+module Sem_160201_invoking_altsteps_005 {
+
+    type record MessageType {
+        integer field1,
+        charstring field2
+    }
+
+    type port loopbackPort message {
+        inout MessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    // altstep
+    altstep AltSet1() runs on GeneralComp {
+
+        [] messagePort.receive {
+            setverdict(pass);
+        }
+
+    }
+
+   function f1 ( ) runs on GeneralComp {
+
+        var MessageType v_testMessage;
+        v_testMessage:= {
+            field1 := 1,
+            field2:= "test string"
+        }
+
+       messagePort.send(v_testMessage) to mtc;
+    }
+
+    testcase TC_Sem_160201_invoking_altsteps_005() runs on GeneralComp system GeneralComp {
+
+        // create PTC
+        var GeneralComp ptc;
+        ptc:=GeneralComp.create;
+        connect(self:messagePort,ptc:messagePort);
+        ptc.start(f1());
+
+        @nodefault AltSet1();    // invoking altstep with @nodefault modifier
+
+        //remove PTC
+        disconnect(self:messagePort,ptc:messagePort);
+        ptc.stop;
+
+    }
+
+    control {
+
+        execute(TC_Sem_160201_invoking_altsteps_005());
+
+    }
+
+}

@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that subtyping definition is not allowed for class types via the normal subtype definition.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_005  "TTCN-3:2018 Object-Oriented"{
+
+    type component GeneralComp {
+    }
+
+    public type class t_empty_class {
+    }
+
+    type t_empty_class MyClassType; //not allowed
+
+    testcase TC_NegSem_50101_top_level_005() runs on GeneralComp {
+        var t_empty_class v_a := t_empty_class.create()
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_005());
+    }
+}

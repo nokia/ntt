@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that the match operation works correctly on records in the negative case.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1509_MatchOperation_004 {
+
+type component GeneralComp { }
+
+type record MyRecord {
+	charstring field1,
+	boolean field2
+}
+
+template MyRecord m_receiveTemplate := {
+	field1 := "ab*de",
+	field2 := ?
+}
+
+testcase TC_Sem_1509_MatchOperation_004() runs on GeneralComp {
+	var MyRecord v_value := {
+		field1 := "abc",
+		field2 := true
+	}
+
+	if (match(v_value, m_receiveTemplate)) {
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control{
+    execute(TC_Sem_1509_MatchOperation_004());
+}
+
+}

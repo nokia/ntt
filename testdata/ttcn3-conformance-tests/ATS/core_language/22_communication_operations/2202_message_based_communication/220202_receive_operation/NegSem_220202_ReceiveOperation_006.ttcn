@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, decoding error in @decoded redirect assignment
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Failure of this decoding shall cause a test case error.
+
+module NegSem_220202_ReceiveOperation_006 {
+	type record R
+    {
+        integer id,
+        charstring payload
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220202_ReceiveOperation_006() runs on GeneralComp {
+        var integer v_src := 1953719668, v_res with { encode "32bit" };
+        var charstring v_str := encvalue_unichar(v_src) & "abcdefgij";
+        p.send(R:{ id := 1, payload := v_str });
+        alt {
+            [] p.receive(R:?) -> value (v_res := @decoded payload) {
+                setverdict (pass);
+            }
+            [] p.receive { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_220202_ReceiveOperation_006(), 5.0);
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070702_the_anyattribute_element_004"
+  xmlns:ns="schema:Pos_070702_the_anyattribute_element_004">
+  <attribute name="foo" type="string"/>
+  <attribute name="bar" type="string"/>
+  <complexType name="ExtBase">
+    <sequence>
+      <element name="field" type="string"/>
+    </sequence>
+    <anyAttribute namespace="##targetNamespace"/>
+  </complexType>
+  <element name="MyType">
+    <complexType>
+      <complexContent>
+        <extension base="ns:ExtBase">
+          <attribute name="ding" type="string"/>
+          <anyAttribute namespace="##any"/>
+        </extension>
+      </complexContent>
+    </complexType>
+  </element>  
+</schema>

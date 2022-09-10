@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that __LINE__ macro stores the actual line number when it is called
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// In this case the line number when the macro is called at line 15.
+module Sem_D04_macro_line_001 {
+
+    type component GeneralComp {}
+    function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_D04_macro_line_001() runs on GeneralComp system GeneralComp {
+
+        const integer MyConst:= __LINE__; // line 15
+
+        if (match(MyConst, 15)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Expected line 15, wrong line number");
+        }
+    }
+
+    control {
+        execute(TC_Sem_D04_macro_line_001());
+    }
+}

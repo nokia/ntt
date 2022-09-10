@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that local template definition can contain in template formal parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Templates parameters can be defined for templates, functions, altsteps, and test cases.
+// To enable a parameterized object to accept templates or matching symbols as actual parameters,
+// the extra keyword template shall be added before the type field of the corresponding formal
+// parameter. This makes the parameter a template parameter and in effect extends the allowed actual
+// parameters for the associated type to include the appropriate set of matching attributes (see
+// annex B) as well as the normal set of values.
+// Formal template parameters may be in, inout or out parameters. The default for formal template
+// parameters is in parameterization.
+
+module Sem_05040102_parameters_of_kind_template_004 {
+
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_004() runs on GeneralComp {
+        template R m_t(template integer p_int1, in template integer p_int2) := {
+            field1 := p_int1,
+            field2 := p_int2
+        }
+        log(m_t(3, ?));
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040102_parameters_of_kind_template_004());
+	}
+}

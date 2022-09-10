@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.1.1, The dot notation used in record type definitions is correctly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06020101_ReferencingRecordFields_003 {
+
+type component GeneralComp {
+}
+
+ type record R {
+  integer field1 (1 .. 10),
+  charstring field2 optional
+ }
+
+ type R.field1 MyInteger;
+
+testcase TC_Sem_06020101_ReferencingRecordFields_003() runs on GeneralComp {
+
+ var MyInteger v_int := 9;  // v_int is allowed in (1 .. 10) range
+
+      if (v_int==9) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_06020101_ReferencingRecordFields_003());
+}
+
+}

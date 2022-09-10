@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.4, applying kill operation to a variable of a different than component type
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The variable associated with VariableRef (being a component type variable, a component
+// type parameter, etc.) or the return type associated with FunctionInstance shall be of
+// component type.
+
+module NegSem_210304_kill_test_component_004 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f_behaviour() runs on GeneralComp {
+        p.receive(integer:?); // infinite blocking
+	}
+
+    testcase TC_NegSem_210304_kill_test_component_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc[2];
+        v_ptc[0] := GeneralComp.create;
+        v_ptc[1] := GeneralComp.create;
+        v_ptc[0].start(f_behaviour());
+        v_ptc[1].start(f_behaviour());
+		v_ptc.kill;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210304_kill_test_component_004());
+    }
+}

@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, redirect assignment of message fields
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Rules in clause 22.2.2 shall apply.
+// As a special case the field reference can be absent to indicate that the whole
+// message shall be stored in a variable.
+
+module Sem_220203_TriggerOperation_010 {
+	type record R
+    {
+        integer field1[2],
+        charstring field2
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_Sem_220203_TriggerOperation_010() runs on GeneralComp {
+        var integer v_int;
+        var charstring v_str;
+        var R v_rec;
+        p.send(R:{ field1 := { 1, 2 }, field2 := "abc" });
+        alt {
+            [] p.trigger(R:?) -> value ( v_int := field1[1], v_rec, v_str := field2) {
+                if (v_int == 2 and v_str == "abc" and v_rec == { field1 := { 1, 2 }, field2 := "abc" }) { setverdict (pass); }
+                else { setverdict(fail); }
+            }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_010(), 5.0);
+    }
+}

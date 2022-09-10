@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the IUT correctly handles loopback message
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// Loopback test: messagePort is a loopback port and sends (2). If receives(2) pass, else failed.
+module Sem_0901_Communication_ports_001{
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_0901_Communication_ports_001() runs on GeneralComp {
+
+
+ messagePort.send(2);  //can send also in-line template
+
+    alt {
+     [] messagePort.receive(2) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_0901_Communication_ports_001());
+}
+
+}

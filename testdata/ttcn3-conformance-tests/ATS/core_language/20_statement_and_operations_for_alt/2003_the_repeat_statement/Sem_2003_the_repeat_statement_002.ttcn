@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.2, repeat in procedure call block
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// When used in statement blocks of the response and exception handling parts
+// of blocking procedure calls, the repeat statement causes the re-evaluation
+// of the response and exception handling part of the call (see clause 22.3.1).
+
+module Sem_2003_the_repeat_statement_002 {
+
+    signature S();
+
+    type port MyPort procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+    function f_mirror() runs on GeneralComp {
+        p.getcall(S:?);
+        p.reply(S:{});
+    }
+
+    testcase TC_Sem_2003_the_repeat_statement_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc[2];
+        var integer v_counter := 0;
+        for(var integer i := 0; i < 2; i := i + 1) {
+            v_ptc[i] := GeneralComp.create;
+            connect(self:p, v_ptc[i]:p);
+            v_ptc[i].start(f_mirror());
+        }
+	    p.call(S:{}) to all component { // broadcast call (several replies expected)
+            [] p.getreply(S:?) {
+                v_counter := v_counter + 1;
+                if (v_counter < lengthof(v_ptc)) { repeat; } // tested repeat
+                else { setverdict(pass); }
+            }
+	    }
+    }
+
+    control {
+	    execute(TC_Sem_2003_the_repeat_statement_002());
+    }
+}

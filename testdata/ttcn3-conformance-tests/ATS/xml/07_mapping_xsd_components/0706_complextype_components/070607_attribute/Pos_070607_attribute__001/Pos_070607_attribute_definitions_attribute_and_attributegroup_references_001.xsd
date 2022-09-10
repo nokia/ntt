@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_070607_attribute_definitions_attribute_and_attributegroup_references_001"
+    xmlns:ns="schema:Pos_070607_attribute_definitions_attribute_and_attributegroup_references_001">
+    <attributeGroup name="ag1">
+        <attribute name="foo" type="float"/>
+        <attribute name="bar" type="float"/>
+    </attributeGroup>
+    <complexType name="c1">
+        <sequence>
+            <element name="ding" type="string"/>
+        </sequence>
+        <attributeGroup ref="ns:ag1"/>
+    </complexType>
+    <element name="e1" type="ns:c1"/>
+</schema>

@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of port.check(getcall) with assignment in case of unsuccessful match inside alt
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_034 {
+
+	signature S(integer p_par1);
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+		var integer v_val;
+        alt
+		{
+        	[] p.check(getcall(S:{ p_par1 := (0, 2, 4, 6)}) -> param(v_val := p_par1)) {
+				setverdict(fail, "Incorrect match");
+			}
+			[] p.getcall {
+				if (not isbound(v_val)) { setverdict(pass, "As expected, the check operation didn't match"); }
+				else { setverdict(fail, "The value should still be undefined at this point"); }
+			}
+		}
+	}
+
+	testcase TC_Sem_2204_the_check_operation_034() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		p.call(S:{ p_par1 := 1 }, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_034(), 5.0);
+    }
+}

@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 451, modified by STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.4, Ensure that kill operator stops a non alive test components.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The kill operation applied on a test component stops the execution of the currently
+// running behaviour - if any - of that component and frees all resources associated
+// to it (including all port connections of the killed component) and removes the
+// component from the test system.
+//
+// The kill operation can also be applied to another test component. In this case the
+// component to be killed shall be addressed using its component reference.
+
+module Sem_210304_kill_test_component_001 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f() runs on GeneralComp {
+        p.receive(integer:?);
+    }
+
+    testcase TC_Sem_210304_kill_test_component_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+		ptc:=GeneralComp.create;
+
+		ptc.start(f());
+        ptc.kill;
+        ptc.killed;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210304_kill_test_component_001());
+    }
+}

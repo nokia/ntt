@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.1
+ ** @purpose  1:7.2, Ensure that the IUT correctly handles field reference decoding
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+/* The following requirement is tested:
+Decoded field reference is a specific notation that can be applied to expressions of bitstring, hexstring,
+octetstring, charstring or universal charstring types. It is used for accessing content of implicitly decoded payload fields.
+*/
+
+module Sem_0703_decoded_field_reference_004 {
+
+type component GeneralComp {
+}
+
+type charstring PduHeader;
+type integer OuterPayloadHeader;
+
+type record PDU {
+		PduHeader header,
+		universal charstring outerPayload        // universal charstring
+}
+
+type record OuterPayload {
+	 charstring innerPayload
+}
+
+type universal charstring InnerPayload;
+
+testcase TC_Sem_0703_decoded_field_reference_004() runs on GeneralComp {
+    // outerPayload content is "test text"
+    var OuterPayload v_outerPayload := { innerPayload := "test text" };
+    var universal charstring v_test := encvalue_unichar(v_outerPayload);
+
+    // convert to universal charstring
+	var PDU v_packet := {header:= "header", outerPayload := v_test};
+
+	var InnerPayload v_payload := v_packet.outerPayload => OuterPayload.innerPayload;
+
+	if ( match(v_payload,"test text")) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_0703_decoded_field_reference_004());
+}
+
+}

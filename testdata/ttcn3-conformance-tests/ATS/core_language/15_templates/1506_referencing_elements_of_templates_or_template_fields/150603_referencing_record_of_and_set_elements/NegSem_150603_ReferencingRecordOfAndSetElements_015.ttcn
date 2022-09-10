@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that referencing an element of an address type, which actual value is null shall cause an error.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+ //Restriction h)
+/*Special value null: referencing an element of an address type, which actual value is null shall cause an error.*/
+
+module NegSem_150603_ReferencingRecordOfAndSetElements_015 {
+
+    type component GeneralComp { }
+
+    type set of integer RoI;
+    type integer address;
+
+    testcase TC_NegSem_150603_ReferencingRecordOfAndSetElements_015() runs on GeneralComp {
+        var address v_add := null;
+        var template RoI m_one;
+
+
+        m_one := {v_add, 1}; // // shall cause an error as we access a value list
+
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_150603_ReferencingRecordOfAndSetElements_015());
+    }
+
+}

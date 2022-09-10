@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.3, Ensure that the IUT recognizes external functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration  external_functions
+ ***************************************************/
+module Sem_160103_external_functions_001 {
+
+    type component GeneralComp {
+    }
+
+	/**
+	 * @return always 1
+	 */
+    external function xf_Sem_160103_external_functions_001() return integer;
+
+    testcase TC_Sem_160103_external_functions_001 () runs on GeneralComp {
+        var integer v_i;
+
+        v_i := xf_Sem_160103_external_functions_001();
+
+        if (v_i == 1) {
+	        setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+
+        execute(TC_Sem_160103_external_functions_001());
+
+    }
+
+}

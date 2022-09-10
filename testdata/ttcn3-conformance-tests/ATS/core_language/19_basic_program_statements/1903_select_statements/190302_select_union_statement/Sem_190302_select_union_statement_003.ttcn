@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that it is possible to use an else branches
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Each branch shall start with the case keyword followed by one or more identifiers
+// of the alternatives (fields) of the union type (a list branch) or the else keyword
+// (an else branch) and a statement block.
+
+module Sem_190302_select_union_statement_003 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        boolean boolOption,
+        bitstring bitOption
+    }
+
+    testcase TC_Sem_190302_select_union_statement_003() runs on GeneralComp {
+        var U v_un := { strOption := "abc" }
+        select union (v_un) {
+            case (strOption) {
+                setverdict(pass);
+            } case (bitOption) {
+                setverdict(fail);
+            } case else {
+                setverdict(fail);
+            }
+        }
+	}
+
+	control {
+		execute(TC_Sem_190302_select_union_statement_003());
+	}
+}

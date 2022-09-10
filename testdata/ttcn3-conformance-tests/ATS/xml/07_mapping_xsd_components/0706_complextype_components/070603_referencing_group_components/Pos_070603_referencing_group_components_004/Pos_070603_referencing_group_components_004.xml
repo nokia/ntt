@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_070603_referencing_group_components_004">
+ <shipTo>New York</shipTo>
+ <billTo>SuperMegaCorp Inc.</billTo>
+ <shipTo>Berlin</shipTo>
+ <billTo>SuperMegaGesellschaft AG</billTo>
+</ns:MyType>

@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, runtime resolved constant in array type declaration
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Array dimensions shall be specified using constant expressions, which shall
+// evaluate to a positive integer values. Constants used in the constant
+// expressions shall meet with the restrictions in clause 10.
+
+module NegSem_060207_arrays_011 {
+
+	type component GeneralComp {
+	}
+
+    function f() return integer {
+        if (rnd() < 0.5) { return 5; }
+        else { return 10; }
+    }
+
+    const integer c_dimension := f();
+    type integer Arr[c_dimension];
+
+	testcase TC_NegSem_060207_arrays_011() runs on GeneralComp {
+        var Arr v_arr;
+        v_arr[0] := 1;
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_011());
+	}
+
+}

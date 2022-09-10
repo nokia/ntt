@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that actual parameters are evaluated in order of their appearance (list notation)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The actual parameters are evaluated in the order of their appearance.
+
+module Sem_050402_actual_parameters_166 {
+
+    type component GeneralComp {
+        var integer vc_counter := 0;
+	}
+
+    function f_eval1() runs on GeneralComp return integer {
+        if (vc_counter == 0)
+        {
+            setverdict(pass);
+            vc_counter := vc_counter + 1;
+        }
+        else { setverdict(fail); }
+        return vc_counter;
+    }
+
+    function f_eval2() runs on GeneralComp return integer {
+        if (vc_counter == 1)
+        {
+            setverdict(pass);
+            vc_counter := vc_counter + 1;
+        }
+        else { setverdict(fail); }
+        return vc_counter;
+    }
+
+    function f_test(integer p_par1, integer p_par2) {
+    }
+
+    testcase TC_Sem_050402_actual_parameters_166() runs on GeneralComp {
+        f_test(f_eval1(), f_eval2()); // tested feature: f_eval1 shall be called before f_eval2
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_166());
+	}
+}

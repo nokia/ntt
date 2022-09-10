@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, verify than an error is generated when sending a partially initialized array
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Sending an array value with undefined elements shall cause an error.
+
+module NegSem_060207_arrays_009 {
+
+    type integer MyArrayType1[5] (1 .. 10);
+
+	type port P message {
+		inout MyArrayType1
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_NegSem_060207_arrays_009() runs on GeneralComp {
+        var template MyArrayType1 m_array1 := { 8, 9, -, 3, 4};
+		p.send(m_array1); // error expected
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_060207_arrays_009());
+	}
+}

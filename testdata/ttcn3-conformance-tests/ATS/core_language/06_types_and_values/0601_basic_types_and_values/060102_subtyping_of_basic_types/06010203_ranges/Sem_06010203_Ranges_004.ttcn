@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted cahrstring with inclusive bounds.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_004 {
+    type charstring MyCharstringRange ("a".."f");
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_004() runs on GeneralComp {
+        var MyCharstringRange v_c1;
+        v_c1 := "a";
+        v_c1 := "c";
+        v_c1 := "f";
+        v_c1 := "acdef";
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_004());
+    }
+}

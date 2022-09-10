@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, restarting explicitly killed alive component
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The kill operation applied on a test component stops the execution of the currently
+// running behaviour - if any - of that component and frees all resources associated
+// to it (including all port connections of the killed component) and removes the
+// component from the test system.
+
+module NegSem_210304_kill_test_component_002 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f() runs on GeneralComp {
+        p.receive(integer:?);
+	}
+
+    testcase TC_NegSem_210304_kill_test_component_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create alive;
+		ptc.start(f());
+        ptc.kill;
+        ptc.start(f());
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210304_kill_test_component_002());
+    }
+}

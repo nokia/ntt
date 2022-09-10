@@ -1,0 +1,7 @@
+{ 
+	"Pos_B308_omit_as_null_001.MyRecord": 
+						{ 
+							"int": null,
+							"MyCharString" : "abcdef"
+						}
+}

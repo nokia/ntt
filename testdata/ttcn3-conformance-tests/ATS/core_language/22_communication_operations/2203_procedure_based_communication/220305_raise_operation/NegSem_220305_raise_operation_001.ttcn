@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.5, raised exception type not in the list of available exceptions
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Exceptions are specified as types. Therefore the exception value may either be derived
+// from a template conforming to the template(value) restriction or be the value resulting
+// from an expression (which of course can be an explicit value). The optional type field in
+// the value specification to the raise operation shall be used in cases where it is necessary
+//  to avoid any ambiguity of the type of the value being sent.
+
+module NegSem_220305_raise_operation_001 {
+	signature S() exception(charstring, octetstring);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S:?);
+		p.raise(S, 1);
+        setverdict(pass);
+	}
+
+    testcase TC_NegSem_220305_raise_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+        v_ptc.start(f());
+	    p.call(S:{}, nowait); // no processing of the exception to avoid possible errors in the catch operation
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_001(), 5.0);
+    }
+}

@@ -1,0 +1,56 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.7, Ensure that the IUT correctly handles template matching of subset definition
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+//Restriction g) Templates in SubSet's argument shall obey the present template restriction.
+
+module Sem_B010207_subset_012 {
+
+
+	type record MessageType {
+  	 set of charstring  field1
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010207_subset_012() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := subset(pattern "[^a-z]", pattern "[^A-Z]")	// pattern
+ }
+
+ v_testMessage:=  {
+  field1 := {"1","2"}
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010207_subset_012());
+}
+
+}

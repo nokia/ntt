@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, component variable value reuse in alive component
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// If a function is started on an alive-type PTC after termination of a previous
+// function, it uses variable values, timers, ports, and the local verdict as they
+// were left after termination of the previous function.
+
+module Sem_210302_Start_test_component_004 {
+
+	type component GeneralComp {
+        var integer vc_val := 0;
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        vc_val := 1;
+    }
+
+    function f_ptcSecondBehaviour() runs on GeneralComp {
+        if (vc_val == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+
+	testcase TC_Sem_210302_Start_test_component_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC") alive;
+        v_ptc.start(f_ptcBehaviour());
+        v_ptc.done;
+        v_ptc.start(f_ptcSecondBehaviour());
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_210302_Start_test_component_004());
+	}
+}

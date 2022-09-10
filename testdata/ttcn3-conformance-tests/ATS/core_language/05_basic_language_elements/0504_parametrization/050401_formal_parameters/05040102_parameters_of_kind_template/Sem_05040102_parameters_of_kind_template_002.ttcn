@@ -1,0 +1,79 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, Ensure that the IUT correctly handles parametrization through the use of parameterized templates.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_05040102_parameters_of_kind_template_002 {
+
+type enumerated MyEnumeratedType {e_black, e_white}
+type integer address;
+
+type record MyRecord {
+ integer field1,
+ boolean field2,
+ address field3,
+ MyEnumeratedType field4,
+ integer field5
+}
+
+
+type component GeneralComp {
+
+}
+
+
+testcase TC_Sem_05040102_parameters_of_kind_template_002 (
+  MyRecord ExpectedMatch,
+  integer p_integer := 0,
+  boolean p_boolean := true,
+  address p_address := null,
+  MyEnumeratedType p_enumerated := e_black,
+  template integer p_integerTemplate := ?
+ ) runs on GeneralComp {
+
+ var template MyRecord ReceivedRecord := {p_integer, p_boolean, p_address, p_enumerated, p_integerTemplate};
+
+    if (match(ExpectedMatch, ReceivedRecord)) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+ var MyRecord DefaultValues  := {
+  field1 := 0,
+  field2 := true,
+  field3 := null,
+  field4 := e_black,
+  field5 := 1			//any number can be used here to correspond with ? matching
+ }
+
+ var MyRecord ModifiedValues  := {
+  field1 := 1,
+  field2 := false,
+  field3 := 1,
+  field4 := e_white,
+  field5 := 1
+ }
+
+ var MyRecord PartlyModifiedValues  := {
+  field1 := 0,
+  field2 := false,
+  field3 := null,
+  field4 := e_white,
+  field5 := 1
+ }
+
+    execute(TC_Sem_05040102_parameters_of_kind_template_002(DefaultValues));
+    execute(TC_Sem_05040102_parameters_of_kind_template_002(DefaultValues,-,-,-,-,-));
+    execute(TC_Sem_05040102_parameters_of_kind_template_002(ModifiedValues,1,false,1,e_white,1));
+    execute(TC_Sem_05040102_parameters_of_kind_template_002(PartlyModifiedValues,-,false,-,e_white,-));
+}
+
+}

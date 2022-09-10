@@ -1,0 +1,47 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Testing alive operator with an alive test component
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Alive test component calls a function f1. Afterwards calls f2 function
+
+module Sem_210305_alive_operation_001 {
+
+    type component GeneralComp {
+	 var integer v_gc:=0;
+	 var integer v_res:=0;}
+	function f1 ( ) runs on GeneralComp {}
+
+	function f2 ( integer p_integer ) runs on GeneralComp return integer {
+		v_gc:=p_integer*p_integer;
+ 		return v_gc;
+	}
+    testcase TC_Sem_210305_alive_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+		ptc:=GeneralComp.create alive;
+
+		ptc.start(f1());
+
+        ptc.done;
+
+		if (ptc.alive) {
+		ptc.start(f2(3));
+		v_res:=f2(3);
+}
+
+		if(v_res==9)
+		{
+        setverdict(pass);
+        }
+        else
+        {
+        setverdict(fail);
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_210305_alive_operation_001());
+    }
+}

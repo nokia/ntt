@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.3.7, verify that a variable of the timer type is compatible with other timer references
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For variables, constants and parameters of timer types, the reference to a timer is compatible with any other timer reference.
+
+module Sem_060307_compatibility_of_timer_types_001 {
+    type component GeneralComp {
+	}
+
+	testcase TC_Sem_060307_compatibility_of_timer_types_001() runs on GeneralComp {
+        var timer v_timer := null;
+		var timer v_timer2;
+		v_timer2 := v_timer;
+	    setverdict(pass);
+	}
+
+    control {
+         execute(TC_Sem_060307_compatibility_of_timer_types_001());
+    }
+}

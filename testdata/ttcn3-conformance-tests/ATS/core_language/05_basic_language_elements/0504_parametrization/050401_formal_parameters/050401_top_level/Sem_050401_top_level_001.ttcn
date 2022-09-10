@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that in parameters can be read within parametrized content
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For all these three sorts of parameter passing, the formal parameters can both be read and set
+// (i.e. get new values being assigned) within the parametrized object.
+
+module Sem_050401_top_level_001 {
+
+	type component GeneralComp {
+	}
+
+	function f(in integer p_int) {
+        if (p_int == 0) { setverdict(pass); } // reading from p_int
+        else { setverdict(fail); }
+	}
+
+	testcase TC_Sem_050401_top_level_001() runs on GeneralComp {
+		f(0);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_001());
+	}
+}

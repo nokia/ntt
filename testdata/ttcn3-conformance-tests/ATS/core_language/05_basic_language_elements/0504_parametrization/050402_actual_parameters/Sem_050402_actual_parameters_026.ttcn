@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that in value parameters can be used as in formal value parameters of altsteps
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed by value to in formal value parameters shall be
+// variables, literal values, module parameters, constants, variables, value returning
+// (external) functions, formal value parameters (of in, inout or out parameterization)
+// of the current scope or expressions composed of the above.
+
+module Sem_050402_actual_parameters_026 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+    }
+
+    altstep a_test(integer p_val) runs on GeneralComp {
+        []t.timeout {
+            if (p_val == 6) { setverdict(pass); }
+            else { setverdict(fail); }
+        }
+    }
+
+    function f_caller(in integer p_val) runs on GeneralComp{
+        t.start;
+        a_test(p_val); // tested parameter passing
+    }
+
+
+    testcase TC_Sem_050402_actual_parameters_026() runs on GeneralComp {
+        f_caller(6); // this parameter passing is not a subject of the test
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_026());
+	}
+}

@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20, Ensure that defaults and the activate statement is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_20_TopLevel_004 {
+
+type port MyPort message {
+    inout charstring
+}
+
+type component GeneralComp {
+    port MyPort p;
+}
+
+template charstring m_testOne := "ping1";
+template charstring m_testTwo := "ping2";
+
+altstep a_catchError() runs on GeneralComp {
+    [] any port.receive {
+    }
+}
+
+testcase TC_Syn_20_TopLevel_004() runs on GeneralComp {
+    var default v_errorDefault := activate(a_catchError());
+    p.send(m_testOne);
+    alt {
+        [] p.receive(m_testOne) {
+        }
+    }
+    setverdict(pass);
+}
+
+}

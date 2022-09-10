@@ -1,0 +1,68 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:14, Ensure that multiple calls can be send without ack using non-blocking signature
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Multiple calls without response or execption need noblock signature
+
+module Sem_1400_procedure_signatures_004 {
+
+	signature p_Sig1_001( in charstring key ) noblock;
+
+
+	type port remotePort procedure {
+		inout  p_Sig1_001;
+	}
+
+	type component GeneralComp {
+		port remotePort PCO;
+		var integer MyComp;
+	}
+
+	type component SystemComp {
+	}
+
+	const charstring key[3] := {"My String1", "hello", "Probe string"};
+
+	function f_Server() runs on GeneralComp {
+		for (var integer i := 0; i < lengthof(key); i := i + 1) {
+			PCO.getcall(p_Sig1_001:{key[i]});
+		}
+		setverdict(pass);
+	}
+
+	function f_client() runs on GeneralComp {
+		for (var integer i := 0; i < lengthof(key); i := i + 1) {
+			PCO.call(p_Sig1_001:{key[i]}) ;
+		}
+	}
+
+	testcase TC_Sem_1400_procedure_signatures_004() runs on GeneralComp system SystemComp {
+
+		var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+		var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+		timer t_guard;
+
+		connect(server:PCO, client:PCO);
+
+		server.start(f_Server());
+		client.start(f_client());
+
+		t_guard.start( 5.0 );
+		alt {
+			[] all component.done {}
+			[] t_guard.timeout {
+				setverdict(fail);
+				all component.stop;
+			}
+		}
+
+		disconnect(server:PCO);
+	}
+
+	control{
+		execute(TC_Sem_1400_procedure_signatures_004(), 10.0);
+	}
+
+}

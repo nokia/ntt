@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.2, getcall with a from clause (multiple items)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// A getcall operation may be restricted to a certain communication partner in case
+// of one-to-many connections. This restriction shall be denoted by using the from
+// keyword followed by a specification of an address or component reference, a list
+// of address or component references or any component.
+
+module Sem_220302_getcall_operation_021 {
+
+	signature S() return integer;
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+        p.call(S:{}, nowait);
+	}
+
+    const integer c_ptcCount := 3;
+
+    testcase TC_Sem_220302_getcall_operation_021() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptcs[c_ptcCount];
+        var integer v_fromCounter := 0, v_noFromCounter := 0;
+        for (var integer i := 0; i < c_ptcCount; i := i + 1) {
+            v_ptcs[i] := GeneralComp.create;
+            connect(self:p, v_ptcs[i]:p);
+            v_ptcs[i].start(f());
+        }
+
+        for (var integer i := 0; i < c_ptcCount; i := i + 1) {
+            alt {
+                [] p.getcall(S:?) from (v_ptcs[0], v_ptcs[1]) { v_fromCounter := v_fromCounter + 1; }
+                [] p.getcall(S:?) { v_noFromCounter := v_noFromCounter + 1; }
+            }
+        }
+        if (v_fromCounter == 2 and v_noFromCounter == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    control {
+        execute(TC_Sem_220302_getcall_operation_021(), 5.0);
+    }
+}

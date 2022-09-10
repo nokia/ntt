@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that error is generated when passing set of and its element to inout parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Whenever a value or template of a record, set, union, record of, set of, array
+// and anytype type is passed as an actual parameter to an inout parameter, none of
+// the fields or elemens of this structured value or template shall be passed as
+// an actual parameter to another inout parameter of the same parameterized TTCN-3
+// object. This restriction applies recursively to all sub-elements of the structured
+// value or template in any level of nesting.
+
+module NegSem_050402_actual_parameters_133 {
+
+    type component GeneralComp {
+	}
+
+    type set of integer SI;
+
+    function f_test (inout integer p_val, inout SI p_set) {
+        p_set[0] := 10;
+        if (p_val == 10) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_133() runs on GeneralComp {
+        var SI v_val := { 1 };
+        f_test(v_val[0], v_val);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_133());
+	}
+}

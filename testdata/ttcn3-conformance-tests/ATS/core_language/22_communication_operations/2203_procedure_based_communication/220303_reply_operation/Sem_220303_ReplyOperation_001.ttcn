@@ -1,0 +1,116 @@
+/*****************************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.3, Ensure that the IUT correctly handles reply to multiple clients on the same server
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_220303_ReplyOperation_001 {
+
+    /**
+    * @desc testing of inline return template for remote procedure call
+    * @param p_par1 only input parameter
+    * @param p_par2 must have value 4 at return
+    * @param p_par3 must have value 5 at return
+    * @return must return value 1
+    */
+    signature p_Sem_220303_ReplyOperation_002(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+
+    template p_Sem_220303_ReplyOperation_002 s_returnTemplate := {
+        p_par1 := -,
+        p_par2 := 4,
+        p_par3 := 5
+    }
+
+    template p_Sem_220303_ReplyOperation_002 s_wrongTemplate := {
+        p_par1 := -,
+        p_par2 := 2,
+        p_par3 := 3
+    }
+
+    template p_Sem_220303_ReplyOperation_002 s_callTemplate := {
+        p_par1 := 1,
+        p_par2 := -,
+        p_par3 := 3
+    }
+
+    type port remotePort procedure {
+        inout p_Sem_220303_ReplyOperation_002;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+    }
+
+    function f_ClientQuery() runs on GeneralComp {
+
+        PCO.call(p_Sem_220303_ReplyOperation_002:s_callTemplate, 5.0) {
+
+            [] PCO.getreply(p_Sem_220303_ReplyOperation_002:s_returnTemplate value 1) {
+                setverdict(pass);
+            }
+            [] PCO.catch (timeout) {
+                setverdict(fail, "Component did not receive a response");
+            }
+        }
+    }
+
+    function f_ServerResponses() runs on GeneralComp {
+        var GeneralComp v_client1 := null, v_client2 := null;
+        var integer v_par1;
+        var integer v_par3;
+        timer t_timeout:=30.0;
+
+        template p_Sem_220303_ReplyOperation_002 s_acceptTemplate := {
+            p_par1 := ?,
+            p_par2 := ?,
+            p_par3 := ?
+        };
+
+        t_timeout.start;
+
+        alt {
+            [v_client1 == null] PCO.getcall(p_Sem_220303_ReplyOperation_002:s_acceptTemplate) -> param(v_par1, - , v_par3) sender v_client1 {
+                if (v_client2 == null) { repeat; }
+            }
+            [v_client2 == null] PCO.getcall(p_Sem_220303_ReplyOperation_002:s_acceptTemplate) -> param(v_par1, - , v_par3) sender v_client2 {
+                if (v_client1 == null) { repeat; }
+            }
+            [] t_timeout.timeout {
+                setverdict(fail);
+            }
+        }
+        PCO.reply(p_Sem_220303_ReplyOperation_002:{p_par1 := -, p_par2 := v_par1+v_par3, p_par3 := v_par1+v_par3+1} value v_par1) to all component;  	//sent to both connected clients
+
+    }
+
+    testcase TC_Sem_220303_ReplyOperation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+        var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+        var GeneralComp client2 := GeneralComp.create("RemoteProcedure Client");
+        // map the PTCs to the system port
+        connect(server:PCO, client:PCO);
+        connect(server:PCO, client2:PCO);
+
+        server.start(f_ServerResponses());
+
+        client2.start(f_ClientQuery());
+        client.start(f_ClientQuery());
+
+        interleave {
+            [] client.done {}
+            [] client2.done {}
+        }
+        server.stop;
+
+        alt {
+            [] all component.done {}
+        }
+    }
+
+    control{
+        execute(TC_Sem_220303_ReplyOperation_001());
+    }
+
+}

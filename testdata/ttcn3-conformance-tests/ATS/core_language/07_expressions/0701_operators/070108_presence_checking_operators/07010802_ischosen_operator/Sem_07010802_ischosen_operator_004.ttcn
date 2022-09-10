@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// The following requirements are tested: Using ischosen for anytype
+
+module Sem_07010802_ischosen_operator_004 {
+
+type component GeneralComp {
+}
+
+type union U { integer f1, charstring f2 };
+
+
+testcase TC_Sem_07010802_ischosen_operator_004 () runs on GeneralComp {
+
+    template anytype mw_anytype := { U.f1:=1};
+	var boolean v_i, v_j;
+
+ 	v_i:=ischosen(mw_anytype.integer);	//function returns false
+
+		if(match(v_i,false)) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "Unexpected result for ischosen()");
+		}
+}
+
+
+control{
+
+    execute(TC_Sem_07010802_ischosen_operator_004());
+
+}
+
+}

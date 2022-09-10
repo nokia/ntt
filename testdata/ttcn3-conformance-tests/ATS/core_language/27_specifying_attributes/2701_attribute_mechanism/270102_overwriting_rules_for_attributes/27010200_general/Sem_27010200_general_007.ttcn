@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that in case of multiple attributes all attributes are overridden
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// If multiple attributes of the same type are allowed, all of them are overridden unless specified otherwise.
+
+module Sem_27010200_general_007 {
+
+    type component GeneralComp {
+	}
+
+	group myPDUs
+	{
+		type record MyPDU1 { }
+		group mySpecialPDUs	{
+			type record MyPDU2 { }
+		} with { extension "MySpecialRule" }
+	} with {
+		extension "MyRule";
+		extension "MyAdditionalRule"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_007 () runs on GeneralComp {
+		var RoUC v_enc := MyPDU2.extension;
+		if(lengthof(v_enc) == 1 and v_enc[0] == "MySpecialRule") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_007());
+	}
+
+} with { extension "GeneralRule" }

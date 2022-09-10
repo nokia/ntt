@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout operations: timed-out timer does not timeout until restarted
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/Timeout operational semantics/Timeout a timer that is already timed out
+
+
+module Sem_2306_timer_timeout_002 {
+    type component TComp{
+        timer t_timedout_timer := 0.5;
+        timer t_aux := 2.0;
+    }
+    testcase TC_Sem_2306_timer_timeout_002() runs on TComp{
+        t_timedout_timer.start;
+        t_timedout_timer.timeout ;
+
+        t_aux.start;
+        alt
+        {
+            [] t_timedout_timer.timeout {
+                setverdict(fail);
+            }
+            [] t_aux.timeout {
+                setverdict(pass);
+            }
+        }
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_002())
+
+
+    }
+}

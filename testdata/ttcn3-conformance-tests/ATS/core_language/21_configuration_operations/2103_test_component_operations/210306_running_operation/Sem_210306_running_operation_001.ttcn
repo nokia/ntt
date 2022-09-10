@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.6, Check that running operator provides information about test components.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_210306_running_operation_001 {
+
+    type component GeneralComp {}
+
+    function f1 ( ) runs on GeneralComp {
+        while (true) {} // block forever
+    }
+
+    testcase TC_Sem_210306_running_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+        ptc:=GeneralComp.create alive;
+        ptc2:=GeneralComp.create alive;
+
+        ptc.start(f1());
+        ptc2.start(f1());
+        ptc.stop;
+
+		// Check that ptc is not running, and ptc2 component is running
+        if (match(ptc.running, false) and match(ptc2.running, true)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail, "either stopped ptc is running or not stopped ptc2 is not running");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210306_running_operation_001(), 5.0);
+    }
+}
