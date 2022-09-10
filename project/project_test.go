@@ -324,8 +324,7 @@ func TestImportTasks(t *testing.T) {
 		{path: "./testdata/ImportTasks/invalid/file.ttcn3", err: syscall.ENOTDIR},
 		{path: "./testdata/ImportTasks/invalid/dirs", err: project.ErrNoSources},
 		{path: "./testdata/ImportTasks/other", err: project.ErrNoSources},
-		{path: "./testdata/ImportTasks/🤔", result: []string{"testdata/ImportTasks/🤔/a.ttcn3"}},
-		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3", "testdata/ImportTasks/lib/🤔.ttcn3"}},
+		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3"}},
 	}
 
 	for _, tt := range tests {
