@@ -143,9 +143,7 @@ request being accepted:
 ## Repository Organization
 
 ```
-ntt
-├── cmd
-│   └── ntt         main binary with sub-commands (list, build, run, lint, ...)
+ntt                 main binary with sub-commands (list, build, run, lint, ...)
 │
 ├── project         test suite configuration package
 ├── tests           test suite control package
