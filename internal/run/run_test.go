@@ -1,4 +1,4 @@
-package ntt_test
+package run_test
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nokia/ntt"
+	"github.com/nokia/ntt/internal/run"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +63,7 @@ func TestBasketMatch(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		b, err := ntt.NewBasket("testBasket", strings.Fields(tt.basket)...)
+		b, err := run.NewBasket("testBasket", strings.Fields(tt.basket)...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,13 +91,13 @@ func TestSubBaskets(t *testing.T) {
 
 	for _, tt := range tests {
 
-		b, err := ntt.NewBasket("testBasket")
+		b, err := run.NewBasket("testBasket")
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		for _, s := range strings.Split(tt.basket, ":") {
-			sb, err := ntt.NewBasket("subBasket", strings.Fields(s)...)
+			sb, err := run.NewBasket("subBasket", strings.Fields(s)...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,7 +119,7 @@ func TestLoadFromEnv(t *testing.T) {
 		os.Unsetenv("TEST_BASKET_stable")
 	}()
 
-	b, err := ntt.NewBasket("testBasket", "-r", "foo")
+	b, err := run.NewBasket("testBasket", "-r", "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +183,7 @@ func testModulePars(t *testing.T, name string) ([]string, error) {
 	if err != nil {
 		t.Fatal("Open project:", err)
 	}
-	_, err = ntt.NewSuite(p)
+	_, err = run.NewSuite(p)
 	if err != nil {
 		t.Fatalf("NewSuite() failed: %v", err)
 	}

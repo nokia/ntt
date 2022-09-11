@@ -68,7 +68,7 @@ help:
 	@perl -ne 'printf("\t%-10s\t%s\n", $$1, $$2)  if /^\.PHONY:\s*(.*)\s*##\s*(.*)$$/' <$(MAKEFILE_LIST)
 
 .PHONY: build ## build everything
-build: bin/ntt bin/ntt-mcov bin/k3objdump bin/ttcn3c
+build: bin/ntt
 
 .PHONY: check ## run tests
 check:
@@ -78,34 +78,18 @@ check:
 install: build
 	install -d -m 755 $(DESTDIR)$(BINDIR)
 	install -m 755 bin/ntt $(DESTDIR)$(BINDIR)/ntt
-	install -m 755 bin/ntt-mcov $(DESTDIR)$(BINDIR)/ntt-mcov
-	install -m 755 bin/k3objdump $(DESTDIR)$(BINDIR)/k3objdump
 	install -d -m 755 $(DESTDIR)$(DATADIR)/cmake
 	install -m 644 cmake/FindNTT.cmake $(DESTDIR)$(DATADIR)/cmake
 
 
 .PHONY: clean ## delete build artifacts
 clean:
-	rm -f bin/ntt bin/ntt-mcov bin/k3objdump
+	rm -f bin/ntt
 	rmdir bin
 
 .PHONY: bin/ntt ## build ntt CLI
 bin/ntt:
-	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ntt
-
-.PHONY: bin/ntt-mcov ## build ntt-mcov CLI
-
-bin/ntt-mcov:
-	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ntt-mcov
-
-.PHONY: bin/k3objdump ## build k3objdump CLI
-bin/k3objdump:
-	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/k3objdump
-
-
-.PHONY: bin/ttcn3c ## build ttcn3c
-bin/ttcn3c:
-	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ ./cmd/ttcn3c
+	$(GO_BUILD) -ldflags="$(NTT_LDFLAGS)" -o $@ .
 
 .PHONY: generate ## run code generators
 generate:

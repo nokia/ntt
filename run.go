@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/nokia/ntt"
 	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
+	"github.com/nokia/ntt/internal/run"
 	"github.com/nokia/ntt/tests"
 	"github.com/spf13/cobra"
 )
@@ -53,7 +53,7 @@ Environment variables:
 
 `,
 
-		RunE: run,
+		RunE: runTests,
 	}
 
 	MaxWorkers int
@@ -84,7 +84,7 @@ Environment variables:
 
 	Runs      []results.Run
 	stamps    = make(map[string]time.Time)
-	Basket, _ = ntt.NewBasket("default")
+	Basket, _ = run.NewBasket("default")
 
 	ResultsFile = cache.Lookup("test_results.json")
 	TickerTime  = time.Second * 30
@@ -93,7 +93,7 @@ Environment variables:
 
 func init() {
 	flags := RunCommand.Flags()
-	flags.AddFlagSet(ntt.BasketFlags())
+	flags.AddFlagSet(run.BasketFlags())
 	flags.IntVarP(&MaxWorkers, "jobs", "j", runtime.NumCPU(), "Allow N test in parallel (default: number of CPU cores")
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
@@ -102,7 +102,7 @@ func init() {
 }
 
 // Run runs the given jobs in parallel.
-func run(cmd *cobra.Command, args []string) error {
+func runTests(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -128,13 +128,13 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	var err error
-	Basket, err = ntt.NewBasketWithFlags("list", cmd.Flags())
+	Basket, err = run.NewBasketWithFlags("list", cmd.Flags())
 	Basket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
 	if err != nil {
 		return err
 	}
 
-	suite, err := ntt.NewSuite(Project)
+	suite, err := run.NewSuite(Project)
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func run(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	ledger := ntt.NewLedger(MaxWorkers)
+	ledger := run.NewLedger(MaxWorkers)
 	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
 	if err != nil {
 		return err
@@ -160,7 +160,7 @@ func run(cmd *cobra.Command, args []string) error {
 	return nttRun(ctx, jobs, ledger)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *ntt.Job, ledger *ntt.Ledger) error {
+func nttRun(ctx context.Context, jobs <-chan *run.Job, ledger *run.Ledger) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -274,7 +274,7 @@ L:
 	return nil
 }
 
-func k3sRun(ctx context.Context, files []string, jobs <-chan *ntt.Job) error {
+func k3sRun(ctx context.Context, files []string, jobs <-chan *run.Job) error {
 	args := []string{
 		"--no-summary",
 		fmt.Sprintf("--results-file=%s", ResultsFile),
@@ -292,7 +292,7 @@ func k3sRun(ctx context.Context, files []string, jobs <-chan *ntt.Job) error {
 	return k3s.Run()
 }
 
-func k3sJobs(jobs <-chan *ntt.Job) io.Reader {
+func k3sJobs(jobs <-chan *run.Job) io.Reader {
 	var ids []string
 	for j := range jobs {
 		ids = append(ids, j.Name)
@@ -301,28 +301,28 @@ func k3sJobs(jobs <-chan *ntt.Job) io.Reader {
 }
 
 // GenerateIDs emits test IDs based on given file and and id list to a channel.
-func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b ntt.Basket) <-chan string {
+func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b run.Basket) <-chan string {
 	policy = strings.ToLower(policy)
 	policy = strings.TrimSpace(policy)
 	switch {
 	case len(ids) > 0:
-		return ntt.GenerateIDsWithContext(ctx, ids...)
+		return run.GenerateIDsWithContext(ctx, ids...)
 	case policy == "old":
-		return ntt.GenerateControlsWithContext(ctx, b, files...)
+		return run.GenerateControlsWithContext(ctx, b, files...)
 	default:
-		return ntt.GenerateTestsWithContext(ctx, b, files...)
+		return run.GenerateTestsWithContext(ctx, b, files...)
 
 	}
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *ntt.Suite, ids []string, size int, ledger *ntt.Ledger) (chan *ntt.Job, error) {
+func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int, ledger *run.Ledger) (chan *run.Job, error) {
 	srcs, err := fs.TTCN3Files(suite.Sources...)
 	if err != nil {
 		return nil, err
 	}
 
-	out := make(chan *ntt.Job, size)
+	out := make(chan *run.Job, size)
 	go func() {
 		defer close(out)
 
