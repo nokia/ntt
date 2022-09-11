@@ -1,16 +1,11 @@
-package run_test
+package main
 
 import (
-	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"testing"
 
-	"github.com/nokia/ntt/internal/run"
-	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3/doc"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBasketMatch(t *testing.T) {
@@ -63,7 +58,7 @@ func TestBasketMatch(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		b, err := run.NewBasket("testBasket", strings.Fields(tt.basket)...)
+		b, err := NewBasket("testBasket", strings.Fields(tt.basket)...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,13 +86,13 @@ func TestSubBaskets(t *testing.T) {
 
 	for _, tt := range tests {
 
-		b, err := run.NewBasket("testBasket")
+		b, err := NewBasket("testBasket")
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		for _, s := range strings.Split(tt.basket, ":") {
-			sb, err := run.NewBasket("subBasket", strings.Fields(s)...)
+			sb, err := NewBasket("subBasket", strings.Fields(s)...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,7 +114,7 @@ func TestLoadFromEnv(t *testing.T) {
 		os.Unsetenv("TEST_BASKET_stable")
 	}()
 
-	b, err := run.NewBasket("testBasket", "-r", "foo")
+	b, err := NewBasket("testBasket", "-r", "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,56 +141,4 @@ func TestLoadFromEnv(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestModulePars(t *testing.T) {
-	t.Skip()
-
-	tests := []struct {
-		file string
-		name string
-		want []string
-	}{
-		{name: "", want: nil},
-		{name: "xxx", want: nil},
-		{name: "xxx.xxx", want: nil},
-		{file: "xxx", want: nil},
-		{file: "good.parameters", want: []string{"X=X from good", "Y=Y from good"}},
-		{file: "good.parameters", name: "A", want: []string{"X=X from good", "Y=Y from good"}},
-		{file: "good.parameters", name: "test.A", want: []string{"X=X from good", "Y=Y from good"}},
-		{file: "good.parameters", name: "test.B", want: []string{"X=X from good", "Y=Y from B", "Z=Z from B"}},
-		{file: "good.parameters", name: "test.C", want: nil},
-		{file: "bad.parameters", want: nil},
-		{file: "bad.parameters", name: "test.B", want: nil},
-	}
-	for _, tt := range tests {
-		t.Run(t.Name(), func(t *testing.T) {
-			os.Setenv("NTT_PARAMETERS_FILE", tt.file)
-			defer os.Unsetenv("NTT_PARAMETERS_FILE")
-			got, _ := testModulePars(t, tt.name)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func testModulePars(t *testing.T, name string) ([]string, error) {
-	p, err := project.Open("testdata/parameters")
-	if err != nil {
-		t.Fatal("Open project:", err)
-	}
-	_, err = run.NewSuite(p)
-	if err != nil {
-		t.Fatalf("NewSuite() failed: %v", err)
-	}
-
-	var (
-		m map[string]string
-	)
-
-	var s []string
-	for k, v := range m {
-		s = append(s, fmt.Sprintf("%s=%s", k, v))
-	}
-	sort.Strings(s)
-	return s, err
 }

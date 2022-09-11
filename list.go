@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	ntt2 "github.com/nokia/ntt/internal/run"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/project"
@@ -133,7 +132,7 @@ func init() {
 	flags.BoolVar(&showTags, "with-tags", false, "Print documentation tags for each match.")
 	flags.BoolVarP(&showTags, "tags", "t", false, "Print documentation tags for each match.")
 	flags.MarkDeprecated("tags", "please use --with-tags instead")
-	flags.AddFlagSet(ntt2.BasketFlags())
+	flags.AddFlagSet(BasketFlags())
 	ListCommand.AddCommand(
 		&cobra.Command{Use: `tests`, RunE: list},
 		&cobra.Command{Use: `modules`, RunE: list},
@@ -146,7 +145,7 @@ func init() {
 
 func list(cmd *cobra.Command, args []string) error {
 
-	basket, err := ntt2.NewBasketWithFlags("list", cmd.Flags())
+	basket, err := NewBasketWithFlags("list", cmd.Flags())
 	basket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
 	if err != nil {
 		return err
@@ -236,7 +235,7 @@ func (t Tag) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.String())
 }
 
-func Print(basket ntt2.Basket, tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
+func Print(basket Basket, tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
 	tags := doc.FindAllTags(comments)
 	if !basket.Match(id, tags) {
 		return
