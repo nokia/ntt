@@ -78,7 +78,7 @@ manager of your choice. You can also install directly from the internet:
 
 If you have Go installed, you may easily install our commands by using the go-get method:
 
-     go get github.com/nokia/ntt
+     go install github.com/nokia/ntt@latest
 
 However note, this will install latest ntt from master branch and thus the
 version might not be correct:
