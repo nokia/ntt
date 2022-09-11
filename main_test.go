@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nokia/ntt/internal/run"
 	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,9 +42,9 @@ func TestGenerateIDs(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			var b run.Basket
+			var b Basket
 			if tt.basket != "" {
-				b, err = run.NewBasket("testBasket", strings.Split(tt.basket, " ")...)
+				b, err = NewBasket("testBasket", strings.Split(tt.basket, " ")...)
 				if err != nil {
 					t.Fatal(err)
 				}
