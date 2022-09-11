@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	ntt2 "github.com/nokia/ntt"
+	ntt2 "github.com/nokia/ntt/internal/run"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/project"
