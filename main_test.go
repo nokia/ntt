@@ -39,7 +39,7 @@ func TestGenerateIDs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := project.Open("../../testdata/vanilla")
+			p, err := project.Open("testdata/vanilla")
 			if err != nil {
 				t.Fatal(err)
 			}
