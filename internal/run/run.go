@@ -150,10 +150,8 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			log.Debugf("Worker %d started.\n", i)
-			defer log.Debugf("Worker %d finished.\n", i)
-
 			for job := range jobs {
+				log.Debugf("worker #%02d: execute %s\n", i, job.Name)
 				r.run(ctx, job, results)
 			}
 		}(i)
@@ -170,7 +168,6 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 					close(out)
 					return
 				}
-
 				ticker.Reset(secs * time.Second)
 				out <- res
 			case <-ticker.C:
