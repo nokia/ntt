@@ -159,19 +159,40 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 		}(i)
 	}
 
+	out := make(chan Result, r.maxWorkers)
+	go func() {
+		var s time.Duration = 1.0
+		ticker := time.NewTicker(s * time.Second)
+		for {
+			select {
+			case res, ok := <-results:
+				if !ok {
+					close(out)
+					return
+				}
+				ticker.Reset(s * time.Second)
+				out <- res
+			case <-ticker.C:
+				out <- Result{
+					Event: tests.NewTickerEvent(),
+				}
+			}
+		}
+	}()
+
 	// Wait for all workers to finish.
 	go func() {
 		wg.Wait()
 		close(results)
 	}()
 
-	return results
+	return out
 }
 
 // execute runs a single test and sends the results to the channel.
 func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
-
 	defer r.Done(job)
+
 	var (
 		workingDir string
 		logFile    string
