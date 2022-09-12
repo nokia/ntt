@@ -124,11 +124,6 @@ func runTests(cmd *cobra.Command, args []string) error {
 		<-signalChan // second signal, hard exit
 		os.Exit(2)
 	}()
-	if OutputDir != "" {
-		if err := os.MkdirAll(OutputDir, os.ModePerm); err != nil {
-			return fmt.Errorf("creating logs directory failed: %w", err)
-		}
-	}
 
 	var err error
 	DefaultBasket, err = NewBasketWithFlags("list", cmd.Flags())
@@ -332,7 +327,9 @@ func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int,
 		i := 0
 		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
 			i++
-			out <- runner.NewJob(id, suite)
+			job := runner.NewJob(id, suite)
+			job.Dir = OutputDir
+			out <- job
 		}
 		log.Debugf("Generating %d jobs done.\n", i)
 	}()

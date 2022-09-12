@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -196,7 +197,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 // truncated and stores the k3 exit code in the log-file for convenient retrieval.
 func waitGracefully(t *Test, cmd *exec.Cmd) error {
 	cmdErr := cmd.Wait()
-	f, err := os.OpenFile(t.LogFile, os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile(filepath.Join(t.Dir, t.LogFile), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}

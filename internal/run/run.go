@@ -177,14 +177,14 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 		logFile    string
 	)
 
-	if job.Dir == "" {
-		logFile = fmt.Sprintf("%s.log", strings.TrimSuffix(job.ID(), "-0"))
-	} else {
+	if job.Dir != "" {
 		workingDir = filepath.Join(job.Dir, job.ID())
 		if err := os.MkdirAll(workingDir, 0755); err != nil {
 			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
 			return
 		}
+	} else {
+		logFile = fmt.Sprintf("%s.log", strings.TrimSuffix(job.ID(), "-0"))
 	}
 
 	t3xf := job.Suite.K3.T3XF
