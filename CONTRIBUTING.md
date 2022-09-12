@@ -95,7 +95,7 @@ quite comfortable:
 	git config branch.master.remote upstream
 
 	# Use `origin` for pushing changes.
-	git config branch.master.pushDefault origin
+	git config branch.master.pushRemote origin
 
 
 Now you're ready to contribute:
