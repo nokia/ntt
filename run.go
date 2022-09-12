@@ -85,8 +85,6 @@ Environment variables:
 
 	ErrCommandFailed = fmt.Errorf("command failed")
 
-	Runs             []results.Run
-	stamps           = make(map[string]time.Time)
 	DefaultBasket, _ = NewBasket("default")
 
 	ResultsFile = cache.Lookup("test_results.json")
@@ -161,96 +159,63 @@ func nttRun(ctx context.Context, jobs <-chan *run.Job, runner *run.Runner) error
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	var runs []results.Run
 	os.Remove(cache.Lookup("test_results.json"))
-	defer FlushTestResults()
+	defer func() {
+		FlushTestResults(runs)
+	}()
 
-	// Execute the jobs in parallel and collect the results.
+	running := make(map[*tests.Job]time.Time)
 	for res := range runner.Run(ctx, jobs) {
+		log.Debugf("result: event=%#v\n", res.Event)
 
-		if _, ok := res.Event.(tests.TickerEvent); ok {
+		switch e := res.Event.(type) {
+
+		case tests.StartEvent:
+			running[e.Job] = e.Time()
 			if Format() == "text" {
-				for _, job := range runner.Jobs() {
+				ColorStart.Printf("=== RUN %s\n", e.Name)
+			}
+
+		case tests.TickerEvent:
+			if Format() == "text" {
+				for job := range running {
 					ColorRunning.Printf("... active %s\n", job.Name)
 				}
 			}
-			continue
-		}
 
-		log.Debugf("result: jobID=%s, event=%#v\n", res.Job.ID(), res.Event)
-
-		// Track errors for early exit (aka --max-fail).
-		if !tests.IsPass(res.Event) {
-			errorCount++
-		}
-
-		// Track begin timestamps for calculating durations.
-		begin, end := stamps[res.ID()], res.Event.Time()
-		if begin.IsZero() {
-			stamps[res.ID()] = time.Now()
-			begin = end
-		}
-		duration := end.Sub(begin)
-
-		displayName := res.Job.Name
-		if job := tests.UnwrapJob(res.Event); job != nil && job.Name != "" {
-			displayName = job.Name
-		}
-
-		displayVerdict := "none"
-		switch ev := res.Event.(type) {
-		case tests.ErrorEvent:
-			displayVerdict = "fatal"
 		case tests.StopEvent:
-			if v := ev.Verdict; v != "" {
-				displayVerdict = v
+			if e.Verdict != "pass" {
+				errorCount++
 			}
-		}
-
-		run := results.Run{
-			Name:       displayName,
-			Verdict:    displayVerdict,
-			Begin:      results.Timestamp{Time: begin},
-			End:        results.Timestamp{Time: end},
-			WorkingDir: res.Test.Dir,
-		}
-
-		if err, ok := res.Event.(tests.ErrorEvent); ok {
-			run.Reason = err.Error()
-		}
-
-		_, isStartEvent := res.Event.(tests.StartEvent)
-		if !isStartEvent {
-			Runs = append(Runs, run)
-		}
-
-		switch Format() {
-		case "quiet":
-			// No output
-		case "plain":
-			if !isStartEvent {
-				c := Colors(displayVerdict)
-				c.Printf("%s\t%s\t%.4f\n", displayVerdict, displayName, float64(duration.Seconds()))
+			run := results.Run{
+				Name:       e.Name,
+				Verdict:    e.Verdict,
+				Begin:      results.Timestamp{Time: running[e.Job]},
+				End:        results.Timestamp{Time: e.Time()},
+				WorkingDir: res.Test.Dir,
 			}
-		case "json":
-			if !isStartEvent {
-				b, err := json.Marshal(run)
-				if err != nil {
-					panic(fmt.Sprintf("cannot marshal run: %v", run))
-				}
-				fmt.Println(string(b))
+			runs = append(runs, run)
+			printRun(run)
+
+		case tests.ErrorEvent:
+			errorCount++
+			job := tests.UnwrapJob(e)
+			if job == nil {
+				ColorFatal.Print("+++ fatal error: " + e.Err.Error())
+				break
 			}
-		case "text":
-			switch {
-			case isStartEvent:
-				ColorStart.Printf("=== RUN %s\n", displayName)
-			case displayVerdict == "fatal":
-				ColorFatal.Printf("+++ fatal %s\t(%s)\n", displayName, run.Reason)
-			default:
-				c := Colors(displayVerdict)
-				c.Printf("--- %s %s\t(duration=%.2fs)\n", displayVerdict, displayName, float64(duration.Seconds()))
+			run := results.Run{
+				Name:       job.Name,
+				Verdict:    "fatal",
+				Begin:      results.Timestamp{Time: running[job]},
+				End:        results.Timestamp{Time: e.Time()},
+				WorkingDir: res.Test.Dir,
 			}
+			printRun(run)
+
 		default:
-			panic(fmt.Sprintf("unknown format: %s", Format()))
+			panic(fmt.Sprintf("event type %T not implemented", e))
 		}
 
 		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
@@ -263,7 +228,30 @@ func nttRun(ctx context.Context, jobs <-chan *run.Job, runner *run.Runner) error
 	if errorCount > 0 {
 		return fmt.Errorf("%w: %d error(s) occurred", ErrCommandFailed, errorCount)
 	}
+
 	return nil
+}
+
+func printRun(r results.Run) {
+	switch Format() {
+	case "plain":
+		c := Colors(r.Verdict)
+		c.Printf("%s\t%s\t%.4f\n", r.Verdict, r.Name, float64(r.Duration().Seconds()))
+	case "text":
+		switch {
+		case r.Verdict == "fatal":
+			ColorFatal.Printf("+++ fatal %s\t(%s)\n", r.Name, r.Reason)
+		default:
+			c := Colors(r.Verdict)
+			c.Printf("--- %s %s\t(duration=%.2fs)\n", r.Verdict, r.Name, float64(r.Duration().Seconds()))
+		}
+	case "json":
+		b, err := json.Marshal(r)
+		if err != nil {
+			panic(fmt.Sprintf("cannot marshal run: %v", r))
+		}
+		fmt.Println(string(b))
+	}
 }
 
 func k3sRun(ctx context.Context, files []string, jobs <-chan *run.Job) error {
@@ -392,7 +380,7 @@ func generate(ctx context.Context, def *ttcn3.Definition, b Basket, c chan<- str
 	return true
 }
 
-func FlushTestResults() error {
+func FlushTestResults(runs []results.Run) error {
 	db := &results.DB{
 		Version: "1",
 		Sessions: []results.Session{
@@ -400,7 +388,7 @@ func FlushTestResults() error {
 				Id:              "1",
 				MaxJobs:         MaxWorkers,
 				ExpectedVerdict: "pass",
-				Runs:            Runs,
+				Runs:            runs,
 			},
 		},
 	}

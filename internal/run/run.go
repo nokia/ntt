@@ -170,6 +170,7 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 					close(out)
 					return
 				}
+
 				ticker.Reset(secs * time.Second)
 				out <- res
 			case <-ticker.C:
@@ -189,6 +190,10 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 	return out
 }
 
+func jobError(j *Job, err error) Result {
+	return Result{Job: j, Event: tests.NewErrorEvent(err)}
+}
+
 // execute runs a single test and sends the results to the channel.
 func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 	defer r.Done(job)
@@ -201,7 +206,7 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 	if job.Dir != "" {
 		workingDir = filepath.Join(job.Dir, job.ID())
 		if err := os.MkdirAll(workingDir, 0755); err != nil {
-			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
+			results <- jobError(job, err)
 			return
 		}
 	} else {
@@ -212,17 +217,17 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 	if workingDir != "" {
 		absT3xf, err := filepath.Abs(t3xf)
 		if err != nil {
-			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
+			results <- jobError(job, err)
 			return
 		}
 		absDir, err := filepath.Abs(workingDir)
 		if err != nil {
-			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
+			results <- jobError(job, err)
 			return
 		}
 		t3xf, err = filepath.Rel(absDir, absT3xf)
 		if err != nil {
-			results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
+			results <- jobError(job, err)
 			return
 		}
 	}
@@ -231,12 +236,11 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 	t.Config = job.Suite.Config
 
 	var (
-		pars    map[string]string
 		timeout time.Duration
 		err     error
 	)
 	if err != nil {
-		results <- Result{Job: job, Event: tests.NewErrorEvent(err)}
+		results <- jobError(job, err)
 		return
 	}
 	if timeout > 0 {
@@ -244,7 +248,8 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
 	}
-	t.ModulePars = pars
+
+	//TODO(5nord) Add t.ModulePars
 	t.Dir = workingDir
 	t.LogFile = logFile
 	t.Env = append(t.Env, job.Suite.Variables.Slice()...)
