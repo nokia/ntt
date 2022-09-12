@@ -94,29 +94,23 @@ func (r *Result) ID() string {
 	return fmt.Sprintf("%s-%s", r.Job.ID(), name)
 }
 
-// Runner is a test runner.
-type Runner interface {
-	// Run the jobs in the given channel.
-	Run(ctx context.Context, jobs <-chan *Job) <-chan Result
-}
-
-func NewLedger(n int) *Ledger {
-	return &Ledger{
+func NewRunner(n int) *Runner {
+	return &Runner{
 		maxWorkers: n,
 		names:      make(map[string]int),
 		jobs:       make(map[string]*Job),
 	}
 }
 
-// Ledger is a worker pool for executing jobs.
-type Ledger struct {
+// Runner is a worker pool for executing jobs.
+type Runner struct {
 	sync.Mutex
 	maxWorkers int
 	names      map[string]int
 	jobs       map[string]*Job
 }
 
-func (l *Ledger) NewJob(name string, suite *Suite) *Job {
+func (l *Runner) NewJob(name string, suite *Suite) *Job {
 	l.Lock()
 	defer l.Unlock()
 
@@ -132,13 +126,13 @@ func (l *Ledger) NewJob(name string, suite *Suite) *Job {
 	return &job
 }
 
-func (l *Ledger) Done(job *Job) {
+func (l *Runner) Done(job *Job) {
 	l.Lock()
 	defer l.Unlock()
 	delete(l.jobs, job.id)
 }
 
-func (l *Ledger) Jobs() []*Job {
+func (l *Runner) Jobs() []*Job {
 	l.Lock()
 	defer l.Unlock()
 
@@ -149,7 +143,7 @@ func (l *Ledger) Jobs() []*Job {
 	return jobs
 }
 
-func (l *Ledger) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
+func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 	wg := sync.WaitGroup{}
 	results := make(chan Result, l.maxWorkers)
 	for i := 0; i < l.maxWorkers; i++ {
@@ -175,7 +169,7 @@ func (l *Ledger) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 }
 
 // execute runs a single test and sends the results to the channel.
-func (l *Ledger) run(ctx context.Context, job *Job, results chan<- Result) {
+func (l *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 
 	defer l.Done(job)
 	var (

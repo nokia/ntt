@@ -151,7 +151,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	ledger := run.NewLedger(MaxWorkers)
+	ledger := run.NewRunner(MaxWorkers)
 	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 	return nttRun(ctx, jobs, ledger)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *run.Job, ledger *run.Ledger) error {
+func nttRun(ctx context.Context, jobs <-chan *run.Job, ledger *run.Runner) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -319,7 +319,7 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int, ledger *run.Ledger) (chan *run.Job, error) {
+func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int, ledger *run.Runner) (chan *run.Job, error) {
 	srcs, err := fs.TTCN3Files(suite.Sources...)
 	if err != nil {
 		return nil, err
