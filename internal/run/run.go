@@ -110,43 +110,43 @@ type Runner struct {
 	jobs       map[string]*Job
 }
 
-func (l *Runner) NewJob(name string, suite *Suite) *Job {
-	l.Lock()
-	defer l.Unlock()
+func (r *Runner) NewJob(name string, suite *Suite) *Job {
+	r.Lock()
+	defer r.Unlock()
 
 	job := Job{
-		id:    fmt.Sprintf("%s-%d", name, l.names[name]),
+		id:    fmt.Sprintf("%s-%d", name, r.names[name]),
 		Name:  name,
 		Suite: suite,
 	}
-	l.names[name]++
-	l.jobs[job.id] = &job
+	r.names[name]++
+	r.jobs[job.id] = &job
 
 	log.Debugf("new job: name=%s, suite=%p, id=%s\n", name, suite, job.id)
 	return &job
 }
 
-func (l *Runner) Done(job *Job) {
-	l.Lock()
-	defer l.Unlock()
-	delete(l.jobs, job.id)
+func (r *Runner) Done(job *Job) {
+	r.Lock()
+	defer r.Unlock()
+	delete(r.jobs, job.id)
 }
 
-func (l *Runner) Jobs() []*Job {
-	l.Lock()
-	defer l.Unlock()
+func (r *Runner) Jobs() []*Job {
+	r.Lock()
+	defer r.Unlock()
 
-	jobs := make([]*Job, 0, len(l.jobs))
-	for _, job := range l.jobs {
+	jobs := make([]*Job, 0, len(r.jobs))
+	for _, job := range r.jobs {
 		jobs = append(jobs, job)
 	}
 	return jobs
 }
 
-func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
+func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 	wg := sync.WaitGroup{}
-	results := make(chan Result, l.maxWorkers)
-	for i := 0; i < l.maxWorkers; i++ {
+	results := make(chan Result, r.maxWorkers)
+	for i := 0; i < r.maxWorkers; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
@@ -154,7 +154,7 @@ func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 			defer log.Debugf("Worker %d finished.\n", i)
 
 			for job := range jobs {
-				l.run(ctx, job, results)
+				r.run(ctx, job, results)
 			}
 		}(i)
 	}
@@ -169,9 +169,9 @@ func (l *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 }
 
 // execute runs a single test and sends the results to the channel.
-func (l *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
+func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 
-	defer l.Done(job)
+	defer r.Done(job)
 	var (
 		workingDir string
 		logFile    string

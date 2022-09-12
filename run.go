@@ -151,8 +151,8 @@ func runTests(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	ledger := run.NewRunner(MaxWorkers)
-	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, ledger)
+	runner := run.NewRunner(MaxWorkers)
+	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, runner)
 	if err != nil {
 		return err
 	}
@@ -160,10 +160,10 @@ func runTests(cmd *cobra.Command, args []string) error {
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
 		return k3sRun(ctx, files, jobs)
 	}
-	return nttRun(ctx, jobs, ledger)
+	return nttRun(ctx, jobs, runner)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *run.Job, ledger *run.Runner) error {
+func nttRun(ctx context.Context, jobs <-chan *run.Job, runner *run.Runner) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -172,7 +172,7 @@ func nttRun(ctx context.Context, jobs <-chan *run.Job, ledger *run.Runner) error
 
 	// Execute the jobs in parallel and collect the results.
 	ticker := time.NewTicker(TickerTime)
-	ressults := ledger.Run(ctx, jobs)
+	ressults := runner.Run(ctx, jobs)
 L:
 	for {
 		select {
@@ -265,7 +265,7 @@ L:
 			}
 		case <-ticker.C:
 			if Format() == "text" {
-				for _, job := range ledger.Jobs() {
+				for _, job := range runner.Jobs() {
 					ColorRunning.Printf("... active %s\n", job.Name)
 				}
 			}
@@ -319,7 +319,7 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int, ledger *run.Runner) (chan *run.Job, error) {
+func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int, runner *run.Runner) (chan *run.Job, error) {
 	srcs, err := fs.TTCN3Files(suite.Sources...)
 	if err != nil {
 		return nil, err
@@ -332,7 +332,7 @@ func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int,
 		i := 0
 		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
 			i++
-			out <- ledger.NewJob(id, suite)
+			out <- runner.NewJob(id, suite)
 		}
 		log.Debugf("Generating %d jobs done.\n", i)
 	}()
