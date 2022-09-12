@@ -161,8 +161,8 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 
 	out := make(chan Result, r.maxWorkers)
 	go func() {
-		var s time.Duration = 1.0
-		ticker := time.NewTicker(s * time.Second)
+		const secs = time.Duration(30.0)
+		ticker := time.NewTicker(secs * time.Second)
 		for {
 			select {
 			case res, ok := <-results:
@@ -170,7 +170,7 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *Job) <-chan Result {
 					close(out)
 					return
 				}
-				ticker.Reset(s * time.Second)
+				ticker.Reset(secs * time.Second)
 				out <- res
 			case <-ticker.C:
 				out <- Result{
