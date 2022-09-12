@@ -119,38 +119,3 @@ func UnwrapJob(e Event) *Job {
 	}
 	return nil
 }
-
-// IsPass returns true if the event is an StopEvent with a pass verdict. For
-// all other verdicts or events types IsPass will return false.
-func IsPass(e Event) bool {
-	if se, ok := e.(StopEvent); ok {
-		return se.Verdict == "pass"
-	}
-	return false
-}
-
-// Controller is responsible for running test cases. Essentially you put jobs
-// in and events come out.
-type Controller struct {
-	events chan Event
-}
-
-// NewController creates a new Controller for executing tests using the given executor.
-func (c *Controller) NewController(e Executor) *Controller {
-	return nil
-}
-
-// EnqueueJob puts a job in the queue.
-func (c *Controller) EnqueueJob(job *Job) error {
-	return nil
-}
-
-// Events returns a channel that emits events.
-func (c *Controller) Events() <-chan Event {
-	return c.events
-}
-
-type Executor interface {
-	// Execute runs the test job.
-	Execute(*Job) <-chan Event
-}

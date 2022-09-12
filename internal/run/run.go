@@ -17,15 +17,6 @@ import (
 	"github.com/nokia/ntt/tests"
 )
 
-// SplitQualifiedName splits a qualified name into module and test name.
-func SplitQualifiedName(name string) (string, string) {
-	parts := strings.Split(name, ".")
-	if len(parts) == 1 {
-		return "", name
-	}
-	return parts[0], strings.Join(parts[1:], ".")
-}
-
 // NewSuite creates a new suite from the given files. It expects either
 // a single directory as argument or a list of regular .ttcn3 files.
 //
