@@ -62,6 +62,26 @@ func (u Unit) Base() int {
 	}
 }
 
+func convHexToBi(r rune) byte {
+	switch r {
+	case 'A', 'a':
+		return 10
+	case 'B', 'b':
+		return 11
+	case 'C', 'c':
+		return 12
+	case 'D', 'd':
+		return 13
+	case 'E', 'e':
+		return 14
+	case 'F', 'f':
+		return 15
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		return byte(r - '0')
+	}
+	return 0
+}
+
 var (
 	ErrSyntax = errors.New("invalid syntax")
 	Undefined = &singelton{typ: UNDEFINED}
@@ -222,32 +242,26 @@ func NewString(s string) *String {
 }
 
 type Bitstring struct {
-	Value *big.Int
-	Unit  Unit
+	Value       string
+	BinaryValue []byte
+	Unit        int
 }
 
 func (b *Bitstring) Type() ObjectType { return BITSTRING }
 func (b *Bitstring) Inspect() string {
-	switch b.Unit {
-	case Bit:
-		return fmt.Sprintf("'%b'B", b.Value)
-	case Octett:
-		return fmt.Sprintf("'%h'O", b.Value)
-	default:
-		return fmt.Sprintf("'%h'H", b.Value)
-	}
+	return b.Value
 }
 
 func (b *Bitstring) Equal(obj Object) bool {
 	if other, ok := obj.(*Bitstring); ok {
-		return b.Value.Cmp(other.Value) == 0
+		return b.Value == other.Value
 	}
 	return false
 }
 
 func (b *Bitstring) hashKey() hashKey {
 	h := fnv.New64a()
-	h.Write(b.Value.Bytes())
+	h.Write(b.BinaryValue)
 	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
@@ -255,35 +269,75 @@ func NewBitstring(s string) (*Bitstring, error) {
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
 	}
+	var b []byte
+	unit := strings.ToUpper(string(s[len(s)-1]))
+	unitInt := 4 // For Octettstrings Unit is 4 for calculations during creation, it's later changed to 8
+	n := removeWhitespaces(s[1 : len(s)-2])
 
-	var unit Unit
-	switch strings.ToUpper(string(s[len(s)-1])) {
+	switch unit {
 	case "B":
-		unit = Bit
+		unitInt = 1
 	case "H":
-		unit = Hex
 	case "O":
-		unit = Octett
+		if !strings.Contains(n, "*") && len(n)%2 != 0 { //number of runes between '' has to be even, excluding *
+			return nil, ErrSyntax
+		}
 	default:
 		return nil, ErrSyntax
 	}
 
+	for i, r := range n {
+		switch r {
+		case '*', '?':
+			i--
+			// If this doesn't work as intended:
+			// Option 1: introduce new variable to count Wildcards
+			// Opt. 2: Simply ignore since a String with Wildcards doesn't represent a specific number anyway,
+			// therefore BinaryValue doesn't mean anything
+		case '0', '1':
+			b[i/(8/unitInt)] |= convHexToBi(r) << ((8 - unitInt) - (i % (8 / unitInt) * unitInt))
+			// 1. Determine byte to be changed, 2. Convert Digit from Rune to byte Value
+			// 3. Shift Value to appropriate Position in byte (number of bits depends on unit)
+			// 4. Write Value into byte Array using logical OR (bits are always zero before write)
+			// 3*. If i % unitInt is 0, shift 7 to the left, if 1, shift 6, etc. (Binary)
+		case 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f', '2', '3', '4', '5', '6', '7', '8', '9':
+			if unit == "B" {
+				return nil, ErrSyntax
+			}
+			b[i/2] |= convHexToBi(r) << (4 - (i % 2 * 4))
+			// If i%2 is 0, shift 4 to the right, if 1, shift 0 (Hex -> each digit is 4 bit)
+		default:
+			return nil, ErrSyntax
+		}
+	}
+	if unit == "O" {
+		unitInt = 8
+	}
+	return &Bitstring{Value: s, BinaryValue: b, Unit: unitInt}, nil
+}
+
+func (b *Bitstring) Len() int { return len(removeWhitespaces(b.Value)) - 3 }
+
+func (b *Bitstring) Get(index int) Object {
+	return &Bitstring{Value: "'" + string(b.Value[index]) + "'" + string(b.Value[len(b.Value)-1]), Unit: b.Unit,
+		BinaryValue: []byte{(b.BinaryValue[index/(8/b.Unit)] & byte((1<<b.Unit)-1<<(8-b.Unit)-(index%(8/b.Unit))*b.Unit)) << (index % (8 / b.Unit) * b.Unit)}}
+	// 1. Determine byte with desired digit, 2. Create mask with bits equal to Unit
+	// 3. Shift mask to appropriate Position for desired digit
+	// 4. Obtain digit using logical AND and shift to beginning of byte
+	// 3*. If i % unitInt is 0, shift 7 to the left, if 1, shift 6, etc. (Binary)
+}
+
+func removeWhitespaces(s string) string {
 	removeWhitespaces := func(r rune) rune {
 		if unicode.IsSpace(r) {
 			return -1
 		}
 		return r
 	}
-	s = strings.Map(removeWhitespaces, s[1:len(s)-2])
-
-	if i, ok := new(big.Int).SetString(s, unit.Base()); ok {
-		return &Bitstring{Value: i, Unit: unit}, nil
-	}
-
-	// TODO(5nord) parse and return Bitstring templates (e.g. '01*1'B)
-	return nil, ErrSyntax
+	return strings.Map(removeWhitespaces, s)
 }
 
+// BitstringTemplate and everything referring to it will be removed
 type BitstringTemplate struct {
 	Value []rune
 }
@@ -351,6 +405,17 @@ func (b *BitstringTemplate) Len() int { return len(b.Value) }
 func (b *BitstringTemplate) Get(index int) Object {
 	t, _ := NewBitstringTemplate("'" + string(b.Value[index]) + "'" + string(b.Value[b.Len()-1]))
 	return t
+}
+
+func (b *BitstringTemplate) convUnit() Unit {
+	switch b.Value[b.Len()-1] {
+	case 'H':
+		return Hex
+	case 'O':
+		return Octett
+	default:
+		return Bit
+	}
 }
 
 type ListType string
