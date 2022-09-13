@@ -16,9 +16,9 @@ func Lengthof(args ...runtime.Object) runtime.Object {
 
 	switch arg := args[0].(type) {
 	case *runtime.String:
-		return runtime.Int{Int: big.NewInt(int64(len(arg.Value)))}
+		return runtime.Int{Int: big.NewInt(int64(arg.Len()))}
 	case *runtime.Bitstring:
-		return runtime.Int{Int: big.NewInt(int64(arg.Value.BitLen() / int(arg.Unit)))}
+		return runtime.Int{Int: big.NewInt(int64(arg.Len()))}
 	}
 	return runtime.Errorf("%s arguments not supported", args[0].Type())
 }
