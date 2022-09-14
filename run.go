@@ -140,14 +140,29 @@ func runTests(cmd *cobra.Command, args []string) error {
 	return nttRun(ctx, jobs, runner)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *tests.Job, runner *run.Runner) error {
+func nttRun(ctx context.Context, jobs <-chan *tests.Job, runner *run.Runner) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	var runs []results.Run
 	os.Remove(cache.Lookup("test_results.json"))
 	defer func() {
-		FlushTestResults(runs)
+		db := &results.DB{
+			Version: "1",
+			Sessions: []results.Session{
+				{
+					Id:              "1",
+					MaxJobs:         MaxWorkers,
+					ExpectedVerdict: "pass",
+					Runs:            runs,
+				},
+			},
+		}
+		b, err := json.MarshalIndent(db, "", "  ")
+		if err != nil {
+			return
+		}
+		err = ioutil.WriteFile(cache.Lookup("test_results.json"), b, 0644)
 	}()
 
 	running := make(map[*tests.Job]time.Time)
@@ -286,21 +301,6 @@ func k3sJobs(jobs <-chan *tests.Job) io.Reader {
 	return strings.NewReader(strings.Join(ids, "\n"))
 }
 
-// GenerateIDs emits test IDs based on given file and and id list to a channel.
-func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b Basket) <-chan string {
-	policy = strings.ToLower(policy)
-	policy = strings.TrimSpace(policy)
-	switch {
-	case len(ids) > 0:
-		return GenerateIDsWithContext(ctx, ids...)
-	case policy == "old":
-		return GenerateControlsWithContext(ctx, b, files...)
-	default:
-		return GenerateTestsWithContext(ctx, b, files...)
-
-	}
-}
-
 // GenerateJobs emits jobs from the given config and ids to a job channel.
 func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int) (chan *tests.Job, error) {
 	srcs, err := fs.TTCN3Files(conf.Sources...)
@@ -326,6 +326,21 @@ func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size 
 		log.Debugf("Generating %d jobs done.\n", i)
 	}()
 	return out, nil
+}
+
+// GenerateIDs emits test IDs based on given file and and id list to a channel.
+func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b Basket) <-chan string {
+	policy = strings.ToLower(policy)
+	policy = strings.TrimSpace(policy)
+	switch {
+	case len(ids) > 0:
+		return GenerateIDsWithContext(ctx, ids...)
+	case policy == "old":
+		return GenerateControlsWithContext(ctx, b, files...)
+	default:
+		return GenerateTestsWithContext(ctx, b, files...)
+
+	}
 }
 
 // GenerateIDs emits given IDs to a channel.
@@ -388,25 +403,6 @@ func generate(ctx context.Context, def *ttcn3.Definition, b Basket, c chan<- str
 		}
 	}
 	return true
-}
-
-func FlushTestResults(runs []results.Run) error {
-	db := &results.DB{
-		Version: "1",
-		Sessions: []results.Session{
-			{
-				Id:              "1",
-				MaxJobs:         MaxWorkers,
-				ExpectedVerdict: "pass",
-				Runs:            runs,
-			},
-		},
-	}
-	b, err := json.MarshalIndent(db, "", "  ")
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(cache.Lookup("test_results.json"), b, 0644)
 }
 
 func readTestsFromFile(path string) ([]string, error) {
