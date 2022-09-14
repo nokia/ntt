@@ -327,6 +327,45 @@ func (b *Bitstring) Get(index int) Object {
 	// 3*. If i % unitInt is 0, shift 7 to the left, if 1, shift 6, etc. (Binary)
 }
 
+func (b *Bitstring) Kind() rune {
+	switch b.Unit {
+	case 1:
+		return 'B'
+	case 4:
+		return 'H'
+	case 8:
+		return 'O'
+	default: // Will never happen
+		return '-'
+	}
+}
+
+// won't work if b includes a Wildcard
+func (b *Bitstring) BigInt() *big.Int {
+	base := 16
+	if b.Unit == 1 {
+		base = 2
+	}
+	r, _ := new(big.Int).SetString(removeWhitespaces(b.Value[1:len(b.Value)-2]), base)
+	return r
+}
+
+func BigIntToBitstring(b *big.Int, unit rune) *Bitstring {
+	base := 2
+	switch unit {
+	case 'O', 'H':
+		base = 16
+	default:
+		unit = 'B'
+	}
+	s := new(big.Int).Text(base)
+	if unit == 'O' && len(s)%2 != 0 {
+		s = "0" + s
+	}
+	r, _ := NewBitstring("'" + s + "'" + string(unit))
+	return r
+}
+
 func removeWhitespaces(s string) string {
 	removeWhitespaces := func(r rune) rune {
 		if unicode.IsSpace(r) {

@@ -442,7 +442,7 @@ func evalUnary(n *ast.UnaryExpr, env runtime.Scope) runtime.Object {
 		}
 	case token.NOT4B:
 		if b, ok := val.(*runtime.Bitstring); ok {
-			return &runtime.Bitstring{Value: new(big.Int).Abs(new(big.Int).Not(b.Value)), Unit: b.Unit}
+			return runtime.BigIntToBitstring(new(big.Int).Abs(new(big.Int).Not(b.BigInt())), b.Kind())
 		}
 	}
 
@@ -601,14 +601,12 @@ func evalStringBinary(x string, y string, op token.Kind, env runtime.Scope) runt
 func evalBitstringBinary(x *runtime.Bitstring, y *runtime.Bitstring, op token.Kind, env runtime.Scope) runtime.Object {
 	switch op {
 	case token.AND4B:
-		return &runtime.Bitstring{Value: new(big.Int).And(x.Value, y.Value), Unit: x.Unit}
+		return runtime.BigIntToBitstring(new(big.Int).And(x.BigInt(), y.BigInt()), x.Kind())
 
 	case token.OR4B:
-		return &runtime.Bitstring{Value: new(big.Int).Or(x.Value, y.Value), Unit: x.Unit}
-
+		return runtime.BigIntToBitstring(new(big.Int).Or(x.BigInt(), y.BigInt()), x.Kind())
 	case token.XOR4B:
-		return &runtime.Bitstring{Value: new(big.Int).Xor(x.Value, y.Value), Unit: x.Unit}
-
+		return runtime.BigIntToBitstring(new(big.Int).Xor(x.BigInt(), y.BigInt()), x.Kind())
 	}
 	return runtime.Errorf("unknown operator: bitstring %s bitstring", op)
 }
