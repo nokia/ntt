@@ -155,7 +155,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 	return nttRun(ctx, jobs, runner)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *run.Job, runner *run.Runner) error {
+func nttRun(ctx context.Context, jobs <-chan *tests.Job, runner *run.Runner) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -254,7 +254,7 @@ func printRun(r results.Run) {
 	}
 }
 
-func k3sRun(ctx context.Context, files []string, jobs <-chan *run.Job) error {
+func k3sRun(ctx context.Context, files []string, jobs <-chan *tests.Job) error {
 	args := []string{
 		"--no-summary",
 		fmt.Sprintf("--results-file=%s", ResultsFile),
@@ -272,7 +272,7 @@ func k3sRun(ctx context.Context, files []string, jobs <-chan *run.Job) error {
 	return k3s.Run()
 }
 
-func k3sJobs(jobs <-chan *run.Job) io.Reader {
+func k3sJobs(jobs <-chan *tests.Job) io.Reader {
 	var ids []string
 	for j := range jobs {
 		ids = append(ids, j.Name)
@@ -296,21 +296,25 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given config and ids to a job channel.
-func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int, runner *run.Runner) (chan *run.Job, error) {
+func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int, runner *run.Runner) (chan *tests.Job, error) {
 	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
 	}
 
-	out := make(chan *run.Job, size)
+	out := make(chan *tests.Job, size)
 	go func() {
 		defer close(out)
 
 		i := 0
 		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
 			i++
-			job := runner.NewJob(id, conf)
-			job.Dir = OutputDir
+			job := &tests.Job{
+				Name:   id,
+				Config: conf,
+				Dir:    OutputDir,
+			}
+			log.Debugf("new job: name=%s, conf=%p\n", id, conf)
 			out <- job
 		}
 		log.Debugf("Generating %d jobs done.\n", i)

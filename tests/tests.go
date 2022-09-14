@@ -22,6 +22,9 @@ type Job struct {
 	// Module Parameters
 	ModulePars map[string]string
 
+	// Dir specifies the working directory for the job.
+	Dir string
+
 	// Env specifies the environment variables to pass to the job.
 	Env []string
 

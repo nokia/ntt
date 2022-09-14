@@ -30,9 +30,6 @@ type Test struct {
 	// Path to the K3 runtime
 	Runtime string
 
-	// Dir specifies the working directory for the test.
-	Dir string
-
 	// LogFile is the path to the log file.
 	LogFile string
 
