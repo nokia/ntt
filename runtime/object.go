@@ -224,17 +224,18 @@ func NewString(s string) *String {
 type Bitstring struct {
 	Value *big.Int
 	Unit  Unit
+	Padding Unit
 }
 
 func (b *Bitstring) Type() ObjectType { return BITSTRING }
 func (b *Bitstring) Inspect() string {
 	switch b.Unit {
 	case Bit:
-		return fmt.Sprintf("'%b'B", b.Value)
+		return fmt.Sprintf("'%0*b'B", b.Padding, b.Value)
 	case Octett:
-		return fmt.Sprintf("'%h'O", b.Value)
+		return fmt.Sprintf("'%0*h'O", b.Padding, b.Value)
 	default:
-		return fmt.Sprintf("'%h'H", b.Value)
+		return fmt.Sprintf("'%0*h'H", b.Padding, b.Value)
 	}
 }
 
@@ -268,6 +269,7 @@ func NewBitstring(s string) (*Bitstring, error) {
 		return nil, ErrSyntax
 	}
 
+	payloadLen := Unit(len(s)) - 3
 	removeWhitespaces := func(r rune) rune {
 		if unicode.IsSpace(r) {
 			return -1
@@ -277,7 +279,7 @@ func NewBitstring(s string) (*Bitstring, error) {
 	s = strings.Map(removeWhitespaces, s[1:len(s)-2])
 
 	if i, ok := new(big.Int).SetString(s, unit.Base()); ok {
-		return &Bitstring{Value: i, Unit: unit}, nil
+		return &Bitstring{Value: i, Unit: unit, Padding: payloadLen}, nil
 	}
 
 	// TODO(5nord) parse and return Bitstring templates (e.g. '01*1'B)

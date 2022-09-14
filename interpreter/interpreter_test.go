@@ -2,6 +2,7 @@ package interpreter_test
 
 import (
 	"testing"
+	"math/big"
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/interpreter"
@@ -273,6 +274,43 @@ func TestBuiltinFunction(t *testing.T) {
 		switch expected := tt.expected.(type) {
 		case int:
 			testInt(t, val, int64(expected))
+		case string:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Error() != expected {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected)
+			}
+		}
+	}
+}
+
+func TestBuiltinFunctionInt2Bit(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected interface{}
+	}{
+		{`int2bit()`,     "wrong number of arguments. got=0, want=2"},
+		{`int2bit(1)`,    "wrong number of arguments. got=1, want=2"},
+		{`int2bit("",0)`, "string arguments not supported"},
+		{`int2bit(0,"")`, "string arguments not supported"},
+		{`int2bit(1,4)`,  &runtime.Bitstring{Value: big.NewInt(1), Unit: runtime.Bit, Padding: 4}},
+		{`int2bit(4,1)`,  "4 value requires more than 1 bits"},
+	}
+	for _, tt := range tests {
+		val := testEval(t, tt.input)
+		switch expected := tt.expected.(type) {
+		case runtime.Bitstring:
+			bitstr, ok := val.(*runtime.Bitstring)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if *bitstr != expected {
+				t.Errorf("fail")
+			}
 		case string:
 			err, ok := val.(*runtime.Error)
 			if !ok {
