@@ -104,34 +104,19 @@ func init() {
 
 // Run runs the given jobs in parallel.
 func runTests(cmd *cobra.Command, args []string) error {
-	ctx, cancel := context.WithCancel(context.Background())
+
+	ctx, cancel := WithSignalHandler(context.Background())
 	defer cancel()
 
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	defer func() {
-		signal.Stop(signalChan)
-		cancel()
-	}()
-	go func() {
-		select {
-		case <-signalChan: // first signal, cancel context
-			cancel()
-		case <-ctx.Done():
-		}
-		<-signalChan // second signal, hard exit
-		os.Exit(2)
-	}()
+	if err := project.Build(Project); err != nil {
+		return fmt.Errorf("building test suite failed: %w", err)
+	}
 
 	var err error
 	DefaultBasket, err = NewBasketWithFlags("list", cmd.Flags())
 	DefaultBasket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
 	if err != nil {
 		return err
-	}
-
-	if err := project.Build(Project); err != nil {
-		return fmt.Errorf("building test suite failed: %w", err)
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
@@ -144,7 +129,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	runner := run.NewRunner(MaxWorkers)
-	jobs, err := GenerateJobs(ctx, Project, ids, MaxWorkers, runner)
+	jobs, err := GenerateJobs(ctx, Project, ids, MaxWorkers)
 	if err != nil {
 		return err
 	}
@@ -254,6 +239,27 @@ func printRun(r results.Run) {
 	}
 }
 
+// WithSignalHandler adds a signal handler for ^C to the context.
+func WithSignalHandler(ctx context.Context) (context.Context, context.CancelFunc) {
+	ctx2, cancel := context.WithCancel(context.Background())
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		select {
+		case <-signalChan: // first signal, cancel context
+			cancel()
+		case <-ctx.Done():
+		}
+		<-signalChan // second signal, hard exit
+		os.Exit(2)
+	}()
+	return ctx2, func() {
+		signal.Stop(signalChan)
+		cancel()
+	}
+}
+
 func k3sRun(ctx context.Context, files []string, jobs <-chan *tests.Job) error {
 	args := []string{
 		"--no-summary",
@@ -296,7 +302,7 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 }
 
 // GenerateJobs emits jobs from the given config and ids to a job channel.
-func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int, runner *run.Runner) (chan *tests.Job, error) {
+func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int) (chan *tests.Job, error) {
 	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
