@@ -348,6 +348,36 @@ func TestImportTasks(t *testing.T) {
 
 }
 
+func TestLibraryPaths(t *testing.T) {
+	t.Parallel()
+	t.Run("empty", func(t *testing.T) {
+		c := &project.Config{}
+		var want []string
+		got, err := project.LibraryPaths(c)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "empty project without k3 does not need anything")
+	})
+
+	t.Run("empty with k3", func(t *testing.T) {
+		want := []string{"k3root/plugins"}
+		c := &project.Config{}
+		c.K3.Plugins = []string{"k3root/plugins"}
+		got, err := project.LibraryPaths(c)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "empty project with k3 only requires k3 builtins")
+	})
+
+	t.Run("imports with k3", func(t *testing.T) {
+		want := []string{"importDir", "k3root/plugins"}
+		c := &project.Config{}
+		c.Imports = []string{"importDir"}
+		c.K3.Plugins = []string{"k3root/plugins"}
+		got, err := project.LibraryPaths(c)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "import directories go before k3 builtins")
+	})
+}
+
 func TestPresets(t *testing.T) {
 	unmarshal := func(s string) project.Parameters {
 		var p project.Parameters
