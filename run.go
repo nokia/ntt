@@ -20,6 +20,7 @@ import (
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/run"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -129,9 +130,8 @@ func runTests(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	suite, err := run.NewSuite(Project)
-	if err != nil {
-		return err
+	if err := project.Build(Project); err != nil {
+		return fmt.Errorf("building test suite failed: %w", err)
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
@@ -144,7 +144,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	runner := run.NewRunner(MaxWorkers)
-	jobs, err := GenerateJobs(ctx, suite, ids, MaxWorkers, runner)
+	jobs, err := GenerateJobs(ctx, Project, ids, MaxWorkers, runner)
 	if err != nil {
 		return err
 	}
@@ -295,9 +295,9 @@ func GenerateIDs(ctx context.Context, ids []string, files []string, policy strin
 	}
 }
 
-// GenerateJobs emits jobs from the given suite and ids to a job channel.
-func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int, runner *run.Runner) (chan *run.Job, error) {
-	srcs, err := fs.TTCN3Files(suite.Sources...)
+// GenerateJobs emits jobs from the given config and ids to a job channel.
+func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int, runner *run.Runner) (chan *run.Job, error) {
+	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func GenerateJobs(ctx context.Context, suite *run.Suite, ids []string, size int,
 		i := 0
 		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
 			i++
-			job := runner.NewJob(id, suite)
+			job := runner.NewJob(id, conf)
 			job.Dir = OutputDir
 			out <- job
 		}

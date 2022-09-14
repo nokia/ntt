@@ -16,29 +16,6 @@ import (
 	"github.com/nokia/ntt/tests"
 )
 
-// NewSuite creates a new suite from the given files. It expects either
-// a single directory as argument or a list of regular .ttcn3 files.
-//
-// Calling NewSuite with an empty argument list will create a suite from
-// current working directory or, if set, from NTT_SOURCE_DIR.
-//
-// NewSuite will read manifest (package.yml) if any.
-func NewSuite(p *project.Config) (*Suite, error) {
-	if err := project.Build(p); err != nil {
-		return nil, fmt.Errorf("building test suite failed: %w", err)
-	}
-
-	return &Suite{
-		Config: p,
-	}, nil
-
-}
-
-// Suite represents a test suite.
-type Suite struct {
-	*project.Config
-}
-
 // Job represents a single job to be executed.
 type Job struct {
 	// Full qualified name of the test or control function to be executed.
@@ -48,7 +25,7 @@ type Job struct {
 	Dir string
 
 	// Test suite the job belongs to.
-	Suite *Suite
+	*project.Config
 
 	id string
 }
@@ -88,19 +65,19 @@ type Runner struct {
 	jobs       map[string]*Job
 }
 
-func (r *Runner) NewJob(name string, suite *Suite) *Job {
+func (r *Runner) NewJob(name string, conf *project.Config) *Job {
 	r.Lock()
 	defer r.Unlock()
 
 	job := Job{
-		id:    fmt.Sprintf("%s-%d", name, r.names[name]),
-		Name:  name,
-		Suite: suite,
+		id:     fmt.Sprintf("%s-%d", name, r.names[name]),
+		Name:   name,
+		Config: conf,
 	}
 	r.names[name]++
 	r.jobs[job.id] = &job
 
-	log.Debugf("new job: name=%s, suite=%p, id=%s\n", name, suite, job.id)
+	log.Debugf("new job: name=%s, conf=%p, id=%s\n", name, conf, job.id)
 	return &job
 }
 
@@ -188,7 +165,7 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 		logFile = fmt.Sprintf("%s.log", strings.TrimSuffix(job.ID(), "-0"))
 	}
 
-	t3xf := job.Suite.K3.T3XF
+	t3xf := job.Config.K3.T3XF
 	if workingDir != "" {
 		absT3xf, err := filepath.Abs(t3xf)
 		if err != nil {
@@ -208,7 +185,7 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 	}
 
 	t := k3r.NewTest(t3xf, job.Name)
-	t.Config = job.Suite.Config
+	t.Config = job.Config
 
 	var (
 		timeout time.Duration
