@@ -62,26 +62,6 @@ func (u Unit) Base() int {
 	}
 }
 
-func convHexToBi(r rune) byte {
-	switch r {
-	case 'A', 'a':
-		return 10
-	case 'B', 'b':
-		return 11
-	case 'C', 'c':
-		return 12
-	case 'D', 'd':
-		return 13
-	case 'E', 'e':
-		return 14
-	case 'F', 'f':
-		return 15
-	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		return byte(r - '0')
-	}
-	return 0
-}
-
 var (
 	ErrSyntax = errors.New("invalid syntax")
 	Undefined = &singelton{typ: UNDEFINED}
@@ -332,16 +312,20 @@ func (b *Bitstring) Get(index int) Object {
 	return &Bitstring{String: s, Value: n, Unit: b.Unit}
 }
 
-func (b *Bitstring) Kind() rune {
-	switch b.Unit {
+func BigIntToBitstring(b *big.Int, unit Unit) string {
+	return "'" + b.Text(unit.Base()) + "'" + unit.String()
+}
+
+func (u Unit) String() string {
+	switch u {
 	case 1:
-		return 'B'
+		return "B"
 	case 4:
-		return 'H'
+		return "H"
 	case 8:
-		return 'O'
+		return "O"
 	default: // Will never happen
-		return '-'
+		return "-"
 	}
 }
 
@@ -423,17 +407,6 @@ func (b *BitstringTemplate) Len() int { return len(b.Value) }
 func (b *BitstringTemplate) Get(index int) Object {
 	t, _ := NewBitstringTemplate("'" + string(b.Value[index]) + "'" + string(b.Value[b.Len()-1]))
 	return t
-}
-
-func (b *BitstringTemplate) convUnit() Unit {
-	switch b.Value[b.Len()-1] {
-	case 'H':
-		return Hex
-	case 'O':
-		return Octett
-	default:
-		return Bit
-	}
 }
 
 type ListType string
