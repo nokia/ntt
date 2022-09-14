@@ -1,4 +1,4 @@
-package run
+package runner
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type Result struct {
 	tests.Event
 }
 
-func NewRunner(n int) *Runner {
+func New(n int) *Runner {
 	return &Runner{
 		maxWorkers: n,
 		names:      make(map[string]int),

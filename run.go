@@ -19,9 +19,9 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
-	"github.com/nokia/ntt/internal/run"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
+	"github.com/nokia/ntt/tests/runner"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
@@ -128,7 +128,6 @@ func runTests(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	runner := run.NewRunner(MaxWorkers)
 	jobs, err := GenerateJobs(ctx, Project, ids, MaxWorkers)
 	if err != nil {
 		return err
@@ -137,10 +136,10 @@ func runTests(cmd *cobra.Command, args []string) error {
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
 		return k3sRun(ctx, files, jobs)
 	}
-	return nttRun(ctx, jobs, runner)
+	return nttRun(ctx, jobs)
 }
 
-func nttRun(ctx context.Context, jobs <-chan *tests.Job, runner *run.Runner) (err error) {
+func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -166,7 +165,7 @@ func nttRun(ctx context.Context, jobs <-chan *tests.Job, runner *run.Runner) (er
 	}()
 
 	running := make(map[*tests.Job]time.Time)
-	for res := range runner.Run(ctx, jobs) {
+	for res := range runner.New(MaxWorkers).Run(ctx, jobs) {
 		log.Debugf("result: event=%#v\n", res.Event)
 
 		switch e := res.Event.(type) {
