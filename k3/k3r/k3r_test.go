@@ -1,4 +1,4 @@
-package k3r_test
+package k3r
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/k3/k3r"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/tests"
 	tsts "github.com/nokia/ntt/tests"
 	"github.com/stretchr/testify/assert"
 )
@@ -106,7 +106,7 @@ func TestEvents(t *testing.T) {
 			}
 
 			var actual []string
-			tst := k3r.NewTest(t3xf, tt.input)
+			tst := NewTest(t3xf, tt.input)
 			tst.Env = append(tst.Env, env.Environ()...)
 			for e := range tst.RunWithContext(ctx) {
 				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "tests.")
@@ -127,6 +127,102 @@ func TestEvents(t *testing.T) {
 		})
 	}
 
+}
+
+func TestBuildEnv(t *testing.T) {
+	clearEnv := func() func() {
+		a, okA := os.LookupEnv("PATH")
+		b, okB := os.LookupEnv("K3R_PATH")
+		c, okC := os.LookupEnv("LD_LIBRARY_PATH")
+		os.Unsetenv("PATH")
+		os.Unsetenv("K3R_PATH")
+		os.Unsetenv("LD_LIBRARY_PATH")
+		return func() {
+			if okA {
+				os.Setenv("PATH", a)
+			}
+			if okB {
+				os.Setenv("K3R_PATH", b)
+			}
+			if okC {
+				os.Setenv("LD_LIBRARY_PATH", c)
+			}
+		}
+
+	}
+
+	t.Run("empty", func(t *testing.T) {
+		want := []string{"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
+		reset := clearEnv()
+		defer reset()
+		test := newTest()
+		got, err := buildEnv(test)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "without K3_SERVER k3r wont communicate")
+
+	})
+
+	t.Run("library paths", func(t *testing.T) {
+		want := []string{
+			"K3R_PATH=import1:import2:k3-plugins",
+			"LD_LIBRARY_PATH=import1:import2:k3-plugins",
+			"PATH=import1:import2:k3-plugins",
+			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
+		}
+		reset := clearEnv()
+		defer reset()
+		test := newTest()
+		test.Config.Imports = []string{"import1", "import2"}
+		test.Config.K3.Plugins = []string{"k3-plugins"}
+		got, err := buildEnv(test)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "library path need to be exported to k3r")
+	})
+
+	t.Run("variables", func(t *testing.T) {
+		want := []string{
+			"K3R_PATH=import1:import2",
+			"LD_LIBRARY_PATH=import1:import2",
+			"PATH=import1:import2:path",
+			"TEST_VAR_A=vartest",
+			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
+		}
+		reset := clearEnv()
+		defer reset()
+		os.Setenv("PATH", "path")
+		test := newTest()
+		test.Config.Variables = map[string]string{
+			"PATH":       "varpath",
+			"TEST_VAR_A": "vartest",
+		}
+		test.Config.Imports = []string{"import1", "import2"}
+		got, err := buildEnv(test)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "library path need to be exported to k3r")
+	})
+
+	t.Run("test env", func(t *testing.T) {
+		want := []string{"FOO=fromVar", "FOO=fromEnv", "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
+		reset := clearEnv()
+		defer reset()
+		test := newTest()
+		test.Config.Variables = map[string]string{
+			"FOO": "fromVar",
+		}
+		test.Env = []string{"FOO=fromEnv"}
+
+		got, err := buildEnv(test)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+}
+
+func newTest() *Test {
+	return &Test{
+		Job: &tests.Job{
+			Config: &project.Config{},
+		},
+	}
 }
 
 func initStage(t *testing.T) (string, string) {

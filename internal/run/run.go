@@ -11,7 +11,6 @@ import (
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/k3r"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
@@ -29,19 +28,8 @@ func NewSuite(p *project.Config) (*Suite, error) {
 		return nil, fmt.Errorf("building test suite failed: %w", err)
 	}
 
-	var paths []string
-	if s := env.Getenv("NTT_CACHE"); s != "" {
-		paths = append(paths, strings.Split(s, string(os.PathListSeparator))...)
-	}
-	paths = append(paths, p.Manifest.Imports...)
-	paths = append(paths, k3.Plugins()...)
-	if cwd, err := os.Getwd(); err == nil {
-		paths = append(paths, cwd)
-	}
-
 	return &Suite{
-		Config:       p,
-		RuntimePaths: paths,
+		Config: p,
 	}, nil
 
 }
@@ -49,7 +37,6 @@ func NewSuite(p *project.Config) (*Suite, error) {
 // Suite represents a test suite.
 type Suite struct {
 	*project.Config
-	RuntimePaths []string
 }
 
 // Job represents a single job to be executed.
@@ -237,13 +224,14 @@ func (r *Runner) run(ctx context.Context, job *Job, results chan<- Result) {
 		defer cancel()
 	}
 
-	//TODO(5nord) Add t.ModulePars
+	// TODO(5nord) implement module parameters
 	t.Dir = workingDir
 	t.LogFile = logFile
-	t.Env = append(t.Env, job.Suite.Variables.Slice()...)
-	t.Env = append(t.Env, env.Environ()...)
-	t.Env = append(t.Env, fmt.Sprintf("K3R_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("K3R_PATH")))
-	t.Env = append(t.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s:%s", strings.Join(job.Suite.RuntimePaths, ":"), os.Getenv("LD_LIBRARY_PATH")))
+	t.Env = env.Environ()
+	if s := env.Getenv("NTT_CACHE"); s != "" {
+		t.Env = append(t.Env, strings.Split(s, string(os.PathListSeparator))...)
+	}
+
 	for event := range t.RunWithContext(ctx) {
 		results <- Result{
 			Job:   job,
