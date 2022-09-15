@@ -2,7 +2,6 @@ package interpreter_test
 
 import (
 	"testing"
-	"math/big"
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/interpreter"
@@ -292,33 +291,42 @@ func TestBuiltinFunctionInt2Bit(t *testing.T) {
 		input    string
 		expected interface{}
 	}{
-		{`int2bit()`,     "wrong number of arguments. got=0, want=2"},
-		{`int2bit(1)`,    "wrong number of arguments. got=1, want=2"},
-		{`int2bit("",0)`, "string arguments not supported"},
-		{`int2bit(0,"")`, "string arguments not supported"},
-		{`int2bit(1,4)`,  &runtime.Bitstring{Value: big.NewInt(1), Unit: runtime.Bit, Padding: 4}},
-		{`int2bit(4,1)`,  "4 value requires more than 1 bits"},
+		{`int2bit()`, runtime.Errorf("wrong number of arguments. got=0, want=2")},
+		{`int2bit(1)`, runtime.Errorf("wrong number of arguments. got=1, want=2")},
+		{`int2bit("", 0)`, runtime.Errorf("string arguments not supported")},
+		{`int2bit(0, "")`, runtime.Errorf("string arguments not supported")},
+		{`int2bit(1, 4)`, "'0001'B"},
+		{`int2bit(4, 1)`, runtime.Errorf("4 value requires more than 1 bits")},
+		{`int2bit(4, -1)`, runtime.Errorf("length must be greater or equal than zero")},
+		{`int2bit(0, 0)`, "'0'B"},
+		{`int2bit(1, 0)`, runtime.Errorf("1 value requires more than 1 bits")},
+		{`int2bit(1, -1)`, runtime.Errorf("no")},
+		{`int2bit(-1, 8)`, runtime.Errorf("no")},
+		{`int2bit(33569, 16)`, "'1000001100100001'B"},
+		{`int2bit(1, 3)`, "'001'B"},
+		{`int2bit(0, 2)`, "'00'B"},
 	}
 	for _, tt := range tests {
 		val := testEval(t, tt.input)
 		switch expected := tt.expected.(type) {
-		case runtime.Bitstring:
+		case string:
 			bitstr, ok := val.(*runtime.Bitstring)
 			if !ok {
 				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
 				continue
 			}
-			if *bitstr != expected {
-				t.Errorf("fail")
+
+			if bitstr.Inspect() != expected {
+				t.Errorf("fail expected=%v got=%v", expected, bitstr.Inspect())
 			}
-		case string:
+		case runtime.Error:
 			err, ok := val.(*runtime.Error)
 			if !ok {
 				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
 				continue
 			}
-			if err.Error() != expected {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected)
+			if err.Error() != expected.Error() {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
 			}
 		}
 	}
