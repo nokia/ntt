@@ -245,11 +245,11 @@ func (b *Bitstring) hashKey() hashKey {
 	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
-func NewBitstring(s string, trim bool) (*Bitstring, error) {
-
+func NewBitstring(s string) (*Bitstring, error) {
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
 	}
+	
 	var unit Unit
 	ending := strings.ToUpper(string(s[len(s)-1]))
 	switch ending {
