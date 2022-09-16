@@ -165,7 +165,7 @@ func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
 	}()
 
 	running := make(map[*tests.Job]time.Time)
-	for e := range runner.New(MaxWorkers).Run(ctx, jobs) {
+	for e := range runner.New(MaxWorkers, jobs).Run(ctx) {
 		log.Debugf("result: event=%#v\n", e)
 
 		switch e := e.(type) {

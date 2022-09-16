@@ -15,10 +15,11 @@ import (
 	"github.com/nokia/ntt/tests"
 )
 
-func New(n int) *Runner {
+func New(n int, jobs <-chan *tests.Job) *Runner {
 	return &Runner{
 		maxWorkers: n,
 		names:      make(map[string]int),
+		jobs:       jobs,
 	}
 }
 
@@ -27,16 +28,17 @@ type Runner struct {
 	sync.Mutex
 	maxWorkers int
 	names      map[string]int
+	jobs       <-chan *tests.Job
 }
 
-func (r *Runner) Run(ctx context.Context, jobs <-chan *tests.Job) <-chan tests.Event {
+func (r *Runner) Run(ctx context.Context) <-chan tests.Event {
 	wg := sync.WaitGroup{}
 	results := make(chan tests.Event, r.maxWorkers)
 	for i := 0; i < r.maxWorkers; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			for job := range jobs {
+			for job := range r.jobs {
 				log.Debugf("worker #%02d: execute %s\n", i, job.Name)
 				r.run(ctx, job, results)
 			}
@@ -137,7 +139,7 @@ func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- tests.E
 		t.Env = append(t.Env, strings.Split(s, string(os.PathListSeparator))...)
 	}
 
-	for event := range t.RunWithContext(ctx) {
+	for event := range t.Run(ctx) {
 		results <- event
 	}
 }

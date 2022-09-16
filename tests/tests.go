@@ -2,11 +2,17 @@
 package tests
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/nokia/ntt/project"
 )
+
+// A Runner runs one or multiple jobs and emits Events
+type Runner interface {
+	Run(context.Context) <-chan Event
+}
 
 // Job describes the test or control function to be executed.
 type Job struct {

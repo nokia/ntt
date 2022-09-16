@@ -108,7 +108,7 @@ func TestEvents(t *testing.T) {
 			var actual []string
 			tst := NewTest(t3xf, tt.input)
 			tst.Env = append(tst.Env, env.Environ()...)
-			for e := range tst.RunWithContext(ctx) {
+			for e := range tst.Run(ctx) {
 				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "tests.")
 				switch e := e.(type) {
 				case tsts.StartEvent:

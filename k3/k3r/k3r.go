@@ -68,11 +68,7 @@ func (r *Error) Unwrap() error {
 	return r.Err
 }
 
-func (t *Test) Run() <-chan tests.Event {
-	return t.RunWithContext(context.Background())
-}
-
-func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
+func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 
 	events := make(chan tests.Event)
 
