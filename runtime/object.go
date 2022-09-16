@@ -267,7 +267,16 @@ func NewBitstring(s string) (*Bitstring, error) {
 		}
 		return r
 	}
+	trim := func(r rune) bool {
+		return unicode.IsSpace(r) || r == '0'
+	}
+
+	s = "'" + strings.TrimLeftFunc(s[1:len(s)-1], trim) + ending
+	// remove leading Whitespaces and zeroes and capitalize Unit
 	n := strings.Map(removeWhitespaces, s[1:len(s)-2])
+	if unit == Octett && len(n)%2 != 0 {
+		s = "'0" + s[1:]
+	}
 	if i, ok := new(big.Int).SetString(n, unit.Base()); ok {
 		return &Bitstring{String: s, Value: i, Unit: unit}, nil
 	}
