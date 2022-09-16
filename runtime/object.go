@@ -267,7 +267,7 @@ func NewBitstring(s string, trim bool) (*Bitstring, error) {
 		if unicode.IsSpace(r) {
 			return -1
 		}
-		return unicode.IsSpace(r)
+		return r
 	}
   
 	trim := func(r rune) bool {
