@@ -33,8 +33,8 @@ func Rnd(args ...runtime.Object) runtime.Object {
 
 func Int2Bit(args ...runtime.Object) runtime.Object {
 
-	if len(args) != 2 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
+	if len(args) != 1 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
 	}
 	number, ok := args[0].(runtime.Int)
 	if !ok {
