@@ -31,6 +31,21 @@ func Rnd(args ...runtime.Object) runtime.Object {
 	return runtime.Float(rand.Float64())
 }
 
+func Int2Bit(args ...runtime.Object) runtime.Object {
+
+	if len(args) != 2 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
+	}
+	number, ok := args[0].(runtime.Int)
+	if !ok {
+		return runtime.Errorf("%s arguments not supported", args[0].Type())
+	}
+	if number.Sign() == -1 {
+		return runtime.Errorf("%s invalue is less than zero", args[0].Type())
+	}
+	return &runtime.Bitstring{Value: number.Value(), Unit: runtime.Bit, String: "'" + number.Value.Text(2) + "'B"}
+}
+
 func Int2Float(args ...runtime.Object) runtime.Object {
 	if len(args) != 1 {
 		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
@@ -90,6 +105,7 @@ func makeSet(lt runtime.ListType, args ...runtime.Object) func(...runtime.Object
 func init() {
 	runtime.AddBuiltin("lengthof", Lengthof)
 	runtime.AddBuiltin("rnd", Rnd)
+	runtime.AddBuiltin("int2bit", Int2Bit)
 	runtime.AddBuiltin("int2float", Int2Float)
 	runtime.AddBuiltin("float2int", Float2Int)
 	runtime.AddBuiltin("log", Log)
