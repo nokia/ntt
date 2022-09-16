@@ -307,7 +307,7 @@ func (b *Bitstring) Get(index int) Object {
 	width := int(b.Unit)/8 + 1
 	// If b.Unit is Octett, each "digit" is two bytes wide
 	s := removeWhitespaces(b.String)
-	s = "'" + s[len(s)-2-(index+1)*width:len(s)-2-index*width] + s[len(s)-2:]
+	s = "'" + s[1+index*width:1+(index+1)*width] + s[len(s)-2:]
 	n, _ := new(big.Int).SetString(s[1:len(s)-2], b.Unit.Base())
 	return &Bitstring{String: s, Value: n, Unit: b.Unit}
 }
