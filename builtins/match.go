@@ -1,6 +1,11 @@
 package builtins
 
-import "github.com/nokia/ntt/runtime"
+import (
+	"strings"
+	"unicode"
+
+	"github.com/nokia/ntt/runtime"
+)
 
 type sliceHolder interface {
 	Get(index int) runtime.Object
@@ -41,6 +46,17 @@ func match(a, b runtime.Object) (bool, error) {
 
 		}
 		return matchRecordOf(a.(*runtime.String), b)
+	case *runtime.Bitstring:
+		if c := a.(*runtime.Bitstring); c.Unit == b.Unit {
+			removeWhitespaces := func(r rune) rune {
+				if unicode.IsSpace(r) {
+					return -1
+				}
+				return r
+			}
+			return match(runtime.NewString(strings.Map(removeWhitespaces, c.String)), runtime.NewString(strings.Map(removeWhitespaces, b.String)))
+		}
+		return false, runtime.Errorf("")
 	default:
 		return a.Equal(b), nil
 	}
