@@ -313,7 +313,7 @@ func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 		}
 		return &runtime.String{Value: []rune(s)}
 	case token.BSTRING:
-		b, err := runtime.NewBitstring(n.Tok.Lit, true)
+		b, err := runtime.NewBitstring(n.Tok.Lit)
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
