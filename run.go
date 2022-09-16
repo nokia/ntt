@@ -165,10 +165,10 @@ func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
 	}()
 
 	running := make(map[*tests.Job]time.Time)
-	for res := range runner.New(MaxWorkers).Run(ctx, jobs) {
-		log.Debugf("result: event=%#v\n", res.Event)
+	for e := range runner.New(MaxWorkers).Run(ctx, jobs) {
+		log.Debugf("result: event=%#v\n", e)
 
-		switch e := res.Event.(type) {
+		switch e := e.(type) {
 
 		case tests.StartEvent:
 			running[e.Job] = e.Time()
@@ -192,7 +192,7 @@ func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
 				Verdict:    e.Verdict,
 				Begin:      results.Timestamp{Time: running[e.Job]},
 				End:        results.Timestamp{Time: e.Time()},
-				WorkingDir: res.Test.Dir,
+				WorkingDir: e.Job.Dir,
 			}
 			runs = append(runs, run)
 			printRun(run)
@@ -209,7 +209,7 @@ func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
 				Verdict:    "fatal",
 				Begin:      results.Timestamp{Time: running[job]},
 				End:        results.Timestamp{Time: e.Time()},
-				WorkingDir: res.Test.Dir,
+				WorkingDir: job.Dir,
 			}
 			printRun(run)
 

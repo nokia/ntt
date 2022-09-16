@@ -15,11 +15,6 @@ import (
 	"github.com/nokia/ntt/tests"
 )
 
-type Result struct {
-	k3r.Test
-	tests.Event
-}
-
 func New(n int) *Runner {
 	return &Runner{
 		maxWorkers: n,
@@ -34,9 +29,9 @@ type Runner struct {
 	names      map[string]int
 }
 
-func (r *Runner) Run(ctx context.Context, jobs <-chan *tests.Job) <-chan Result {
+func (r *Runner) Run(ctx context.Context, jobs <-chan *tests.Job) <-chan tests.Event {
 	wg := sync.WaitGroup{}
-	results := make(chan Result, r.maxWorkers)
+	results := make(chan tests.Event, r.maxWorkers)
 	for i := 0; i < r.maxWorkers; i++ {
 		wg.Add(1)
 		go func(i int) {
@@ -48,7 +43,7 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *tests.Job) <-chan Result 
 		}(i)
 	}
 
-	out := make(chan Result, r.maxWorkers)
+	out := make(chan tests.Event, r.maxWorkers)
 	go func() {
 		const secs = time.Duration(30.0)
 		ticker := time.NewTicker(secs * time.Second)
@@ -62,9 +57,7 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *tests.Job) <-chan Result 
 				ticker.Reset(secs * time.Second)
 				out <- res
 			case <-ticker.C:
-				out <- Result{
-					Event: tests.NewTickerEvent(),
-				}
+				out <- tests.NewTickerEvent()
 			}
 		}
 	}()
@@ -79,7 +72,7 @@ func (r *Runner) Run(ctx context.Context, jobs <-chan *tests.Job) <-chan Result 
 }
 
 // execute runs a single test and sends the results to the channel.
-func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- Result) {
+func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- tests.Event) {
 	var (
 		workingDir string
 		logFile    string
@@ -93,7 +86,7 @@ func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- Result)
 	if job.Dir != "" {
 		workingDir = filepath.Join(job.Dir, id)
 		if err := os.MkdirAll(workingDir, 0755); err != nil {
-			results <- Result{Event: tests.NewErrorEvent(err)}
+			results <- tests.NewErrorEvent(err)
 			return
 		}
 	} else {
@@ -104,17 +97,17 @@ func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- Result)
 	if workingDir != "" {
 		absT3xf, err := filepath.Abs(t3xf)
 		if err != nil {
-			results <- Result{Event: tests.NewErrorEvent(err)}
+			results <- tests.NewErrorEvent(err)
 			return
 		}
 		absDir, err := filepath.Abs(workingDir)
 		if err != nil {
-			results <- Result{Event: tests.NewErrorEvent(err)}
+			results <- tests.NewErrorEvent(err)
 			return
 		}
 		t3xf, err = filepath.Rel(absDir, absT3xf)
 		if err != nil {
-			results <- Result{Event: tests.NewErrorEvent(err)}
+			results <- tests.NewErrorEvent(err)
 			return
 		}
 	}
@@ -127,7 +120,7 @@ func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- Result)
 		err     error
 	)
 	if err != nil {
-		results <- Result{Event: tests.NewErrorEvent(err)}
+		results <- tests.NewErrorEvent(err)
 		return
 	}
 	if timeout > 0 {
@@ -145,9 +138,6 @@ func (r *Runner) run(ctx context.Context, job *tests.Job, results chan<- Result)
 	}
 
 	for event := range t.RunWithContext(ctx) {
-		results <- Result{
-			Test:  *t,
-			Event: event,
-		}
+		results <- event
 	}
 }
