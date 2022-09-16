@@ -222,19 +222,20 @@ func NewString(s string) *String {
 }
 
 type Bitstring struct {
-	Value *big.Int
-	Unit  Unit
+	Value  *big.Int
+	Unit   Unit
+	Length int
 }
 
 func (b *Bitstring) Type() ObjectType { return BITSTRING }
 func (b *Bitstring) Inspect() string {
 	switch b.Unit {
 	case Bit:
-		return fmt.Sprintf("'%b'B", b.Value)
+		return fmt.Sprintf("'%0*b'B", b.Length, b.Value)
 	case Octett:
-		return fmt.Sprintf("'%h'O", b.Value)
+		return fmt.Sprintf("'%0*h'O", b.Length, b.Value)
 	default:
-		return fmt.Sprintf("'%h'H", b.Value)
+		return fmt.Sprintf("'%0*h'H", b.Length, b.Value)
 	}
 }
 
@@ -251,7 +252,8 @@ func (b *Bitstring) hashKey() hashKey {
 	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
-func NewBitstring(s string) (*Bitstring, error) {
+func NewBitstring(s string, trim bool) (*Bitstring, error) {
+
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
 	}
@@ -268,16 +270,19 @@ func NewBitstring(s string) (*Bitstring, error) {
 		return nil, ErrSyntax
 	}
 
-	removeWhitespaces := func(r rune) rune {
-		if unicode.IsSpace(r) {
-			return -1
+	trimFunc := func(r rune) bool {
+		if trim {
+			return unicode.IsSpace(r) || r == '0'
 		}
-		return r
+		return unicode.IsSpace(r)
 	}
-	s = strings.Map(removeWhitespaces, s[1:len(s)-2])
+
+	s = s[1 : len(s)-2]
+	s = strings.TrimFunc(s, trimFunc)
+	length := len(s)
 
 	if i, ok := new(big.Int).SetString(s, unit.Base()); ok {
-		return &Bitstring{Value: i, Unit: unit}, nil
+		return &Bitstring{Value: i, Unit: unit, Length: length}, nil
 	}
 
 	// TODO(5nord) parse and return Bitstring templates (e.g. '01*1'B)
