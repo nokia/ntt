@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.4, @decoded redirect parameter assignment of a bitstring field
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// When assigning individual fields of a reply, encoded parameters can be decoded
+// prior to assignment using the @decoded modifier. In this case, the referenced
+// parameter on the right hand sided of the assignment shall be one of the
+// bitstring, hexstring, octetstring, charstring or universal charstring types. It
+// shall be decoded into a value of the same type as the variable on the left hand
+// side of the assignment.
+
+module Sem_220304_getreply_operation_009 {
+	signature S(out bitstring p_par);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    function f_server() runs on GeneralComp {
+        var charstring v_src := "abc";
+        var bitstring v_bs := encvalue(v_src);
+        p.getcall(S:?);
+        p.reply(S:{ p_par := v_bs });
+    }
+
+    testcase TC_Sem_220304_getreply_operation_009() runs on GeneralComp system GeneralComp {
+        var charstring v_res;
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{ p_par := - }) {
+            [] p.getreply(S:?) -> param (v_res := @decoded p_par) {
+                if (v_res == "abc") { setverdict (pass); }
+                else { setverdict(fail); }
+            }
+            [] p.getreply { setverdict(fail); }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220304_getreply_operation_009(), 5.0);
+    }
+}

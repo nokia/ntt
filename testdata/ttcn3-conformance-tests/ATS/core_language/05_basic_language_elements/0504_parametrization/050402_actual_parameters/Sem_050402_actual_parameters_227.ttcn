@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that mixed notation can be used
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters can be provided ... in a mixed notation where the first parameters are given in list notation
+// and additional parameters in assignment notation.
+// The test is based on modified example 11
+
+module Sem_050402_actual_parameters_227 {
+
+    type component GeneralComp {
+    }
+
+    function f_mixed (out integer p_par1, in integer p_par2 := 2, inout integer p_par3) {
+        p_par1 := 1 + p_par2;
+        if (p_par2 == 2 and p_par3 == 0) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+	}
+
+    testcase TC_Sem_050402_actual_parameters_227() runs on GeneralComp {
+        var integer v := 0;
+		// the following statements all have the same semantics:
+		f_mixed(-,2,v);
+		f_mixed(-,p_par2 := 2, p_par3 := v);
+		f_mixed(-,-,p_par3 := v);
+		f_mixed(-,p_par3 := v, p_par2 := 2);
+
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_227());
+	}
+}

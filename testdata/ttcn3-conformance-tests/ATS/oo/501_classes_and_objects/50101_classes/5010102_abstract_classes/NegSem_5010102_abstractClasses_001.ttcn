@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.2, Ensure that abstract classes cannot be explicitly instantiated.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010102_abstractClasses_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class @abstract t_class_abstract {
+
+        public function log_sending();
+    }
+
+    public type class t_class_subclass extends t_class_abstract {
+
+        public function log_sending() {
+            log("Sending messages!!!");
+        }
+    }
+
+    testcase TC_NegSem_5010102_abstractClasses_001() runs on GeneralComp {
+        var t_class_abstract v_a := t_class_abstract.create(); //not allowed
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010102_abstractClasses_001());
+    }
+}

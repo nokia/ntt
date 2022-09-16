@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT correctly handles assignments from structures having compatible types and type ranges
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060302_structured_types_005 {
+
+
+	type record RecordType {
+ 	 integer  a(0..10) optional,
+ 	 integer  b(0..10) optional,
+ 	 boolean  c
+	}
+
+	type record of RecordType RecordList;
+
+
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_060302_structured_types_005() runs on GeneralComp {
+
+    var RecordList v_list;
+    var RecordType v_record:={a:=1,b:=2,c:=false};
+    var integer v_int;
+
+
+    v_list:= {v_record,v_record};
+    v_int:=v_list[1].b;
+
+    if ( v_int==2 ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_060302_structured_types_005());
+}
+
+}

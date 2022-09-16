@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that multiple parameters of different types are passed correctly into the test case.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_002 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_2601_ExecuteStatement_002(integer p_value, charstring p_string, boolean p_bool) runs on GeneralComp {
+	if (match(p_value, 20) and
+	    match(p_string, "hello") and
+	    match(p_bool, true)
+	   ){
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control {
+	var integer v_test := 20;
+	execute(TC_Sem_2601_ExecuteStatement_002(v_test, "hello", true));
+}
+
+}

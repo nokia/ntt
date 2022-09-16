@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure any timer.timeout operation works with @nodefault modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// The following requirements are tested:
+// Restriction g) The @nodefault modifier is allowed only in stand-alone timeout statements.
+
+
+module Sem_2306_timer_timeout_010 {
+    type component TComp{
+        timer t_timer := 1.0;
+    }
+
+    testcase TC_Sem_2306_timer_timeout_010() runs on TComp{
+        t_timer.start;
+        @nodefault t_timer.timeout;    // timeout with @nodefault modifier
+
+        if (t_timer.running ){
+            setverdict(fail);
+        }
+        setverdict(pass);
+    }
+    control{
+            execute(TC_Sem_2306_timer_timeout_010())
+    }
+}

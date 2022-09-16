@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.2.3, trigger with a from clause (any component)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// In the case of one-to-many connections the trigger operation may be restricted
+// to a certain communication partner. This restriction shall be denoted using the
+// from keyword followed by a specification of an address or component reference,
+// a list of address or component references or any component.
+
+module Sem_220203_TriggerOperation_008 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+        p.send(1);
+	}
+
+    const integer c_ptcCount := 3;
+
+    testcase TC_Sem_220203_TriggerOperation_008() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptcs[c_ptcCount];
+        for (var integer i := 0; i < c_ptcCount; i := i + 1) {
+            v_ptcs[i] := GeneralComp.create;
+            connect(self:p, v_ptcs[i]:p);
+            v_ptcs[i].start(f());
+        }
+
+        for (var integer i := 0; i < c_ptcCount; i := i + 1) {
+            alt {
+                [] p.trigger(integer:?) from any component { setverdict(pass); }
+            }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_008(), 5.0);
+    }
+}

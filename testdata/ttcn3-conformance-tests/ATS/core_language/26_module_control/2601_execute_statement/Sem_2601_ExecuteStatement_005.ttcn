@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that the verdict pass works correctly.
+ ** @verdict  pass accept, ttcn3verdict:fail
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_005 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_2601_ExecuteStatement_005() runs on GeneralComp {
+	setverdict(pass);
+}
+
+testcase TC_Sem_2601_ExecuteStatement_005_second(verdicttype p_verdict) runs on GeneralComp {
+	if (p_verdict == pass) {
+		setverdict(fail);
+	} else {
+		setverdict(pass);
+	}
+}
+
+control {
+	var verdicttype v_result;
+
+	v_result := execute(TC_Sem_2601_ExecuteStatement_005());
+	execute(TC_Sem_2601_ExecuteStatement_005_second(v_result));
+}
+
+}

@@ -1,0 +1,64 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.8, Ensure that the IUT correctly handles attribute definitions and their scoping rules
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+/* The operation for getting a variant attribute value may be followed by an optional parameter. If no parameter is
+present, the operation returns only variants that are not bound to any particular encoding. If the parameter is present, the
+returned value will containt variants that are bound to the encoding referenced by the parameter. */
+
+ // Restriction a) The optional parameter of the operation shall be used only for getting variant attributes.
+
+
+module Sem_2708_Retrieving_attribute_values_003 {
+   type component GeneralComp {}
+
+// MyPDU1 will be displayed as PDU
+	type record MyPDU1 { integer field1 } with {
+									display "testDisplayValue";
+									encode "Codec1";
+									variant "Codec1"."Rule1A";
+									variant "Codec1"."Rule1B";
+									encode "Codec2";
+									variant "Codec2"."Rule2A";
+									variant "Codec2"."Rule2B";
+									}
+
+	type record	of universal charstring RUC;
+
+testcase TC_Sem_2708_Retrieving_attribute_values_003() runs on GeneralComp {
+
+			var MyPDU1 v_pdu;
+
+			var RUC v_encoding;
+            var RUC v_variantsforCodec1,v_variantsforCodec2;
+
+			v_encoding := v_pdu.encode;
+
+			// retrieve variants for all defined encodings
+			for (var integer item := 0; item < lengthof(v_encoding); item := item + 1) {
+                if(v_encoding[item] == "Codec1"){
+					v_variantsforCodec1 := v_pdu.variant(v_encoding[item]);	// collect all variants
+                }
+
+                 if(v_encoding[item] == "Codec2"){
+					v_variantsforCodec2 := v_pdu.variant(v_encoding[item]);	// collect all variants
+                }
+			}
+
+
+  			if (match(v_variantsforCodec1, { "Rule1A", "Rule1B"}) and match(v_variantsforCodec2, {"Rule2A", "Rule2B" })) {
+          		setverdict(pass);
+		    } else {
+		        setverdict(fail,v_variantsforCodec1, v_variantsforCodec2);
+		    }
+}
+
+control{
+    execute(TC_Sem_2708_Retrieving_attribute_values_003());
+}
+
+}

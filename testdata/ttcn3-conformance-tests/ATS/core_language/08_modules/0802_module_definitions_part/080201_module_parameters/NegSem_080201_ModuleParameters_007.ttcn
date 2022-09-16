@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, verify that module parameters cannot be used as actual parameters of out formal parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction a)
+// During test execution module parameters shall not be used as target of assignments or as actual out or inout parameters.
+
+module NegSem_080201_ModuleParameters_007 {
+    modulepar integer PX_INT;
+
+    function f_test(out integer p_par) {
+	    p_par := 1;
+	}
+
+    type component GeneralComp {
+	}
+
+	testcase TC_NegSem_080201_ModuleParameters_007() runs on GeneralComp {
+		f_test(PX_INT);
+	    setverdict(pass);
+	}
+
+    control {
+         execute(TC_NegSem_080201_ModuleParameters_007());
+    }
+}

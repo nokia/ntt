@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_070402_attribute_group_definitions_001"
+    xmlns:ns="schema:Pos_070402_attribute_group_definitions_001">
+    <attributeGroup name="Agroup">
+        <attribute name="fgroup" type="float" />
+        <attribute name="sgroup" type="string" />
+        <attribute name="igroup" type="integer" />
+    </attributeGroup>
+    <complexType name="c1">
+        <sequence>
+            <element name="elem" type="string"/>
+        </sequence>
+        <attributeGroup ref="ns:Agroup" />
+    </complexType>
+    <element name="e1" type="ns:c1" />
+</schema>

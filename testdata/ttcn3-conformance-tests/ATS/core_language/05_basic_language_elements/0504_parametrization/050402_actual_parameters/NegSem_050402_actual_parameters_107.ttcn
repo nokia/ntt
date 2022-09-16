@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that incompatible values cannot be passed to in formal parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The type of each actual parameter shall be compatible with the type of each
+// corresponding formal parameter.
+
+module NegSem_050402_actual_parameters_107 {
+
+    type component GeneralComp {
+	}
+
+    type record R1 {
+        integer field1,
+        integer field2
+    }
+
+    type record R2 {
+        integer elem1,
+        integer elem2 optional
+    }
+
+    function f_test (R1 p_val) {
+        if (p_val == { field1 := 1, field2 := 2 }) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_107() runs on GeneralComp {
+        var R2 v_rec := { 1, 2 };
+        f_test(v_rec);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_107());
+	}
+}

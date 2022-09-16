@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted cahrstring with mixed bounds.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_006 {
+    type charstring MyCahrstringRange (!"a".."f");
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_006() runs on GeneralComp {
+        var MyCahrstringRange v_c1;
+        v_c1 := "b";
+        v_c1 := "c";
+        v_c1 := "d";
+        v_c1 := "e";
+        v_c1 := "f";
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_006());
+    }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060606_effect_of_minoccurs_and_maxoccurs_003"
+  xmlns:ns="schema:Pos_07060606_effect_of_minoccurs_and_maxoccurs_003">
+  <element name="MyType">
+    <complexType>
+      <sequence minOccurs="0" maxOccurs="unbounded">
+        <element name="foo" type="string"/>
+        <element name="bar" type="string"/>
+      </sequence>
+    </complexType>  
+  </element>
+</schema>

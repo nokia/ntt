@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.5, Ensure that referencing an alternative of an address type, which actual value is null shall cause
+ ** @verdict  pass reject
+ *****************************************************************/
+
+//Restriction d)
+/*Special value null: referencing an alternative of an address type, which actual value is null shall cause
+an error.*/
+
+
+module NegSem_150605_Referencing_union_alternatives_006 {
+
+      type integer address;
+
+
+    type union My_Union {
+        integer   u1,
+        address   u2
+    }
+
+
+
+
+    type component GeneralComp {  }
+
+
+
+    testcase TC_NegSem_150605_Referencing_union_alternatives_006() runs on GeneralComp {
+
+     var template integer m_template;
+
+
+
+     var template My_Union My_Template;
+     My_Template.u1 := 1;
+     My_Template.u2 := null;
+
+
+
+		m_template := My_Template.u2;	//error: null
+
+		setverdict(pass);
+
+
+ }
+
+    control{
+        execute(TC_NegSem_150605_Referencing_union_alternatives_006());
+    }
+}

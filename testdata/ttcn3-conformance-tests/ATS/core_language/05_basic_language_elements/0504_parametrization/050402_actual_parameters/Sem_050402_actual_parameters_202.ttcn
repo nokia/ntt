@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the Example 8 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_202 {
+
+    type component GeneralComp {
+	}
+
+    function f_initValues (out integer p_par1, out integer p_par2) {
+        p_par1 := 1;
+        p_par2 := 2;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_202() runs on GeneralComp {
+        var integer v_var1;
+        f_initValues(p_par2 := v_var1, p_par1 := v_var1);
+        // After this function call, v_var1 will contain 2, as parameters are assigned in
+        // the same order as in the definition of the f_initValues function. Thus p_par1 is
+        // assigned first to v_var1 and p_par2 after that ovewriting the previous value.
+        if (v_var1 == 2) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_202());
+	}
+}

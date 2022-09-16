@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the fourth part of the Example 3 produces the expected error
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_050402_actual_parameters_145 {
+
+    type component GeneralComp {
+	}
+    type record of integer RoI;
+
+    function f_testReferences (inout RoI p_roi, inout integer p_elem) {
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_145() runs on GeneralComp {
+        var RoI v_roi := { 0, 1, 2, 3, 4, 5 };
+        f_testReferences(v_roi, v_roi[2]); // produces an error as elements of v_roi are not allowed
+            // to be passed by reference if the parent structure (v_roi) is passed by reference too.
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_145());
+	}
+}

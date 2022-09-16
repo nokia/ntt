@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that no out formal parameter is allowed in constructor
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+       var integer v_i;
+
+        create(out integer v_i) {
+            this.v_i := v_i;
+        }
+    }
+
+    testcase TC_NegSem_5010105_Constructors_001() runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_001());
+    }
+}

@@ -1,0 +1,12 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that the modulo operator on two integers is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_070101_ArithmeticOperators_005 {
+
+const integer c_result := 10 mod 3;
+
+}

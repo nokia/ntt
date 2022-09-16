@@ -1,0 +1,19 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10.1, Component type with variable, timer and port instance
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_06021001_component_type_definition_002 {
+	type port MyMessagePortType message {
+		inout 	integer
+	}
+
+    type component MyMTCType {
+		var integer vc_myLocalInteger;
+		timer tc_myLocalTimer;
+		port MyMessagePortType	pCO1
+	}
+
+
+}

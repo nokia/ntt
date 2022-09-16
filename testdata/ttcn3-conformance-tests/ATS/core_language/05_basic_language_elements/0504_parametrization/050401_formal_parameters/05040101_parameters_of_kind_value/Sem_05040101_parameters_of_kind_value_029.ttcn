@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 521, updated by STF 572
+ ** @version  0.0.2,
+ ** @purpose  1:5.4.1.1, Verify that inout prefix can be used for port parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Formal port parameters shall be inout parameters, which can optionally be indicated by the keyword inout.
+
+module Sem_05040101_parameters_of_kind_value_029 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component C {
+        port P p;
+    }
+
+    function f_test(inout P p_port) {
+        p_port.send(1);
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_05040101_parameters_of_kind_value_029() runs on C {
+		var P v_port := p;
+        f_test(v_port);
+    }
+
+    control {
+        execute(TC_Sem_05040101_parameters_of_kind_value_029());
+    }
+}

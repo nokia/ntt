@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Verify that out port parameters are allowed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The older versions of the core language specifications contained this rule:
+// Formal port parameters shall be inout parameters, which can optionally be indicated by the keyword inout.
+//
+// The rule has been removed and the test verifies that compilers can accept in port prameters now.
+
+module Sem_05040101_parameters_of_kind_value_027 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component C {
+        port P p;
+    }
+
+    function f_test(out P p_port) {
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_05040101_parameters_of_kind_value_027() runs on C {
+        f_test(-);
+    }
+
+    control {
+        execute(TC_Sem_05040101_parameters_of_kind_value_027());
+    }
+}

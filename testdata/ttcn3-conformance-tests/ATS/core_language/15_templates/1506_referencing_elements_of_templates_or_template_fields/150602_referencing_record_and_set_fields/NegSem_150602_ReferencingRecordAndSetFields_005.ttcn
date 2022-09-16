@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.6.2, Ensure that referencing a template field with the ifpresent attribute causes a rejection.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150602_ReferencingRecordAndSetFields_005 {
+
+type component GeneralComp { }
+
+type record MyRecordOne {
+	MyRecordOne f1 optional
+}
+
+testcase TC_NegSem_150602_ReferencingRecordAndSetFields_005() runs on GeneralComp {
+	var template MyRecordOne m_R1 := {
+		f1 := * ifpresent
+	}
+	var template MyRecordOne m_R2 := {
+		f1 := m_R1.f1.f1 // access to a field with ifpresent shall cause an error!
+	}
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_150602_ReferencingRecordAndSetFields_005());
+}
+
+
+
+}

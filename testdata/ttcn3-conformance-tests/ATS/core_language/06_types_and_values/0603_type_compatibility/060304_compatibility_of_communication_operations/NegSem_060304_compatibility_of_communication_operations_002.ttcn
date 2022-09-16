@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.3.4, compatible but not strongly typed value in receive operation
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The communication operations (see clause 22) send, receive, trigger, call, getcall,
+// reply, getreply and raise and connection operations connect, map, disconnect and
+// unmap (see clause 21.1) are exceptions to the weaker rule of type compatibility
+// and require strong typing. The types of values or templates directly used as
+// parameters to these operations shall also be explicitly defined in the associated
+// port type definition.
+
+module NegSem_060304_compatibility_of_communication_operations_002
+{
+    type port P message {
+        inout charstring;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+    type charstring MyString; // synonym
+
+    testcase TC_NegSem_060304_compatibility_of_communication_operations_002() runs on GeneralComp {
+        p.send(charstring:"abc");
+        alt {
+            []p.receive(MyString:?) {}
+            []p.receive {} // to avoid alt error in case the previous statement is incorrectly accepted
+        }
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060304_compatibility_of_communication_operations_002());
+	}
+}

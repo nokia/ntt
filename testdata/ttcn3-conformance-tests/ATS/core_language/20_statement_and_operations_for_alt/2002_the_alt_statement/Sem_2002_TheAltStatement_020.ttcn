@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the alt-statement supports local definitions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * Timer as local definition in alt-statement
+ **/
+module Sem_2002_TheAltStatement_020 {
+
+	type port loopbackPort message {
+		inout charstring
+	}
+
+	type component GeneralComp {
+		port loopbackPort p;
+	}
+
+	template charstring m_test := "abc";
+
+	testcase TC_Sem_2002_TheAltStatement_020() runs on GeneralComp system GeneralComp {
+
+         alt {
+	        timer t_timer := 5.0;    // local definition of timer
+			[else]{
+	           t_timer.start;    // start local timer
+	           setverdict(pass);    // timeout event occurred
+			}
+		}
+
+	}
+
+	control {
+		execute(TC_Sem_2002_TheAltStatement_020());
+	}
+
+}

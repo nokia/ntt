@@ -1,0 +1,7 @@
+{ 
+	"Pos_B308_omit_as_null_002.MySet": 
+						{ 
+							"int": null,
+							"MyCharString" : "abcdef"
+						}
+}

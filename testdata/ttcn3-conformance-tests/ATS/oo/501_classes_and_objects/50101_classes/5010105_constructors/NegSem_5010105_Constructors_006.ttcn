@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that initialization of a member field shall not invoke any member function in the object being initialized
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_006 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer v_i := set_vi(3); //not allowed, calling a member function to initialize a member field
+
+        public function set_vi(integer v_i) return integer {
+            return v_i;
+        }
+
+        public function get_vi() return integer {
+            return this.v_i;
+        }
+    }
+
+    testcase TC_NegSem_5010105_Constructors_006() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create();
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_006());
+    }
+}

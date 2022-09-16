@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.13.2, ensure that list subtyping check for record types is properly handled
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06021302_ListSubtyping_001 {
+ type record MyRecord {
+  integer f1 optional,
+  charstring f2,
+  charstring f3
+ }
+
+ type MyRecord MyRecordSub1 (
+  { f1 := omit, f2 := "user", f3 := "password" },
+  { f1 := 1, f2 := "User", f3 := "Password" }
+  ); // a valid subtype of MyRecord containing 2 values
+
+  type MyRecordSub1 MyRecordSub2 (
+   { f1 := 1, f2 := "user", f3 := "password" },
+   { f1 := 1, f2 := "User", f3 := "Password" }
+  ); //invalid subtype, the omitted element cannot be overwritten
+
+}

@@ -1,0 +1,18 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, not unique identifiers in enumerated type declaration
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The identifiers of enumerated values shall be unique within the enumerated type
+// (but do not have to be globally unique) and are consequently visible in the
+// context of the given type only.
+
+module NegSem_060204_enumerated_type_and_values_001 {
+
+    type enumerated MyFirstEnumType {
+        Monday, Tuesday, Wednesday, Thursday, Friday, Monday
+    };
+}

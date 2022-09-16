@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Ensure that templates with "@default modifier" unions are evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+ /*The following requirement is tested: At most one of the union alternatives can be declared as the default alternative by
+using the @default modifier before the type of the alternative.*/
+
+
+module Sem_1102_TemplateVars_005 {
+
+   type union U {
+		@default integer option1,
+		charstring option2
+	}
+
+    type port loopbackPort message {
+	  inout U
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+
+testcase TC_Sem_1102_TemplateVars_005() runs on GeneralComp {
+	var template U mw_pattern := 12345;
+	var U v_int := { option1 := 12345};
+
+    messagePort.send(v_int);
+
+    alt {
+     [] messagePort.receive(mw_pattern) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+
+}
+
+control{
+    execute(TC_Sem_1102_TemplateVars_005());
+}
+
+}

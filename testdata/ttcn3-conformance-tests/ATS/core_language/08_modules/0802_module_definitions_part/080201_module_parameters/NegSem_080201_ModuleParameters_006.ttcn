@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, Ensure that a reference to plain module parameter with a default value delivers the default value unless it is overwritten.
+ ** @verdict  pass reject
+ *****************************************************************/
+//Module parameters shall not be used in type or array definitions.
+
+module NegSem_080201_ModuleParameters_006 {
+
+modulepar integer MY_INT_MODULE_PARAMETER := 2;
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_080201_ModuleParameters_006() runs on GeneralComp {
+
+    var integer my_int_array[1] := MY_INT_MODULE_PARAMETER;    // error: Module parameters shall not be used in type or array definitions.
+    if (my_int_array[2] == 2) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_080201_ModuleParameters_006());
+}
+
+}

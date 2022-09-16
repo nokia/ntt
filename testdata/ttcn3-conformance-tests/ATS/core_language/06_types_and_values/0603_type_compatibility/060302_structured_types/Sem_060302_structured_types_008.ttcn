@@ -1,0 +1,51 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT correctly handles assignments from structures having compatible types
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*The following requirement is tested: Using union values of unions with default alternatives.
+
+A union value "b" of union type "B" with a default alternative of type
+"C" is compatible with an arbitrary type "A" if the alternative selected in "b" is the default alternative and the
+value of the default alternative is compatible to "A". A value "a" of an arbitrary type "A" is compatible with a
+union type "B" with a default alternative of type "C" if value "a" is compatible to "C".
+
+ */
+
+module Sem_060302_structured_types_008 {
+
+ type union U {
+		 integer option1,
+		@default boolean option2
+		}
+
+ type union U2 {
+		@default integer option1,
+		boolean option2
+		}
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_060302_structured_types_008() runs on GeneralComp {
+
+	var U v_u1 := true;	// using default value of U
+	var U2 v_u2 := {option2 := true};
+
+	if(match(v_u1,v_u2)){
+	// correct because all alternatives in U exist in U2 and are compatible
+		setverdict(pass);
+	}
+	else {
+		setverdict(fail);
+	}
+
+
+   }
+
+    control{
+        execute(TC_Sem_060302_structured_types_008());
+    }
+
+}

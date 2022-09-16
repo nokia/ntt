@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer can not be initialized with negative duration
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer value is non-neg float
+ **/
+
+
+module NegSem_12_toplevel_timer_001 {
+    type component TComp{
+        timer t_timer := -1.0; // not allowed
+    }
+    testcase TC_NegSem_12_toplevel_timer_001() runs on TComp{
+        t_timer.start;
+    }
+    control{
+
+            execute(TC_NegSem_12_toplevel_timer_001())
+
+
+    }
+}

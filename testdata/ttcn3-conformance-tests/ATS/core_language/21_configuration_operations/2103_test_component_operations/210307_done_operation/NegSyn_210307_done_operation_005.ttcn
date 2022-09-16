@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Ensure that @nodefault modifier is allowed only in stand-alone done statements.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restrcition j): The @nodefault modifier is allowed only in stand-alone done statements.
+
+module NegSyn_210307_done_operation_005{
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSyn_210307_done_operation_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc;
+		v_ptc := GeneralComp.create;
+		v_ptc.start(f());
+        // error:  The @nodefault modifier is allowed only in stand-alone done statements.
+        alt
+		{
+        	[] @nodefault v_ptc.done { setverdict(fail, "The done operation didn't found stopped or killed component"); }
+			[else] { setverdict(pass); }
+		}
+    }
+
+    control {
+    }
+}

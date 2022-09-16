@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined function isvalue() works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * check that isvalue() predefined function works properly
+ */
+
+
+module Sem_160102_predefined_functions_088 {
+
+    type record MyRec{
+    integer field1,
+    integer field2 optional}
+
+    type record MyRec2 {
+     MyRec field1,
+     integer field2
+    }
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_088() runs on GeneralComp {
+
+    var boolean v_res;
+
+    var MyRec2 MyRecValue := {{1,-},1};
+
+
+
+    v_res := isvalue(MyRecValue.field1.field1);  //nested, expected result: true
+
+
+   if ( match(v_res, true)) {setverdict(pass," isvalue(MyRecValue.field1.field1): ", v_res);}
+           else{setverdict(fail," isvalue(MyRecValue.field1.field1):", v_res, " expected result: true");}
+
+    }
+
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_088());
+    }
+}

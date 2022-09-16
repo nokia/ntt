@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:ns="schema:Pos_070607_attribute_definitions_attribute_and_attributegroup_references_002">
+    <xsd:attribute name="fooGlobal" type="xsd:float" />
+    <xsd:attribute name="barGlobal" type="xsd:string" />
+    <xsd:attribute name="dingGlobal" type="xsd:integer" />
+    <xsd:attributeGroup name="Agroup">
+        <xsd:attribute name="fooInAgroup" type="xsd:float" />
+        <xsd:attribute name="barInAgroup" type="xsd:string" />
+        <xsd:attribute name="dingInAgroup" type="xsd:integer" />
+    </xsd:attributeGroup>
+    <xsd:complexType name="c1">
+        <xsd:sequence>
+            <xsd:element name="elem" type="xsd:string"/>
+        </xsd:sequence>
+        <xsd:attribute ref="fooGlobal" />
+        <xsd:attribute ref="barGlobal" />
+        <xsd:attribute ref="dingGlobal" />
+        <xsd:attribute name="fooLocal" type="xsd:float" />
+        <xsd:attribute name="barLocal" type="xsd:string" />
+        <xsd:attribute name="dingLocal" type="xsd:integer" />
+        <xsd:attributeGroup ref="Agroup" />
+    </xsd:complexType>
+    <xsd:element name="e1" type="c1" />
+</xsd:schema>

@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign invalid hexstring value
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060101_TopLevel_004 {
+    const hexstring c_b1 := '01H'O; // not an hexstring value
+}

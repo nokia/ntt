@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign boolean to float values
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060100_SimpleBasicTypes_004 {
+    const float c_f1 := true; // not a float value
+}

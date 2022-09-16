@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify that port.check(getcall) works correctly as standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_027 {
+
+	signature S();
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+        p.check(getcall);
+		setverdict(pass, "Check operation successful");
+		p.getcall;
+		setverdict(pass, "Call still on the top of the queue");
+	}
+
+	testcase TC_Sem_2204_the_check_operation_027() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		p.call(S:{}, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_027(), 5.0);
+    }
+}

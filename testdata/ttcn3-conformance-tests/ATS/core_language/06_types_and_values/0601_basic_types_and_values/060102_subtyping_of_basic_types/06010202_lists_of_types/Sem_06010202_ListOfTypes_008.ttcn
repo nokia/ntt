@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign values to list of types restricted boolean value.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010202_ListOfTypes_008 {
+    type boolean MyBoolean1 (false,true);
+
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010202_ListOfTypes_008() runs on GeneralComp {
+        var MyBoolean1 v_b;
+        v_b := false;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010202_ListOfTypes_008());
+    }
+}

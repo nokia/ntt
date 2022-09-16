@@ -324,8 +324,7 @@ func TestImportTasks(t *testing.T) {
 		{path: "./testdata/ImportTasks/invalid/file.ttcn3", err: syscall.ENOTDIR},
 		{path: "./testdata/ImportTasks/invalid/dirs", err: project.ErrNoSources},
 		{path: "./testdata/ImportTasks/other", err: project.ErrNoSources},
-		{path: "./testdata/ImportTasks/🤔", result: []string{"testdata/ImportTasks/🤔/a.ttcn3"}},
-		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3", "testdata/ImportTasks/lib/🤔.ttcn3"}},
+		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3"}},
 	}
 
 	for _, tt := range tests {
@@ -347,6 +346,36 @@ func TestImportTasks(t *testing.T) {
 		}
 	}
 
+}
+
+func TestLibraryPaths(t *testing.T) {
+	t.Parallel()
+	t.Run("empty", func(t *testing.T) {
+		c := &project.Config{}
+		var want []string
+		got, err := project.LibraryPaths(c)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "empty project without k3 does not need anything")
+	})
+
+	t.Run("empty with k3", func(t *testing.T) {
+		want := []string{"k3root/plugins"}
+		c := &project.Config{}
+		c.K3.Plugins = []string{"k3root/plugins"}
+		got, err := project.LibraryPaths(c)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "empty project with k3 only requires k3 builtins")
+	})
+
+	t.Run("imports with k3", func(t *testing.T) {
+		want := []string{"importDir", "k3root/plugins"}
+		c := &project.Config{}
+		c.Imports = []string{"importDir"}
+		c.K3.Plugins = []string{"k3root/plugins"}
+		got, err := project.LibraryPaths(c)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "import directories go before k3 builtins")
+	})
 }
 
 func TestPresets(t *testing.T) {

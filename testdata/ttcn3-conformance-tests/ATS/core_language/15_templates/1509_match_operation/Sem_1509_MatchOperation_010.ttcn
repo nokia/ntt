@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that the match operation works correctly on sets with optional fields in the positive case.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1509_MatchOperation_010 {
+
+type component GeneralComp { }
+
+type set MySet {
+	charstring field1,
+	boolean field2 optional
+}
+
+template MySet mw_receiveTemplate := {
+	field1 := pattern "ab*de",
+	field2 := *
+}
+
+testcase TC_Sem_1509_MatchOperation_010() runs on GeneralComp {
+	var MySet v_value := {
+		field1 := "abcde",
+		field2 := omit
+	}
+
+	if (match(v_value, mw_receiveTemplate)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1509_MatchOperation_010());
+}
+
+}

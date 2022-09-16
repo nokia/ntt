@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24.1, Ensure that local verdicts initializes with none
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.1 The Verdict mechanism/Local verdict is initialized with none
+ **/
+
+
+module Sem_2401_InitiallyNone_001 {
+    type component GeneralComp {}
+
+    testcase TC_Sem_2401_InitiallyNone_001() runs on GeneralComp {
+        var verdicttype b_verdict := getverdict;
+        if (b_verdict == none) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_2401_InitiallyNone_001());
+    }
+}

@@ -1,0 +1,47 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.2, Verify that encoding related variant doesn't overwrite variants of other encodings
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// An encoding related variant will overwrite only variants related to the same encoding.
+
+module Sem_27010202_rules_for_multiple_encodings_002 {
+
+    type component GeneralComp {
+	}
+
+	type integer Int with {
+		encode "CodecA"; variant "CodecA"."Rule1";
+		encode "CodecB"; variant "CodecB"."Rule2";
+    }
+
+	// Overwriting variant with an encoding reference
+	type Int Int3 with {
+		variant "CodecB"."Rule4"; // new variant for encoding "CodecB" overwrites
+		// the original variant "CodecB"."Rule2"
+		// Variant "CodecA"."Rule1" is unchanged as this definition contains no reference
+		// to "CodecB"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010202_rules_for_multiple_encodings_002 () runs on GeneralComp {
+		var RoUC v_var1 := Int3.variant("CodecA"),
+			v_var2 := Int3.variant("CodecB");
+		if(lengthof(v_var1) == 1 and v_var1[0] == "Rule1" and
+			lengthof(v_var2) == 1 and v_var2[0] == "Rule4") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_27010202_rules_for_multiple_encodings_002());
+	}
+
+}

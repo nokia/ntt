@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified" 
+	targetNamespace="schema:Pos_070106_form_010_2"
+	xmlns:ns="schema:Pos_070106_form_010_2">
+	<element name="MyElement" type="ns:MyType" />
+	<complexType name="MyType">
+		<sequence>
+			<element name="myField" type="integer" />
+		</sequence>
+	</complexType>
+</schema>

@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign hexstring to octetstring values
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060101_TopLevel_009 {
+    const octetstring c_b1 := 'FA'H; // not an octetstring value
+}

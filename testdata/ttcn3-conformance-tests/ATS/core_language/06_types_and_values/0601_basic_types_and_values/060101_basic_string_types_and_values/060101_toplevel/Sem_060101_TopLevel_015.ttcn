@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1,Ensure that whitespaces, control characters and backslash will be included for the universal charstring length calculation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060101_TopLevel_015 {
+
+ type component GeneralComp {}
+
+    testcase TC_Sem_060101_TopLevel_015() runs on GeneralComp {
+        var universal charstring v_a := "ABC\    DEF";    //lengthof(v_a) is 11
+
+    	if (match(lengthof(v_a), 11))
+        {
+    		setverdict(pass,"Size of v_a is:",lengthof(v_a));
+    	}
+    	else {
+    		setverdict(fail,"Size of v_a is:",lengthof(v_a));
+    	}
+    }
+
+    control{
+        execute(TC_Sem_060101_TopLevel_015());
+    }
+}

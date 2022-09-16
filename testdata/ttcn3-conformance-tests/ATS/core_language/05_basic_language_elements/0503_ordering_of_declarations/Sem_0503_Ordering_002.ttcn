@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 5.3 ordering rules
+ ** @purpose  1:5.3, Ensure that allowed any ordering with component definitions are supported
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0503_Ordering_002 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+type component GeneralComp	//declarations inside a component can be in any order
+{
+ timer t_rec,t_rec2;
+ var integer v_comp1:=0;
+ port loopbackPort messagePortA;
+ var integer v_comp2:=0;
+}
+
+testcase TC_Sem_0503_Ordering_002() runs on GeneralComp  {
+
+     v_comp1 := 1;
+     v_comp2 := v_comp1;
+      if (v_comp2 == 1) {
+	    setverdict(pass);
+      }
+
+}
+
+control {
+    execute(TC_Sem_0503_Ordering_002());
+}
+
+}

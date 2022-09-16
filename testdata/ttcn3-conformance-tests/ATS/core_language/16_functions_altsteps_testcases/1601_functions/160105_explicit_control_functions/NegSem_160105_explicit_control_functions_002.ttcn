@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.5, Ensure that the IUT recognizes explicit control functions
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+
+// Tested restriction:
+// b) The component type referenced in the runs on clause shall not contain any port definitions.
+
+module NegSem_160105_explicit_control_functions_002 {
+
+    type port MyPort {
+        inout octetstring;
+    }
+
+    type component GeneralComp {
+        MyPort P;
+    }
+
+    function @control f_NegSem_160105_explicit_control_functions_002() runs on GeneralComp {
+        execute(TC_Sem_160105_explicit_control_functions_002());
+    }
+
+    testcase TC_NegSem_160105_explicit_control_functions_002 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        f_NegSem_160105_explicit_control_functions_002();
+    }
+
+}

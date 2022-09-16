@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that default template instance of template formal parameters cannot invoke functions with runs on clause
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)
+// The template instance shall not contain the invocation of functions with a runs on clause.
+
+module NegSem_05040101_parameters_of_kind_value_010 {
+	type component GeneralComp {
+        var integer vc_int;
+	}
+
+    function fx() runs on GeneralComp return integer {
+        return vc_int + 1;
+    }
+
+    function f(in template integer p_int := fx()) runs on GeneralComp {
+        log(p_int);
+    }
+
+	testcase TC_NegSem_05040101_parameters_of_kind_value_010() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040101_parameters_of_kind_value_010());
+	}
+}

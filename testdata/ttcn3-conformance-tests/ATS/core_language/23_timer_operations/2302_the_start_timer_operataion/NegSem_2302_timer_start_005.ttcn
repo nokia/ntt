@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:23.2, Verify that the start operation applied to a non-timer reference produces an error
+ ** @verdict  pass reject
+ ***************************************************/
+// The following requirement is tested
+// b) The ObjectReference (in the timer start operation) shall be of the timer type.
+
+module NegSem_2302_timer_start_005 {
+    type component TComp{
+    }
+    testcase TC_NegSem_2302_timer_start_005() runs on TComp{
+        var float v_duration := 1.0;
+        v_duration.start;
+        setverdict(pass);
+    }
+    control{
+
+            execute(TC_NegSem_2302_timer_start_005())
+
+
+    }
+}

@@ -1,0 +1,19 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:21.3.1, Ensure that named components on hosts are accepted
+ ** @verdict  pass reject
+ *****************************************************************/
+module NegSem_210301_CreateOperation_001 {
+
+    type component GeneralComp { }
+
+    testcase TC_NegSem_210301_CreateOperation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create(5); // it should expect charstring
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210301_CreateOperation_001());
+    }
+}

@@ -1,0 +1,118 @@
+/*****************************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.1, blocking multicast call with no response and exception handling part
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// Like for the send operation, TTCN-3 also supports unicast, multicast and broadcast calls
+// of procedures. This can be done in the same manner as described in clause 22.2.1, i.e.
+// the argument of the to clause of a call operation is for unicast calls the address of
+// one receiving entity (or can be omitted in case of one-to-one connections), for multicast
+// calls a list of addresses of a set of receivers and for broadcast calls the all component
+// keyword.
+
+module Sem_220301_CallOperation_006 {
+
+    /**
+    * @desc testing of inline return template for remote procedure call
+    * @param p_par1 only input parameter
+    * @param p_par2 must have value 4 at return
+    * @param p_par3 must have value 5 at return
+    * @return must return value 1
+    */
+    signature p_Sem_220301_CallOperation_006(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+    template p_Sem_220301_CallOperation_006 s_returnTemplate := {
+        p_par1 := -,
+        p_par2 := 4,
+        p_par3 := 5
+    }
+
+    template p_Sem_220301_CallOperation_006 s_wrongTemplate := {
+        p_par1 := -,
+        p_par2 := 2,
+        p_par3 := 3
+    }
+
+    template p_Sem_220301_CallOperation_006 s_callTemplate := {
+        p_par1 := 1,
+        p_par2 := -,
+        p_par3 := 3
+    }
+
+    type port remotePort procedure {
+        inout p_Sem_220301_CallOperation_006;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+    }
+
+    function f_ClientQuery(GeneralComp server1, GeneralComp server2) runs on GeneralComp {
+        //  validate multicast calling
+        PCO.call(p_Sem_220301_CallOperation_006:s_callTemplate, nowait) to (server1, server2);
+        interleave {
+            //check that we get a reply from first server
+            [] PCO.getreply(p_Sem_220301_CallOperation_006:s_returnTemplate value 1) from server1 {
+                setverdict(pass, "Reply from server 1");
+            }
+            [] PCO.getreply(p_Sem_220301_CallOperation_006:s_returnTemplate value 1) from server2 {
+                setverdict(pass, "Reply from server 2");
+            }
+        }
+    }
+
+    template p_Sem_220301_CallOperation_006 s_acceptTemplate := {
+        p_par1 := ?,
+        p_par2 := ?,
+        p_par3 := ?
+    };
+
+    function f_ServerResponses() runs on GeneralComp {
+        var integer v_par1;
+        var integer v_par3;
+
+        alt {
+            [] PCO.getcall(p_Sem_220301_CallOperation_006:s_acceptTemplate) -> param(v_par1, - , v_par3) {
+                PCO.reply(p_Sem_220301_CallOperation_006:{p_par1 := -, p_par2 := v_par1+v_par3, p_par3 := v_par1+v_par3+1} value v_par1);
+                repeat;
+            }
+        }
+
+    }
+
+    testcase TC_Sem_220301_CallOperation_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp server1 := GeneralComp.create("RemoteProcedure Service") alive;
+        var GeneralComp server2 := GeneralComp.create("RemoteProcedure Service2") alive;
+        var GeneralComp client := GeneralComp.create("RemoteProcedure Client") alive;
+        // map the PTCs to the system port
+        connect(server1:PCO, client:PCO);
+        connect(server2:PCO, client:PCO);
+
+        // set server address and start operation
+        server1.start(f_ServerResponses());
+        server2.start(f_ServerResponses());
+
+        client.start(f_ClientQuery(server1, server2));
+
+        alt {
+            [] client.done {
+                server1.stop;
+                server2.stop;
+            }
+        }
+
+        alt {
+            [] all component.done {}
+        }
+
+        disconnect(server1:PCO);
+        disconnect(server2:PCO);
+    }
+
+    control{
+        execute(TC_Sem_220301_CallOperation_006(), 5.0);
+    }
+
+}

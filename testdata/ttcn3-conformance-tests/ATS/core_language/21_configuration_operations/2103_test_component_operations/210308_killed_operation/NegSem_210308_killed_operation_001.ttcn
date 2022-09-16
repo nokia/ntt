@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Ensure that killed operator is only valid for ptcs.
+ ** @verdict  pass reject
+ *****************************************************************/
+// killed operator is not allowed for mtc check.
+
+module NegSem_210308_killed_operation_001 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_NegSem_210308_killed_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+
+        mtc.kill;
+
+		alt {
+			[] any component killed {setverdict(pass);} // not allowed. killed only allowed for ptcs.
+		}
+    }
+
+    control {
+        execute(TC_NegSem_210308_killed_operation_001());
+    }
+}

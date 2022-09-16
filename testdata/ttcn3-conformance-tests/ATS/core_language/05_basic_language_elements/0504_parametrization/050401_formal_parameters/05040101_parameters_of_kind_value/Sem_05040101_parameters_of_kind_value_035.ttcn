@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that null can be used as default value of formal value parameters of default type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction g)
+// Default values of port type formal parameters shall be the special value null.
+
+module Sem_05040101_parameters_of_kind_value_035 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+    function f(P p_def := null) {
+        log(p_def);
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_035() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_035());
+	}
+}

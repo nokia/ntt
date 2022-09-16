@@ -1,0 +1,49 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'decvalue_o' function works properly in case of encoding a variable to octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * The optional dynamic_encoding parameter is used for dynamic selection of encode attribute of the
+decoded_value parameter for this single decvalue_o call. The rules for dynamic selection of the encode
+attribute are described in clause 27.9.
+ * */
+
+module Sem_160102_predefined_functions_112 {
+
+    type component GeneralComp {
+
+    }
+
+    type record MyPDU{
+        charstring a1
+    }with { encode "PayloadCodec1" };
+
+
+
+    testcase TC_Sem_160102_predefined_functions_112 () runs on GeneralComp {
+
+    var MyPDU v_rec := {a1 := "abcd"};
+    var MyPDU v_dec;
+    var integer v_res;
+
+    // Encoding:
+    var octetstring v_enc := encvalue_o(v_rec, "PayloadCodec1" );
+
+    // Decoding:
+    v_res := decvalue_o(v_enc, v_dec, "PayloadCodec1"); // try to decode octetstream
+    if (v_res == 0 and match(v_dec,v_rec)) {
+         setverdict(pass);
+    } else {
+          setverdict(fail,v_enc);
+    }
+
+   }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_112());
+    }
+
+}

@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Ensure that all component notation works correctly in unmap operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The all component keyword shall only be used in combination with the all port
+// keyword, i.e. all component:all port, and shall only be used by the MTC. Furthermore,
+// the all component:all port argument shall be used as the one and only argument of a
+// disconnect or unmap operation and it allows to release all connections and mappings
+// of the test configuration.
+
+module Sem_210102_disconnect_and_unmap_operations_009 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1, p2;
+    }
+
+	function checkUnmapped() runs on GeneralComp
+	{
+		if(not p1.checkstate("Mapped") and not p2.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+    testcase TC_Sem_210102_disconnect_and_unmap_operations_009() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc1 := GeneralComp.create;
+
+		map(self:p1, system:p1);
+		map(self:p2, system:p2);
+		map(v_ptc1:p1, system:p1);
+		map(v_ptc1:p2, system:p2);
+
+		unmap(all component:all port);
+
+		// verity that ports are really unmapped
+        checkUnmapped();
+        v_ptc1.start(checkUnmapped());
+		all component.done;
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_and_unmap_operations_009());
+    }
+}
+

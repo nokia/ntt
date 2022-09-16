@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author  TTF T004
+ ** @version 0.0.1
+ ** @purpose 5.1.1.12, Ensure that referencing the name of a nested class in a null reference cause an error.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010112_ConstructorInvocation_004 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+
+	type class Parent {
+		type class Child {
+			var charstring v_name;
+
+			public function get_name()  return charstring {
+				return v_name;
+			}
+		}
+	}
+
+	testcase TC_NegSem_5010112_ConstructorInvocation_004 () runs on GeneralComp {
+		var Parent v_parent := Parent.create();
+		v_parent := null;
+		var Parent.Child v_child := v_parent.Child.create("child"); //cause an error
+
+		if (v_child.get_name() == "child") {
+			setverdict(fail);
+		} else {
+			setverdict(inconc);
+		}
+	}
+
+    control {
+        execute(TC_NegSem_5010112_ConstructorInvocation_004());
+    }
+}

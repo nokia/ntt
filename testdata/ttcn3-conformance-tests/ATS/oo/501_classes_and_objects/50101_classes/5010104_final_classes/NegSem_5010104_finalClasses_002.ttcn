@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.4, Ensure that final classes cannot be subclassed.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010104_finalClasses_002 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class @final FinalClass {
+        function doSomething() return charstring  {
+            return "something";
+        }
+    }
+
+    type class Subclass extends FinalClass { //not allowed
+        var integer i;
+    }
+
+    testcase TC_NegSem_5010104_finalClasses_002() runs on GeneralComp {
+        var Subclass o_subclass := Subclass.create(1);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010104_finalClasses_002());
+    }
+}

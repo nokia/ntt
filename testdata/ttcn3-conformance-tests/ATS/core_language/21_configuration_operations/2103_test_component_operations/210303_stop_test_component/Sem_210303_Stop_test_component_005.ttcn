@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:21.3.3, alive component restart after explicit stop
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Stopping an alive-type component shall stop the currently running behaviour only
+// but the component continues to exist and can execute new behaviour (started on
+// it using the start operation).
+
+module Sem_210303_Stop_test_component_005 {
+
+	type component GeneralComp {
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+		timer t_tmr := 1.0;
+		t_tmr.start;
+		t_tmr.timeout;
+    }
+
+    function f_ptcSecondBehaviour() runs on GeneralComp {
+        setverdict(pass);
+    }
+
+
+	testcase TC_Sem_210303_Stop_test_component_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC") alive;
+        v_ptc.start(f_ptcBehaviour());
+        v_ptc.stop;
+        v_ptc.start(f_ptcSecondBehaviour());
+        v_ptc.done;
+	}
+
+	control{
+	    execute(TC_Sem_210303_Stop_test_component_005());
+	}
+}

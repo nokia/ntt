@@ -1,0 +1,19 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.2.1, The element identifiers are local to the record and shall be unique within the record (but do not have to be globally unique).
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060201_RecordTypeValues_001 {
+    const integer field2 := 4; // do not edit the name
+
+    type record MyRecordType {
+		integer field1,
+		MyOtherRecordType field2 optional,
+		charstring field3
+	}
+    type record MyOtherRecordType {
+    	bitstring field1,
+    	boolean field2
+    }
+}

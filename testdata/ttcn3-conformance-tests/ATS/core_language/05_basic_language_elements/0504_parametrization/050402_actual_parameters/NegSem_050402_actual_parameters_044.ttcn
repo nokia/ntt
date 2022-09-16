@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that reference to elements of formal value parameters cannot be used as inout formal value parameters of altsteps
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module NegSem_050402_actual_parameters_044 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+    }
+
+    type record R {
+        integer field1
+    }
+
+    altstep a_test(inout integer p_val) runs on GeneralComp {
+        []t.timeout {
+            if (p_val == 11) { setverdict(pass); }
+            else { setverdict(fail); }
+        }
+    }
+
+    function f_caller(in template R p_param) runs on GeneralComp {
+        a_test(p_param.field1); // tested parameter passing
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_044() runs on GeneralComp {
+        t.start;
+        f_caller({field1 := 11 });
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_044());
+	}
+}

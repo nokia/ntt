@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Ensure that the the IUT does not allows two output port connection
+ ** @verdict  pass reject
+ ***************************************************/
+//Test the two output port cannot connect
+module NegSem_210101_connect_operation_001{
+
+	type port myport message {
+	  out integer
+	}
+
+
+type component Mysystem
+	{
+ 	port myport messagePort;
+	}
+
+testcase TC_NegSem_210101_connect_operation_001() runs on Mysystem system Mysystem {
+   var Mysystem MyCompA;
+   var Mysystem MyCompB;
+
+MyCompA:=Mysystem.create;
+MyCompB:=Mysystem.create;
+connect(MyCompA:messagePort,MyCompB:messagePort); //not allowed messageports are output
+
+}
+control{
+    execute(TC_NegSem_210101_connect_operation_001());
+}
+}
+

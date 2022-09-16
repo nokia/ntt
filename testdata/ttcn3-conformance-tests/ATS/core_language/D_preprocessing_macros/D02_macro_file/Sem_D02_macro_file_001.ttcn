@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that __FILE__ macro stores the path and file name in a charstring
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Sem_D02_macro_file_001 {
+
+    type component GeneralComp {	}
+
+    testcase TC_Sem_D02_macro_file_001() runs on GeneralComp system GeneralComp {
+
+        const charstring MyConst:= __FILE__;
+        // will match file paths of the form .../Sem_D02_macro_file_001.ttcn or ...\Sem_D02_macro_file_001.ttcn
+        template charstring namePattern := pattern "*[\\/]Sem_D02_macro_file_001.ttcn";
+
+        if(match(MyConst, namePattern)){
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_D02_macro_file_001());
+    }
+}

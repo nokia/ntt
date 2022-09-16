@@ -1,0 +1,63 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  9:6.8, Verify conversion of XSD anySimpleType to TTCN-3 anytype
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration any_to_anytype
+***************************************************/
+
+module Pos_Pos_0608_anytype_and_anysimpletype_types_006 {
+
+   import from schema_Pos_0608_anytype_and_anysimpletype_types_006 language "XSD" all;
+
+   template MyType m_msg := { integer := 1 };
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Pos_0608_anytype_and_anysimpletype_types_006() runs on C system C {
+        var Raw v_rcv;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            []    p.check(receive(Raw:?) -> value v_rcv) {
+                log("XML message ", v_rcv);
+                alt {
+                    // match decoded value to pass test
+                    [] p.receive(m_msg) {
+                        setverdict(pass, "Decoded value matches encoded template");
+                    }
+                    [] p.receive {
+                        setverdict(fail, "XML decoding failure");
+                    }
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_0608_anytype_and_anysimpletype_types_006(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

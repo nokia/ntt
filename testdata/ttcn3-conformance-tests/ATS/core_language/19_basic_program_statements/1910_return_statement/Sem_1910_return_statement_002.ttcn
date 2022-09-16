@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:19.10, Ensure that the IUT correctly handles return statements.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_1910_return_statement_002 {
+
+    type component GeneralComp {
+    }
+
+    function f_template_return() return template charstring {
+        setverdict(pass);
+        return ?;
+    }
+
+
+    testcase TC_Sem_1910_return_statement_002 () runs on GeneralComp {
+        if ( match("A",f_template_return() ) ) {
+            setverdict(pass, "function return value correct");
+        }
+        else {
+            setverdict(fail, "function return value wrong");
+        }
+
+    }
+
+
+    control{
+
+        execute(TC_Sem_1910_return_statement_002());
+
+    }
+
+}

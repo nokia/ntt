@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, storing verdict in done operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// When the done operation is applied to a PTC and matches, the final local verdict of the PTC
+// can be retrieved and stored in variable of the type verdicttype. This is denoted by the
+// symbol '->' the keyword value followed by the name of the variable into which the verdict
+// is stored.
+
+module Sem_210307_done_operation_012 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_Sem_210307_done_operation_012() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        var verdicttype v_verdict;
+        v_ptc.start(f());
+		alt {
+			[] v_ptc.done -> value v_verdict {
+                if (v_verdict != pass) { setverdict(fail, "Invalid PTC verdict"); }
+            }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210307_done_operation_012(), 5.0);
+    }
+}

@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that override directive applied to a type reference does not affect the referenced type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// If the override directive is applied to a type reference, it doesn't affect the attributes of the
+// original referenced type.
+
+module Sem_27010200_general_015 {
+
+    type component GeneralComp {
+	}
+
+	type record MyRecordA {
+		integer field1
+	} with { encode override "RuleA" }
+
+	type record MyRecordB {
+		MyRecordA fieldA
+	} with { encode override "RuleB" }
+
+	// The following template will use "RuleA" as the override directive for MyRecordB affects only
+	// MyRecordB.fieldA, but not the original MyRecordA.
+	template MyRecordA mw_msg := ?;
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_015 () runs on GeneralComp {
+		var RoUC v_enc1 := mw_msg.encode;
+		if(lengthof(v_enc1) == 1 and v_enc1[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_015());
+	}
+}

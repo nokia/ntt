@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenations of record of charstrings work when parameterized.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_008 {
+
+type component GeneralComp { }
+
+type record of charstring RecOfChar;
+
+template RecOfChar m_concatenation := {"ABC"} & * length(3) & {pattern "E" & "?" & "F"};
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_008() runs on GeneralComp {
+    var RecOfChar m_reference := {"ABC","A","B","C","E2F"}; // some value that matches
+
+    if (match(m_reference, m_concatenation)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail);
+    }
+
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_008());
+}
+
+}

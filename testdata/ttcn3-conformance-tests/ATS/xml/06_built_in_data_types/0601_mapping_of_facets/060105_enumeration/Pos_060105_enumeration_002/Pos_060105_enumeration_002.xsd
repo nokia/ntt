@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_060105_enumeration_002"
+    xmlns:ns="schema:Pos_060105_enumeration_002"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:simpleType name="t1">
+        <xsd:restriction base="xsd:integer">
+          <xsd:enumeration value="0"/>
+          <xsd:enumeration value="5"/>
+          <xsd:enumeration value="-5"/>
+          <xsd:enumeration value="10"/>
+        </xsd:restriction>
+      </xsd:simpleType>
+      <element name="e1" type="ns:t1"/>
+</schema>

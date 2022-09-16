@@ -1,0 +1,23 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15, Ensure that a template formed from a union is rejected when the union somehow contains a default type field.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_15_TopLevel_001 {
+
+type record MyRecord {
+	default def
+}
+
+type union MyUnion {
+	integer choice1,
+	MyRecord choice2
+}
+
+template MyUnion m_integerChosen := {
+	choice1 := 5
+}
+
+}

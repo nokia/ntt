@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.2
+ ** @purpose  1:5.4.1.1, Ensure that the IUT correctly handles parametrization through the use of module parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_05040101_parameters_of_kind_value_001 {
+
+    // the following module parameters must not be set externally, as their default values are being checked
+    modulepar integer INTEGER_MODULE_PARAMETER := 1;
+
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_05040101_parameters_of_kind_value_001() runs on GeneralComp {
+        if ( (INTEGER_MODULE_PARAMETER == 1)) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+
+    }
+
+
+    control{
+        execute(TC_Sem_05040101_parameters_of_kind_value_001());
+    }
+
+}

@@ -1,0 +1,58 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.3.6, Verify that error occurs when any from catch is applied to 1D array and index target is array
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction i
+// If the index redirection is used for single-dimensional port arrays, the type
+// of the integer variable shall allow storing the highest index of the respective array.
+module NegSem_220306_catch_operation_002 {
+
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+	const integer c_portCount := 4;
+    type component GeneralComp
+	{
+		port P p[c_portCount];
+	}
+
+	function f() runs on GeneralComp
+	{
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			p[i].getcall;
+			if (i mod 2 == 1) { p[i].raise(S, 10) };
+		}
+	}
+
+    testcase TC_NegSem_220306_catch_operation_002() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_index[1];
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			connect(self:p[i], v_ptc:p[i]);
+			p[i].call(S:{}, nowait);
+		}
+		v_ptc.start(f());
+		v_ptc.done;
+        alt
+		{
+        	[] any from p.catch(S, integer:?) -> @index value v_index {
+				if(v_index[0] == 1){
+		            setverdict(pass);
+		        } else {
+		            setverdict(fail, "Index or parameter value incorrectly assigned");
+		        }
+			}
+			[else] { setverdict(fail, "The any from catch operation didn't match for some reason");  }
+		}
+    }
+
+    control {
+        execute(TC_NegSem_220306_catch_operation_002(), 5.0);
+    }
+}

@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.1, Assign values to restricted float.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010201_ListOfValues_006 {
+    type float MyFloat (1.0, 5.0);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010201_ListOfValues_006() runs on GeneralComp {
+        var MyFloat v_f := 2.0; // value is not defined by the type
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010201_ListOfValues_006());
+    }
+}

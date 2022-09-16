@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer declaration syntax
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer declaration syntax
+ **/
+
+
+module NegSyn_12_toplevel_timer_005 {
+    type component TComp{
+        timer t_timer := 1;
+    }
+    testcase TC_NegSyn_12_toplevel_timer_005() runs on TComp{
+
+    }
+    control{
+
+            execute(TC_NegSyn_12_toplevel_timer_005())
+
+
+    }
+}

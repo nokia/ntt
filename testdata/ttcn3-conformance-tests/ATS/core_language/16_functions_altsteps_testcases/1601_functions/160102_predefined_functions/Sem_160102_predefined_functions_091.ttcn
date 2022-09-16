@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * check that rnd() uses seeds per component
+ *
+ */
+
+
+module Sem_160102_predefined_functions_091 {
+
+  type component GeneralComp {}
+
+
+  //function to generate random number with seed given as input
+  function frnd(float seed) runs on GeneralComp {
+    var float v_random1 := rnd(seed);
+    var float v_random2 := rnd();
+
+    setverdict(pass);
+    if (not match(rnd(seed), v_random1)) {
+      setverdict(fail, "rnd from same seed has to be identical to ", v_random1);
+    }
+    if (match(rnd(seed+1.0), v_random1)) {
+      setverdict(fail, "rnd from different seed should not be identical with ", v_random1);
+    }
+  }
+
+  testcase TC_Sem_160102_predefined_functions_091 (float General_Comp_seed) runs on GeneralComp system GeneralComp {
+
+    var float v_random1,v_random2;
+
+    //Generate components with different seeds
+    var GeneralComp v_ptc1,v_ptc2;
+
+    v_ptc1:= GeneralComp.create alive;
+    v_ptc2:= GeneralComp.create alive;
+
+    //different seeds given to components:
+    v_ptc1.start(frnd(General_Comp_seed));
+    v_ptc2.start(frnd(General_Comp_seed+0.5));
+    all component.done;
+  }
+
+  control{
+    const float General_Comp_seed := 0.0;
+    execute(TC_Sem_160102_predefined_functions_091(General_Comp_seed));
+  }
+
+}

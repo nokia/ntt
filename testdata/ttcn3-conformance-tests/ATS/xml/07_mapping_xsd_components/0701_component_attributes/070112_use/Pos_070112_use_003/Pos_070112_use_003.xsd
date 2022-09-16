@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070112_use_003"
+  xmlns:ns="schema:Pos_070112_use_003">
+  <complexType name="struct">
+    <simpleContent>
+      <extension base="integer">
+        <attribute name="attr" type="string" />
+      </extension>
+    </simpleContent>
+  </complexType>
+
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <element name="foo">
+          <complexType>
+            <simpleContent>
+              <restriction base="ns:struct">
+                <attribute name="attr" type="string" use="prohibited" />
+              </restriction>
+            </simpleContent>
+          </complexType>
+        </element>
+      </sequence>
+    </complexType>
+  </element>  
+</schema>

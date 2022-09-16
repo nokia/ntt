@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify error is generated if activated alstep runs on incompatible component
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// An activate operation will put the referenced altstep as the first element into the list
+// of defaults and return a default reference.
+// The effect of an activate operation is local to the test component in which it is called.
+
+module NegSem_200502_the_activate_operation_001 {
+
+	type component GeneralComp {
+	}
+
+	type port P message {
+		inout integer;
+	}
+
+	type component TestComp {
+		port P p;
+	}
+
+	altstep a() runs on TestComp {
+		[] p.receive {}
+	}
+
+	testcase TC_NegSem_200502_the_activate_operation_001() runs on GeneralComp {
+		activate(a());
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_200502_the_activate_operation_001());
+	}
+}

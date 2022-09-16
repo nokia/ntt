@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that param allows data types only.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+// Restriction e:
+// MessageType shall be a reference to a data type.
+
+module NegSyn_060209_CommunicationPortTypes_005 {
+
+     type record MsgType1 {
+        integer f1,
+        octetstring f2
+    }
+
+	type boolean MsgType2;
+	type charstring MsgType3;
+
+    type default MyDefType;
+
+    type port MyMessagePortTypeOne message {
+        in MsgType1, MsgType2;
+        out MsgType3;
+        inout MyDefType    // error: not data type
+    }
+
+}

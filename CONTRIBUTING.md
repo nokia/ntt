@@ -95,7 +95,7 @@ quite comfortable:
 	git config branch.master.remote upstream
 
 	# Use `origin` for pushing changes.
-	git config branch.master.pushDefault origin
+	git config branch.master.pushRemote origin
 
 
 Now you're ready to contribute:
@@ -139,6 +139,49 @@ request being accepted:
   separate pull requests.
 * Write [good commit messages](https://chris.beams.io/posts/git-commit/).
 
+
+## Repository Organization
+
+```
+ntt                 main binary with sub-commands (list, build, run, lint, ...)
+│
+├── project         test suite configuration package
+├── tests           test suite control package
+├── runtime         runtime system
+├── builtins        predefined and builtin functions
+├── interpreter     tree walking interpreter for TTCN-3
+│
+├── ttcn3           language support (semantics and convenience functions)
+│   ├── ast         abstract syntax tree and helpers
+│   ├── parser      parser (TTCN-3:2018, various extensions, support for Titan, k3 and mtc)
+│   ├── scanner     tokenizer
+│   ├── token       token types
+│   ├── printer     obsolete pretty printer
+│   ├── doc         documentation tags package
+│   └── syntax      new TTCN-3 syntax package (WIP)
+│
+├── internal
+│   ├── compdb      compilation database types (compile_commands.json)
+│   ├── results     result database types (test_results.json)
+│   ├── env         environment file handling (ntt.env)
+│   ├── loc         source location package
+│   ├── log         logging library
+│   ├── proc        subprocess library
+│   ├── session     session handling library
+│   ├── errors      multi-error implementation
+│   ├── fs          file caching and filesystem utilities
+│   ├── cache	    path cache package (NTT_CACHE, VPATH)
+│   ├── memoize     data caching library
+│   ├── lsp         language server
+│   ├── pipeconn    net.Conn implementation for os.Stdin/os.Stdout (unsed)
+│   └── yaml        YAML support library
+│
+└── k3              k3 support packages
+    ├── k3r         runtime interface package
+    ├── k3s         k3s interface package
+    ├── log         log file parser
+    └── t3xf        T3XF/TASM decoder
+```
 
 ## Issue and Pull Request Labels
 

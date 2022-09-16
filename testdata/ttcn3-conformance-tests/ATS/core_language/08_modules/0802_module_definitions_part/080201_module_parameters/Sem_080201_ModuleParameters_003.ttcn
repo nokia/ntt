@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:8.2.1, Ensure that a reference to plain module parameter with a default value delivers the default value unless it is overwritten.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//More than one occurrence of module parameters declaration is allowed but each parameter shall be declared only once (i.e. redefinition of the module parameter is not allowed).
+
+module Sem_080201_ModuleParameters_003 {
+
+modulepar integer MY_INTEGER_MODULE_PARAMETER := 2;
+modulepar float MY_FLOAT_MODULE_PARAMETER := 1.23;
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_080201_ModuleParameters_003() runs on GeneralComp {
+	if (MY_INTEGER_MODULE_PARAMETER == 2 and MY_FLOAT_MODULE_PARAMETER == 1.23) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_080201_ModuleParameters_003());
+}
+
+}

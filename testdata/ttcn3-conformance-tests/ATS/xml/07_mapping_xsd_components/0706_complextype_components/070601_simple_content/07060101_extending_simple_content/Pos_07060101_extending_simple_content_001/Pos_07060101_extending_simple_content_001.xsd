@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_07060101_extending_simple_content_001" 
+  xmlns:types="schema:Pos_07060101_extending_simple_content_001">
+
+	<complexType name="e23">
+		<simpleContent>
+			<extension base="string">
+				<attribute name="foo" type="float"/>
+				<attribute name="bar" type="integer"/>
+			</extension>
+		</simpleContent>
+	</complexType>
+	
+	<element name="e23el" type="types:e23"/>
+</schema>

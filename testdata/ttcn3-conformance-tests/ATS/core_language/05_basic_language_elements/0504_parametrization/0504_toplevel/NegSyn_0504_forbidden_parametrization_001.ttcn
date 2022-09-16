@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.4, Ensure that the IUT rejects forbidden module parametrization types.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_0504_forbidden_parametrization_001 {
+
+modulepar { template integer INTEGER_MODULE_PARAMETER := 0 }
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSyn_0504_forbidden_parametrization_001() runs on GeneralComp {
+}
+
+control{
+    execute(TC_NegSyn_0504_forbidden_parametrization_001());
+}
+
+}

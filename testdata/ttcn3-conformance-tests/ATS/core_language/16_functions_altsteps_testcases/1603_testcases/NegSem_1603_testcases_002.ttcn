@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1603_testcases_002 {
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_1603_testcases_002 () runs on GeneralComp {
+ TC_fail();		//testcases can only be invoked from the control part
+ setverdict(pass);
+}
+
+testcase TC_fail () runs on GeneralComp {
+ setverdict(fail);
+}
+
+
+control{
+
+    execute(TC_NegSem_1603_testcases_002());
+
+}
+
+}

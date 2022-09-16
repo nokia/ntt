@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype comprise boolean data type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_003 {
+ type component GeneralComp {
+
+var anytype Var1, Var2,Var3;
+var boolean Var4, Var5;
+
+}
+
+testcase TC_Sem_060206_anytype_003() runs on GeneralComp {
+
+Var1.boolean := true;
+Var2.boolean:=true;
+Var3.boolean := not Var1.boolean;	// not true = false
+
+Var4 := Var1.boolean and Var2.boolean;		// true and true = true
+Var5 := Var1.boolean and Var3.boolean;		// true and false = false
+
+      if (match(Var4, true) and match(Var5, false)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_003());
+}
+
+}

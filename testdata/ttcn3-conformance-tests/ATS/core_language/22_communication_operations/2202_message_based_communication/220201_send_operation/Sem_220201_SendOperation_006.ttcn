@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, multicast send operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Multicast communication is used, if the to clause includes a list of communication
+// partners.
+
+module Sem_220201_SendOperation_006 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f(integer p_expected) runs on GeneralComp
+	{
+        alt {
+            [] p.receive(p_expected) { setverdict(pass); }
+            [] p.receive { setverdict(fail); }
+        }
+	}
+
+    const integer c_ptcCount := 4;
+
+    testcase TC_Sem_220201_SendOperation_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptcs[c_ptcCount];
+        for (var integer i := 0; i < c_ptcCount; i := i + 1) {
+            v_ptcs[i] := GeneralComp.create;
+            connect(self:p, v_ptcs[i]:p);
+            v_ptcs[i].start(f(i mod 2));
+        }
+		p.send(0) to (v_ptcs[0], v_ptcs[2]);
+        p.send(1) to (v_ptcs[1], v_ptcs[3]);
+        all component.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_220201_SendOperation_006(), 5.0);
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:test xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ns="schema:Pos_060602_idrefs_001">
+	<item>abc</item>
+	<item>def</item>
+	<item>ghi</item>
+    <itemrefs>ghi def abc</itemrefs>
+</ns:test>

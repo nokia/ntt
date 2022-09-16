@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that a send operation with actual parameters of a global parameterized template is accepted with the actual parameter being a template parameter.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1503_GlobalAndLocalTemplates_005 {
+
+    type port MyMessagePortType message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        MyMessageType field3 optional
+    }
+
+    template MyMessageType m_myTemplate(integer p_myFormalParam):= {
+        field1 := p_myFormalParam,
+        field2 := "abc1xyz",
+        field3 := omit
+    }
+
+    template MyMessageType m_myOtherTemplate(template MyMessageType p_myTemplate):= {
+        field1 := 2,
+        field2 := "abcxyz",
+        field3 := p_myTemplate
+    }
+
+    testcase TC_Sem_1503_GlobalAndLocalTemplates_005() runs on GeneralComp {
+        pt_myPort.send(m_myOtherTemplate(m_myTemplate(2)));
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_1503_GlobalAndLocalTemplates_005());
+    }
+
+
+}

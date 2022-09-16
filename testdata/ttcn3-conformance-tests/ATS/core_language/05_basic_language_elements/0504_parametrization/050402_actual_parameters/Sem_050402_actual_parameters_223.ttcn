@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that actual out value parameters of functions can be skipped if they are the last ones
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// An actual parameter can also be skipped by just leaving it out if no other actual parameter follows in the actual parameter
+// list - either because the parameter is last or because all following formal parameters are out parameters or have default
+// values and are left out.
+
+module Sem_050402_actual_parameters_223 {
+
+    type component GeneralComp {
+    }
+
+    function f_test(out integer p_val) {
+        p_val := 9
+    }
+
+    testcase TC_Sem_050402_actual_parameters_223() runs on GeneralComp {
+        f_test(); // tested parameter passing
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_223());
+	}
+}

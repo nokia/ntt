@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that local/global constants or module parameters of class type or containing class type fields or elements are not allowed.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_006 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_simple_class {
+        private var hexstring v_hstr := 'AF37D'H;
+
+        public function get_hexstr() return hexstring {
+            return v_hstr;
+        }
+    }
+
+    const t_class_simple_class const_simple := t_class_simple_class.create(); // not allowed
+    modulepar t_class_simple_class mod_par_simple; // not allowed
+
+    testcase TC_NegSem_50101_top_level_006() runs on GeneralComp {
+        var t_class_simple_class v_a := t_class_simple_class.create();
+        if (v_a.get_hexstr() == 'AF37D'H) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_006());
+    }
+}

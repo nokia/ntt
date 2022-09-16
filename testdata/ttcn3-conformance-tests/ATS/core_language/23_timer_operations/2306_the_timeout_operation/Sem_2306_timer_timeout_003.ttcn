@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout happen in order from the shortest to the longest
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/Timeout operational semantics/Timeout started timer
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/The timeout can be used as alternative in alt
+
+module Sem_2306_timer_timeout_003 {
+    type component TComp{
+        timer t_short, t_medium, t_long;
+    }
+    testcase TC_Sem_2306_timer_timeout_003() runs on TComp{
+        t_long.start(3.0);
+        t_medium.start(2.0);
+        t_short.start(1.0);
+
+        alt
+        {
+            [] t_long.timeout {
+                setverdict(fail,
+                    "Timer started for 3 seconds expired earlier than the timer started for 1 second");
+                stop;
+            }
+            [] t_medium.timeout {
+                setverdict(fail,
+                    "Timer started for 2 seconds expired earlier than the timer started for 1 second");
+                stop;
+            }
+            [] t_short.timeout {
+                setverdict(pass);
+            }
+        }
+        alt
+        {
+            [] t_long.timeout {
+                setverdict(fail,
+                    "Timer started for 3 seconds expired earlier than the timer started for 2 second");
+                stop;
+            }
+            [] t_medium.timeout {
+                setverdict(pass);
+            }
+        }
+		t_long.timeout;
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_003())
+
+
+    }
+}

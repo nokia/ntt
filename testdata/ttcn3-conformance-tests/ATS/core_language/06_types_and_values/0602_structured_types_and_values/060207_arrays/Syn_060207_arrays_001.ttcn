@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, array specified in variable declaration
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// They [arrays] may be specified also at the point of a variable declaration.
+
+module Syn_060207_arrays_001 {
+
+    const integer c_arr[2] := {0, 1};
+    modulepar integer PX_ARR[3];
+
+	control {
+		var integer v_arr[5], v_noarr, v_arr2[2];
+	}
+
+}

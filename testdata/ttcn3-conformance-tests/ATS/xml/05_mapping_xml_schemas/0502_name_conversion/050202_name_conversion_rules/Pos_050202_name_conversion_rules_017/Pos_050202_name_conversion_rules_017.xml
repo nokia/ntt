@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_050202_name_conversion_rules_017">
+ <item>0</item>
+ <item中国>1</item中国>
+ <item日本>2</item日本>
+</ns:MyType>

@@ -1,0 +1,84 @@
+/***************************************************
+ ** @author   STF 475, updated by STF 521
+ ** @version  0.0.2
+ ** @purpose  9:8.1.1, Show effect of the block and abstract attributes on element substitution
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration  elem_subst
+ ***************************************************/
+
+// The test is focused on encoding only. Decoding cannot be used as abstract and block attributes prevent it.
+
+module Pos_080101_head_elements_of_substitution_groups_002 {
+
+    import from schema_Pos_080101_head_elements_of_substitution_groups_002 language "XSD" all;
+
+    template Ize m_msg := {
+		head_list := {
+			{ head := "anything" },
+			{ member1 := "any thing" },
+			{ member2 := something },
+			{ member3 := { bar:= 5, foo := omit, base := "anything else" } }
+		}
+    }
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference XML file and returns true if they represent the same XML structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the XML file
+     * @param p_referenceXmlFile the XML file
+     * @param p_xsdFileList the list of XSD files
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference XML file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceXmlFile represent the same XML structure
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceXmlFile, FileList p_xsdFileList, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_080101_head_elements_of_substitution_groups_002() runs on C system C {
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference XML file
+            []    p.receive(Raw:?) -> value v_rcv {
+                log("XML message ", v_rcv);
+				// TODO: in order to enable the check, a validation tool update needed so that it can work without schemas
+                //if (matchFile(v_rcv, "Pos_080101_head_elements_of_substitution_groups_002.xml", {}, v_matchError)) {
+                    setverdict(pass, "Decoded value matches reference XML");
+                //} else {
+                //    setverdict(fail, v_matchError);
+                //}
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_080101_head_elements_of_substitution_groups_002(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

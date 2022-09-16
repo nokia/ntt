@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.12, Ensure that members of a nested class have not the same name as one of the members of a indirectly containing class.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010112_ConstructorInvocation_003 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+
+    type class MySuperClass {
+    	var charstring v_id;
+    }
+
+	type class MyClass extends MySuperClass {
+	}
+
+    type class Grandparent extends MyClass{
+		type class Parent {
+			type class Child {
+				var charstring v_id; // not allowed
+			}
+		}
+    }
+
+	testcase TC_NegSem_5010112_ConstructorInvocation_003 () runs on GeneralComp {
+		//empy testcase
+		setverdict(pass);
+	}
+
+    control {
+        execute(TC_NegSem_5010112_ConstructorInvocation_003());
+    }
+}

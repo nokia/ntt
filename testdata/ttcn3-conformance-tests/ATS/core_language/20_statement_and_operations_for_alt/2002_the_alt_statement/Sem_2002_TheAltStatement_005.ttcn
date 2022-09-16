@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the else branch is executed when nothing else matched (loopback case).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2002_TheAltStatement_005 {
+
+type port MyPort message {
+	inout charstring
+}
+
+type component GeneralComp {
+	port MyPort p;
+}
+
+template charstring m_testOne := "ping1";
+template charstring m_testTwo := "ping2";
+
+testcase TC_Sem_2002_TheAltStatement_005() runs on GeneralComp {
+	p.send(m_testOne);
+	p.send(m_testOne);
+
+	alt {
+		[] p.receive(m_testTwo) {
+			setverdict(fail);
+		}
+		[false] p.receive(m_testTwo) {
+			setverdict(fail);
+		}
+		[else] {
+			setverdict(pass);
+		}
+	}
+
+	setverdict(pass);
+}
+
+control {
+	execute(TC_Sem_2002_TheAltStatement_005(), 2.0);  // if the altstep isn't handled after 2s, we raise an error
+}
+
+}

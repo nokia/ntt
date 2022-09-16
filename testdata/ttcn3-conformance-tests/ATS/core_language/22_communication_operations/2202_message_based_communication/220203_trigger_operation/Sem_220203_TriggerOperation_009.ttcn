@@ -1,0 +1,48 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, redirect assignment of message fields
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Rules in clause 22.2.2 shall apply.
+// When the keyword value is followed by an assignment list enframed by a pair of
+// parentheses, the whole received message and/or one or more parts of it can be
+// stored. In a single assignment within the list, on the right hand side of the
+// assignment symbol (":=") a field of the template type shall be referenced, on
+// the left hand side the name of the variable or a formal parameter, in which
+// the value shall be stored.
+
+module Sem_220203_TriggerOperation_009 {
+	type record R
+    {
+        integer field1[2],
+        charstring field2
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_Sem_220203_TriggerOperation_009() runs on GeneralComp {
+        var integer v_int;
+        var charstring v_str;
+        p.send(R:{ field1 := { 1, 2 }, field2 := "abc" });
+        alt {
+            [] p.trigger(R:?) -> value ( v_int := field1[1], v_str := field2) {
+                if (v_int == 2 and v_str == "abc") { setverdict (pass); }
+                else { setverdict(fail); }
+            }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_009(), 5.0);
+    }
+}

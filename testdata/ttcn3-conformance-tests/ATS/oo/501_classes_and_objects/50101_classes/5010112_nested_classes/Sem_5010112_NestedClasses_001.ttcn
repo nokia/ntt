@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.12, Ensure that nested classes can be used.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010112_ConstructorInvocation_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class Parent {
+
+		type class Child {
+			//empty class
+		}
+    }
+
+    testcase TC_Sem_5010112_ConstructorInvocation_001 () runs on GeneralComp {
+    	var Parent v_parent := Parent.create();
+    	var Parent.Child v_child := v_parent.Child.create();
+
+    	//empty test
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_5010112_ConstructorInvocation_001());
+    }
+}

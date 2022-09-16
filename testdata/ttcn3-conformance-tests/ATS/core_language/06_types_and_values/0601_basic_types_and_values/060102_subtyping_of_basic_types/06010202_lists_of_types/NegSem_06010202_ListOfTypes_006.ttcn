@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted integers.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_006 {
+    type integer Integer1 (0..9 );
+    type integer Integer2 (20..30);
+    type integer Integer_1_2 (Integer1, Integer2);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_006() runs on GeneralComp {
+        var Integer_1_2 v_b;
+        v_b := 15; //invalid
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_006());
+    }
+}

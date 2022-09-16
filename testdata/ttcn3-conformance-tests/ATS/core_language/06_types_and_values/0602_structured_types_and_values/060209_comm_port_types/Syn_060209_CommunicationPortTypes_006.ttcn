@@ -1,0 +1,19 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that unmap param is accepted by the port definition.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_060209_CommunicationPortTypes_006 {
+
+	type record MyType {
+	    integer f1
+	}
+
+    type port MyMessagePortTypeOne message {
+        inout integer;
+        unmap param (in MyType p1, out integer p2);
+    }
+
+}

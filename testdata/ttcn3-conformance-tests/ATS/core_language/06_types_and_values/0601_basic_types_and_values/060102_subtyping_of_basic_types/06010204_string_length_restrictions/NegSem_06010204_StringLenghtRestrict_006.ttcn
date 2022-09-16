@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign invalid values to length restricted octetstring
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010204_StringLenghtRestrict_006 {
+    type octetstring ocStrings1 length(2..infinity);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010204_StringLenghtRestrict_006() runs on GeneralComp {
+        var ocStrings1 v_b1;
+        v_b1 := 'FE'O;	//1 octet invalid length
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010204_StringLenghtRestrict_006());
+    }
+}

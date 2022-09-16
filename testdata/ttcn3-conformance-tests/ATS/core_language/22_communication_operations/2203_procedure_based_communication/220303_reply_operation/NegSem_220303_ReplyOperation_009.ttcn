@@ -1,0 +1,47 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that values that are not addresses or components cannot be used in the to clause of the reply operation
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// d) All AddressRef items in the to clause shall be of type address, component or of the address
+// type bound to the port type (see clause 6.2.9) of the port instance referenced in the reply
+// operation.
+
+module NegSem_220303_ReplyOperation_009 {
+
+    signature S();
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    function f_server() runs on GeneralComp {
+		var integer v_addr := 10;
+        p.getcall(S:?);
+        p.reply(S:{}) to v_addr;
+    }
+
+    testcase TC_NegSem_220303_ReplyOperation_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}, nowait);
+        alt {
+			[] p.getreply {}
+			[] v_ptc.done {}
+		}
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220303_ReplyOperation_009(), 5.0);
+    }
+
+}

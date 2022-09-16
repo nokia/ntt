@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:10, Constant used within invoke function with return
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_10_Constants_004 {
+
+    type component GeneralComp {
+    }
+    //2
+    function f_Sem_10_Constants_004(integer p_int) runs on GeneralComp return integer{
+        const integer c_i := 2;
+        if(p_int==0)
+        {
+            return c_i;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    testcase TC_Sem_10_Constants_004() runs on GeneralComp {
+        const integer c_int := 2;
+        if (f_Sem_10_Constants_004(0)==c_int)
+        {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    } //end testcase
+
+    control{
+        execute(TC_Sem_10_Constants_004());
+    }
+}

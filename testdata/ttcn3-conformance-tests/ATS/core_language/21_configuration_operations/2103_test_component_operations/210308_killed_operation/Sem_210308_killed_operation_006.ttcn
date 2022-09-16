@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Verify that any from killed doesn't assign index when no component has been killed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// The index of the matched component can optionally be assigned to an integer variable
+// for single-dimensional component arrays...
+module Sem_210308_killed_operation_006 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210308_killed_operation_006() runs on GeneralComp system GeneralComp {
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		var integer v_index;
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create alive;
+			v_ptc[i].start(f());
+		}
+        alt
+		{
+        	[] any from v_ptc.killed -> @index value v_index { setverdict(fail, "The any from killed operation didn't found killed component"); }
+			[else] { setverdict(pass); }
+		}
+        if(not isbound(v_index)){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Index incorrectly assigned");
+        }
+	}
+
+    control {
+        execute(TC_Sem_210308_killed_operation_006(), 5000.0);
+    }
+}

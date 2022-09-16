@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, value list notation used for union value definition
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The value list notation shall not be used for setting values of union types.
+
+module NegSem_060205_top_level_005 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1
+	}
+
+    testcase TC_NegSem_060205_top_level_005() runs on GeneralComp {
+		var U v_choice := { 1 };
+        if (ischosen(v_choice.option1)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_060205_top_level_005());
+	}
+}

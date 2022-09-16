@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.2
+ ** @purpose  1:24, Ensure setverdict is not allowed in control part at the top level.
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions.
+ **/
+
+module NegSem_24_toplevel_005 {
+	type component GeneralComp {}
+
+	testcase TC_NegSem_24_toplevel_005() runs on GeneralComp {
+		setverdict(fail);
+	}
+
+
+	control {
+		// TODO Check with grammar if it is allowed
+		// At least grammar allowes it in compound statements
+		setverdict(pass);
+		execute(TC_NegSem_24_toplevel_005())
+	}
+}

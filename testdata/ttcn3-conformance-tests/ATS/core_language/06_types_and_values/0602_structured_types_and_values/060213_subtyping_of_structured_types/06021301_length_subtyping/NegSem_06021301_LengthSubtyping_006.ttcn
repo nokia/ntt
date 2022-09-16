@@ -1,0 +1,17 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.2.13.1, The length subtyping check for 'record of' or 'set of' types
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*The following requirement is tested:
+ * In case of the range syntax the upper bound shall not be lesser than the lower bound value.
+*/
+
+module NegSem_06021301_LengthSubtyping_006 {
+   type record length(0..10) of integer RecordOfLengthLessThan10;
+
+   type RecordOfLengthLessThan10 RecordOfLengthLessThan5 length(5..2);	//Error: In case of the range syntax the upper bound shall not be lesser than the lower bound value.
+
+}

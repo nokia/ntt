@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(present) can't be parameter to template(omit) if contains anyvalue(?)
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1508_TemplateRestrictions_037 {
+
+    type record ExampleType {	// Exampletype record integer and a boolean
+       	integer a,
+		boolean b
+       }
+
+	type component GeneralComp {
+	}
+
+
+
+	template (omit) ExampleType m_baseTemplate(template integer MyintTemplate := ?) :={
+		a := MyintTemplate,	// template MyintTemplate contains anyvalue(?), which is not allowed in omit restriction
+		b := true
+	}
+
+	testcase TC_NegSem_1508_TemplateRestrictions_037() runs on GeneralComp {
+
+
+		if (ispresent(m_baseTemplate.a) == true) {
+      		setverdict(pass);
+		} else {
+            setverdict(fail);
+       }
+ }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_037());
+    }
+}

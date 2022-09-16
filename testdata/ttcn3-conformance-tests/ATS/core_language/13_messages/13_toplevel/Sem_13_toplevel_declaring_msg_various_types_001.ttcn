@@ -1,0 +1,142 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:13, Port with type anytype can send and receive messages of any basic or structured type: 'record' type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// #reqname  /Requirements/13 Declaring messages/Any type can be declared as type of message in a message port type
+
+
+module Sem_13_toplevel_declaring_msg_various_types_001{
+    type record CompositeType{
+        integer i
+    }
+    type set MySet{
+        integer int1,
+        charstring str1
+    }
+    type enumerated MyEnum{
+        Perl,Bash,Python
+    }
+    type integer MyArray[3];
+    type union MyUnion{
+        integer int,
+        float real
+    }
+    type record MsgType1{
+        integer i,
+        float k,
+        boolean b,
+        verdicttype v,
+        bitstring bs,
+        hexstring hs,
+        octetstring os,
+        charstring cs,
+        universal charstring ucs,
+        CompositeType rec1,
+        MySet set1,
+        MyUnion union1,
+        MyEnum enum1,
+        MyArray arr1
+    }
+    type record MsgType2{
+            integer j
+    }
+
+    type port MyPort message{
+        inout integer;
+        inout float;
+        inout boolean;
+        inout verdicttype;
+        inout bitstring;
+        inout hexstring;
+        inout octetstring;
+        inout charstring;
+        inout universal charstring;
+        inout CompositeType;
+        inout MySet;
+        inout MyUnion;
+        inout MyEnum;
+        inout MyArray;
+    }
+
+    type component Sender{
+        timer t_timer := 2.0;
+        port MyPort src;
+    }
+
+    type component Receiver{
+        port MyPort dst;
+    }
+    type component MTC {}
+
+    function make_union() return MyUnion
+    {
+        var MyUnion result;
+        result.int := 1;
+        return result;
+    }
+
+    const MsgType1 c_values := {
+        i := 1,
+        k := 1.0,
+        b := true,
+        v := pass,
+        bs := '0101'B,
+        hs := '123ABD'H,
+        os := 'FF96'O,
+        cs := "ab",
+        ucs := "the",
+        rec1 := {1},
+        set1 := {int1:=1, str1:="the"},
+        union1 := make_union(),
+        enum1 := Bash,
+        arr1 := {1,2,3}
+    };
+
+    function f_sender() runs on Sender
+    {
+        // CompositeType
+        t_timer.start;
+        src.send(c_values.rec1);
+        alt {
+            [] src.receive(c_values.rec1) { setverdict(pass); }
+			[] src.receive {
+				setverdict(fail, "Unexpected data, expected CompositeType ", c_values.rec1);
+				stop;
+			}
+			[] t_timer.timeout {
+				setverdict(fail, "No response from echo service");
+				stop;
+			}
+        }
+    }
+
+	function f_receiver() runs on Receiver
+	{
+	    timer t_timer := 30.0;
+	    t_timer.start;
+	    alt
+	    {
+            [] dst.receive(c_values.rec1) { setverdict(pass); dst.send(c_values.rec1); }
+
+            [] dst.receive { setverdict(fail, "Unexpected messagem expected CompositeType", c_values.rec1); stop; }
+	        [] t_timer.timeout { setverdict(fail, "No more messages"); stop; }
+	    }
+	}
+
+    testcase TC_Sem_13_toplevel_declaring_msg_various_types_001() runs on MTC system MTC
+    {
+		var Sender c_sender := Sender.create;
+		var Receiver c_receiver := Receiver.create;
+        connect(c_sender:src, c_receiver:dst);
+        c_sender.start(f_sender());
+        c_receiver.start(f_receiver());
+        c_sender.done;
+        c_receiver.kill;
+    }
+    control {
+            execute(TC_Sem_13_toplevel_declaring_msg_various_types_001())
+    }
+}

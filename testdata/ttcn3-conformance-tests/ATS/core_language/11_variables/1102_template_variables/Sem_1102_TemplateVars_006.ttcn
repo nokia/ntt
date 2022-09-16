@@ -1,0 +1,54 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Ensure that templates with "@default" modifier unions are evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+ //The following requirement is tested:
+  /*
+   * Restriction j) If a lazy or fuzzy template variable iss are used in deterministic contexts (i.e. during the evaluation of a
+   * snapshot or initialization of global non-fuzzy templates), it shall be declared @deterministic and the template body assigned to the
+   * variable shall fulfill the restrictions imposed on content of functions used in special places.
+   * */
+
+
+module Sem_1102_TemplateVars_006 {
+
+   type union U {
+		@default integer option1,
+		charstring option2
+	}
+
+    type port loopbackPort message {
+	  inout U
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+
+testcase TC_Sem_1102_TemplateVars_006() runs on GeneralComp {
+	var template @lazy @deterministic U mw_pattern := 12345;
+	var U v_int := { option1 := 12345};
+
+    messagePort.send(v_int);
+
+    alt {
+     [] messagePort.receive(mw_pattern) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+
+}
+
+control{
+    execute(TC_Sem_1102_TemplateVars_006());
+}
+
+}

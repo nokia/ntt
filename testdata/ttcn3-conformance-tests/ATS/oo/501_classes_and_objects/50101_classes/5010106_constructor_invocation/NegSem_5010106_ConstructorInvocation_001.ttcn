@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.6, Ensure that class constructor can be invoked.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010106_ConstructorInvocation_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+	type class MyClass {
+	   var integer v_id;
+
+	   public function get_vid() return integer {
+			return this.v_id;
+		}
+	}
+
+	type external class MyExternalClass extends MyClass {
+		var charstring v_cstr;
+
+		create(integer id)
+		external (charstring cstr): MyClass(id){
+			this.v_cstr := cstr;
+		}
+
+		public function get_vcstr() return charstring {
+			return this.v_cstr;
+		}
+	}
+
+    testcase TC_NegSem_5010106_ConstructorInvocation_001() runs on GeneralComp {
+		var MyExternalClass v_ext := MyExternalClass.create(123, "abc"); //not allowed
+
+		if (v_ext.get_vcstr() == "abc") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_NegSem_5010106_ConstructorInvocation_001());
+    }
+}

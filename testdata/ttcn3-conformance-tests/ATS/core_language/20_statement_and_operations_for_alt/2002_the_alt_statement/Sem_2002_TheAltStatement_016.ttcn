@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the alt-statement supports local definitions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * An alt statement may define some local definitions before its alternative branches.
+ * These can be used by all the branches.
+ **/
+module Sem_2002_TheAltStatement_016 {
+
+	type port MyPort message {
+		inout charstring
+	}
+
+	type component GeneralComp {
+		port MyPort p;
+	}
+
+    function fsend(in charstring tSend) runs on GeneralComp {
+        p.send(tSend) to all component;
+    }
+
+	template charstring m_test := "ping";
+
+	testcase TC_Sem_2002_TheAltStatement_016() runs on GeneralComp system GeneralComp {
+
+        var GeneralComp newComp1 := GeneralComp.create;      // create parallel test component
+
+        connect(mtc:p, newComp1:p);
+        newComp1.start(fsend("ping"));
+		alt {
+	        var integer v_a := 2;    // local variable
+			[] p.receive(m_test) {
+	            if(match(v_a, 2)){    // check that local variable has value 2
+				    setverdict(pass);
+	            }else{
+	                setverdict(fail);
+	            }
+			}
+		}
+	}
+
+	control {
+		execute(TC_Sem_2002_TheAltStatement_016());
+	}
+
+}

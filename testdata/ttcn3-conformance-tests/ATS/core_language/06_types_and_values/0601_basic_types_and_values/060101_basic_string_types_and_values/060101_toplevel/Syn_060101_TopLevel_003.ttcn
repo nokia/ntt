@@ -1,0 +1,13 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign different octetstring values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060101_TopLevel_003 {
+    const octetstring c_o1 := '00'O;
+    const octetstring c_o2 := '1Fa3B5'O;
+    const octetstring c_o3 := '07aDC4'O;
+    const octetstring c_o4 := '000000000000000000000000'O;
+    const octetstring c_o5 := 'FFFFFFFFFFFFFFFFFFFFFFFF'O;
+}

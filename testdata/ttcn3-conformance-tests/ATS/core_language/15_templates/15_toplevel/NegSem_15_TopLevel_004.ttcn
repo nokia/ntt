@@ -1,0 +1,20 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15, Ensure that a template shall not be of port type.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_15_TopLevel_004 {
+
+type port MyPort message {inout integer};
+
+type record MyRecord {
+	MyPort myPort1
+}
+
+template MyRecord mw_myRecord := {
+    myPort1 := ?
+}
+
+}

@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, attempting to receive a type missing from the port list
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The trigger operation shall only be used on message-based ports and the type of the
+// value to be received shall be included in the list of incoming types of the port type
+// definition.
+
+
+module NegSem_220203_TriggerOperation_011 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_011() runs on GeneralComp {
+        var integer v_index;
+        p.send(10);
+        alt {
+            [] p.trigger(charstring:?) { setverdict(pass); }
+            [else] { setverdict(pass); }
+        }
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_011(), 5.0);
+    }
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070503_derivation_by_union_002"
+  xmlns:ns="schema:Pos_070503_derivation_by_union_002">
+	<simpleType name="e21unnamed">
+		<union>
+			<simpleType>
+				<restriction base="float"/>
+			</simpleType>
+			<simpleType>
+				<restriction base="integer"/>
+			</simpleType>
+			<simpleType>
+				<restriction base="string"/>
+			</simpleType>
+		</union>
+	</simpleType>
+	<element name="MyType" type="ns:e21unnamed"/>
+  
+</schema>

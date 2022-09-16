@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that the response and exception handling part cannot contain an else clause
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// h) The use of else branches and the invocation of altsteps is not allowed.
+
+module NegSyn_220301_CallOperation_001 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_NegSyn_220301_CallOperation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f_called());
+		p.call(S:{}) {
+			[] p.getreply(S:?) { setverdict(pass); }
+			[else] {} // expected error
+		}
+    }
+
+    control {
+        execute(TC_NegSyn_220301_CallOperation_001(), 5.0);
+    }
+}

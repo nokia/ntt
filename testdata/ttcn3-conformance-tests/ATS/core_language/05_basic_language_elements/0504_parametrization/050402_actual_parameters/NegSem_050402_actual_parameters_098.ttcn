@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that ordinary values cannot be passed to timer parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to formal timer parameters shall be component
+// timers, local timers or formal timer parameters of the current scope.
+
+module NegSem_050402_actual_parameters_098 {
+
+    type component GeneralComp {
+	}
+
+    function f_test(timer t_par) {
+        t_par.start;
+        if (t_par.running) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_098() runs on GeneralComp {
+        f_test(5.0); // tested parameter passing: it should not be possible to pass a float value to a timer parameter
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_098());
+	}
+}

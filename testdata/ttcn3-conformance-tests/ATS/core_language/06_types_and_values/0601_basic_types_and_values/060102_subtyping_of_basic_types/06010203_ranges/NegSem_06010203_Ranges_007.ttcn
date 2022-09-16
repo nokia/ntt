@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign invalid value to range constrained charstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_007 {
+    type charstring MyCharstringRange (!"a"..!"f");
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_007() runs on GeneralComp {
+        var MyCharstringRange v_c1;
+        v_c1 := "a";
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_007());
+    }
+}

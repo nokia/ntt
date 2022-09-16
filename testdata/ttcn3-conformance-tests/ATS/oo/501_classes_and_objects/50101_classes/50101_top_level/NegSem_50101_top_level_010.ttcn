@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that The runs on type of a class shall be runs on compatible with the runs on type of the superclass.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_010 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type port Myport message {
+        inout octetstring;
+    }
+
+    type component MessageComp {
+        port Myport p1;
+    };
+
+    public type class t_superclass_with_incompatible runs on MessageComp {
+        var octetstring v_o := '1100'O;
+
+        public function sending_vo() {
+            log(this.v_o);
+        }
+    }
+
+    public type class t_subclass extends t_superclass_with_incompatible runs on GeneralComp {
+
+    }
+
+    testcase TC_NegSem_50101_top_level_010() runs on GeneralComp {
+        var t_subclass v_a := t_subclass.create(); // not allowed
+        if (v_a.v_o == '1100'O) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_010());
+    }
+
+}

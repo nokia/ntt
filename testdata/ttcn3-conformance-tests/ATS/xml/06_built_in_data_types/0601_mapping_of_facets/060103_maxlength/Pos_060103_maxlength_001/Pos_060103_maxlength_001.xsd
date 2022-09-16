@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060103_maxlength_001"
+  xmlns:ns="schema:Pos_060103_maxlength_001">
+    <element name="test">
+      <simpleType>
+        <restriction base="string">
+          <maxLength value="3"/>
+        </restriction>
+      </simpleType>
+	</element>
+</schema>

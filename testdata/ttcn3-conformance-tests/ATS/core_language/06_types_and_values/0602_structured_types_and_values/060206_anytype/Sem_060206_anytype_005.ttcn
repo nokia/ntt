@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype comprise bitstring and hexstring data type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_005 {
+ type component GeneralComp {
+
+var anytype Var1, Var2;
+}
+
+testcase TC_Sem_060206_anytype_005() runs on GeneralComp {
+
+Var1.bitstring := '1010'B;
+Var2.hexstring:='FE80'H;
+
+
+      if (match(Var1.bitstring, '1010'B) and match(Var2.hexstring, 'FE80'H)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_005());
+}
+
+}

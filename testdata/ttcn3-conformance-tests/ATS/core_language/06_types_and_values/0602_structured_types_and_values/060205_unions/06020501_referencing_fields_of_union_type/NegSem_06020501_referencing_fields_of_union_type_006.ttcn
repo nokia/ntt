@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.1, referencing not chosen alternative on right hand side of assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// When an alternative of a union type is referenced on the right hand side of
+// an assignment an error shall occur if the referenced alternative is not the
+// currently chosen alternative or if the referenced union field or value is omitted
+// or uninitialized.
+
+module NegSem_06020501_referencing_fields_of_union_type_006 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		charstring option2
+	}
+
+    testcase TC_NegSem_06020501_referencing_fields_of_union_type_006() runs on GeneralComp {
+		var U v_union := { option1 := 1 };
+        if (v_union.option2 !=  "test") { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_06020501_referencing_fields_of_union_type_006());
+	}
+}

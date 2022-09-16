@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, verify that arrays can be used as a return value of a function
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+//The following requirement is tested:
+/* Arrays can be used in TTCN-3 as a shorthand notation to specify record of types.
+  * They may be specified also at the point of a variable, formal parameter or function return
+  * value declaration.
+*/
+
+
+module Sem_060207_arrays_024 {
+
+ type component GeneralComp {
+ }
+
+    function getArray() return integer[3]{ // array definition in function return type declaration
+        return {3,2,1};
+    }
+
+testcase TC_Sem_060207_arrays_024() runs on GeneralComp {
+
+      var integer v_res[3] := getArray();
+	  setverdict(pass, v_res);
+}
+
+control {
+    execute(TC_Sem_060207_arrays_024());
+}
+
+}

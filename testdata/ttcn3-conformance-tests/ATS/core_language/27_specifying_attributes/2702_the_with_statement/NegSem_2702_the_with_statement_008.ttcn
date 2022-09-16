@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that dot notation in the FreeText part in not possible for encode attributes
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction c
+// Dot notation in the FreeText part is allowed for variant attributes only.
+
+module NegSem_2702_the_with_statement_008 {
+	type component GeneralComp {
+	}
+
+	type record R {
+		integer field1
+	} with {
+		encode "RuleA"."Version1";
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2702_the_with_statement_008 () runs on GeneralComp {
+		var RoUC v_enc1 := R.encode;
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_2702_the_with_statement_008());
+	}
+}

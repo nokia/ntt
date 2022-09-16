@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.1.1, verify that referencing uninitialized record on the right hand of an assignment is not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Referencing a subfield of an uninitialized or omitted record field or value on the right
+// hand side of an assignment shall cause an error.
+
+module NegSem_06020101_ReferencingRecordFields_003 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        record {
+            integer subfield1
+        } field1,
+        charstring field2 optional
+    }
+
+    testcase TC_NegSem_06020101_ReferencingRecordFields_003() runs on GeneralComp {
+        var R v_rec;
+        v_rec.field2 := "abc";
+        if (v_rec.field1.subfield1 == 5) {
+	        setverdict(fail);
+        } else {
+	        setverdict(pass);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_06020101_ReferencingRecordFields_003());
+    }
+
+}

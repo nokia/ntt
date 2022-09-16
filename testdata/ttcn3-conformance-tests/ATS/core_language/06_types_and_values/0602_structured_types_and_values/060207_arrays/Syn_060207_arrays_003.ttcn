@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, multidimensional array specified in variable declaration
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// Arrays may be declared as single or multi-dimensional.
+
+module Syn_060207_arrays_003 {
+
+    const integer c_arr[2][3] := { { 0, 1, 2}, {3, 4, 5 }};
+    modulepar integer PX_ARR[3][2][6];
+
+	control {
+		var integer v_arr[5][3], v_noarr, v_arr2[2][2][10];
+	}
+
+}

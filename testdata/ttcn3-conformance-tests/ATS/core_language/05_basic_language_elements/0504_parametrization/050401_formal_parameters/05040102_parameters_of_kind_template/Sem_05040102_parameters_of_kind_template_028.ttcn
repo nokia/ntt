@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that altstep definition can contain in, out and inout template formal parameters with value restriction
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal template parameters can be restricted to accept actual parameters containing a restricted
+// set of matching mechanisms only. Such limitations can be expressed by the restrictions omit,
+// present, and value.
+
+module Sem_05040102_parameters_of_kind_template_028 {
+
+	type component GeneralComp {
+	}
+
+    altstep a(template(value) integer p_int1, in template(value) integer p_int2,
+        out template(value) integer p_int3, inout template(value) integer p_int4) {
+        [] any timer.timeout { setverdict(fail); }
+        [else] { setverdict(pass); }
+    }
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_028() runs on GeneralComp {
+        var template(value) integer v_int1, v_int2 := 20;
+        a(0, 2, v_int1, v_int2);
+	}
+
+	control{
+		execute(TC_Sem_05040102_parameters_of_kind_template_028());
+	}
+}

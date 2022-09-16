@@ -1,0 +1,4 @@
+Semantics tests of section 27.7 also validate generic attribute handling behavior, 
+which applies to whole section 27. The reason it is in subsection 27.7, is because
+optional attribute matching provides a means of semantic validation through message 
+loopback port.

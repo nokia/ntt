@@ -1,0 +1,5 @@
+Most aspects of message based communication have been tested in B_matching_incoming_values,
+and most aspects of procedue based communication have been tested in 
+1502_declaring_signature_templates. This section contains test cases only for those
+special aspects of communication operations, which have not been tested elsewhere.
+

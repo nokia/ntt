@@ -5,7 +5,7 @@ before:
 builds:
   - id: ntt
     binary: ntt
-    dir: ./cmd/ntt
+    dir: .
     goos:
       - linux
       - darwin

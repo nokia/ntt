@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.12, Ensure that the right port address is used
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060212_AddressingEntitiesInsideSut_002 {
+    type integer address;
+
+    type port PortType1 message {
+        address charstring;
+        inout all;
+    }
+
+    type port PortType2 message {
+        inout all;
+    }
+
+    type component TestCaseComp {
+        port PortType1 p1;
+        port PortType2 p2;
+    }
+
+    testcase TC_Sem_060212_AddressingEntitiesInsideSut_002() runs on TestCaseComp system TestCaseComp {
+
+        var address v_int := 1;
+        var PortType1.address v_char := "test";
+
+        map(mtc:p1, system:p1);
+        map(mtc:p2, system:p2);
+
+        // port 1 has charstring address
+        p1.send(5) to v_char;
+
+		// port 2 has integer address
+        p2.send(5) to v_int;
+        p2.send(5) to 5;
+
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_060212_AddressingEntitiesInsideSut_002());
+    }
+}

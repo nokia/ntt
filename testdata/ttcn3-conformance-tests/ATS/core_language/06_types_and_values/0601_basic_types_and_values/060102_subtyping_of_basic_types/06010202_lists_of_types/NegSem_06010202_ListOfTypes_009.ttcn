@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign invalid values to list of types restricted verdicttype.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010202_ListOfTypes_009 {
+    type verdicttype Myverdict1 (pass, error);	//only "pass" and "error" values are listed
+	type verdicttype Myverdict2 (inconc, none);	//only "inconc" and "none" values are listed
+    type verdicttype Myverdict_1_2 (Myverdict1, Myverdict2);
+
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010202_ListOfTypes_009() runs on GeneralComp {
+        var Myverdict_1_2 v_b;
+        v_b := fail; //invalid
+		setverdict(pass);
+    }
+    control{
+        execute(TC_NegSem_06010202_ListOfTypes_009());
+    }
+}

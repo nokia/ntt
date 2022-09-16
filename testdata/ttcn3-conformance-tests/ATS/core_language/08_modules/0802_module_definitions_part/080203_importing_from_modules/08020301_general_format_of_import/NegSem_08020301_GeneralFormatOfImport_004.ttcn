@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.4, Ensure that transitive import rules are properly handled
+ ** @verdict  pass reject
+ *****************************************************************/
+
+
+module NegSem_08020301_GeneralFormatOfImport_004 {
+
+import from NegSem_08020301_GeneralFormatOfImport_004_import all;
+
+type component GeneralComp {}
+
+testcase TC_NegSem_08020301_GeneralFormatOfImport_004() runs on GeneralComp {
+	if (c_myconst == 43532) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_08020301_GeneralFormatOfImport_004());
+}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_004_import {
+  import from NegSem_08020301_GeneralFormatOfImport_004_import_2 all;
+}
+
+
+module NegSem_08020301_GeneralFormatOfImport_004_import_2 {
+	const integer c_myconst := 43532;
+}

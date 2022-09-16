@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with an incompatible value in the verdict clause
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The variable in the verdict clause shall be of type verdicttype.
+
+module NegSem_210310_call_test_component_operation_022 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_022() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_verdict;
+        v_ptc.call(f()) -> verdict v_verdict;
+		if (v_verdict == 1) {
+		    setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_022(), 5.0);
+    }
+}

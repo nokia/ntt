@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487 (updated by T003)
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined function isvalue() works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * check that isvalue() predefined function works properly
+ */
+
+
+module Sem_07010803_isvalue_operator_002 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_07010803_isvalue_operator_002 () runs on GeneralComp {
+
+    var boolean v_res;
+
+    template charstring Mytemaplate:= "1234ABCD";
+
+
+
+    v_res := isvalue(Mytemaplate);   //template, expected result: true
+
+
+
+        if ( match(v_res, true)) {setverdict(pass," isvalue(Mytemaplate): ", v_res);}
+           else{setverdict(fail," isvalue(Mytemaplate):", v_res, " expected result: true");}
+
+    }
+
+
+    control{
+        execute(TC_Sem_07010803_isvalue_operator_002());
+    }
+}

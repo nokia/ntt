@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.1, Assign values to restricted integer.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010201_ListOfValues_005 {
+    type integer MyInt (1, 5);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010201_ListOfValues_005() runs on GeneralComp {
+        var MyInt v_i := 2; // value is not defined by the type
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010201_ListOfValues_005());
+    }
+}

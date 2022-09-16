@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_B0329_xml_header_control_002"
+  xmlns:types="schema:Pos_B0329_xml_header_control_002">
+    <element name="test" type="string" />
+</schema>

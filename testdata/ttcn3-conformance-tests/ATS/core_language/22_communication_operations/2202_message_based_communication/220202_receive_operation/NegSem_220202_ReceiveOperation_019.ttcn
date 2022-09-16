@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, insufficient value range of variable in index redirection
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// If the index redirection is used for single-dimensional port arrays, the type of the
+// integer variable shall allow storing the highest index of the respective array.
+
+module NegSem_220202_ReceiveOperation_019 {
+    type integer RestrInt(0..2);
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P p[10];
+	}
+
+    testcase TC_NegSem_220202_ReceiveOperation_019() runs on GeneralComp {
+        var RestrInt v_int;
+        p[5].send(100);
+        any from p.receive(integer:?) -> @index value v_int;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220202_ReceiveOperation_019(), 5.0);
+    }
+}

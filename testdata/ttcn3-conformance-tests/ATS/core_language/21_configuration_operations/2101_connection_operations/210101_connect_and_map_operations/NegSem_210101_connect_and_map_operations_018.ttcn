@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 451 (updated by STF 521 and 572)
+ ** @version  0.0.3
+ ** @purpose  1:21.1.1, Ensure that IUT cannot map ports with empty outlist-PORT1 and inlist-PORT2
+ ** @verdict  pass reject
+ ***************************************************/
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected or mappde;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// c) The map operation is allowed if and only if:
+//   1) PORT1 is a component port reference and PORT2 is a system port reference; and
+//   2) outlist PORT1 ⊆ outlist-PORT2 and inlist-PORT2 ⊆ inlist-PORT1; and
+//   3) at least one of outlist-PORT1 or inlist-PORT2 is not empty
+//
+// In this test, outlist-PORT1 and inlist-PORT2 are empty
+
+module NegSem_210101_connect_and_map_operations_018 {
+
+    type port LoopbackPort message {
+        out integer
+	}
+    type port IntegerOutputPortType message {
+        in integer
+	}
+
+    type component GeneralComp {
+		port IntegerOutputPortType MycomportA
+	}
+
+    type component MyTestSystemInterface {
+ 	    port LoopbackPort messagePort
+	}
+
+    // MyTestSystemInterface is the test system interface
+    testcase TC_NegSem_210101_connect_and_map_operations_018() runs on GeneralComp system MyTestSystemInterface {
+        // establishing the port connections
+        map(mtc:MycomportA, system:messagePort); //not allowed: MycomportA is in port, meanwhile MySysteminterface port is output
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210101_connect_and_map_operations_018());
+    }
+}

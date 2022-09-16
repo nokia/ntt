@@ -1,0 +1,53 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Ensure that partially initialized templates are evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1102_TemplateVars_003 {
+
+ type set IntegerSet {
+  integer a1 optional,
+  integer a2 optional,
+  integer a3 optional
+ };
+
+    type port loopbackPort message {
+	  inout IntegerSet
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+function f_partial () runs on GeneralComp return template IntegerSet {
+ var template IntegerSet mw_return := {a1:=1,a2:=*};
+
+ return mw_return;
+}
+
+testcase TC_Sem_1102_TemplateVars_003() runs on GeneralComp {
+	var template IntegerSet mw_pattern := f_partial();
+	var IntegerSet v_set := {a1:=1,a2:=2,a3:=3}
+	mw_pattern.a3 := 3;
+
+    messagePort.send(v_set);
+
+    alt {
+     [] messagePort.receive(mw_pattern) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+
+}
+
+control{
+    execute(TC_Sem_1102_TemplateVars_003());
+}
+
+}

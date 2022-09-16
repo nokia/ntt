@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that out formal parameters are passed to actual parameter in correct (assignment notation)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The values of out formal parameters are passed to the actual parameters in the same
+// order as is the order of formal parameters in the definition of the parameterized
+// TTCN-3 object.
+
+module Sem_050402_actual_parameters_156 {
+
+    type component GeneralComp {
+	}
+
+    function f_test(out integer p_val1, out integer p_val2, out integer p_val3) {
+        p_val1 := 1;
+        p_val2 := 2;
+        p_val3 := 3;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_156() runs on GeneralComp {
+        var integer v_val;
+        f_test(p_val3 := v_val, p_val2 := v_val, p_val1 := v_val); // tested parameter passing
+        if (v_val == 3) { setverdict(pass); }
+        else { setverdict(fail); }
+
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_156());
+	}
+}

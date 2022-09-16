@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that referencing rules are correctly applied to actual parameters of out formal template parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When actual parameters that are passed to inout and out formal value or template
+// parameters contain a value or template reference, rules for using references on
+// the left hand side of assignments apply.
+
+module Sem_050402_actual_parameters_152 {
+
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer field1,
+        record {
+            integer subfield1,
+            integer subfield2
+        } field2 optional
+    }
+
+    function f_test(out template integer p_val) {
+        p_val := 10;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_152() runs on GeneralComp {
+        var template R v_rec := {
+            field1 := 1,
+            field2 := ?
+        };
+        f_test(v_rec.field2.subfield1); // tested parameter passing (using referencing rules specified at 15.6.2)
+        if (match(valueof(v_rec.field2.subfield1), 10) and match(0, v_rec.field2.subfield2)) { setverdict(pass); }
+        else { setverdict(fail); }
+
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_152());
+	}
+}

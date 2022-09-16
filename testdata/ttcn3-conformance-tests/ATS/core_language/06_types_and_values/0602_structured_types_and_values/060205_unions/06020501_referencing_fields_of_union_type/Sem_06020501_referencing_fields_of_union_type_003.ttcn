@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.1, union costraint not applied to extended type reference to its item
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If an alternative in a union type or a subtype of a union type is referenced by
+// the dot notation, the resulting type is the set of values allowed for that
+// alternative imposed by the constraints of the alternative declaration itself
+// (i.e. any constraints applied to the union type itself are ignored).
+
+module Sem_06020501_referencing_fields_of_union_type_003 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		charstring option2
+	}
+
+    type U ConstrainedU ( {option1 := 1 }, { option1 := 2});
+    type ConstrainedU.option1 UnionItem;
+
+    testcase TC_Sem_06020501_referencing_fields_of_union_type_003() runs on GeneralComp {
+		var UnionItem v_val := 100;
+        if (v_val == 100) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_Sem_06020501_referencing_fields_of_union_type_003());
+	}
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070701_the_any_element_007"
+  xmlns:ns="schema:Pos_070701_the_any_element_007">
+	<xsd:element name="test" type="xsd:string"></xsd:element>
+	<xsd:element name="MyType">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:any namespace="##any"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

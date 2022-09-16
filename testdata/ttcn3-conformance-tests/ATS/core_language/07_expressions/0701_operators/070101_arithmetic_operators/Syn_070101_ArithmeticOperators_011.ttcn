@@ -1,0 +1,12 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that the division operator on float constants is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_070101_ArithmeticOperators_011 {
+
+const float c_result := 10.2 / 0.4;
+
+}

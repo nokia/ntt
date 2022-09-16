@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070502_derivation_by_list_004"
+  xmlns:ns="schema:Pos_070502_derivation_by_list_004">
+	<element name="MyType">
+		<simpleType>
+        	<list>
+				<simpleType>
+				<restriction base="string">
+					<enumeration value="Red"/>
+					<enumeration value="Orange"/>
+					<enumeration value="Yellow"/>
+					<enumeration value="Green"/>
+					<enumeration value="Blue"/>
+					<enumeration value="Indigo"/>
+					<enumeration value="Violet"/>
+				</restriction>
+				</simpleType>
+			</list>
+		</simpleType>
+	</element>
+</schema>

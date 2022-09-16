@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 487, updated by STF 572
+ ** @version  0.0.2
+ ** @purpose  1:20.4, stop inside interleave
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// In the older versions of TTCN-3, stop was not allowed inside interleave.
+// The test verifies that this restriction is no longer present in the tested
+// tool.
+
+module Sem_2004_InterleaveStatement_011 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    testcase TC_Sem_2004_InterleaveStatement_011() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+
+        interleave {
+            [] p.receive(charstring:"bar") {
+                setverdict(pass);
+                stop;
+            }
+            [] p.receive(charstring:"foo") {
+            }
+        }
+    }
+
+    control{
+        execute(TC_Sem_2004_InterleaveStatement_011());
+    }
+}

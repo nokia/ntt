@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.5, Ensure timer runnig syntax
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.5 The Running timer operation/Timer running syntax
+
+module Syn_2306_timer_timeout_001
+{
+    type component TComp {}
+
+    testcase TC_Syn_2306_timer_timeout_001() runs on TComp
+    {
+        var boolean v_bool;
+        timer t_timer := 0.1;
+        timer t_array[3] := { 1.0, 2.0, 3.0 }
+
+        t_timer.start;
+        if (t_timer.running)
+        {
+            t_array[0].start;
+            if (t_array[0].running)
+            {
+	            v_bool := t_array[1].running;
+            }
+        }
+
+        v_bool := any timer.running;
+        if (any timer.running and true)
+        {
+        }
+        if (not any timer.running)
+        {
+        }
+    }
+
+    control{
+            execute(TC_Syn_2306_timer_timeout_001())
+    }
+
+}

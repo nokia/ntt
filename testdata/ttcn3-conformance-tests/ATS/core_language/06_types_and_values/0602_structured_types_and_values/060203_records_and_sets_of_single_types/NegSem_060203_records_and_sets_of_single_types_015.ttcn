@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, verify than an error is generated when sending a partially initialized record of value
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Undefined elements are permitted only in transient states (while the value
+// remains invisible). Sending a record of value with undefined elements shall
+// cause a test case error.
+
+module NegSem_060203_records_and_sets_of_single_types_015 {
+
+	type record of integer RoI;
+
+	type port P message {
+		inout RoI
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_NegSem_060203_records_and_sets_of_single_types_015() runs on GeneralComp {
+		var template RoI mw_sendingTemplate := {0, -, 2};
+		p.send(mw_sendingTemplate); // error expected
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_060203_records_and_sets_of_single_types_015());
+	}
+}

@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.8, Ensure that if a public method is overridden,
+ **   the overriding method shall have the same formal parameters in the same order as the
+ **   overridden method
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010108_Methods_003 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type integer Mytype1;
+    type Mytype1 Mytype2;
+
+    type class MySuperClass {
+        var octetstring v_o;
+
+        public function doSomething(in integer a, in integer b) return integer {
+            return oct2int(this.v_o);
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+        public function doSomething(in integer b, in integer a) return integer { //Not allowed, not the same method signature
+            return a;
+        }
+    }
+
+    testcase TC_NegSem_5010108_Methods_003() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create('AAFF'O);
+        if (v_a.doSomething(1,1) == 1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010108_Methods_003());
+    }
+}

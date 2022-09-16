@@ -1,0 +1,72 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:7.1.8.4, Ensure that the IUT recognizes isbound operator and correctly evaluates it
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_07010804_isbound_operator_004 {
+
+	type component GeneralComp {
+	}
+
+    type record MyRec {
+        integer f1,
+        MyRec f2 optional
+    }
+
+    type union MyUnion {
+        integer ch1,
+        MyRec   ch2
+    }
+
+	testcase TC_Sem_07010804_isbound_operator_004() runs on GeneralComp {
+
+     	var template MyUnion v_myUnion;
+	    var boolean checkResult := isbound(v_myUnion);        // yields false, as v_myUnion is uninitialized
+        if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as v_myUnion is uninitialized");
+		}
+
+        checkResult := isbound(v_myUnion.ch1);    // yields false, as alternative ch1 is uninitialized
+        if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as as alternative ch1 is uninitialized");
+		}
+        v_myUnion := { ch1 := 5 };
+        checkResult := isbound(v_myUnion);        // yields true
+        if(checkResult) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield true as v_myUnion is partially initialized");
+		}
+
+        checkResult := isbound(v_myUnion.ch1);    // yields true
+        if(checkResult) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield true as v_myUnion.ch1 is initialized");
+		}
+
+        checkResult := isbound(v_myUnion.ch2);    // yields false as the ch2 alternative is not selected
+        if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as the ch2 alternative is not selected");
+		}
+
+        checkResult := isbound(v_myUnion.ch2.f1); // yields false as the field f1 is inaccessible
+        if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as the field f1 is inaccessible");
+		}
+
+    }
+
+	control {
+		execute(TC_Sem_07010804_isbound_operator_004());
+	}
+}

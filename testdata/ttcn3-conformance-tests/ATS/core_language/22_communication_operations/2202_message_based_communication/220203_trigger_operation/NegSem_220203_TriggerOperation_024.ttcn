@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, trying to store an incompatible component value in the sender clause of a trigger operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Type mismatch at storing the received value or parts of the received value and storing
+// the sender shall cause an error.
+
+module NegSem_220203_TriggerOperation_024 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    type component CustomComp {
+		var integer vc_int;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_024() runs on GeneralComp system GeneralComp {
+        var CustomComp v_sender;
+        timer t_tmr := 0.1;
+        t_tmr.start;
+        connect(self:p, self:p);
+        p.send(10);
+        alt {
+            // this alternative shall be selected, but the assignment shall generate an error
+            [] p.trigger(integer:?) -> sender v_sender { }
+			[] t_tmr.timeout {}
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_024(), 5.0);
+    }
+}

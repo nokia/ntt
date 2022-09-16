@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that in value formal parameters of template can have default values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// In parameters may have a default value, which is given by an expression assigned to
+// the parameter.
+
+module Sem_05040101_parameters_of_kind_value_011 {
+
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+    template R m_t(integer p_int1 := 3, in integer p_int2 := 4) := {
+        field1 := p_int1,
+        field2 := p_int2
+    }
+}

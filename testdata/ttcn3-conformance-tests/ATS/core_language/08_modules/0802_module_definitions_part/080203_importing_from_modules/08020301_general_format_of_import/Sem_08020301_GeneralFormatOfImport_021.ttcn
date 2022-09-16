@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, verify that imported modules can be renamed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// It is allowed to rename a module name during its import. The new name will be visible only in the importing module.
+
+module Sem_08020301_GeneralFormatOfImport_021 {
+
+	import from Sem_08020301_GeneralFormatOfImport_021_import -> Imported {type My_type} ;
+
+	type component GeneralComp {}
+
+    testcase TC_Sem_08020301_GeneralFormatOfImport_021() runs on GeneralComp {
+	   var Imported.My_type v_1 := 2;
+       setverdict(pass);
+    }
+
+    control {
+	    // testing if parameter names are imported
+        execute(TC_Sem_08020301_GeneralFormatOfImport_021());
+    }
+}
+
+module Sem_08020301_GeneralFormatOfImport_021_import {
+ 	type integer My_type;		//integer type
+
+}

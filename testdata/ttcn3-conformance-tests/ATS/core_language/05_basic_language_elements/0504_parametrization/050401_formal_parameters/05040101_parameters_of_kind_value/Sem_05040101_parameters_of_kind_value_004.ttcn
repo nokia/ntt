@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Ensure that the IUT correctly handles parametrization through the use of module parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_05040101_parameters_of_kind_value_004 {
+
+    // the following module parameter must not be set externally, as their default values are being checked
+
+    modulepar MyEnumeratedType ENUMERATED_MODULE_PARAMETER := e_black;
+
+    type enumerated MyEnumeratedType {e_black, e_white}
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_05040101_parameters_of_kind_value_004() runs on GeneralComp {
+        if (ENUMERATED_MODULE_PARAMETER == e_black ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+
+    }
+
+
+    control{
+        execute(TC_Sem_05040101_parameters_of_kind_value_004());
+    }
+
+}

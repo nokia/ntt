@@ -1,0 +1,16 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.6, Ensure that it is possible to import from previous language versions.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Sem_08020306_ImportingDefinitionsFromOtherT3EditionsAndFromNonT3Modules_001 language "TTCN-3:2010" {
+	import from Sem_08020306_ImportingDefinitionsFromOtherT3EditionsAndFromNonT3Modules_001_import language "TTCN-3:2003" {
+		const all;
+	}
+}
+
+module Sem_08020306_ImportingDefinitionsFromOtherT3EditionsAndFromNonT3Modules_001_import {
+	const integer c_myconst := 1;
+}

@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.2.3, @decoded redirect assignment with encoding parameter
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Rules in clause 22.2.2 shall apply.
+// In case the referenced field is of the universal charstring type, the @decoded
+// clause can contain an optional parameter defining the encoding format. The
+// parameter shall be of the charstring type and it shall contain one of the
+// strings allowed for the decvalue_unichar function (specified in clause C.5.4).
+
+module Sem_220203_TriggerOperation_016 {
+	type record R
+    {
+        integer id,
+        universal charstring payload
+    }
+
+	type port P message {
+		inout R;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_Sem_220203_TriggerOperation_016() runs on GeneralComp {
+        var integer v_src := 1953719668, v_res with { variant "32 bit" };
+        var universal charstring v_str := encvalue_unichar(v_src, "UTF-16LE");
+        p.send(R:{ id := 1, payload := v_str });
+        alt {
+            [] p.trigger(R:?) -> value (v_res := @decoded("UTF-16LE") payload) {
+                if (v_res == 1953719668) { setverdict (pass); }
+                else { setverdict(fail); }
+            }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_016(), 5.0);
+    }
+}

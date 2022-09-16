@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can be an enum type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_010 {
+ type component GeneralComp {
+}
+
+type enumerated Myenum
+{
+FirstElement,
+SecondElement
+}
+
+testcase TC_Sem_060206_anytype_010() runs on GeneralComp {
+
+var anytype c;
+c.Myenum:= FirstElement;	// anytype c follows the type Myenum and the value of c should be FirstElement
+
+      if (c.Myenum ==FirstElement) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_010());
+}
+
+}

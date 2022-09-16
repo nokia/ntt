@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 451 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:21.1.1, Ensure that IUT cannot map input port with output port
+ ** @verdict  pass reject
+ ***************************************************/
+
+// Mycompport A P1 is output port mapped to SUT in port
+module NegSem_210101_map_operation_002{
+
+    type port loopbackPort message {
+	  inout integer
+		}
+type port IntegerOutputPortType message {
+	  out integer
+	}
+
+type component GeneralComp
+	{
+
+		port IntegerOutputPortType MycomportA
+	}
+
+type component MyTestSystemInterface
+	{
+ 	port loopbackPort messagePort
+	}
+// MyTestSystemInterface is the test system interface
+testcase TC_NegSem_210101_map_operation_002() runs on GeneralComp system MyTestSystemInterface {
+// establishing the port connections
+map(mtc:MycomportA, system:messagePort); //not allowed: MycomportA is out port, meanwhile MySysteminterface port is input
+
+}
+control{
+    execute(TC_NegSem_210101_map_operation_002());
+}
+}

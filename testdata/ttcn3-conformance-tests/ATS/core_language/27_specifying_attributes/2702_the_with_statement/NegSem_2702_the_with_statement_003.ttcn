@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that error is generated for an unknown FieldReference in type attributes
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction a:
+// DefinitionRef and FieldReference shall refer to a definition or field respectively which is within the module,
+// group or definition to which the with statement is associated
+
+module NegSem_2702_the_with_statement_003 {
+
+    type component GeneralComp {
+	}
+
+	type record R {
+		R field optional
+	} with { encode(field.field2) "RuleA" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2702_the_with_statement_003 () runs on GeneralComp {
+		var RoUC v_enc1 := R.field.encode,
+			v_enc2 := R.field.field.encode;
+
+		if(lengthof(v_enc1) == 0 and v_enc2[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_NegSem_2702_the_with_statement_003());
+	}
+}

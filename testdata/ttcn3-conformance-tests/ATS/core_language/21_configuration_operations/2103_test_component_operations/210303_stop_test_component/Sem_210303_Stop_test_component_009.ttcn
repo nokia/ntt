@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, verdict value reuse in alive component after explicit stop
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Furthermore, the local verdict of the component keeps its value.
+
+module Sem_210303_Stop_test_component_009 {
+
+    type port P message {
+        inout integer;
+    }
+
+	type component GeneralComp {
+        port P p;
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        setverdict(pass);
+        p.send(1);
+        p.receive(integer:?);
+        setverdict(fail);
+    }
+
+    function f_ptcSecondBehaviour() runs on GeneralComp {
+        if (getverdict != pass) { setverdict(fail); }
+    }
+
+
+	testcase TC_Sem_210303_Stop_test_component_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC") alive;
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_ptcBehaviour());
+        p.receive(integer:?);
+        v_ptc.stop;
+        v_ptc.start(f_ptcSecondBehaviour());
+        v_ptc.done;
+	}
+
+	control{
+	    execute(TC_Sem_210303_Stop_test_component_009());
+	}
+}

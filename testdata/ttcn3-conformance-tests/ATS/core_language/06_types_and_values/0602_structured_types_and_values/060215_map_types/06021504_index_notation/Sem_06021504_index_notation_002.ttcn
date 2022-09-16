@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that a key updates only the referenced value
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Using the index notation on the left hand side of an assignment with a key that is already
+// mapped  causes the key to be mapped to the assigned value.
+
+module Sem_06021504_index_notation_001 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021504_index_notation_001() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 10 };
+		v_map["xyz"] := 5;
+		if (v_map["test"] == 1 and v_map["xyz"] == 5) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021504_index_notation_001());
+	}
+}

@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that parameters cannot be assigned more than once in assignment notation
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// When using assignment notation, each formal parameter shall be assigned an actual
+// parameter at most once.
+
+module NegSem_050402_actual_parameters_105 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (integer p_val1, charstring p_val2) {
+        if (match(p_val1 == 1 and p_val2 == "test") { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_105() runs on GeneralComp {
+        f_test(p_val1 := 1, p_val2 := "test", p_val1 := 1);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_105());
+	}
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070503_derivation_by_union_008"
+  xmlns:ns="schema:Pos_070503_derivation_by_union_008">
+	<xsd:simpleType name="e21memberlist">
+		<xsd:union memberTypes="xsd:integer xsd:boolean xsd:string "/>
+	</xsd:simpleType>
+
+	<xsd:element name="MyType">
+		<xsd:simpleType>
+			<xsd:restriction base="ns:e21memberlist">
+				<xsd:enumeration value="20"/>
+				<xsd:enumeration value="50.0"/>
+				<xsd:enumeration value="small-1"/>
+			</xsd:restriction>
+		</xsd:simpleType>
+	</xsd:element>
+</xsd:schema>

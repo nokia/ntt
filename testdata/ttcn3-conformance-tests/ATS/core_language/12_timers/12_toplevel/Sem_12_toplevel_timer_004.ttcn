@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure timer can be declared in functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer can be declared in module control, test cases, functions, altsteps
+ **/
+
+
+module Sem_12_toplevel_timer_004 {
+    type component TComp{
+    }
+    function func()
+    {
+        timer t_timer:=10.0;
+        t_timer.start;
+        if (t_timer.running){
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+
+    }
+    testcase TC_Sem_12_toplevel_timer_004() runs on TComp{
+        func();
+    }
+    control{
+       execute(TC_Sem_12_toplevel_timer_004())
+    }
+}

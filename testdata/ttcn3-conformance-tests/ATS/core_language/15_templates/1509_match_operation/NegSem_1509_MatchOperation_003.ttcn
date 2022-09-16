@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that the match operation works correctly with enums.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1509_MatchOperation_003 {
+
+type component GeneralComp { }
+
+type enumerated A_enum { A, B, C, D, E };
+type enumerated B_enum { A, F, G };
+
+testcase TC_NegSem_1509_MatchOperation_003() runs on GeneralComp {
+
+    	var A_enum v_value := A;
+
+
+	if (match(v_value, G)) { // error: different enum type
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_1509_MatchOperation_003());
+}
+
+}

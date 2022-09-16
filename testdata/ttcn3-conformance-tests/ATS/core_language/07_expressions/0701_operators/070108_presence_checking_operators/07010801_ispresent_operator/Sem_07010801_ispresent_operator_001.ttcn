@@ -1,0 +1,63 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_07010801_ispresent_operator_001 {
+    type enumerated MyEnumeratedType {e_black, e_white, e_green};
+
+    type record MyRecord {
+        record {
+            boolean innerField1 optional,
+            integer innerField2 optional
+        } field1 optional,
+        integer field2,
+        integer field3,
+        MyEnumeratedType field4 optional
+    }
+
+    type union U { integer f1, octetstring f2 }
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_07010801_ispresent_operator_001 () runs on GeneralComp {
+        var MyRecord v_record1 := {
+				field1 := {innerField1 := omit, innerField2 := omit},
+				field2 := 2,
+				field3 := 3,
+				field4 := omit
+			};
+        var U v_U1 := {f1 := 1};
+        template MyRecord template1 := {
+			field1 := {?, *},
+			field2 := 2,
+			field3 := 3,
+			field4 := (e_black, e_white)  ifpresent
+		}
+        template U template2 := {f2 := ?}
+
+        if( match(ispresent(v_record1.field1), true) and
+            match(ispresent(v_record1.field4), false) and
+            match(ispresent(v_record1.field2), true) and
+            match(ispresent(template1.field1.innerField1), true) and
+            match(ischosen(v_U1.f1), true) and
+            match(ischosen(v_U1.f2), false) and
+            match(ischosen(template2.f2), true) and
+            match(ischosen(template2.f1), false) and
+            match(isvalue(template1.field2), true) and
+            match(isvalue(template2.f2), false)
+        ) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+        execute(TC_Sem_07010801_ispresent_operator_001());
+    }
+}

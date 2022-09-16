@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 409 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:26.1, Ensure that the timeout specified with the execute statement is respected.
+ ** @verdict  pass accept, ttcn3verdict:error
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_003 {
+
+type port P message { inout integer; }
+type component GeneralComp { port P p; }
+
+testcase TC_Sem_2601_ExecuteStatement_003() runs on GeneralComp {
+	alt { // this alt is intentionally blocking!
+		[] any port.receive {
+			repeat;
+		}
+	}
+	setverdict(pass);
+}
+
+control {
+	execute(TC_Sem_2601_ExecuteStatement_003(), 2.0); // let the testcase timeout after 2 seconds
+}
+
+}

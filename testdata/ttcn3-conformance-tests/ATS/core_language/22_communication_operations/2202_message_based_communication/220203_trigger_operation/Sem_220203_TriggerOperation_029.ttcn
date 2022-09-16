@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, trigger with @nodefault modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction m)	The @nodefault modifier is allowed only in stand-alone trigger statements.
+
+module Sem_220203_TriggerOperation_029 {
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp {
+		port P messagePort;
+	}
+
+    function f1 ( ) runs on GeneralComp {
+             messagePort.send(1) to mtc;
+    }
+
+
+    testcase TC_Sem_220203_TriggerOperation_029() runs on GeneralComp system GeneralComp {
+        var integer v_int;
+
+        // create PTC
+        var GeneralComp ptc;
+        ptc:=GeneralComp.create;
+        connect(self:messagePort,ptc:messagePort);
+        ptc.start(f1());
+
+        @nodefault messagePort.trigger(integer:?) -> value v_int;    // stand-alone statement @nodefault modifier
+        if (v_int == 1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+
+        //remove PTC
+        disconnect(self:messagePort,ptc:messagePort);
+        ptc.stop;
+
+    }
+
+    control {
+        execute(TC_Sem_220203_TriggerOperation_029(), 5.0);
+    }
+}

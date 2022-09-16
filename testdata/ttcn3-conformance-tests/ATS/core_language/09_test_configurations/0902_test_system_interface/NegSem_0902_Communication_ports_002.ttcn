@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the mycomp is connected to two system interface port.
+ ** @verdict  pass reject
+ ***************************************************/
+
+//It is not allowed to connect one port connect to two system interface port.
+module NegSem_0902_Communication_ports_002{
+
+    type port loopbackPort message {
+	  inout integer
+		}
+	type port MyMessagePortType message {
+	  inout integer
+		}
+
+type component GeneralComp
+	{
+		port MyMessagePortType Mycomport
+	}
+
+type component MyTestSystemInterface
+	{
+ 	port loopbackPort messagePortA,messagePortB
+	}
+// MyTestSystemInterface is the test system interface
+testcase TC_NegSem_0902_Communication_ports_002() runs on GeneralComp system MyTestSystemInterface {
+// establishing the port connections
+map(mtc:Mycomport, system:messagePortA);
+map(mtc:Mycomport, system:messagePortB); // not allowed
+
+setverdict(fail);
+
+}
+control{
+    execute(TC_NegSem_0902_Communication_ports_002());
+}
+}

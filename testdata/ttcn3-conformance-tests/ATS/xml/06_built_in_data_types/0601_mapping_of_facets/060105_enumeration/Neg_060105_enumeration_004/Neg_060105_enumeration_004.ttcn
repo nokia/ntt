@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 475
+ ** @version  0.0.1
+ ** @purpose  9:6.1.5, disallow enumeration values removed by restriction
+ ** @verdict  pass reject
+ ***************************************************/
+module Neg_060105_enumeration_004 {
+
+    import from schema_Neg_060105_enumeration_004 language "XSD" all;
+
+    template C2 m_msg := uNKNOWN;
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_060105_enumeration_004() runs on C system C {
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+        log("template should either be rejected by compiler or by runtime latest while encoding");
+
+        setverdict(fail, "Invalid template should not be encoded");
+
+        unmap(self:p, system:p);
+    }
+
+    control {
+        execute(TC_Neg_060105_enumeration_004(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

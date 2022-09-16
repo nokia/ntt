@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.2, Ensure that the value of an explicitly imported template can be read and carries the same value.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+module Sem_08020302_ImportingSingleDefinitions_002 {
+
+    import from Sem_08020302_ImportingSingleDefinitions_002_import {
+        template m_myTemplate;
+    };
+
+    type component GeneralComp {}
+    type record MyMessageType2 {
+        integer	field1,
+        charstring field2,
+        boolean field3
+    }
+
+    testcase TC_Sem_08020302_ImportingSingleDefinitions_002() runs on GeneralComp {
+        var MyMessageType2 v_value:={23521, "My String", true};
+
+        if (match(v_value, m_myTemplate)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+        execute(TC_Sem_08020302_ImportingSingleDefinitions_002());
+    }
+}
+
+module Sem_08020302_ImportingSingleDefinitions_002_import {
+    type record MyMessageType {
+        integer	field1,
+        charstring field2,
+        boolean field3
+    }
+
+    template MyMessageType m_myTemplate := {
+        field1 := 23521,
+        field2 := "My String",
+        field3 := true
+    }
+}

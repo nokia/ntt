@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Verify that all component.done produces true if some components haven't been started
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// When the all keyword is used with the done operation, it matches if no one PTC is executing its
+// behaviour. It also matches if no PTC has been created.
+// Interpretation according to the following note:
+// The difference between the done operation applied to a single ptc and the usage of the all
+// keyword leads to the situation that ptc.done does not match if the ptc has never been started
+// but all component.done matches at the same time as it considers only those components that
+// ever have been started .
+module Sem_210307_done_operation_011 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210307_done_operation_011() runs on GeneralComp system GeneralComp {
+		var boolean v_isRunning;
+		const integer c_size := 4;
+        var GeneralComp v_ptc := GeneralComp.create;
+		alt {
+			[] v_ptc.done { setverdict(fail, "PTC is not done yet (it actually hasn't been started yet)" )}
+			[] all component.done { setverdict(pass); }
+			[else] { setverdict(fail, "all component.done wasn't triggered"); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210307_done_operation_011(), 5.0);
+    }
+}

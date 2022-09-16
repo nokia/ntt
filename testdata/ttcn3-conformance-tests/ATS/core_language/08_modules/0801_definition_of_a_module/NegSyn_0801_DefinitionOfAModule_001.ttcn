@@ -1,0 +1,10 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.1, Ensure that a module definition with multiple language specifications is rejected.
+ ** @verdict  pass reject
+ *****************************************************************/
+// list of languages is not allowed
+module NegSyn_0801_DefinitionOfAModule_001 language "TTCN-3:2005", "TTCN-3:2009", "TTCN-3:2010" {
+
+}

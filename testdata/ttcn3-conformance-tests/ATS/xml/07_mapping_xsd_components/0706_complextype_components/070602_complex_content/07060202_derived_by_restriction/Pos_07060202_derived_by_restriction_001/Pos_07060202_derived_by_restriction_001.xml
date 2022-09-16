@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:e1  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xmlns:ns="schema:Pos_07060202_derived_by_restriction_001">
+  <size>-200</size>
+  <unit>string</unit>
+</ns:e1>

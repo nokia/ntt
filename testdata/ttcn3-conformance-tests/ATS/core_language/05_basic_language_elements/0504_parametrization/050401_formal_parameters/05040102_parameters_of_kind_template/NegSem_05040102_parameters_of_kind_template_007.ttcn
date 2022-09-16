@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that incompatible template instance in default template assignment of template formal parameters causes error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction d)
+// The default template instance has to be compatible with the type of the parameter.
+
+module NegSem_05040102_parameters_of_kind_template_007 {
+	type component GeneralComp {
+	}
+
+    function f(in template integer p_int := (-infinity..5.0)) {
+    }
+
+	testcase TC_NegSem_05040102_parameters_of_kind_template_007() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040102_parameters_of_kind_template_007());
+	}
+}

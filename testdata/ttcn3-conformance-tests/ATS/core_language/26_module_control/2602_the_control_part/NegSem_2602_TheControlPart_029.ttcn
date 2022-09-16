@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26.2, Ensure that alternative behaviours are only used to control timer behavior in the control part.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2602_TheControlPart_029 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component MTCComp {
+        port MyPort p;
+    }
+
+    function f_createComp() return MTCComp {
+        return  MTCComp.create;
+    }
+
+    control {
+        var MTCComp v_myComp := f_createComp(); // assume create was accepted
+        alt {
+            [] v_myComp.p.receive(charstring:"foobar") {
+            }
+        }
+    }
+
+}

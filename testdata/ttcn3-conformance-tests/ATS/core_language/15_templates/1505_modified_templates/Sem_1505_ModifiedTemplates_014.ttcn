@@ -1,0 +1,44 @@
+ /***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:15.5, verify that matching mechanisms can be modified in in-line templates
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)	After completing initialization, modified global and local templates that do not contain the @abstract modifier shall be fully initialized
+
+module Sem_1505_ModifiedTemplates_014 {
+    type component GeneralComp {
+	}
+
+    type record MyRecordType {
+		integer field1 optional,
+		charstring field2,
+		boolean field3
+	}
+
+     // templates with @abstract modifier
+	template @abstract MyRecordType m_myTemplate1(integer p_myPar) := {
+		field1 := p_myPar
+	}
+
+    testcase TC_Sem_1505_ModifiedTemplates_014() runs on GeneralComp system GeneralComp {
+		var template MyRecordType v_modification := {
+		  field2 := "G string",
+          field3 := true
+		}
+		var template MyRecordType v_myTemplate := modifies m_myTemplate1(5) := v_modification;
+		// no modification of field1,field3
+		// results in { field1 := 5, field2 := "G string", field3 := true }
+        if (valueof(v_myTemplate) == { field1 := 5, field2 := "G string", field3 := true }) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+	}
+
+	control {
+		execute(TC_Sem_1505_ModifiedTemplates_014());
+	}
+}

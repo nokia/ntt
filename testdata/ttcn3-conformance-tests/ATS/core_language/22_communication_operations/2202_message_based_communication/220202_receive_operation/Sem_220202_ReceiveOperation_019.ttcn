@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.2, any from port.receive statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// To receive a message on any port from a specific port array, use the any from
+// PortArrayRef syntax where PortArrayRef shall be a reference to a  port array
+// identifier.
+
+module Sem_220202_ReceiveOperation_019 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p [3];
+	}
+
+    testcase TC_Sem_220202_ReceiveOperation_019() runs on GeneralComp {
+        p[2].send(10);
+        alt {
+            [] any from p.receive(integer:?) { setverdict(pass); }
+            [] any port.receive { setverdict(fail); }
+        }
+    }
+
+    control {
+        execute(TC_Sem_220202_ReceiveOperation_019(), 5.0);
+    }
+}

@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that a class members' names are unique.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_002 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_member_overloading {
+
+        var integer v_i := 10;
+
+        public function v_i() return integer { // not allowed
+            return 5;
+        }
+    }
+
+    testcase TC_NegSem_50101_top_level_002() runs on GeneralComp {
+        var t_class_member_overloading v_a := t_class_member_overloading.create();
+        if (v_a.v_i() == 5) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_002());
+    }
+}

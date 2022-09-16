@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070608_mixed_content_002"
+  xmlns:ns="schema:Pos_070608_mixed_content_002">
+  <element name="MyType">
+    <complexType mixed="true">
+      <sequence maxOccurs="unbounded" minOccurs="0">
+        <element name="a" type="string"/>
+        <element name="b" type="boolean"/>
+      </sequence>
+    </complexType>
+  </element>
+</schema>

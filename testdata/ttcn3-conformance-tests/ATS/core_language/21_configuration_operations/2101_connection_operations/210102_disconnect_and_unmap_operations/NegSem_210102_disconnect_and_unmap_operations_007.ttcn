@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Verify that the param clause cannot be used when unmap contains no system port reference
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction a:
+// In an unmap operation, a param clause shall only be present if the system port to
+// which the param clause belongs to is explicitly referenced.
+
+module NegSem_210102_disconnect_and_unmap_operations_007 {
+
+	type port P message {
+		inout integer;
+		unmap param (integer p_par1);
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_NegSem_210102_disconnect_and_unmap_operations_007() runs on GeneralComp system GeneralComp {
+		map(system:p, self:p);
+		unmap(self:p) param(3);
+		if(not p.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+
+	}
+
+	control{
+	    execute(TC_NegSem_210102_disconnect_and_unmap_operations_007());
+	}
+}

@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.5, Assign quadruple values to pattern restricted character strings.
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+
+module NegSyn_06010205_StringPattern_002 {
+    type charstring MyString (pattern "\q{0,0,1,116}abc"); //error: not a legal character for the TTCN 3 charstring type
+
+
+    type component GeneralComp {}
+
+    testcase TC_NegSyn_06010205_StringPattern_002() runs on GeneralComp {
+        var MyString v_c := "Ŵabc";    //error: not a legal character of the TTCN 3 charstring type
+    }
+
+    control{
+        execute(TC_NegSyn_06010205_StringPattern_002());
+    }
+}

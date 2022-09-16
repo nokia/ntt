@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.3.4, Verify that any from getreply is working with @nodefault modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction m) The @nodefault modifier is allowed only in stand-alone getreply statements.
+
+module Sem_220304_getreply_operation_024 {
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+	const integer c_portCount := 1;
+    type component GeneralComp
+	{
+		port P p[c_portCount];
+	}
+
+	function f() runs on GeneralComp
+	{
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			p[0].getcall;    // get call
+			p[0].reply(S:{});    // and send reply
+		}
+	}
+
+	testcase TC_Sem_220304_getreply_operation_024() runs on GeneralComp system GeneralComp {
+         var GeneralComp v_ptc := GeneralComp.create;
+         var integer v_i;
+
+        connect(self:p[0], v_ptc:p[0]);
+        p[0].call(S:{}, nowait);
+		v_ptc.start(f());
+
+		// get reply from v_ptc
+        @nodefault p[0].getreply(S:{});    // getreply with @nodefault modifier
+        setverdict(pass);
+
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_Sem_220304_getreply_operation_024(), 5.0);
+    }
+}

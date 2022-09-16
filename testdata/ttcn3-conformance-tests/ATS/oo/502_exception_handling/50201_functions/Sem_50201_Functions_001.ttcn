@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.2.1, Ensure that functions is extended with an optional exception clause.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50201_Functions_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type integer MyIntegerType;
+
+    function f_raise() runs on GeneralComp exception(integer) {
+        raise 6;
+    }
+
+    function f_exception() runs on GeneralComp return integer {
+        f_raise();
+        return 0;
+    } catch(integer e) {
+        return 1;
+    } catch(MyIntegerType e) {
+        return 1;
+    }
+
+    testcase TC_Sem_50201_Functions_001() runs on GeneralComp {
+        if (f_exception() == 1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_50201_Functions_001());
+    }
+}

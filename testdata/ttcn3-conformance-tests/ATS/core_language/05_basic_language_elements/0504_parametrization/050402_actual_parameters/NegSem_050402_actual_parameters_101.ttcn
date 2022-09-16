@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that list notation containing less actual parameters than required is not accepted
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For each formal parameter without a default there shall be an actual parameter.
+
+module NegSem_050402_actual_parameters_101 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (integer p_val1, charstring p_val2) {
+        if (p_val1 == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_101() runs on GeneralComp {
+        f_test(1);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_101());
+	}
+}

@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:10, Assign rnd to constant used in type, not allowed since constant expressions used in types have to be known at compile-time.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_10_Constants_001 {
+
+    const float c_i := rnd(314E-2); // not allowed by standard
+    type float MyFloat (c_i);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_10_Constants_001() runs on GeneralComp {
+        var MyFloat v_f := c_i;
+        log(v_f);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_10_Constants_001());
+    }
+}

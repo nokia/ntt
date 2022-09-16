@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, Ensure that the IUT correctly handles message trigger operations
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restection k) The ObjectReference shall be of a port type.
+
+
+module NegSem_220203_TriggerOperation_025 {
+
+
+    type port loopbackPort message {
+      inout integer
+    }
+
+type component GeneralComp {
+    port loopbackPort messagePort;
+    var anytype p;
+}
+
+testcase TC_NegSem_220203_TriggerOperation_025() runs on GeneralComp {
+
+    timer t_timeout := 1.0;
+    t_timeout.start;
+
+    messagePort.send(2);
+
+    alt {
+     [] p.trigger(1) {   // error: it shall be of a port type.
+         setverdict(pass);
+     }
+    }
+}
+
+control{
+    execute(TC_NegSem_220203_TriggerOperation_025());
+}
+
+}

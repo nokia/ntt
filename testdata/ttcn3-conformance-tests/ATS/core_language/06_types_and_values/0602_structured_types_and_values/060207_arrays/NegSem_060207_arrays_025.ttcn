@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, using greater than allowed custom array index on the left hand side of assignments
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The index shall not exceed the limitations given by either the length or the
+// upper bound of the index.
+
+module NegSem_060207_arrays_025 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_NegSem_060207_arrays_025() runs on GeneralComp {
+        var integer v_arr[2..5] := { 2, 3, 4, 5 };
+        v_arr[6] := 6;
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_025());
+	}
+
+}

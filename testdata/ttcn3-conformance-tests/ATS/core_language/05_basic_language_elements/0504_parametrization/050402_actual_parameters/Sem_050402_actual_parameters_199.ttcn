@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the Example 5 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_199 {
+
+    type port P message {
+        inout MyMessageType;
+    }
+
+    type component GeneralComp {
+        port P MyPCO;
+	}
+
+    // Given the message definition
+    type record MyMessageType
+    {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    // A message template might be
+    template MyMessageType MyTemplate(integer MyValue) :=
+    {
+        field1 := MyValue,
+        field2 := pattern "abc*xyz",
+        field3 := true
+    }
+
+    testcase TC_Sem_050402_actual_parameters_199(template MyMessageType RxMsg) runs on GeneralComp {
+        MyPCO.send(MyMessageType:{7, "abcdefxyz", true });
+        MyPCO.receive(RxMsg);
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_199(MyTemplate(7)));
+	}
+}

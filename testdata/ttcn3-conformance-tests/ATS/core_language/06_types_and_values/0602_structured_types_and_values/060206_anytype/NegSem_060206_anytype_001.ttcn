@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that after redeclaration of an anytype value the old type and value are lost
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060206_anytype_001 {
+ type component GeneralComp {
+
+var anytype Var1, Var2;
+
+}
+
+testcase TC_NegSem_060206_anytype_001() runs on GeneralComp {
+
+Var1.integer := 10;
+Var2.float := 3.0E0;
+
+Var1.float := 5.5E0;
+Var2.charstring := "abc";	// the new type of Var2 is charstring instead of float
+
+      if ( match(Var1.integer, 10) and match(Var2.float, 3.0E0)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_NegSem_060206_anytype_001());
+}
+
+}

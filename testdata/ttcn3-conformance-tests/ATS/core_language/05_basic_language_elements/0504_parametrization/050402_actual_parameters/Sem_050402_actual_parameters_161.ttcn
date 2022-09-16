@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that port parameters can be passed to port parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to formal port parameters shall be component
+// ports or formal port parameters of the current scope.
+
+module Sem_050402_actual_parameters_161 {
+
+    type port IntPort message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port IntPort p;
+	}
+
+    function f_test(IntPort p_port) {
+        p_port.stop;
+    }
+
+    function f_caller(IntPort p_port) {
+        f_test(p_port); // tested parameter passing
+    }
+
+    testcase TC_Sem_050402_actual_parameters_161() runs on GeneralComp {
+        f_test(p); // this component port passing is not a subject of this test
+        if (p.checkstate("Stopped")) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_161());
+	}
+}

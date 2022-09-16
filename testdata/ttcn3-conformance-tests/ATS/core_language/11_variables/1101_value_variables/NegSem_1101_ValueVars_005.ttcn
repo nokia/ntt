@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:11.1, Variables should be assigned only by values
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The expression shall evaluate to a value, which is at least partially initialized.
+
+module NegSem_1101_ValueVars_005 {
+    type component GeneralComp {}
+
+	testcase TC_NegSem_1101_ValueVars_005() runs on GeneralComp {
+  		var integer v_i;
+        var integer v_j := v_i + 2;    // error: v_i is uninitialized
+
+        setverdict(pass);
+	}
+
+    control {
+        execute(TC_NegSem_1101_ValueVars_005());
+    }
+}

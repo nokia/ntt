@@ -1,0 +1,7 @@
+The following requirements are present in 5.4.1.1 and 5.4.1.2 too and they are tested as a part of these clauses:
+
+Formal parameters of parameterized templates, functions, altsteps, and testcases are defined in formal parameter lists. Formal parameters shall be in, inout or out parameters (see definitions in clause 3.1).
+
+If not stated otherwise, a formal parameter is an in parameter.
+
+Formal in parameters may have default values. This default value is used when no actual parameter is provided.

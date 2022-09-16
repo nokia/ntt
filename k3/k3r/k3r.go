@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,8 +15,8 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
 )
 
@@ -28,9 +29,6 @@ type Test struct {
 
 	// Path to the K3 runtime
 	Runtime string
-
-	// Dir specifies the working directory for the test.
-	Dir string
 
 	// LogFile is the path to the log file.
 	LogFile string
@@ -85,13 +83,6 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 			return
 		}
 
-		sid, err := session.Get()
-		if err != nil {
-			events <- tests.NewErrorEvent(err)
-			return
-		}
-		defer session.Release(sid)
-
 		if t.LogFile == "" {
 			t.LogFile = fmt.Sprintf("%s.log", fs.Stem(t.T3XF))
 		}
@@ -111,14 +102,12 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
 		cmd.Dir = t.Dir
-		cmd.Env = append(t.Env,
-			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
-			fmt.Sprintf("K3_SESSION_ID=%d", sid),
-		)
-
-		for k, v := range t.ModulePars {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		env, err := buildEnv(t)
+		if err != nil {
+			events <- tests.NewErrorEvent(err)
+			return
 		}
+		cmd.Env = env
 		cmd.Stdin = strings.NewReader(t.request())
 		cmd.Stderr = &t.Stderr
 		stdout, err := cmd.StdoutPipe()
@@ -192,11 +181,54 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 	return events
 }
 
+func buildEnv(t *Test) ([]string, error) {
+	var ret []string
+
+	paths, err := project.LibraryPaths(t.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, p := range []string{"K3R_PATH", "LD_LIBRARY_PATH", "PATH"} {
+		if s := buildEnvPaths(p, paths); s != "" {
+			ret = append(ret, s)
+		}
+	}
+
+	if t.Config != nil {
+		for k, v := range t.Config.Variables {
+			if _, ok := env.LookupEnv(k); !ok {
+				ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+			}
+		}
+	}
+
+	ret = append(ret, t.Env...)
+
+	for k, v := range t.ModulePars {
+		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	ret = append(ret, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
+	return ret, nil
+}
+
+// buildEnvPaths returns environment variable s with given search paths prepended.
+func buildEnvPaths(s string, paths []string) string {
+	if env, ok := env.LookupEnv(s); ok {
+		paths = append(paths, env)
+	}
+	if len(paths) != 0 {
+		return fmt.Sprintf("%s=%s", s, strings.Join(paths, string(os.PathListSeparator)))
+	}
+	return ""
+}
+
 // waitGracefully waits for the k3 runtime to exit, checks if the log file is
 // truncated and stores the k3 exit code in the log-file for convenient retrieval.
 func waitGracefully(t *Test, cmd *exec.Cmd) error {
 	cmdErr := cmd.Wait()
-	f, err := os.OpenFile(t.LogFile, os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile(filepath.Join(t.Dir, t.LogFile), os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}

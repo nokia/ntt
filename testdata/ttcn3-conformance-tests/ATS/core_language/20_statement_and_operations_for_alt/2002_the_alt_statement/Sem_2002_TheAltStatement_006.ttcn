@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 409 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:20.2, Ensure that an altstep invocation works as expected (loopback case).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2002_TheAltStatement_006 {
+
+type port MyPort message {
+	inout charstring
+}
+
+type component GeneralComp {
+	port MyPort p;
+}
+
+template charstring m_testOne := "ping1";
+template charstring m_testTwo := "ping2";
+
+altstep a_test() runs on GeneralComp {
+	[] p.receive(m_testOne) {
+		setverdict(pass);
+	}
+}
+
+testcase TC_Sem_2002_TheAltStatement_006() runs on GeneralComp {
+	timer t_tmr := 0.5;
+    t_tmr.start;
+    p.send(m_testOne);
+    t_tmr.timeout;  // wait for some time for the answer
+	alt {
+		[] a_test();
+		[else] {
+			setverdict(fail);
+		}
+	}
+
+	setverdict(pass);
+}
+
+control {
+	execute(TC_Sem_2002_TheAltStatement_006());
+}
+
+}

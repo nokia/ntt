@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the setverdict operation cannot be used during evaluation of a deterministic fuzzy parameter
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters passed to fuzzy or lazy formal parameters shall fulfill the restrictions imposed on content
+// of functions used in special places given in 16.1.4.
+// The following operations shall not be used:
+// h) Calling the setverdict operation (see notes 4 and 6).
+
+module NegSem_050402_actual_parameters_226 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test() runs on GeneralComp return template integer {
+		setverdict(pass);
+		return ?;
+	}
+
+    function f_param(template @fuzzy @deterministic integer p_param) runs on GeneralComp  {
+        log(p_param); // causes validation
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_226() runs on GeneralComp system GeneralComp {
+        f_param(f_test());
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_226());
+	}
+}

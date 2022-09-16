@@ -1,0 +1,64 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:B.3.13, Verify that "errorbehavior" variant is correctly used during decode.
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * TTCN-3 predefined decoding functions ensure that the decoding trial of the inout
+ * parameter encoded_value will not cause a test case error, when the decoding fails
+ * or is incomplete. - ET_DEC_ENUM:EB_IGNORE
+ * */
+
+// NOTE: the test is not executed as it would require dedicated errorbehavior support
+
+module Pos_B313_error_behaviour_002 {
+
+    import from JSON all;
+
+    type enumerated MyEnumType {
+		firstItem(0),
+		secondItem(1),
+		thirdItem(3),
+		etc(2, 4..255)
+	} with { encode "JSON"; variant "errorbehavior(ET_DEC_ENUM:EB_ERROR)"};
+
+    template MyEnumType myEnum := secondItem;
+
+    type component C {
+
+    }
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    testcase TC_Pos_B313_error_behaviour_002() runs on C system C {
+
+     var MyEnumType v_dec := firstItem;
+
+    //var octetstring v_enc := encvalue_o(myEnum, - , "JSON"); // result: '7B22506F735F423331335F6572726F725F6265686176696F75725F3030322E4D79456E756D54797065223A227365636F6E644974656D227D'O
+
+    // note: since the octetstring is incomplete, the decoding should fail, due to an unknown enumerated value.
+    var octetstring v_enc := '7B22506F735F423331335F6572726F725F6265686176696F75725F3030322E4D79456E756D54797065223A227365636F6E64497465227D'O;
+    log(v_enc);
+
+    // Decoding of an unknown enumerated value.
+    var integer v_decresult := decvalue_o(v_enc, v_dec, "errorbehavior(ET_DEC_ENUM:EB_IGNORE)" , "JSON");
+
+     // encode the message
+        if (v_decresult == 0) {
+            setverdict(pass,v_decresult, v_dec );
+
+        } else {
+            setverdict(fail, v_dec);
+
+        }
+    }
+
+    control {
+      //  execute(TC_Pos_B313_error_behaviour_002(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

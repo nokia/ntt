@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:10, set type used as a constant with optional fields and "implicit omit"
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+ /*The following requirement is tested: Restriction c) Using the dot notation (see clauses When using direct assignment notation in a scope where the optional
+attribute is set to "implicit omit", the uninitialized optional fields in the referenced value, shall implicitly be set
+to omit after the assignment in the new value, while mandatory fields shall remain unchanged
+*/
+
+module Sem_10_Constants_011 {
+
+    type set MySetType
+    {
+        bitstring field1,
+        boolean field2 optional,
+        charstring field3 optional
+
+    };
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_10_Constants_011() runs on GeneralComp {
+        const MySetType c_mST3 := {field1 := '1010'B,
+                                   field2 := -,
+                                   field3 := -} with { optional "implicit omit" };
+
+
+
+        if (match(c_mST3, {'1010'B, omit, omit}))
+            {
+                setverdict(pass);
+            }
+            else {
+                setverdict(fail);
+            }
+    }
+
+    control{
+        execute(TC_Sem_10_Constants_011());
+    }
+}

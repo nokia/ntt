@@ -1,7 +1,9 @@
 package syntax
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,11 +41,11 @@ func TestNode(t *testing.T) {
 		root := b.Push(Root)
 		b.Pop()
 		assert.Equal(t, Root, root.Kind())
-		assert.Equal(t, Invalid, root.Parent())
-		assert.Equal(t, Invalid, root.FirstToken())
-		assert.Equal(t, Invalid, root.LastToken())
-		assert.Equal(t, Invalid, root.FirstChild())
-		assert.Equal(t, Invalid, root.Next())
+		assert.Equal(t, Nil, root.Parent())
+		assert.Equal(t, Nil, root.FirstToken())
+		assert.Equal(t, Nil, root.LastToken())
+		assert.Equal(t, Nil, root.FirstChild())
+		assert.Equal(t, Nil, root.Next())
 		assert.Equal(t, -1, root.Pos())
 		assert.Equal(t, -1, root.End())
 		assert.Equal(t, 0, root.Len())
@@ -57,7 +59,7 @@ func TestNode(t *testing.T) {
 		z := b.PushToken(Mul, 7, 8)
 		b.Pop()
 
-		assert.Equal(t, Invalid, root.Parent())
+		assert.Equal(t, Nil, root.Parent())
 		assert.Equal(t, root, x.Parent())
 		assert.Equal(t, root, y.Parent())
 		assert.Equal(t, root, z.Parent())
@@ -65,7 +67,7 @@ func TestNode(t *testing.T) {
 		assert.Equal(t, x, root.FirstToken())
 		assert.Equal(t, z, root.LastToken())
 		assert.Equal(t, x, root.FirstChild())
-		assert.Equal(t, Invalid, root.Next())
+		assert.Equal(t, Nil, root.Next())
 		assert.Equal(t, 4, root.Pos())
 		assert.Equal(t, 8, root.End())
 		assert.Equal(t, 4, root.Len())
@@ -153,6 +155,20 @@ func TestScanner(t *testing.T) {
 	}
 }
 
+func TestParser(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.want, testParse(tt.input))
+		})
+	}
+}
+
 func testScan(input string) []string {
 	s := NewScanner([]byte(input))
 	var nodes []string
@@ -166,13 +182,29 @@ func testScan(input string) []string {
 	return nodes
 }
 
-func testParse(input string) []string {
-	var nodes []string
+func testParse(input string) string {
+	var (
+		buf       bytes.Buffer
+		needSpace bool
+	)
+
 	Parse([]byte(input)).Inspect(func(n Node) bool {
-		nodes = append(nodes, fmt.Sprintf("%T ", n))
+		if needSpace {
+			buf.WriteByte(' ')
+		}
+
+		switch {
+		case n == Nil:
+			needSpace = false
+			buf.WriteByte(')')
+		case n.IsNonTerminal():
+			fmt.Fprintf(&buf, "%s(", n.Kind())
+		case n.IsTerminal():
+			fmt.Fprintf(&buf, "%s", n.Kind())
+		}
 		return true
 	})
-	return nodes
+	return strings.TrimSuffix(strings.TrimPrefix(buf.String(), "Root("), ")")
 }
 
 func printEvents(events []treeEvent) []string {

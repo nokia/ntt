@@ -1,0 +1,49 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that deactivate removes default from list of defaults
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// A deactivate operation will remove the referenced default from the list of defaults.
+
+module Sem_200503_the_deactivate_operation_001 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(pass);
+		}
+	}
+
+	altstep a2() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(fail, "Deactivated"); // should be deactivated at the time of default processing
+		}
+	}
+
+	testcase TC_Sem_200503_the_deactivate_operation_001() runs on GeneralComp {
+		var default v_default;
+		activate(a1());
+		v_default := activate(a2());
+		p.send(integer:1);
+		deactivate(v_default);
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_Sem_200503_the_deactivate_operation_001());
+	}
+}

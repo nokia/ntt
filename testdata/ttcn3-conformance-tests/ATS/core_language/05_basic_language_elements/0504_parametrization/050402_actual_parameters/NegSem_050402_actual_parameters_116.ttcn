@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that error is generated when no actual parameter list is used for test cases with no parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// If the formal parameter list of TTCN-3 objects function, testcase, signature,
+// altstep or external function is empty, then the empty parentheses shall be
+// included both in the declaration and in the invocation of that object. In all
+// other cases the empty parentheses shall be omitted.
+
+module NegSem_050402_actual_parameters_116 {
+
+    type component GeneralComp {
+	}
+
+    testcase TC_NegSem_050402_actual_parameters_116() runs on GeneralComp {
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_116);
+	}
+}

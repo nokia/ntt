@@ -1,0 +1,55 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Ensure that dot notation referencing to a field, which actual value is null shall cause an error.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+/* The following requirements are tested:
+Restriction k.: Using the dot notation and index notation for referencing a field, alternative or element of an address value, which actual value is null shall cause an
+error.
+*/
+
+
+module NegSem_1102_TemplateVars_003 {
+
+    type integer address;
+    type record MyRecordType
+    {
+        address field1,
+        integer field2 optional
+    };
+
+    type port loopbackPort message {
+	  inout integer, address
+	}
+
+    type component GeneralComp {
+	  port loopbackPort messagePort
+    }
+
+
+
+testcase TC_NegSem_1102_TemplateVars_003() runs on GeneralComp {
+
+   var MyRecordType R1:= {field1 := null,
+                          field2 := -};
+
+    var template integer v_set := R1.field1; //error
+
+ messagePort.send(R1.field1);
+
+    alt {
+     [] messagePort.receive(v_set) {
+        setverdict(pass,v_set);
+     }
+     [] messagePort.receive {
+        setverdict(fail,v_set);
+     }
+    }
+}
+control{
+    execute(TC_NegSem_1102_TemplateVars_003());
+}
+
+}

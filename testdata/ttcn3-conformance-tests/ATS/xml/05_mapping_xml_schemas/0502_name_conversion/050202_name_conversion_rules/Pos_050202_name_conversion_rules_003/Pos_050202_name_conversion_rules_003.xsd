@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:...Pos_050202_name_conversion_rules_003"
+  xmlns:ns="schema:...Pos_050202_name_conversion_rules_003">
+  <element name="MyType" type="ns:A...b" />
+  <complexType name="A...b">
+    <sequence>
+		<element name="c___d" type="integer"/>
+    </sequence>
+    <attribute name="e._.f" type="integer" />
+  </complexType>  
+</schema>

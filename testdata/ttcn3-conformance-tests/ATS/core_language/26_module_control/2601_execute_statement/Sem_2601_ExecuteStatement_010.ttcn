@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:26.1, verify that test cases can be executed from altsteps called from the control block
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// c) The execute statement shall not be called from within an existing executing test behaviour
+// chain called from a test case, i.e. test cases can only be executed from the control part or
+// from functions or altsteps called directly or indirectly from the control part.
+
+module Sem_2601_ExecuteStatement_010 {
+
+    type component GeneralComp { }
+
+    testcase TC_Sem_2601_ExecuteStatement_010() runs on GeneralComp {
+        setverdict(pass);
+    }
+
+	altstep a() {
+		[] any timer.timeout {
+			execute(TC_Sem_2601_ExecuteStatement_010());
+		}
+	}
+
+    control {
+        var verdicttype v_result;
+		timer t_tmr1 := 0.5, t_tmr2 := 2.0;
+		t_tmr1.start;
+		t_tmr2.start;
+		activate(a());
+		alt { // t_tmr1 shall time out first triggering the default and thus executing the test case
+			[] t_tmr2.timeout {
+			}
+		}
+    }
+
+}

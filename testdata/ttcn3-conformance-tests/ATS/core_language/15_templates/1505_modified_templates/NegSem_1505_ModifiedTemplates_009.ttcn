@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that modified templates with different restrictions are rejected.
+ ** @verdict  pass rejected
+ *****************************************************************/
+// The following requirement is tested:
+// b) Restrictions on referencing elements of templates or template fields are described in clause
+// EXAMPLE 8
+
+
+module NegSem_1505_ModifiedTemplates_009 {
+
+    type component GeneralComp {
+    }
+
+    type record MyRecordType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+	template(value) MyRecordType m_myValueRecTemplate :=
+	{
+		field1 := 123,
+		field2 := "A string",
+		field3 := true
+	}
+
+    testcase TC_NegSem_1505_ModifiedTemplates_009() runs on GeneralComp {
+		template (value) MyRecordType m_myUnrestrictedRecTemplate modifies m_myValueRecTemplate :=	{
+			field2 := "A modified string" // field1, field3 is unchanged
+		}
+		// ERROR the modified template has different restriction from the base template
+
+        setverdict(fail);
+    }
+
+    control{
+        execute(TC_NegSem_1505_ModifiedTemplates_009());
+    }
+
+
+}

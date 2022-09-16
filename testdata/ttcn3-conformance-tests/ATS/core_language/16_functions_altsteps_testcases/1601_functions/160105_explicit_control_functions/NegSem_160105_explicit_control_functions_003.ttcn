@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.5, Ensure that the IUT recognizes explicit control functions
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+
+// Tested restriction:
+// c) Parameters and the return type shall not be of a port type and shall not be of a structured type that contains fields of a port type on any level of nesting.
+//    Testing the "return type shall not be of a port type" is not necessary, as ports can only be used in functions if
+//    -- The "runs on" component declares it - this contradicts to restriction b) tested in NegSem_160105_explicit_control_functions_002
+//    -- The function receives the port as a formal parameter - tested in this TC
+
+
+module NegSem_160105_explicit_control_functions_003 {
+
+    type port MyPort {
+        inout octetstring;
+    }
+
+    type component GeneralComp {
+    }
+
+    function @control f_NegSem_160105_explicit_control_functions_003(MyPort p_port) runs on GeneralComp {
+        execute(TC_Sem_160105_explicit_control_functions_003());
+    }
+
+    testcase TC_NegSem_160105_explicit_control_functions_003 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        f_NegSem_160105_explicit_control_functions_003();
+    }
+
+}

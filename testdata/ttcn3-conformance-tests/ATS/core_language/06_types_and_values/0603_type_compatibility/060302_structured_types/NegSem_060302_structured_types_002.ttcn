@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT rejects assignments from incompatible types or type ranges
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060302_structured_types_002 {
+
+	type record RecordType1 {
+ 	 integer  a(0..10) optional,
+ 	 integer  b(0..5) optional,
+ 	 boolean  c
+	}
+	type record RecordType2 {
+ 	 integer  e 	   optional,
+ 	 integer  f(0..10)  ,
+ 	 boolean  g
+	}
+
+
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060302_structured_types_002() runs on GeneralComp {
+
+    var RecordType1 v_rec1:={a:=4,b:=omit,c:=false};
+    var RecordType2 v_rec2;
+
+    v_rec2:=v_rec1;		// optionality mismatch (e.g. b is optional where f is mandatory)
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSem_060302_structured_types_002());
+}
+
+}

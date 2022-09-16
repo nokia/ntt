@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(omit) can't be assigned to a variable template(value) if omit
+ ** @verdict  pass reject
+ *****************************************************************/
+
+
+module NegSem_1508_TemplateRestrictions_031 {
+
+    type record ExampleType {	// Exampletype record contains a charstring and a boolean
+       	charstring a optional,
+		boolean b
+       }
+
+	type component GeneralComp {
+	var template (value) ExampleType v_value;	//value restricted template variable
+	}
+
+
+	template (omit) ExampleType MyintTemplate :=omit;		//actual template (with omit restriction) is omit
+
+
+
+	testcase TC_NegSem_1508_TemplateRestrictions_031() runs on GeneralComp {
+
+	v_value := MyintTemplate;	//error: v_value is value restricted, hence can not be omit
+
+		if (valueof(v_value.b) == false) {
+      		setverdict(pass);
+		} else {
+            setverdict(fail);
+       }
+ }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_031());
+    }
+}

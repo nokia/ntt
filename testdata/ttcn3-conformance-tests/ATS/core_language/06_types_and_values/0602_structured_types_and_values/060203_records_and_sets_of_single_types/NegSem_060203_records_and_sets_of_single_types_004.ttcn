@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3, negative index applied to a set of value on the right hand side of an assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Implicit rule, formal requirement requested in CR 6646 (resolution expected
+// in TTCN-3:2014)
+module NegSem_060203_records_and_sets_of_single_types_004 {
+
+	type component GeneralComp {
+	}
+
+	type set of integer SoI;
+
+	testcase TC_NegSem_060203_records_and_sets_of_single_types_004() runs on GeneralComp {
+
+		var SoI v_set := { 0, 1, 2 };
+		var integer i := v_set[-1]; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060203_records_and_sets_of_single_types_004());
+	}
+
+}

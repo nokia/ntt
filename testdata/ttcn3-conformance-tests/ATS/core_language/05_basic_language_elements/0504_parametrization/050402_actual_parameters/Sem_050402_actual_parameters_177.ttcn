@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that actual parameters at the end of list notation can be explicitly skipped
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The actual parameter of a formal parameter with default value can be skipped by using
+// dash "-" as actual parameter.
+
+module Sem_050402_actual_parameters_177 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (integer p_val1, integer p_val2 := 20) {
+        if (match(p_val1, 1) and match(p_val2, 20)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_177() runs on GeneralComp {
+        f_test(1, -);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_177());
+	}
+}

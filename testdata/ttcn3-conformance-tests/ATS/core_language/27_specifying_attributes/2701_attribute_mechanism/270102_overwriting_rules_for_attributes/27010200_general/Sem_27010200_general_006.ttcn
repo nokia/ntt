@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that attributes from lower group scopes override attribute from higher group scopes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// A with statement that is placed inside the scope of another with statement shall override the outermost with.
+// This shall also apply to the use of the with statement with groups.
+
+module Sem_27010200_general_006 {
+
+    type component GeneralComp {
+	}
+
+	group myPDUs
+	{
+		type record MyPDU1 { }
+		group mySpecialPDUs	{
+			type record MyPDU2 { }
+		} with { extension "MySpecialRule" }
+	} with {
+		extension "MyRule";
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_006 () runs on GeneralComp {
+		var RoUC v_enc1 := MyPDU1.extension,
+			v_enc2 := MyPDU2.extension;
+		if(v_enc1[0] == "MyRule" and v_enc2[0] == "MySpecialRule") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_27010200_general_006());
+	}
+
+} with { extension "GeneralRule" }

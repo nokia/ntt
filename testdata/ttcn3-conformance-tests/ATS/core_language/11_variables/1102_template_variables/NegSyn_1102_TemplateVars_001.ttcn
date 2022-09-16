@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Define template variables in module scope
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_1102_TemplateVars_001 {
+    var template integer v_i1 := 5;
+}

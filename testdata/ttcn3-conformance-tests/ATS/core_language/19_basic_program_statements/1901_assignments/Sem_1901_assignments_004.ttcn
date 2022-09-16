@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.1, Ensure that Ensure that the right-hand side of the assignment of a structured value is evaulted correctly
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+
+//Restriction d) Using a reference to an omitted field in the right-hand side of the assignment has the same effect as using the omit keyword.
+
+module Sem_1901_assignments_004{
+
+type component GeneralComp {
+}
+
+ type record Myrec{
+     integer field1,
+     float   field2 optional
+ };
+
+type record Myrec_2{
+     float   field optional
+ };
+
+testcase TC_Sem_1901_assignments_004 () runs on GeneralComp system GeneralComp {
+ var Myrec v_j :={11,omit};
+ var Myrec_2 v_i;
+
+   v_i.field:=v_j.field2;	//assignment
+
+ if (match(v_i.field,omit)) {
+  setverdict(pass,v_i);
+ }
+ else {
+  setverdict(fail,v_i);
+ }
+}
+
+
+control{
+
+    execute(TC_Sem_1901_assignments_004());
+
+}
+
+}

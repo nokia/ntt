@@ -1,0 +1,59 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.3.6, Verify that any from catch doesn't change index variable when no there's no suitable match
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// It is also possible to store the index of a port in a single-dimensional port array at which
+// the operation was successful to a variable of type integer or, in case of multi-dimensional
+// port arrays the index of the successful port to an integer array or record of integer variable.
+module Sem_220306_catch_operation_004 {
+
+    signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+	const integer c_portCount := 4;
+    type component GeneralComp
+	{
+		port P p[c_portCount];
+	}
+
+	function f() runs on GeneralComp
+	{
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			p[i].getcall;
+			if (i mod 2 == 1) { p[i].raise(S, i + 100) };
+		}
+	}
+
+    testcase TC_Sem_220306_catch_operation_004() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_index := 99;
+		for(var integer i := 0; i < c_portCount; i := i + 1) {
+			connect(self:p[i], v_ptc:p[i]);
+			p[i].call(S:{}, nowait);
+		}
+		v_ptc.start(f());
+		v_ptc.done;
+        alt
+		{
+        	[] any from p.catch(S, integer:(1..10)) -> @index value v_index {
+				setverdict(fail, "The any from catch operation produced incorrect match");
+			}
+			[else] { setverdict(pass); }
+		}
+        if(v_index == 99){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Index incorrectly assigned");
+        }
+	}
+
+    control {
+        execute(TC_Sem_220306_catch_operation_004(), 5000.0);
+    }
+}

@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from incompatible type ranges
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_060301_non_structured_types_006 {
+    type hexstring ConstrainedHexString ('1A'H, '1B'H, '1C'H);
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060301_non_structured_types_006() runs on GeneralComp {
+
+    var hexstring v_hexstr := '2B'H;
+    var ConstrainedHexString v_constrainedHexstr;
+
+    v_constrainedHexstr:=v_hexstr; // value '2B'H not in ConstrainedHexString type
+
+}
+
+control{
+    execute(TC_NegSem_060301_non_structured_types_006());
+}
+
+}

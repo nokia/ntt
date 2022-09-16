@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of port.check(getreply) in case of successful match in standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_067 {
+
+	signature S(out integer p_par1) return integer;
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f() runs on GeneralComp {
+		p.getcall;
+		setverdict(pass, "Call received");
+		p.reply(S:{ p_par1 := 1} value 5);
+	}
+
+	testcase TC_Sem_2204_the_check_operation_067() runs on GeneralComp system GeneralComp{
+		var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		p.call(S:{ p_par1 := -}, nowait);
+		v_ptc.start(f());
+        p.check(getreply(S:{ p_par1 := ?} value integer:(0..10)) from v_ptc);
+		setverdict(pass, "Check operation successful");
+		p.getreply;
+		setverdict(pass, "Reply still on the top of the queue");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_067(), 5.0);
+    }
+}

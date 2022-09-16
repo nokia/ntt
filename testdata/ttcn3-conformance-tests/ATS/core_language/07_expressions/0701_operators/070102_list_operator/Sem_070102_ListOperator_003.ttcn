@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.2, Ensure that the list operator on record of is evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_070102_ListOperator_003 {
+
+type component GeneralComp {
+}
+
+type record of integer IntegerArray;
+
+testcase TC_Sem_070102_ListOperator_003() runs on GeneralComp {
+	var IntegerArray v_i := {0, 1, 2};
+	var IntegerArray v_j := {3, 4, 5};
+
+	var IntegerArray v_result := v_i & v_j;
+	var IntegerArray v_reference := {0, 1, 2, 3, 4, 5};
+	if (v_result == v_reference) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070102_ListOperator_003());
+}
+
+}

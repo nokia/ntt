@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.4, indirect function call containing reception statement inside interleave
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Control transfer statements for, while, do-while, goto, activate,
+// deactivate, stop, repeat, return, direct call of altsteps as alternatives
+// and (direct and indirect) calls of user-defined functions, which include
+// reception statements, shall not be used in interleave statements.
+
+module NegSem_2004_InterleaveStatement_012 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port MyPort p;
+    }
+
+    function f_receive() runs on GeneralComp {
+        p.receive(charstring:?);
+    }
+
+    function f_caller(boolean p_choice) runs on GeneralComp {
+        if (p_choice) {
+            f_receive();
+        }
+    }
+
+    testcase TC_NegSem_2004_InterleaveStatement_012() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+        p.send(charstring:"ding");
+
+        interleave {
+            [] p.receive(charstring:"bar") {
+                f_caller(true);
+            }
+            [] p.receive(charstring:"foo") {
+            }
+        }
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_2004_InterleaveStatement_012());
+    }
+}

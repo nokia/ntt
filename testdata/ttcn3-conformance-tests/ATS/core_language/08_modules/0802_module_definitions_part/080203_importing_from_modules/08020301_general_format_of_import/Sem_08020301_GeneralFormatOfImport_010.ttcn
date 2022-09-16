@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that signature is imported together with parameter names
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction c:
+// A definition is imported together with its name and all local definitions.
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// Signature
+
+module Sem_08020301_GeneralFormatOfImport_010 {
+
+import from Sem_08020301_GeneralFormatOfImport_010_import { signature Signature1 };
+
+type component GeneralComp {}
+
+// type compatibility is checked during parameter passing: for this check, type
+// information for the signature parameters should be available at this point
+// to compile the script correctly
+template Signature1 s_test := {
+	p_param1 := 1 // testing signature parameter name
+}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_010() runs on GeneralComp {
+	log (s_test);
+	setverdict(pass);
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_010());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_010_import
+{
+	signature Signature1 (in integer p_param1);
+}

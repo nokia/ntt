@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_07060201_derived_by_extension_010"
+    xmlns:ns="schema:Pos_07060201_derived_by_extension_010">
+		<complexType name="complex-base-complex">
+			<sequence>
+				<element name="int" type="integer"/>
+				<element name="str" type="string"/>
+			</sequence>
+			<attribute name="attr" type="integer"/>
+		</complexType>
+
+		<complexType name="complex-ext-complex">
+			<complexContent>
+				<extension base="ns:complex-base-complex" />
+			</complexContent>
+		</complexType>
+
+		<element name="elem-complex-ext-complex">
+			<complexType>
+				<complexContent>
+					<extension base="ns:complex-base-complex" />
+			</complexContent>
+			</complexType>
+		</element>
+
+</schema>

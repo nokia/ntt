@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT correctly handles assignments from structures having compatible anytypes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060302_structured_types_004 {
+
+ import from Sem_060302_structured_types_004_importA all;
+ import from Sem_060302_structured_types_004_importB all;
+
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_060302_structured_types_004() runs on GeneralComp {
+
+   var Sem_060302_structured_types_004_importA.Atype v_a;
+   var Sem_060302_structured_types_004_importB.Atype v_b := { integer := 1 }
+
+   v_a:=v_b;
+
+    if ( match(v_a.integer, 1) ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_060302_structured_types_004());
+}
+
+}
+
+
+module Sem_060302_structured_types_004_importA {
+  type integer I (0..2);
+  type float F;
+  type anytype Atype;
+ }
+
+
+module Sem_060302_structured_types_004_importB {
+  type integer I (0..2);
+  type anytype Atype;
+}
+

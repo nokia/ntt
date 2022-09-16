@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 5.2 Scope rules
+ ** @purpose  1:5.3, Ensure that allowed orderings of declarations are supported
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0503_Ordering_001 {
+
+type component GeneralComp {
+    var integer vc_component := 0;
+}
+
+testcase TC_Sem_0503_Ordering_001() runs on GeneralComp  {
+    var integer v_testcase := 0;
+
+    f_function();
+    if(true) {
+     var integer v_statement := 0;
+      if (v_statement == 0) {
+            var integer v_nested_statement := 0;
+	    setverdict(pass);
+      }
+
+    }
+}
+
+function f_function() runs on GeneralComp {
+    var integer v_function := 0;
+}
+
+control {
+    var integer v_control := 0;
+    execute(TC_Sem_0503_Ordering_001());
+}
+
+}

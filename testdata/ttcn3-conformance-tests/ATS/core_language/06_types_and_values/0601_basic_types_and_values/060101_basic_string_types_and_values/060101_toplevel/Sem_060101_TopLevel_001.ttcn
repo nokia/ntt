@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Assign and read bitstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060101_TopLevel_001 {
+
+    const bitstring c_b := '10001'B;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_611_TopLevel_001() runs on GeneralComp {
+    	if (c_b == '10001'B){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_611_TopLevel_001());
+    }
+}

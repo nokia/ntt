@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenations of set of integers are accepted.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Note: see CR5805 regarding corresponding BNF update
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_009 {
+
+type component GeneralComp { }
+
+type set of integer SetOfInt;
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_009() runs on GeneralComp {
+	var template SetOfInt m_concatenation := {1, 2} & * length(2) & {3, 4};
+
+	var SetOfInt m_reference := {1,2, 20, 21, 3, 4};
+	if (match(m_reference,m_concatenation)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_009());
+}
+
+}

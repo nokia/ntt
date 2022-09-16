@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.0, verify that lazy templates of the timer type are not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction a)
+// Templates shall not be of default, port or timer type.
+
+module NegSem_1500_general_050 {
+    type component GeneralComp {
+	}
+
+    template timer mw_test := ?;
+
+    testcase TC_NegSem_1500_general_050() runs on GeneralComp system GeneralComp {
+		log(mw_test);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_1500_general_050());
+	}
+}

@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, constant expression in array dimension
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Array dimensions shall be specified using constant expressions, which shall
+// evaluate to a positive integer values. Constants used in the constant
+// expressions shall meet with the restrictions in clause 10.
+
+module Sem_060207_arrays_015 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_060207_arrays_015() runs on GeneralComp {
+        var integer v_arr[9 - 3 * 2] := { 0, 1, 2 };
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_Sem_060207_arrays_015());
+	}
+
+}

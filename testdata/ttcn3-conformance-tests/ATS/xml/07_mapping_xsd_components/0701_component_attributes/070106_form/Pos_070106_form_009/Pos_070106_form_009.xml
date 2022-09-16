@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:MyElement xmlns:ns="schema:Pos_070106_form_009"
+              xmlns:ns2="schema:Pos_070106_form_009_2">
+  <ns:myField>1</ns:myField>
+  <ns:myField2>
+    <myField>2</myField>
+  </ns:myField2>
+  <ns2:MyElement>
+    <myField>3</myField>
+  </ns2:MyElement>
+</ns:MyElement>

@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * This function converts an UTF-32 universal charstring value to an octetstring.*/
+
+module Sem_160102_predefined_functions_029 {
+
+
+    type component GeneralComp {
+    }
+
+
+    testcase TC_Sem_160102_predefined_functions_029 () runs on GeneralComp {
+
+    // universal charstring:
+        var universal charstring v_0 := "ABC123abc";
+
+    // predefined function for universal charstring to octetstring conversion:
+        var octetstring v_encoded := unichar2oct(v_0,"UTF-32");        //"UTF-32", expected value: '0000 0041 0000 0042 0000 0043 0000 0031 0000 0032 0000 0033 0000 0061 0000 0062 0000 0063'O
+        var octetstring v_1 := '000000410000004200000043000000310000003200000033000000610000006200000063'O;
+
+
+        if( match(v_encoded,v_1)
+        ) {
+            setverdict(pass,"Encoded value for: ",v_0, " is ", v_encoded);
+        }
+        else {
+            setverdict(fail,"encoded value is: ", v_encoded, " expected ", v_1);
+        }
+    }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_029());
+    }
+}

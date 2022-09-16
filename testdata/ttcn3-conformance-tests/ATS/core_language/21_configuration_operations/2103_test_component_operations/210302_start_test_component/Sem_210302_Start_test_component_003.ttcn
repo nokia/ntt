@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, test component as a result of function invocation in start operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The start operation shall bind the required behaviour to the test component. This
+// behaviour is defined by reference to an already defined function.
+
+module Sem_210302_Start_test_component_003 {
+
+	type component GeneralComp {
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        setverdict(pass, "Executing PTC behaviour...");
+    }
+
+    function f_create() return GeneralComp {
+        return GeneralComp.create("PTC");
+    }
+
+	testcase TC_Sem_210302_Start_test_component_003() runs on GeneralComp system GeneralComp {
+        f_create().start(f_ptcBehaviour());
+        all component.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_210302_Start_test_component_003());
+	}
+}

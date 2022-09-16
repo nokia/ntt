@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, deactivation of defaults in alive components
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// In contrast to that, all active defaults are deactivated when the behaviour of
+// an alive-type PTC is stopped. This means no default is activated when a new
+// behaviour is started on an alive-type PTC.
+
+module Sem_210302_Start_test_component_009 {
+
+    type port P message {
+        inout integer;
+    }
+
+	type component GeneralComp {
+        timer tc_tmr := 1.0;
+        port P p;
+	}
+
+    altstep a_receive() runs on GeneralComp {
+        [] p.receive(integer:?) { setverdict(fail); }
+    }
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        activate(a_receive());
+    }
+
+    function f_ptcSecondBehaviour() runs on GeneralComp {
+        tc_tmr.start;
+        alt {
+            [] tc_tmr.timeout { setverdict(pass); }
+        }
+    }
+
+
+	testcase TC_Sem_210302_Start_test_component_009() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC") alive;
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_ptcBehaviour());
+        v_ptc.done;
+        p.send(2);
+        v_ptc.start(f_ptcSecondBehaviour());
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_210302_Start_test_component_009());
+	}
+}

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="schema:Pos_07060201_derived_by_extension_003"
+    xmlns:ns="schema:Pos_07060201_derived_by_extension_003">
+      <!-- Additional base definition:-->
+    <complexType name="e25seqRecurrence">
+      <sequence minOccurs="0" maxOccurs="unbounded">
+        <element name="titleElemBase" type="string"/>
+        <element name="forenameElemBase" type="string"/>
+        <element name="surnameElemBase" type="string"/>
+      </sequence>
+      <attribute name="genderAttrBase" type="integer"/>
+      <attributeGroup ref="ns:g25attr2"/>
+    </complexType>
+    <complexType name="c1">
+      <complexContent>
+        <extension base="ns:e25seqRecurrence">
+          <sequence minOccurs="0" maxOccurs="unbounded">
+            <group ref="ns:g25seq"/>
+            <element name="ageElemExt" type="integer"/>
+          </sequence>
+          <attribute name="unitOfAge" type="string"/>
+        </extension>
+      </complexContent>
+    </complexType>
+    <complexType name="e25seq">
+      <sequence>
+        <element name="titleElemBase" type="string"/>
+        <element name="forenameElemBase" type="string"/>
+        <element name="surnameElemBase" type="string"/>
+      </sequence>
+      <attribute name="genderAttrBase" type="integer"/>
+      <attributeGroup ref="ns:g25attr2"/>
+    </complexType>
+    <group name="g25seq">
+      <sequence>
+        <element name="familyStatusElemInGroup" type="string"/>
+        <element name="spouseElemInGroup" type="string" minOccurs="0"/>
+      </sequence>
+    </group>
+    <attributeGroup name="g25attr1">
+      <attribute name="birthPlaceAttrGroup" type="string"/>
+      <attribute name="birthDateAttrGroup" type="string"/>
+    </attributeGroup>
+    <attributeGroup name="g25attr2">
+      <attribute name="jobPositionAttrGroup" type="string"/>
+    </attributeGroup>
+    <element name="e1" type="ns:c1"/>
+</schema>

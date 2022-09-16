@@ -1,0 +1,54 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.8, Ensure that the IUT correctly handles attribute definitions and their scoping rules
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+/*  If the attribute can occur multiple times (encode, variant, extension), the operation
+returns a record of universal charstring type. If such an attribute is not present, the operation returns an
+empty record of value. */
+
+ // Restriction a) The optional parameter of the operation shall be used only for getting variant attributes.
+
+module Sem_2708_Retrieving_attribute_values_004 {
+   type component GeneralComp {}
+
+// MyPDU1 will be displayed as PDU
+	type record MyPDU1 { integer field1 } with {
+									display "testDisplayValue";
+									encode "Codec1";
+									variant "Codec1"."Rule1A";
+									variant "Codec1"."Rule1B";
+									encode "Codec2";
+									variant "Codec2"."Rule2A";
+									variant "Codec2"."Rule2B";
+									}
+
+	type record	of universal charstring RUC;
+
+
+
+testcase TC_Sem_2708_Retrieving_attribute_values_004() runs on GeneralComp {
+
+			var MyPDU1 v_pdu;
+
+			var RUC v_encoding, v_variants;
+
+			v_encoding := v_pdu.encode; // v_encoding will contain { "Codec1", "Codec2" }
+
+			v_variants := v_pdu.variant;	// shall contain {}
+
+  			if (match(v_variants, {}) ) {
+          		setverdict(pass);
+		    } else {
+		        setverdict(fail);
+		    }
+}
+
+control{
+    execute(TC_Sem_2708_Retrieving_attribute_values_004());
+}
+
+}

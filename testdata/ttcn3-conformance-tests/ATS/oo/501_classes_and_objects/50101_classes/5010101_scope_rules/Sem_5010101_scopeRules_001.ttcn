@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.1, Ensure that the reuse identifiers from the higher(module) scope.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010101_scopeRules_001 "TTCN-3:2018 Object-Oriented" {
+
+    const float c_f := 5.551;
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_scope {
+        const float c_f := 2.5;
+
+        public function get_cf() return float {
+            return this.c_f;
+        }
+    }
+
+    testcase TC_Sem_5010101_scopeRules_001() runs on GeneralComp {
+        var t_class_scope v_a := t_class_scope.create();
+        if (v_a.get_cf() == 2.5 and Sem_5010101_scopeRules_001.c_f == 5.551) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+        if (v_a.get_cf()!= Sem_5010101_scopeRules_001.c_f) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010101_scopeRules_001());
+    }
+}

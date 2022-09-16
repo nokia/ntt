@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.2
+ ** @purpose  1:24, Ensure setverdict is not allowed in part whithin compound statement.
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions.
+ **/
+
+module NegSem_24_toplevel_004 {
+	type component GeneralComp {}
+
+	testcase TC_NegSem_24_toplevel_004() runs on GeneralComp {
+		setverdict(fail);
+	}
+
+
+	control {
+		if (true) {
+			// It is allowed by BNF: ControlStatement -> BasicStatements -> ConditionalConstruct -> StatementBlock => SetLocalVerdict
+			setverdict(pass);
+		}
+		execute(TC_NegSem_24_toplevel_004())
+	}
+}

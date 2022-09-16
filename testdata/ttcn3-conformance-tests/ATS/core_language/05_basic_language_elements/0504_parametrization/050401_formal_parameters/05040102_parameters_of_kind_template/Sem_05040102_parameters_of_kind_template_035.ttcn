@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that null is suitable default value of formal template parameters of component type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)
+// Default templates of component type formal parameters shall be built from the special values
+// null, mtc, self, or system.
+
+module Sem_05040102_parameters_of_kind_template_035 {
+
+	type component GeneralComp {
+	}
+
+    function f(template GeneralComp p_comp := null) {
+        log(p_comp);
+    }
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_035() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040102_parameters_of_kind_template_035());
+	}
+}

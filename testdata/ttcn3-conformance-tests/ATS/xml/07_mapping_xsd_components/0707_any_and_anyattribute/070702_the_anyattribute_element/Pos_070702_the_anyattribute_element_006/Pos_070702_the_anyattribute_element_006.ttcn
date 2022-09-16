@@ -1,0 +1,63 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  9:7.7.2, Verify conversion of anyAttribute element to TTCN-3 anytype
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration any_to_anytype
+***************************************************/
+
+module Pos_070702_the_anyattribute_element_006 {
+
+   import from schema_Pos_070702_the_anyattribute_element_006 language "XSD" all;
+
+   template MyType m_msg := { attr := { {Bar := "bar"}, { Foo := "foo" } }, base := "Hello world!" };
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Pos_070702_the_anyattribute_element_006() runs on C system C {
+        var Raw v_rcv;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            []    p.check(receive(Raw:?) -> value v_rcv) {
+                log("XML message ", v_rcv);
+                alt {
+                    // match decoded value to pass test
+                    [] p.receive(m_msg) {
+                        setverdict(pass, "Decoded value matches encoded template");
+                    }
+                    [] p.receive {
+                        setverdict(fail, "XML decoding failure");
+                    }
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_070702_the_anyattribute_element_006(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

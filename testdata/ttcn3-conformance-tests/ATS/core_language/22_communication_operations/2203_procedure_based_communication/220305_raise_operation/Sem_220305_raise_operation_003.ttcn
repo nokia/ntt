@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.5, broadcast raise operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Exceptions to one or more call operations may be sent to one, several or all peer entities
+// connected to the addressed port. This can be specified in the same manner as described in
+// clause 22.2.1. This means, the argument of the to clause of a raise operation is for
+// unicast exceptions the address of one receiving entity, for multicast exceptions a list of
+// addresses of a set of receivers and for broadcast exceptions the all component keywords.
+
+module Sem_220305_raise_operation_003 {
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+        p.call(S:{}) {
+            []p.catch { setverdict(pass); }
+        }
+	}
+
+    testcase TC_Sem_220305_raise_operation_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc1 := GeneralComp.create, v_ptc2 := GeneralComp.create;
+		connect(self:p, v_ptc1:p);
+        connect(self:p, v_ptc2:p);
+        v_ptc1.start(f());
+        v_ptc2.start(f());
+        p.getcall(S:?);
+        p.getcall(S:?); // call from both components expected
+		p.raise(S, 1) to all component;
+        all component.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_220305_raise_operation_003(), 5.0);
+    }
+}

@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, Ensure that start operation works with parametered altsteps
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirement is tested: The start operation shall bind the required behaviour to the test component.
+// This behaviour is defined by reference to an already defined function or altstep.
+
+module Sem_210302_Start_test_component_012 {
+
+    type port myPortType message {
+        inout integer;
+    }
+
+    type component GeneralCompSystem { }
+    type component GeneralComp {
+    port myPortType myPort;
+    }
+
+    altstep a_myBehaviour() runs on GeneralComp {
+
+        [] any port.receive {
+            setverdict(pass);
+        }
+	}
+
+
+    testcase TC_Sem_210302_Start_test_component_012() runs on GeneralComp system GeneralCompSystem {
+        var GeneralComp ptc;
+
+		ptc:=GeneralComp.create alive;
+
+        connect(mtc:myPort, ptc:myPort);
+        myPort.send(1);
+
+		ptc.start(a_myBehaviour());
+		ptc.done;
+
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_210302_Start_test_component_012());
+    }
+}

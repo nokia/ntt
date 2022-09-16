@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.2
+ ** @purpose  1:26.2, Ensure that the raise statements are not allowed in the control part.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2602_TheControlPart_019 {
+
+    type port MyPort procedure {
+        inout MyProcedure
+    }
+
+    type component MTCComp {
+        port MyPort p;
+    }
+
+	type charstring Exception;
+
+    signature MyProcedure(integer p_value, boolean p_bool) exception (Exception);
+
+    template Exception s_exception := "Thrown exception";
+
+    function f_createComp() return MTCComp {
+        return  MTCComp.create;
+    }
+
+    control {
+        var MTCComp v_myComp := f_createComp(); // assume create was accepted
+
+        v_myComp.p.raise(MyProcedure, s_exception);
+    }
+
+}

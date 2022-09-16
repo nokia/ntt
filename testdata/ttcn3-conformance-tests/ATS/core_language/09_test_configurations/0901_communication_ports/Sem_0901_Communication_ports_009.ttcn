@@ -1,0 +1,49 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that a component port can be connected to two other component ports
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/*NOTE: figure 6(g): A component port can be connected to two other component ports */
+
+module Sem_0901_Communication_ports_009 {
+
+    type port MyPort message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port MyPort p;
+    }
+
+	function checkConnected() runs on GeneralComp
+	{
+		if(p.checkstate("Connected")) {
+			setverdict(pass,"Connected");
+		} else {
+			setverdict(fail,"Not Connected");
+		}
+	}
+
+    testcase TC_Sem_0901_Communication_ports_009() runs on GeneralComp system GeneralComp {
+
+//creating 3 components:
+		var GeneralComp v_ptcA := GeneralComp.create;
+        var GeneralComp v_ptcB := GeneralComp.create;
+        var GeneralComp v_ptcC := GeneralComp.create;
+
+
+        connect(v_ptcA:p, v_ptcB:p);
+		connect(v_ptcA:p, v_ptcC:p);
+
+		v_ptcB.start(checkConnected());
+		v_ptcC.start(checkConnected());
+
+    }
+
+    control{
+        execute(TC_Sem_0901_Communication_ports_009());
+    }
+}

@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.8, Ensure that the IUT correctly handles attribute definitions and their scoping rules
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+/*
+Restriction b) The Expression in optional parameter of the operation shall be of the universal charstring type.
+ */
+
+module NegSyn_2708_Retrieving_attribute_values_001 {
+
+	type record MyPDU1 { integer field1 } with {
+									display 'FFFF'H;	// error: type shall be universal charstring
+									encode "Codec1";
+									}
+
+}

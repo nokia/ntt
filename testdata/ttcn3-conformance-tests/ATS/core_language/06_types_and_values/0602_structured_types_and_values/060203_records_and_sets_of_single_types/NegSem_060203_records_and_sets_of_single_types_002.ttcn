@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, ensure that the inner type referencing is correctly handled
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060203_records_and_sets_of_single_types_002 {
+
+ type component GeneralComp {
+ }
+
+ type record of record length (5) of integer ConstrainedStructure (1 .. 10);
+ type ConstrainedStructure[-] RecordOfInt;
+
+testcase TC_NegSem_060203_records_and_sets_of_single_types_002() runs on GeneralComp {
+
+ var RecordOfInt v_rec := { 8, 1, 2, 3, 4, 5, 6, 7 };  // a record is longer than the restricted length
+
+}
+
+control {
+    execute(TC_NegSem_060203_records_and_sets_of_single_types_002());
+}
+
+}

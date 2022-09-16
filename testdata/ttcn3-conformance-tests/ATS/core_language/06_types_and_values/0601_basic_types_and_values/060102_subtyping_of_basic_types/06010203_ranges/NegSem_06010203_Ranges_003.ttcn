@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assure that not_a_number is not allowed in float range subtyping.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_003 {
+    // causes an error as not_a_number is not allowed in range subtyping
+    type float MyFloatRange (-infinity .. not_a_number);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_003() runs on GeneralComp {
+        var MyFloatRange v_i;
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_003());
+    }
+}

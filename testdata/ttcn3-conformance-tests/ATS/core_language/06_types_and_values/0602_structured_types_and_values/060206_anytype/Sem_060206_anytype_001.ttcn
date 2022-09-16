@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype comprise integer data type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_001 {
+
+
+ type component GeneralComp {
+
+var anytype Var1, Var2;
+var integer Var3;
+}
+
+
+testcase TC_Sem_060206_anytype_001() runs on GeneralComp {
+
+Var1.integer := 10;
+Var2:= {integer := Var1.integer + 3};
+Var3 := Var2.integer * 2;
+
+      if (Var3==26) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_001());
+}
+
+}

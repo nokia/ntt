@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1, Ensure that whitespaces and backslash character is allowed in a universal charstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060101_TopLevel_014 {
+
+ type component GeneralComp {}
+
+    testcase TC_Sem_060101_TopLevel_014() runs on GeneralComp {
+        var universal charstring v_a := "ABC\        DEF";
+    	if (match(v_a,"ABC\        DEF"))
+        {
+    		setverdict(pass,"v_a:",v_a);
+    	}
+    	else {
+    		setverdict(fail,"v_a:",v_a);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_060101_TopLevel_014());
+    }
+}

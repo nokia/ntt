@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation with an incompatible variable in the value clause
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The variable in the value clause shall be compatible with the return value of the invoked function.
+
+module NegSem_210310_call_test_component_operation_020 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp return integer {
+		setverdict(pass);
+		return 1;
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_020() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var charstring v_str;
+        v_ptc.call(f()) -> value v_str;
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_020(), 5.0);
+    }
+}

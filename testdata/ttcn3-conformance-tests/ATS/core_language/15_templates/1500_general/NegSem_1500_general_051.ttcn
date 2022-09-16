@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.0, verify that lazy templates of types with timer fields are not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction b)
+// Templates shall not be of a structured type that contains fields of default, port or timer type
+// on any level of nesting.
+
+module NegSem_1500_general_051 {
+    type component GeneralComp {
+	}
+
+    type record R {
+        timer tmr
+    }
+
+    template R mw_test := ?;
+
+    testcase TC_NegSem_1500_general_051() runs on GeneralComp system GeneralComp {
+		log(mw_test);
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_1500_general_051());
+	}
+}

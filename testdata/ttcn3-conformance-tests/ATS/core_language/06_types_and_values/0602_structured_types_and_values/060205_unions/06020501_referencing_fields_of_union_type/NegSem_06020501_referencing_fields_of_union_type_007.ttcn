@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.1, referencing alternative of uninitialized union on right hand side of assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// When an alternative of a union type is referenced on the right hand side of
+// an assignment an error shall occur if the referenced alternative is not the
+// currently chosen alternative or if the referenced union field or value is omitted
+// or uninitialized.
+
+module NegSem_06020501_referencing_fields_of_union_type_007 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		charstring option2
+	}
+
+    type record R {
+        integer field1,
+        U field2
+    }
+
+    testcase TC_NegSem_06020501_referencing_fields_of_union_type_007() runs on GeneralComp {
+		var R v_rec;
+        v_rec.field1 := 5;
+        if (v_rec.field2.option1 !=  100) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_06020501_referencing_fields_of_union_type_007());
+	}
+}

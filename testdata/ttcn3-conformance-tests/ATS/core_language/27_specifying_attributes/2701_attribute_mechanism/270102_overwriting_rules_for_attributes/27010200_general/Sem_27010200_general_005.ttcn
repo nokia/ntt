@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that attributes from type reference override attributes from higher scopes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Attributes inherited from a type reference will override general attributes from a higher scope unit.
+
+// Note:
+// 1. The type R gets its attribute from the module
+// 2. The constant c_r gets its attribute from two sources: the R type and the scope unit (the test case)
+// 3. Because the R reference is preferred, the attribute originating from the module level will be used
+//    even though the scope unit where the c_r unit seemingly overrides it
+
+
+module Sem_27010200_general_005 {
+
+    type component GeneralComp {
+	}
+
+	type record R {
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_005 () runs on GeneralComp {
+		const R c_r := {};
+		var RoUC v_enc := c_r.encode;
+		if(v_enc[0] == "GeneralRule") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	} with { encode "RuleA" }
+
+
+	control{
+		execute(TC_Sem_27010200_general_005());
+	}
+
+} with { encode "GeneralRule" }

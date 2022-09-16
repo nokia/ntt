@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that value formal parameters can be used in expressions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Value formal parameters can be used within the parameterized object the same way as values,
+// for example in expressions.
+
+module Sem_05040101_parameters_of_kind_value_010 {
+
+	type component GeneralComp {
+	}
+
+    function f(integer p_int1, in integer p_int2){
+        if (p_int1 + p_int2 == 5) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_010() runs on GeneralComp {
+        f(2, 3);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_010());
+	}
+}

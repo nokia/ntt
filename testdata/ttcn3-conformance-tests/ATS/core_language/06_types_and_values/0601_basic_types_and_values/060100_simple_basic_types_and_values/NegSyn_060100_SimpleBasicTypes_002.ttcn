@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign boolean to integer values
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060100_SimpleBasicTypes_002 {
+    const integer c_i1 := true; // not an integer value
+}

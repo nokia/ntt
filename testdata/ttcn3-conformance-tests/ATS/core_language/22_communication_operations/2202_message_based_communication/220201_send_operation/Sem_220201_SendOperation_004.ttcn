@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, Ensure that the IUT correctly handles message sending operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_220201_SendOperation_004 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_220201_SendOperation_004() runs on GeneralComp {
+ var integer v_1:=2, v_2:=3;
+
+ messagePort.send(v_1*v_2+1);  //can send also the results of operations
+
+    alt {
+     [] messagePort.receive(7) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_220201_SendOperation_004());
+}
+
+}

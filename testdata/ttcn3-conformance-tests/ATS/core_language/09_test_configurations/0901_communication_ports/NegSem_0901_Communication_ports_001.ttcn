@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Ensure that a port owned by a component cannot be connected with two other ports
+ ** @verdict  pass reject
+ ** @configuration  port:broadcast
+ ***************************************************/
+
+/*NOTE: see Figure 7(c): Two components (A and B with two ports).
+ * ERROR: Port A connects to port B1 and port B2, this is not allowed
+ * */
+
+module NegSem_0901_Communication_ports_001{
+
+
+    type component GeneralComp{
+        port IntegerInputPortType messagePortA,messagePortB;
+    };
+
+    type port IntegerInputPortType message {
+	  inout integer
+	}
+
+
+
+testcase TC_NegSem_0901_Communication_ports_001() runs on GeneralComp system GeneralComp {
+
+// generate test components
+	var GeneralComp MycompA;
+	var GeneralComp MycompB;
+    MycompA := GeneralComp.create;
+    MycompB := GeneralComp.create;
+
+// make the connections between ports
+    connect(MycompA:messagePortA,MycompB:messagePortA);
+    connect(MycompA:messagePortA,MycompB:messagePortB);	//Error: not allowed, MycompA messagePortA is already connected to MycompB messagePortA
+}
+control{
+    execute(TC_NegSem_0901_Communication_ports_001());
+}
+}
+

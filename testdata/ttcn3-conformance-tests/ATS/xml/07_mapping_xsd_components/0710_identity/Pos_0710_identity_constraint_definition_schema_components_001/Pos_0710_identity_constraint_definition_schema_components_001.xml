@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_0710_identity_constraint_definition_schema_components_001">
+ <unitInventory unitId="24">
+  <item itemId="1004" />
+  <item itemId="1005" />
+  <item itemId="6028" />
+  <item itemId="7450" />
+ </unitInventory>
+ <unitInventory unitId="30">
+  <item itemId="1011" />
+  <item itemId="1042" />
+  <item itemId="5301" />
+  <item itemId="6001" />
+ </unitInventory>
+</ns:MyType>

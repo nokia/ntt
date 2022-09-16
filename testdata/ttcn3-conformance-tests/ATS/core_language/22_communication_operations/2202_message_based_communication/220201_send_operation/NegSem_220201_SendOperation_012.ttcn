@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, The ObjectReference shall be of a port type in send operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restection g) The ObjectReference shall be of a port type.
+
+module NegSem_220201_SendOperation_012 {
+
+
+    type component GeneralComp
+	{
+		var anytype p;
+	}
+
+    testcase TC_NegSem_220201_SendOperation_012() runs on GeneralComp system GeneralComp {
+		p.send(0) to all component;    // error: ObjectReference shall be of a port type
+        all component.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220201_SendOperation_012());
+    }
+}

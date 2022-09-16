@@ -1,0 +1,56 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.2, Verify that a @control altstep can not be activated on other components
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1602_toplevel_053 {
+
+    type record MessageType {
+        integer  		field1,
+        charstring  	field2
+    }
+
+    type port loopbackPort message {
+        inout MessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    function f_test ( integer p_integer := 0 ) runs on GeneralComp return integer {
+
+        return p_integer+1;
+    }
+
+
+    altstep @control AltSet1() {
+        var integer v_LocalVar := f_test();   // local variable
+
+        [] messagePort.receive {
+            setverdict(pass);
+        }
+
+    }
+
+    testcase TC_NegSem_1602_toplevel_053 () runs on GeneralComp {
+        var MessageType v_testMessage;
+        v_testMessage:=  {
+            field1 := 1,
+            field2 := "test string"
+        }
+
+        messagePort.send(v_testMessage);
+
+        AltSet1(); //Trying to activate @control altstep on a component other than control component
+
+    }
+
+    control{
+
+        execute(TC_NegSem_1602_toplevel_053());
+
+    }
+
+}

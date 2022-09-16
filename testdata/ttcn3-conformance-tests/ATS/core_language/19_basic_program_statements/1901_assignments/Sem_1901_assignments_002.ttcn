@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.1, Ensure that uninitialized at the right-hand side of the assignment shall also become uninitialized at the left-hand side
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_1901_assignments_002{
+
+type component GeneralComp {
+}
+
+ type record Myrec{
+     integer field1,
+     float   field2
+ };
+
+testcase TC_Sem_1901_assignments_002 () runs on GeneralComp system GeneralComp {
+ var Myrec v_i :={11,1.1};    //fully initialized variable
+ var Myrec v_j :={12};        //partly initialized variable
+
+   v_i:=v_j;	//assignment, v_i is now partly initialized variable
+
+ if (isvalue(v_i)) {
+  setverdict(fail,v_i);
+ }
+ else {
+  setverdict(pass,v_i);
+ }
+}
+
+
+control{
+
+    execute(TC_Sem_1901_assignments_002());
+
+}
+
+}

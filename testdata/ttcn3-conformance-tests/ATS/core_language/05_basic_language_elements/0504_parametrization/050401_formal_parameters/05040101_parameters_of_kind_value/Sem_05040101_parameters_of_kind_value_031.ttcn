@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Verify that out timer parameters are allowed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The older versions of the core language specifications contained this rule:
+// Formal timer parameters shall be inout parameters, which can optionally be indicated by the keyword inout.
+//
+// The rule has been removed and the test verifies that compilers can accept in timer prameters now.
+
+module Sem_05040101_parameters_of_kind_value_031 {
+
+    type component C {
+        timer tc_tmr;
+    }
+
+    function f_test(out timer p_tmr) runs on C {
+        p_tmr := tc_tmr;
+        p_tmr.start(1.0);
+    }
+
+
+    testcase TC_Sem_05040101_parameters_of_kind_value_031() runs on C{
+
+    	var timer t_tmr;
+
+        f_test(t_tmr);
+
+        t_tmr.timeout;
+        setverdict(pass);
+
+    }
+
+
+    control {
+
+        execute(TC_Sem_05040101_parameters_of_kind_value_031());
+
+    }
+
+}

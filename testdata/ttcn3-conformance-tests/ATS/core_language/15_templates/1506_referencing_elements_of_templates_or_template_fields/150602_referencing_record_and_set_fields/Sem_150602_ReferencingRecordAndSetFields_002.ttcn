@@ -1,0 +1,60 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.6.2, Ensure that the recurisve anyvalue expansion is performed correctly when new values are assigned.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_150602_ReferencingRecordAndSetFields_002 {
+
+type component GeneralComp { }
+
+type record MyRecordTwo {
+	integer g1,
+	MyRecordTwo g2 optional
+}
+
+type record MyRecordOne {
+	integer f1 optional,
+	MyRecordTwo f2 optional
+}
+
+testcase TC_Sem_150602_ReferencingRecordAndSetFields_002() runs on GeneralComp {
+	var template MyRecordOne m_R1 := {
+		f1 := 0,
+		f2 := ?
+	}
+
+	m_R1.f2.g2.g2 := {g1:=1, g2:=omit};
+	// as f2 is ? and we access g2.g2, TTCN-3 should expand the following fields to
+	// contain the following values:
+	// m_R1.f1 = 0
+	// m_R1.f2 = {
+	//   g1 = ?
+	//   g2 = {
+	//     g1 = ?,
+	//     g2 = {
+	//       g1 = 1
+	//       g2 = omit
+	//     }
+	//   }
+	// }
+
+	if (match(valueof(m_R1.f1), 0) and
+     ispresent(m_R1.f2.g2) and
+	 ispresent(m_R1.f2.g2.g2) and
+	 ( ispresent(m_R1.f2.g2.g2.g2) == false) and
+	 match( valueof(m_R1.f2.g2.g2.g1), 1 )
+    ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_150602_ReferencingRecordAndSetFields_002());
+}
+
+
+}

@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the Example 6 can be executed
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_050402_actual_parameters_200 {
+
+    type component GeneralComp {
+	}
+
+    modulepar boolean logMessage := true;
+    function logMsg(@lazy charstring complex) {
+        if (logMessage) {
+            log(complex);
+        }
+    }
+
+    function computeComplexMessage() return charstring {
+        // some complicated computation
+        setverdict(pass);
+        return "hello";
+    }
+
+    testcase TC_Sem_050402_actual_parameters_200() runs on GeneralComp {
+        logMsg(computeComplexMessage()); // computeComplexMessage() is only invoked if
+            // logMessage is true
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_200());
+	}
+}

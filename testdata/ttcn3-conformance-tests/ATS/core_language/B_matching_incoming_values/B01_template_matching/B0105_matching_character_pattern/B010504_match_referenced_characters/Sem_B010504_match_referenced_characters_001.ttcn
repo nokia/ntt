@@ -1,0 +1,76 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.5.4, Ensure that the IUT correctly handles template matching of character pattern reference characters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010504_match_referenced_characters_001 {
+
+    modulepar {
+     charstring MOD_REF:="e";
+    }
+
+	type charstring CharRange ("e".."t");
+
+	type record MessageType {
+  	 charstring  	field1,
+  	 charstring		field2,
+  	 charstring		field3,
+  	 charstring  	field4,
+  	 charstring		field5,
+  	 charstring		field6
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+      const charstring c_Ref:="s";
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010504_match_referenced_characters_001(charstring p_Ref) runs on GeneralComp {
+
+    var MessageType v_testMessage;
+    var charstring v_Ref:="s";
+    template charstring m_Ref:="s";
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := pattern "te[\N{v_Ref}]t",
+  field2 := pattern "[\N{c_Ref}et]+",
+  field3 := pattern "[\N{MOD_REF}-t]+",
+  field4 := pattern "te[\N{p_Ref}]t",
+  field5 := pattern "te\N{m_Ref}t",
+  field6 := pattern "\N{CharRange}+"
+ };
+
+ v_testMessage:=  {
+  field1 := "test",
+  field2 := "test",
+  field3 := "test",
+  field4 := "test",
+  field5 := "test",
+  field6 := "test"
+ };
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010504_match_referenced_characters_001("s"));
+}
+
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_0608_anytype_and_anysimpletype_types_006"
+  xmlns:ns="schema:Pos_0608_anytype_and_anysimpletype_types_006">
+	<xsd:element name="MyType" type="xsd:anySimpleType"></xsd:element>
+</xsd:schema>

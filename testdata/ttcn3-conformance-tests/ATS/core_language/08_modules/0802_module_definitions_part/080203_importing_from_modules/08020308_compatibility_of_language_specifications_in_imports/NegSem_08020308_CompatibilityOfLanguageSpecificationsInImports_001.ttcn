@@ -1,0 +1,14 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.8, Ensure that imports referring to future TTCN-3 versions are rejected.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_08020308_CompatibilityOfLanguageSpecificationsInImports_001 {
+
+import from NegSem_08020308_CompatibilityOfLanguageSpecificationsInImports_001_import_A language "TTCN-3:9000" all; // shall be rejected as the cited TTCN-3 version is obviously in the future
+}
+
+module NegSem_08020308_CompatibilityOfLanguageSpecificationsInImports_001_import_A {
+}

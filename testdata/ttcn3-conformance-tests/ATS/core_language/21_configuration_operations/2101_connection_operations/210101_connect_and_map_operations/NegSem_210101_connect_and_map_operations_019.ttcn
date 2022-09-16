@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that it is not possible to connect a system port
+ ** @verdict  pass reject
+ ***************************************************/
+// For the connect operations, only consistent connections are allowed.
+// a) Assuming the following:
+//   1) ports PORT1 and PORT2 are the ports to be connected or mappde;
+//   2) inlist-PORT1 defines the messages or procedures of the in-direction of PORT1;
+//   3) outlist-PORT1defines the messages or procedures of the out-direction of PORT1;
+//   4) inlist-PORT2 defines the messages or procedures of the in-direction of PORT2; and
+//   5) outlist-PORT2 defines the messages or procedures of the out-direction of PORT2.
+// b) The connect operation is allowed if and only if:
+//   1) outlist-PORT1 ⊆ inlist-PORT2 and outlist-PORT2 ⊆ inlist-PORT1; and
+//   2) neither PORT1 nor PORT2 are system port references; and
+//   3) at least one of outlist-PORT1 or outlist-PORT2 is not empty.
+
+module NegSem_210101_connect_and_map_operations_019 {
+
+    type port P message {
+        inout integer
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    // MyTestSystemInterface is the test system interface
+    testcase TC_NegSem_210101_connect_and_map_operations_019() runs on GeneralComp system GeneralComp {
+        // establishing the port connections
+        connect(mtc:p, system:p);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210101_connect_and_map_operations_019());
+    }
+}

@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.3, Ensure that the IUT correctly processes repeat statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2003_the_repeat_statement_001 {
+
+    type port loopbackPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+        port loopbackPort p;
+    }
+
+    template charstring m_test := "ping";
+
+    testcase TC_Sem_2003_the_repeat_statement_001() runs on GeneralComp {
+        timer t:= 5.0;
+        var integer counter := 1;
+
+        p.send(m_test);
+        p.send(m_test);
+
+        t.start;
+        alt {
+            [counter == 1] p.receive(m_test) {
+                counter := 2;
+                repeat;
+            }
+            [counter == 2] p.receive(m_test) {
+                setverdict(pass);
+            }
+            [] t.timeout {
+                setverdict(fail);
+            }
+        }
+    }
+
+    control {
+        execute(TC_Sem_2003_the_repeat_statement_001());
+    }
+
+}

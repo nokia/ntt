@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:15.5, Ensure that it is possible to modify a matching symbol
+ ** @verdict  pass accept
+ *****************************************************************/
+// The following requirement is tested:
+// Syntactical structure: (... modifies BaseTemplateBody ...)
+
+module Sem_1505_ModifiedTemplates_017 {
+
+    type component GeneralComp {
+    }
+
+    type record MyRecordType {
+        integer field1,
+        charstring field2,
+        boolean field3 optional
+    }
+
+    testcase TC_Sem_1505_ModifiedTemplates_017() runs on GeneralComp {
+		template MyRecordType m_msg modifies ? := {
+			field2 := "A modified string" // field1, field3 are assigned according to expansion rules
+		}
+
+        if(istemplatekind(m_msg.field1, "?") and
+		   valueof(m_msg.field2) == "A modified string" and
+		   istemplatekind(m_msg.field3, "*")) {
+            setverdict(pass);
+        } else{
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_1505_ModifiedTemplates_017());
+    }
+}

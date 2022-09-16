@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that in lack of clause "runs on" the test case has no ports, and no component constants and variables
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+
+module Syn_1603_testcases_005 {
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+    type component GeneralComp {
+	  port loopbackPort messagePort;
+      const integer c_i := 2;
+      var integer v_i := 2;
+    }
+
+    testcase TC_Syn_1603_testcases_005 () {
+       messagePort.send(c_i);    // Error: messagePort and c_i are unknown in this testcase
+
+       if(match(v_i, c_i)){
+            //Error: v_i and c_i are unknown
+         setverdict(pass);
+	    }else{
+	     setverdict(fail, v_i, c_i);
+	    }
+	}
+
+    control{
+   	// execute(TC_Syn_1603_testcases_005 ());
+    }
+
+}

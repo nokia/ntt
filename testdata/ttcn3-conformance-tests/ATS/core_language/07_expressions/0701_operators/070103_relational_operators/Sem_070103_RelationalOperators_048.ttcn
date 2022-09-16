@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that anytypes can be compared
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Values of the same or any two anytype types can be compared.
+// For anytype values the same rule apply as to union values, with the addition that names of user-defined types defined with the same name in different modules do not denote the same type name of the selected alternatives.
+
+module Sem_070103_RelationalOperators_048 {
+
+type component GeneralComp {
+}
+
+type anytype Atype_1;
+
+type anytype Atype_2;
+
+testcase TC_Sem_070103_RelationalOperators_048() runs on GeneralComp {
+
+    var Atype_1 v_any1;
+    var Atype_2 v_any2;
+
+    v_any1.integer := 2;
+    v_any2.integer := 4;
+
+	if (v_any1.integer < v_any2.integer) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070103_RelationalOperators_048());
+}
+
+}

@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:12, Ensure uninitialized timer in array can't be started
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/12 Declaring timers/Timer declaration syntax
+ **/
+
+
+module NegSem_12_toplevel_timer_004 {
+    type component TComp{
+        timer t_timer[2] := {-, 1.0};
+    }
+    testcase TC_NegSem_12_toplevel_timer_004() runs on TComp{
+        t_timer[0].start;
+    }
+    control{
+
+            execute(TC_NegSem_12_toplevel_timer_004())
+
+
+    }
+}

@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that template inout parameters cannot be used as inout formal value parameters of test cases
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module NegSem_050402_actual_parameters_054 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_054(inout integer p_val) runs on GeneralComp {
+        if (p_val == 5) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+    function f_caller(inout template integer p_val) {
+        execute(TC_NegSem_050402_actual_parameters_054(p_val)); // tested parameter passing
+    }
+
+	control {
+        var template integer vm_val := 5;
+		f_caller(vm_val);
+	}
+}

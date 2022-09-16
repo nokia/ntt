@@ -1,0 +1,21 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that execution rejects test case execution with infinity timer guard
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_2601_ExecuteStatement_004 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_2601_ExecuteStatement_004(integer p_value, charstring p_string, boolean p_bool) runs on GeneralComp {
+		setverdict(pass);
+}
+
+control {
+	var integer v_test := 20;
+	execute(TC_NegSem_2601_ExecuteStatement_004(v_test, "hello", true), infinity); //not allowed to explicitly assign infinite timer
+}
+
+}

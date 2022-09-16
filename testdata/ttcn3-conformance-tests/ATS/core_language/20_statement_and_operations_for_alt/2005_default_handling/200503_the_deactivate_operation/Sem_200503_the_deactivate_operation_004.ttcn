@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.1, verify that deactivate null works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Calling a deactivate operation with the special value null has no effect.
+
+module Sem_200503_the_deactivate_operation_004 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	altstep a1() runs on GeneralComp {
+		[] p.receive(integer:?) {
+			setverdict(pass);
+		}
+	}
+
+	testcase TC_Sem_200503_the_deactivate_operation_004() runs on GeneralComp {
+		var default v_default := null;
+		activate(a1());
+		p.send(integer:1);
+		deactivate(v_default); // v_default is null: there should be no error and no deactivation
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default invocation
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_Sem_200503_the_deactivate_operation_004());
+	}
+}

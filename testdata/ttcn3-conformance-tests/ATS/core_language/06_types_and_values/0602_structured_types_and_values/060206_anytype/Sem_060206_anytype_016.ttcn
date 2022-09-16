@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can act as an union
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_016 {
+
+type union MyUnion1 {
+integer number,
+charstring string
+};
+
+
+type component GeneralComp {
+
+	var anytype x;	// anytype x variable
+	var MyUnion1 y;
+
+}
+
+
+testcase TC_Sem_060206_anytype_0016() runs on GeneralComp {
+
+y.number:=11;
+y.string := "abc";	// Union y contains field1=abc and field2=true
+
+
+x.MyUnion1:= y;	// anytype x now gets the type MyUnion1 and the values given by y.
+
+      if (valueof(x.MyUnion1)==valueof(y))
+	  {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_0016());
+}
+
+}

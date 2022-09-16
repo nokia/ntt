@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:26, Ensure that start/stop/read/running timer constructs in the control part are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_26_ModuleControl_015 {
+
+type component GeneralComp { }
+
+altstep a_test(timer p_timer) runs on GeneralComp {
+	[] p_timer.timeout {
+	}
+}
+
+control{
+	timer t_timer;
+	var float v_value;
+	t_timer.start(20E-3);
+	v_value := t_timer.read;
+	if (t_timer.running) {
+		// do something
+	}
+
+	t_timer.stop;
+}
+
+}

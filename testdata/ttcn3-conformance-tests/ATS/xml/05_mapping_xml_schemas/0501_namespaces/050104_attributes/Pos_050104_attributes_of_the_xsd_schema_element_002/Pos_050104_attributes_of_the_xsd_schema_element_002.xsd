@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050104_attributes_of_the_xsd_schema_element_002"
+  xmlns:ns="schema:Pos_050104_attributes_of_the_xsd_schema_element_002"
+  elementFormDefault="qualified">
+	<element name="MyType">
+		<complexType>
+			<sequence>
+				<element name="item1" type="string" />
+				<element name="item2" type="string" />
+			</sequence>
+		</complexType>
+	</element>  
+</schema>

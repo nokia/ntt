@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, type mismatch in sender redirect assignment
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// AddressRef for retrieving the sending entity shall be of type address, component or
+// of the type provided in the address declaration of the port type of the port instance
+// referenced in the receive operation.
+
+
+module NegSem_220203_TriggerOperation_014 {
+
+	type port P message {
+		inout integer;
+        address integer;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220203_TriggerOperation_014() runs on GeneralComp {
+        var charstring v_addr;
+        p.send(10);
+        p.trigger -> sender v_addr;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220203_TriggerOperation_014(), 5.0);
+    }
+}

@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.2, Verify that defining attributes of the same kind with and without a modifier is not possible
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction b
+// In case multiple attributes of the same type are allowed, all of them shall be without
+// an additional modifier (override, @local) or the modifier shall be the same for all
+// attributes.
+
+module NegSem_2702_the_with_statement_007 {
+	type component GeneralComp {
+	}
+
+	type record R {
+		integer field1
+	} with {
+		encode @local "RuleA";
+		encode "RuleB"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2702_the_with_statement_007 () runs on GeneralComp {
+		var RoUC v_enc1 := R.encode,
+			v_enc2 := R.field1.encode;
+		if(v_enc1 == { "RuleA", "RuleB" } and
+			lengthof(v_enc2) == 0) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_NegSem_2702_the_with_statement_007());
+	}
+}

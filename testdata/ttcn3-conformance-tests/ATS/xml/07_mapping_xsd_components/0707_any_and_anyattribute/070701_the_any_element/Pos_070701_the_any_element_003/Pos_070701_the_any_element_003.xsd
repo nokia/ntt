@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070701_the_any_element_003"
+  xmlns:ns="schema:Pos_070701_the_any_element_003">
+  <element name="MyType">
+    <complexType>
+      <sequence>
+        <any namespace="##local"/>
+      </sequence>
+    </complexType>
+  </element>  
+</schema>

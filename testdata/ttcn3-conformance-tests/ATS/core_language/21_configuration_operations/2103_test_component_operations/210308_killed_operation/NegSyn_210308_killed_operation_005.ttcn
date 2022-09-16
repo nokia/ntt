@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, Ensure that the alive keyword is properly evaluated
+ ** @verdict  pass reject, noexectuion
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restrcition j): The @nodefault modifier is allowed only in stand-alone killed statements.
+
+module NegSyn_210308_killed_operation_005 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_NegSyn_210308_killed_operation_005() runs on GeneralComp system GeneralComp {
+
+        var GeneralComp ptc;
+		ptc:=GeneralComp.create alive;
+		ptc.start(f1());
+        ptc.kill;
+
+        // error: @nodefault before killed is not allowed, since it is not a stand-alone statement
+		alt {
+			[] @nodefault ptc.killed {setverdict(fail);}
+			[] ptc2.killed {setverdict(pass);}
+		}
+
+
+    }
+
+    control {
+       // execute(TC_NegSyn_210308_killed_operation_005());
+    }
+}

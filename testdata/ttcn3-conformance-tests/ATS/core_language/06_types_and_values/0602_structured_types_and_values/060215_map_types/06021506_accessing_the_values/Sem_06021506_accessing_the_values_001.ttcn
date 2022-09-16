@@ -1,0 +1,16 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.6, Verify that it is possible to derive a set of values from a map type
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// If MapValue is a value of type MapValueType defined as mapfromAtoB then MapValue.to yields a result
+// compatible with type set ofB that contains all the values from MapValue. This type can also be
+// referenced as MapValueType.to.
+
+module Sem_06021506_accessing_the_values_001 {
+	type map from charstring to integer TMap1;
+	template TMap1.to m_values := {1, 2 }
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050102_includes_002"
+  xmlns:ns1="schema:Pos_050102_includes_002">
+  <include schemaLocation="Pos_050102_includes_002_1.xsd" />
+  <element name="MyType2" type="integer"/>
+</schema>

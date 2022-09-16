@@ -1,0 +1,53 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that functionality of a simple reply operation (explicit unicast, return value)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The value part of the reply operation consists of a signature reference with an associated
+// actual parameter list and (optional) return value. The signature may either be defined in
+// the form of a signature template or it may be defined in-line.
+
+// Responses to one or more call operations may be sent to one, several or all peer entities
+// connected to the addressed port. This can be specified in the same manner as described in
+// clause 22.2.1. This means, the argument of the to clause of a reply operation is for unicast
+// responses the address of one receiving entity, for multicast responses a list of addresses
+// of a set of receivers and for broadcast responses the all component keywords.
+
+module Sem_220303_ReplyOperation_004 {
+
+    signature S() return integer;
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    function f_server() runs on GeneralComp {
+		var GeneralComp v_sender;
+        p.getcall(S:?) -> sender v_sender;
+        p.reply(S:{} value 2) to v_sender;
+    }
+
+    testcase TC_Sem_220303_ReplyOperation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}, nowait);
+        alt {
+			[] p.getreply {}
+			[] v_ptc.done {}
+		}
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_220303_ReplyOperation_004(), 5.0);
+    }
+
+}

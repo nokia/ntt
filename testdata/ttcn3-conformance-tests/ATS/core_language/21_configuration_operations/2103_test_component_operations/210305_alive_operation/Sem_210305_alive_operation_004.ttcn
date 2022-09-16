@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Test any component alive operator with multiple test components
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Any component alive test with two test components.
+
+module Sem_210305_alive_operation_004 {
+
+    type component GeneralComp {
+	 var integer v_gc:=0;
+	 var integer v_res:=0;}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210305_alive_operation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+		ptc2.start(f1());
+        ptc.kill;
+
+		if (any component.alive) {
+        setverdict(pass);
+        }
+        else
+        {
+        setverdict(fail);
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_210305_alive_operation_004());
+    }
+}

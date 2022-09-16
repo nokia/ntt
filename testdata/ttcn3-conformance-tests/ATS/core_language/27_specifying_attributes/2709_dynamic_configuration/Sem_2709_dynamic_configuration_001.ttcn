@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.9, Verify that the setencode operation can be applied to a port
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// The setencode operation dynamically restricts the number of encode attribute values of
+// a referenced type or its fields or elements to a single value. Dependent on the
+// language element preceding the dot, the encoding configuration is valid ... for all
+// sending and receiving operations of a single port (single port reference)...
+
+module Sem_2709_dynamic_configuration_001 {
+
+	type port P message {
+		inout MyPDU;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	type record MyPDU {
+		integer field1,
+		boolean field2
+	} with {
+		encode "Codec 1";
+		encode "Codec 2";
+		encode "Codec 3"
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_2709_dynamic_configuration_001 () runs on GeneralComp {
+		p.setencode(MyPDU, "Codec 1");
+		// Compilation and seamless execution tested.
+		// Actual effect not tested as it would require dedicated TCI implementation
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_2709_dynamic_configuration_001());
+	}
+
+}

@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.2, Ensure that the list operator on bitstrings is evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070102_ListOperator_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070102_ListOperator_001() runs on GeneralComp {
+	var bitstring v_result := '1111'B & '0000'B & '1111'B;
+	if (v_result == '111100001111'B) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070102_ListOperator_001());
+}
+
+}

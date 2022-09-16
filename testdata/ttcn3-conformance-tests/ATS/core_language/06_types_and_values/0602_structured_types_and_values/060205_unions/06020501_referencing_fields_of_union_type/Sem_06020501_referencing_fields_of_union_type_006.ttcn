@@ -1,0 +1,50 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5.1, referencing field of structured alternative on left hand side of assignment
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When referencing an alternative of an uninitialized union value or field or
+// omitted field (including omitting a field at a higher level of the embedding
+// hierarchy) on the left hand side of an assignment, the reference shall
+// recursively be expanded up to and including the depth of the referenced
+// alternative as follows:
+// a) When expanding a value or value field of union type, the alternative
+// referenced in the dot notation becomes the chosen one.
+// b) Expansion of record, record of, set, set of, and array values and intermediate
+// fields shall follow the rules of item a) in clauses 6.2.1.1and 6.2.3, and clause
+// 6.2.2.1 correspondingly.
+// c) At the end of the expansion, the value at the right hand side of the assignment
+// shall be assigned to the referenced alternative.
+
+module Sem_06020501_referencing_fields_of_union_type_006 {
+    type component GeneralComp {
+	}
+
+    type record of integer RI;
+    type record R {
+        RI field1,
+        integer field2
+    }
+
+    type union U {
+		integer option1,
+		R option2
+	}
+
+    testcase TC_Sem_06020501_referencing_fields_of_union_type_006() runs on GeneralComp {
+		var U v_union;
+        v_union.option2.field1[1] := 10;
+
+        if (ischosen(v_union.option2) and isbound(v_union.option2.field1) and
+           not isbound(v_union.option2.field2) and not isbound(v_union.option2.field1[0]) and
+           v_union.option2.field1[1] == 10) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_Sem_06020501_referencing_fields_of_union_type_006());
+	}
+}

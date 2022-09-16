@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:20.2, Ensure that the done-block in an alt-statement is triggered as expected (loopback case).
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_2002_TheAltStatement_008 {
+
+type port MyPort message {
+    inout charstring
+}
+
+type component MTCComp {
+    port MyPort p;
+}
+
+type component PTCComp {
+    port MyPort p;
+}
+
+type component SystemComp {
+    port MyPort p;
+}
+
+function f_secondComponent() runs on PTCComp {
+}
+
+testcase TC_Sem_2002_TheAltStatement_008() runs on MTCComp system SystemComp {
+    var PTCComp v_ptc := PTCComp.create alive;
+    map(self:p, system:p);
+    v_ptc.start(f_secondComponent());
+
+    alt {
+        [] v_ptc.killed {
+            setverdict(fail); // as we have an alive component, it shouldn't have the killed status here
+        }
+        [] v_ptc.done {
+            setverdict(pass);
+        }
+    }
+    v_ptc.kill;
+}
+
+control {
+    execute(TC_Sem_2002_TheAltStatement_008());
+}
+
+}

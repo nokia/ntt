@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" g.h-i="2" xmlns:ns="schema:Pos-050202.name-conversion_rules_001/test">
+ <d.e-f>1</d.e-f>
+</ns:MyType>

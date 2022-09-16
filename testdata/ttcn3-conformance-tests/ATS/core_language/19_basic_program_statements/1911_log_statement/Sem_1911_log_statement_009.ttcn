@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, Ensure that the IUT properly evaluates log statements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// match operation -> true/false
+
+module Sem_1911_log_statement_009 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_1911_log_statement_009() runs on GeneralComp {
+        var integer v_i := 1;
+        var integer v_j := 1;
+        log("Match operation: ", match(v_i,v_j));
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_1911_log_statement_009());
+	}
+}

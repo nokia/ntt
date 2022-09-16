@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.4, Ensure that inline templates are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1504_InlineTemplates_001 {
+
+type port MyMessagePortType message {
+	inout MyMessageType
+}
+
+type component GeneralComp {
+	port MyMessagePortType pt_myPort;
+}
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+testcase TC_Syn_1504_InlineTemplates_001() runs on GeneralComp {
+    pt_myPort.send(MyMessageType:{2, "abcxyz", true});
+	setverdict(pass);
+}
+
+control{
+    execute(TC_Syn_1504_InlineTemplates_001());
+}
+}

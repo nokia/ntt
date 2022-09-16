@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify that parameters are passed at activation time
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// The actual parameters of a parameterized altstep (see clause 16.2.1) that should
+// be activated as a default, shall be provided in the corresponding activate statement.
+// This means the actual parameters are bound to the default at the time of its activation
+// (and not e.g. at the time of its invocation by the default mechanism).
+
+module Sem_200502_the_activate_operation_002 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	const integer c_defaultParValue := 1;
+
+	altstep a(integer p_par) runs on GeneralComp {
+		[] p.receive(integer:?) {
+			if (p_par == c_defaultParValue) { setverdict(pass); }
+			else { setverdict(fail); }
+		}
+	}
+
+	testcase TC_Sem_200502_the_activate_operation_002() runs on GeneralComp {
+		var integer v_num := c_defaultParValue;
+		activate(a(v_num));
+		v_num := v_num + 1;
+		p.send(integer:5);
+		alt {
+			[] p.receive(integer:0) { // not expected: leads to default evocation
+				setverdict(fail);
+			}
+		}
+	}
+
+	control{
+		execute(TC_Sem_200502_the_activate_operation_002());
+	}
+}

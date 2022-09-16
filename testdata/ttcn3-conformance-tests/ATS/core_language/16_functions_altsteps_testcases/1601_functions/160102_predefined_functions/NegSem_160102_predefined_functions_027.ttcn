@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_160102_predefined_functions_027 {
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_027 () runs on GeneralComp {
+	var bitstring v_i;
+
+ 	v_i:=replace('00000110'B,1,4,'8'H);		//incompatible replacement type
+
+}
+
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_027());
+
+}
+
+}

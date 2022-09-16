@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.2
+ ** @purpose  1:24.1, Ensure overwriting rules for global verdict: none can't overwrite pass.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.1 The Verdict mechanism/Overwriting rules for setverdict
+ **/
+
+
+module Sem_2401_GlobalVerdict_004 {
+	type component GeneralComp {}
+
+	function set_PTC_verdict_pass() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+	function set_PTC_verdict_none() runs on GeneralComp {
+		setverdict(none);
+	}
+
+    testcase TC_Sem_2401_GlobalVerdict_004() runs on GeneralComp system GeneralComp {
+    	var GeneralComp PTC1, PTC2;
+
+    	PTC1 :=  GeneralComp.create;
+    	PTC2 :=  GeneralComp.create;
+    	PTC1.start(set_PTC_verdict_pass());
+    	PTC2.start(set_PTC_verdict_none());
+    	all component.done;
+    	// Verdict none can't overwrite pass
+    }
+
+    control{
+        execute(TC_Sem_2401_GlobalVerdict_004());
+    }
+}

@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases without clause "runs on"
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+/**
+ * a) interface part (optional): In case the "runs on" clause is missing, the MTC created by the test case has no ports, and no component constants and variables;
+ */
+module Syn_1603_testcases_003 {
+
+	type component GeneralComp { }
+
+	// testcase without clause "runs on"
+	testcase TC_Syn_1603_testcases_003 () {
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Syn_1603_testcases_003());
+	}
+
+}

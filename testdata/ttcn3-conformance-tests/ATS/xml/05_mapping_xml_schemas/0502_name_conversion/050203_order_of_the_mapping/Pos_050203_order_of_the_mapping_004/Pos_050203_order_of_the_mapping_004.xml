@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ns="schema:Pos_050203_order_of_the_mapping_004">
+  <f1>
+    <a>1</a>
+  </f1>
+  <f2>
+    <a>2</a>
+  </f2>
+</ns:MyType>

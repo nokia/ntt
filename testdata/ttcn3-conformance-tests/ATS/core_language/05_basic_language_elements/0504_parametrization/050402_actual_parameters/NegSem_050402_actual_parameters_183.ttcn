@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that parameter reuse is not allowed in the mixed notation
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction o
+// If the mixed notation is used, ... the parameters given in assignment notation shall not assign parameters
+// that already have an actual parameter given in list notation.
+
+module NegSem_050402_actual_parameters_183 {
+
+    type component GeneralComp {
+    }
+
+    function f_mixed (out integer p_par1, in integer p_par2 := 2, inout integer p_par3) {
+        p_par1 := 1 + p_par2;
+        if (p_par2 == 2 and p_par3 == 0) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+	}
+
+    testcase TC_NegSem_050402_actual_parameters_183() runs on GeneralComp {
+        var integer v := 0;
+		f_mixed(-, 5, p_par3 := v, p_par2 := 2);
+
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_183());
+	}
+}

@@ -1,0 +1,49 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Ensure that index notation referencing to a set of, which actual value is null shall cause an error.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+/* The following requirements are tested:
+Restriction k. : Using the dot notation and index notation for referencing a field, alternative or element of an address value, which actual value is null shall cause an
+error.
+*/
+
+module NegSem_1102_TemplateVars_004 {
+
+    type integer address;
+    type set of address MySet;
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+    type component GeneralComp {
+	  port loopbackPort messagePort
+    }
+
+
+
+testcase TC_NegSem_1102_TemplateVars_004() runs on GeneralComp {
+
+   var MySet R1:= {[0] := null};
+
+    var template integer v_set := R1[0]; //error
+
+ messagePort.send(R1[0]);
+
+    alt {
+     [] messagePort.receive(v_set) {
+        setverdict(pass,v_set);
+     }
+     [] messagePort.receive {
+        setverdict(fail,v_set);
+     }
+    }
+}
+control{
+    execute(TC_NegSem_1102_TemplateVars_004());
+}
+
+}

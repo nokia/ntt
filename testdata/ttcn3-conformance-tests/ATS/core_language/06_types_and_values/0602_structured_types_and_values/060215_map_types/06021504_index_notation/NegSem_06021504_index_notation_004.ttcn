@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.4, Verify that a partially initialized key used as an index of the right hand side causes an error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction a
+// The index expression used for index notation and index assignment notation shall be
+// completely initialized and compatible with the from type of the map type.
+
+module NegSem_06021504_index_notation_004 {
+	type record R {
+		charstring ip,
+		integer portNum
+	}
+	type map from R to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021504_index_notation_004() runs on C {
+		var TMap1 v_map := { [ { "127.0.01", 80 }] := 1, [{"192.168.0.1", 433}] := 5 };
+		var R v_index := {"192.168.0.100", - };
+		var integer v_val := v_map[v_index];
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_06021504_index_notation_004());
+	}
+}

@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:20.2, verify that a function used in a parameter of an altstep invoked from an alt branch cannot contain inout parameters
+ ** @verdict  pass reject
+***************************************************/
+
+// The following requirement is tested:
+// d) The evaluation of an altstep invoked from an alt branch, if none of the alternatives in the altstep is chosen, shall
+// not have side effects. To avoid side effects the restrictions imposed on the contents of functions called from special
+// places (clause 16.1.4) shall apply to the actual parameters of the invoked altstep.
+
+module NegSem_2002_TheAltStatement_059 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+	function f_test(inout integer p_par) runs on GeneralComp return boolean {
+		p_par := 1;
+		return true;
+	}
+
+    altstep a_rcv(boolean p_par) runs on GeneralComp {
+        [] p.receive(integer:?) {}
+    }
+
+    testcase TC_NegSem_2002_TheAltStatement_059() runs on GeneralComp system GeneralComp {
+		var integer v_int := 0;
+        connect(mtc:p, mtc:p);
+        p.send(1);
+        alt {
+	        [] a_rcv(f_test(v_int));
+            [] any timer.timeout {}
+        }
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_2002_TheAltStatement_059());
+	}
+}

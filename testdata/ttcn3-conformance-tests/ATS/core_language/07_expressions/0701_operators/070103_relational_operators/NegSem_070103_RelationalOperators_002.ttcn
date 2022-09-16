@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that the equals operator on records is evaluated correctly.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_070103_RelationalOperators_002 {
+
+type component GeneralComp {
+}
+
+ type set IntegerSet1 {
+  integer a1 optional,
+  integer a2 optional,
+  integer a3 optional
+ };
+
+ type set IntegerSet2 {
+  integer a4 optional,
+  integer a5 optional,
+  integer a6 optional
+ };
+
+ type set LargeSet {
+  integer a1 optional,
+  integer a2 optional,
+  integer a3 optional,
+  integer a4 optional,
+  integer a5 optional,
+  integer a6 optional
+ };
+
+
+testcase TC_NegSem_070103_RelationalOperators_002() runs on GeneralComp {
+	const IntegerSet1 c_set1 := {a1:=0,a2:=omit,a3:=2};
+	const IntegerSet2 c_set2 := {a4:=3,a5:=5,a6:=omit};
+	const LargeSet   c_large := {a1:=0,a2:=omit,a3:=2,a4:=3,a5:=5,a6:=omit};
+
+	if ( c_set1 & c_set2 == c_large ) {  //It is intentionally forbidden to concatenate record and set values
+		setverdict(pass);
+	}
+
+}
+
+control{
+    execute(TC_NegSem_070103_RelationalOperators_002());
+}
+
+}

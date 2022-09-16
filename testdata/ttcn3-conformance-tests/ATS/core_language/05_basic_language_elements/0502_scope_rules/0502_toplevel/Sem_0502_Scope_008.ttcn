@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 5.2 Scope rules
+ ** @purpose  1:5.2, Ensure that the IUT correctly handles definitions of extended component scope
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0502_Scope_008 {
+
+type component GeneralComp {
+    var integer vc_component := 1;
+}
+
+type component ExtendedComp extends GeneralComp {
+}
+
+
+testcase TC_Sem_0502_Scope_008() runs on ExtendedComp {
+    if (vc_component == 1) {
+	setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_0502_Scope_008());
+}
+
+}

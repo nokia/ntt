@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.3.6, verify that timer type is not compatible with a non-timer type
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For variables, constants and parameters of timer types, the reference to a timer is compatible with any other timer reference.
+
+module NegSem_060307_compatibility_of_timer_types_001 {
+    type port P message {
+		inout integer
+	}
+
+    type component GeneralComp {
+	}
+
+	testcase TC_NegSem_060307_compatibility_of_timer_types_001() runs on GeneralComp {
+		var GeneralComp v_ptc := null;
+        var timer v_timer;
+		v_timer := v_ptc;
+	    setverdict(pass);
+	}
+
+    control {
+         execute(TC_NegSem_060307_compatibility_of_timer_types_001());
+    }
+}

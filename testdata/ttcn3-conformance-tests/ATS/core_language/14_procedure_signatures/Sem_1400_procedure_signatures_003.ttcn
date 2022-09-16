@@ -1,0 +1,72 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:14, Ensure that non blocking signatures can raise exception
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Singature exception is an integer
+
+module Sem_1400_procedure_signatures_003 {
+
+    signature p_Sig1_001(in integer p_par1) noblock
+	exception (integer);  //execption is an integer
+
+    type port remotePort procedure {
+        inout  p_Sig1_001;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+		var integer MyComp;
+    }
+
+
+    function f_Server() runs on GeneralComp {
+	PCO.raise(p_Sig1_001,5); // raise exception
+	}
+
+	function f_client() runs on GeneralComp {
+	timer t_timeout:=30.0;
+	var integer temp;
+		t_timeout.start;
+
+	PCO.catch(p_Sig1_001,integer:5)-> value temp;
+		if (temp==5)
+		{
+		setverdict(pass); // receive exception
+		}
+		else{
+		setverdict(fail);
+		}
+}
+
+	testcase TC_Sem_1400_procedure_signatures_003() runs on GeneralComp system GeneralComp {
+
+		var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+	   var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+
+
+       connect(server:PCO, client:PCO);
+
+
+       server.start(f_Server());
+	   client.start(f_client());
+
+		       alt {
+           [] client.done {
+               server.stop;
+           }
+       }
+
+       alt {
+           [] all component.done {}
+       }
+
+       disconnect(server:PCO);
+   }
+
+    control{
+        execute(TC_Sem_1400_procedure_signatures_003());
+    }
+
+}

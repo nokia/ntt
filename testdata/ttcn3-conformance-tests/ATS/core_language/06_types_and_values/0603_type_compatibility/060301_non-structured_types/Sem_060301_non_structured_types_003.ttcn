@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:6.3.1, Ensure that the IUT correctly handles assignments from compatible type ranges
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// charstring and universal charstring assigments
+module Sem_060301_non_structured_types_003 {
+
+    type charstring ConstrainedChar ("a" .. "z");
+    type universal charstring ConstrainedUChar (char(0, 0, 1, 111) .. char(0, 0, 1, 113));
+
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_060301_non_structured_types_003() runs on GeneralComp {
+
+
+    var charstring v_char := "jkl";
+    var ConstrainedChar v_constrainedChar;
+    var universal charstring v_uChar := char(0, 0, 1, 112);
+    var ConstrainedUChar v_constrainedUChar;
+
+
+
+    v_constrainedChar:=v_char;
+    v_constrainedUChar:=v_uChar;
+
+    if (
+     (v_constrainedChar=="jkl") and
+     (v_constrainedUChar==char(0, 0, 1, 112)))
+	{
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_060301_non_structured_types_003());
+}
+
+}

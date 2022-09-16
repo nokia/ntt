@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1.3, Ensure that the IUT recognizes external functions with @control modifier
+ ** @verdict  pass accept, noexecution
+ ** @configuration  external_functions
+ ***************************************************/
+
+module Sem_160103_external_functions_004 {
+
+    type component GeneralComp {
+    }
+
+    external function @control xf_Sem_160103_external_functions_001() return integer;
+
+    testcase TC_Sem_160103_external_functions_004 () runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_160103_external_functions_004());
+    }
+
+}

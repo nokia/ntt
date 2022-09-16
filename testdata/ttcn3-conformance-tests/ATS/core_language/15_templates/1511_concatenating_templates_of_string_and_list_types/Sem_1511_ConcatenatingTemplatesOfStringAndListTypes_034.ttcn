@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Concatenating charstring templates: the @nocase modifier
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Concatenation of character strings in a pattern definition always takes precedence over concatenation
+// of templates. If it is necessary to concatenate a pattern definition with a following character string
+// according to the template concatenation rules (thus automatically escaping the string), the pattern
+// definition shall be enclosed into parentheses.
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_034 {
+
+type component GeneralComp { }
+
+type record MyRecord {
+	charstring field1,
+	charstring field2
+}
+
+template MyRecord m_receiveTemplate := {
+	field1 := pattern "AB*DE",
+	field2 := (pattern "ABC") & * length(2) & "FG"	// parentheses used to distinguish from pattern concatenation
+}
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_034() runs on GeneralComp {
+	var MyRecord v_value := {
+		field1 := "AB*DE",
+		field2 := "ABCDEFG"
+	}
+
+	if (match(v_value, m_receiveTemplate)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_034());
+}
+
+}

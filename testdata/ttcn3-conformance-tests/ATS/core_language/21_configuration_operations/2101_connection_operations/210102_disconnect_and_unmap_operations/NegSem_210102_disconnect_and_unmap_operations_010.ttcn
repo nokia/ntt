@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, violation of strong typing rules for PTC ports in disconnect operations
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// If the type of the component referenced in a connection operation is known (either
+// when the component reference is a variable or value returned from a function or the
+// type is defined the runs on, mtc or system clause of the calling function), the
+// referenced port declaration shall be present in this component type.
+
+module NegSem_210102_disconnect_and_unmap_operations_010 {
+
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+    type component GeneralCompEx extends GeneralComp {
+        port P p2;
+    }
+
+	testcase TC_NegSem_210102_disconnect_and_unmap_operations_010() runs on GeneralComp system GeneralComp {
+        var GeneralCompEx v_ptc := GeneralCompEx.create;
+        var GeneralComp v_ptcAlias := v_ptc;
+		connect(self:p, v_ptc:p2);
+        disconnect(self:p, v_ptcAlias:p2);// although the actual PTC instance contains the p2 port,
+          // it cannot be referenced as the variable v_ptc is of the GeneralComp type and
+          // not GeneralCompEx
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210102_disconnect_and_unmap_operations_010());
+	}
+}

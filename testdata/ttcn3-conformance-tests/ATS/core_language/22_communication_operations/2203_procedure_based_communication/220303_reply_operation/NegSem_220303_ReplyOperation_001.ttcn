@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, Ensure that reply operations are only used on procedure based ports
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_220303_ReplyOperation_001 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_NegSem_220303_ReplyOperation_001() runs on GeneralComp {
+
+ messagePort.send(2);
+
+    alt {
+     [] messagePort.receive(2) {
+        messagePort.reply(3);		//cannot use reply on a message based port
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_NegSem_220303_ReplyOperation_001());
+}
+
+}

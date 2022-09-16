@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.7, Ensure that the rotate left operator works as expected on bitstrings.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070107_RotateOperators_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070107_RotateOperators_001() runs on GeneralComp {
+	var bitstring v_test := '101001'B;
+	var bitstring v_result := v_test <@ 2;
+
+	if (v_result == '100110'B) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070107_RotateOperators_001());
+}
+
+}

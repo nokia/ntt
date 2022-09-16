@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that out parameters can be used as actual inout parameters of parameterized objects
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal parameters can be used directly as actual parameters for other parametrized objects,
+// e.g. as actual parameters in function invocations or as actual parameters in template instances.
+
+module Sem_050401_top_level_012 {
+
+	type component GeneralComp {
+	}
+
+    function fx(inout integer p_int) {
+        p_int := 3;
+    }
+
+	function f(out integer p_int) {
+        p_int := 0;
+        fx(p_int);
+        setverdict(pass);
+	}
+
+	testcase TC_Sem_050401_top_level_012() runs on GeneralComp {
+		var integer v_int;
+        f(v_int);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_012());
+	}
+}

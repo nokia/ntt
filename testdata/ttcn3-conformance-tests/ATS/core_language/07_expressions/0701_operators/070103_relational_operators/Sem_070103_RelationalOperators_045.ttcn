@@ -1,0 +1,30 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that NaN special float is evaulated correctly in a relation.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070103_RelationalOperators_045 {
+
+type component GeneralComp {
+}
+
+
+
+testcase TC_Sem_070103_RelationalOperators_045() runs on GeneralComp {
+
+    var float My_val := 1.0;
+
+	if (My_val < not_a_number) {
+		setverdict(pass, My_val);
+	} else {
+		setverdict(fail, My_val);
+	}
+}
+
+control{
+    execute(TC_Sem_070103_RelationalOperators_045());
+}
+
+}

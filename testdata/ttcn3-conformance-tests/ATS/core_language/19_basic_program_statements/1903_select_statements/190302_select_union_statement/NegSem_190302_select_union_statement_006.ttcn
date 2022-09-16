@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that it is possible to use a select union statement with several branches
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// c) No two cases in a select union statement shall have the same caseIdentifier or TypeIdentifier.
+module NegSem_190302_select_union_statement_006 {
+
+    type component GeneralComp {
+	}
+
+    testcase TC_NegSem_190302_select_union_statement_006() runs on GeneralComp {
+        var anytype v_any;
+        v_any.integer := 2;
+        v_any.charstring := "abc";
+        v_any.float := 1.2;
+
+        select union (v_any) {
+            case (charstring) {
+                if(match(v_any.charstring,"abc"))
+                {setverdict(pass, v_any.charstring);}
+            } case (integer) {
+                if(match(v_any.integer,2))
+                {setverdict(pass, v_any.integer);}
+            } case (charstring) {    // error
+                  if(match(v_any.charstring,"abc"))
+                {setverdict(fail, v_any.charstring);}
+            }
+               case else {
+                setverdict(fail);
+            }
+        }
+	}
+
+	control {
+		execute(TC_NegSem_190302_select_union_statement_006());
+	}
+}

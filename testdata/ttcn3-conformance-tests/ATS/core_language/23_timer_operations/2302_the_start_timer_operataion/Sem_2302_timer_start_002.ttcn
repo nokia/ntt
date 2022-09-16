@@ -1,0 +1,53 @@
+/***************************************************
+ ** @author   STF 433 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:23, Ensure timer can be restarted
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/timer can be restarted by repeated start operation
+
+
+module Sem_2302_timer_start_002 {
+    type component TComp{
+    }
+
+    testcase TC_Sem_2302_timer_start_002() runs on TComp{
+        timer t_short := 0.5, t_target := 1.0, t_long := 1.0;
+
+        t_short.start;
+        t_target.start;
+        t_long.start;
+
+        alt {
+            []t_short.timeout {
+                setverdict(pass);
+                t_target.start; // restart timer
+            }
+            []t_target.timeout {
+                setverdict(fail);
+                stop;
+            }
+            []t_long.timeout {
+                setverdict(fail);
+                stop;
+            }
+        }
+        alt {
+            []t_long.timeout {
+                setverdict(pass);
+            }
+            []t_target.timeout {
+                // Expected that t_target timeouts in 1.5 seconds since start:
+                // 0.5 sec. elapsed by t_short and 1.0 sec. by restarted timer
+                setverdict(fail);
+                stop;
+            }
+        }
+    }
+    control{
+
+            execute(TC_Sem_2302_timer_start_002())
+
+
+    }
+}

@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, explicit numbering of enumerated items
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For each enumerated value without an assigned integer value, the system
+// successively associates an integer number in the textual order of the
+// enumerated values, starting at the left-hand side, beginning with zero, by
+// step 1 and skipping any number occupied by any of the enumerated values with
+// a manually assigned value. These values are only used by the system to allow
+// the use of relational operators. The user shall not directly use associated
+// integer values but can access them and convert integer values into enumerated
+// values by using the predefined functions enum2int and int2enum (see clauses
+// 16.1.2, C.1.29 C.1.30 and C.1.4 C.1.4).
+
+module Sem_060204_enumerated_type_and_values_003 {
+
+    type component GeneralComp {
+	}
+
+    type enumerated EDays {
+        Monday(-1), Tuesday(4), Wednesday(0), Thursday(6), Friday(20)
+    };
+
+    testcase TC_Sem_060204_enumerated_type_and_values_003() runs on GeneralComp {
+        var EDays v_day0 := Monday, v_day2 := Wednesday, v_day4 := Friday;
+
+		if (enum2int(v_day0) == -1 and enum2int(v_day2) == 0 and enum2int(v_day4) == 20) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060204_enumerated_type_and_values_003());
+	}
+}

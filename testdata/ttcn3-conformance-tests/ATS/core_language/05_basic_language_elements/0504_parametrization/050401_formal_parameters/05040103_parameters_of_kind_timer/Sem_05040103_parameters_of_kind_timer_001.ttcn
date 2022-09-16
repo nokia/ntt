@@ -1,0 +1,98 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.3, Ensure that the IUT correctly handles parametrization through the use of timer parameters.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_05040103_parameters_of_kind_timer_001 {
+
+type enumerated MyEnumeratedType {e_black, e_white}
+type integer address;
+
+type record MyRecord {
+ integer field1,
+ boolean field2,
+ address field3,
+ MyEnumeratedType field4,
+ integer field5
+}
+
+type port TestPort message {
+ inout MyRecord
+}
+
+type component GeneralComp {
+  port TestPort generalPort;
+  port TestPort otherport;
+}
+function f_parametrizationCheck (
+  MyRecord ExpectedMatch,
+  timer p_timer,
+  integer p_integer := 0,
+  boolean p_boolean := true,
+  address p_address := null,
+  MyEnumeratedType p_enumerated := e_black,
+  template integer p_integerTemplate := ?
+ ) runs on GeneralComp {
+  var template MyRecord ReceivedRecordTemplate := {p_integer, p_boolean, p_address, p_enumerated, p_integerTemplate};
+
+    if ( match(ExpectedMatch, ReceivedRecordTemplate) and (p_timer.running) ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+  }
+
+testcase TC_Sem_05040103_parameters_of_kind_timer_001 (
+  MyRecord ExpectedMatch,
+  integer p_integer := 0,
+  boolean p_boolean := true,
+  address p_address := null,
+  MyEnumeratedType p_enumerated := e_black,
+  template integer p_integerTemplate := ?
+ ) runs on GeneralComp {
+
+ timer t_check;
+ t_check.start(5.0);
+ f_parametrizationCheck(ExpectedMatch, t_check, p_integer, p_boolean, p_address, p_enumerated, p_integerTemplate);
+
+ t_check.stop;
+
+}
+
+
+control{
+
+ var MyRecord DefaultValues  := {
+  field1 := 0,
+  field2 := true,
+  field3 := null,
+  field4 := e_black,
+  field5 := 1			//any number can be used here to correspond with ? matching
+ }
+
+ var MyRecord ModifiedValues  := {
+  field1 := 1,
+  field2 := false,
+  field3 := 1,
+  field4 := e_white,
+  field5 := 1
+ }
+
+ var MyRecord PartlyModifiedValues  := {
+  field1 := 0,
+  field2 := false,
+  field3 := null,
+  field4 := e_white,
+  field5 := 1
+ }
+
+    execute(TC_Sem_05040103_parameters_of_kind_timer_001(DefaultValues));
+    execute(TC_Sem_05040103_parameters_of_kind_timer_001(DefaultValues,-,-,-,-,-));
+    execute(TC_Sem_05040103_parameters_of_kind_timer_001(ModifiedValues,1,false,1,e_white,1));
+    execute(TC_Sem_05040103_parameters_of_kind_timer_001(PartlyModifiedValues,-,false,-,e_white,-));
+}
+
+}

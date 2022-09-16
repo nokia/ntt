@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Verify that it is possible to define procedute-based port types
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_060209_CommunicationPortTypes_003 {
+
+    signature S1();
+	signature S2(in integer p_par1);
+	signature S3(in charstring p_par1);
+	signature S4(in integer p_par1) return bitstring;
+	signature S5(in charstring p_par1, out charstring p_par2) return boolean;
+
+    // Procedure-based port which allows to accept calls to procedures S1, S2 and S4, call
+	// procedure S3. S5 calls can be both accepted or dispatched.
+    type port MyMessagePortTypeOne procedure {
+        in S1, S2;
+        out S3;
+		in S4;
+        inout S5;
+    }
+
+}

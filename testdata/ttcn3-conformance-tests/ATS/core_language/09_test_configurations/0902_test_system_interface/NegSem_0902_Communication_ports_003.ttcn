@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the two system interf. port cannot connect
+ ** @verdict  pass reject
+ ***************************************************/
+
+//Two system interface ports are not allowed to connect
+module NegSem_0902_Communication_ports_003{
+
+    type port loopbackPort message {
+	  inout integer
+		}
+type component MyTestSystemInterface
+	{
+ 	port loopbackPort messagePortA,messagePortB
+	}
+// MyTestSystemInterface is the test system interface
+
+testcase TC_NegSem_0902_Communication_ports_003() runs on MyTestSystemInterface {
+// establishing the port connections
+map(system:messagePortA, system:messagePortB);  // not allowed
+
+setverdict(fail);
+
+}
+control{
+    execute(TC_NegSem_0902_Communication_ports_003());
+}
+}

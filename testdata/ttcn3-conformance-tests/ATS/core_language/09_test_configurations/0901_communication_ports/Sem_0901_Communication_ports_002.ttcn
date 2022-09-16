@@ -1,0 +1,79 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the the IUT receives the message sent by mycompA
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ** @configuration  port:broadcast
+ ***************************************************/
+
+// Two component mycompA and B message exchange
+module Sem_0901_Communication_ports_002{
+
+	type port myport message {
+	  inout integer
+	}
+
+
+type component Mysystem
+	{
+	timer t_rec,t_rec2;
+ 	port myport messagePort;
+	}
+function fsend() runs on Mysystem {
+messagePort.send(2);
+	t_rec2.start(20.0);
+	alt {
+     [] messagePort.receive(3) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    		[] t_rec2.timeout {
+			setverdict( inconc );
+		}
+		}
+t_rec2.stop;
+}
+function frec() runs on Mysystem {
+ t_rec.start( 20.0 );
+	alt {
+		[]  messagePort.receive(2) {
+			messagePort.send(3);
+			setverdict( pass );
+		}
+		[] messagePort.receive {
+			setverdict( fail );
+		}
+		[] t_rec.timeout {
+			setverdict( inconc );
+		}
+		}
+t_rec.stop;
+}
+
+testcase TC_Sem_0901_Communication_ports_002() runs on Mysystem system Mysystem {
+   var Mysystem MyCompA;
+   var Mysystem MyCompB;
+
+MyCompA:=Mysystem.create;
+MyCompB:=Mysystem.create;
+connect(MyCompA:messagePort,MyCompB:messagePort);
+connect(MyCompB:messagePort,MyCompA:messagePort);
+
+
+MyCompB.start(frec());
+MyCompA.start(fsend());
+
+//MyCompB.stop;
+//MyCompA.stop;
+
+   MyCompB.done;
+   MyCompA.done;
+
+}
+control{
+    execute(TC_Sem_0901_Communication_ports_002());
+}
+}
+

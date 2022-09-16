@@ -1,0 +1,59 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:15.8, Ensure that decoded content match is not allowed for omit template restriction
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+
+module NegSem_1508_TemplateRestrictions_051 {
+
+	type record MessageType {
+	  hexstring payload
+	}
+
+	type record Mymessage {
+	  integer field1,
+	  bitstring field2 optional
+    }
+
+
+    type port loopbackPort message{inout MessageType};
+
+
+    type component GeneralComp {
+	      port loopbackPort messagePort
+    }
+
+testcase TC_NegSem_1508_TemplateRestrictions_051() runs on GeneralComp {
+    var bitstring v_enc;
+    var Mymessage v_testMessage;
+    var MessageType Message;
+    template (value) MessageType mw_matchingTemplate:= {
+        payload :=  decmatch Mymessage: {field1:= 10, field2 :=  '1001'B}        //error: value restriction not allowed
+    }
+
+    v_testMessage:=  {
+        field1 := 10,
+        field2 := '1001'B
+     }
+
+      Message.payload := bit2hex(encvalue(v_testMessage));		//encode message to payload
+
+  messagePort.send(Message);	//send message
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail,mw_matchingTemplate);
+     }
+    }
+
+}
+
+control{
+    execute(TC_NegSem_1508_TemplateRestrictions_051());
+}
+
+}

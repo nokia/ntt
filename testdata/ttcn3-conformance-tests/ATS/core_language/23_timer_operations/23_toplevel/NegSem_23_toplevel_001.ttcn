@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure timer operations are not allowed outside of module control, test case, function, altstep
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/Usage of timers is allowed in test cases, functions, altsteps, module control/Timer read is not allowed in component definitions
+module NegSem_23_toplevel_001
+{
+    type component TComp
+    {
+        timer t_timer1 := 1.0;
+        timer t_timer2 := t_timer1.read;
+    }
+
+    testcase TC_NegSem_23_toplevel_001() runs on TComp
+    {
+        log("Value of t_timer2.read before starting it", t_timer2.read);
+    }
+
+    control
+    {
+        execute(TC_NegSem_23_toplevel_001())
+    }
+}

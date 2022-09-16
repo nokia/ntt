@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that assignment notation containing all parameters in declaration order is accepted
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For each formal parameter without default value, there shall be an actual parameter.
+
+module Sem_050402_actual_parameters_180 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (integer p_val1, charstring p_val2, integer p_val3) {
+        if ( match(p_val1, 1) and match(p_val2, "test") and match(p_val3, 3)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_180() runs on GeneralComp {
+        f_test(p_val1 := 1, p_val2 := "test", p_val3 := 3);
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_180());
+	}
+}

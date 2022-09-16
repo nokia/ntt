@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// C.2.2 In addition to the general error causes in clause 16.1.2, error causes are:
+// 	the template passed to the inpar parameter is not of a record or set type.
+module NegSem_160102_predefined_functions_061 {
+
+    type component GeneralComp {
+	}
+
+
+    testcase TC_NegSem_160102_predefined_functions_061() runs on GeneralComp {
+	var integer v_i;
+    var anytype anyType;
+    anyType.charstring := "abc";
+    template anytype MyAnytype := anyType;
+
+ 	v_i:=sizeof(MyAnytype);		// error: template is an anytype
+ 	setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_160102_predefined_functions_061());
+	}
+}

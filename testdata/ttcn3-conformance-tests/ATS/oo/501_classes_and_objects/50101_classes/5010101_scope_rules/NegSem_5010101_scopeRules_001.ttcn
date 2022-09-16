@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.1, Ensure that reusing identifiers of members of the component type specified in the runs on clause of the class for members and inside methods for formal parameters and local declarations is not allowed
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010101_scopeRules_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+        const integer c_i := 5;
+    }
+
+    public type class MyClass runs on GeneralComp {
+        const integer c_i := 8; //not allowed
+
+        function DoNothing(integer c_i := 11) { //not allowed
+            log("Not allowed this type of reusing IDs.");
+        }
+    }
+
+    testcase TC_NegSem_5010101_scopeRules_001() runs on GeneralComp {
+        var MyClass v_a := MyClass.create();
+        if (v_a.c_i != c_i) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010101_scopeRules_001());
+    }
+}

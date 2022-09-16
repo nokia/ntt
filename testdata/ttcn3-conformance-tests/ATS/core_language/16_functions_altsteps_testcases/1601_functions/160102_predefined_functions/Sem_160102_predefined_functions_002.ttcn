@@ -1,0 +1,78 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_160102_predefined_functions_002 {
+    type record of integer IntegerList;
+
+    type record MyRecord {
+        boolean field1,
+        record of integer field2,
+        integer field3 optional
+    }
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_002 () runs on GeneralComp {
+        template MyRecord template1 := {
+            field1 := true,
+            field2 := { permutation(2, 3), ? },
+            field3 := omit
+        }
+        template MyRecord template2 := {
+            field1 := true,
+            field2 := {permutation(2, 3)},
+            field3 := omit
+        }
+        template IntegerList template3 := { 1, 2, 3, * } length(1..3) ;
+
+        if (not (lengthof(charstring:"test") == 4)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(universal charstring:"test") == 4)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(bitstring:'010'B) == 3)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(hexstring:'55'H) == 2)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(octetstring:'55'O) == 1)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(charstring:pattern "t??t") == 4)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(bitstring:'1??1'B) == 4)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(hexstring:'1*1'H length(8)) == 8)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(octetstring:'00?FF'O length(3)) == 3)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(octetstring:'AB?'O) == 2)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(template1.field2) == 3)) {
+            setverdict(fail);
+        }
+        if (not (sizeof(template2) == 2)) {
+            setverdict(fail);
+        }
+        if (not (lengthof(template3) == 3)) {
+            setverdict(fail);
+        }
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_160102_predefined_functions_002());
+    }
+}

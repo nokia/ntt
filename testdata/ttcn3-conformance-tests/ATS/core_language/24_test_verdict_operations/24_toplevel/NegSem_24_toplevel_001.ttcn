@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.2
+ ** @purpose  1:24, Ensure getverdict is not allowed in constant initialization in control part
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions.
+ **/
+
+module NegSem_24_toplevel_001 {
+    // This should be syntactically correct since BNF does not restrict initialization expression
+    const verdicttype c_verdict := getverdict;
+
+    type component GeneralComp  {}
+
+    testcase TC_NegSem_24_toplevel_001 (verdicttype v_verdict) runs on GeneralComp{
+        setverdict(pass)
+    }
+
+    control {
+        execute(TC_NegSem_24_toplevel_001(c_verdict));
+    }
+}

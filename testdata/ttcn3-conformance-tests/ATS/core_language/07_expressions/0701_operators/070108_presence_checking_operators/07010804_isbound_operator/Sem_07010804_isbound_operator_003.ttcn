@@ -1,0 +1,56 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:7.1.8.4, Ensure that the IUT recognizes isbound operator and correctly evaluates it
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_07010804_isbound_operator_003 {
+
+	type component GeneralComp {
+	}
+
+    type record MyRec {
+		integer f1,
+		MyRec f2 optional
+	}
+
+
+	testcase TC_Sem_07010804_isbound_operator_003() runs on GeneralComp {
+        var MyRec v_myRec;
+        var boolean checkResult := isbound(v_myRec); // yields false
+        if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as v_myRec is uninitialized");
+		}
+
+        v_myRec.f2 := omit;
+        checkResult := isbound(v_myRec);    // yields true as v_myRec is partially initialized,
+                                            // field f2 is set to omit
+        if(checkResult) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield true as v_myRec is partially initialized, field f2 is set to omit");
+		}
+
+        v_myRec  := { f1 := 5, f2 := omit }
+        checkResult := isbound(v_myRec);        // yields true as v_myRec is completely initialized
+        if(checkResult) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield true as v_myRec is completely initialized");
+		}
+
+        checkResult := isbound(v_myRec.f2.f1);  // yields false as v_myRec.f2.f1 is inaccessible
+        if(checkResult == false) {
+			setverdict(pass);
+		} else {
+			setverdict(fail, "isbound should yield false as v_myRec.f2.f1 is inaccessible");
+		}
+
+	}
+
+	control {
+		execute(TC_Sem_07010804_isbound_operator_003());
+	}
+}

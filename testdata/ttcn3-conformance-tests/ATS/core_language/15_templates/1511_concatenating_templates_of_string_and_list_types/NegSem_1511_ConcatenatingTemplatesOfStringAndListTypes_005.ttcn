@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that the inline template definitions are correctly concatenated.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_005 {
+
+type component GeneralComp { }
+
+type record MyRecord {
+	charstring field1,
+	charstring field2
+}
+
+template MyRecord m_receiveTemplate := {
+	field1 := pattern "AB*DE",
+	field2 := pattern "ABCC" & * length(2) & "EF"	//cannot use length(n) attribute on charstring pattern
+}
+
+testcase TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_005() runs on GeneralComp {
+	var MyRecord v_value := {
+		field1 := "AB*DE",
+		field2 := "ABCCDE*EF"
+	}
+
+	if (match(v_value, m_receiveTemplate)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_1511_ConcatenatingTemplatesOfStringAndListTypes_005());
+}
+
+}

@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.3, Verify that functions with timer parameters cannot be used in component.start operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal timer parameters, with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040103_parameters_of_kind_timer_001 {
+
+    type component C {
+    }
+
+    function f_test(inout timer p_tmr) runs on C {
+        p_tmr.timeout;
+        setverdict(pass);
+    }
+
+    testcase TC_NegSem_05040103_parameters_of_kind_timer_001() runs on C system C {
+    	timer t_tmr := 0.1;
+        var C v_ptc := C.create;
+        t_tmr.start;
+        v_ptc.start(f_test(t_tmr));
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_05040103_parameters_of_kind_timer_001());
+    }
+}

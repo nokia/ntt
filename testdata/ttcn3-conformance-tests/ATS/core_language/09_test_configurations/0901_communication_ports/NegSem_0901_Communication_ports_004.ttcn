@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that it is not possible to map a connected port
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*NOTE: see Figure 7(b): GeneralComp port p1 is mapped to a TSI port P1.
+ * Therefore mapping GeneralComp port p2 with TSI port P1 gives an error.
+ * */
+
+
+
+module NegSem_0901_Communication_ports_004 {
+
+    type port MyPort message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port MyPort p1;
+        port MyPort p2;
+    }
+
+        type component SystemComp
+    {
+        port MyPort p1;
+    }
+
+    testcase TC_NegSem_0901_Communication_ports_004() runs on GeneralComp system SystemComp {
+
+//create a test component
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p1, v_ptc:p1);
+		map(self:p1, system:p1); // error: v_ptc.p1 is already mapped to SystemComp.p1
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0901_Communication_ports_004());
+    }
+}
+

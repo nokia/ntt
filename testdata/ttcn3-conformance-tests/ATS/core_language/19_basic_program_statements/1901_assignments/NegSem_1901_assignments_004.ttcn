@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.1, Ensure that omit assignment to a record non-optional value is not allowed
+ ** @verdict  pass  reject
+ ***************************************************/
+
+//Restriction c)
+/*If the left-hand side of the assignment is a reference to a non-optional value object (i.e. a value definition, a mandatory field, a record/set of/array element, a union alternative, a value parameter),
+ * the right-hand side shall not be a reference to an omitted field or the omit symbol.*/
+
+module NegSem_1901_assignments_004{
+
+type component GeneralComp {
+}
+
+ type record Myrec{
+     integer field1,
+     float   field2
+ };
+
+testcase TC_NegSem_1901_assignments_004 () runs on GeneralComp system GeneralComp {
+
+ var Myrec v_i;
+
+   v_i:={11,omit};	//assignment not allowed
+
+    setverdict(pass,v_i);
+
+}
+
+
+control{
+
+    execute(TC_NegSem_1901_assignments_004());
+
+}
+
+}

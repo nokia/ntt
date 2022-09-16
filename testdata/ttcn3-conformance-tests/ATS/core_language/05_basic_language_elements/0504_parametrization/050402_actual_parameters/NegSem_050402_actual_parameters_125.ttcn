@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that error is generated when lazy variable is passed to inout formal parameter
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters passed to out and inout parameters shall not be references to
+// lazy or fuzzy variables.
+
+module NegSem_050402_actual_parameters_125 {
+
+    type component GeneralComp {
+	}
+
+    function f_test (inout integer p_val) {
+        p_val := 10;
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_125() runs on GeneralComp {
+        var @lazy integer v_val := 1;
+        f_test(v_val);
+        if (v_val == 10) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_125());
+	}
+}

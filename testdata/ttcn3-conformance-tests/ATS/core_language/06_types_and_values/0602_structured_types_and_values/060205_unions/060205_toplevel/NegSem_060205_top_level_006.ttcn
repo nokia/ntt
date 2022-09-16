@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, @default notation used for union value definition
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// incorrect type is given as default value
+
+module NegSem_060205_top_level_006 {
+    type component GeneralComp {
+	}
+
+      type union U {
+		@default integer option1,
+		charstring option2
+	}
+
+    testcase TC_NegSem_060205_top_level_006() runs on GeneralComp {
+		var U v_choice := "abc";	//	error default type should be integer
+        if (ischosen(v_choice.option1)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_060205_top_level_006());
+	}
+}

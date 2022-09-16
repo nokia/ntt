@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.2.0, Verify that attributes from type reference override attributes from higher scopes
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// Attributes inherited from a type reference will override general attributes from a higher scope unit
+// containing the type reference.
+
+module Sem_27010200_general_003 {
+
+    type component GeneralComp {
+	}
+
+	type record MyRecordA {
+	} with { encode "RuleA" }
+
+	type record MyRecordB
+	{
+		MyRecordA field
+	} with { encode "RuleB" }
+
+	type record of universal charstring RoUC;
+
+	testcase TC_Sem_27010200_general_003 () runs on GeneralComp {
+		var RoUC v_enc := MyRecordB.field.encode;
+		if(v_enc[0] == "RuleA") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+
+	control{
+		execute(TC_Sem_27010200_general_003());
+	}
+
+} with { encode "GeneralRule" }

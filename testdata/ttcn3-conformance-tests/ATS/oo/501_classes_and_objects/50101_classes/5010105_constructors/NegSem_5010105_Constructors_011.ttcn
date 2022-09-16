@@ -1,0 +1,25 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that the initializer of a field shall not use a field that does not have an initializer
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5011105_Constructors_011 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer v_u;
+        var integer v_i := v_u; //not allowed, v_u is uninitialized
+    }
+
+    testcase TC_NegSem_5010105_Constructors_011() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create(1);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_011());
+    }
+}

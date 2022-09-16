@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050104_attributes_of_the_xsd_schema_element_004"
+   attributeFormDefault="qualified">
+	<xs:element name="MyType">
+		<xs:complexType>			
+			<xs:sequence>				
+				<xs:element name="item" type="xs:string" />
+			</xs:sequence>
+			<xs:attribute name="attr" type="xs:string" />
+		</xs:complexType>
+	</xs:element>  
+</xs:schema>

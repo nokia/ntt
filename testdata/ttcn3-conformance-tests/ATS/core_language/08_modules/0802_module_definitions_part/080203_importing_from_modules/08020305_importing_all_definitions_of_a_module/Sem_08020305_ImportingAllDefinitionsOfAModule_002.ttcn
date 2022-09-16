@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.5, Ensure that the constant is be visible after multiple imports.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_08020305_ImportingAllDefinitionsOfAModule_002 {
+
+import from Sem_08020305_ImportingAllDefinitionsOfAModule_002_import all except {
+	const all;
+};
+import from Sem_08020305_ImportingAllDefinitionsOfAModule_002_import all; // second import overrides the first
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020305_ImportingAllDefinitionsOfAModule_002() runs on GeneralComp {
+	if (c_myconst == 43532) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_08020305_ImportingAllDefinitionsOfAModule_002());
+}
+}
+
+module Sem_08020305_ImportingAllDefinitionsOfAModule_002_import {
+	const integer c_myconst := 43532;
+}

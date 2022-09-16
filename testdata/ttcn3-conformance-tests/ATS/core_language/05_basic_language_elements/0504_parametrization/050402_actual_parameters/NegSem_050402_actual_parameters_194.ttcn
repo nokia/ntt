@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that the done operation cannot be used during evaluation of a deterministic fuzzy parameter
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters passed to fuzzy or lazy formal parameters shall fulfill the restrictions imposed on content
+// of functions used in special places given in 16.1.4.
+// The following operations shall not be used:
+// a) All component operations, i.e. create, start (component), stop (component), kill, running (component),
+// alive, done and killed (see notes 1, 3, 4 and 6).
+
+module NegSem_050402_actual_parameters_194 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+    }
+
+	function f_test(GeneralComp p_ptc) return template integer {
+		p_ptc.done;
+        return ?;
+	}
+
+    function f_param(template @fuzzy @deterministic integer p_param) runs on GeneralComp  {
+        log(p_param); // causes validation
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_194() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        f_param(f_test(v_ptc));
+		v_ptc.start(f_ptcBehaviour());
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_194());
+	}
+}

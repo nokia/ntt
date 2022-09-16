@@ -1,0 +1,58 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.2, Ensure that disconnect operation with no argument works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// The usage of a disconnect ... operation without any parameters is a shorthand
+// form for using the operation with the parameter self:all port. It disconnects
+// ... all ports of the component that calls the operation.
+
+module Sem_210102_disconnect_and_unmap_operations_004{
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1, p2;
+    }
+
+	function checkSecondConnected() runs on GeneralComp
+	{
+		if(not p1.checkstate("Connected") and p2.checkstate("Connected")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+    testcase TC_Sem_210102_disconnect_and_unmap_operations_004() runs on GeneralComp system GeneralComp {
+        // components are created alive so that their connections are not destroyed when behaviour stops
+		var GeneralComp v_ptc1 := GeneralComp.create alive,
+			v_ptc2 := GeneralComp.create alive;
+
+		connect(self:p1, v_ptc1:p1);
+		connect(self:p2, v_ptc2:p1);
+		connect(v_ptc1:p2, v_ptc2:p2);
+
+		disconnect;
+
+		// verity that ports are really disconnected
+        v_ptc1.start(checkSecondConnected());
+        v_ptc2.start(checkSecondConnected());
+		if(not p1.checkstate("Connected") and not p2.checkstate("Connected")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+		all component.done;
+    }
+    control{
+        execute(TC_Sem_210102_disconnect_and_unmap_operations_004());
+    }
+}
+

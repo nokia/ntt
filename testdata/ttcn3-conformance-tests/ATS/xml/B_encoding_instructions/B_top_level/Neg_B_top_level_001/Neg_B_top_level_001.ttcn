@@ -1,0 +1,68 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  9:7.5.1, Verify that XSD types cannot be encoded
+ ** @verdict  pass reject
+***************************************************/
+// The following requirements are tested:
+// If templates or values of types with the "XML" encode attribute (or any of its synonyms
+// – i.e. TTCN-3 types that are a result of conversion from XSD) are used as an argument of
+// a communication operation, a variant attribute containing the "element" encoding instruction
+// shall be assigned to it. Using a value or template of a type that doesn’t contain this
+// encoding instruction shall cause an error.
+
+module Neg_B_top_level_001 {
+
+   import from schema_Neg_B_top_level_001 "XSD" all;
+
+   template Elem_simple_restr m_msg := 1;
+
+
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    testcase TC_Neg_B_top_level_001() runs on C system C {
+        var Raw v_rcv;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            []    p.check(receive(Raw:?) -> value v_rcv) {
+                log("XML message ", v_rcv);
+                alt {
+                    // match decoded value to pass test
+                    [] p.receive(m_msg) {
+                        setverdict(pass, "Decoded value matches encoded template");
+                    }
+                    [] p.receive {
+                        setverdict(fail, "XML decoding failure");
+                    }
+                }
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Neg_B_top_level_001(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+
+}

@@ -1,0 +1,39 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.9, Ensure that a public member function can only be overridden by another public member function.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010110_Visibility_003 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        var integer v_i;
+
+        public function f_add(integer inint) return integer {
+            return this.v_i + inint;
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+            public function f_add(integer inint) return integer {
+            return this.v_i + 1;
+        }
+    }
+
+    testcase TC_Sem_5010110_Visibility_003() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create(1);
+        if (v_a.f_add(2) == 2) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010110_Visibility_003());
+    }
+}

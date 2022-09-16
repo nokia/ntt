@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.4, Verify that templates cannot contain port parameters
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Only function and altstep definitions may have formal port parameters, - with the exception of functions or
+// altsteps started as test component behaviour (see clause 21.3.2).
+
+module NegSem_05040104_parameters_of_kind_port_006 {
+
+    type port P message {
+        inout integer
+    }
+    type component C {
+        port P p;
+    }
+
+    template boolean m_msg(P p_par) := p_par.checkstate("Started");
+
+    testcase TC_NegSem_05040104_parameters_of_kind_port_006() runs on C system C {
+		log(m_msg(p));
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040104_parameters_of_kind_port_006());
+    }
+}

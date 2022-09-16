@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070107_type_003"
+  xmlns:ns="schema:Pos_070107_type_003">
+  <element name="MyType" type="integer"/>
+</schema>

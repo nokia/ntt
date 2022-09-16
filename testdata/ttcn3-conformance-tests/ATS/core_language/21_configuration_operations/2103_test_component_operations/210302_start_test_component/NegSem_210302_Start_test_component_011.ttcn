@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.2, passing structured value containing ports to started component function
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// All formal parameter types of the function shall neither be of port or default type
+// or should contain a direct or indirect element or field of port or default type.
+
+module NegSem_210302_Start_test_component_011 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type P PortArray[2];
+
+	type component GeneralComp {
+        port P p[2];
+	}
+
+    function f_behaviour(PortArray p_ports) runs on GeneralComp {
+        p_ports[0].receive(integer:?);
+        setverdict(pass);
+    }
+
+	testcase TC_NegSem_210302_Start_test_component_011() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p[0], self:p[0]);
+		p[0].send(1);
+        v_ptc.start(f_behaviour(p));
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210302_Start_test_component_011());
+	}
+}

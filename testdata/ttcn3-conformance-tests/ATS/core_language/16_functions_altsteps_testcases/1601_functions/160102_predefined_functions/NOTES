@@ -1,0 +1,3 @@
+- NOTE: The proper functioning of encvalue and decvalue functions cannot be tested.
+- TODO: split these tests in one per function (since if one function fails the entire test 
+       fails and we could not say that the other functions work properly)

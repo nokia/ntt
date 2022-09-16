@@ -1,0 +1,24 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Ensure that import of specific types is accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_08020301_GeneralFormatOfImport_002 {
+	import from Syn_08020301_GeneralFormatOfImport_002_import {
+		type all;
+		template all;
+		const c_myconst;
+		testcase all;
+		altstep all;
+		function all;
+		signature all;
+		modulepar all;
+	};
+
+}
+
+module Syn_08020301_GeneralFormatOfImport_002_import {
+	const integer c_myconst := 1;
+}

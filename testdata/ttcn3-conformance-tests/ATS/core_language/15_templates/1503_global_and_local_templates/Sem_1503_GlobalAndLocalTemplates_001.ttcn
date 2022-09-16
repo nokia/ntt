@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that a template values can be accessed with the dot notation as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1503_GlobalAndLocalTemplates_001 {
+
+type port MyMessagePortType message {
+	inout MyMessageType
+}
+
+type component GeneralComp {
+	port MyMessagePortType pt_myPort;
+}
+
+type record MyMessageType {
+	integer field1,
+	charstring field2,
+	boolean field3
+}
+
+template MyMessageType m_myTemplate := {
+	field1 := 2,
+	field2 := "foobar",
+	field3 := true
+}
+
+testcase TC_Sem_1503_GlobalAndLocalTemplates_001() runs on GeneralComp {
+	if (match(2,m_myTemplate.field1) and match("foobar", m_myTemplate.field2) and match(true, m_myTemplate.field3)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1503_GlobalAndLocalTemplates_001());
+}
+}

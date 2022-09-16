@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.1.1, Access octetstring elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010101_AccessStringElements_006 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010101_AccessStringElements_006() runs on GeneralComp {
+        var octetstring v_b := ''O;
+        v_b[0] := '10'O;
+        v_b[1] := '01'O;
+    	if (v_b == '1001'O){
+    		setverdict(pass);
+    	}
+    	else {
+    		setverdict(fail);
+    	}
+    }
+
+    control{
+        execute(TC_Sem_06010101_AccessStringElements_006());
+    }
+}

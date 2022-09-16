@@ -1,0 +1,56 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.2, verify that the component.running operation cannot be used in parameters of altsteps invoked from an alt branch
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction b)
+// The evaluation of formal parameters' default values and initialization of local definitions by calling value returning
+// functions may have side effects. To avoid side effects that cause an inconsistency between the actual snapshot and the
+// state of the component, and to prevent different results of subsequent evaluations on an unchanged snapshot,
+// restrictions given in clause 16.1.4 shall apply to the formal parameters' default values and the initialization of local
+// definitions.
+
+module NegSem_1602_toplevel_012 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+		var GeneralComp v_ptc;
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        timer t_tmr := 10.0;
+		t_tmr.start;
+		t_tmr.timeout;
+    }
+
+	function f_test(GeneralComp p_ptc) return boolean {
+		if (p_ptc.running) { return true; }
+        else { return false; }
+	}
+
+    altstep a_rcv(boolean p_par := f_test(v_ptc)) runs on GeneralComp {
+        [] p.receive(integer:?) {}
+    }
+
+    testcase TC_NegSem_1602_toplevel_012() runs on GeneralComp system GeneralComp {
+        v_ptc := GeneralComp.create;
+		v_ptc.start(f_ptcBehaviour());
+        connect(mtc:p, mtc:p);
+        p.send(1);
+        alt {
+	        [] a_rcv();
+            [] any timer.timeout {}
+        }
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_1602_toplevel_012());
+	}
+}

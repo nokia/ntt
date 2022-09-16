@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/memoize"
-	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/lsp/span"
 )
 
 // A File represents a open file

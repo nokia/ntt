@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.1, Assign values to restricted hexstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010201_ListOfValues_002 {
+    type hexstring MyListOfHexStrings ('01'H, '10'H);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010201_ListOfValues_002() runs on GeneralComp {
+        var MyListOfHexStrings v_h := '00'H; // value is not defined by the type
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010201_ListOfValues_002());
+    }
+}

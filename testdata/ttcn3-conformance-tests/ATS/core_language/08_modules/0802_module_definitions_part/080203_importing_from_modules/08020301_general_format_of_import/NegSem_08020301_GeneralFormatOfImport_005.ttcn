@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Make sure that the identifier of the current module cannot be used for prefixing imported entities
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// Name clashes shall be resolved using qualified name(s) for the imported definition(s),
+// i.e. prefixing the imported definition by the identifier of the module in which it has
+// been defined; the prefix and the identifier shall be separated by a dot (".").
+// In cases where there are no ambiguities the prefixing need not (but may) be present
+// when the imported definitions are used.
+
+module NegSem_08020301_GeneralFormatOfImport_005 {
+
+import from NegSem_08020301_GeneralFormatOfImport_005_import all;
+
+type component GeneralComp {}
+
+testcase TC_NegSem_08020301_GeneralFormatOfImport_005() runs on GeneralComp {
+	log(NegSem_08020301_GeneralFormatOfImport_005.c_test);
+	setverdict(pass);
+}
+
+control{
+    execute(TC_NegSem_08020301_GeneralFormatOfImport_005());
+}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_005_import {
+	const integer c_test := 5;
+}

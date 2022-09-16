@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:22.3.4, Verify that error occurs when using @nodefault modifier in a non stand-alone any port.getreply operation
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction m) The @nodefault modifier is allowed only in stand-alone getreply statements.
+
+module NegSyn_220304_getreply_operation_003 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_NegSyn_220304_getreply_operation_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_index;
+		connect(self:p, v_ptc:p);
+		p.call(S:{}, nowait);
+		v_ptc.start(f());
+		v_ptc.done;
+        alt
+		{
+        	[] @nodefault any port.getreply { setverdict(pass); }    // not allowed to use @nodefault modifer here
+			[else] { setverdict(fail, "The any from getreply operation didn't match for some reason"); }
+		}
+    }
+
+    control {
+        //execute(TC_NegSyn_220304_getreply_operation_003(), 5.0);
+    }
+}

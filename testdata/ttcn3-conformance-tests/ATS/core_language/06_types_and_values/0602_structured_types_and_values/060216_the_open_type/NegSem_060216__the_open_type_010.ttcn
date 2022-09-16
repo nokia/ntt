@@ -1,0 +1,29 @@
+/***************************************************
+ * @author TTF T003
+ * @version 0.0.1
+ * @purpose 1.6.2.16, Ensure that the open type is forbidden as return parameters of functions.
+ * @verdict pass reject
+ ***************************************************/
+
+module NegSem_060216_the_open_type_010 {
+	type component GeneralComp {
+	}
+
+	function f_my_function(in integer p_int) return any{
+		return p_int;
+	};
+
+	testcase TC_Sem_060216_the_open_type_010() runs on GeneralComp {
+		var integer v_i := 123;
+
+		if (f_my_function(v_i) == 123) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060216_the_open_type_007());
+	};
+}

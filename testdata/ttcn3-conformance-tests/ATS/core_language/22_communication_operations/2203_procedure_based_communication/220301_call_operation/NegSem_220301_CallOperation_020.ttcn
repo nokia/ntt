@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that calls cannot be used on disconnected ports
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// m) Applying a call operation to an unmapped or disconnected port shall cause a test
+// case error.
+
+module NegSem_220301_CallOperation_020 {
+
+	signature S() noblock;
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    testcase TC_NegSem_220301_CallOperation_020() runs on GeneralComp system GeneralComp {
+		p.call(S:{});
+    }
+
+    control {
+        execute(TC_NegSem_220301_CallOperation_020(), 5.0);
+    }
+}

@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.2, no default activation after else
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// If an else branch is defined, the default mechanism will never be called,
+// i.e. active defaults will never be entered.
+
+module Sem_2002_TheAltStatement_014 {
+
+    type port MyPort message {
+        inout charstring
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+    altstep a_receive() runs on GeneralComp {
+        [] p.receive {
+			setverdict(fail);
+		}
+    }
+
+    testcase TC_Sem_2002_TheAltStatement_014() runs on GeneralComp system GeneralComp {
+        map(self:p, system: p);
+	    p.send(charstring:"abc");
+        activate(a_receive());
+	    alt {
+		    [] p.receive(charstring:"def") {
+                setverdict(fail);
+            }
+            [else] {
+                setverdict(pass);
+            }
+	    }
+    }
+
+    control {
+	    execute(TC_Sem_2002_TheAltStatement_014());
+    }
+}

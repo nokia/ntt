@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign values to list of types restricted floats.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010202_ListOfTypes_007 {
+    type float Float1 (1.0E0..9E0);	//float values between 1 and 9
+    type float Float2 (2.0E1..3.0E1);	//float values between 20 and 30
+    type float Float_1_2 (Float1, Float2);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010202_ListOfTypes_007() runs on GeneralComp {
+        var Float_1_2 v_b;
+        v_b := 5.5E0;	//5.5 is between 1 and 9
+        v_b := 2.55E1;	//25.5 is between 20 and 30
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010202_ListOfTypes_007());
+    }
+}

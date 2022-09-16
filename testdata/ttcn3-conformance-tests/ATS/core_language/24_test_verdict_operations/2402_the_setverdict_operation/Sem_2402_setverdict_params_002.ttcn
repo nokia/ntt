@@ -1,0 +1,22 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure setverdict accepts values only as the parameter
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/24.2 The Setverdict operation/Optional setverdict parameters
+ **/
+
+module Sem_2402_setverdict_params_002 {
+    type component TComp {}
+
+    testcase TC_Sem_2402_setverdict_params_002() runs on TComp {
+        var template verdicttype v_pass := pass;
+        setverdict(valueof(v_pass));
+    }
+
+    control {
+        execute(TC_Sem_2402_setverdict_params_002())
+    }
+}

@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+
+/* The following requirements are tested:
+ *In addition to the general error causes in clause 16.1.2, error causes are:
+ * inpar is a template of a character string type and contains a matching mechanism other than AnyElement or
+AnyElementsOrNone; */
+
+module NegSem_160102_predefined_functions_036 {
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_036 () runs on GeneralComp {
+
+    const charstring m_Ref:="abc?def?";
+    var template charstring Mytemp := pattern "{m_Ref}\q{0,0,1,113}";
+    var charstring v_i;
+
+ 	v_i:=substr(Mytemp,1,2);		//error: non allowed matching mechanism
+
+
+}
+
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_036());
+
+}
+
+}

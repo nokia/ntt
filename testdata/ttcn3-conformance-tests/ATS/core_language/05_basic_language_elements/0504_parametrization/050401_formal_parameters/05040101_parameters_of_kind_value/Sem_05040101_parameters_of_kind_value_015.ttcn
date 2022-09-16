@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that in value formal parameters of test case can have default values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+
+// The following requirement is tested:
+// In parameters may have a default value, which is given by an expression assigned to
+// the parameter.
+
+module Sem_05040101_parameters_of_kind_value_015 {
+
+	type component GeneralComp {
+	}
+
+    type record R
+    {
+        integer field1,
+        integer field2
+    }
+
+    testcase TC(integer p_int1 := 3, in integer p_int2 := 4) runs on GeneralComp {
+    }
+}

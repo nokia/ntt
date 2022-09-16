@@ -1,0 +1,47 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.5, missing to clause in case of 1 to n connection
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// In case of one-to-one connections, the to clause may be omitted, because the receiving
+// entity is uniquely identified by the system structure.
+
+module NegSem_220305_raise_operation_004 {
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+	function f(integer p_expected) runs on GeneralComp
+	{
+        p.call(S:{}) {
+            [] p.catch(S, p_expected) { setverdict(pass); }
+            [] p.catch { setverdict(fail); }
+        }
+	}
+
+    testcase TC_NegSem_220305_raise_operation_004() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc1 := GeneralComp.create, v_ptc2 := GeneralComp.create;
+		connect(self:p, v_ptc1:p);
+        connect(self:p, v_ptc2:p);
+        v_ptc1.start(f(1));
+        v_ptc2.start(f(1));
+        p.getcall(S:?);
+        p.getcall(S:?); // call from both components expected
+		p.raise(S, 1); // missing to clause: error expected
+        all component.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_004(), 5.0);
+    }
+}

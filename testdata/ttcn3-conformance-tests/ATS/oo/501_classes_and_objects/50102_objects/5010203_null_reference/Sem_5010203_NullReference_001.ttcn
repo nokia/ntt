@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.3, Ensure that an object variable or parameter may be compared with the special value null
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010203_NullReference_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var boolean v_bool;
+    }
+
+    testcase TC_Sem_5010203_NullReference_001() runs on GeneralComp {
+        var MyClass v_a;
+        var MyClass v_b := MyClass.create(true);
+        var MyClass v_c := null;
+        if (v_a == null and v_b != null and v_c == null) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_em_5010203_NullReference_001());
+    }
+
+}

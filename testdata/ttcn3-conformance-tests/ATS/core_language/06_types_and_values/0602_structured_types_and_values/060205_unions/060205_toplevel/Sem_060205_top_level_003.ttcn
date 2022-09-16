@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, assignment notation for union values with @default
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// using the @default modifier before the type of the alternative. For unions with a default alternative, special type compatibility rules apply (see clause 6.3.2.4) which allow using the union value as compatible with the type of the default alternative.
+
+module Sem_060205_top_level_003 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		@default integer option1,
+		charstring option2
+	}
+
+    testcase TC_Sem_060205_top_level_003() runs on GeneralComp {
+		var U v_choice := 12345;	// implicit usage of the default alternative: v_choice := { option1 := 34 }
+		var U v_res := v_choice + 5; // implicit usage of the default of v_choice
+
+        if (ischosen(v_res.option1) and match(v_res.option1, 12350)) { setverdict(pass); }
+        else { setverdict(fail); }
+
+	}
+
+	control{
+		execute(TC_Sem_060205_top_level_003());
+	}
+}

@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that a class declare constants as its members.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_50101_top_level_003 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_const_field {
+        private const charstring cons_ver_id := "1.0v12";
+
+        public function get_cons_verid() return charstring {
+            return this.cons_ver_id;
+        }
+    }
+
+    testcase TC_Sem_50101_top_level_003() runs on GeneralComp {
+        var t_class_const_field v_a := t_class_const_field.create();
+        if (v_a.get_cons_verid() == "1.0v12") {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_50101_top_level_003());
+    }
+}

@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that constructors do not assign anything to variables that are not local to the constructor body or accessible fields of the class the constructor belongs to
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_004 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+      var integer v_myVar;
+    }
+
+
+    type class MyClass runs on GeneralComp {
+        var integer v_i;
+
+        create(integer v_i) {
+            this.v_i := v_i;
+            v_myVar := 4; //not allowed, v_myVar is not constructor local or field of MyClass
+        }
+
+    }
+
+    testcase TC_NegSem_5010105_Constructors_004() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create(1);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_004());
+    }
+}

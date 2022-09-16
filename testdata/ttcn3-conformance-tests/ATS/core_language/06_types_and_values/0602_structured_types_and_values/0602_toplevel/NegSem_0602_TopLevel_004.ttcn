@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that indexed notation can not be used for a union type.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_0602_TopLevel_004 {
+
+    type component GeneralComp {
+    }
+
+    type union MyUnion {
+        integer field1,
+        charstring field2,
+        float field3
+    }
+
+    testcase TC_NegSem_0602_TopLevel_004() runs on GeneralComp {
+
+        var MyUnion v_myUnion := {
+            field1 := 5
+        };
+
+        var integer Integer1 :=3;
+        v_myUnion[0] := Integer1;//not possible to use index notation on a union type
+
+    }
+
+    control {
+        execute(TC_NegSem_0602_TopLevel_004());
+    }
+}

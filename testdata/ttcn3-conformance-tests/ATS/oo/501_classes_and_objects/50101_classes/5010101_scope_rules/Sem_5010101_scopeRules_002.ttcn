@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.1, Ensure that identifiers of member declarations can be reused inside methods for formal parameter and local declarations.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010101_scopeRules_002 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    public type class t_class_scope {
+        const integer a := 88;
+
+         public function formalParameterScope(integer a := 87) return boolean {
+             return this.a != a;
+         }
+    }
+
+    testcase TC_Sem_5010101_scopeRules_002() runs on GeneralComp {
+        var t_class_scope v_a := t_class_scope.create();
+        if (v_a.formalParameterScope()) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010101_scopeRules_002());
+    }
+}

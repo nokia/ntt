@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that Arithmetic operators are for integer and float values
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_070101_ArithmeticOperators_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_070101_ArithmeticOperators_001() runs on GeneralComp {
+	var integer v_i := 20;
+	var boolean v_k :=true;
+
+	var integer v_result := v_i*v_k;	// not allowed int*boolean
+
+	setverdict(pass);
+
+
+}
+control{
+    execute(TC_NegSem_070101_ArithmeticOperators_001());
+}
+
+}

@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:15.3, Ensure that a send operation with actual parameters of a global parameterized template is accepted with the actual parameter being an inline template.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirement is tested:
+// d)	After completing initialization, global and local templates that do not contain the @abstract modifier shall be fully initialized.
+
+module Sem_1503_GlobalAndLocalTemplates_007 {
+
+    type port MyMessagePortType message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType {
+        integer field1,
+        charstring field2,
+        boolean field3
+    }
+
+    type MyMessageType m_myTemplate;
+
+    testcase TC_Sem_1503_GlobalAndLocalTemplates_007() runs on GeneralComp {
+        template @abstract m_myTemplate m_myAbstractTemplate :={
+        field1 := 2    // field2 and field3 is missing, but @abstract modifier allows this
+        };
+
+        if(ispresent(m_myAbstractTemplate.field1) and not ispresent(m_myAbstractTemplate.field2) and not ispresent(m_myAbstractTemplate.field3)){
+         setverdict(pass);
+        }else{
+         setverdict(fail);
+        }
+
+    }
+
+    control{
+        execute(TC_Sem_1503_GlobalAndLocalTemplates_007());
+    }
+
+
+}

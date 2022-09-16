@@ -23,6 +23,8 @@ jobs:
     needs: goreleaser
     runs-on: windows-latest
     steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
       - name: Checkout
         uses: actions/checkout@v2
       - name: Download ntt.exe

@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign invalid values to restricted integer with exclusive bounds.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_004 {
+	type integer MyIntegerRange (!-3 .. 0);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_004() runs on GeneralComp {
+        var MyIntegerRange v_i := -3; // -3 is outside range
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_004());
+    }
+}

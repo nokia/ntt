@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, Verify that template parameter of an activated altstep cannot be an out parameter
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_05040102_parameters_of_kind_template_018 {
+
+    altstep a_test(out template integer p_par) runs on C {
+        [] any timer.timeout {
+            p_par := ?;
+        }
+    }
+
+    type component C {
+    }
+
+    testcase TC_NegSem_05040102_parameters_of_kind_template_018() {
+        var integer v_int := ?;
+        activate(a_test(v_int));
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_05040102_parameters_of_kind_template_018());
+    }
+}

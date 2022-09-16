@@ -1,0 +1,26 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10.1, Component type with port instance arrays
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_06021001_component_type_definition_003 {
+	type port MyMessagePortType message {
+		inout 	integer
+	}
+
+    signature Proc1();
+
+	type port MyProcedurePortType procedure {
+		out		Proc1
+	}
+
+    type component MyCompType {
+		port MyMessagePortType pCO[3];
+		port MyProcedurePortType pCOm[3][3]
+		// Defines a component type which has an array of 3 message ports and a two dimensional
+		// array of 9 procedure ports.
+	}
+
+
+}

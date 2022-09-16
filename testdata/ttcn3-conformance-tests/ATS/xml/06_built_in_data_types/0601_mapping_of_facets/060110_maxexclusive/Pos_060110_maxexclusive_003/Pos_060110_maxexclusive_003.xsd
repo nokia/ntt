@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="schema:Pos_060110_maxexclusive_003"
+	xmlns:types="schema:Pos_060110_maxexclusive_003">
+	<include schemaLocation="Pos_060110_maxexclusive_003_1.xsd"></include>
+	<simpleType name="t1">
+		<restriction base="types:e2">
+			<maxExclusive value="-4.0" />
+		</restriction>
+	</simpleType>
+    <element name="e1" type="types:t1"/>
+</schema>

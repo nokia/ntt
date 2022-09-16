@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, component variable value reuse in alive component after explicit stop
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Stopping an alive-type component means that all variables, timers and ports
+// declared in the component type definition of the alive-type component keep their
+// value, contents or state.
+
+module Sem_210303_Stop_test_component_006 {
+
+    type port P message {
+        inout charstring;
+    }
+
+	type component GeneralComp {
+        var integer vc_val := 0;
+        port P p;
+	}
+
+    function f_ptcBehaviour() runs on GeneralComp {
+        vc_val := 1;
+        p.send("PTC started");
+        p.receive(charstring:?); // this will never come
+        setverdict(fail);
+    }
+
+    function f_ptcSecondBehaviour() runs on GeneralComp {
+        if (vc_val == 1) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+
+	testcase TC_Sem_210303_Stop_test_component_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC") alive;
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_ptcBehaviour());
+        p.receive(charstring:?);
+        v_ptc.stop;
+        p.send("greetings from the MTC");
+        v_ptc.start(f_ptcSecondBehaviour());
+        v_ptc.done;
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_Sem_210303_Stop_test_component_006());
+	}
+}

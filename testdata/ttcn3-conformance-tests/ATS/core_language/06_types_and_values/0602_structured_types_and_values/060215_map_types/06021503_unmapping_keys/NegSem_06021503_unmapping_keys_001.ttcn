@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.3, Verify that unmapping a key in an uninitialized map causes an error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following rule is tested:
+// Restriction a
+// ValueRef shall be an initialized variable of map type.
+
+module NegSem_06021503_unmapping_keys_001 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_NegSem_06021503_unmapping_keys_001() runs on C {
+        var boolean v_condition := false;
+		var TMap1 v_map;
+        if (v_condition) {
+            v_map := { ["test"] := 1, ["xyz"] := 5 };
+        }
+		unmap(v_map, "abc");
+		setverdict(pass);
+
+	}
+
+	control {
+		execute(TC_NegSem_06021503_unmapping_keys_001());
+	}
+}

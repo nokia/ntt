@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:5.2, Ensure that the IUT handles scope hierarchy via functions.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0502_Scope_003 {
+
+type component GeneralComp {
+    var integer vc_int := 0;
+}
+
+function f_funcScope() runs on GeneralComp {
+    vc_int := 1;
+    if (vc_int == 1){
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+testcase TC_Sem_0502_Scope_003_a() runs on GeneralComp {
+    f_funcScope();
+}
+
+testcase TC_Sem_0502_Scope_003_b() runs on GeneralComp {
+    f_funcScope();
+    if (vc_int == 1){
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_Sem_0502_Scope_003_a());
+    execute(TC_Sem_0502_Scope_003_b());
+}
+
+}

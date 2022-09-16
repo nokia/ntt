@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- By default xerces loads only ONE xsd for each target namespace.
+As a java-based XmlDiff can't validate XML file that uses element definitions from
+the second file.
+ 
+As a workaround we merged the XSD files manually and validate using single XSD.
+ -->
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050101_namespaces_003"
+  xmlns:ns1="schema:Pos_050101_namespaces_003">
+  <element name="MyType" type="integer"/>
+  <element name="MyType2" type="integer"/>
+</schema>

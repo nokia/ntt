@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.11, Ensure that concatenation of charstring and universal charsting types are concatenated as expected.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/* When templates of charstring and universal charstring type are both
+ * present in the concatenation, the charstring values are implicitly converted to universal charstring values*/
+
+module Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_014 {
+
+type component GeneralComp { }
+
+testcase TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_014() runs on GeneralComp {
+    var template universal charstring v_myString1 := (char ( 0, 0, 1, 113) & "AB" & char ( 0, 0, 1, 112));     // "űABŰ"
+
+    if (match("űABŰ", v_myString1)) {
+        setverdict(pass);
+    } else {
+        setverdict(fail,v_myString1);
+    }
+}
+
+control{
+    execute(TC_Sem_1511_ConcatenatingTemplatesOfStringAndListTypes_014());
+}
+
+}

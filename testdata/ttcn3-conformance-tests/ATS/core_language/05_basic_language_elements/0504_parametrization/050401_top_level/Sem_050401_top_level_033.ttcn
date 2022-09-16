@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that @deterministic modifier can be used for fuzzy template parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal value or template parameters may be declared fuzzy using the @fuzzy modifier. The behaviour
+// of fuzzy parameters is defined in clause 3.1, definition of fuzzy values or templates.
+
+module Sem_050401_top_level_033 {
+
+	type component GeneralComp {
+	}
+
+	function f(template @fuzzy @deterministic integer pm_int) {
+        if (match(1, pm_int)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	testcase TC_Sem_050401_top_level_033() runs on GeneralComp {
+		f(1);
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_033());
+	}
+}

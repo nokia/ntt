@@ -1,0 +1,27 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.1, Verify that attributes of synonym types can use field references
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+ // The following requirements are tested:
+
+ // Attributes can be attached to synonym types (6.4). If the synonym type is a structured type,
+ // attributes in the with statement may reference fields or elements of this structured type.
+
+module Syn_270101_ScopeOfAttributes_004 {
+
+    type record MyRecord {
+     integer field1,
+     record {
+	  integer innerField1,
+	  boolean innerField2
+     } field2
+    }
+
+	type MyRecord MyRecord2
+    with {
+     display(field2.innerField1) "colour red";
+    }
+}

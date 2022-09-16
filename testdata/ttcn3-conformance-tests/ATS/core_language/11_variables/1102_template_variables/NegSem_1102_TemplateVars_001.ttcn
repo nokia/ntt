@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:11.2, Template variables should be assigned with unitialized variables
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_1102_TemplateVars_001 {
+    type component GeneralComp {}
+
+	testcase TC_NegSem_1102_TemplateVars_001() runs on GeneralComp {
+  		var template integer v_i1;
+        var template integer v_i2 := v_i1; // v_i1 is not initialized
+
+        setverdict(pass);
+	}
+
+    control {
+        execute(TC_NegSem_1102_TemplateVars_001());
+    }
+}

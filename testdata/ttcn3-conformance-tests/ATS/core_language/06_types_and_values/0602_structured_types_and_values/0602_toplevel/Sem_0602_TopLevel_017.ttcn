@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that assignment notation can be used for a record type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirement is tested: Fields not mentioned are implicitly left uninitialized. When re-assigning a previously initialized value, using the not used symbol or just skipping a field in an assignment notation, will cause that field to remain unchanged. Even when specifying partial values each field shall not appear more than once.*/
+
+module Sem_0602_TopLevel_017 {
+
+
+    type component GeneralComp {
+    }
+
+    type record MyRecord {
+        integer field1,
+        charstring field2 optional,
+        float field3
+    }
+
+    testcase TC_Sem_0602_TopLevel_017() runs on GeneralComp {
+
+		var MyRecord v_myRecord := {
+			            field1 := 5,
+			            field3 := 3.14
+		};
+
+
+        if (not ispresent(v_myRecord.field2)) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_017());
+    }
+}

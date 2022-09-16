@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:7.1.3, Ensure that the less than or equal to operator on enumerations is evaluated correctly with differing values.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+/* Two enumerated values are equal if and only if they are associated
+ * with the same integer value. Otherwise, they are ordered using the
+ * mathematical order on the associated integer values.*/
+
+
+module Sem_070103_RelationalOperators_050 {
+
+type component GeneralComp {
+}
+
+type enumerated MyEnumType1 {
+	e_monday(2), e_tuesday, e_wednesday, e_thursday, e_friday
+};
+
+type enumerated MyEnumType2 {
+	e_monday(1..8), e_tuesday, e_wednesday, e_thursday, e_friday
+};
+
+testcase TC_Sem_070103_RelationalOperators_050() runs on GeneralComp {
+	var MyEnumType1 v_first := e_monday;
+	var MyEnumType2 v_second := e_monday(2);
+
+	if (match(enum2int(v_first),enum2int(v_second))) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070103_RelationalOperators_050());
+}
+
+}

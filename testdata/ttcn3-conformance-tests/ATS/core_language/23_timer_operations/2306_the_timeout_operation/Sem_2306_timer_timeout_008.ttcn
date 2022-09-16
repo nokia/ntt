@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470, corrected by STF 487
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure that timeout of a timer from a timer array works correctly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_2306_timer_timeout_008 {
+    type component TComp{
+        timer t_TimerArray[2][2] :={{0.5, 1.0}, {5.0, 5.5}};
+    }
+    testcase TC_Sem_2306_timer_timeout_008() runs on TComp{
+        var integer v_foundIndex[2];
+        for (var integer i := 0; i < lengthof(t_TimerArray); i := i + 1) {
+            for (var integer j := 0; j < lengthof(t_TimerArray[i]); j := j + 1) {
+                t_TimerArray[i][j].start;
+            }
+        }
+        t_TimerArray[0][0].stop;
+
+        any from t_TimerArray.timeout -> @index value v_foundIndex;
+        if(v_foundIndex[0] == 0 and v_foundIndex[1] == 1){
+            setverdict(pass);
+        } else {
+            setverdict(fail, "wrong number of timers with timeout");
+        }
+
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_008(), 5.0)
+
+
+    }
+}

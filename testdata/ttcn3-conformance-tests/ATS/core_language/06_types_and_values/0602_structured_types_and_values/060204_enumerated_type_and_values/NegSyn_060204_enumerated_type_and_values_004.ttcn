@@ -1,0 +1,16 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, expression as user-assigned enumerated value
+ ** @verdict  pass reject, noexecutino
+ ***************************************************/
+
+// The following requirement is tested:
+// ach enumerated value may optionally have a user-assigned integer value or non-empty list of integer literal values or ranges of integer literal values
+
+module NegSyn_060204_enumerated_type_and_values_004 {
+
+    type enumerated MyFirstEnumType {
+        Monday, Tuesday(), Thursday, Friday
+    };    // error: non-empty integer literal required
+}

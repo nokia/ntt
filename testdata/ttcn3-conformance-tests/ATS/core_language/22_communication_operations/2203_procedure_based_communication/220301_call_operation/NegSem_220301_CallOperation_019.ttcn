@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that non-blocking procedure calls cannot contain nowait parameter
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// l) The call operation for a non-blocking procedure shall have no response and exception
+// handling part, shall raise no timeout exception and shall not use the nowait keyword.
+
+module NegSem_220301_CallOperation_019 {
+
+	signature S() noblock;
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		p.getcall(S:?);
+		p.reply(S:{});
+	}
+
+    testcase TC_NegSem_220301_CallOperation_019() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f_called());
+		p.call(S:{}, nowait);
+		alt {
+			[] p.getreply(S:?) { setverdict(pass, "Reply accepted"); } // guard error expected
+		}
+    }
+
+    control {
+        execute(TC_NegSem_220301_CallOperation_019(), 5.0);
+    }
+}

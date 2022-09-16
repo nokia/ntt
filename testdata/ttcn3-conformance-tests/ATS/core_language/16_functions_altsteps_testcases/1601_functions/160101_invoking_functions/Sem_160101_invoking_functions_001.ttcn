@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.1, Ensure that the IUT correctly handles function invocations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_160101_invoking_functions_001 {
+
+
+type component GeneralComp {
+ var integer v_gc:=0;
+}
+
+function f_test ( integer p_integer := 0 ) runs on GeneralComp return integer {
+
+ v_gc:=v_gc+p_integer;
+ return v_gc;
+}
+
+testcase TC_Sem_160101_invoking_functions_001 () runs on GeneralComp {
+	var integer v_result:=0;
+
+	f_test();
+	f_test(1);
+	v_result:=f_test(1);
+ 	if( match(v_result, 2) and match(f_test(), 2) ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+
+}
+
+
+control{
+
+    execute(TC_Sem_160101_invoking_functions_001());
+
+}
+
+}

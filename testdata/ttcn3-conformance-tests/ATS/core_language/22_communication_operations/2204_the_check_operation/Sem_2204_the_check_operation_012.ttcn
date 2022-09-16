@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:22.4, Verify behaviour of port.check(receive) with assignment in case of unsuccessful match in standalone statement
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+module Sem_2204_the_check_operation_012 {
+
+	type port P message {
+		inout integer;
+		address integer;
+	}
+
+    type component GeneralComp {
+		port P p;
+		var integer v_addr;
+	}
+
+	altstep a() runs on GeneralComp {
+		[] p.receive {
+			if (not isbound(v_addr)) { setverdict(pass, "As expected, the check operation didn't match"); }
+			else { setverdict(fail, "The address value should still be undefined at this point"); }
+			stop;
+		}
+	}
+	testcase TC_Sem_2204_the_check_operation_012() runs on GeneralComp {
+		activate(a());
+		p.send(integer:1) to 80;
+        p.check(receive(integer:(100..200)) from P.address:(20..100) -> sender v_addr);
+		setverdict(fail, "Incorrect match");
+    }
+
+    control {
+        execute(TC_Sem_2204_the_check_operation_012(), 5.0);
+    }
+}

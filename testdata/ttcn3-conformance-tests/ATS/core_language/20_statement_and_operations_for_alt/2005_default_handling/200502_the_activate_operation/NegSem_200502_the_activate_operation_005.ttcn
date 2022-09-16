@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify error is generated when activating function
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// An activate operation will put the referenced altstep as the first element into the list of defaults
+// and return a default reference.
+
+module NegSem_200502_the_activate_operation_005 {
+
+	type component GeneralComp {
+	}
+
+	function f() runs on GeneralComp {
+		alt {
+			[] any port.receive {}
+		}
+	}
+
+	testcase TC_NegSem_200502_the_activate_operation_005() runs on GeneralComp {
+		activate(f());
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_200502_the_activate_operation_005());
+	}
+}

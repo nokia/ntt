@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that identifiers of port types are not imported together with component types
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The TTCN-3 import mechanism distinguishes between the identifier of a referenced
+// definition and the information necessary for the usage of a referenced definition
+// within the imported definition. For the usage, the identifier of a referenced
+// definition is not required and therefore not imported automatically.
+// Table 8:
+// Possible referenced definitions for a component type: port types
+
+module NegSem_08020301_GeneralFormatOfImport_015 {
+import from NegSem_08020301_GeneralFormatOfImport_015_import { type C };
+	// P should be undefined, because it is not automatically imported
+	type component GeneralComponent {
+		port P p2;
+	}
+}
+
+module NegSem_08020301_GeneralFormatOfImport_015_import {
+	type port P message {
+		inout integer
+	}
+	type component C {
+		port P p1;
+	}
+}

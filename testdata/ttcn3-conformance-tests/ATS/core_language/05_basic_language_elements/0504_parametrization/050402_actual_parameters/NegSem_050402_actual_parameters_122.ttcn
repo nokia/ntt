@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that function calls passed to fuzzy formal parameters cannot contain inout parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Functions, called by actual parameters passed to fuzzy or lazy formal parameters
+// of the calling function, shall not have inout or out formal parameters. The called
+// functions may use other functions with inout or out parameters internally.
+
+module NegSem_050402_actual_parameters_122 {
+
+    type component GeneralComp {
+	}
+
+    function f_eval(inout integer p_val) return integer {
+        p_val := p_val + 1;
+        return p_val;
+    }
+
+    function f_test (@fuzzy integer p_val) {
+        if (p_val == 2) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_122() runs on GeneralComp {
+        var integer v_val := 0;
+        f_test(1 + f_eval(v_val));
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_122());
+	}
+}

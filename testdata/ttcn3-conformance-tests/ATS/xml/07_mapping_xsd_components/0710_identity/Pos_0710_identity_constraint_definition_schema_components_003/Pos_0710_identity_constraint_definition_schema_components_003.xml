@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_0710_identity_constraint_definition_schema_components_003">
+ <unitInventory unitRef="24">
+  <item itemId="1004" />
+  <item itemId="1005" />
+  <item itemId="6028" />
+  <item itemId="7450" />
+ </unitInventory>
+ <unitInventory unitRef="30">
+  <item itemId="1011" />
+  <item itemId="1042" />
+  <item itemId="5301" />
+  <item itemId="6001" />
+ </unitInventory>
+ <unitDesc unitId="24">
+  <desc>crucial unit</desc>
+ </unitDesc>
+ <unitDesc unitId="30">
+  <desc>very important unit</desc>
+ </unitDesc>
+</ns:MyType>

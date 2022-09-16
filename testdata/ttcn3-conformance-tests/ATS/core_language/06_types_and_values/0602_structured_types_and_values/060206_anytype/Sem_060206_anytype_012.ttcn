@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that redeclaration of an anytype value works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_012 {
+
+type record R
+	{
+		anytype R1 // R Record type contains an anytype element.
+	};
+
+type component GeneralComp {
+
+var anytype Var_1, Var_2,Var_3;
+var R MyRec;
+
+}
+
+testcase TC_Sem_060206_anytype_012() runs on GeneralComp {
+
+Var_1.integer := 10; // Var_1 integer with value of 10
+Var_2.float := 3.0E0; 	// Var_2 float with value of 3.0
+MyRec.R1.float := 3.5E0; // record MyRec R1 element is now a float with value of 3.5
+
+Var_3.float := MyRec.R1.float + Var_2.float; // Var_3 is float type = 3.5 + 3.0
+
+// changing types:
+Var_1.float := 5.5E0;	// Var_1 float with value of 5.5
+Var_2.charstring := "abc"; 	// Var_2 charstring with value of "abc"
+MyRec.R1.charstring := "def"; // record MyRec R1 element is now a charstring with value of "def"
+
+      if (match(Var_1.float, 5.5E0) and match(Var_2.charstring, "abc") and match(Var_3.float, 6.5E0)
+          and match(MyRec.R1.charstring, "def")) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_012());
+}
+
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<ns:e1 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xmlns:ns="schema:Pos_07060201_derived_by_extension_009">
+  <x>x</x>
+  <!--Optional:-->
+  <y>
+    <x>x1</x>
+    <!--Optional:-->
+    <z>z1</z>
+  </y>
+</ns:e1>
+
+

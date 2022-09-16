@@ -245,7 +245,8 @@ func (b *Bitstring) hashKey() hashKey {
 	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
-func NewBitstring(s string) (*Bitstring, error) {
+func NewBitstring(s string, trim bool) (*Bitstring, error) {
+
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
 	}
@@ -261,12 +262,14 @@ func NewBitstring(s string) (*Bitstring, error) {
 	default:
 		return nil, ErrSyntax
 	}
+  
 	removeWhitespaces := func(r rune) rune {
 		if unicode.IsSpace(r) {
 			return -1
 		}
-		return r
+		return unicode.IsSpace(r)
 	}
+  
 	trim := func(r rune) bool {
 		return unicode.IsSpace(r) || r == '0'
 	}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070502_derivation_by_list_001"
+  xmlns:ns="schema:Pos_070502_derivation_by_list_001">
+  <simpleType name="e19">
+	<list itemType="float"/>
+  </simpleType>
+  <element name="MyType" type="ns:e19" />
+</schema>

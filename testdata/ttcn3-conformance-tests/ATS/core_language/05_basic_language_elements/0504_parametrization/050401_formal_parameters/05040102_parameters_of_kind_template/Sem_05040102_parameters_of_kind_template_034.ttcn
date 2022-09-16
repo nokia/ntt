@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that test case definition can contain in, out and inout template formal parameters with short omit restriction
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Formal template parameters can be restricted to accept actual parameters containing a restricted
+// set of matching mechanisms only. Such limitations can be expressed by the restrictions omit,
+// present, and value. The restriction template (omit) can be replaced by the shorthand notation omit.
+
+module Sem_05040102_parameters_of_kind_template_034 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_034(
+        omit integer p_int1, in omit integer p_int2,
+        out omit integer p_int3, inout omit integer p_int4) runs on GeneralComp {
+        setverdict(pass);
+	}
+
+	control {
+        var omit integer v_int1, v_int2 := 20;
+		execute(TC_Sem_05040102_parameters_of_kind_template_034(omit, 2, v_int1, v_int2));
+	}
+}

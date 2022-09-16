@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that inout parameters of a signature used in a call operation cannot contain matching symbols
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// b) All in and inout parameters of the signature shall have a specific value i.e. the use
+// of matching mechanisms such as AnyValue is not allowed.
+
+module NegSem_220301_CallOperation_010 {
+
+    signature S(inout integer p_par);
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	template S s_signature1 := { p_par := ? };
+
+    testcase TC_NegSem_220301_CallOperation_010() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        p.call(s_signature1, nowait);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220301_CallOperation_010(), 5.0);
+    }
+
+}

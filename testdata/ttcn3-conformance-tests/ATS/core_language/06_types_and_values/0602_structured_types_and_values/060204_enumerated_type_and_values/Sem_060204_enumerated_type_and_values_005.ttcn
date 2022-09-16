@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, using enumerated value with implicit type reference
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For any instantiation or value reference of an enumerated type, the given
+// type shall be implicitly or explicitly referenced.
+
+module Sem_060204_enumerated_type_and_values_005 {
+
+    type component GeneralComp {
+	}
+
+    type enumerated EDays {
+        Monday, Tuesday, Wednesday, Thursday, Friday
+    };
+
+    testcase TC_Sem_060204_enumerated_type_and_values_005() runs on GeneralComp {
+        var EDays v_day := Monday;
+        if (v_day == Monday) { //the type of variable v_day identifies the type context of EDays for the equality operator
+		    setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+	}
+
+	control {
+		execute(TC_Sem_060204_enumerated_type_and_values_005());
+	}
+}

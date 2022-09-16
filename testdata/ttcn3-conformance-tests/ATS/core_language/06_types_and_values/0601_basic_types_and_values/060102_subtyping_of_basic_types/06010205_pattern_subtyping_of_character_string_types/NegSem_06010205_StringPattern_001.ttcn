@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.5, Assign invalid values to pattern restricted character strings.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010205_StringPattern_001 {
+    type charstring MyString (pattern "?bc*xyz");
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010205_StringPattern_001() runs on GeneralComp {
+        var MyString v_c := "abcyz"; // value missing x
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010205_StringPattern_001());
+    }
+}

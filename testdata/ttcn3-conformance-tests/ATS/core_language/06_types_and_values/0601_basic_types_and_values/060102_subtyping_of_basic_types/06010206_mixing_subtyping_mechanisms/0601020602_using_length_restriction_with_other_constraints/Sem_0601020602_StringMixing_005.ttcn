@@ -1,0 +1,23 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.6.2, Assign values to mixed restricted hex strings.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0601020602_StringMixing_005 {
+    type hexstring MyString ('1F1'H, '103A10'H, '111111'H) length (3 .. 8);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_0601020602_StringMixing_005() runs on GeneralComp {
+        var MyString v_c;
+        v_c := '1F1'H;
+        v_c := '103A10'H;
+        v_c := '111111'H;
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_0601020602_StringMixing_005());
+    }
+}

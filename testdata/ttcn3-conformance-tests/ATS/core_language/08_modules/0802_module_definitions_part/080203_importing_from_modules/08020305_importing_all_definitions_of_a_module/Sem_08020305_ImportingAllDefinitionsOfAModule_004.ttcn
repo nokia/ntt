@@ -1,0 +1,32 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.5, verify that the control function is imported when importing all definitions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// All visible definitions of a module definitions part may be imported using the all
+// keyword next to the module name.
+
+module Sem_08020305_ImportingAllDefinitionsOfAModule_004 {
+
+    import from Sem_08020305_ImportingAllDefinitionsOfAModule_004_import all;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_08020305_ImportingAllDefinitionsOfAModule_004() runs on GeneralComp {
+        setverdict(pass);
+	}
+
+    control {
+	    Sem_08020305_ImportingAllDefinitionsOfAModule_004_import.control();
+        execute(TC_Sem_08020305_ImportingAllDefinitionsOfAModule_004());
+    }
+}
+
+module Sem_08020305_ImportingAllDefinitionsOfAModule_004_import {
+	control {
+	    log("In imported control function");
+	}
+}

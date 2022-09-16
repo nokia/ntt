@@ -1,0 +1,17 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that template(omit) is rejected with value ranges.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1508_TemplateRestrictions_004 {
+
+type record ExampleType {
+	integer a,
+	boolean b optional
+}
+
+template(omit) ExampleType exampleOmitAny := {(1..6), true};
+
+}

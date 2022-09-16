@@ -1,0 +1,59 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:B.1.5.1, Ensure that the IUT correctly handles template matching of character pattern set expressions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_B010501_set_expression_002 {
+
+
+	type record MessageType {
+  	 charstring  	field1,
+  	 charstring		field2,
+  	 charstring		field3
+	}
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_B010501_set_expression_002() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := pattern "te[pqrs]t[0-9]",	//mismatching set
+  field2 := pattern "test[^a-z]",
+  field3 := pattern "[A-Z]est"
+ }
+
+ v_testMessage:=  {
+  field1 := "text1",
+  field2 := "test1",
+  field3 := "Test"
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(fail);
+     }
+     [] messagePort.receive {
+        setverdict(pass);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_B010501_set_expression_002());
+}
+
+}

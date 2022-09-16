@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:19.3.2, verify that unknown alternatives cannot be use in case statements
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Every Identifier in a case of the select union statement shall be an identifier
+// of an alternative of the union type of the template instance given to the
+// statement's header.
+
+module NegSem_190302_select_union_statement_003 {
+
+    type component GeneralComp {
+	}
+
+    type union U {
+        integer intOption,
+        charstring strOption,
+        record {
+            integer field1,
+            integer field2
+        } recOption
+    }
+
+    testcase TC_NegSem_190302_select_union_statement_003() runs on GeneralComp {
+        var U v_un := { intOption := 5 }
+        select union (v_un) {
+            case (intOption) {
+                setverdict(pass);
+            } case (strOption) {
+                setverdict(fail);
+            } case (recOption) {
+                setverdict(fail);
+            } case (boolOption) {
+                setverdict(fail);
+            }
+        }
+	}
+
+	control {
+		execute(TC_NegSem_190302_select_union_statement_003());
+	}
+}

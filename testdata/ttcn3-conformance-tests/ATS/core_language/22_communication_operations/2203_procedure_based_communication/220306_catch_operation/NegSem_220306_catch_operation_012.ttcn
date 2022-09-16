@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.6, encoding parameter of @decoded redirect value assignment applied to incorrect type
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// In case the referenced field is not a universal charstring, the optional
+// parameter shall not be present.
+
+module NegSem_220202_ReceiveOperation_012 {
+	type record R {
+        integer id,
+        octetstring payload
+    }
+
+    signature S() exception (R);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    function f_server() runs on GeneralComp {
+        var charstring v_src := "abc";
+        var R v_rec := { id := 3, payload := bit2oct(encvalue(v_src)) };
+        p.getcall(S:?);
+        p.raise(S, v_rec);
+    }
+
+    testcase TC_NegSem_220306_catch_operation_012() runs on GeneralComp system GeneralComp {
+        var charstring v_res;
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}) {
+            [] p.catch(S, R:?) -> value (v_res := @decoded("UTF-8") payload) {
+                setverdict(pass);
+            }
+            [] p.catch { setverdict(pass); }
+        }
+
+    }
+
+    control {
+        execute(TC_NegSem_220306_catch_operation_012(), 5.0);
+    }
+}

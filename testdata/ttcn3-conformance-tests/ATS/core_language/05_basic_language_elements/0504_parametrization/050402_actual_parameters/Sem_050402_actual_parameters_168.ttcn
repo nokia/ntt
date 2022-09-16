@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that rules for referencing are applied to actual paremeters before passing to out formal parameters
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Before passing the actual parameter, the rules for referencing the element on
+// the left hand side of assignments are applied, expanding the structured value
+// so that the referenced element becomes accessible (see clauses 6.2 and 15.6 for
+// more details).
+
+module Sem_050402_actual_parameters_168 {
+
+    type component GeneralComp {
+        var integer vc_index := 0;
+	}
+
+    type record of integer RI;
+
+    function f_test(out integer p_par1) runs on GeneralComp {
+        vc_index := 1;
+        p_par1 := 10;
+    }
+
+    testcase TC_Sem_050402_actual_parameters_168() runs on GeneralComp {
+        var RI v_ri := { 1, 2 }
+        f_test(v_ri[vc_index]); // tested parameter passing
+        if (v_ri == { 10, 2 }) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_168());
+	}
+}

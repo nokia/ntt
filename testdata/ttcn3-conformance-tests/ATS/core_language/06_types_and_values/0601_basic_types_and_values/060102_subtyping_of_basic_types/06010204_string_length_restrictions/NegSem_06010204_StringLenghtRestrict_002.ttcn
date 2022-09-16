@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.4, Assign invalid values to length restricted bitstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010204_StringLenghtRestrict_002 {
+    type bitstring BitStrings length(2);
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010204_StringLenghtRestrict_002() runs on GeneralComp {
+        var BitStrings v_b := '111'B; // value length 3 != type length is 2
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010204_StringLenghtRestrict_002());
+    }
+}

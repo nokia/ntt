@@ -1,0 +1,22 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:15, Ensure that the expression or template body initializing a template shall evaluate to a value or template, which is type compatible with the template being declared.
+ ** @verdict  pass reject, noexecution
+ *****************************************************************/
+
+// The following requirement is tested:
+//Restriction C: the expression or template body initializing a template shall evaluate to a value or template, which is type compatible with the template being declared.
+
+module NegSyn_15_TopLevel_001 {
+
+
+type record MyRecord {
+	integer myInt
+}
+
+template MyRecord mw_myRecord := {
+    myInt := 2.1    // error: incompatible type (int req., float is given)
+}
+
+}

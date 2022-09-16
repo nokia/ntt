@@ -1,0 +1,58 @@
+/*****************************************************************
+ ** @author   STF 584
+ ** @version  0.0.1
+ ** @purpose  1:7.2, Ensure that the IUT correctly handles field reference decoding
+ ** @verdict  pass reject
+ *****************************************************************/
+
+/* The following requirement is tested:
+The string value preceding the => operator shall be decoded into a value of the type following the => operator. Failure
+of this decoding shall cause a test case error. In case the string operand is of the universalcharstring type and
+the extended syntax with parentheses is used, the type operand can be followed by an optional parameter defining the
+encoding format. The parameter shall be of the charstring type and it shall contain one of the strings allowed for
+the decvalue_unichar function (specified in clause C.5.4). Any other value shall cause an error. In case the string
+operand is not a universalcharstring, the optional parameter shall not be present.
+*/
+
+module NegSem_0703_decoded_field_reference_001 {
+
+type component GeneralComp {
+}
+
+type bitstring PduHeader;
+type integer OuterPayloadHeader;
+
+type record PDU {
+		PduHeader header,
+		bitstring outerPayload
+}
+
+type record OuterPayload {
+		charstring innerPayload,
+        integer header
+}
+
+type integer InnerPayload;
+
+testcase TC_NegSem_0703_decoded_field_reference_001() runs on GeneralComp {
+    // outerPayload content is "test text"
+    var charstring v_testText := "test text";
+    var bitstring v_test := encvalue(v_testText);
+
+	var PDU v_packet := {header:= '0110'B, outerPayload := v_test};
+    // log(v_packet.outerPayload);
+
+	var universal charstring v_payload := v_packet.outerPayload => InnerPayload;  // error type mismatch
+
+	if ( match(v_payload,"test text")) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_NegSem_0703_decoded_field_reference_001());
+}
+
+}

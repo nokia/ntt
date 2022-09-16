@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype comprise float data type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_002 {
+ type component GeneralComp {
+
+var anytype Var1, Var2;
+var float Var3;
+
+}
+
+testcase TC_Sem_060206_anytype_002() runs on GeneralComp {
+
+Var1.float := 10.5;
+Var2:= {float := Var1.float + 3.0};
+Var3 := Var2.float * 2.0;
+
+      if (Var3==27.0) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_002());
+}
+
+}

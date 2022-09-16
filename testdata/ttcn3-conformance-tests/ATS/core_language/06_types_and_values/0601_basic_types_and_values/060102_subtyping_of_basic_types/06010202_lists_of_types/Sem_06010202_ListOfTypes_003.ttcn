@@ -1,0 +1,24 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.2, Assign values to list of types restricted octetstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010202_ListOfTypes_003 {
+    type octetstring Firstoctetstrings('0036'O,'0050'O); //30 and 40 in decimal
+    type octetstring Secondtoctetstrings ('0074'O,'0120'O); //50 and 60 in decimal
+    type octetstring octetStrings_1_2 (Firstoctetstrings, Secondtoctetstrings);
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010202_ListOfTypes_003() runs on GeneralComp {
+        var octetStrings_1_2 v_b;
+        v_b := '0074'O;	 // '0074'O value is defined by the type Secondtoctetstrings
+        v_b := '0050'O;	//'0050'O value is defined by the type Firstoctetstrings
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010202_ListOfTypes_003());
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns:MyType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="schema:Pos_07060606_effect_of_minoccurs_and_maxoccurs_004">
+ <foo>foo1</foo>
+ <bar>bar1</bar>
+ <foo>foo2</foo>
+ <bar>bar2</bar>
+ <ding>ding</ding>
+</ns:MyType>

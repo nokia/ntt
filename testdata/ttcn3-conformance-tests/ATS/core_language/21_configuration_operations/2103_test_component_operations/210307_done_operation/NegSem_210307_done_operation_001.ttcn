@@ -1,0 +1,29 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.7, Ensure that done operator can be used only for ptcs.
+ ** @verdict  pass reject
+ *****************************************************************/
+// Done operator can be used only for ptcs, not for mtcs.
+
+module NegSem_210307_done_operation_001 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_NegSem_210307_done_operation_001() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+
+		GeneralComp.done; // not allowed. Done only allowed for ptcs.
+
+    }
+
+    control {
+        execute(TC_NegSem_210307_done_operation_001());
+    }
+}

@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:11.1, Ensure that partially initialized variables are evaluated correctly.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1101_ValueVars_005 {
+
+type component GeneralComp {
+}
+
+ type set IntegerSet {
+  integer a1 optional,
+  integer a2 optional,
+  integer a3 optional
+ };
+
+function f_partial () runs on GeneralComp return IntegerSet {
+ return {a1:=1,a2:=omit};
+}
+
+testcase TC_Sem_1101_ValueVars_005() runs on GeneralComp {
+	var IntegerSet v_set := f_partial();
+	v_set.a3 := 3;
+
+	if ( match(v_set, {a1:=1,a2:=omit,a3:=3}) ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1101_ValueVars_005());
+}
+
+}

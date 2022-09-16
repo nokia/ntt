@@ -1,0 +1,43 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.1.3, Verify that attributes can be added to imported elements
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// In general, a language element is imported together with its attributes. In some cases these
+// attributes may have to be changed when importing the language element, e.g. a type may be
+// displayed in one module as ASP, then it is imported by another module where it should be
+// displayed as PDU. For such cases it is allowed to change attributes on the import statement.
+// When resolving the attributes, the import statement works as an additional higher scope unit
+// on the top of the imported module. Attributes set in the import statement are valid only
+// within the importing module.
+
+module Sem_270103_attributes_of_imported_elements_001 {
+
+	import from Sem_270103_attributes_of_imported_elements_001_import {
+		type MyType
+	} with {
+		display "ASP"
+	};
+
+	type component GeneralComp {}
+
+	testcase TC_Sem_270103_attributes_of_imported_elements_001() runs on GeneralComp {
+		if (MyType.display == "ASP") {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control{
+		execute(TC_Sem_270103_attributes_of_imported_elements_001());
+	}
+}
+
+module Sem_270103_attributes_of_imported_elements_001_import {
+	type integer MyType;
+}
+

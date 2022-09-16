@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure negative infinity is not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.2 The start timer operation/Timer value is non-neg float
+
+
+module NegSem_2302_timer_start_004 {
+    type component TComp{
+        timer t_timer;
+    }
+    testcase TC_NegSem_2302_timer_start_004() runs on TComp{
+        // Timer value shall be a non-negative numerical float number (i.e. the value shall be greater or equal 0.0, infinity and not_a_number are disallowed).
+        var float duration := -infinity;
+        t_timer.start(duration);
+    }
+    control{
+
+            execute(TC_NegSem_2302_timer_start_004())
+
+
+    }
+}

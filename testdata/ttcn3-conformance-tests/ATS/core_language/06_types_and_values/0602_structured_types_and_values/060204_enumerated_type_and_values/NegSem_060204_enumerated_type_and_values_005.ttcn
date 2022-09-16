@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.4, using enumerated value without implicit or explicit type reference
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// For any instantiation or value reference of an enumerated type, the given
+// type shall be implicitly or explicitly referenced.
+
+module NegSem_060204_enumerated_type_and_values_005 {
+
+    type component GeneralComp {
+	}
+
+    type enumerated EDays {
+        Monday, Tuesday, Wednesday, Thursday, Friday
+    };
+
+    testcase TC_NegSem_060204_enumerated_type_and_values_005() runs on GeneralComp {
+        if (Tuesday != Wednesday) { // no implicit or explicit reference to enumeration
+		    setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+	}
+
+	control {
+		execute(TC_NegSem_060204_enumerated_type_and_values_005());
+	}
+}

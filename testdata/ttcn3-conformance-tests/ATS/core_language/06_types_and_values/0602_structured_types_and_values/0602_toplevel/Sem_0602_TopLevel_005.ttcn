@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that assignment notation can be used for a union type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0602_TopLevel_005 {
+
+    type component GeneralComp {
+    }
+
+    type union MyUnion {
+        integer field1,
+        charstring field2,
+        float field3
+    }
+
+    testcase TC_Sem_0602_TopLevel_005() runs on GeneralComp {
+
+        var MyUnion v_myUnion := {
+            field1 := 5
+        };
+
+        if (v_myUnion.field1 == 5) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_005());
+    }
+}

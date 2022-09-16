@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.6.2, Ensure that fields with * values on the right-hand side of an assignment are rejected
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150602_ReferencingRecordAndSetFields_002 {
+
+type component GeneralComp { }
+
+type record MyRecordTwo {
+	integer g1,
+	MyRecordTwo g2 optional
+}
+
+type record MyRecordOne {
+	integer f1 optional,
+	MyRecordTwo f2 optional
+}
+
+testcase TC_NegSem_150602_ReferencingRecordAndSetFields_002() runs on GeneralComp {
+	var template MyRecordOne m_R1 := {
+		f1 := 5,
+		f2 := omit
+	}
+
+	m_R1.f2 := *;
+
+	// shall cause an error as * is assigned to m_R1.f2
+	var template MyRecordTwo m_R2 := m_R1.f2.g2;
+	// if we get here, something must be wrong
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_150602_ReferencingRecordAndSetFields_002());
+}
+
+
+}

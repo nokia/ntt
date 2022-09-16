@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that a two TSI port cannot be connected
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*NOTE: see Figure 7(f): Two TSI port cannot be connected
+ * */
+
+module NegSem_0901_Communication_ports_007 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1, p2;
+    }
+
+    testcase TC_NegSem_0901_Communication_ports_007() runs on GeneralComp system GeneralComp {
+		    var GeneralComp s := system;
+        map(s:p2, system:p1); // error: p1 and p2 cannot be connected
+
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0901_Communication_ports_007());
+    }
+}
+

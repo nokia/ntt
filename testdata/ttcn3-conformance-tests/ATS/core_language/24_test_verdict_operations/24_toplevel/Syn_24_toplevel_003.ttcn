@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:24, Ensure setverdict and getverdict are allowed in atsteps
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+/*
+ * #reqname  /Requirements/24 Test verdict operations/Getverdict and setverdict operations shall only be used in test cases, altsteps and functions./Setverdict locations/Setverdict allowed in altsteps
+ **/
+
+module Syn_24_toplevel_003 {
+	type record MessageType {
+  		integer  		field
+	}
+
+    type port MessagePort message {
+		inout MessageType;
+	}
+
+	type component GeneralComp {
+		port MessagePort PCO1;
+		port MessagePort PCO2;
+		port MessagePort PCO3;
+	}
+
+	altstep a_test_get_set_verdict() runs on GeneralComp {
+		var verdicttype v_verdict := getverdict;
+
+		[] PCO1.receive {
+			setverdict(pass);
+		}
+		[] PCO2.receive {
+			setverdict(inconc);
+		}
+		[] PCO3.receive {
+			setverdict(fail);
+		}
+	}
+}

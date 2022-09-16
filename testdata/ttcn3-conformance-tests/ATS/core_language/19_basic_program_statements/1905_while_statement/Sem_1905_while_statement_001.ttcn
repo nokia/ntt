@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:19.5, Ensure that the IUT properly evaluates while statements
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_1905_while_statement_001 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_1905_while_statement_001 () runs on GeneralComp{
+ var integer v_j:=1;
+
+ while(v_j<10) {
+  v_j:=v_j+1;
+ }
+
+  if( v_j==10 ) { setverdict(pass); }
+  else  { setverdict(fail); }
+
+
+}
+
+
+control{
+
+    execute(TC_Sem_1905_while_statement_001());
+
+}
+
+}

@@ -1,0 +1,47 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.3.5, exception on a message port
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// An exception shall only be raised at a procedure-based port. An exception is a reaction
+// to an accepted procedure call the result of which leads to an exceptional event.
+
+module NegSem_220305_raise_operation_005 {
+	signature S() exception(integer);
+
+	type port PSig procedure {
+		inout S;
+	}
+
+    type port PMsg message {
+		inout integer;
+	}
+
+    type component GeneralComp
+	{
+		port PSig p1;
+        port PMsg p2;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p1.getcall(S:?);
+		p2.raise(S, 1);
+        setverdict(pass);
+	}
+
+    testcase TC_NegSem_220305_raise_operation_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p1, v_ptc:p1);
+        connect(self:p2, v_ptc:p2);
+        v_ptc.start(f());
+	    p1.call(S:{}, nowait); // no processing of the exception to avoid possible errors in the catch operation
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_005(), 5.0);
+    }
+}

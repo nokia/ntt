@@ -1,0 +1,59 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:B.1.2.2, Ensure that the IUT correctly handles template matching of complemented value listing
+ ** @verdict  pass reject
+ ***************************************************/
+
+module NegSem_B010202_complemented_value_list_001 {
+
+	type record MessageType {
+  	 integer        field1,
+  	 RoI            field2
+	}
+
+    type record of integer RoI;
+
+    type port loopbackPort message {
+	  inout MessageType
+	}
+
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_NegSem_B010202_complemented_value_list_001() runs on GeneralComp {
+
+    var MessageType v_testMessage;
+
+    template RoI m_RoI2 := {2, *, 4};
+
+ template MessageType mw_matchingTemplate:=
+ {
+  field1 := complement(0, all from m_RoI2), // shall cause an error because t_RoI2 contains AnyElementsOrNone
+  field2 := complement({2, 3, (6..9)})
+ }
+
+ v_testMessage:=  {
+  field1 := 0,
+  field2 := {0,1}
+ }
+
+ messagePort.send(v_testMessage);
+
+    alt {
+     [] messagePort.receive(mw_matchingTemplate) {
+        setverdict(pass);
+     }
+     [] messagePort.receive {
+        setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_NegSem_B010202_complemented_value_list_001());
+}
+
+}

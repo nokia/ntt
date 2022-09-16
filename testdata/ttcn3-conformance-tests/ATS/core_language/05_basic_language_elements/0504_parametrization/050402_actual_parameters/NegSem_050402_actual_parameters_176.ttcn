@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that reference to elements of formal value parameters cannot be used as out formal template parameters of altsteps
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to out formal template parameters shall be template variables,
+// formal template parameters or references to elements of template variables or formal template
+// parameters of structured types.
+
+module NegSem_050402_actual_parameters_176 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+    }
+
+    type record R {
+        integer field1
+    }
+
+    altstep a_test(out template integer p_val) runs on GeneralComp {
+        []t.timeout {
+           p_val := 5;
+        }
+    }
+
+    function f_caller(in R p_param) runs on GeneralComp {
+        a_test(p_param.field1); // tested parameter passing
+        if (match({ field1 := 5 }, p_param)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_176() runs on GeneralComp {
+        t.start;
+        f_caller({field1 := 11 });
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_176());
+	}
+}

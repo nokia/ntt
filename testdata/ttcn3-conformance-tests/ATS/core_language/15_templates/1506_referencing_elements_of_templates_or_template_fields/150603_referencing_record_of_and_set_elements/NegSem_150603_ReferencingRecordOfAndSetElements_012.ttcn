@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that referencing uninitialized fields is not allowed.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+//Restriction a)	Omit: referencing an element within a record of, set of or array field to which omit is assigned shall follow the rules specified in clause 6.2.3.
+
+/*Clause 6.2.3: If the value of the element indicated by the index at the right-hand of an assignment is undefined (uninitialized), this
+shall cause a semantic or runtime error. Referencing an identified element of an uninitialized or omitted record of or set
+of field or value on the right hand side of an assignment shall cause an error.*/
+
+
+module NegSem_150603_ReferencingRecordOfAndSetElements_012{
+
+    type component GeneralComp { }
+
+    type set of integer SoI;
+
+    testcase TC_NegSem_150603_ReferencingRecordOfAndSetElements_012() runs on GeneralComp {
+
+	var template SoI m_one;
+	var template SoI m_two;
+
+        m_one := {1,-};		// {1,-}
+        m_two := {m_one[1],2};	// {-,2} error not allowed referencing
+
+        if (not isvalue(m_two)) {
+            setverdict(pass);
+        }
+
+    }
+
+    control{
+        execute(TC_NegSem_150603_ReferencingRecordOfAndSetElements_012());
+    }
+
+
+
+}

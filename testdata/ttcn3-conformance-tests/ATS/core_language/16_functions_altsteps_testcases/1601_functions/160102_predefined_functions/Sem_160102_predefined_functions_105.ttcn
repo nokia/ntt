@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined 'decvalue_o' function works properly in case of decoding an octetstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+The decvalue_o function decodes an octetstring into a value. The test system shall suppose that the octetstring
+encoded_value represents an encoded instance of the actual type of decoded_value.
+- C.5.6 The decoding from octetstring function
+*/
+
+
+module Sem_160102_predefined_functions_105 {
+
+    type component GeneralComp {}
+    type integer MyType with { variant "32 bit" }
+
+    testcase TC_Sem_160102_predefined_functions_105 () runs on GeneralComp {
+
+    var octetstring v_ref := '0A000000'O;	// encoded value
+
+    //Decoding:
+    var MyType v_dec;
+    var integer v_res := decvalue_o(v_ref, v_dec); // decode octetstream to integer
+
+    if (match(v_res, 0) and match(v_dec, 10)) {
+    	// successful decoding
+          setverdict(pass);
+    } else {
+          setverdict(fail,v_res);
+    }
+
+   }
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_105());
+
+    }
+
+}

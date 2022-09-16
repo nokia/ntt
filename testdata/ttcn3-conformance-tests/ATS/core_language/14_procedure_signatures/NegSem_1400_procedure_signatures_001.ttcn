@@ -1,0 +1,52 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, Ensure that nonblocking signature contains in parameter
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1400_procedure_signatures_001 {
+
+    signature p_procedure_signatures_001(out integer p_par1) noblock; // noblock keyword, shall only have in parameters
+
+    template p_procedure_signatures_001 s_returnTemplate := {
+        p_par1 := -  }
+
+    type port remotePort procedure {
+        inout p_procedure_signatures_001;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+    }
+
+    function f_ClientQuery() runs on GeneralComp { }
+
+	testcase TC_NegSem_1400_procedure_signatures_001() runs on GeneralComp system GeneralComp {
+       var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+       var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+
+		// map the PTCs to the system port
+       connect(server:PCO, client:PCO);
+
+
+       client.start(f_ClientQuery());
+
+       alt {
+           [] client.done {
+               server.stop;
+           }
+       }
+
+       alt {
+           [] all component.done {}
+       }
+
+       disconnect(server:PCO);
+   }
+
+    control{
+        execute(TC_NegSem_1400_procedure_signatures_001());
+    }
+
+}

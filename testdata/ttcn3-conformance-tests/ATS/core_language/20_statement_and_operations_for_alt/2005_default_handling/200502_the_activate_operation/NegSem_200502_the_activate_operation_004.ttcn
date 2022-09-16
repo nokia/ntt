@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:20.5.2, verify error is generated when activating altstep with inout parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// An altstep that is activated as a default shall only have in parameters, port parameters, or timer parameters.
+
+module NegSem_200502_the_activate_operation_004 {
+
+	type component GeneralComp {
+	}
+
+	altstep a(inout integer p_val) runs on GeneralComp {
+		[] any port.receive {}
+	}
+
+	testcase TC_NegSem_200502_the_activate_operation_004() runs on GeneralComp {
+		var integer v_val := 1;
+		activate(a(v_val));
+	}
+
+	control{
+		execute(TC_NegSem_200502_the_activate_operation_004());
+	}
+}

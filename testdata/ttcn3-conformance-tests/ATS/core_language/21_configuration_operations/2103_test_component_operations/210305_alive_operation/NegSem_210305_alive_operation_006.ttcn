@@ -1,0 +1,37 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, partially initialized array in any from ComponentArrayRef.alive
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The ComponentArrayRef shall be a reference to a completely initialized component array.
+
+module NegSem_210305_alive_operation_006 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	function f() runs on GeneralComp {
+		p.receive(integer:?);
+	}
+
+    testcase TC_NegSem_210305_alive_operation_006() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptcs[2];
+        v_ptcs[0] := GeneralComp.create alive;
+        v_ptcs[0].start(f());
+		if (any from v_ptcs.alive) {
+            setverdict(pass);
+		}
+    }
+
+    control {
+        execute(TC_NegSem_210305_alive_operation_006(), 5.0);
+    }
+}

@@ -1,0 +1,49 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.3.2, Ensure that the IUT rejects assignments from structures having incompatible anytypes
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_060302_structured_types_011 {
+
+ import from NegSem_060302_structured_types_011_importA all;
+ import from NegSem_060302_structured_types_011_importB all;
+
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_060302_structured_types_011() runs on GeneralComp {
+
+   var NegSem_060302_structured_types_011_importA.Atype v_a;
+   var NegSem_060302_structured_types_011_importB.Atype v_b := { F := 1 }
+
+   v_a:=v_b;		//v_a's type does not contain the selected alternative
+
+    if ( v_a==1 ) {
+        setverdict(pass);
+    }
+    else {
+        setverdict(fail);
+    }
+}
+
+control{
+    execute(TC_NegSem_060302_structured_types_011());
+}
+
+}
+
+
+module NegSem_060302_structured_types_011_importA {
+  type integer I (0..2);
+  type anytype Atype;
+ }
+
+
+module NegSem_060302_structured_types_011_importB {
+  type integer I (0..2);
+  type integer F;
+  type anytype Atype;
+}
+

@@ -1,0 +1,63 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, Ensure that the IUT correctly handles message sending operations
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_220201_SendOperation_004 {
+
+signature p_NegSem_220201_SendOperation_004(in integer p_par1, out integer p_par2, inout integer p_par3) return integer;
+
+template p_NegSem_220201_SendOperation_004 s_baseTemplate := {
+	p_par1 := -,
+	p_par2 := 4,
+	p_par3 := ?
+}
+
+template p_NegSem_220201_SendOperation_004 s_returnTemplate modifies s_baseTemplate := {
+	p_par3 := 5
+}
+
+template p_NegSem_220201_SendOperation_004 s_wrongTemplate modifies s_baseTemplate := {
+	p_par3 := 3
+}
+
+template p_NegSem_220201_SendOperation_004 s_callTemplate := {
+	p_par1 := 1,
+	p_par2 := -,
+	p_par3 := 3
+}
+
+    type port remotePort procedure {
+    	out p_NegSem_220201_SendOperation_004;
+	}
+
+type component GeneralComp {
+	  port remotePort PCO;
+}
+
+testcase NegSem_220201_SendOperation_004() runs on GeneralComp {
+
+ PCO.send(p_NegSem_220201_SendOperation_004:s_callTemplate, 5.0) {  //cannot use send operation on a procedure based port
+
+	[] PCO.getreply(p_NegSem_220201_SendOperation_004:s_wrongTemplate value 1) {
+		setverdict(fail);
+	}
+	[] PCO.getreply(p_NegSem_220201_SendOperation_004:s_returnTemplate value 2) {
+		setverdict(fail);
+	}
+	[] PCO.getreply(p_NegSem_220201_SendOperation_004:s_returnTemplate value 1) {
+		setverdict(pass);
+	}
+	[] PCO.catch (timeout) {
+		setverdict(fail);
+	}
+ }
+}
+
+control{
+    execute(NegSem_220201_SendOperation_004());
+}
+
+}

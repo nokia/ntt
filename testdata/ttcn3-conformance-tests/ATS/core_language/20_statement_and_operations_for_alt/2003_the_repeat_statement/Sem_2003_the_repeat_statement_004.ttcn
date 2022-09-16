@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:20.2, repeat in executed default
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// If a repeat statement is used in a top alternative in an altstep definition,
+// it causes a new snapshot and the re-evaluation of the alt statement from
+// which the altstep has been called. The call of the altstep may either be
+// done implicitly by the default mechanism (see clause 20.5.1) or explicitly
+// in the alt statement (see clause 20.2).
+
+module Sem_2003_the_repeat_statement_004 {
+
+    type port MyPort message {
+        inout charstring;
+    }
+
+    type component GeneralComp {
+	    port MyPort p;
+    }
+
+    altstep a_receiveAny() runs on GeneralComp {
+        [] p.receive(charstring:?) {
+            repeat;
+        }
+    }
+
+    testcase TC_Sem_2003_the_repeat_statement_004() runs on GeneralComp {
+        p.send(charstring:"foo");
+        p.send(charstring:"bar");
+        activate(a_receiveAny());
+        alt {
+            [] p.receive(charstring:"bar") {
+                setverdict(pass);
+            }
+        }
+    }
+
+    control {
+	    execute(TC_Sem_2003_the_repeat_statement_004());
+    }
+}

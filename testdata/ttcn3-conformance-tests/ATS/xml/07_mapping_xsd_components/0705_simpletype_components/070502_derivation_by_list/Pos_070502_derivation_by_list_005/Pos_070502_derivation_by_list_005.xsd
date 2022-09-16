@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070502_derivation_by_list_005"
+  xmlns:ns="schema:Pos_070502_derivation_by_list_005">
+  <element name="MyType">
+    <simpleType>
+      <list>
+        <simpleType>
+          <union>
+            <simpleType>
+              <restriction base="boolean" />
+            </simpleType>
+            <simpleType>
+              <restriction base="float" />
+            </simpleType>
+          </union>
+        </simpleType>
+      </list>
+    </simpleType>
+  </element>  
+</schema>

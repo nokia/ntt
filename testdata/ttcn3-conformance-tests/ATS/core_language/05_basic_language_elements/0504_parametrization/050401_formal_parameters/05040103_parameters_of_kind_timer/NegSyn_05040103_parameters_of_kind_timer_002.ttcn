@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.3, Verify that out timer parameters are not allowed
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Formal timer parameters shall be inout parameters, which can optionally be indicated by the keyword inout.
+
+module NegSyn_05040103_parameters_of_kind_timer_002 {
+
+    type component C {
+
+    }
+
+    function f_test(out timer p_tmr) {
+
+        p_tmr.start(1.0);
+
+    }
+
+
+    testcase TC_NegSyn_05040103_parameters_of_kind_timer_002() runs on C{
+
+    	timer t_tmr;
+
+        f_test(t_tmr);
+
+        t_tmr.timeout;
+        setverdict(pass);
+
+    }
+
+
+    control {
+
+        execute(TC_NegSyn_05040103_parameters_of_kind_timer_002());
+
+    }
+
+}

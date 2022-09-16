@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.9, Ensure that private member functions are not visible and can be present in multiple classes of the same hierarchy with different parameter lists and return values.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010110_Visibility_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MySuperClass {
+        var integer v_i;
+
+        private function f_do(integer v_i) return integer {
+            return this.v_i + v_i;
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+        private function f_do() {
+            log("Do nothing!!! (Visibility)");
+        }
+    }
+
+    testcase TC_Sem_5010110_Visibility_001() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create(32) : MySuperClass();
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_5010110_Visibility_001());
+    }
+}

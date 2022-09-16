@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.2.2, Ensure that multiple variables can contain a reference to the same object simultaneously.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010202_ObjectReferences_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        var integer x;
+
+        public function setX(integer x) {
+            this.x := x;
+        }
+
+        public function getX() return integer {
+            return this.x;
+        }
+    }
+
+    testcase TC_Sem_5010202_ObjectReferences_001() runs on GeneralComp {
+        var MyClass v_a := MyClass.create(7);
+        var MyClass v_b := v_a;
+        var MyClass v_c := v_b;
+        v_a.setX(5);
+        if (v_c.getX() == 5) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+    control {
+        execute(TC_Sem_5010202_ObjectReferences_001());
+    }
+}

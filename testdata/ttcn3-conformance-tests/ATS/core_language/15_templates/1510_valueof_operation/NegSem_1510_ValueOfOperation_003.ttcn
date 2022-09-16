@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.10,  Ensure that the valueof function works correctly on regular value templates.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1510_ValueOfOperation_003 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer field1,
+	boolean field2
+}
+
+testcase TC_NegSem_1510_ValueOfOperation_003() runs on GeneralComp {
+	var template ExampleType f_first := {
+		field1 := (1, 2),
+		field2 := true
+	};
+
+	var ExampleType v_second := valueof(f_first);
+
+	// if we get here, something must be wrong as valueof on m_template shall cause an error
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1510_ValueOfOperation_003());
+}
+
+}

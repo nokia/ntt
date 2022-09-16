@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.0, Ensure that templates are not allowed for class types.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_50101_top_level_003 "TTCN-3:2018 Object-Oriented" {
+
+     type component GeneralComp {
+     }
+
+    public type template class t_templ_class_const_field { //not allowed
+        private const charstring cons_ver_id := "0.0.1";
+
+        public function get_cons_verid() return charstring {
+            return this.cons_ver_id;
+        }
+    }
+
+    testcase TC_NegSem_50101_top_level_003() runs on GeneralComp {
+        var t_templ_class_const_field v_a := t_templ_class_const_field.create();
+        if (v_a.get_cons_verid() == "0.0.1") {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_50101_top_level_003());
+    }
+
+}

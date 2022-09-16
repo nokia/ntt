@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070603_referencing_group_components_010"
+  xmlns:ns="schema:Pos_070603_referencing_group_components_010">
+  <group name="shipAndBill">
+    <choice>
+      <element name="shipTo" type="string"/>
+      <element name="billTo" type="string"/>
+    </choice>
+  </group>
+  <element name="MyType">
+    <complexType>
+      <choice>
+         <group ref="ns:shipAndBill" />
+         <element name="sentFrom" type="string" />
+      </choice>
+    </complexType>
+  </element>  
+</schema>

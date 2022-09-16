@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined function get_stringencoding works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * The get_stringencoding function analyses the encoded_value and returns the UCS encoding scheme.*/
+
+
+module Sem_160102_predefined_functions_081 {
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_081 () runs on GeneralComp {
+
+
+   var octetstring v_test := '414243C3A9C3BC'O;    //UTF-8 encoded octetstring. The decoded value is: ABCéü
+
+   var charstring v_get := get_stringencoding(v_test);    // expected result: "UTF8"
+
+	if (match(v_get , ("UTF-8","<unknown>"))) {
+			setverdict(pass,"Decoded: ",v_get);
+		} else {
+			setverdict(fail, "Unexpected result: ", v_get);
+		}
+    }
+
+
+
+    control{
+        execute(TC_Sem_160102_predefined_functions_081());
+    }
+}

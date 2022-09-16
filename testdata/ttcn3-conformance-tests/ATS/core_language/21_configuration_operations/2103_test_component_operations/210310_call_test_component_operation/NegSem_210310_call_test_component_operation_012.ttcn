@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation returning a port
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The return value of the function or altstep invoked from a call test component operation neither
+// be of a port, default or timer type nor should contain a direct or indirect element or field of
+// a port, default or timer type.
+
+module NegSem_210310_call_test_component_operation_012 {
+    type port P message {
+	    inout integer;
+	}
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp return P {
+		setverdict(pass);
+		return null;
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_012() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        v_ptc.call(f());
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_012(), 5.0);
+    }
+}

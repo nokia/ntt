@@ -1,0 +1,11 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign different integer values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060100_SimpleBasicTypes_001 {
+    const integer c_i1 := 0;
+	const integer c_i2 := 1;
+	const integer c_i3 := -5;
+}

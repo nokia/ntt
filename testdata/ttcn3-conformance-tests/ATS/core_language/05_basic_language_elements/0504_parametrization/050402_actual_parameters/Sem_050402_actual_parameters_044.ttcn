@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that reference to elements of formal value parameters can be used as inout formal value parameters of functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module Sem_050402_actual_parameters_044 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        integer field1
+    }
+
+    function f_test(inout integer p_val) {
+        if (p_val == 11) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    function f_caller(in R p_param) {
+        f_test(p_param.field1); // tested parameter passing
+    }
+
+    testcase TC_Sem_050402_actual_parameters_044() runs on GeneralComp {
+        f_caller({field1 := 11 });
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_044());
+	}
+}

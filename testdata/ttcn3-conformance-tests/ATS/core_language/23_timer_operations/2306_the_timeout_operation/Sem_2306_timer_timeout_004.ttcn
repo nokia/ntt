@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure any timer.timeout operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation//Requirements/23 Timer operations/23.6 The Timeout operation/The any keyword used with the timeout operation succeeds if the timeout-list is not empty./Wait for timers in scope of the alt
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/The any keyword used with the timeout operation succeeds if the timeout-list is not empty./Wait for timers in scope of the alt
+// #reqname  /Requirements/23 Timer operations/23.7 Summary of use of any and all with timers/Allow any timer.timeout
+
+
+module Sem_2306_timer_timeout_004 {
+    type component TComp{
+        timer t_timer[2] := {1.0, 1.1};
+    }
+    altstep a_step() runs on TComp{
+        [] any timer.timeout {
+            setverdict(pass);
+        }
+    }
+    testcase TC_Sem_2306_timer_timeout_004() runs on TComp{
+        t_timer[0].start;
+        t_timer[1].start;
+        a_step();
+        a_step();
+        if (t_timer[0].running or t_timer[1].running){
+            setverdict(fail);
+        }
+        setverdict(pass);
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_004())
+
+
+    }
+}

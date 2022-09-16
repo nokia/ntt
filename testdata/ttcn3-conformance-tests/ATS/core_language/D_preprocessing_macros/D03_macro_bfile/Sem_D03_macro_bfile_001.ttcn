@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:D, Ensure that the __BFILE__ macro replaces the actual file name
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// the actual file name is given in __BFILE__ macro.
+module Sem_D03_macro_bfile_001 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_D03_macro_bfile_001() runs on GeneralComp system GeneralComp {
+
+	const charstring MyConst:=__BFILE__;
+
+    	if(match(MyConst, "Sem_D03_macro_bfile_001.ttcn")){
+		    setverdict(pass);
+	    } else {
+		    setverdict(fail);
+	    }
+    }
+
+    control {
+        execute(TC_Sem_D03_macro_bfile_001());
+    }
+}

@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that use class constructor with formal parameter.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010105_Constructors_001 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+       var integer v_i;
+       var charstring v_id;
+
+        create(integer v_i, charstring v_id) {
+            this.v_i := v_i;
+            this.v_id := v_id;
+        }
+
+        public function get_vi() return integer {
+            return this.v_i;
+        }
+
+        public function get_vid() return charstring {
+            return this.v_id;
+        }
+    }
+
+    testcase TC_Sem_5010105_Constructors_001() runs on GeneralComp {
+        var MyClass v_a := MyClass.create(5, "abc");
+        if (v_a.get_vi() == 5 and v_a.get_vid() == "abc") {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010105_Constructors_001());
+    }
+}

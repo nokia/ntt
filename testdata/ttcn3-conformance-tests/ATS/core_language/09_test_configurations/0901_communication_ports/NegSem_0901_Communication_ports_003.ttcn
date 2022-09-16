@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that it is not possible to connect a port with two other ports owned by the same component
+ ** @verdict  pass reject
+ ** @configuration  port:broadcast
+ ***************************************************/
+
+/*NOTE: see Figure 7(a): MyCompA has 3 ports and A2 shall not be connected to A1 and A3 both
+ * */
+
+module NegSem_0901_Communication_ports_003{
+
+	type charstring address;
+    type port IntegerInputPortType message {
+	  inout integer
+	}
+
+type component MycompA {	 // MyCompA has 3 ports
+	  port IntegerInputPortType messagePortA1,messagePortA2,messagePortA3
+}
+
+testcase TC_NegSem_0901_Communication_ports_003() runs on MycompA {
+
+connect(mtc:messagePortA1,mtc:messagePortA2);
+connect(mtc:messagePortA2,mtc:messagePortA3); // Error: this is not allowed
+    }
+
+control{
+    execute(TC_NegSem_0901_Communication_ports_003());
+}
+
+}

@@ -1,0 +1,53 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that defaults are not executed in response and exception handling part of a call operation
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The response and exception handling part of a call operation is executed like an alt
+// statement without any active default.
+
+module Sem_220301_CallOperation_008 {
+
+	signature S();
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+	function f_called() runs on GeneralComp {
+		timer t_tmr := 1.0;
+		p.getcall(S:?);
+		t_tmr.start;
+		t_tmr.timeout;
+		p.reply(S:{});
+	}
+
+	altstep a_timeout() runs on GeneralComp {
+		[] any timer.timeout { setverdict(fail, "Timer timeout"); }
+	}
+
+    testcase TC_Sem_220301_CallOperation_008() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		timer t_tmr := 0.1;
+		t_tmr.start;
+		activate(a_timeout()); // activates a default which shouldn't be triggered in the call block
+		connect(self:p, v_ptc:p);
+		v_ptc.start(f_called());
+		p.call(S:{}, 4.0) { // the local t_tmr timer should time out first, because the reply is delayed
+			[] p.getreply(S:?) { setverdict(pass, "Reply received"); }
+			[] p.catch(timeout) { setverdict(fail, "Call timeout"); }
+		}
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_220301_CallOperation_008(), 5.0);
+    }
+}

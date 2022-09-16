@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   TTF T003
+ ** @version  0.0.1
+ ** @purpose  1:6.2.15.2, Verify that values not present in the index assignment notation are unchanged
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Re-assigning a previously initialized value, using the not used symbol or just skipping
+// a field or element in an assignment notation, will cause that field or element to remain
+// unchanged.
+
+module Sem_06021502_indexed_assignment_notation_003 {
+	type map from charstring to integer TMap1;
+	type component C {}
+
+	testcase TC_Sem_06021502_indexed_assignment_notation_003() runs on C {
+		var TMap1 v_map := { ["test"] := 1, ["xyz"] := 5 }
+		v_map := { ["test"] := 10}
+		if (v_map["test"] == 10 and v_map["xyz"] == 5) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_06021502_indexed_assignment_notation_003());
+	}
+}

@@ -1,0 +1,17 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.2.9, Ensure that message-based ports with address are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_060209_CommunicationPortTypes_002 {
+
+    type port MyMessagePortTypeTwo message {
+        // if addressing is used on ports of type MyMessagePortTypeTwo
+        // the addresses have to be of type integer
+        address integer;
+        inout integer;
+    }
+
+}

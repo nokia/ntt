@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, ensure that value list cannot contain an empty assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// No empty assignment is allowed (e.g. two commas, the second immediately
+// following the first or only with white space between them).
+module NegSyn_060203_records_and_sets_of_single_types_001 {
+
+	type component GeneralComp {
+	}
+
+	type record of integer RoI;
+
+	testcase TC_NegSyn_060203_records_and_sets_of_single_types_001() runs on GeneralComp {
+
+		var RecordOfInt v_rec := { 0, , 2 };  // syntax error expected
+
+	}
+
+	control {
+		execute(TC_NegSyn_060203_records_and_sets_of_single_types_001());
+	}
+
+}

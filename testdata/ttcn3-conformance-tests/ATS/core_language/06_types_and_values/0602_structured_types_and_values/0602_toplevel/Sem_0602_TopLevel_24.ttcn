@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that mixed list and assignment notation can be used for an array type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+//The following requirement is tested:
+/* Values of these types (record, set, record of , set of, array) may be given using an explicit assignment notation or a
+ * short-hand value list notation or in a mixed list and assignment notation.
+ * */
+
+module Sem_0602_TopLevel_24
+{
+    type component GeneralComp {
+    }
+
+    type integer MyArrayType[3];
+
+    testcase TC_Sem_0602_TopLevel_024() runs on GeneralComp {
+
+		var MyArrayType v_myArray := { 1, [2] := 3, [1] := 2};    // mixed notation (assignment + list)
+
+        if (match(v_myArray, {1,2,3})) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_024());
+    }
+}

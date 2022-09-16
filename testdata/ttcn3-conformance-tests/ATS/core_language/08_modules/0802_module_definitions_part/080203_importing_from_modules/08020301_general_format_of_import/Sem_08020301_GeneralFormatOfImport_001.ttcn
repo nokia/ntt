@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.4, Ensure that transitive imports are properly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+
+module Sem_08020301_GeneralFormatOfImport_001 {
+
+import from Sem_08020301_GeneralFormatOfImport_001_import { import all };
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_001() runs on GeneralComp {
+	if (c_myconst == 43532) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_001());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_001_import {
+	public import from Sem_08020301_GeneralFormatOfImport_001_import_2 all;
+}
+
+
+module Sem_08020301_GeneralFormatOfImport_001_import_2 {
+	const integer c_myconst := 43532;
+}

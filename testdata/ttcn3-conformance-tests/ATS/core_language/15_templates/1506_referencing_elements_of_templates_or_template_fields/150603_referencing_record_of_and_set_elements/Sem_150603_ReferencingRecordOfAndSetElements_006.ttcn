@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that referencing an element within a record of, set of or array field to which omit is assigned works as expected
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//Restriction a)
+/*Omit: referencing an element within a record of, set of or array field to which omit is assigned shall follow the rules specified in clause 6.2.3.*/
+
+
+module Sem_150603_ReferencingRecordOfAndSetElements_006 {
+
+    type component GeneralComp { }
+
+    type record of integer RoI;
+
+    testcase TC_Sem_150603_ReferencingRecordOfAndSetElements_006() runs on GeneralComp {
+        var template RoI m_one;
+        var template RoI m_two := {6};
+
+        m_one := {1,-,3};
+        // assignment should yield omit
+        m_two := m_one;
+
+        if (ispresent(m_two)) {
+            setverdict(pass,m_two);
+        } else {
+            setverdict(fail,m_two);
+        }
+    }
+
+    control{
+        execute(TC_Sem_150603_ReferencingRecordOfAndSetElements_006());
+    }
+
+
+
+}

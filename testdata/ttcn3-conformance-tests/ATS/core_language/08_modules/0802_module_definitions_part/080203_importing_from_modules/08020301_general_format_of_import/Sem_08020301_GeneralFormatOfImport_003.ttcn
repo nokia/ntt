@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Make sure that local definition takes precedence over imported one when their identifiers are equal
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Name clashes may occur due to import, e.g. import from different modules. Name clashes
+// shall be resolved using qualified name(s) for the imported definition(s), i.e. prefixing
+// the imported definition (which causes the name clash) by the identifier of the module in
+// which it has been defined; the prefix and the identifier shall be separated by a dot (".").
+
+module Sem_08020301_GeneralFormatOfImport_003 {
+
+import from Sem_08020301_GeneralFormatOfImport_003_import all;
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_003() runs on GeneralComp {
+	if (c_myconst == -1) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+const integer c_myconst := -1;
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_003());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_003_import
+{
+	const integer c_myconst := 43532;
+}

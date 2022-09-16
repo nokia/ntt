@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.2
+ ** @purpose  1:5.4.1.2, verify that default template instance of template formal parameters can invoke functions with runs on clause
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// Background:
+// Prior to the version TTCN-3:2017, the template instance could not contain invocation of functions with a runs on clause.
+
+module Sem_05040101_parameters_of_kind_value_040 {
+	type component GeneralComp {
+        var integer vc_int := 1;
+	}
+
+    function fx() runs on GeneralComp return template integer {
+        return (vc_int..100);
+    }
+
+    function f(in template integer p_int := fx()) runs on GeneralComp {
+        log(p_int);
+    }
+
+	testcase TC_Sem_05040101_parameters_of_kind_value_040() runs on GeneralComp {
+        f();
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040101_parameters_of_kind_value_040());
+	}
+}

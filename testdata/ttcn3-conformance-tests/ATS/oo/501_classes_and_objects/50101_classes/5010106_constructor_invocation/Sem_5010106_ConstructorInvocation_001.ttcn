@@ -1,0 +1,44 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.6, Ensure that class constructor can be invoked and return reference to the newly constructed object.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010106_ConstructorInvocation_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+       var integer v_id;
+
+	   create(integer id){
+	        this.v_id := id;
+	   }
+
+	   public function get_vid() return integer {
+			return this.v_id;
+		}
+    }
+
+    testcase TC_Sem_5010106_ConstructorInvocation_001() runs on GeneralComp {
+    	var MyClass v_a := MyClass.create(123);
+
+    	if (v_a.get_vid() == 123) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+
+		v_a := MyClass.create(321); //return reference to the newly constructed object.
+		if (v_a.get_vid() == 321) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_5010106_ConstructorInvocation_001());
+    }
+}

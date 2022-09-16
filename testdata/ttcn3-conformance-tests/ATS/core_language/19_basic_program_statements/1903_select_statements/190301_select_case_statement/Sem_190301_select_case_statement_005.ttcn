@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:19.3, Ensure that the IUT properly evaluates select-case statements
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_190301_select_case_statement_005 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_190301_select_case_statement_005 () runs on GeneralComp{
+ var charstring v_i:="aBcDeFg";
+
+ select (v_i) {
+  case(charstring:"aBc") {
+   setverdict(fail);
+  }
+  case(charstring:"aBcDeFg") {
+   setverdict(pass);
+  }
+  case(charstring:"aBcD") {
+   setverdict(fail);
+  }
+  case else {
+   setverdict(fail);
+  }
+ }
+}
+
+
+control{
+
+    execute(TC_Sem_190301_select_case_statement_005());
+
+}
+
+}

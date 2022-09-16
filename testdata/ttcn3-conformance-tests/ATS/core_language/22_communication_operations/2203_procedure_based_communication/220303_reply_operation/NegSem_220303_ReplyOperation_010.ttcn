@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that reply operation on a disconnected port causes an error
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// f) Applying a reply operation to an unmapped or disconnected port shall cause a test
+// case error.
+
+module NegSem_220303_ReplyOperation_010 {
+
+    signature S();
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    function f_server() runs on GeneralComp {
+        p.getcall(S:?);
+		disconnect(self:p);
+        p.reply(S:{});
+    }
+
+    testcase TC_NegSem_220303_ReplyOperation_010() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}, nowait);
+        alt {
+			[] p.getreply {}
+			[] v_ptc.done {}
+		}
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220303_ReplyOperation_010(), 5.0);
+    }
+
+}

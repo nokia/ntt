@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:16.3, Ensure that the IUT properly evaluates invocation of testcases without clause "runs on", but with clause "system"
+ ** @verdict  pass reject, noexecute
+ ***************************************************/
+/**
+ * a) interface part (optional): denoted by the keyword runson which references the required component type for the MTC and makes the associated port names visible within the MTC behaviour.
+ * In case the runson clause is missing, the MTC created by the test case has no ports, and no component constants and variables;
+ */
+module NegSyn_1603_testcases_006 {
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+    type component GeneralComp {
+	  port loopbackPort messagePort;
+      const integer c_i := 2;
+      var integer v_i := 2;
+    }
+
+	testcase TC_NegSyn_1603_testcases_006 () system GeneralComp {
+		// testcase without clause "runs on", but "system" clause is present
+
+    	messagePort.send(c_i);	// Error: messagePort and c_i are unknown in this testcase
+	    if(match(v_i, c_i)){
+	         setverdict(pass);
+	    }else{
+	     setverdict(fail, v_i, c_i);
+	    }
+	}
+
+	control{
+	    execute(TC_NegSyn_1603_testcases_006());
+	}
+
+}

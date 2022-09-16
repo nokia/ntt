@@ -1,0 +1,40 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.0.6, ensure that anytype can have an set value and set value can be anytype
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060206_anytype_011 {
+ type component GeneralComp {
+}
+
+type set MySet
+{
+integer First,
+charstring	Second,
+anytype Third			//3rd element of this type of set is anytype
+}
+
+testcase TC_Sem_060206_anytype_011() runs on GeneralComp {
+
+var anytype c;
+var MySet S; // Set S from type MySet
+
+c.MySet.Second := "abc";	// anytype c becomes a charstring
+S.Third.float:=15.5; // The 3rd element in set S is now becomes a float with value 15.5
+
+
+      if ( match(c.MySet.Second, "abc") and match(S.Third.float, 15.5)) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060206_anytype_011());
+}
+
+}

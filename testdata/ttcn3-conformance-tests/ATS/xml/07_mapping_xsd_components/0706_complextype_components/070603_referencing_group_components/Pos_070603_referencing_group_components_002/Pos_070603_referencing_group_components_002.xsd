@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070603_referencing_group_components_002"
+  xmlns:ns="schema:Pos_070603_referencing_group_components_002">
+  <group name="shipAndBill">
+    <sequence>
+      <element name="shipTo" type="string"/>
+      <element name="billTo" type="string"/>
+    </sequence>
+  </group>
+  <group name="shipAndBillEx">
+    <sequence>
+      <group ref="ns:shipAndBill"/>
+      <element name="sentFrom" type="string"/>
+    </sequence>
+  </group>
+  <element name="MyType">
+    <complexType>
+      <group ref="ns:shipAndBillEx"/>
+    </complexType>
+  </element>  
+</schema>

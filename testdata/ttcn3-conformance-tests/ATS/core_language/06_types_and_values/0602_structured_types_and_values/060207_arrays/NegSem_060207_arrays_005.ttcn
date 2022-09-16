@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, wrong index type applied to an array on the right hand side of an assignment
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Indexed value notation can be used on both the right-hand side and left-hand
+// side of assignments. The index of the first element shall be zero or the lower
+// bound if an index range has been given.
+// [from 3.1] index notation: notation to access individual elements of record of,
+// set of, array and string values or templates, where the element to be accessed
+// is identified explicitly by an index value enclosed in square brackets ("[" and
+// "]") which specifies the position of that element within the referenced value
+// or template and the index value is either an integer value, array of integers
+// or record of integers.
+
+module NegSem_060207_arrays_005 {
+
+	type component GeneralComp {
+	}
+
+    type integer MyArrayType1[5] (1 .. 10);
+
+	testcase TC_NegSem_060207_arrays_005() runs on GeneralComp {
+
+        var MyArrayType1 v_array1 := { 8, 9, 2, 3, 4};
+		var integer i := v_array1["0"]; // error expected
+		setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060207_arrays_005());
+	}
+
+}

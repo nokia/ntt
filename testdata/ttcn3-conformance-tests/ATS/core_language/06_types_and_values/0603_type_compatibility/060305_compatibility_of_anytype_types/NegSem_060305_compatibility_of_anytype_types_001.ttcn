@@ -1,0 +1,52 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.3.0.6, ensure that anytype types are only compatible with other anytype types.
+ ** @verdict  pass reject
+ ***************************************************/
+
+/*The following requirement is tested:
+ * Only anytype types that are constrained to a fixed set of types via list subtyping
+ * can be a potential cause for anytype incompatibility, i.e. if the set of types contained
+ * in type "B" does not contain the type selected in "a".
+*/
+
+module NegSem_060305_compatibility_of_anytype_types_001 {
+
+    import from NegSem_060305_compatibility_of_anytype_types_001_importB all;
+    import from NegSem_060305_compatibility_of_anytype_types_001_importC all;
+
+    type integer I (0..9);
+    type charstring C;
+    type anytype Btype ({float:=?},{integer:=?});
+
+    type component GeneralComp {
+}
+
+
+testcase TC_NegSem_060305_compatibility_of_anytype_types_001() runs on GeneralComp {
+
+    var NegSem_060305_compatibility_of_anytype_types_001_importB.Atype v_aa;
+    var Atype v_baI := { NegSem_060305_compatibility_of_anytype_types_001_importC.I := 1 };
+
+    v_aa := v_baI;        // incorrect
+	      setverdict(pass);
+}
+
+control {
+    execute(TC_NegSem_060305_compatibility_of_anytype_types_001());
+}
+
+}
+
+
+module NegSem_060305_compatibility_of_anytype_types_001_importB  {
+		type integer I (0..2);
+		type anytype Atype ({I:=?},{integer:=?},{float:=?});
+}
+
+module NegSem_060305_compatibility_of_anytype_types_001_importC  {
+	    type integer I (0..2);
+		type float F;
+		type anytype Atype ({I:=?},{F:=?},{integer:=?});
+	}

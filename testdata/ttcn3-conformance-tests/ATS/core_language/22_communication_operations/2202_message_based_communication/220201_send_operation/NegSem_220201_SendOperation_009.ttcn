@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.2.1, null address in the to clause of send operation
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// No AddressRef in the to clause shall contain the special value null at the time
+// of the operation.
+
+module NegSem_220201_SendOperation_009 {
+
+	type port P message {
+		inout integer;
+	}
+
+    type integer address;
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220201_SendOperation_009() runs on GeneralComp {
+        var address v_addr := null;
+        p.send(1) to v_addr;
+        p.receive(integer:?);
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220201_SendOperation_009(), 5.0);
+    }
+}

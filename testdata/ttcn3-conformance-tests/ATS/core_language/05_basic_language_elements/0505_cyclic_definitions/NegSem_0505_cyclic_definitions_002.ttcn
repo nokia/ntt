@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:5.5, Verify that an error is detected when a forbidded cyclic reference occurs in cyclic import
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Direct and indirect cyclic definitions are not allowed with the exception of the
+// following cases:
+// a) for recursive type definitions (see clause 6.2);
+// b) function and altstep definitions (i.e. recursive function or altstep calls);
+// c) cyclic import definitions, if the imported definitions only form allowed cyclic
+// definitions.
+// The test is a modification of example 1 from the chapter 5.5 that defines both constants
+// in different modules.
+
+module NegSem_0505_cyclic_definitions_002 {
+	import from NegSem_0505_cyclic_definitions_002_import { const c_test1 }
+	type record ARecordType { integer a, integer b };
+	const ARecordType c_test2 := { 1 , c_test1.b}; // c_test2 refers to c_test1
+
+	testcase TC_Sem_0505_cyclic_definitions_005() runs on GeneralComp system GeneralComp {
+		log(c_test2);
+	}
+
+	control{
+	    execute(TC_Sem_0505_cyclic_definitions_005());
+	}
+}
+
+module NegSem_0505_cyclic_definitions_002_import {
+	import from NegSem_0505_cyclic_definitions_002 all;
+	const ARecordType c_test1 := { 1 , c_test2.b}; // c_test1 refers to c_test2
+}

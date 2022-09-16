@@ -1,0 +1,33 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:7, compound expression as an operand of record type
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Compound expressions are used for expressions of array, record, record of and
+// set of types.
+
+module Sem_07_toplevel_003
+{
+    type component GeneralComp {
+	}
+
+    type record R {
+        integer field1,
+        charstring field2 optional
+    }
+
+    testcase TC_Sem_07_toplevel_003() runs on GeneralComp {
+        var R v_rec;
+        v_rec.field1 := 1;
+        v_rec.field2 := omit;
+        if (v_rec == { field1 := 1, field2 := omit }) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_07_toplevel_003());
+	}
+}

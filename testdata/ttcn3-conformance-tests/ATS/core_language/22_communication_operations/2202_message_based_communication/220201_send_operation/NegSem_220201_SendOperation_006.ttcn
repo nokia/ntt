@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:22.2.1, partially initialized template
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The TemplateInstance (and all parts of it) shall have a specific value i.e. the use
+// of matching mechanisms such as AnyValue is not allowed.
+
+module NegSem_220201_SendOperation_006 {
+
+    type record of integer RoI;
+
+	type port P message {
+		inout RoI;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+	}
+
+    testcase TC_NegSem_220201_SendOperation_006() runs on GeneralComp {
+        var template RoI vm_msg := {1, -, 2};
+        p.send(vm_msg);
+        p.receive;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_220201_SendOperation_006(), 5.0);
+    }
+}

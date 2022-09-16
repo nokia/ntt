@@ -1,0 +1,14 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that module parameter of template kind is not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction a)
+// Only function, testcase, altstep and template definitions may have formal template parameters.
+
+module NegSyn_05040102_parameters_of_kind_template_001 {
+    modulepar template integer PX_TEMPLATE_PAR;
+}

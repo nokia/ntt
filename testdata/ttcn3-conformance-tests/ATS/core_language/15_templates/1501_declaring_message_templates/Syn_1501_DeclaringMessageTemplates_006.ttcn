@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.1, Ensure that all port operations are accepted.
+ ** @verdict  pass accept, noexecution
+ *****************************************************************/
+
+module Syn_1501_DeclaringMessageTemplates_006 {
+
+    type port MyMessagePortType message {
+        inout MyMessageType
+    }
+
+    type component GeneralComp {
+        port MyMessagePortType pt_myPort;
+    }
+
+    type record MyMessageType {
+        integer field1 optional,
+        charstring field2,
+        boolean field3
+    }
+
+    template MyMessageType m_myTemplate := {
+        field1 := omit,
+        field2 := "My string",
+        field3 := true
+    }
+
+    testcase TC_Syn_1501_DeclaringMessageTemplates_006() runs on GeneralComp {
+        pt_myPort.send(m_myTemplate);
+        pt_myPort.receive(m_myTemplate);
+        pt_myPort.trigger(m_myTemplate);
+        pt_myPort.check(receive(m_myTemplate));
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Syn_1501_DeclaringMessageTemplates_006());
+    }
+
+}

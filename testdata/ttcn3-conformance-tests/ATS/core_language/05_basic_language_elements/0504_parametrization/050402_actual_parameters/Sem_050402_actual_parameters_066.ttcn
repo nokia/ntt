@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that template parameters can be used as in formal template parameters of functions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to in formal template parameters shall be literal
+// values, module parameters, constants, variables, value or template returning (external)
+// functions, formal value parameters (of in, inout or out parameterization) of the current
+// scope or expressions composed of the above, as well as templates, template variables or
+// formal template parameters (of in, inout or out parameterization) of the current scope.
+
+module Sem_050402_actual_parameters_066 {
+
+    type component GeneralComp {
+	}
+
+    template integer m_msg := 1;
+
+    function f_test(in template integer p_val) {
+        if (match(1, p_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_066() runs on GeneralComp {
+        f_test(m_msg); // tested parameter passing
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_066());
+	}
+}

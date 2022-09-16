@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C.3.5)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * this test investigates that IUT correctly evaluates predefined function istemplateking().*/
+
+module Sem_160102_predefined_functions_055 {
+
+
+    type component GeneralComp {
+    }
+    type set of integer MySet(0 .. 10);
+
+    testcase TC_Sem_160102_predefined_functions_055 () runs on GeneralComp {
+
+    var template MySet v_8 := subset (1, 2, 3); //subset
+
+     if ( match(istemplatekind(v_8, "subset"), true)) {setverdict(pass," superset: ", istemplatekind(v_8, "subset"));}
+           else{setverdict(fail," subset:",istemplatekind(v_8, "subset"), " expected result: true");}
+    }
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_055());
+
+    }
+
+}

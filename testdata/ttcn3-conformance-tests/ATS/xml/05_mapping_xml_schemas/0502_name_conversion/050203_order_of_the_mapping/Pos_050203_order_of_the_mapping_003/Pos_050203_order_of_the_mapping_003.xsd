@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050203_order_of_the_mapping_003"
+  xmlns:ns="schema:Pos_050203_order_of_the_mapping_003">
+  <attribute name="ü_item" type="boolean" />
+  <attribute name="Item" type="float" />
+  <element name="ä_item" type="string" />
+  <element name="item" type="integer" />
+</schema>

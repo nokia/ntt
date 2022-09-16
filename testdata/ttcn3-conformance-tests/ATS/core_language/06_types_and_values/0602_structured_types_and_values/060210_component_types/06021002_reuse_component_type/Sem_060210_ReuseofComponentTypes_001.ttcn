@@ -1,0 +1,50 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.10, Ensure that extending a component with another component works properly
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+/* The following requirements are tested:
+ * It is allowed to have one component type extending several parent types in one definition,
+ * which have to be specified as a comma-separated list of types in the definition.
+ * Any of the parent types may also be defined by means of extension.
+ */
+
+module Sem_060210_ReuseofComponentTypes_001 {
+
+ //MyComp has a port
+ type component MyComp {
+       port loopbackPort pt_myPort;
+    }
+
+//Component GeneralComp has a timer and a port extended from MyComp
+ type component GeneralComp extends MyComp {
+        timer t;
+    }
+
+    type port loopbackPort message {
+        inout integer;
+    }
+
+
+    testcase TC_Sem_060210_ReuseofComponentTypes_001() runs on GeneralComp {
+
+  //Send an integer:
+     pt_myPort.send(2);
+
+    alt {
+     [] pt_myPort.receive(2) {
+        setverdict(pass, "Receive successful");
+     }
+     [] pt_myPort.receive {
+        setverdict(fail, "Unexpected result");
+     }
+    }
+
+  }
+
+    control{
+        execute(TC_Sem_060210_ReuseofComponentTypes_001());
+    }
+}

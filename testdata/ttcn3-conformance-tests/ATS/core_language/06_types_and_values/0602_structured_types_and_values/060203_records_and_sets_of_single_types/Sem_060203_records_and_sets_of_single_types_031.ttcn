@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3, array as a set-of value index on right hand side (dimensions match)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// For nested record of or set of types, an array or record of integer restricted
+// to a single size can be used as a short-hand notation for a nested index
+// notation.
+
+module Sem_060203_records_and_sets_of_single_types_031 {
+
+	type component GeneralComp {
+	}
+
+	type set of set of integer SoSoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_031() runs on GeneralComp {
+
+		var SoSoI v_set := {{0, 1}, {2, 3}};
+        var integer v_index[2] := { 1, 0 }
+		if (v_set[v_index] == 2) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_031());
+	}
+
+}

@@ -1,0 +1,13 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Accept all verdict values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060100_SimpleBasicTypes_006 {
+    const verdicttype c_v1 := pass;
+    const verdicttype c_v2 := fail;
+    const verdicttype c_v4 := inconc;
+    const verdicttype c_v5 := none;
+    const verdicttype c_v6 := error;
+}

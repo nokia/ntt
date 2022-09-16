@@ -1,0 +1,33 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify using of import clause with language tag for impoting module having identical language tag
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction h:
+// The language specification of the import statement shall be identical to the language
+// specification of the source module from which definitions are imported provided
+// a language specification is defined in the source module.
+
+module Sem_08020301_GeneralFormatOfImport_017 {
+
+import from Sem_08020301_GeneralFormatOfImport_017_import language "TTCN-3:2013" all;
+
+type component GeneralComp {}
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_017() runs on GeneralComp {
+	if (c_test == 0) { setverdict(pass); }
+	else { setverdict(fail); }
+}
+
+control{
+	// testing if parameter names are imported
+    execute(TC_Sem_08020301_GeneralFormatOfImport_017());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_017_import language "TTCN-3:2013" {
+	const integer c_test := 0;
+}

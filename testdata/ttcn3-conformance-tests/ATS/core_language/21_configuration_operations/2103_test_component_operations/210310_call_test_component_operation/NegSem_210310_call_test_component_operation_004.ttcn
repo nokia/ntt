@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation invoked on a non-component object
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The ObjectReference shall be of a component type.
+
+module NegSem_210310_call_test_component_operation_004 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		setverdict(pass);
+	}
+
+    testcase TC_NegSem_210310_call_test_component_operation_004() runs on GeneralComp system GeneralComp {
+        timer t;
+        t.call(f());
+		setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210310_call_test_component_operation_004(), 5.0);
+    }
+}

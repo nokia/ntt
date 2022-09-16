@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.7, Ensure that the import of import statements works for import all.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001 {
+
+import from NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001_importA {
+    import all;
+};
+
+type component GeneralComp {}
+
+testcase TC_NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001() runs on GeneralComp {
+    if (c_myconst == 43532) { // c_myconst shall not be accessible as the import in the importA module is private.
+        setverdict(fail);
+    } else {
+        setverdict(pass);
+    }
+}
+
+control{
+    execute(TC_NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001());
+}
+}
+
+module NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001_importA {
+    private import from NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001_importB all;
+}
+
+module NegSem_08020307_ImportingOfImportStatementsFromT3Modules_001_importB {
+    const integer c_myconst := 43532;
+}

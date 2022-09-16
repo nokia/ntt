@@ -1,0 +1,43 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that predefined decvalue and decvalue_unichar function works properly in case of uninitialized encode value is given
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirements are tested:
+ * all actual in and inout parameters shall be initialized with the following exceptions:
+ * 16.1.2. Restriction a.3 : the encoded_value parameter of the decvalue and decvalue_unichar function may be uninitialized.*/
+
+module Sem_160102_predefined_functions_080 {
+    type enumerated E { one(1), two(2), three(3) } with { variant "32 bit"};
+
+    type component GeneralComp {
+    }
+
+    testcase TC_Sem_160102_predefined_functions_080 () runs on GeneralComp {
+
+        var bitstring v_test;    // uninitialized value for encoded_value parameter decvalue() input
+        var universal charstring v_test_enc_8; // uninitialized value encoded_value parameter for decvalue_unichar() input
+		var E v_decoded;
+        var E v_decoded_8;
+
+		var integer v_res := decvalue(v_test, v_decoded);
+        var integer v_res_8 := decvalue_unichar(v_test_enc_8, v_decoded_8, "UTF-8");
+
+        if(match(v_res,1)){
+            setverdict(pass,"Decoded ", v_decoded , " with result ", v_res);
+        }else{
+             setverdict(fail,"Decode failed ", v_decoded , " with result ", v_res);
+        }
+
+        if(match(v_res_8,1)){
+            setverdict(pass,"Decoded ", v_decoded_8 , " with result ", v_res_8);
+        }else{
+             setverdict(fail,"Decode failed ", v_decoded_8 , " with result ", v_res_8);
+        }
+    }
+    control{
+        execute(TC_Sem_160102_predefined_functions_080());
+    }
+}

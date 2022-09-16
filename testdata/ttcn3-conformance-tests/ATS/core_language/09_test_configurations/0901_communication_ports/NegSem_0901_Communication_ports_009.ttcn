@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:9.1, Verify that connections within the test system interface are not allowed
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction a): Connections within the test system interface are not allowed.
+
+module NegSem_0901_Communication_ports_008 {
+
+    type port P message {
+        inout integer
+    }
+
+    type component GeneralComp
+    {
+        port P p1, p2;
+    }
+
+    testcase TC_NegSem_0901_Communication_ports_008() runs on GeneralComp system GeneralComp {
+		map(system:p1, system:p1); // mapping system port to itself: error expected
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_0901_Communication_ports_008());
+    }
+}
+

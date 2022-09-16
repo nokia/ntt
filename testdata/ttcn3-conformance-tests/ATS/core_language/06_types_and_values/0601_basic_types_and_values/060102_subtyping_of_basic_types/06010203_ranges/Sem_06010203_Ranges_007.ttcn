@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign values to range restricted universal charstring.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_06010203_Ranges_007 {
+    type universal charstring MyUCharString (char(0, 0, 1, 111) .. char(0, 0, 1, 113));
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_06010203_Ranges_007() runs on GeneralComp {
+        var MyUCharString v_uc1;
+        v_uc1 := char(0, 0, 1, 111);
+		setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_06010203_Ranges_007());
+    }
+}

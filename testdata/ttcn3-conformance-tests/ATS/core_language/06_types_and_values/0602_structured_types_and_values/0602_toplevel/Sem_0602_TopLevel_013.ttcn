@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that indexed notation can be used for a set of type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_0602_TopLevel_013 {
+
+    type component GeneralComp {
+    }
+
+    type set of integer MySetOf;
+
+    testcase TC_Sem_0602_TopLevel_013() runs on GeneralComp {
+
+        var MySetOf v_allSets := {1,2,3};
+        var integer Integer1 :=3;
+        v_allSets[0] := Integer1;
+        Integer1 := v_allSets[1];
+
+        if ( match(v_allSets, {3,2,3}) and match(Integer1, 2)) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_013());
+    }
+}

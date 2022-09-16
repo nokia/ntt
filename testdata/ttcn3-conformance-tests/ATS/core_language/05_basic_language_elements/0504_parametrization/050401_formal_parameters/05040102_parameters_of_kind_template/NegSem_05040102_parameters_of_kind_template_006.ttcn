@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that inout template formal parameters cannot have default values
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction c)
+// Default templates can be provided for in parameters only.
+
+module NegSem_05040102_parameters_of_kind_template_006 {
+	type component GeneralComp {
+	}
+
+    function f(inout template integer p_int := ?) {
+    }
+
+	testcase TC_NegSem_05040102_parameters_of_kind_template_006() runs on GeneralComp {
+        var template integer v_int := 0;
+        f(v_int);
+        log(v_int);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040102_parameters_of_kind_template_006());
+	}
+}

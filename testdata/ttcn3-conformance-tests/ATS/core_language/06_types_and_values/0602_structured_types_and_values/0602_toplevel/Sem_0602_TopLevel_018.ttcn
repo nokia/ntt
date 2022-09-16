@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that assignment notation can be used for a record type.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+/* The following requirement is tested: When the assignment notation is used in a scope, where the optional attribute is implicitly or explicitly set to
+"explicit omit", optional and mandatory fields, not directly referred to in the notation shall remain
+unchanged.When optional fields of variables are not assigned explicitly, they are uninitialized
+*/
+
+module Sem_0602_TopLevel_018 {
+
+
+    type component GeneralComp {
+    }
+
+    type record MyRecord {
+        integer field1,
+        charstring field2 optional,
+        float field3
+    }
+
+    testcase TC_Sem_0602_TopLevel_018() runs on GeneralComp {
+
+		var MyRecord v_myRecord := {
+			            field1 := 5,
+			            field3 := 3.14
+		} with { optional "implicit omit" };
+
+
+        if (match(v_myRecord.field2, omit)) {
+            setverdict(pass);
+        }
+        else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_0602_TopLevel_018());
+    }
+}

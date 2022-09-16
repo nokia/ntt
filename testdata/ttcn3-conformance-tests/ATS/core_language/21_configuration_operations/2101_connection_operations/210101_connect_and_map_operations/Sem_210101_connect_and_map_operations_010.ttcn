@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that the param part can be skipped in map operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction g:
+// In map operations, param clauses are optional.
+
+module Sem_210101_connect_and_map_operations_010 {
+
+	type port P message {
+		inout integer;
+		map param (integer p_par1);
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_Sem_210101_connect_and_map_operations_010() runs on GeneralComp system GeneralComp {
+		map(system:p, self:p);
+		if(p.checkstate("Mapped")) {
+			setverdict(pass);
+		} else {
+			setverdict(fail);
+		}
+
+	}
+
+	control{
+	    execute(TC_Sem_210101_connect_and_map_operations_010());
+	}
+}

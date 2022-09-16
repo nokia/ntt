@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.2, verify that default template instance of template formal parameters is resolved in the scope of the parameterized entity
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// If a default template is used, it is evaluated in the scope of the parameterized entity, not the scope of the actual parameter list.
+
+module Sem_05040102_parameters_of_kind_template_041 {
+	type component GeneralComp {
+        var template integer vc_int := ?;
+	}
+
+    function f(in template integer p_int := vc_int) runs on GeneralComp {
+        if (match(10, p_int)) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+	testcase TC_Sem_05040102_parameters_of_kind_template_041() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        vc_int := (1, 2, 3);
+		v_ptc.start(f()); // p_int default to ? (vc_int of v_ptc) and not to (1, 2, 3) (vc_int of self)
+        v_ptc.done;
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_Sem_05040102_parameters_of_kind_template_041());
+	}
+}

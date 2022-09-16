@@ -1,0 +1,31 @@
+/***************************************************
+ ** @author   STF 409, updated by STF 572
+ ** @version  0.0.2
+ ** @purpose  1:6.3.2.1, Compatible enumerated types
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_060302_structured_types_009 {
+
+	type enumerated EnumeratedType {e_black, e_white};
+	type enumerated EnumeratedRedefinition {e_black, e_white};
+
+
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_060302_structured_types_009() runs on GeneralComp {
+
+    var EnumeratedType v_enum1:=e_black;
+    var EnumeratedRedefinition v_enum2;
+
+    v_enum2:=v_enum1; // not a synonym type
+	setverdict(pass);
+}
+
+control{
+    execute(TC_Sem_060302_structured_types_009());
+}
+
+}

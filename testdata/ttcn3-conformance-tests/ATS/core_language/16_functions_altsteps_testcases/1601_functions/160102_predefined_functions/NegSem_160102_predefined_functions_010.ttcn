@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C)
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_160102_predefined_functions_010 {
+	type record of integer IntegerList;
+
+type component GeneralComp {
+}
+
+
+testcase TC_NegSem_160102_predefined_functions_010 () runs on GeneralComp {
+	template IntegerList template1 := { 1, 2, 3, * } length(1..2) ; 		//incorrect template length
+	var integer v_i;
+
+ 	v_i:=lengthof(template1);
+
+}
+
+
+control{
+
+    execute(TC_NegSem_160102_predefined_functions_010());
+
+}
+
+}

@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, Ensure that component.stop causes the stopping of the target component.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_210303_Stop_test_component_001 {
+
+    type component GeneralComp { }
+
+    function f() runs on GeneralComp {
+    	// wait until component is stopped from outside
+        while (true) {}
+    }
+
+
+    testcase TC_Sem_210303_Stop_test_component_001() runs on GeneralComp system GeneralComp {
+        timer t := 1.0;
+        var GeneralComp ptc;
+        ptc:=GeneralComp.create;
+
+        ptc.start(f());
+
+		// wait until component started
+		t.start;
+		t.timeout;
+
+        ptc.stop;
+
+		// Test ptc behavior after stop
+        if (ptc.running==false)
+        {
+            setverdict(pass);
+        }
+        else
+        {
+            setverdict(fail, "Component still running");
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_210303_Stop_test_component_001());
+    }
+}

@@ -1,0 +1,35 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:21.3.10, call operation: value clause ignored after incomplete execution
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// In all cases of incomplete execution, the variables referenced in the value and verdict clause
+// or in out and inout actual parameters will stay unchanged and no assignment will be made.
+
+module Sem_210310_call_test_component_operation_011 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp return integer {
+		setverdict(pass);
+		stop;
+	}
+
+    testcase TC_Sem_210310_call_test_component_operation_011() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		var integer v_int := 0;
+        v_ptc.call(f()) -> value v_int catch(stop) {}
+		if (v_int == 0) {
+		    setverdict(pass);
+		} else {
+		    setverdict(fail);
+		}
+    }
+
+    control {
+        execute(TC_Sem_210310_call_test_component_operation_011(), 5.0);
+    }
+}

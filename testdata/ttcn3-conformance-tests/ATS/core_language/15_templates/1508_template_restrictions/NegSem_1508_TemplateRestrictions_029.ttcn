@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that the template(present) with anyvalue(?) can't be assigned to an omit restricted variable template
+ ** @verdict  pass reject
+ *****************************************************************/
+
+
+module NegSem_1508_TemplateRestrictions_029 {
+
+    type record ExampleType {	// Exampletype record contains a charstring and a boolean
+       	charstring a,
+		boolean b
+       }
+
+	type component GeneralComp {
+	var template (omit) ExampleType v_omit;	//omit restricted template variable
+	}
+
+
+	template (present) ExampleType MyintTemplate :={ //actual template with present restriction contains anytype (?)
+	a := ?,
+	b := false
+	}
+
+
+	testcase TC_NegSem_1508_TemplateRestrictions_029() runs on GeneralComp {
+
+	v_omit := MyintTemplate;	//error: v_omit is omit restricted, hence can not contain anytype(?)
+
+		if (valueof(v_omit.b) == false) {
+      		setverdict(pass);
+		} else {
+            setverdict(fail);
+       }
+ }
+
+    control{
+        execute(TC_NegSem_1508_TemplateRestrictions_029());
+    }
+}

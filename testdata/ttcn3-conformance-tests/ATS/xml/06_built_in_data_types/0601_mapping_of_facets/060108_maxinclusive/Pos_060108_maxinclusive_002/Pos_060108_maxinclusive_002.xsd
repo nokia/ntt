@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_060108_maxinclusive_002"
+  xmlns:types="schema:Pos_060108_maxinclusive_002">
+    <simpleType name="t1">
+        <restriction base="float">
+        <maxInclusive value="5"/>
+        <!--Float possible values from http://www.w3.org/TR/xmlschema-2/#float  : -1E4, 1267.43233E12, 12.78e-2, 12 , -0, 0 and INF are all legal literals for float-->
+    </restriction>
+    </simpleType>
+    <element name="e1" type="types:t1"/>
+</schema>

@@ -1,0 +1,38 @@
+/***************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:9, Ensure that the a connected port cannot be mapped
+ ** @verdict  pass reject
+ ***************************************************/
+
+// A connected port cannot be mapped with a system interface port
+module NegSem_0902_Communication_ports_004{
+
+    type port loopbackPort message {
+	  inout integer
+		}
+type port IntegerOutputPortType message {
+	  inout integer
+	}
+
+
+type component MyTestSystemInterface
+	{
+ 	port IntegerOutputPortType messagePort
+	}
+// MyTestSystemInterface is the test system interface
+testcase TC_NegSem_0902_Communication_ports_004() runs on MyTestSystemInterface system MyTestSystemInterface {
+// establishing the port connections
+	var MyTestSystemInterface MycompA;
+	var MyTestSystemInterface MycompB;
+MycompA := MyTestSystemInterface.create;
+MycompB := MyTestSystemInterface.create;
+
+connect(MycompA:messagePort,MycompB:messagePort);
+map(MycompB:messagePort, system:messagePort); //  not allowed this type of connection
+
+}
+control{
+    execute(TC_NegSem_0902_Communication_ports_004());
+}
+}

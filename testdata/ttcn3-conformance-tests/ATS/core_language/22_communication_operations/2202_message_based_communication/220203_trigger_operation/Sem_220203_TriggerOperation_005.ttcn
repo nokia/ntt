@@ -1,0 +1,42 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:22.2.3, Ensure that the IUT correctly handles message trigger operations
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_220203_TriggerOperation_005 {
+
+
+    type port loopbackPort message {
+	  inout integer
+	}
+
+type component GeneralComp {
+	  port loopbackPort messagePort
+}
+
+testcase TC_Sem_220203_TriggerOperation_005() runs on GeneralComp {
+ timer t_timeout:=5.0;
+
+ messagePort.send(2);
+ t_timeout.start;
+
+    alt {
+     [] any port.trigger(2) {   //checks trigger from any port
+        setverdict(pass);
+     }
+     [] messagePort.trigger {	//this alt is only selected if message was not removed from the queue
+        setverdict(fail);
+     }
+     [] t_timeout.timeout {
+       setverdict(fail);
+     }
+    }
+}
+
+control{
+    execute(TC_Sem_220203_TriggerOperation_005());
+}
+
+}

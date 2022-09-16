@@ -1,0 +1,21 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:6.1.2.3, Assign invalid value to range constrained universal charstring.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_06010203_Ranges_013 {
+    type universal charstring MyUCharString (char(0, 0, 1, 111) .. !char(0, 0, 1, 113));
+
+    type component GeneralComp {}
+
+    testcase TC_NegSem_06010203_Ranges_013() runs on GeneralComp {
+        var MyUCharString v_uc1;
+        v_uc1 := char(0, 0, 1, 100); // out of range
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_06010203_Ranges_013());
+    }
+}

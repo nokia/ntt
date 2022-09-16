@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 548
+ ** @version  0.0.1
+ ** @purpose  1:27.5, Verify that an error is generated if variant contains an unknown encoding reference (inside a list)
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirement is tested:
+// Restriction a)
+// When dot notation is used in the variant attribute value for an element, the strings preceding
+// the dot symbol shall resolve into one of the encode attribute values associated with the same
+// element.
+
+module NegSem_2705_variant_attributes_003 {
+
+    type component GeneralComp {
+	}
+
+	type charstring Multi with {
+		encode "Codec1"; encode "Codec2";
+		variant {"Codec1", "Codec3"}."Rule1";
+	}
+
+	type record of universal charstring RoUC;
+
+	testcase TC_NegSem_2705_variant_attributes_003 () runs on GeneralComp {
+		setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_2705_variant_attributes_003());
+	}
+
+}

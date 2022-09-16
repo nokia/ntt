@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author  STF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.5, Ensure that constants are initialized exactly once
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010105_Constructors_008 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+        const integer c_i := 1;
+
+        create() {
+            this.c_i := 1; //not allowed, constants shall be initialized exactly once
+        }
+    }
+
+    testcase TC_NegSem_5010105_Constructors_008() runs on GeneralComp {
+        var MyClass o_myClass := MyClass.create();
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_5010105_Constructors_008());
+    }
+}

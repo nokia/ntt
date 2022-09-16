@@ -1,0 +1,86 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:7.2.7, Ensure that verdicttype value shall be encoded as JSON.String
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+/*
+  TTCN-3 verdicttype values shall be encoded in JSON as JSON.String-s.
+ * */
+
+module Pos_070207_verdicttype_003 {
+
+    import from JSON all;
+
+    type verdicttype MyVerdictType with { encode "JSON" };
+
+    const MyVerdictType m_msg := inconc; // encoding verdicttype as JSON.String
+    /* { "Pos_070207_verdicttype_003.MyVerdictType": "inconc" } */
+
+    /**
+     * @desc The timeout given in seconds after which the test case will be stopped.
+     */
+    modulepar float PX_TC_EXECUTION_TIMEOUT := 5.0;
+
+    type universal charstring Raw with { encode "Text" };
+
+    type universal charstring File;
+    type record of File FileList;
+
+    type port P message {
+        inout all;
+    }
+    type component C {
+        port P p;
+    }
+
+    /**
+     * @desc lexical compare the charstring p_textToMatch with the contents of the reference JSON file and returns true if they represent the same JSON structure
+     * @param p_textToMatch text to be compared with the UTF-8 contents of the JSON data
+     * @param p_referenceJsonFile the JSON data
+     * @param p_matchError the error result in case it did not match
+     * @param p_referenceTTCN3File the file of the TTCN-3 test module. This path is used to find the reference JSON file relative to this path, by keeping the TTCN-3 code file system independent.
+     * @return true if p_textToMatch and the contents of p_referenceJsonFile represent the same JSON data
+     */
+    external function matchFile(Raw p_textToMatch, File p_referenceJsonFile, out universal charstring p_matchError, File p_referenceTTCN3File := __FILE__) return boolean;
+
+    testcase TC_Pos_070207_verdicttype_003() runs on C system C {
+
+        var Raw v_rcv;
+        var universal charstring v_matchError;
+
+        map(self:p, system:p);
+
+        // encode the message
+        p.send(m_msg);
+
+        alt {
+            // compare the encoded message with the reference JSON file
+            []  p.check(receive(Raw:?) -> value v_rcv) {
+                log("JSON message: ", v_rcv);
+                if (matchFile(v_rcv, "Pos_070207_verdicttype_003.json", v_matchError)) {
+                    alt {
+                        // match decoded value to pass test
+                        [] p.receive(m_msg) {
+                            setverdict(pass, "Decoded value matches encoded template and reference JSON");
+                        }
+                        [] p.receive {
+                            setverdict(fail, "JSON decoding failure");
+                        }
+                    }
+                } else {
+                    setverdict(fail, v_matchError);
+                }
+
+            }
+            [] p.receive {
+                setverdict(fail, "Raw decoding failure");
+            }
+        }
+    }
+
+    control {
+        execute(TC_Pos_070207_verdicttype_003(), PX_TC_EXECUTION_TIMEOUT);
+    }
+
+}

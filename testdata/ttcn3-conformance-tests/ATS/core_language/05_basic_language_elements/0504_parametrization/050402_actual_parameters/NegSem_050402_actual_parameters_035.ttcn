@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that constants cannot be used as inout formal value parameters of altsteps
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module NegSem_050402_actual_parameters_035 {
+
+    type component GeneralComp {
+        timer t := 0.0;
+	}
+
+    const integer c_val := 3;
+
+    altstep a_test(inout integer p_val) runs on GeneralComp {
+        []t.timeout {
+            if (p_val == 3) { setverdict(pass); }
+            else { setverdict(fail); }
+        }
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_035() runs on GeneralComp {
+        t.start;
+        a_test(c_val); // tested parameter passing
+	}
+
+	control {
+		execute(TC_NegSem_050402_actual_parameters_035());
+	}
+}

@@ -1,0 +1,40 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.4, standalone kill in alive PTC
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// The kill operation can be applied on the current test component itself by a simple
+// kill statement or by addressing itself using the self operation in conjunction with
+// the kill operation.
+
+
+module Sem_210304_kill_test_component_005 {
+
+    type component GeneralComp {
+    	timer t;
+    }
+
+	function f() runs on GeneralComp {
+        var boolean v_bCond := true;
+        if (v_bCond) { kill; } // to bypass possible "unreachable statement" errors
+	    setverdict(fail);
+	}
+
+    testcase TC_Sem_210304_kill_test_component_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc := GeneralComp.create alive;
+
+		ptc.start(f());
+		t.start(5.0);
+		alt {
+            [] ptc.killed { setverdict(pass); }
+            [] t.timeout { setverdict(fail); }
+		}
+    }
+
+    control {
+        execute(TC_Sem_210304_kill_test_component_005());
+    }
+}

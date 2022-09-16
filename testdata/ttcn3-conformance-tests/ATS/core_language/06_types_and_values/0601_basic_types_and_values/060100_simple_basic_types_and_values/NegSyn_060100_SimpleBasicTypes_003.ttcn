@@ -1,0 +1,9 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign integer to float values
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSyn_060100_SimpleBasicTypes_003 {
+    const float c_f1 := 0; // not a float value
+}

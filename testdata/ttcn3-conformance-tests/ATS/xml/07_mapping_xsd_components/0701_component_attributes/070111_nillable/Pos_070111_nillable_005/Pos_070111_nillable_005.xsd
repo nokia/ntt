@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_070111_nillable_005"
+  xmlns:ns="schema:Pos_070111_nillable_005">  
+  <element name="MyType" nillable="true">
+	<complexType> 
+		<sequence>
+			<element name="foo" type="integer"/>
+		</sequence>
+		<attribute name="bar" type="integer"/>
+		<attribute name="content" type="integer"/>
+	</complexType>
+  </element>
+</schema>

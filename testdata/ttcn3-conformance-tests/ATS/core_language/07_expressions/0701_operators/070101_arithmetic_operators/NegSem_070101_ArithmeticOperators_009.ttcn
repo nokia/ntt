@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that in x rem y arithmetic operator y is non-zero positive number
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_070101_ArithmeticOperators_009 {
+
+type component GeneralComp {
+}
+
+testcase TC_NegSem_070101_ArithmeticOperators_009() runs on GeneralComp {
+	var integer v_i := 20;
+	var integer v_k :=0;
+
+	var integer v_result := v_i rem v_k;	// arithmetic operator rem with 0 is not allowed
+
+		setverdict(pass);
+
+}
+control{
+    execute(TC_NegSem_070101_ArithmeticOperators_009());
+}
+
+}

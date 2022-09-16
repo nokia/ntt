@@ -1,0 +1,30 @@
+/***************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that the IUT recognizes predefined functions and correctly evaluates them (as specified by Annex C.3.5)
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+module Sem_160102_predefined_functions_062 {
+
+    type component GeneralComp {
+    }
+
+    type record of integer MyRecofInt;
+
+    testcase TC_Sem_160102_predefined_functions_062() runs on GeneralComp {
+        var template MyRecofInt v_1 := {1,2,3,4,5}; // specific value of integer type
+        var template bitstring enc := decmatch v_1;    //encoded template
+
+        if (match(istemplatekind(enc, "decmatch"), true)) {
+            setverdict(pass, "decmatch: ", istemplatekind(enc, "decmatch"));
+        } else {
+            setverdict(fail, "decmatch: ", istemplatekind(enc, "decmatch"), "; expected result: true");
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_160102_predefined_functions_062());
+    }
+}

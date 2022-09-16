@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 451 (updated by STF 470, 487 and 521)
+ ** @version  0.0.1
+ ** @desc     Test cases for clause 6.2
+ ** @purpose  1:6.2, Ensure that assignments with "implicit omit" attribute are correctly handled
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060201_RecordTypeValues_004 {
+
+type component GeneralComp {
+}
+
+ type record R {
+  integer f1,
+  integer f2 optional,
+  integer f3,
+  integer f4 optional,
+  integer f5 optional
+ }
+
+testcase TC_Sem_060201_RecordTypeValues_004() runs on GeneralComp {
+
+ var R v_assigned := { 1, 2 } with { optional "implicit omit" }		// f3 stays undefined
+ if (v_assigned.f1 == 1 and
+	v_assigned.f2 == 2 and
+	not isbound(v_assigned.f3) and
+	not ispresent(v_assigned.f4) and
+	not ispresent(v_assigned.f5)) {
+		setverdict(pass);
+	} else { setverdict(fail); }
+}
+
+control {
+    execute(TC_Sem_060201_RecordTypeValues_004());
+}
+
+}

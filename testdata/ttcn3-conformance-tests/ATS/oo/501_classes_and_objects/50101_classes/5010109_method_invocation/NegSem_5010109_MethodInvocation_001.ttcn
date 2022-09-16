@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.9, Ensure that "super" keyword can be used from inside a class member only.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010109_MethodInvocation_001 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+	type class MySuperClass {
+        private const charstring cons_name := "MySuperClass";
+
+        create() {}
+
+        public function f_super_name() return charstring {
+            return this.cons_name;
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+    }
+
+    testcase TC_NegSem_5010109_MethodInvocation_001() runs on GeneralComp {
+        var MySubClass v_sub := MySubClass.create();
+        if (v_sub.super.f_super() == "MySuperClass") {  //not allowed
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010109_MethodInvocation_001());
+    }
+}

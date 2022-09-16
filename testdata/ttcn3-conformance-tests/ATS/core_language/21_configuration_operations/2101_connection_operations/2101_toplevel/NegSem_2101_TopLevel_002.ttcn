@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1, Verify that map operation fails if both operands are component ports
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// When connecting a test component to a test system interface the map operation shall be used.
+
+module NegSem_2101_TopLevel_002 {
+	type port P message {
+		inout integer;
+	}
+
+	type component GeneralComp {
+		port P p;
+	}
+
+	testcase TC_NegSem_210101_TopLevel_002() runs on GeneralComp system GeneralComp {
+		var GeneralComp v_ptc := GeneralComp.create;
+		map(self:p, v_ptc:p); // error expected
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210101_TopLevel_002());
+	}
+}

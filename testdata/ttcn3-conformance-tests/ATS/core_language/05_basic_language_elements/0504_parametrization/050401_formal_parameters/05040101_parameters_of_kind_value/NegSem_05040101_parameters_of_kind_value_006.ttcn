@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that inout value formal parameters cannot have default values
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction d)
+// Default values can be provided for in parameters only.
+
+module NegSem_05040101_parameters_of_kind_value_006 {
+	type component GeneralComp {
+	}
+
+    function f(inout integer p_int := 5) {
+    }
+
+	testcase TC_NegSem_05040101_parameters_of_kind_value_006() runs on GeneralComp {
+        var integer v_int := 0;
+        f(v_int);
+        log(v_int);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040101_parameters_of_kind_value_006());
+	}
+}

@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.5, verify that the address type is imported when importing all definitions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirement is tested:
+// All visible definitions of a module definitions part may be imported using the all
+// keyword next to the module name.
+
+module Sem_08020305_ImportingAllDefinitionsOfAModule_003 {
+
+    import from Sem_08020305_ImportingAllDefinitionsOfAModule_003_import all;
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_08020305_ImportingAllDefinitionsOfAModule_003() runs on GeneralComp {
+        var address v_addr := 3;
+        log(v_addr);
+        setverdict(pass);
+	}
+
+    control {
+         execute(TC_Sem_08020305_ImportingAllDefinitionsOfAModule_003());
+    }
+}
+
+module Sem_08020305_ImportingAllDefinitionsOfAModule_003_import {
+	type integer address;
+}

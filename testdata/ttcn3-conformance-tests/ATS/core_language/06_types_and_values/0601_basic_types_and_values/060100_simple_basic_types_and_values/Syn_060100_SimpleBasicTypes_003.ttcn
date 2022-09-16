@@ -1,0 +1,13 @@
+/***************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:6.1.0, Assign different float values
+ ** @verdict  pass accept, noexecution
+ ***************************************************/
+module Syn_060100_SimpleBasicTypes_003 {
+    const float c_f1 := 0.0;
+	const float c_f2 := 131E57;
+	const float c_f3 := 131E-57;
+    const float c_f4 := -502E55;
+	const float c_f5 := -502E-55;
+}

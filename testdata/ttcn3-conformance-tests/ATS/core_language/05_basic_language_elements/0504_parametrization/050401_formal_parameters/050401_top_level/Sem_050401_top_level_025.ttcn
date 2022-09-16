@@ -1,0 +1,39 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1, verify that default values of @lazy parameters are properly evaluated
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Assigning default values for lazy and fuzzy formal parameters does not change the parameters' semantics:
+// when the default values are used as actual values for the parameters, they shall be evaluated the same
+// way (i.e. delayed) as if an actual parameter was provided.
+
+module Sem_050401_top_level_025 {
+
+	type component GeneralComp {
+	}
+
+	function f(@lazy float p_int := rnd()) runs on GeneralComp {
+        var float v_float;
+        // rnd function is used for checking:
+        // 1. first rnd with a seed is called to initiate the generator with a fixed value
+        // 2. the next call is without a seed (to continue the sequence); this value is saved
+        // 3. the third call re-uses the seed to restart the sequence
+        // 4. the rnd call used in evaluation of the default value shall produce the same result now as in the 2nd step
+        rnd(1.0);
+        v_float := rnd();
+        rnd(1.0);
+        if (p_int == v_float) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	testcase TC_Sem_050401_top_level_025() runs on GeneralComp {
+		f();
+	}
+
+	control{
+		execute(TC_Sem_050401_top_level_025());
+	}
+}

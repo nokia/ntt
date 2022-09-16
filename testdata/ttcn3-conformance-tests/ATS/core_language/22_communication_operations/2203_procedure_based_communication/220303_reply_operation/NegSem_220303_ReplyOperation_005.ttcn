@@ -1,0 +1,46 @@
+/***************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.3, verify that signature not listed in the port definition cannot be used in the reply operation
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// No AddressRef in the to clause shall contain the special value null at the time
+// of the operation.
+
+module NegSem_220303_ReplyOperation_005 {
+
+    signature S();
+	signature SNotListed();
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    function f_server() runs on GeneralComp {
+        p.getcall;
+        p.reply(SNotListed:{});
+    }
+
+    testcase TC_NegSem_220303_ReplyOperation_005() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{}, nowait);
+		alt {
+			[] p.getreply {}
+			[] v_ptc.done {}
+		}
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_220303_ReplyOperation_005(), 5.0);
+    }
+
+}

@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 521, updated by STF 572
+ ** @version  0.0.2
+ ** @purpose  1:16.1.2, Ensure that predefined encvalue_unichar function works properly in case of encoding universal charstring
+ ** @verdict  pass accept, ttcn3verdict:pass
+
+ ***************************************************/
+
+/* The following requirements are tested:
+ * The optional decoding_info parameter is used for passing additional encoding information to the codec and,
+ * if it is omitted, no additional information is sent to the codec.*/
+
+
+module Sem_160102_predefined_functions_100 {
+
+    type component GeneralComp {
+
+    }
+
+    testcase TC_Sem_160102_predefined_functions_100 () runs on GeneralComp {
+
+    var charstring v_test := "abc";
+
+    //Encoding:
+    var universal charstring v_test_enc_8 := encvalue_unichar(v_test,"UTF-8", "encoding_info_text"); //encode to universal charstring UTF-8
+
+    //Decoding:
+    var charstring v_test_dec;
+    var integer v_res:= decvalue_unichar(v_test_enc_8,v_test_dec,"UTF-8", "encoding_info_text"); //decode (UTF-8)
+
+    if (v_res == 0) {
+          setverdict(pass, "Decoded ", v_test_enc_8 , " with result ", v_res);
+    } else {
+          setverdict(fail, "Unexpected decoding result: Decoded ", v_test_enc_8 , " with result ", v_res);
+    }
+
+   }
+
+    control{
+
+        execute(TC_Sem_160102_predefined_functions_100());
+
+    }
+
+}

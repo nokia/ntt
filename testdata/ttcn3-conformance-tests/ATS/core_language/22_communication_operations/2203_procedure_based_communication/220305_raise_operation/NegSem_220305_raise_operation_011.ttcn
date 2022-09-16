@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:22.3.5, ensure that error occured when using raise operation on a non port type
+ ** @verdict  pass reject
+ *****************************************************************/
+// The following requirements are tested:
+// g) The ObjectReference shall be of a port type.
+
+module NegSem_220305_raise_operation_011 {
+	signature S() exception(integer);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp
+	{
+		port P p;
+        var anytype p2;
+	}
+
+	function f() runs on GeneralComp
+	{
+		p.getcall(S:?);
+		p2.raise(S, 1);    // error: non port type
+        setverdict(pass);
+	}
+
+    testcase TC_NegSem_220305_raise_operation_011() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+		connect(self:p, v_ptc:p);
+        v_ptc.start(f());
+	    p.call(S:{}, nowait); // no processing of the exception to avoid possible errors in the catch operation
+        v_ptc.done;
+    }
+
+    control {
+        execute(TC_NegSem_220305_raise_operation_011(), 5.0);
+    }
+}

@@ -1,0 +1,45 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:19.1, Ensure that Ensure that the right-hand side of the assignment of a structured value is evaulted correctly
+ ** @verdict  pass  accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirements are tested:
+ /*
+ * Restriction a) The right-hand side of an assignment shall evaluate to a value, or template, port or timer which is type
+ * compatible with the variable at the left-hand side of the assignment.
+ * */
+
+module Sem_1901_assignments_005{
+
+type component GeneralComp {
+}
+
+ type port MyMessagePortType message
+	{
+        address integer;
+		inout integer
+	}
+
+testcase TC_Sem_1901_assignments_005 () runs on GeneralComp system GeneralComp {
+ var MyMessagePortType v_j := null;
+ var MyMessagePortType v_i := v_j;     // assignment
+
+
+ if (match(v_i, null)) {
+  setverdict(pass);    // v_i is assigned with null
+ }
+ else {
+  setverdict(fail);
+ }
+}
+
+
+control{
+
+    execute(TC_Sem_1901_assignments_005());
+
+}
+
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="schema:Pos_050203_order_of_the_mapping_001"
+  xmlns:ns="schema:Pos_050203_order_of_the_mapping_001">
+  <group name="item">
+    <sequence>
+      <element name="field1" type="integer" />
+      <element name="field2" type="integer" />
+    </sequence>
+  </group> 
+  <attribute name="ü_item" type="integer" />
+  <simpleType name="ö_item">
+    <restriction base="float" />
+  </simpleType>
+  <element name="ä_item" type="string" />
+</schema>

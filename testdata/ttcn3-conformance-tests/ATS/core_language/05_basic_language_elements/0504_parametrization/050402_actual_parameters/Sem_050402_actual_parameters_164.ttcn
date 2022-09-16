@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that actual parameters override default templates
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// When a formal parameter has been defined with a default value or template,
+// respectively, then it is not necessary to provide an actual parameter.
+
+module Sem_050402_actual_parameters_164 {
+
+    type component GeneralComp {
+	}
+
+    function f_test(template integer p_val := (0..5)) {
+        if (match(10, p_val)) { setverdict(pass); }
+        else { setverdict(fail); }
+    }
+
+    testcase TC_Sem_050402_actual_parameters_164() runs on GeneralComp {
+        f_test(?); // tested parameter passing
+	}
+
+	control {
+		execute(TC_Sem_050402_actual_parameters_164());
+	}
+}

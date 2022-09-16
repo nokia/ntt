@@ -1,0 +1,51 @@
+/*****************************************************************
+ ** @author   STF 487 (updated by STF 521)
+ ** @version  0.0.2
+ ** @purpose  1:22.3.4, @decoded redirect parameter assignment with encoding parameter
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// In case the referenced field is of the universal charstring type, the @decoded
+// clause can contain an optional parameter defining the encoding format. The
+// parameter shall be of the charstring type and it shall contain one of the
+// strings allowed for the decvalue_unichar function (specified in clause C.5.4).
+
+module Sem_220304_getreply_operation_014 {
+	signature S(out universal charstring p_par);
+
+	type port P procedure {
+		inout S;
+	}
+
+    type component GeneralComp {
+		port P p;
+	}
+
+    function f_server() runs on GeneralComp {
+        var integer v_src := 1953719668 with { variant "32 bit" };
+        var universal charstring v_str := encvalue_unichar(v_src, "UTF-16LE");
+        p.getcall(S:?);
+        p.reply(S:{ p_par := v_str });
+    }
+
+    testcase TC_Sem_220304_getreply_operation_014() runs on GeneralComp system GeneralComp {
+        var integer v_res with { variant "32 bit" };
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_server());
+        p.call(S:{ p_par := - }) {
+            [] p.getreply(S:?) -> param (v_res := @decoded("UTF-16LE") p_par) {
+                if (v_res == 1953719668) { setverdict (pass); }
+                else { setverdict(fail); }
+            }
+            [] p.getreply { setverdict(fail); }
+        };
+        v_ptc.done;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_Sem_220304_getreply_operation_014(), 5.0);
+    }
+}

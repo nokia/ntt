@@ -1,0 +1,26 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.10,  Ensure that the valueof function works correctly on range templates.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_1510_ValueOfOperation_004 {
+
+type component GeneralComp { }
+
+testcase TC_NegSem_1510_ValueOfOperation_004() runs on GeneralComp {
+	var template integer v_test := (1..5);
+
+	var integer v_second := valueof(v_test);
+
+	// if we get here, something must be wrong as valueof on v_test shall cause an error
+	// as it is not a template.
+	setverdict(fail);
+}
+
+control{
+    execute(TC_NegSem_1510_ValueOfOperation_004());
+}
+
+}

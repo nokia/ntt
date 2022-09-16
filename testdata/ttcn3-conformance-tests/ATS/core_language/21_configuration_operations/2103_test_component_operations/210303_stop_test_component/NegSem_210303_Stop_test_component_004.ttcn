@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:21.3.3, applying stop operation to a function call result of a different than component type
+ ** @verdict  pass reject
+ *****************************************************************/
+
+// The following requirements are tested:
+// The variable associated with VariableRef (being a component type variable, a component
+// type parameter, etc.) or the return type associated with FunctionInstance shall be of
+// component type.
+
+module NegSem_210303_Stop_test_component_004 {
+
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+    type GeneralComp CompArray[2];
+
+	function f_behaviour() runs on GeneralComp {
+        p.receive(integer:?); // infinite blocking
+	}
+
+    function f_createComponents() return CompArray {
+        var CompArray v_ptc;
+        v_ptc[0] := GeneralComp.create;
+        v_ptc[1] := GeneralComp.create;
+        v_ptc[0].start(f_behaviour());
+        v_ptc[1].start(f_behaviour());
+        return v_ptc;
+    }
+
+    testcase TC_NegSem_210303_Stop_test_component_004() runs on GeneralComp system GeneralComp {
+        f_createComponents().stop;
+        setverdict(pass);
+    }
+
+    control {
+        execute(TC_NegSem_210303_Stop_test_component_004());
+    }
+}

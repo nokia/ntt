@@ -1,0 +1,34 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:21.3.8, check that any component and killed operator can check that at least one test component is running or not
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// Check that at least one test component is still running or not
+module Sem_210308_killed_operation_002 {
+
+    type component GeneralComp {}
+	function f1 ( ) runs on GeneralComp {}
+
+    testcase TC_Sem_210308_killed_operation_002() runs on GeneralComp system GeneralComp {
+        var GeneralComp ptc;
+        var GeneralComp ptc2;
+		ptc:=GeneralComp.create alive;
+		ptc2:=GeneralComp.create alive;
+
+		ptc.start(f1());
+		ptc2.start(f1());
+
+		ptc.kill;
+
+		alt {
+			[] any component.killed {setverdict(pass);}
+		}
+
+
+    }
+
+    control {
+        execute(TC_Sem_210308_killed_operation_002());
+    }
+}

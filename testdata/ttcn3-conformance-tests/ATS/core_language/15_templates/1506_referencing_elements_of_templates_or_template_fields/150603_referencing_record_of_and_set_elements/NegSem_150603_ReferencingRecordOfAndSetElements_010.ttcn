@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author   STF 451
+ ** @version  0.0.1
+ ** @purpose  1:15.6.3, Ensure that referencing AnyValueOrNone fields is not allowed.
+ ** @verdict  pass reject
+ *****************************************************************/
+
+module NegSem_150603_ReferencingRecordOfAndSetElements_010 {
+
+    type component GeneralComp { }
+
+    type record of integer RoI;
+
+    testcase TC_NegSem_150603_ReferencingRecordOfAndSetElements_010() runs on GeneralComp {
+        var template RoI m_one;
+
+        m_one := ?;
+        m_one[2] := 2;
+        // assignment should yield {?,?,2,*}
+
+        if (not match(5,m_one[0])) {
+            setverdict(fail);
+        }
+        if (not match(5,m_one[1])) {
+            setverdict(fail);
+        }
+        if (not match(2,m_one[2])) {
+            setverdict(fail);
+        }
+        if (not match(5,m_one[3])) {  // shall cause an error due to the presence of AnyValueOrNone
+            setverdict(fail);
+        }
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_NegSem_150603_ReferencingRecordOfAndSetElements_010());
+    }
+
+
+
+}

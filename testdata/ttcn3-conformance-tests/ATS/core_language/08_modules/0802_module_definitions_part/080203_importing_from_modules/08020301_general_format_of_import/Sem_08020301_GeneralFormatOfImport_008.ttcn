@@ -1,0 +1,57 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.1, Verify that structured type is imported together with its field names and nested type definitions
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// Restriction c:
+// A definition is imported together with its name and all local definitions.
+// Restriction d:
+// A definition is imported together with all information of referenced definitions that
+// are necessary for the usage of the imported definition, independent of the visibility
+// of the referenced definitions.
+// Table 8:
+// User-defined type, structured type
+
+module Sem_08020301_GeneralFormatOfImport_008 {
+
+import from Sem_08020301_GeneralFormatOfImport_008_import { type R, U };
+
+type component GeneralComp {}
+
+type U.variant1 Test; // test if nested type is imported
+
+testcase TC_Sem_08020301_GeneralFormatOfImport_008() runs on GeneralComp {
+	var Test v_test1 := { subfield1 := 1, subfield2 := 2 }
+	var R v_test2;
+	// test if field names are imported and type information is avaiable (necessary for
+	// compatibility check during assignment
+	v_test2.field1 := 1;
+	v_test2.field2 := 2;
+	log (v_test1);
+	log (v_test2);
+	setverdict(pass);
+}
+
+control{
+    execute(TC_Sem_08020301_GeneralFormatOfImport_008());
+}
+}
+
+module Sem_08020301_GeneralFormatOfImport_008_import
+{
+	type record R {
+		integer field1,
+		integer field2
+	}
+
+	type union U {
+		set {
+			integer subfield1,
+			integer subfield2
+		} variant1,
+		integer variant2
+	}
+}

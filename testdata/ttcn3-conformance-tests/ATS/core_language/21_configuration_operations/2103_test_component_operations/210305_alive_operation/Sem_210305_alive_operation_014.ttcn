@@ -1,0 +1,45 @@
+/*****************************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Verify any from alive index redirection to fuzzy variable
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+// The following requirements are tested:
+// Restriction f
+// If a variable referenced in the @index clause is a lazy or fuzzy variable, the expression
+// assigned to this variable is equal to the result produced by the alive operation. Later
+// evaluation of the lazy or fuzzy variable does not lead to repeated invocation of the alive
+// operation.
+module Sem_210305_alive_operation_014 {
+
+    type component GeneralComp {}
+
+	function f() runs on GeneralComp {
+		timer t := 100.0;
+		t.start;
+		t.timeout;
+	}
+
+    testcase TC_Sem_210305_alive_operation_014() runs on GeneralComp system GeneralComp {
+		var boolean v_isAlive;
+		const integer c_size := 4;
+        var GeneralComp v_ptc[c_size];
+		var @fuzzy integer v_index;
+		for (var integer i := 0; i < c_size; i := i + 1) {
+			v_ptc[i] := GeneralComp.create; // created components are inactive
+			if (i mod 2 == 0) { v_ptc[i].kill; } // kill components on even indices
+			else { v_ptc[i].start(f());} // activate v_ptc
+		}
+        v_isAlive := any from v_ptc.alive -> @index value v_index;
+		v_ptc[1].kill; // component at position 1 is killed after the redirect assignment
+        if(v_index == 1) { // no alive call during evaluation, v_index remains equal to 1
+            setverdict(pass);
+        } else {
+            setverdict(fail, "Index incorrectly assigned");
+        }
+    }
+
+    control {
+        execute(TC_Sem_210305_alive_operation_014(), 5.0);
+    }
+}

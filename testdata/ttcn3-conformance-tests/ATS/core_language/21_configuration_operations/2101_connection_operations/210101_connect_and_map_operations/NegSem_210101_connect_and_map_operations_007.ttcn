@@ -1,0 +1,32 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:21.1.1, Verify that parameter count mismatch in map param clause is detected
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirements are tested:
+// Restriction g:
+// If in a map operation a param clause is present, the actual parameters shall conform
+// to the map param clause of the port type declaration of the system port used.
+
+module NegSem_210101_connect_and_map_operations_007 {
+
+	type port P message {
+		inout integer;
+		map param (integer p_par1);
+	}
+
+	type component GeneralComp {
+		port P p
+	}
+
+	testcase TC_NegSem_210101_connect_and_map_operations_007() runs on GeneralComp system GeneralComp {
+		map(system:p, self:p) param(5, 3);
+		setverdict(pass);
+	}
+
+	control{
+	    execute(TC_NegSem_210101_connect_and_map_operations_007());
+	}
+}

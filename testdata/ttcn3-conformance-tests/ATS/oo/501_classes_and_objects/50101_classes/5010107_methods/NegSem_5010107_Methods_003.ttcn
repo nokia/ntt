@@ -1,0 +1,42 @@
+/*****************************************************************
+ ** @author  STF 572
+ ** @version 0.0.1
+ ** @purpose 5.1.1.7, Ensure that The return type of an overriding function shall be the same as the return type of the overridden function with the same template restrictions and modifiers.
+ ** @verdict pass reject
+*****************************************************************/
+module NegSem_5010107_Methods_003 "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type integer Mytype1;
+    type Mytype1 Mytype2;
+
+    type class MySuperClass {
+        var octetstring v_o;
+
+         function doSomething() return Mytype1 {
+            return oct2int(this.v_o);
+        }
+    }
+
+    type class MySubClass extends MySuperClass {
+
+        function doSomething() return Mytype2 { //allowed?
+            return 1;
+        }
+    }
+
+    testcase TC_NegSem_5010107_Methods_003() runs on GeneralComp {
+        var MySubClass v_a := MySubClass.create('AAFF'O) : MySuperClass();
+        if (v_a.doSomething() == 1) {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_NegSem_5010107_Methods_003());
+    }
+}

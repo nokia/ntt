@@ -1,0 +1,3 @@
+- NOTE: imports of compatible external definitions is not easily possible with TTCN-3 alone.
+  Therefore, the amount of tests possible in this section is highly limited.
+- Restriction b is tested as a part of 8.2.3.1

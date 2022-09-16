@@ -1,0 +1,35 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, verify that value list notation can be used for an array
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+module Sem_060207_arrays_001 {
+
+// The following requirement is tested:
+// When the value list notation is used, the first value of the list is assigned to
+// the first element of the array (the element with index 0 or the lower bound if
+// an index range has been given), the second value to the next element, etc.
+
+ type component GeneralComp {
+ }
+
+ type integer MyArrayType1[3] (1 .. 10);
+
+testcase TC_Sem_060207_arrays_001() runs on GeneralComp {
+
+ var MyArrayType1 v_array1 := { 8, 1, 2 };
+      if (v_array1[2]==2) {
+	    setverdict(pass);
+      }
+      else {
+	    setverdict(fail);
+	  }
+
+}
+
+control {
+    execute(TC_Sem_060207_arrays_001());
+}
+
+}

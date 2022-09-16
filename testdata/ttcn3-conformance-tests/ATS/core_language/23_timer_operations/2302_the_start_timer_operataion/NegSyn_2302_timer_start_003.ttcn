@@ -1,0 +1,25 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23, Ensure timer start  syntax
+ ** @verdict  pass reject
+ ***************************************************/
+
+
+module NegSyn_2302_timer_start_003 {
+    type component TComp{
+
+        timer t_timers[3] := {1.0, 1.0, 1.0};
+    }
+    testcase TC_NegSyn_2302_timer_start_003() runs on TComp{
+
+        t_timers[1].start();
+
+    }
+    control{
+
+            execute(TC_NegSyn_2302_timer_start_003())
+
+
+    }
+}

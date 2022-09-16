@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.8, Ensure that a templat(value) can be assigned to a template(omit) variable.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1508_TemplateRestrictions_003 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer a,
+	boolean b optional
+}
+
+template(value) ExampleType exampleValueOptional := {1, omit};
+
+testcase TC_Sem_1508_TemplateRestrictions_003() runs on GeneralComp {
+	var template(omit) ExampleType v_omit;
+
+	v_omit := exampleValueOptional;
+
+	if (match(valueof(v_omit.a), 1) and
+	    match(ispresent(v_omit.b), false )
+	   ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1508_TemplateRestrictions_003());
+}
+
+
+}

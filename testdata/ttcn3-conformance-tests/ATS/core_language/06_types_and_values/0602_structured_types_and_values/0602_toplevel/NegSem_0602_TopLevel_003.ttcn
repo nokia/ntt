@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2, Ensure that indexed notation can not be used for a set type.
+ ** @verdict  pass reject
+ ***************************************************/
+module NegSem_0602_TopLevel_003 {
+
+    type component GeneralComp {
+    }
+
+    type set MySet {
+        integer field1,
+        charstring field2,
+        float field3
+    }
+
+    testcase TC_NegSem_0602_TopLevel_003() runs on GeneralComp {
+
+        var MySet v_mySet := {
+            field1 := 5,
+            field2 := "hi",
+            field3 := 3.14
+        };
+
+        var integer Integer1 :=3;
+        v_mySet[0] := Integer1;//not possible to use index notation on a set type
+
+    }
+
+    control {
+        execute(TC_NegSem_0602_TopLevel_003());
+    }
+}

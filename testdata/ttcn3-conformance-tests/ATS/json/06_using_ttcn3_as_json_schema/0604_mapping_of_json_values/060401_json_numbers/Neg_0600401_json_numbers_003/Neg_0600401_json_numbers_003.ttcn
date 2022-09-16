@@ -1,0 +1,18 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  11:6.4.1, Verify that -infinity can not be assigned to a JSON.Number.
+ ** @verdict  pass reject
+ ***************************************************/
+/*
+ * JSON numbers:
+ * 6.4.1: No special values (as –infinity, infinity or NaN) are allowed.
+ * */
+
+module Neg_0600401_json_numbers_003 {
+
+    import from JSON all;
+
+    template JSON.Number m_msg := -infinity;    // error: -infinity is not alloewed.
+
+}

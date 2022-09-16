@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:15.10, Ensure that the valueof operation works as expected for fully initialized templates.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1510_ValueOfOperation_001 {
+
+type component GeneralComp { }
+
+type record ExampleType {
+	integer field1,
+	boolean field2
+}
+
+template ExampleType m_template := {
+	field1 := 1,
+	field2 := true
+}
+
+testcase TC_Sem_1510_ValueOfOperation_001() runs on GeneralComp {
+	var ExampleType v_value := valueof(m_template);
+
+	if (match(v_value.field1, 1) and
+	    match(v_value.field2, true)
+	   ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1510_ValueOfOperation_001());
+}
+
+}

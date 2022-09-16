@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:21.3.5, Ensure that alive applied on the mtc the operation returns true.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+//// The following requirement is tested: Alive operation applied on the mtc the operation returns true.
+
+module Sem_210305_alive_operation_015 {
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_210305_alive_operation_015() runs on GeneralComp system GeneralComp {
+
+		if (mtc.alive) {
+        setverdict(pass);
+        }
+        else
+        {
+        setverdict(fail);
+        }
+
+    }
+
+    control {
+        execute(TC_Sem_210305_alive_operation_015());
+    }
+}

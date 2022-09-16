@@ -1,0 +1,34 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.2, verify that reference to elements of formal value parameters cannot be used as inout formal value parameters of test cases
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Actual parameters that are passed to inout formal value parameters shall be variables
+// or formal value parameters (of in, inout or out parameterization) or references to
+// elements of variables or formal value parameters of structured types.
+
+module NegSem_050402_actual_parameters_056 {
+
+    type component GeneralComp {
+    }
+
+    type record R {
+        integer field1
+    }
+
+    testcase TC_NegSem_050402_actual_parameters_056(inout integer p_val) runs on GeneralComp {
+        if (p_val == 11) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+    function f_caller(in template R p_param) {
+        execute(TC_NegSem_050402_actual_parameters_056(p_param.field1)); // tested parameter passing
+    }
+
+	control {
+		f_caller({field1 := 11 });
+	}
+}

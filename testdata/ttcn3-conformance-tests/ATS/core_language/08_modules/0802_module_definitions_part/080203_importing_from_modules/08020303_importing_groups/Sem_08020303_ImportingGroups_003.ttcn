@@ -1,0 +1,38 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:8.2.3.3, but that it is in fact a shortcut notation for explicit imports.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_08020303_ImportingGroups_003 {
+
+    import from Sem_08020303_ImportingGroups_003_import {
+        group CONST_GROUP.CONST_INNER_GROUP except {
+            const c_myconst;
+        };
+        const all;
+    }
+
+    type component GeneralComp {}
+
+    testcase TC_Sem_08020303_ImportingGroups_003() runs on GeneralComp {
+        if (c_myconst == 43532) { // c_myconst shall be imported from const all;, the exception must not removed it from the imports.
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control{
+        execute(TC_Sem_08020303_ImportingGroups_003());
+    }
+}
+
+module Sem_08020303_ImportingGroups_003_import {
+    group CONST_GROUP {
+        group CONST_INNER_GROUP {
+            const integer c_myconst := 43532;
+        }
+    }
+}

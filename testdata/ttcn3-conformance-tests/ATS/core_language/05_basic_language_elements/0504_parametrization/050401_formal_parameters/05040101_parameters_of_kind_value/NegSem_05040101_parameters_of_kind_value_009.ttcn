@@ -1,0 +1,27 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, verify that default value of value formal parameters cannot reference other parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)
+// The expression shall not refer to other parameters of the same parameter list.
+
+module NegSem_05040101_parameters_of_kind_value_009 {
+	type component GeneralComp {
+	}
+
+    function f(in integer p_int, in integer p_int2 := p_int) runs on GeneralComp {
+    }
+
+	testcase TC_NegSem_05040101_parameters_of_kind_value_009() runs on GeneralComp {
+        f(2);
+        setverdict(pass);
+	}
+
+	control{
+		execute(TC_NegSem_05040101_parameters_of_kind_value_009());
+	}
+}

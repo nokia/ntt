@@ -1,0 +1,29 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, omit symbol in union value notations
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Neither the not used symbol "-" nor omit is allowed in union value notations.
+
+module NegSem_060205_top_level_004 {
+    type component GeneralComp {
+	}
+
+    type union U {
+		integer option1,
+		charstring option2
+	}
+
+    testcase TC_NegSem_060205_top_level_004() runs on GeneralComp {
+		var U v_choice := { option1 := omit };
+        if (ischosen(v_choice.option1) or ischosen(v_choice.option2)) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control{
+		execute(TC_NegSem_060205_top_level_004());
+	}
+}

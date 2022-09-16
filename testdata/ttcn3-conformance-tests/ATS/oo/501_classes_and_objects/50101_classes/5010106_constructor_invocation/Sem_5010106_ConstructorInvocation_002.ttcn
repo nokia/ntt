@@ -1,0 +1,46 @@
+/*****************************************************************
+ ** @author  TTF T003
+ ** @version 0.0.1
+ ** @purpose 5.1.1.6, Ensure that external class constructor can be invoked with additional external parameter list.
+ ** @verdict pass accept
+*****************************************************************/
+module Sem_5010106_ConstructorInvocation_002 language "TTCN-3:2018 Object-Oriented" {
+
+    type component GeneralComp {
+    }
+
+    type class MyClass {
+       var integer v_id;
+
+	   public function get_vid() return integer {
+			return this.v_id;
+		}
+    }
+
+	type external class MyExternalClass extends MyClass {
+		var charstring v_cstr;
+
+		create(integer id)
+		external (charstring cstr): MyClass(id){
+			this.v_cstr := cstr;
+		}
+
+		public function get_vcstr() return charstring {
+			return this.v_cstr;
+		}
+	}
+
+    testcase TC_Sem_5010106_ConstructorInvocation_002() runs on GeneralComp {
+    	var MyExternalClass v_ext := MyExternalClass.create(123) external ("abc");
+
+    	if (v_ext.get_vid() == 123 and v_ext.get_vcstr() == "abc") {
+            setverdict(pass);
+        } else {
+            setverdict(fail);
+        }
+    }
+
+    control {
+        execute(TC_Sem_5010106_ConstructorInvocation_002());
+    }
+}

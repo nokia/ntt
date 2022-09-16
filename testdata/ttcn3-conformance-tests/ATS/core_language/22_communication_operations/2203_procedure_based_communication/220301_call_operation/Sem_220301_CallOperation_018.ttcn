@@ -1,0 +1,36 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:22.3.1, verify that out parameters of a signature used in a call operation can contain matching symbols
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+// The following requirements are tested:
+// c) Only out parameters may be omitted or specified with a matching attribute.
+
+module Sem_220301_CallOperation_022 {
+
+    signature S(out integer p_par);
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+    }
+
+	template S s_signature1 := { p_par := ? };
+
+    testcase TC_Sem_220301_CallOperation_022() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        p.call(s_signature1, nowait);
+        setverdict(pass);
+    }
+
+    control{
+        execute(TC_Sem_220301_CallOperation_022(), 5.0);
+    }
+
+}

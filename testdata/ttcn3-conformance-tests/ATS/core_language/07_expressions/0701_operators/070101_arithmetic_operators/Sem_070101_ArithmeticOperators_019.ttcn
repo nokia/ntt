@@ -1,0 +1,41 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.1, Ensure that the addition operator works on float variables.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070101_ArithmeticOperators_019 {
+
+type component GeneralComp {
+}
+
+/**
+ * @desc Equals method for floats
+ * @return true if abs(f1 - f2) < 1.E-6
+ */
+function f_isFloatNear(in float f1, in float f2) return boolean {
+  var float delta := f1-f2;
+  if (delta < 0.0) {
+    delta := 0.0 - delta;
+  }
+  return delta < 1E-6;
+}
+
+testcase TC_Sem_070101_ArithmeticOperators_019() runs on GeneralComp {
+	var float v_i := 10.2;
+	var float v_j := 0.4;
+	var float v_result := v_i + v_j;
+
+	if ( f_isFloatNear(v_result,10.6) ) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070101_ArithmeticOperators_019());
+}
+
+}

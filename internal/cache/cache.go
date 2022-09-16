@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nokia/ntt/internal/span"
+	"github.com/nokia/ntt/internal/lsp/span"
 )
 
 // Lookup works similar to GNU Makes VPATH functionality: Paths without directory portion will be looked up alternate directory specified by NTT_CACHE environment variable.

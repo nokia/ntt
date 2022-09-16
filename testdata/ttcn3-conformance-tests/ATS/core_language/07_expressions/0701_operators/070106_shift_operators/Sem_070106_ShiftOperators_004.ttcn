@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 409
+ ** @version  0.0.1
+ ** @purpose  1:7.1.6, Ensure that the shift right operator works as expected on hexstrings.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_070106_ShiftOperators_004 {
+
+type component GeneralComp {
+}
+
+testcase TC_Sem_070106_ShiftOperators_004() runs on GeneralComp {
+	var hexstring v_test := '12345'H;
+	var hexstring v_result := v_test >> 2;
+
+	if (v_result == '00123'H) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_070106_ShiftOperators_004());
+}
+
+}

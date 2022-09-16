@@ -1,0 +1,31 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:15.9, Ensure that the match operation works correctly with enums.
+ ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_1509_MatchOperation_015 {
+
+type component GeneralComp { }
+
+type enumerated A_enum { A, B, C, D, E };
+type enumerated B_enum { A, F, G };
+
+testcase TC_Sem_1509_MatchOperation_015() runs on GeneralComp {
+
+    	var A_enum v_value := A;
+
+
+	if (match(A,v_value)) {
+		setverdict(pass);
+	} else {
+		setverdict(fail);
+	}
+}
+
+control{
+    execute(TC_Sem_1509_MatchOperation_015());
+}
+
+}

@@ -1,0 +1,48 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.3.4, compatible but not strongly typed value in raise operation
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// The communication operations (see clause 22) send, receive, trigger, call, getcall,
+// reply, getreply and raise and connection operations connect, map, disconnect and
+// unmap (see clause 21.1) are exceptions to the weaker rule of type compatibility
+// and require strong typing. The types of values or templates directly used as
+// parameters to these operations shall also be explicitly defined in the associated
+// port type definition.
+
+module NegSem_060304_compatibility_of_communication_operations_003
+{
+    signature S() exception (charstring);
+
+    type port P procedure {
+        inout S;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+    type charstring MyString; // synonym
+
+    function f_mirror() runs on GeneralComp {
+        p.getcall(S:?);
+        p.raise(S, MyString:"abc");
+    }
+
+    testcase TC_NegSem_060304_compatibility_of_communication_operations_003() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create("PTC");
+        connect(self:p, v_ptc:p);
+        v_ptc.start(f_mirror());
+        p.call(S:{}) {
+            [] p.catch {}
+        }
+        setverdict(pass);
+	}
+
+	control {
+		execute(TC_NegSem_060304_compatibility_of_communication_operations_003());
+	}
+}

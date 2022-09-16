@@ -1,0 +1,41 @@
+/***************************************************
+ ** @author   STF 572
+ ** @version  0.0.1
+ ** @purpose  1:16.1, altsteps activated as default can non have port parameters
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// Restriction e)
+
+module NegSem_1602_toplevel_054 {
+    type port P message {
+        inout integer;
+    }
+
+    type component GeneralComp {
+        port P p;
+	}
+
+    altstep a_test(P p_port) runs on GeneralComp
+        [] p_port.receive {
+            setverdict(pass);
+        }
+    }
+
+    function f_behavior() runs on GeneralComp {
+        var default d_as = activate(a_test(p)) //altstep activated as default no longer can have port as parameter
+    }
+
+    testcase TC_Sem_1602_toplevel_054() runs on GeneralComp system GeneralComp {
+        var GeneralComp v_ptc := GeneralComp.create;
+        connect(mtc:p, v_ptc:p);
+        p.send(1);
+        v_ptc.start(f_behavior());
+        v_ptc.done;
+	}
+
+	control {
+		execute(TC_Sem_1602_toplevel_054());
+	}
+}

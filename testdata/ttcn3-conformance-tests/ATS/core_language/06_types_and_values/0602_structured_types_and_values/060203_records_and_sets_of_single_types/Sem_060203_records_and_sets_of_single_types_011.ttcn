@@ -1,0 +1,44 @@
+/***************************************************
+ ** @author   STF 470
+ ** @version  0.0.1
+ ** @purpose  1:6.2.3.2, verify handling of value list assignment used for update of set of values
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Elements to be left out of the assignment shall be explicitly skipped in the list
+// by use of the not-used-symbol "-". Already initialized elements left without
+// a corresponding list member in a value list notation (i.e. at the end of a list)
+// are becoming uninitialized. In this way, a value with initialized elements can be
+// made empty by using the empty value list notation ("{}").
+module Sem_060203_records_and_sets_of_single_types_011 {
+
+	type component GeneralComp {
+	}
+
+	type set of integer SoI;
+
+	testcase TC_Sem_060203_records_and_sets_of_single_types_011() runs on GeneralComp {
+
+		var SoI v_set := { 0, 1, 2 };
+		v_set := { 10, - };
+		if (v_set == { 10, 1 } ) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+		v_set := {};
+		if (lengthof(v_set) == 0 ) {
+			setverdict(pass);
+		}
+		else {
+			setverdict(fail);
+		}
+	}
+
+	control {
+		execute(TC_Sem_060203_records_and_sets_of_single_types_011());
+	}
+
+}

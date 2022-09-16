@@ -1,0 +1,21 @@
+/*****************************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:26.1, Ensure that host id restriction is correctly handled.
+ ** @verdict  pass accept, ttcn3verdict:error
+ *****************************************************************/
+
+module Sem_2601_ExecuteStatement_009 {
+
+    type component GeneralComp { }
+
+    testcase TC_Sem_2601_ExecuteStatement_009(integer p_value, charstring p_string, boolean p_bool) runs on GeneralComp {
+        setverdict(pass);
+    }
+
+    control {
+        var integer v_test := 20;
+        execute(TC_Sem_2601_ExecuteStatement_009(v_test, "hello", true), -, "wrong_host4232432432432432432432432432");
+    }
+
+}

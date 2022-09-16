@@ -1,0 +1,28 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.7, using custom array index on the right hand side of assignments
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+
+// The following requirement is tested:
+// Indexed value notation can be used on both the right-hand side and left-hand
+// side of assignments. The index of the first element shall be zero or the lower
+// bound if an index range has been given.
+
+module Sem_060207_arrays_020 {
+
+	type component GeneralComp {
+	}
+
+	testcase TC_Sem_060207_arrays_020() runs on GeneralComp {
+        var integer v_arr[2..5] := { 2, 3, 4, 5 };
+        if (v_arr[2] == 2) { setverdict(pass); }
+        else { setverdict(fail); }
+	}
+
+	control {
+		execute(TC_Sem_060207_arrays_020());
+	}
+
+}

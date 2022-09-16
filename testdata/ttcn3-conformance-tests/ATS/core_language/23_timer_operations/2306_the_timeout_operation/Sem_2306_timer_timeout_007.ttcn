@@ -1,0 +1,37 @@
+/***************************************************
+ ** @author   STF 433
+ ** @version  0.0.1
+ ** @purpose  1:23.6, Ensure timer timeout happen in order from the shortest to the longest
+ ** @verdict  pass accept, ttcn3verdict:pass
+ ***************************************************/
+// #reqname  /Requirements/23 Timer operations/23.6 The Timeout operation/The timeout can be used as a standalone statement
+
+module Sem_2306_timer_timeout_007 {
+    type component TComp{
+        timer t_short, t_medium, t_long;
+    }
+    testcase TC_Sem_2306_timer_timeout_007() runs on TComp{
+        t_long.start(3.0);
+        t_medium.start(2.0);
+        t_short.start(1.0);
+
+		t_medium.timeout;
+        if (t_short.running)
+        {
+            setverdict(fail, "The timer has expired too early");
+            stop;
+        }
+		if (not t_long.running)
+		{
+		    setverdict(fail, "The timer has expired too late");
+		    stop;
+		}
+		setverdict(pass);
+    }
+    control{
+
+            execute(TC_Sem_2306_timer_timeout_007())
+
+
+    }
+}

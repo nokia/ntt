@@ -1,0 +1,20 @@
+/***************************************************
+ ** @author   STF 487
+ ** @version  0.0.1
+ ** @purpose  1:6.2.5, union type declaration with two equal identifiers
+ ** @verdict  pass reject
+ ***************************************************/
+
+// The following requirement is tested:
+// TTCN-3 supports the union type. The union type is a collection of alternatives,
+// each one identified by an identifier. Only one of the specified alternatives
+// will ever be present in an actual union value. Union types are useful to model
+// data which can take one of a finite number of known types.
+
+module NegSyn_060205_top_level_001 {
+    type union U {
+		integer option1,
+		charstring option2,
+        boolean option1 // error expected
+	}
+}

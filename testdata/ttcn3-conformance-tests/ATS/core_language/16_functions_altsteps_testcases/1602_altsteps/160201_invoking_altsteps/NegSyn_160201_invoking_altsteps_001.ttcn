@@ -1,0 +1,36 @@
+/***************************************************
+ ** @author   STF T003
+ ** @version  0.0.1
+ ** @purpose  1:16.2.1, Ensure that the IUT recognizes altstep definitions with @nodefault and correctly evaluates them
+ ** @verdict  pass reject, noexecution
+ ***************************************************/
+
+// If the @nodefault modifier is placed before a stand-alone altstep call, the implicit alt statement also contains the @nodefault modifier.
+
+module NegSyn_160201_invoking_altsteps_001 {
+
+    type record MessageType {
+        integer field1,
+        charstring field2
+    }
+
+    type port loopbackPort message {
+        inout MessageType
+    }
+
+    type component GeneralComp {
+        port loopbackPort messagePort
+    }
+
+    // error: invalid @nodefault modifier
+    altstep @nodefault AltSet1() runs on GeneralComp {
+
+        [] messagePort.receive {
+            setverdict(pass);
+        }
+
+    }
+
+    control {}
+
+}

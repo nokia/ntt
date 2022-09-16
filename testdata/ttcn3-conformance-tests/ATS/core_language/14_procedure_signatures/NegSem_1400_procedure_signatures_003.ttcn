@@ -1,0 +1,79 @@
+/*****************************************************************
+ ** @author   TTF T014
+ ** @version  0.0.1
+ ** @purpose  1:14, Ensure that signature return type must be data type
+ ** @verdict  pass reject
+ *****************************************************************/
+//Exception is a charstring
+
+module NegSem_1400_procedure_signatures_003 {
+
+    signature p_Sig1_001(in integer p_par1, out integer p_par2, inout integer p_par3) return port // Not allowed: only data types are allowed
+	exception (charstring);  //execption is a string
+
+
+    type port remotePort procedure {
+        inout  p_Sig1_001;
+    }
+
+    type component GeneralComp {
+        port remotePort PCO;
+		var integer MyComp;
+    }
+
+
+    function f_Server() runs on GeneralComp {
+	PCO.raise(p_Sig1_001,"My string"); // raise exception
+	}
+
+	function f_client() runs on GeneralComp {
+	timer t_timeout:=30.0;
+
+		t_timeout.start;
+
+	 alt {
+	  [] PCO.catch(p_Sig1_001,charstring:"My string") {
+		setverdict(pass); // receive exception
+		}
+	  [] PCO.catch(p_Sig1_001,charstring:?)  // receive anything else
+	   {
+		setverdict(fail);
+	  }
+
+      [] t_timeout.timeout {
+        setverdict(fail);
+      }
+
+		}
+}
+
+	testcase TC_NegSem_1400_procedure_signatures_003() runs on GeneralComp system GeneralComp {
+
+		var GeneralComp server := GeneralComp.create("RemoteProcedure Service");
+	   var GeneralComp client := GeneralComp.create("RemoteProcedure Client");
+
+
+       connect(server:PCO, client:PCO);
+
+
+       server.start(f_Server());
+	   client.start(f_client());
+
+		       alt {
+           [] client.done {
+               server.stop;
+           }
+       }
+
+       alt {
+           [] all component.done {}
+       }
+
+       disconnect(server:PCO);
+   }
+
+    control{
+        execute(TC_NegSem_1400_procedure_signatures_003());
+    }
+
+}

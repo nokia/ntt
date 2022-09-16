@@ -1,0 +1,28 @@
+/*****************************************************************
+ ** @author   STF 521
+ ** @version  0.0.1
+ ** @purpose  1:5.4.1.1, Verify that inout prefix can be used for timer parameters
+  ** @verdict  pass accept, ttcn3verdict:pass
+ *****************************************************************/
+
+module Sem_05040101_parameters_of_kind_value_033 {
+
+    type component C {
+    }
+
+    function f_test(inout timer p_tmr) {
+        p_tmr.timeout;
+        setverdict(pass);
+    }
+
+    testcase TC_Sem_05040101_parameters_of_kind_value_033() runs on C {
+    	timer t_tmr := 0.1;
+        var timer v_tmr := t_tmr;
+        t_tmr.start;
+        f_test(v_tmr);
+    }
+
+    control {
+        execute(TC_Sem_05040101_parameters_of_kind_value_033());
+    }
+}
