@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -26,6 +25,7 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -53,17 +53,17 @@ all tests with @stable-tag:
 Environment variables:
 
 * SCT_K3_SERVER=on	use k3s as backend.
-* K3_40_RUN_POLICY=old	if no ids are specified, run all control parts.
 
 `,
 
 		RunE: runTests,
 	}
 
-	MaxWorkers int
-	MaxFail    int
-	errorCount uint64
-	OutputDir  string
+	RunAllTests bool
+	MaxWorkers  int
+	MaxFail     int
+	errorCount  uint64
+	OutputDir   string
 
 	ColorFatal   = color.New(color.FgRed, color.Bold)
 	ColorFailure = color.New(color.FgRed, color.Bold)
@@ -86,8 +86,6 @@ Environment variables:
 
 	ErrCommandFailed = fmt.Errorf("command failed")
 
-	DefaultBasket, _ = NewBasket("default")
-
 	ResultsFile = cache.Lookup("test_results.json")
 	Start       = time.Now()
 )
@@ -99,24 +97,18 @@ func init() {
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
 	flags.BoolVarP(&outputProgress, "progress", "P", false, "show progress")
+	flags.BoolVarP(&RunAllTests, "all", "a", false, "run all tests instead of control parts")
 	flags.StringVarP(&testsFile, "tests-file", "t", "", "read tests from FILE. When FILE is '-', read standard input")
 }
 
 // Run runs the given jobs in parallel.
 func runTests(cmd *cobra.Command, args []string) error {
-
 	ctx, cancel := WithSignalHandler(context.Background())
 	defer cancel()
 
+	// Assure that that project binaries are up-to-date, before we execute the tests.
 	if err := project.Build(Project); err != nil {
 		return fmt.Errorf("building test suite failed: %w", err)
-	}
-
-	var err error
-	DefaultBasket, err = NewBasketWithFlags("list", cmd.Flags())
-	DefaultBasket.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
-	if err != nil {
-		return err
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
@@ -128,42 +120,28 @@ func runTests(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	srcs, err := fs.TTCN3Files(Project.Sources...)
-	if err != nil {
-		return err
-	}
-
-	jobs := make(chan *tests.Job, MaxWorkers)
-	go func() {
-		defer close(jobs)
-
-		i := 0
-		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
-			i++
-			job := &tests.Job{
-				Name:   id,
-				Config: Project,
-				Dir:    OutputDir,
-			}
-			log.Debugf("new job: name=%s\n", id)
-			jobs <- job
-		}
-		log.Debugf("Generating %d jobs done.\n", i)
-	}()
-
-	if err != nil {
-		return err
-	}
-
+	// Use Nokia-internal TTCN-3 runner, if SCT_K3_SERVER is set.
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
-		return k3sRun(ctx, files, jobs)
+		k3s := proc.CommandContext(ctx, "k3s",
+			"--no-summary",
+			fmt.Sprintf("--results-file=%s", ResultsFile),
+			fmt.Sprintf("-j%d", MaxWorkers),
+		)
+		if s := env.Getenv("K3SFLAGS"); s != "" {
+			k3s.Args = append(k3s.Args, strings.Fields(s)...)
+		}
+		k3s.Args = append(k3s.Args, files...)
+		k3s.Stdin = strings.NewReader(strings.Join(ids, "\n"))
+		k3s.Stdout = os.Stdout
+		k3s.Stderr = os.Stderr
+		log.Verboseln("+", k3s.String())
+		return k3s.Run()
 	}
-	return nttRun(ctx, jobs)
-}
 
-func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	jobs, err := JobQueue(ctx, cmd, Project, ids, RunAllTests)
+	if err != nil {
+		return err
+	}
 
 	var runs []results.Run
 	os.Remove(cache.Lookup("test_results.json"))
@@ -251,6 +229,82 @@ func nttRun(ctx context.Context, jobs <-chan *tests.Job) (err error) {
 	}
 
 	return nil
+
+}
+
+func JobQueue(ctx context.Context, cmd *cobra.Command, conf *project.Config, ids []string, allTests bool) (<-chan *tests.Job, error) {
+	if len(ids) == 0 {
+		return ProjectJobs(ctx, conf, cmd.Flags(), allTests)
+	}
+
+	out := make(chan *tests.Job)
+	go func() {
+		defer close(out)
+		for _, id := range ids {
+			job := &tests.Job{
+				Name:   id,
+				Config: Project,
+				Dir:    OutputDir,
+			}
+			select {
+			case out <- job:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out, nil
+}
+
+// ProjectJobs returns a channel of jobs provided by the given project
+// configuration. The jobs are filtered by the given flags and environment
+// variable NTT_LIST_BASKETS. ProjectJobs will emit all control parts. Unless
+// allTests is true, in which case it will emit all testcases.
+func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet, allTests bool) (<-chan *tests.Job, error) {
+	srcs, err := fs.TTCN3Files(Project.Sources...)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := NewBasketWithFlags("run", flags)
+	if err != nil {
+		return nil, err
+	}
+	b.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
+
+	jobs := make(chan *tests.Job)
+	go func() {
+		defer close(jobs)
+
+		for _, src := range srcs {
+			for _, def := range EntryPoints(src, allTests) {
+				id := def.QualifiedName(def.Ident)
+				tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
+				if b.Match(id, tags) {
+					job := &tests.Job{
+						Name:   id,
+						Config: Project,
+						Dir:    OutputDir,
+					}
+					select {
+					case jobs <- job:
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+	}()
+	return jobs, err
+}
+
+// EntryPoints returns controls parts of the given TTCN-3 source file. When tests is true, it returns all testcases instead.
+func EntryPoints(file string, tests bool) []*ttcn3.Definition {
+	tree := ttcn3.ParseFile(file)
+	if tests {
+		return tree.Tests()
+	}
+	return tree.Controls()
 }
 
 func printRun(r results.Run) {
@@ -294,109 +348,6 @@ func WithSignalHandler(ctx context.Context) (context.Context, context.CancelFunc
 		signal.Stop(signalChan)
 		cancel()
 	}
-}
-
-func k3sRun(ctx context.Context, files []string, jobs <-chan *tests.Job) error {
-	args := []string{
-		"--no-summary",
-		fmt.Sprintf("--results-file=%s", ResultsFile),
-		fmt.Sprintf("-j%d", MaxWorkers),
-	}
-	if s := env.Getenv("K3SFLAGS"); s != "" {
-		args = append(args, strings.Fields(s)...)
-	}
-	args = append(args, files...)
-	k3s := proc.CommandContext(ctx, "k3s", args...)
-	k3s.Stdin = k3sJobs(jobs)
-	k3s.Stdout = os.Stdout
-	k3s.Stderr = os.Stderr
-	log.Verboseln("+", k3s.String())
-	return k3s.Run()
-}
-
-func k3sJobs(jobs <-chan *tests.Job) io.Reader {
-	var ids []string
-	for j := range jobs {
-		ids = append(ids, j.Name)
-	}
-	return strings.NewReader(strings.Join(ids, "\n"))
-}
-
-// GenerateIDs emits test IDs based on given file and and id list to a channel.
-func GenerateIDs(ctx context.Context, ids []string, files []string, policy string, b Basket) <-chan string {
-	policy = strings.ToLower(policy)
-	policy = strings.TrimSpace(policy)
-	switch {
-	case len(ids) > 0:
-		return GenerateIDsWithContext(ctx, ids...)
-	case policy == "old":
-		return GenerateControlsWithContext(ctx, b, files...)
-	default:
-		return GenerateTestsWithContext(ctx, b, files...)
-
-	}
-}
-
-// GenerateIDs emits given IDs to a channel.
-func GenerateIDsWithContext(ctx context.Context, ids ...string) <-chan string {
-	out := make(chan string)
-	go func() {
-		defer close(out)
-		for _, id := range ids {
-			out <- id
-		}
-	}()
-	return out
-}
-
-// GenerateTestsWithContext emits all test ids from given TTCN-3 files to a channel.
-func GenerateTestsWithContext(ctx context.Context, b Basket, files ...string) <-chan string {
-	out := make(chan string)
-	go func() {
-		defer close(out)
-		for _, src := range files {
-			tree := ttcn3.ParseFile(src)
-			for _, def := range tree.Funcs() {
-				if n := def.Node.(*ast.FuncDecl); n.IsTest() {
-					if !generate(ctx, def, b, out) {
-						return
-					}
-				}
-			}
-		}
-	}()
-	return out
-}
-
-// GenerateControls emits all control function ids from given TTCN-3 files to a channel.
-func GenerateControlsWithContext(ctx context.Context, b Basket, files ...string) <-chan string {
-	out := make(chan string)
-	go func() {
-		defer close(out)
-		for _, src := range files {
-			tree := ttcn3.ParseFile(src)
-			for _, n := range tree.Controls() {
-				if !generate(ctx, n, b, out) {
-					return
-				}
-			}
-
-		}
-	}()
-	return out
-}
-
-func generate(ctx context.Context, def *ttcn3.Definition, b Basket, c chan<- string) bool {
-	id := def.Tree.QualifiedName(def.Ident)
-	tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
-	if b.Match(id, tags) {
-		select {
-		case c <- id:
-		case <-ctx.Done():
-			return false
-		}
-	}
-	return true
 }
 
 func readTestsFromFile(path string) ([]string, error) {

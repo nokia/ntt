@@ -101,6 +101,18 @@ func (t *Tree) Funcs() []*Definition {
 	return defs
 }
 
+func (t *Tree) Tests() []*Definition {
+	var defs []*Definition
+	ast.Inspect(t.Root, func(n ast.Node) bool {
+		if n, ok := n.(*ast.FuncDecl); ok && n.IsTest() {
+			defs = append(defs, &Definition{Ident: n.Name, Node: n, Tree: t})
+			return false
+		}
+		return true
+	})
+	return defs
+}
+
 func (t *Tree) Imports() []*Definition {
 	var defs []*Definition
 	ast.Inspect(t.Root, func(n ast.Node) bool {
