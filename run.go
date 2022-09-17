@@ -128,7 +128,29 @@ func runTests(cmd *cobra.Command, args []string) error {
 		ids = append(tests, ids...)
 	}
 
-	jobs, err := GenerateJobs(ctx, Project, ids, MaxWorkers)
+	srcs, err := fs.TTCN3Files(Project.Sources...)
+	if err != nil {
+		return err
+	}
+
+	jobs := make(chan *tests.Job, MaxWorkers)
+	go func() {
+		defer close(jobs)
+
+		i := 0
+		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
+			i++
+			job := &tests.Job{
+				Name:   id,
+				Config: Project,
+				Dir:    OutputDir,
+			}
+			log.Debugf("new job: name=%s\n", id)
+			jobs <- job
+		}
+		log.Debugf("Generating %d jobs done.\n", i)
+	}()
+
 	if err != nil {
 		return err
 	}
@@ -298,33 +320,6 @@ func k3sJobs(jobs <-chan *tests.Job) io.Reader {
 		ids = append(ids, j.Name)
 	}
 	return strings.NewReader(strings.Join(ids, "\n"))
-}
-
-// GenerateJobs emits jobs from the given config and ids to a job channel.
-func GenerateJobs(ctx context.Context, conf *project.Config, ids []string, size int) (chan *tests.Job, error) {
-	srcs, err := fs.TTCN3Files(conf.Sources...)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make(chan *tests.Job, size)
-	go func() {
-		defer close(out)
-
-		i := 0
-		for id := range GenerateIDs(ctx, ids, srcs, env.Getenv("K3_40_RUN_POLICY"), DefaultBasket) {
-			i++
-			job := &tests.Job{
-				Name:   id,
-				Config: conf,
-				Dir:    OutputDir,
-			}
-			log.Debugf("new job: name=%s, conf=%p\n", id, conf)
-			out <- job
-		}
-		log.Debugf("Generating %d jobs done.\n", i)
-	}()
-	return out, nil
 }
 
 // GenerateIDs emits test IDs based on given file and and id list to a channel.
