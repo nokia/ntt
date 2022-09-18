@@ -11,7 +11,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-// FindTTCN3Files returns a list of TTCN-3 source files (.ttcn3, .ttcn).
+// FindTTCN3Files returns a list of TTCN-3 source files (.ttcn3, .ttcn,
+// .ttcnpp) in the given directory.
 func FindTTCN3Files(dir string) []string {
 	return findFiles(dir, HasTTCN3Extension)
 }
@@ -40,33 +41,48 @@ func FindTTCN3DirectoriesRecursive(dir string) []string {
 	return ret
 }
 
-// TTCN3Files returns all TTCN3 files from input list.
+// TTCN3Files takes a list of paths and replaces all paths describing a
+// directory with the TTCN-3 files contained in that directory.
+//
+// A error is returned for each path which is not accessable or for each
+// (non-directory), which does not have a TTCN-3 extension.
+//
+// This function a conventient way to "flatten" the Sources of a project.Config
+// struct, for example.
 func TTCN3Files(paths ...string) ([]string, error) {
 	var (
-		errs error
+		errs *multierror.Error
 		ret  []string
 	)
-
 	for _, path := range paths {
 		info, err := os.Stat(path)
 		switch {
-		case err != nil:
+		case err != nil && !IsURI(path):
+			ret = append(ret, path)
 			errs = multierror.Append(errs, err)
-			ret = append(ret, path)
-
-		case info.IsDir():
-			ret = append(ret, FindTTCN3Files(path)...)
-
-		case info.Mode().IsRegular() && HasTTCN3Extension(path):
-			ret = append(ret, path)
-
+		case err == nil && info.IsDir():
+			files, err := ioutil.ReadDir(path)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
+			for _, file := range files {
+				if !file.Mode().IsDir() && HasTTCN3Extension(file.Name()) {
+					path := filepath.Join(path, file.Name())
+					f, err := TTCN3Files(path)
+					ret = append(ret, f...)
+					errs = multierror.Append(errs, err)
+				}
+			}
 		default:
-			errs = multierror.Append(errs, fmt.Errorf("Cannot handle %q. Expecting directory or ttcn3 source file", path))
+			if !HasTTCN3Extension(path) {
+				err := fmt.Errorf("%s: %w", path, ErrInvalidFileExtension)
+				errs = multierror.Append(errs, err)
+			}
 			ret = append(ret, path)
 		}
 
 	}
-	return ret, errs
+	return ret, errs.ErrorOrNil()
 }
 
 // HasTTCN3Extension returns true if file has suffix .ttcn3 or .ttcn

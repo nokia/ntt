@@ -2,6 +2,7 @@
 package fs
 
 import (
+	"errors"
 	"net/url"
 	"path"
 	"path/filepath"
@@ -9,7 +10,10 @@ import (
 	"github.com/nokia/ntt/internal/lsp/span"
 )
 
-var store = Store{}
+var (
+	ErrInvalidFileExtension = errors.New("invalid file extension")
+	store                   = Store{}
+)
 
 // Open a file.
 //

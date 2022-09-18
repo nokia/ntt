@@ -15,8 +15,10 @@ type Store struct {
 
 // Open a file and add it to the store.
 func (s *Store) Open(path string) *File {
-	path = cache.Lookup(path)
+	return s.open(cache.Lookup(path))
+}
 
+func (s *Store) open(path string) *File {
 	uri := URI(path)
 
 	s.filesMu.Lock()

@@ -1,6 +1,7 @@
 package fs_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -58,5 +59,66 @@ func TestJoinPath(t *testing.T) {
 		got := fs.JoinPath(test.first, test.second)
 		assert.Equal(t, test.want, got)
 	}
+
+}
+
+func TestTTCN3Files(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		got, err := fs.TTCN3Files()
+		assert.Nil(t, err)
+		assert.Nil(t, got)
+	})
+	t.Run("dir", func(t *testing.T) {
+		got, err := fs.TTCN3Files("testdata/TestTTCN3Files")
+		assert.Nil(t, err)
+		assert.Nil(t, got)
+	})
+	t.Run("dir", func(t *testing.T) {
+		got, err := fs.TTCN3Files("testdata/TestTTCN3Files/some-dir")
+		assert.Nil(t, err)
+		assert.Nil(t, got)
+	})
+	t.Run("dir", func(t *testing.T) {
+		want := []string{
+			"testdata/TestTTCN3Files/ttcn3-dir/a.ttcn3",
+			"testdata/TestTTCN3Files/ttcn3-dir/b.ttcn",
+			"testdata/TestTTCN3Files/ttcn3-dir/c.ttcnpp",
+		}
+		got, err := fs.TTCN3Files("testdata/TestTTCN3Files/ttcn3-dir")
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+	t.Run("errors", func(t *testing.T) {
+		want := []string{
+			"testdata/TestTTCN3Files/xxx-dir/a.ttcn3",
+		}
+		got, err := fs.TTCN3Files("testdata/TestTTCN3Files/xxx-dir/a.ttcn3")
+		assert.True(t, errors.Is(err, os.ErrNotExist))
+		assert.Equal(t, want, got)
+	})
+	t.Run("file", func(t *testing.T) {
+		want := []string{
+			"testdata/TestTTCN3Files/ttcn3-dir/a.ttcn3",
+			"testdata/TestTTCN3Files/ttcn3-dir/a.ttcn3",
+		}
+		got, err := fs.TTCN3Files(
+			"testdata/TestTTCN3Files/ttcn3-dir/a.ttcn3",
+			"testdata/TestTTCN3Files/ttcn3-dir/a.ttcn3",
+		)
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+	t.Run("URI", func(t *testing.T) {
+		want := []string{"foo://a.ttcn3"}
+		got, err := fs.TTCN3Files("foo://a.ttcn3")
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+	t.Run("URI", func(t *testing.T) {
+		want := []string{"foo://a.ttcn3?bar"}
+		got, err := fs.TTCN3Files("foo://a.ttcn3?bar")
+		assert.True(t, errors.Is(err, fs.ErrInvalidFileExtension))
+		assert.Equal(t, want, got)
+	})
 
 }
