@@ -31,6 +31,25 @@ func Rnd(args ...runtime.Object) runtime.Object {
 	return runtime.Float(rand.Float64())
 }
 
+func Int2char(args ...runtime.Object) runtime.Object {
+	if len(args) != 1 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+	}
+	number, ok := args[0].(runtime.Int)
+	if !ok {
+		return runtime.Errorf("%s arguments not supported", args[0].Type())
+	}
+	if !number.IsInt64() {
+		return runtime.Errorf("Provided argument is not integer.")
+	}
+	i := number.Int64()
+	if i < 0 || i > 127 {
+		return runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = %d", i)
+	}
+
+	return &runtime.String{Value: []rune(fmt.Sprintf("%c", i))}
+}
+
 func Int2Bit(args ...runtime.Object) runtime.Object {
 
 	if len(args) != 2 {
@@ -122,6 +141,7 @@ func init() {
 	runtime.AddBuiltin("int2bit", Int2Bit)
 	runtime.AddBuiltin("int2float", Int2Float)
 	runtime.AddBuiltin("float2int", Float2Int)
+	runtime.AddBuiltin("int2char", Int2char)
 	runtime.AddBuiltin("log", Log)
 	runtime.AddBuiltin("match", Match)
 	runtime.AddBuiltin("superset", makeSet(runtime.SUPERSET))
