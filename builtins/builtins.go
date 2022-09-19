@@ -57,7 +57,7 @@ func Int2Bit(args ...runtime.Object) runtime.Object {
 	if length < 0 {
 		return runtime.Errorf("length must be greater or equal than zero")
 	}
-	return &runtime.Bitstring{Value: number.Value(), Unit: runtime.Bit, Length: length, String: "'" + number.Value.Text(2) + "'B"}
+	return &runtime.Bitstring{Value: number.Value(), Unit: runtime.Bit, Length: length, String: "'" + number.Text(2) + "'B"}
 }
 
 func Int2Float(args ...runtime.Object) runtime.Object {
