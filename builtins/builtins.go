@@ -33,8 +33,8 @@ func Rnd(args ...runtime.Object) runtime.Object {
 
 func Int2Bit(args ...runtime.Object) runtime.Object {
 
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+	if len(args) != 2 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
 	}
 	number, ok := args[0].(runtime.Int)
 	if !ok {
@@ -43,7 +43,21 @@ func Int2Bit(args ...runtime.Object) runtime.Object {
 	if number.Sign() == -1 {
 		return runtime.Errorf("%s invalue is less than zero", args[0].Type())
 	}
-	return &runtime.Bitstring{Value: number.Value(), Unit: runtime.Bit, String: "'" + number.Value.Text(2) + "'B"}
+	lengthArg, lenOk := args[1].(runtime.Int)
+	if !lenOk {
+		return runtime.Errorf("%s arguments not supported", args[1].Type())
+	}
+	if !lengthArg.IsInt64() {
+		return runtime.Errorf("length argument out of range (int64)")
+	}
+	length := int(lengthArg.Int64())
+	if number.BitLen() > length {
+		return runtime.Errorf("%v value requires more than %d bits", number, length)
+	}
+	if length < 0 {
+		return runtime.Errorf("length must be greater or equal than zero")
+	}
+	return &runtime.Bitstring{Value: number.Value(), Unit: runtime.Bit, Length: length, String: "'" + number.Value.Text(2) + "'B"}
 }
 
 func Int2Float(args ...runtime.Object) runtime.Object {
