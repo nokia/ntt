@@ -152,7 +152,7 @@ func (t *Test) RunWithContext(ctx context.Context) <-chan tests.Event {
 					events <- tests.NewErrorEvent(ErrNoSuchModule)
 				case "E102:":
 					events <- tests.NewErrorEvent(ErrNoSuchTest)
-				case "E103":
+				case "E103:":
 					events <- tests.NewErrorEvent(ErrNotATest)
 				case "E200:":
 					events <- tests.NewErrorEvent(ErrRuntimeNotReady)
