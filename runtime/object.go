@@ -222,6 +222,7 @@ func NewString(s string) *String {
 }
 
 type Bitstring struct {
+	String string
 	Value  *big.Int
 	Unit   Unit
 	Length int
@@ -252,110 +253,96 @@ func (b *Bitstring) hashKey() hashKey {
 	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
-func NewBitstring(s string, trim bool) (*Bitstring, error) {
+func NewBitstring(s string) (*Bitstring, error) {
 
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
 	}
 
 	var unit Unit
-	switch strings.ToUpper(string(s[len(s)-1])) {
-	case "B":
+	s = s[:len(s)-1] + strings.ToUpper(string(s[len(s)-1])) // Capitalize unit
+	switch s[len(s)-1] {
+	case 'B':
 		unit = Bit
-	case "H":
+	case 'H':
 		unit = Hex
-	case "O":
+	case 'O':
 		unit = Octett
 	default:
 		return nil, ErrSyntax
 	}
+	n := removeWhitespaces(s[1 : len(s)-2])
 
-	trimFunc := func(r rune) bool {
-		if trim {
-			return unicode.IsSpace(r) || r == '0'
-		}
-		return unicode.IsSpace(r)
+	if i, ok := new(big.Int).SetString(n, unit.Base()); ok {
+		return &Bitstring{String: s, Value: i, Unit: unit, Length: len(n)}, nil
 	}
 
-	s = s[1 : len(s)-2]
-	s = strings.TrimFunc(s, trimFunc)
-	length := len(s)
-
-	if i, ok := new(big.Int).SetString(s, unit.Base()); ok {
-		return &Bitstring{Value: i, Unit: unit, Length: length}, nil
-	}
-
-	// TODO(5nord) parse and return Bitstring templates (e.g. '01*1'B)
-	return nil, ErrSyntax
+	return NewBitstringWithWildcards(s, unit)
 }
 
-type BitstringTemplate struct {
-	Value []rune
-}
+func NewBitstringWithWildcards(s string, unit Unit) (*Bitstring, error) {
+	n := removeWhitespaces(s[1 : len(s)-2])
 
-func (b *BitstringTemplate) Type() ObjectType { return BITSTRING }
-func (b *BitstringTemplate) Inspect() string  { return string(b.Value) }
-
-func (b *BitstringTemplate) Equal(obj Object) bool {
-	c, ok := obj.(*Bitstring)
-	if !ok || len(b.Value) != len([]rune(c.Inspect())) {
-		c, ok := obj.(*BitstringTemplate)
-		if !ok || len(b.Value) != len(c.Value) {
-			return false
-		}
-	}
-
-	for i, v := range []rune(c.Inspect()) {
-		if v != b.Value[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-func NewBitstringTemplate(s string) (*BitstringTemplate, error) {
-	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
-		return nil, ErrSyntax
-	}
-
-	unit := strings.ToUpper(string(s[len(s)-1]))
 	switch unit {
-	case "B", "H":
-	case "O":
-		if (len(s)-3)%2 != 0 { //number of runes between '' has to be even
+	case Bit, Hex:
+	case Octett:
+		if !strings.Contains(n, "*") && len(n)%2 != 0 { //number of runes between '' has to be even, unless it contains *
 			return nil, ErrSyntax
 		}
 	default:
 		return nil, ErrSyntax
 	}
 
-	removeWhitespaces := func(r rune) rune {
-		if unicode.IsSpace(r) {
-			return -1
-		}
-		return r
-	}
-
-	n := []rune(strings.Map(removeWhitespaces, s[1:len(s)-2]))
 	for _, r := range n {
 		switch r {
 		case '*', '?', '0', '1':
 		case 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f', '2', '3', '4', '5', '6', '7', '8', '9':
-			if unit == "B" {
+			if unit == Bit {
 				return nil, ErrSyntax
 			}
 		default:
 			return nil, ErrSyntax
 		}
 	}
-	return &BitstringTemplate{Value: n}, nil
+	return &Bitstring{String: s, Value: new(big.Int).SetInt64(-1), Unit: unit, Length: len(n)}, nil
 }
 
-func (b *BitstringTemplate) Len() int { return len(b.Value) }
-func (b *BitstringTemplate) Get(index int) Object {
-	t, _ := NewBitstringTemplate("'" + string(b.Value[index]) + "'" + string(b.Value[b.Len()-1]))
-	return t
+func (b *Bitstring) Len() int { return b.Length }
+
+func (b *Bitstring) Get(index int) Object {
+	width := int(b.Unit)/8 + 1
+	// If b.Unit is Octett, each "digit" is two bytes wide
+	s := removeWhitespaces(b.String)
+	s = "'" + s[1+index*width:1+(index+1)*width] + s[len(s)-2:]
+	n, _ := new(big.Int).SetString(s[1:len(s)-2], b.Unit.Base())
+	return &Bitstring{String: s, Value: n, Unit: b.Unit, Length: 1} //Length one, even for Octett
+}
+
+func BigIntToBitstring(b *big.Int, unit Unit) string {
+	return "'" + b.Text(unit.Base()) + "'" + unit.String()
+}
+
+func (u Unit) String() string {
+	switch u {
+	case 1:
+		return "B"
+	case 4:
+		return "H"
+	case 8:
+		return "O"
+	default: // Will never happen
+		return "-"
+	}
+}
+
+func removeWhitespaces(s string) string {
+	removeWhitespaces := func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}
+	return strings.Map(removeWhitespaces, s)
 }
 
 type ListType string
