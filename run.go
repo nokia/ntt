@@ -97,8 +97,8 @@ func init() {
 	flags.IntVar(&MaxFail, "max-fail", 0, "Stop after N failures")
 	flags.StringVarP(&OutputDir, "output-dir", "o", "", "store test artefacts in DIR/ID")
 	flags.BoolVarP(&outputProgress, "progress", "P", false, "show progress")
-	flags.BoolVarP(&RunAllTests, "all", "a", false, "run all tests instead of control parts")
-	flags.StringVarP(&testsFile, "tests-file", "t", "", "read tests from FILE. When FILE is '-', read standard input")
+	flags.BoolVarP(&RunAllTests, "all-tests", "a", false, "run all tests instead of control parts")
+	flags.StringSliceVarP(&testsFiles, "tests-file", "t", nil, "read tests from FILE. If this option is used multiple times all contained tests will be executed in that order. When FILE is '-', read standard input")
 }
 
 // Run runs the given jobs in parallel.
@@ -112,13 +112,6 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-	if testsFile != "" {
-		tests, err := readTestsFromFile(testsFile)
-		if err != nil {
-			return err
-		}
-		ids = append(tests, ids...)
-	}
 
 	// Use Nokia-internal TTCN-3 runner, if SCT_K3_SERVER is set.
 	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
@@ -131,6 +124,13 @@ func runTests(cmd *cobra.Command, args []string) error {
 			k3s.Args = append(k3s.Args, strings.Fields(s)...)
 		}
 		k3s.Args = append(k3s.Args, files...)
+		for _, f := range testsFiles {
+			tests, err := readTestsFromFile(f)
+			if err != nil {
+				return err
+			}
+			ids = append(tests, ids...)
+		}
 		k3s.Stdin = strings.NewReader(strings.Join(ids, "\n"))
 		k3s.Stdout = os.Stdout
 		k3s.Stderr = os.Stderr
@@ -138,7 +138,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 		return k3s.Run()
 	}
 
-	jobs, err := JobQueue(ctx, cmd, Project, ids, RunAllTests)
+	jobs, err := JobQueue(ctx, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 			errorCount++
 			job := tests.UnwrapJob(e)
 			if job == nil {
-				ColorFatal.Print("+++ fatal error: " + e.Err.Error())
+				ColorFatal.Println("+++ fatal error: " + e.Err.Error())
 				break
 			}
 			run := results.Run{
@@ -218,7 +218,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 		}
 
 		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
-			ColorFatal.Print("+++ fatal too many errors. Exiting.\n")
+			ColorFatal.Println("+++ fatal too many errors. Exiting.")
 			cancel()
 			break
 		}
@@ -232,18 +232,25 @@ func runTests(cmd *cobra.Command, args []string) error {
 
 }
 
-func JobQueue(ctx context.Context, cmd *cobra.Command, conf *project.Config, ids []string, allTests bool) (<-chan *tests.Job, error) {
-	if len(ids) == 0 {
-		return ProjectJobs(ctx, conf, cmd.Flags(), allTests)
+func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, files []string, ids []string, allTests bool) (<-chan *tests.Job, error) {
+	if len(files) == 0 && len(ids) == 0 {
+		return ProjectJobs(ctx, conf, flags, allTests)
 	}
-
+	var fileIDs []string
+	for _, f := range files {
+		tests, err := readTestsFromFile(f)
+		if err != nil {
+			return nil, err
+		}
+		fileIDs = append(fileIDs, tests...)
+	}
 	out := make(chan *tests.Job)
 	go func() {
 		defer close(out)
-		for _, id := range ids {
+		for _, id := range append(fileIDs, ids...) {
 			job := &tests.Job{
 				Name:   id,
-				Config: Project,
+				Config: conf,
 				Dir:    OutputDir,
 			}
 			select {
@@ -261,7 +268,8 @@ func JobQueue(ctx context.Context, cmd *cobra.Command, conf *project.Config, ids
 // variable NTT_LIST_BASKETS. ProjectJobs will emit all control parts. Unless
 // allTests is true, in which case it will emit all testcases.
 func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet, allTests bool) (<-chan *tests.Job, error) {
-	srcs, err := fs.TTCN3Files(Project.Sources...)
+
+	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
 	}
@@ -272,10 +280,9 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 	}
 	b.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
 
-	jobs := make(chan *tests.Job)
+	out := make(chan *tests.Job)
 	go func() {
-		defer close(jobs)
-
+		defer close(out)
 		for _, src := range srcs {
 			for _, def := range EntryPoints(src, allTests) {
 				id := def.QualifiedName(def.Ident)
@@ -287,7 +294,7 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 						Dir:    OutputDir,
 					}
 					select {
-					case jobs <- job:
+					case out <- job:
 					case <-ctx.Done():
 						return
 					}
@@ -295,7 +302,7 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 			}
 		}
 	}()
-	return jobs, err
+	return out, err
 }
 
 // EntryPoints returns controls parts of the given TTCN-3 source file. When tests is true, it returns all testcases instead.
@@ -358,11 +365,14 @@ func readTestsFromFile(path string) ([]string, error) {
 	if path == "-" {
 		lines, err = ioutil.ReadAll(os.Stdin)
 	} else {
-		f, ferr := os.Open(path)
-		if ferr != nil {
-			return nil, ferr
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, err
 		}
 		lines, err = ioutil.ReadAll(f)
+		if err != nil {
+			return nil, err
+		}
 
 	}
 	var tests []string

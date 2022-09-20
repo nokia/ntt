@@ -94,7 +94,7 @@ var (
 	outputJSON     bool
 	outputPlain    bool
 	outputProgress bool
-	testsFile      string
+	testsFiles     []string
 	chdir          string
 
 	version = "dev"
