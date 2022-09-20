@@ -18,7 +18,7 @@ func Lengthof(args ...runtime.Object) runtime.Object {
 	case *runtime.String:
 		return runtime.Int{Int: big.NewInt(int64(len(arg.Value)))}
 	case *runtime.Bitstring:
-		return runtime.Int{Int: big.NewInt(int64(arg.Value.BitLen() / int(arg.Unit)))}
+		return runtime.Int{Int: big.NewInt(int64(arg.Length))}
 	}
 	return runtime.Errorf("%s arguments not supported", args[0].Type())
 }
@@ -76,7 +76,7 @@ func Int2Bit(args ...runtime.Object) runtime.Object {
 	if length < 0 {
 		return runtime.Errorf("length must be greater or equal than zero")
 	}
-	return &runtime.Bitstring{Value: number.Value(), Unit: runtime.Bit, Length: length}
+	return &runtime.Bitstring{String: fmt.Sprintf("'%0*s'B", length, number.Value().Text(2)), Value: number.Value(), Unit: runtime.Bit, Length: length}
 }
 
 func Int2Float(args ...runtime.Object) runtime.Object {

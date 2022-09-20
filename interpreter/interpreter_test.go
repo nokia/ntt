@@ -240,7 +240,7 @@ func TestBitstring(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"'011'b", "'11'B"},
+		{"'011'b", "'011'B"},
 		{"not4b '01'b", "'10'B"},
 		{"'0011'b and4b '0101'b", "'1'B"},
 		{"'0011'b or4b  '0101'b", "'111'B"},
