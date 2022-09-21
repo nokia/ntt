@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
@@ -107,7 +106,6 @@ func TestEvents(t *testing.T) {
 
 			var actual []string
 			tst := NewTest(t3xf, tt.input)
-			tst.Env = append(tst.Env, env.Environ()...)
 			for e := range tst.Run(ctx) {
 				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "tests.")
 				switch e := e.(type) {
@@ -152,7 +150,12 @@ func TestBuildEnv(t *testing.T) {
 	}
 
 	t.Run("empty", func(t *testing.T) {
-		want := []string{"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
+		want := []string{
+			"K3R_PATH=.",
+			"LD_LIBRARY_PATH=.",
+			"PATH=.",
+			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
+		}
 		reset := clearEnv()
 		defer reset()
 		test := newTest()
@@ -164,9 +167,9 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("library paths", func(t *testing.T) {
 		want := []string{
-			"K3R_PATH=import1:import2:k3-plugins",
-			"LD_LIBRARY_PATH=import1:import2:k3-plugins",
-			"PATH=import1:import2:k3-plugins",
+			"K3R_PATH=.:import1:import2:k3-plugins",
+			"LD_LIBRARY_PATH=.:import1:import2:k3-plugins",
+			"PATH=.:import1:import2:k3-plugins",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 		}
 		reset := clearEnv()
@@ -181,9 +184,9 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("variables", func(t *testing.T) {
 		want := []string{
-			"K3R_PATH=import1:import2",
-			"LD_LIBRARY_PATH=import1:import2",
-			"PATH=import1:import2:path",
+			"K3R_PATH=.:import1:import2",
+			"LD_LIBRARY_PATH=.:import1:import2",
+			"PATH=.:import1:import2:path",
 			"TEST_VAR_A=vartest",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 		}
@@ -202,7 +205,13 @@ func TestBuildEnv(t *testing.T) {
 	})
 
 	t.Run("test env", func(t *testing.T) {
-		want := []string{"FOO=fromVar", "FOO=fromEnv", "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
+		want := []string{
+			"K3R_PATH=.",
+			"LD_LIBRARY_PATH=.",
+			"PATH=.",
+			"FOO=fromVar",
+			"FOO=fromEnv",
+			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
 		reset := clearEnv()
 		defer reset()
 		test := newTest()

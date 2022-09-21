@@ -188,6 +188,13 @@ func buildEnv(t *Test) ([]string, error) {
 		return nil, err
 	}
 
+	// Prepend current working directory and NTT_CACHE envirnoment variable
+	// to library paths.
+	paths = append([]string{"."}, paths...)
+	if s, ok := env.LookupEnv("NTT_CACHE"); ok {
+		paths = append([]string{s}, paths...)
+	}
+
 	for _, p := range []string{"K3R_PATH", "LD_LIBRARY_PATH", "PATH"} {
 		if s := buildEnvPaths(p, paths); s != "" {
 			ret = append(ret, s)
