@@ -18,12 +18,14 @@ func TestJobQueue(t *testing.T) {
 module m1 {
     testcase tc1() {}
     testcase tc2() {}
+
+    // @wip
     control {}
 }
 module m2 {
     testcase tc1() {}
     testcase tc2() {}
-    control {}{
+    control {}
 }`)
 
 	t.Parallel()
@@ -93,8 +95,69 @@ module m2 {
 		assert.True(t, errors.Is(err, os.ErrNotExist))
 		assert.Nil(t, got, "no tests at all on error")
 	})
-	// test basket is only for defaults
-	// test basket errors
+	t.Run("tests-file", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-t", "testdata/TestJobQueueEmpty.txt")
+		assert.Nil(t, err)
+		assert.Nil(t, got, "an empty file means no tests will be run")
+	})
+	t.Run("filters", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-a", "-r", "tc1")
+		want := []string{"m1.tc1", "m2.tc1"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "default tests are filtered")
+	})
+	t.Run("filters", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-a", "-r", "xxx")
+		assert.Nil(t, err)
+		assert.Nil(t, got, "it's not an error if no tests match")
+	})
+	t.Run("filters", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-r", "tc1", "tc1", "tc2")
+		want := []string{"tc1"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "CLI tests are filtered")
+	})
+	t.Run("filters", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-a", "-x", "tc1")
+		want := []string{"m1.tc2", "m2.tc2"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "default tests are filtered")
+	})
+	t.Run("filters", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-x", "tc1", "tc1")
+		assert.Nil(t, err)
+		assert.Nil(t, got, "it's not an error all tests match")
+	})
+	t.Run("filters", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-x", "xxx", "tc1")
+		want := []string{"tc1"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got, "it's not an error if no tests match")
+	})
+	t.Run("tags", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-R", "@wip")
+		want := []string{"m1.control"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+	t.Run("tags", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-X", "@wip")
+		want := []string{"m2.control"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+	t.Run("tags", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-R", "@wip", "m1.control", "m2.control", "foo")
+		want := []string{"m1.control"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
+	t.Run("tags", func(t *testing.T) {
+		got, err := testJobQueue(t, defaultConfig, "-X", "@wip", "m2.control", "foo")
+		want := []string{"m2.control", "foo"}
+		assert.Nil(t, err)
+		assert.Equal(t, want, got)
+	})
 }
 
 func testConfig(modules ...string) *project.Config {
@@ -108,26 +171,17 @@ func testConfig(modules ...string) *project.Config {
 }
 
 func testJobQueue(t *testing.T, conf *project.Config, args ...string) ([]string, error) {
+
+	var (
+		allTests bool
+		files    []string
+	)
+
 	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	flags.AddFlagSet(RunCommand.Flags())
-
-	// AddFlagSet does not re-initialize the flag values. As a result, flag
-	// arguments from earlier tests accumulate and mess up our tests.
-	flags.VisitAll(func(f *pflag.Flag) {
-		if val, ok := f.Value.(pflag.SliceValue); ok {
-			_ = val.Replace(nil)
-		}
-	})
-
+	flags.AddFlagSet(BasketFlags())
+	flags.BoolVarP(&allTests, "all-tests", "a", false, "run all tests instead of control parts")
+	flags.StringSliceVarP(&files, "tests-file", "t", nil, "read tests from FILE. If this option is used multiple times all contained tests will be executed in that order. When FILE is '-', read standard input")
 	if err := flags.Parse(args); err != nil {
-		t.Fatal(err)
-	}
-	allTests, err := flags.GetBool("all-tests")
-	if err != nil {
-		t.Fatal(err)
-	}
-	files, err := flags.GetStringSlice("tests-file")
-	if err != nil {
 		t.Fatal(err)
 	}
 	jobs, err := JobQueue(context.Background(), flags, conf, files, flags.Args(), allTests)

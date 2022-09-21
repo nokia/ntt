@@ -268,6 +268,8 @@ func Name(n Node) string {
 		if n.Tok.Kind == token.LABEL {
 			return Name(n.Label)
 		}
+	case *ControlPart:
+		return Name(n.Name)
 	case *CallExpr:
 		return Name(n.Fun)
 	case *LengthExpr:

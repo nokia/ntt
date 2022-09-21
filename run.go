@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fatih/color"
@@ -236,6 +237,47 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 	if len(files) == 0 && len(ids) == 0 {
 		return ProjectJobs(ctx, conf, flags, allTests)
 	}
+
+	// We need the syntax-trees for all available tests, because the user
+	// can filter ids by testcase tags.
+	srcs, err := fs.TTCN3Files(conf.Sources...)
+	if err != nil {
+		return nil, err
+	}
+	wg := sync.WaitGroup{}
+	m := make(map[string]*ttcn3.Definition)
+	wg.Add(len(srcs))
+	start := time.Now()
+	for _, src := range srcs {
+		go func(src string) {
+			defer wg.Done()
+			tree := ttcn3.ParseFile(src)
+			ast.Inspect(tree.Root, func(n ast.Node) bool {
+				switch n := n.(type) {
+				case *ast.FuncDecl:
+					name := tree.QualifiedName(n)
+					m[name] = &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree}
+					return false
+				case *ast.ControlPart:
+					name := tree.QualifiedName(n)
+					m[name] = &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree}
+					return false
+				default:
+					return true
+				}
+			})
+
+		}(src)
+	}
+	wg.Wait()
+	log.Debugf("Scanned %d tests in %s.\n", len(m), time.Since(start))
+
+	b, err := NewBasketWithFlags("run", flags)
+	if err != nil {
+		return nil, err
+	}
+	b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
+
 	var fileIDs []string
 	for _, f := range files {
 		tests, err := readTestsFromFile(f)
@@ -244,19 +286,27 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		}
 		fileIDs = append(fileIDs, tests...)
 	}
+
 	out := make(chan *tests.Job)
 	go func() {
 		defer close(out)
 		for _, id := range append(fileIDs, ids...) {
-			job := &tests.Job{
-				Name:   id,
-				Config: conf,
-				Dir:    OutputDir,
+			var tags [][]string
+			if def := m[id]; def != nil {
+				tags = doc.FindAllTags(ast.FirstToken(def.Node).Comments())
 			}
-			select {
-			case out <- job:
-			case <-ctx.Done():
-				return
+			if b.Match(id, tags) {
+				job := &tests.Job{
+					Name:   id,
+					Config: conf,
+					Dir:    OutputDir,
+				}
+
+				select {
+				case out <- job:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()
@@ -268,7 +318,6 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 // variable NTT_LIST_BASKETS. ProjectJobs will emit all control parts. Unless
 // allTests is true, in which case it will emit all testcases.
 func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet, allTests bool) (<-chan *tests.Job, error) {
-
 	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
@@ -278,19 +327,19 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 	if err != nil {
 		return nil, err
 	}
-	b.LoadFromEnvOrConfig(Project, "NTT_LIST_BASKETS")
+	b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
 
 	out := make(chan *tests.Job)
 	go func() {
 		defer close(out)
 		for _, src := range srcs {
 			for _, def := range EntryPoints(src, allTests) {
-				id := def.QualifiedName(def.Ident)
+				id := def.QualifiedName(def.Node)
 				tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
 				if b.Match(id, tags) {
 					job := &tests.Job{
 						Name:   id,
-						Config: Project,
+						Config: conf,
 						Dir:    OutputDir,
 					}
 					select {
