@@ -39,7 +39,7 @@ func TestNewPlugin(t *testing.T) {
 	if err != nil {
 		t.Errorf("Plugin did not load correcty: %s", err.Error())
 	}
-	expected := fmt.Sprintf("|plod|k3r|%s|k3r-extfunc-plugin|extfunc", abs)
+	expected := fmt.Sprintf("|%s|k3r-extfunc-plugin|extfunc", abs)
 	if actual := strings.Split(string(stdout), "\n"); !sliceContains(actual, expected) {
 		t.Errorf("Plugin did not load correctly:\n%s\n", string(stdout))
 	}

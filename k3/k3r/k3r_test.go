@@ -69,7 +69,7 @@ func TestEvents(t *testing.T) {
 		{
 			input: "test3.test3",
 			events: []string{
-				"ErrorEvent error (not a test case)",
+				"ErrorEvent error (no such test case)",
 			}},
 		{
 			input: "asd",
