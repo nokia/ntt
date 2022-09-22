@@ -504,3 +504,81 @@ func TestBuiltinFunctionInt2char(t *testing.T) {
 		}
 	}
 }
+
+func TestBuiltinFunctionInt2unichar(t *testing.T) {
+
+	tests := []struct {
+		input    string
+		expected runtime.Object
+	}{
+		{`int2unichar()`, runtime.Errorf("wrong number of arguments. got=0, want=1")},
+		{`int2unichar(1,1)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
+		{`int2unichar("wrong")`, runtime.Errorf("string arguments not supported")},
+		{`int2unichar(-1)`, runtime.Errorf("value must be grater or equal to 0")},
+		{`int2unichar(2147483648)`, runtime.Errorf("value must be less than 2147483647")},
+		{`int2unichar(9786)`, runtime.NewUniversalString("☺")},
+	}
+
+	for _, tt := range tests {
+
+		val := testEval(t, tt.input)
+
+		switch expected := tt.expected.(type) {
+		case *runtime.Error:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Error() != expected.Error() {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
+			}
+		case *runtime.UniversalString:
+			if !expected.Equal(val) {
+				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
+			}
+		default:
+			t.Errorf("test error, unhandeled type:%T", expected)
+		}
+	}
+}
+
+func TestBuiltinFunctionUnichar2int(t *testing.T) {
+
+	tests := []struct {
+		input    string
+		expected runtime.Object
+	}{
+		{`unichar2int()`, runtime.Errorf("wrong number of arguments. got=0, want=1")},
+		{`unichar2int(1,1)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
+		{`unichar2int(1)`, runtime.Errorf("integer arguments not supported")},
+		{`unichar2int("to long")`, runtime.Errorf("argument must be of lenght=1")},
+		{`unichar2int("t")`, runtime.NewInt("116")},
+		{`unichar2int("☺")`, runtime.NewInt("9786")},
+	}
+
+	for _, tt := range tests {
+
+		val := testEval(t, tt.input)
+
+		switch expected := tt.expected.(type) {
+		case *runtime.Error:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Error() != expected.Error() {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
+				continue
+			}
+		case runtime.Int:
+			if !expected.Equal(val) {
+				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
+				continue
+			}
+		default:
+			t.Errorf("test error, unhandeled type:%T", expected)
+		}
+	}
+}

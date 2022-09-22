@@ -19,6 +19,8 @@ func Lengthof(args ...runtime.Object) runtime.Object {
 		return runtime.Int{Int: big.NewInt(int64(len(arg.Value)))}
 	case *runtime.Bitstring:
 		return runtime.Int{Int: big.NewInt(int64(arg.Length))}
+	case *runtime.UniversalString:
+		return runtime.Int{Int: big.NewInt(int64(len(arg.String)))}
 	}
 	return runtime.Errorf("%s arguments not supported", args[0].Type())
 }
@@ -48,6 +50,51 @@ func Int2char(args ...runtime.Object) runtime.Object {
 	}
 
 	return &runtime.String{Value: []rune(fmt.Sprintf("%c", i))}
+}
+
+func Int2unichar(args ...runtime.Object) runtime.Object {
+
+	if len(args) != 1 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+	}
+	number, ok := args[0].(runtime.Int)
+	if !ok {
+		return runtime.Errorf("%s arguments not supported", args[0].Type())
+	}
+	if !number.IsInt64() {
+		return runtime.Errorf("argument is not int64")
+	}
+	numberI64 := number.Int64()
+	if numberI64 < 0 {
+		return runtime.Errorf("value must be grater or equal to 0")
+	}
+	if numberI64 > 2147483647 {
+		return runtime.Errorf("value must be less than 2147483647")
+	}
+	return runtime.NewUniversalString(fmt.Sprintf("%c", numberI64))
+}
+
+func Unichar2int(args ...runtime.Object) runtime.Object {
+	if len(args) != 1 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+	}
+
+	switch args[0].Type() {
+	case runtime.UNISTRING:
+		ustring, _ := args[0].(*runtime.UniversalString)
+		if ustring.Len() != 1 {
+			return runtime.Errorf("argument must be of lenght=1")
+		}
+		return runtime.NewInt(fmt.Sprintf("%d", ustring.String[0]))
+	case runtime.STRING:
+		pstring, _ := args[0].(*runtime.String)
+		if pstring.Len() != 1 {
+			return runtime.Errorf("argument must be of lenght=1")
+		}
+		return runtime.NewInt(fmt.Sprintf("%d", pstring.Value[0]))
+	default:
+		return runtime.Errorf("%s arguments not supported", args[0].Type())
+	}
 }
 
 func Int2Bit(args ...runtime.Object) runtime.Object {
@@ -142,6 +189,8 @@ func init() {
 	runtime.AddBuiltin("int2float", Int2Float)
 	runtime.AddBuiltin("float2int", Float2Int)
 	runtime.AddBuiltin("int2char", Int2char)
+	runtime.AddBuiltin("int2unichar", Int2unichar)
+	runtime.AddBuiltin("unichar2int", Unichar2int)
 	runtime.AddBuiltin("log", Log)
 	runtime.AddBuiltin("match", Match)
 	runtime.AddBuiltin("superset", makeSet(runtime.SUPERSET))
