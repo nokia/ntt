@@ -245,7 +245,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		return nil, err
 	}
 	wg := sync.WaitGroup{}
-	m := make(map[string]*ttcn3.Definition)
+	m := sync.Map{}
 	wg.Add(len(srcs))
 	start := time.Now()
 	for _, src := range srcs {
@@ -256,11 +256,11 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 				switch n := n.(type) {
 				case *ast.FuncDecl:
 					name := tree.QualifiedName(n)
-					m[name] = &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree}
+					m.Store(name, &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree})
 					return false
 				case *ast.ControlPart:
 					name := tree.QualifiedName(n)
-					m[name] = &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree}
+					m.Store(name, &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree})
 					return false
 				default:
 					return true
@@ -270,7 +270,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		}(src)
 	}
 	wg.Wait()
-	log.Debugf("Scanned %d tests in %s.\n", len(m), time.Since(start))
+	log.Debugf("Scanned all tests in %s.\n", time.Since(start))
 
 	b, err := NewBasketWithFlags("run", flags)
 	if err != nil {
@@ -292,8 +292,8 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		defer close(out)
 		for _, id := range append(fileIDs, ids...) {
 			var tags [][]string
-			if def := m[id]; def != nil {
-				tags = doc.FindAllTags(ast.FirstToken(def.Node).Comments())
+			if def, ok := m.Load(id); ok {
+				tags = doc.FindAllTags(ast.FirstToken(def.(*ttcn3.Definition).Node).Comments())
 			}
 			if b.Match(id, tags) {
 				job := &tests.Job{
