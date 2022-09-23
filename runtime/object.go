@@ -33,6 +33,7 @@ const (
 	BOOL         ObjectType = "boolean"
 	STRING       ObjectType = "string"
 	BITSTRING    ObjectType = "bitstring"
+	UNISTRING    ObjectType = "universal string"
 	FUNCTION     ObjectType = "function"
 	LIST         ObjectType = "list"
 	RECORD       ObjectType = "record"
@@ -219,6 +220,37 @@ func (s *String) Get(index int) Object {
 
 func NewString(s string) *String {
 	return &String{Value: []rune(s)}
+}
+
+type UniversalString struct {
+	String string
+}
+
+func (us *UniversalString) Type() ObjectType { return UNISTRING }
+func (us *UniversalString) Inspect() string  { return us.String }
+func (us *UniversalString) Equal(obj Object) bool {
+	if other, ok := obj.(*UniversalString); ok {
+		return us.String == other.String
+	}
+	return false
+}
+func (us *UniversalString) hashKey() hashKey {
+	h := fnv.New64a()
+	h.Write([]byte(us.String))
+	return hashKey{Type: us.Type(), Value: h.Sum64()}
+}
+func (us *UniversalString) Len() int {
+	return len(us.String)
+}
+
+func (us *UniversalString) Get(index int) Object {
+	if index >= len(us.String) {
+		return &UniversalString{String: ""}
+	}
+	return &UniversalString{String: string(us.String[index])}
+}
+func NewUniversalString(s string) *UniversalString {
+	return &UniversalString{String: s}
 }
 
 type Bitstring struct {
