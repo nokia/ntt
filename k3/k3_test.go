@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/k3/t3xf"
 )
 
 func TestNewPlugin(t *testing.T) {
@@ -63,15 +62,9 @@ func TestNewT3XF(t *testing.T) {
 		t.Fatalf("Unexpected numberof build artifacts: %v", out)
 	}
 
-	file, err := t3xf.ReadFile(out[0])
+	_, err = os.Stat(out[0])
 	if err != nil {
-		t.Fatalf("t3xf.ReadFile() = %v", err)
-	}
-	s := t3xf.NewScanner(file.Sections.T3XF)
-	for s.Scan() {
-	}
-	if err := s.Err(); err != nil {
-		t.Errorf("t3xf.Scan() = %v", err)
+		t.Error(err)
 	}
 }
 
