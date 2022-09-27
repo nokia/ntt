@@ -16,10 +16,11 @@ const (
 	// Special tokens
 	ILLEGAL Kind = iota
 	EOF
+
+	literal_beg
 	COMMENT
 	PREPROC
 
-	literal_beg
 	// Identifiers and basic type literals
 	// (these tokens stand for classes of literals)
 	IDENT   // main
