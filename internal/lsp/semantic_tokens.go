@@ -46,6 +46,11 @@ const (
 	None
 )
 
+const (
+	SPLIT_AFTER_LINES    = 5000
+	PARALLEL_SEMTOK_JOBS = 4
+)
+
 var TokenTypes = []string{
 	Namespace:     "namespace",
 	Type:          "type",
@@ -172,6 +177,55 @@ var builtins = map[string]SemanticTokenType{
 	"verdicttype":          Type,
 }
 
+type Range struct {
+	Begin loc.Pos
+	End   loc.Pos
+}
+
+type SemTokSeqItem struct {
+	Data   []uint32
+	BeginL int
+	Idx    int
+}
+
+func SemanticTokenReassambly(seqItems []SemTokSeqItem) []uint32 {
+	d := make([]uint32, 0, len(seqItems[0].Data))
+	for i, item := range seqItems {
+		if i == 0 {
+			d = append(d, item.Data...)
+		} else {
+			baseIdx := len(d)
+			d = append(d, item.Data...)
+			d[baseIdx] -= uint32(item.BeginL) + 1 //delta-line
+			d[baseIdx+1] = 0                      //delta-column
+		}
+	}
+	return d
+}
+
+func calculateEqualLineRanges(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines uint, nrOfRanges uint) []Range {
+	res := make([]Range, 0, 2)
+	begin := tree.Position(b)
+	end := tree.Position(e)
+	r := end.Line - begin.Line
+	if r > int(splitAfterLines) {
+		for i := 0; i < int(nrOfRanges); i++ {
+			nextEndL := begin.Line + r/int(nrOfRanges)
+			if nextEndL >= end.Line {
+				res = append(res, Range{tree.Pos(begin.Line, begin.Column), e})
+			} else {
+				res = append(res, Range{tree.Pos(begin.Line, begin.Column), tree.Pos(nextEndL, 1) - 1})
+			}
+			begin.Column = 1
+			begin.Line += r / int(nrOfRanges)
+		}
+	} else {
+		res = append(res, Range{b, e})
+	}
+	log.Debugf("SemanticTokens: parallel processing ranges: %v\n", res)
+	return res
+}
+
 func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
@@ -197,8 +251,21 @@ func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc
 		}
 		log.Debug(fmt.Sprintf("SemanticTokens for %s took %s.", tree.Filename(), time.Since(start)))
 	}()
-
-	return &protocol.SemanticTokens{Data: SemanticTokens(tree, db, begin, end)}, nil
+	prange := calculateEqualLineRanges(tree, begin, end, SPLIT_AFTER_LINES, PARALLEL_SEMTOK_JOBS)
+	ch := make(chan SemTokSeqItem)
+	for i, r := range prange {
+		go func(idx int, r Range) {
+			item := SemTokSeqItem{Data: SemanticTokens(tree, db, r.Begin, r.End), BeginL: tree.Position(r.Begin).Line, Idx: idx}
+			ch <- item
+		}(i, r)
+	}
+	semTokSeq := make([]SemTokSeqItem, len(prange))
+	for i := 0; i < len(prange); i++ {
+		item := <-ch
+		log.Debugf("SemanticTokens: Received items for idx: %d, length %d\n", item.Idx, len(item.Data))
+		semTokSeq[item.Idx] = item
+	}
+	return &protocol.SemanticTokens{Data: SemanticTokenReassambly(semTokSeq)}, nil
 }
 
 func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) []uint32 {
