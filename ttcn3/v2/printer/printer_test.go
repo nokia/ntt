@@ -12,11 +12,12 @@ func TestSimpleFormatter(t *testing.T) {
 		input string
 		want  interface{}
 	}{
-		{"", ""},
+		{input: "", want: ""},
+		{input: "foo;", want: "foo;"},
 	}
 
 	for _, test := range tests {
-		f := &simpleFormatter{}
+		f := &printer{}
 		got, err := f.Bytes([]byte(test.input))
 		switch want := test.want.(type) {
 		case string:
