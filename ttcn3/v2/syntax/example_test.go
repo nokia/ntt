@@ -3,7 +3,7 @@ package syntax_test
 import (
 	"fmt"
 
-	"github.com/nokia/ntt/ttcn3/syntax"
+	"github.com/nokia/ntt/ttcn3/v2/syntax"
 )
 
 func main() {

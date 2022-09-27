@@ -158,7 +158,7 @@ ntt                 main binary with sub-commands (list, build, run, lint, ...)
 │   ├── token       token types
 │   ├── printer     obsolete pretty printer
 │   ├── doc         documentation tags package
-│   └── syntax      new TTCN-3 syntax package (WIP)
+│   └── v2 	    new TTCN-3 syntax package (WIP)
 │
 ├── internal
 │   ├── compdb      compilation database types (compile_commands.json)
@@ -179,8 +179,7 @@ ntt                 main binary with sub-commands (list, build, run, lint, ...)
 └── k3              k3 support packages
     ├── k3r         runtime interface package
     ├── k3s         k3s interface package
-    ├── log         log file parser
-    └── t3xf        T3XF/TASM decoder
+    └── log         log file parser
 ```
 
 ## Issue and Pull Request Labels
