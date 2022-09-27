@@ -14,6 +14,18 @@ func TestSimpleFormatter(t *testing.T) {
 	}{
 		{input: "", want: ""},
 		{input: "foo;", want: "foo;"},
+
+		// Remove leading whitespace
+		{input: "    leading;", want: "leading;"},
+
+		// Remove trailing whitespace
+		{input: "trailing;   ", want: "trailing;"},
+
+		// At max one blank between tokens.
+		{input: "import from   all", want: "import from all"},
+
+		// Convert all other whitespace to blanks.
+		{input: "import \tfrom\tall", want: "import from all"},
 	}
 
 	for _, test := range tests {
