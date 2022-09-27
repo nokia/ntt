@@ -465,6 +465,46 @@ func testBool(t *testing.T, obj runtime.Object, expected bool) bool {
 	return true
 }
 
+func TestBuiltinFunctionInt2str(t *testing.T) {
+
+	tests := []struct {
+		input    string
+		expected runtime.Object
+	}{
+		{`int2str(2, 4)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
+		{`int2str("wrong")`, runtime.Errorf("string arguments not supported")},
+		{`int2str(2.4)`, runtime.Errorf("float arguments not supported")},
+		{`int2str(9223372036854775808)`, runtime.Errorf("Provided argument is not 64bit-integer")},
+		{`int2str(9223372036854775807)`, runtime.NewString("9223372036854775807")},
+		{`int2str(0)`, runtime.NewString("0")},
+		{`int2str(-9223372036854775808)`, runtime.NewString("-9223372036854775808")},
+		{`int2str(-9223372036854775809)`, runtime.Errorf("Provided argument is not 64bit-integer")},
+	}
+
+	for _, tt := range tests {
+
+		val := testEval(t, tt.input)
+
+		switch expected := tt.expected.(type) {
+		case *runtime.Error:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Error() != expected.Error() {
+				t.Errorf("wrong error message. got=%s, want=%s", err.Error(), expected.Error())
+			}
+		case *runtime.String:
+			if !expected.Equal(val) {
+				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
+			}
+		default:
+			t.Errorf("test error, unhandeled type:%T", expected)
+		}
+	}
+}
+
 func TestBuiltinFunctionInt2char(t *testing.T) {
 
 	tests := []struct {
