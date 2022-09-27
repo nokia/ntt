@@ -21,7 +21,7 @@ func Bytes(src []byte) ([]byte, error) {
 // various whitespace issues.
 type printer struct {
 	buf     bytes.Buffer
-	lastPos int
+	lastPos syntax.Position
 }
 
 func (p *printer) Bytes(src []byte) ([]byte, error) {
@@ -31,23 +31,33 @@ func (p *printer) Bytes(src []byte) ([]byte, error) {
 	// formatting experiments even before the parser is ready.
 	tree := syntax.Tokenize(src)
 
+	// Only pretty print if there are no syntax errors.
 	if tree.Err() != nil {
 		return nil, tree.Err()
 	}
 
+	// Prime the position tracker with the first token.
 	if tok := tree.FirstToken(); tok != syntax.Nil {
-		p.lastPos = tok.End()
+		s := tok.Span()
+		p.lastPos = s.End
 	}
 	tree.Inspect(func(n syntax.Node) bool {
-		if n == syntax.Nil || !n.IsTerminal() {
+		if n == syntax.Nil || !n.IsToken() {
 			return true
 		}
-		begin, end := n.Pos(), n.End()
-		if begin > p.lastPos {
+
+		currPos := n.Span()
+		switch {
+		case currPos.Begin.Line > p.lastPos.Line:
+			p.print("\n")
+			if currPos.Begin.Line-p.lastPos.Line > 1 {
+				p.print("\n")
+			}
+		case currPos.Begin.Column > p.lastPos.Column:
 			p.print(" ")
 		}
-		p.lastPos = end
-		p.print(string(src[begin:end]))
+		p.lastPos = currPos.End
+		p.print(n.Text())
 		return true
 	})
 
