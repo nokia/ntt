@@ -48,7 +48,7 @@ const (
 
 const (
 	SPLIT_AFTER_LINES    = 5000
-	PARALLEL_SEMTOK_JOBS = 4
+	PARALLEL_SEMTOK_JOBS = 20
 )
 
 var TokenTypes = []string{
@@ -183,21 +183,30 @@ type Range struct {
 }
 
 type SemTokSeqItem struct {
-	Data   []uint32
-	BeginL int
-	Idx    int
+	Data []uint32
+	Idx  int
+}
+
+func LastTokenLine(d *[]uint32) uint32 {
+	var sum uint32 = 0
+	for i := 0; i < len(*d); i += 5 {
+		sum += (*d)[i]
+	}
+	return sum
 }
 
 func SemanticTokenReassambly(seqItems []SemTokSeqItem) []uint32 {
+	var lTokL uint32 = 0
 	d := make([]uint32, 0, len(seqItems[0].Data))
 	for i, item := range seqItems {
 		if i == 0 {
 			d = append(d, item.Data...)
+			lTokL = LastTokenLine(&item.Data)
 		} else {
 			baseIdx := len(d)
 			d = append(d, item.Data...)
-			d[baseIdx] -= uint32(item.BeginL) + 1 //delta-line
-			d[baseIdx+1] = 0                      //delta-column
+			d[baseIdx] = d[baseIdx] - lTokL //delta-line
+			lTokL = LastTokenLine(&item.Data)
 		}
 	}
 	return d
@@ -211,7 +220,7 @@ func CalculateEqualLineRanges(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfter
 	if r > int(splitAfterLines) {
 		for i := 0; i < int(nrOfRanges); i++ {
 			nextEndL := begin.Line + r/int(nrOfRanges)
-			if nextEndL >= end.Line {
+			if i == int(nrOfRanges-1) {
 				res = append(res, Range{tree.Pos(begin.Line, begin.Column), e})
 			} else {
 				res = append(res, Range{tree.Pos(begin.Line, begin.Column), tree.Pos(nextEndL, 1) - 1})
@@ -260,7 +269,7 @@ func FastSemanticTokenCalc(prange []Range, tree *ttcn3.Tree, db *ttcn3.DB) []Sem
 	ch := make(chan SemTokSeqItem)
 	for i, r := range prange {
 		go func(idx int, r Range) {
-			item := SemTokSeqItem{Data: SemanticTokens(tree, db, r.Begin, r.End), BeginL: tree.Position(r.Begin).Line, Idx: idx}
+			item := SemTokSeqItem{Data: SemanticTokens(tree, db, r.Begin, r.End), Idx: idx}
 			ch <- item
 		}(i, r)
 	}
