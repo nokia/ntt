@@ -636,7 +636,7 @@ func GenerateActualList(list []uint32, tree *ttcn3.Tree, text string) []Token {
 			col = 1
 		}
 		col += int(list[i+1])
-		pos := int(tree.Pos(line, col)) - 1
+		pos := int(tree.Pos(line, col)) - 1 // -1 to account for the Pos offset.
 		toks = append(toks, Token{
 			Line: line,
 			Text: Substr(text, pos, pos+int(list[i+2])),
