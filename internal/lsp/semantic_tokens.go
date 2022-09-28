@@ -203,7 +203,7 @@ func SemanticTokenReassambly(seqItems []SemTokSeqItem) []uint32 {
 	return d
 }
 
-func calculateEqualLineRanges(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines uint, nrOfRanges uint) []Range {
+func CalculateEqualLineRanges(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines uint, nrOfRanges uint) []Range {
 	res := make([]Range, 0, 2)
 	begin := tree.Position(b)
 	end := tree.Position(e)
@@ -251,7 +251,12 @@ func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc
 		}
 		log.Debug(fmt.Sprintf("SemanticTokens for %s took %s.", tree.Filename(), time.Since(start)))
 	}()
-	prange := calculateEqualLineRanges(tree, begin, end, SPLIT_AFTER_LINES, PARALLEL_SEMTOK_JOBS)
+	prange := CalculateEqualLineRanges(tree, begin, end, SPLIT_AFTER_LINES, PARALLEL_SEMTOK_JOBS)
+	semTokSeq := FastSemanticTokenCalc(prange, tree, db)
+	return &protocol.SemanticTokens{Data: SemanticTokenReassambly(semTokSeq)}, nil
+}
+
+func FastSemanticTokenCalc(prange []Range, tree *ttcn3.Tree, db *ttcn3.DB) []SemTokSeqItem {
 	ch := make(chan SemTokSeqItem)
 	for i, r := range prange {
 		go func(idx int, r Range) {
@@ -265,7 +270,7 @@ func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc
 		log.Debugf("SemanticTokens: Received items for idx: %d, length %d\n", item.Idx, len(item.Data))
 		semTokSeq[item.Idx] = item
 	}
-	return &protocol.SemanticTokens{Data: SemanticTokenReassambly(semTokSeq)}, nil
+	return semTokSeq
 }
 
 func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) []uint32 {
