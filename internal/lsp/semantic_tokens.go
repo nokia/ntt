@@ -217,16 +217,16 @@ func SplitTree(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines int, nrOf
 	begin := tree.Position(b)
 	end := tree.Position(e)
 	r := end.Line - begin.Line
-	if r > int(splitAfterLines) {
-		for i := 0; i < int(nrOfRanges); i++ {
-			nextEndL := begin.Line + r/int(nrOfRanges)
-			if i == int(nrOfRanges-1) {
+	if r > splitAfterLines {
+		for i := 0; i < nrOfRanges; i++ {
+			nextEndL := begin.Line + r/nrOfRanges
+			if i == nrOfRanges-1 {
 				res = append(res, Range{tree.Pos(begin.Line, begin.Column), e})
 			} else {
 				res = append(res, Range{tree.Pos(begin.Line, begin.Column), tree.Pos(nextEndL, 1) - 1})
 			}
 			begin.Column = 1
-			begin.Line += r / int(nrOfRanges)
+			begin.Line += r / nrOfRanges
 		}
 	} else {
 		res = append(res, Range{b, e})
@@ -260,7 +260,7 @@ func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc
 		}
 		log.Debug(fmt.Sprintf("SemanticTokens for %s took %s.", tree.Filename(), time.Since(start)))
 	}()
-	prange := CalculateEqualLineRanges(tree, begin, end, SPLIT_AFTER_LINES, PARALLEL_SEMTOK_JOBS)
+	prange := SplitTree(tree, begin, end, SPLIT_AFTER_LINES, PARALLEL_SEMTOK_JOBS)
 	semTokSeq := FastSemanticTokenCalc(prange, tree, db)
 	return &protocol.SemanticTokens{Data: SemanticTokenReassambly(semTokSeq)}, nil
 }
