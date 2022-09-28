@@ -269,8 +269,7 @@ func FastSemanticTokenCalc(prange []Range, tree *ttcn3.Tree, db *ttcn3.DB) []Sem
 	ch := make(chan SemTokSeqItem)
 	for i, r := range prange {
 		go func(idx int, r Range) {
-			item := SemTokSeqItem{Data: SemanticTokens(tree, db, r.Begin, r.End), Idx: idx}
-			ch <- item
+			ch <- SemTokSeqItem{Data: SemanticTokens(tree, db, r.Begin, r.End), Idx: idx}
 		}(i, r)
 	}
 	semTokSeq := make([]SemTokSeqItem, len(prange))
