@@ -196,7 +196,7 @@ func LastTokenLine(d *[]uint32) uint32 {
 }
 
 func SemanticTokenReassambly(seqItems []SemTokSeqItem) []uint32 {
-	var lTokL uint32 = 0
+	lTokL := uint32(0)
 	d := make([]uint32, 0, len(seqItems[0].Data))
 	for i, item := range seqItems {
 		if i == 0 {
