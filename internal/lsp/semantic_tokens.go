@@ -212,7 +212,7 @@ func SemanticTokenReassambly(seqItems []SemTokSeqItem) []uint32 {
 	return d
 }
 
-func CalculateEqualLineRanges(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines uint, nrOfRanges uint) []Range {
+func SplitTree(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines int, nrOfRanges int) []Range {
 	res := make([]Range, 0, 2)
 	begin := tree.Position(b)
 	end := tree.Position(e)
