@@ -490,6 +490,77 @@ func TestComponentVars(t *testing.T) {
 	}, actual)
 }
 
+func TestParallelComponentVars(t *testing.T) {
+	actual := testParallelTokens(t, nil, `
+        module Test
+        {
+                import from TestComponentVars_Module_1 all;
+                testcase tc() runs on C3 system C0 {
+                        vC0_C1 := C0.create();
+                        vi_C2 := 1;
+                        log(vi_C2);
+                        p0_C0.send("hello");
+                        vC0_C1.start(f(p_i := vi_C2));
+                }
+        }
+        module TestComponentVars_Module_1
+        {
+                type component C0 {
+                        port P p0_C0;
+                }
+                type component C1 {
+                        var C0 vC0_C1;
+                }
+                type component C2 extends C1 {
+                        var integer vi_C2;
+                }
+                type component C3 extends C2, C0 {}
+                type port P message {
+                        inout charstring
+                }
+                function f(integer p_i) runs on C0 {}
+        }`)
+
+	assert.Equal(t, []Token{
+		{Line: 2, Text: "Test", Type: lsp.Namespace, Mod: lsp.Definition},
+		{Line: 4, Text: "TestComponentVars_Module_1", Type: lsp.Namespace},
+		{Line: 5, Text: "tc", Type: lsp.Function, Mod: lsp.Definition},
+		{Line: 5, Text: "C3", Type: lsp.Class},
+		{Line: 5, Text: "C0", Type: lsp.Class},
+		{Line: 6, Text: "vC0_C1", Type: lsp.Property},
+		{Line: 6, Text: "C0", Type: lsp.Class},
+		{Line: 7, Text: "vi_C2", Type: lsp.Property},
+		{Line: 8, Text: "log", Type: lsp.Function, Mod: lsp.DefaultLibrary},
+		{Line: 8, Text: "vi_C2", Type: lsp.Property},
+		{Line: 9, Text: "p0_C0", Type: lsp.Interface},
+		{Line: 10, Text: "vC0_C1", Type: lsp.Property},
+		{Line: 10, Text: "f", Type: lsp.Function},
+		{Line: 10, Text: "p_i", Type: lsp.Parameter},
+		{Line: 10, Text: "vi_C2", Type: lsp.Property},
+
+		{Line: 13, Text: "TestComponentVars_Module_1", Type: lsp.Namespace, Mod: lsp.Definition},
+		{Line: 15, Text: "C0", Type: lsp.Class, Mod: lsp.Definition},
+		{Line: 16, Text: "P", Type: lsp.Interface},
+		{Line: 16, Text: "p0_C0", Type: lsp.Interface, Mod: lsp.Declaration},
+		{Line: 18, Text: "C1", Type: lsp.Class, Mod: lsp.Definition},
+		{Line: 19, Text: "C0", Type: lsp.Class},
+		{Line: 19, Text: "vC0_C1", Type: lsp.Property, Mod: lsp.Declaration},
+		{Line: 21, Text: "C2", Type: lsp.Class, Mod: lsp.Definition},
+		{Line: 21, Text: "C1", Type: lsp.Class},
+		{Line: 22, Text: "integer", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 22, Text: "vi_C2", Type: lsp.Property, Mod: lsp.Declaration},
+		{Line: 24, Text: "C3", Type: lsp.Class, Mod: lsp.Definition},
+		{Line: 24, Text: "C2", Type: lsp.Class},
+		{Line: 24, Text: "C0", Type: lsp.Class},
+		{Line: 25, Text: "P", Type: lsp.Interface, Mod: lsp.Definition},
+		{Line: 26, Text: "charstring", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 28, Text: "f", Type: lsp.Function, Mod: lsp.Definition},
+		{Line: 28, Text: "integer", Type: lsp.Type, Mod: lsp.DefaultLibrary},
+		{Line: 28, Text: "p_i", Type: lsp.Parameter, Mod: lsp.Declaration},
+		{Line: 28, Text: "C0", Type: lsp.Class},
+	}, actual)
+}
+
 type Token struct {
 	Line int
 	Text string
@@ -518,19 +589,54 @@ func testTokens(t *testing.T, rng *protocol.Range, text string) []Token {
 		end = tree.Pos(int(rng.End.Line), int(rng.End.Character))
 	}
 
+	list := lsp.SemanticTokens(tree, db, begin, end)
+	// -1 to account for the Pos offset.
+	toks := GenerateActualList(list, tree, text)
+	return toks
+}
+
+func testParallelTokens(t *testing.T, rng *protocol.Range, text string) []Token {
+	t.Helper()
+
+	file := fmt.Sprintf("%s.ttcn3", t.Name())
+	fs.SetContent(file, []byte(text))
+	tree := ttcn3.ParseFile(file)
+	if tree.Err != nil {
+		t.Fatal(tree.Err)
+	}
+
+	// Build index to for tree.Lookup to resolve imported symbols.
+	db := &ttcn3.DB{}
+	db.Index(file)
+
+	begin := tree.Root.Pos()
+	end := tree.Root.End()
+	if rng != nil {
+		begin = tree.Pos(int(rng.Start.Line), int(rng.Start.Character))
+		end = tree.Pos(int(rng.End.Line), int(rng.End.Character))
+	}
+
+	prange := lsp.CalculateEqualLineRanges(tree, begin, end, 5, 3)
+	semTokSeq := lsp.FastSemanticTokenCalc(prange, tree, db)
+	list := lsp.SemanticTokenReassambly(semTokSeq)
+	// -1 to account for the Pos offset.
+	toks := GenerateActualList(list, tree, text)
+	return toks
+}
+
+func GenerateActualList(list []uint32, tree *ttcn3.Tree, text string) []Token {
 	var (
 		toks []Token
 		line = 1
 		col  = 1
 	)
-	list := lsp.SemanticTokens(tree, db, begin, end)
 	for i := 0; i < len(list); i += 5 {
 		line += int(list[i])
 		if list[i] != 0 {
 			col = 1
 		}
 		col += int(list[i+1])
-		pos := int(tree.Pos(line, col)) - 1 // -1 to account for the Pos offset.
+		pos := int(tree.Pos(line, col)) - 1
 		toks = append(toks, Token{
 			Line: line,
 			Text: Substr(text, pos, pos+int(list[i+2])),
