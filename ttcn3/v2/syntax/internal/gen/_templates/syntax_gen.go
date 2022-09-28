@@ -12,7 +12,12 @@ type Kind int32
 func (k Kind) IsTerminal() bool { return k.IsToken() }
 
 // IsToken returns true if the kind is a token. This function is the same as IsTerminal.
-func (k Kind) IsToken() bool { return __tokens_begin <= k && k <= __tokens_end }
+func (k Kind) IsToken() bool {
+	return __tokens_begin <= k && k <= __tokens_end ||
+		k == Unknown ||
+		k == Malformed ||
+		k == Unterminated
+}
 
 // IsNonTerminal returns true if the kind is a non terminal. Non terminals are
 // produced by the parser and usually have other non terminals or tokens as
