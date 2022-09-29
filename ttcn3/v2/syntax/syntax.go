@@ -6,6 +6,7 @@ package syntax
 import "fmt"
 
 var (
+	// Nil is the zero value of a Node.
 	Nil = Node{}
 )
 
@@ -15,10 +16,18 @@ type Node struct {
 	*tree
 }
 
+// IsValid returns true if the node is valid non-nil node.
+func (n Node) IsValid() bool {
+	return n.tree != nil
+}
+
 // Kind returns the syntax node kind of the node, such as Comment, Identifier,
 // VarDecl, etc.
 func (n Node) Kind() Kind {
-	return n.event().Kind()
+	if n.tree != nil {
+		return n.event().Kind()
+	}
+	return 0
 }
 
 // IsTerminal returns true if the node is a terminal node.
@@ -31,7 +40,7 @@ func (n Node) IsNonTerminal() bool {
 	return n.Kind().IsNonTerminal()
 }
 
-// Parent returns the parent of the node or Invalid if the node is the root node.
+// Parent returns the parent of the node or Nil if the node is the root node.
 func (n Node) Parent() Node {
 	if n.idx == 0 {
 		return Nil
@@ -64,7 +73,7 @@ func (n Node) Parent() Node {
 	return Nil
 }
 
-// FirstToken returns the first token of a syntax node which is not a trivia or Invalid if
+// FirstToken returns the first token of a syntax node which is not a trivia or Nil if
 // there is none.
 //
 // Trivia tokens are tokens that are comments or preproccessor directives.
@@ -93,7 +102,7 @@ func (n Node) FirstToken() Node {
 	return Nil
 }
 
-// LastToken returns the last token of a syntax node which is not a trivia or Invalid if none is available.
+// LastToken returns the last token of a syntax node which is not a trivia or Nil if none is available.
 func (n Node) LastToken() Node {
 	switch te := n.event(); te.Type() {
 	case OpenNode:
@@ -130,7 +139,7 @@ func (n Node) FirstChild() Node {
 	return Nil
 }
 
-// Next returns the next sibling node or Invalid if there is none.
+// Next returns the next sibling node or Nil if there is none.
 func (n Node) Next() Node {
 	switch te := n.event(); te.Type() {
 	case OpenNode:
@@ -151,7 +160,7 @@ func (n Node) Next() Node {
 }
 
 // Inspect traverses the syntax tree in depth-first order. It calls f for each
-// node recursively followed by a call of f(Invalid).
+// node recursively followed by a call of f(Nil).
 func (n Node) Inspect(f func(n Node) bool) {
 	if !f(n) {
 		return
@@ -194,6 +203,22 @@ func (n Node) Text() string {
 		return string(n.tree.content[pos:end])
 	}
 	return ""
+}
+
+// FindDescendant finds the last descendant of this node whose span includes the
+// given position. If no such node exists, it returns Nil.
+func (n Node) FindDescendant(pos int) Node {
+	ret := Nil
+	n.Inspect(func(n Node) bool {
+		if n.IsValid() {
+			if n.Pos() <= pos && pos < n.End() {
+				ret = n
+				return true
+			}
+		}
+		return false
+	})
+	return ret
 }
 
 // Err returns the error of the subtree.

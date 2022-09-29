@@ -169,6 +169,29 @@ func TestParser(t *testing.T) {
 	}
 }
 
+func TestFindDescendant(t *testing.T) {
+	tests := []struct {
+		input string
+		want  Kind
+	}{
+		{"", EOF},
+		{"¶", EOF},
+		{"Foo¶", EOF},
+		{"Fo¶0", Identifier},
+		{"12+ab", EOF},
+		{"12¶+ab", Add},
+		{"12¶ +ab", Root},
+		{"12+ab¶", EOF},
+	}
+
+	for _, tt := range tests {
+		src, pos := ExtractCursor(tt.input)
+		// TODO(5nord): Use parser instead of tokenizer.
+		k := Tokenize([]byte(src)).FindDescendant(pos).Kind()
+		assert.Equal(t, fmt.Sprint(tt.want), fmt.Sprint(k))
+	}
+}
+
 func testScan(input string) []string {
 	s := NewScanner([]byte(input))
 	var nodes []string
