@@ -44,6 +44,7 @@ const (
 	Operator
 	// Not part of the LSP
 	None
+	Postpone
 )
 
 const (
@@ -106,6 +107,20 @@ var TokenModifiers = []string{
 	"defaultLibrary",
 }
 
+var specialKws = map[string]SemanticTokenType{
+	"all":    None,
+	"any":    None,
+	"create": None,
+	"start":  None,
+	"stop":   None,
+	"self":   None,
+	"send":   None,
+	"mtc":    None,
+	"done":   None,
+	"this":   None,
+	"system": None,
+	"runs":   None,
+}
 var builtins = map[string]SemanticTokenType{
 	"any2unistr":           Function,
 	"anytype":              Type,
@@ -177,6 +192,11 @@ var builtins = map[string]SemanticTokenType{
 	"verdicttype":          Type,
 }
 
+type FwdRef struct {
+	TokListIdx int
+	Id         *ast.Ident
+}
+
 type Range struct {
 	Begin loc.Pos
 	End   loc.Pos
@@ -185,6 +205,11 @@ type Range struct {
 type SemTokSeqItem struct {
 	Data []uint32
 	Idx  int
+}
+
+type SemTokResolverHelper struct {
+	SemTokSeqItem
+	FwdRefs []FwdRef
 }
 
 func LastTokenLine(d *[]uint32) uint32 {
@@ -235,6 +260,26 @@ func SplitTree(tree *ttcn3.Tree, b loc.Pos, e loc.Pos, splitAfterLines int, nrOf
 	return res
 }
 
+func SemanticTokenFixup(tree *ttcn3.Tree, db *ttcn3.DB, d []uint32, fwdRefs []FwdRef) []uint32 {
+	log.Debugf("SemanticToken: %d elements queued for fixup\n", len(fwdRefs))
+	for _, ref := range fwdRefs {
+		defs := tree.LookupWithDB(ref.Id, db)
+		if len(defs) == 0 {
+			// assign a non-critical type/modifyer pair: Variable/Unknown
+			d[ref.TokListIdx+3] = uint32(Variable)
+			d[ref.TokListIdx+4] = uint32(Undefined)
+			continue
+		}
+		if len(defs) > 1 {
+			log.Debugf("ReferenceToken: multiple definitions for %s\n", ref.Id.Tok.String())
+		}
+		typ, mod := DefinitionToken(defs[0].Tree, defs[0].Ident)
+		d[ref.TokListIdx+3] = uint32(typ)
+		d[ref.TokListIdx+4] = uint32(mod &^ (Definition | Declaration))
+	}
+	return d
+}
+
 func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
@@ -261,28 +306,35 @@ func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc
 		log.Debug(fmt.Sprintf("SemanticTokens for %s took %s.", tree.Filename(), time.Since(start)))
 	}()
 	prange := SplitTree(tree, begin, end, SPLIT_AFTER_LINES, PARALLEL_SEMTOK_JOBS)
-	semTokSeq := FastSemanticTokenCalc(prange, tree, db)
-	return &protocol.SemanticTokens{Data: SemanticTokenReassambly(semTokSeq)}, nil
+	semTokSeq, fwdRefs := FastSemanticTokenCalc(prange, tree, db)
+	log.Debug(fmt.Sprintf("SemanticTokens for %s after FastSemanticTokenCalc took %s.", tree.Filename(), time.Since(start)))
+	d := SemanticTokenReassambly(semTokSeq)
+	log.Debug(fmt.Sprintf("SemanticTokens for %s after SemanticTokenReassambly took %s.", tree.Filename(), time.Since(start)))
+	return &protocol.SemanticTokens{Data: SemanticTokenFixup(tree, db, d, fwdRefs)}, nil
 }
 
-func FastSemanticTokenCalc(prange []Range, tree *ttcn3.Tree, db *ttcn3.DB) []SemTokSeqItem {
-	ch := make(chan SemTokSeqItem)
+func FastSemanticTokenCalc(prange []Range, tree *ttcn3.Tree, db *ttcn3.DB) ([]SemTokSeqItem, []FwdRef) {
+	ch := make(chan SemTokResolverHelper)
+	var fwdRefs []FwdRef
 	for i, r := range prange {
 		go func(idx int, r Range) {
-			ch <- SemTokSeqItem{Data: SemanticTokens(tree, db, r.Begin, r.End), Idx: idx}
+			d, fwd := SemanticTokens(tree, db, r.Begin, r.End, true)
+			ch <- SemTokResolverHelper{SemTokSeqItem: SemTokSeqItem{Data: d, Idx: idx}, FwdRefs: fwd}
 		}(i, r)
 	}
 	semTokSeq := make([]SemTokSeqItem, len(prange))
 	for i := 0; i < len(prange); i++ {
 		item := <-ch
 		log.Debugf("SemanticTokens: Received items for idx: %d, length %d\n", item.Idx, len(item.Data))
-		semTokSeq[item.Idx] = item
+		semTokSeq[item.Idx] = item.SemTokSeqItem
+		fwdRefs = append(fwdRefs, item.FwdRefs...)
 	}
-	return semTokSeq
+	return semTokSeq, fwdRefs
 }
 
-func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) []uint32 {
+func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos, isBig bool) ([]uint32, []FwdRef) {
 	var tokens []uint32
+	var fwdRefs []FwdRef = nil
 	line := 0
 	col := 0
 	ast.Inspect(tree.Root, func(n ast.Node) bool {
@@ -300,10 +352,13 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 			if id.IsName {
 				typ, mod = DefinitionToken(tree, id)
 			} else {
-				typ, mod = ReferenceToken(tree, db, id)
+				typ, mod = ReferenceToken(tree, db, isBig, id)
 			}
 
 			if typ != None {
+				if typ == Postpone {
+					fwdRefs = append(fwdRefs, FwdRef{TokListIdx: len(tokens), Id: id})
+				}
 				tokens, line, col = appendToken(tokens, id.Tok, tree, typ, mod, line, col)
 				if id.Tok2.IsValid() {
 					tokens, line, col = appendToken(tokens, id.Tok2, tree, typ, mod, line, col)
@@ -313,7 +368,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 		return true
 	})
 	log.Debugf("SemanticTokens: %d identifiers, %d bytes\n", len(tokens)/5, end-begin)
-	return tokens
+	return tokens, fwdRefs
 }
 
 func appendToken(tokens []uint32, tok ast.Token, tree *ttcn3.Tree, typ SemanticTokenType, mod SemanticTokenModifiers, line int, col int) ([]uint32, int, int) {
@@ -386,14 +441,25 @@ func DefinitionToken(tree *ttcn3.Tree, id ast.Node) (SemanticTokenType, Semantic
 	return None, Undefined
 }
 
-func ReferenceToken(tree *ttcn3.Tree, db *ttcn3.DB, id *ast.Ident) (SemanticTokenType, SemanticTokenModifiers) {
+func ReferenceToken(tree *ttcn3.Tree, db *ttcn3.DB, isBig bool, id *ast.Ident) (SemanticTokenType, SemanticTokenModifiers) {
 	name := id.String()
 	if typ, ok := builtins[name]; ok {
 		return typ, DefaultLibrary
 	}
-	defs := tree.LookupWithDB(id, db)
+	if typ, ok := specialKws[name]; ok {
+		return typ, Undefined
+	}
+	var defs []*ttcn3.Definition = nil
+	if !isBig {
+		defs = tree.LookupWithDB(id, db)
+	} else {
+		defs = tree.Lookup(id)
+	}
 	if len(defs) == 0 {
-		return None, Undefined
+		if !isBig {
+			return None, Undefined
+		}
+		return Postpone, Undefined
 	}
 	if len(defs) > 1 {
 		log.Debugf("ReferenceToken: multiple definitions for %s\n", name)

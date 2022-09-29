@@ -589,7 +589,7 @@ func testTokens(t *testing.T, rng *protocol.Range, text string) []Token {
 		end = tree.Pos(int(rng.End.Line), int(rng.End.Character))
 	}
 
-	list := lsp.SemanticTokens(tree, db, begin, end)
+	list, _ := lsp.SemanticTokens(tree, db, begin, end, false)
 	// -1 to account for the Pos offset.
 	toks := GenerateActualList(list, tree, text)
 	return toks
@@ -617,9 +617,9 @@ func testParallelTokens(t *testing.T, rng *protocol.Range, text string) []Token 
 	}
 
 	prange := lsp.SplitTree(tree, begin, end, 5, 3)
-	semTokSeq := lsp.FastSemanticTokenCalc(prange, tree, db)
+	semTokSeq, fwdRefs := lsp.FastSemanticTokenCalc(prange, tree, db)
 	list := lsp.SemanticTokenReassambly(semTokSeq)
-	// -1 to account for the Pos offset.
+	list = lsp.SemanticTokenFixup(tree, db, list, fwdRefs)
 	toks := GenerateActualList(list, tree, text)
 	return toks
 }
