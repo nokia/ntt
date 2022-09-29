@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
@@ -40,6 +41,7 @@ const (
 	MAP          ObjectType = "map"
 	BUILTIN_OBJ  ObjectType = "builtin function"
 	VERDICT      ObjectType = "verdict"
+	ENUMERATED   ObjectType = "enumerated"
 	ANY          ObjectType = "?"
 	ANY_OR_NONE  ObjectType = "*"
 )
@@ -180,6 +182,36 @@ func NewInt(s string) Int {
 	i := &big.Int{}
 	i.SetString(s, 10)
 	return Int{i}
+}
+
+type Enum struct {
+	Elements map[string]int
+}
+
+func (e *Enum) Type() ObjectType { return ENUMERATED }
+func (e *Enum) Inspect() string {
+	var ret []string
+	for name, val := range e.Elements {
+		ret = append(ret, fmt.Sprintf("%s(%d)", name, val))
+	}
+	return "{" + strings.Join(ret, ", ") + "}"
+}
+
+func (e *Enum) Equal(obj Object) bool {
+	other, ok := obj.(*Enum)
+	if !ok {
+		return false
+	}
+	return reflect.DeepEqual(e, other)
+}
+
+func NewEnum(nums ...string) *Enum {
+	ret := Enum{}
+	ret.Elements = make(map[string]int)
+	for id, name := range nums {
+		ret.Elements[name] = id
+	}
+	return &ret
 }
 
 type String struct {

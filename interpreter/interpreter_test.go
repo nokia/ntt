@@ -582,3 +582,57 @@ func TestBuiltinFunctionUnichar2int(t *testing.T) {
 		}
 	}
 }
+
+func TestEnums(t *testing.T) {
+
+	NewEnumWithIds := func(elements ...interface{}) *runtime.Enum {
+		ret := runtime.NewEnum()
+		for i := 0; i < len(elements); i += 2 {
+
+			name, _ := elements[i+0].(string)
+			index, _ := elements[i+1].(int)
+			ret.Elements[name] = index
+		}
+		return ret
+	}
+
+	tests := []struct {
+		input    string
+		expected runtime.Object
+	}{
+		{"type enumerated E1 {}; E1", runtime.Errorf("this enum has no elements")},
+		{"type enumerated E2 {red}; E2", runtime.NewEnum("red")},
+		{"type enumerated E3 {red, green, blue}; E3", runtime.NewEnum("red", "green", "blue")},
+		{"type enumerated E4 {red(1,2)}; E4", runtime.Errorf("enum element has unexpected number of arguments 2 for key red")},
+		{"type enumerated E5 {red(\"1\")}; E5", runtime.Errorf("enum element has unexpected argument for key red")},
+		{"type enumerated E6 {red(-1)}; E6", runtime.Errorf("enum element has unexpected argument for key red")},
+		{"type enumerated E7 {red(1),blue(1)}; E7", runtime.Errorf("key blue can't have value of 1, it's already used by key red")},
+		{"type enumerated E8 {red(1),blue(2)}; E8", NewEnumWithIds("red", 1, "blue", 2)},
+		{"type enumerated E9 {red,blue(10),green}; E9", NewEnumWithIds("red", 0, "blue", 10, "green", 11)},
+	}
+
+	for _, tt := range tests {
+
+		val := testEval(t, tt.input)
+
+		switch expected := tt.expected.(type) {
+		case *runtime.Error:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Error() != expected.Error() {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
+				continue
+			}
+		case *runtime.Enum:
+			if !tt.expected.Equal(val) {
+				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
+				continue
+			}
+		default:
+			t.Errorf("test error, unhandeled type:%T", expected)
+		}
+	}
+}

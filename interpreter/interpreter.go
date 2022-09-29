@@ -1,7 +1,9 @@
 package interpreter
 
 import (
+	"fmt"
 	"math/big"
+	"strconv"
 
 	_ "github.com/nokia/ntt/builtins"
 	"github.com/nokia/ntt/runtime"
@@ -281,9 +283,77 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		case token.GOTO:
 			return runtime.Errorf("goto statement not implemented")
 		}
+
+	case *ast.EnumTypeDecl:
+		return evalEnumTypeDecl(n, env)
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
+}
+
+func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
+
+	ret := runtime.NewEnum()
+
+	addUniqueEnumElement := func(name string, value int) error {
+		if _, hasThisKey := ret.Elements[name]; hasThisKey {
+			return fmt.Errorf("key %s aleady exists", name)
+		}
+		if value < 0 {
+			return fmt.Errorf("key %s can't have negative value of %d", name, value)
+		}
+
+		for eName, eVal := range ret.Elements {
+			if eVal == value {
+				return fmt.Errorf("key %s can't have value of %d, it's already used by key %s", name, value, eName)
+			}
+		}
+		ret.Elements[name] = value
+		return nil
+	}
+
+	curentEnumId := 0
+	for _, e := range n.Enums {
+		switch t := e.(type) {
+		case *ast.Ident:
+			ident, _ := e.(*ast.Ident)
+			enumName := ident.Tok.String()
+			if err := addUniqueEnumElement(enumName, curentEnumId); err != nil {
+				return runtime.Errorf("%v", err)
+			}
+			curentEnumId++
+		case *ast.CallExpr:
+			callExpr, _ := e.(*ast.CallExpr)
+			ident, ok := callExpr.Fun.(*ast.Ident)
+			if !ok {
+				return runtime.Errorf("enum element has unexpected format for key %v", e)
+			}
+			enumName := ident.Tok.String()
+			if len(callExpr.Args.List) != 1 {
+				return runtime.Errorf("enum element has unexpected number of arguments %d for key %s", len(callExpr.Args.List), enumName)
+			}
+			vl, ok := callExpr.Args.List[0].(*ast.ValueLiteral)
+			if !ok || vl.Tok.Kind != token.INT {
+				return runtime.Errorf("enum element has unexpected argument for key %s", enumName)
+			}
+			enumVal, err := strconv.Atoi(vl.Tok.Lit)
+			if err != nil {
+				return runtime.Errorf("enum element has unexpected argument for key %s: %v", enumName, err)
+			}
+			curentEnumId = enumVal
+			if err := addUniqueEnumElement(enumName, curentEnumId); err != nil {
+				return runtime.Errorf("%v", err)
+			}
+			curentEnumId++
+		default:
+			return runtime.Errorf("enum has unexpected element %v", t)
+		}
+	}
+	if len(ret.Elements) == 0 {
+		return runtime.Errorf("this enum has no elements")
+	}
+	env.Set(n.Name.String(), ret)
+	return ret
 }
 
 func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
