@@ -585,13 +585,12 @@ func TestBuiltinFunctionUnichar2int(t *testing.T) {
 
 func TestEnums(t *testing.T) {
 
-	NewEnumWithIds := func(elements ...interface{}) *runtime.Enum {
-		ret := runtime.NewEnum()
+	NewEnumTypeWithIds := func(enumTypeName string, elements ...interface{}) *runtime.EnumType {
+		ret := runtime.NewEnumType(enumTypeName)
 		for i := 0; i < len(elements); i += 2 {
-
-			name, _ := elements[i+0].(string)
-			index, _ := elements[i+1].(int)
-			ret.Elements[name] = index
+			eKeyName, _ := elements[i+0].(string)
+			eKeyRanges, _ := elements[i+1].([]runtime.EnumRange)
+			ret.Elements[eKeyName] = eKeyRanges
 		}
 		return ret
 	}
@@ -600,15 +599,39 @@ func TestEnums(t *testing.T) {
 		input    string
 		expected runtime.Object
 	}{
-		{"type enumerated E1 {}; E1", runtime.Errorf("this enum has no elements")},
-		{"type enumerated E2 {red}; E2", runtime.NewEnum("red")},
-		{"type enumerated E3 {red, green, blue}; E3", runtime.NewEnum("red", "green", "blue")},
-		{"type enumerated E4 {red(1,2)}; E4", runtime.Errorf("enum element has unexpected number of arguments 2 for key red")},
-		{"type enumerated E5 {red(\"1\")}; E5", runtime.Errorf("enum element has unexpected argument for key red")},
-		{"type enumerated E6 {red(-1)}; E6", runtime.Errorf("enum element has unexpected argument for key red")},
-		{"type enumerated E7 {red(1),blue(1)}; E7", runtime.Errorf("key blue can't have value of 1, it's already used by key red")},
-		{"type enumerated E8 {red(1),blue(2)}; E8", NewEnumWithIds("red", 1, "blue", 2)},
-		{"type enumerated E9 {red,blue(10),green}; E9", NewEnumWithIds("red", 0, "blue", 10, "green", 11)},
+		{"type enumerated E1 {};", runtime.Errorf("this enum has no elements")},
+		{"type enumerated E2 {red}; E2", runtime.NewEnumType(
+			"E2",
+			"red")},
+		{"type enumerated E3 {red, green, blue}; E3", runtime.NewEnumType(
+			"E3",
+			"red", "green", "blue")},
+		{"type enumerated E4 {red(1,2)}; E4", NewEnumTypeWithIds(
+			"E4",
+			"red", []runtime.EnumRange{{First: 1, Last: 1}, {First: 2, Last: 2}})},
+		{"type enumerated E5 {red(\"1\")};", runtime.Errorf("can't add key red, enum element has unexpected CallExpr argument, ValueLiteral unexpected STRING")},
+		{"type enumerated E6 {red(-1)}; E6", NewEnumTypeWithIds(
+			"E6",
+			"red", []runtime.EnumRange{{First: -1, Last: -1}})},
+		{"type enumerated E7 {red(1),blue(1)};", runtime.Errorf("can't add key blue, range(1) colides with ranges in key red")},
+		{"type enumerated E8 {red(1),blue(2)}; E8", NewEnumTypeWithIds(
+			"E8",
+			"red", []runtime.EnumRange{{First: 1, Last: 1}},
+			"blue", []runtime.EnumRange{{First: 2, Last: 2}})},
+		{"type enumerated E9 {red,blue(10),green}; E9", NewEnumTypeWithIds(
+			"E9",
+			"red", []runtime.EnumRange{{First: 0, Last: 0}},
+			"blue", []runtime.EnumRange{{First: 10, Last: 10}},
+			"green", []runtime.EnumRange{{First: 11, Last: 11}})},
+		{"type enumerated EA {red(-4..0),green,blue(-3)};", runtime.Errorf("can't add key blue, range(-3) colides with ranges in key red")},
+		{"type enumerated EA {red(-4..0),green(1,2),blue(3..4)}; EA", NewEnumTypeWithIds(
+			"EA",
+			"red", []runtime.EnumRange{{First: -4, Last: 0}},
+			"green", []runtime.EnumRange{{First: 1, Last: 1}, {First: 2, Last: 2}},
+			"blue", []runtime.EnumRange{{First: 3, Last: 4}})},
+
+		//TODO:
+		//{"type record of enumerated { E } RoE", ??},
 	}
 
 	for _, tt := range tests {
@@ -619,20 +642,18 @@ func TestEnums(t *testing.T) {
 		case *runtime.Error:
 			err, ok := val.(*runtime.Error)
 			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				t.Errorf("\n%s\nobject is not runtime.Error.\ngot=%+v(%T)\nwant=%s", tt.input, val, val, expected.Error())
 				continue
 			}
 			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
-				continue
+				t.Errorf("\n%s\nwrong error message.\ngot=%q,\nwant=%s", tt.input, err.Error(), expected.Error())
 			}
-		case *runtime.Enum:
+		case *runtime.EnumType:
 			if !tt.expected.Equal(val) {
-				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
-				continue
+				t.Errorf("\n%s\ngot=%v,\nwant=%v", tt.input, val, expected)
 			}
 		default:
-			t.Errorf("test error, unhandeled type:%T", expected)
+			t.Errorf("\n%s\ntest error, unhandeled type:%T", tt.input, expected)
 		}
 	}
 }
