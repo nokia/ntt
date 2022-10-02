@@ -75,7 +75,7 @@ and [Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
 
 ### A Pull Request Workflow
 
-Some basic understanding how to use Git will of great use. If you know any good
+Some basic understanding of how to use Git will be of great use. If you know any good
 tutorials, we'd love to link them here.
 
 For most steps I'll assume you will use a Linux environment, but steps should
