@@ -11,9 +11,11 @@ func TestSimpleFormatter(t *testing.T) {
 	tests := []struct {
 		input string
 		want  interface{}
+		skip  bool
 	}{
 		{input: "", want: ""},
 		{input: "foo;", want: "foo;"},
+		{input: "foo;\n\n", want: "foo;\n", skip: true}, // trailing newline does not work yet.
 		{input: "//foo", want: "//foo"},
 		{input: "//foo\n", want: "//foo\n"},
 
@@ -57,7 +59,9 @@ func TestSimpleFormatter(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(t.Name(), func(t *testing.T) {
-			t.Logf("input: %q", test.input)
+			if test.skip {
+				t.Skip()
+			}
 			got, err := Bytes([]byte(test.input))
 			switch want := test.want.(type) {
 			case string:
