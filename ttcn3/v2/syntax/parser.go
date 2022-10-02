@@ -11,6 +11,7 @@ func Parse(src []byte) Node {
 		p.parse()
 	}
 	p.Pop()
+	root.tree.lines = p.Lines()
 	return root
 }
 

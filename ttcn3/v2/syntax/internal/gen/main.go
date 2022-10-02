@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	grammarFile = "../../../specs/ttcn3.ebnf"
+	grammarFile = "../../../../specs/ttcn3.ebnf"
 )
 
 type Data struct {

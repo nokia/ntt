@@ -16,6 +16,44 @@ type Node struct {
 	*tree
 }
 
+// Span is the text span in the source code.
+type Span struct {
+	Filename   string
+	Begin, End Position
+}
+
+// String returns the string representation of the text span.
+func (s Span) String() string {
+	ret := fmt.Sprint(s.Begin.String())
+	if name := s.Filename; name != "" {
+		ret = fmt.Sprintf("%s:", s.Filename) + ret
+	}
+	if s.Begin != s.End && s.End.IsValid() {
+		ret += fmt.Sprintf("-%s", s.End.String())
+	}
+	return ret
+}
+
+// Position is a cursor position in a source file. Lines and columns are 1-based.
+type Position struct {
+	Line, Column int
+}
+
+// IsValid returns true if the position is valid.
+func (pos *Position) IsValid() bool { return pos.Line > 0 }
+
+// String returns the position's string representation.
+func (pos *Position) String() string {
+	if !pos.IsValid() {
+		return "-"
+	}
+	s := fmt.Sprintf("%d", pos.Line)
+	if pos.Column != 0 {
+		s += fmt.Sprintf(":%d", pos.Column)
+	}
+	return s
+}
+
 // IsValid returns true if the node is valid non-nil node.
 func (n Node) IsValid() bool {
 	return n.tree != nil
@@ -73,10 +111,8 @@ func (n Node) Parent() Node {
 	return Nil
 }
 
-// FirstToken returns the first token of a syntax node which is not a trivia or Nil if
+// FirstToken returns the first token/terminal of a syntax node or Nil if
 // there is none.
-//
-// Trivia tokens are tokens that are comments or preproccessor directives.
 func (n Node) FirstToken() Node {
 	switch te := n.event(); te.Type() {
 
@@ -84,17 +120,14 @@ func (n Node) FirstToken() Node {
 	// and return the first non-terminal.
 	case OpenNode:
 		for i := n.idx + 1; i < te.skip(); i++ {
-			if te := n.tree.events[i]; te.Type() == AddToken && !te.Kind().IsTrivia() {
+			if te := n.tree.events[i]; te.Type() == AddToken {
 				return n.get(i)
 			}
 		}
 		return Nil
 
-	// If the node is already a token, we check for "trivianess" and return
+	// Just return if the node is already a token.
 	case AddToken:
-		if te.Kind().IsTrivia() {
-			return Nil
-		}
 		return n
 	default:
 		panicEvent(te)
@@ -102,20 +135,17 @@ func (n Node) FirstToken() Node {
 	return Nil
 }
 
-// LastToken returns the last token of a syntax node which is not a trivia or Nil if none is available.
+// LastToken returns the last token/terminal of a syntax node or Nil if none is available.
 func (n Node) LastToken() Node {
 	switch te := n.event(); te.Type() {
 	case OpenNode:
 		for i := te.skip() - 1; i >= n.idx; i-- {
-			if te := n.tree.events[i]; te.Type() == AddToken && !te.Kind().IsTrivia() {
+			if te := n.tree.events[i]; te.Type() == AddToken {
 				return n.get(i)
 			}
 		}
 		return Nil
 	case AddToken:
-		if te.Kind().IsTrivia() {
-			return Nil
-		}
 		return n
 	default:
 		panicEvent(te)
@@ -221,6 +251,42 @@ func (n Node) FindDescendant(pos int) Node {
 	return ret
 }
 
+// Span returns the text span of the node in the source code.
+func (n Node) Span() Span {
+	return Span{
+		Begin: n.tree.position(n.Pos()),
+		End:   n.tree.position(n.End()),
+	}
+}
+
+func (t *tree) position(pos int) Position {
+	if pos < 0 {
+		return Position{}
+	}
+	if l := t.searchLines(pos); l >= 0 {
+		return Position{
+			Line:   l + 1,
+			Column: pos - t.lines[l] + 1,
+		}
+	}
+	return Position{}
+}
+
+func (t *tree) searchLines(pos int) int {
+	// TODO(5nord) add line cache
+	i, j := 0, len(t.lines)
+	for i < j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+		// i ≤ h < j
+		if t.lines[h] <= pos {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	return int(i) - 1
+}
+
 // Err returns the error of the subtree.
 func (n Node) Err() error {
 	return nil
@@ -238,7 +304,7 @@ func (n Node) get(idx int) Node {
 type tree struct {
 	name    string
 	events  []treeEvent
-	lines   []uint32
+	lines   []int
 	content []byte
 	errs    []error
 }

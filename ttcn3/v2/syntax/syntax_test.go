@@ -192,6 +192,41 @@ func TestFindDescendant(t *testing.T) {
 	}
 }
 
+func TestSpans(t *testing.T) {
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		// Only tokens carry file positions. No tokens, no span.
+		{"", []string{"Root: -"}},
+		{" ", []string{"Root: -"}},
+		{"\n\n", []string{"Root: -"}},
+
+		{"1", []string{"Root: 1:1-1:2", "integer: 1:1-1:2"}},
+		{"foo //bar", []string{
+			"Root: 1:1-1:10",
+			"identifier: 1:1-1:4",
+			"comment: 1:5-1:10",
+		}},
+		{"/*\nfoo*", []string{"Root: 1:1-2:5", "unterminated string: 1:1-2:5"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(t.Name(), func(t *testing.T) {
+			var got []string
+			// TODO(5nord): Use parser instead of tokenizer.
+			Tokenize([]byte(tt.input)).Inspect(func(n Node) bool {
+				if n.IsValid() {
+					s := fmt.Sprintf("%v: %v", n.Kind(), n.Span())
+					got = append(got, s)
+				}
+				return true
+			})
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func testScan(input string) []string {
 	s := NewScanner([]byte(input))
 	var nodes []string

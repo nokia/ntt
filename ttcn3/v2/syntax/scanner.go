@@ -14,20 +14,28 @@ func Tokenize(src []byte) Node {
 		b.PushToken(kind, begin, end)
 	}
 	b.Pop()
+	root.tree.lines = s.Lines()
 	return root
 }
 
 // NewScanner returns a new TTCN-3 scanner for src.
 func NewScanner(src []byte) *Scanner {
 	return &Scanner{
-		src: src,
+		src:   src,
+		lines: []int{0},
 	}
 }
 
 // Scanner scans a TTCN-3 source.
 type Scanner struct {
-	src []byte
-	pos int
+	lines []int
+	src   []byte
+	pos   int
+}
+
+// Lines returns the line offsets of the source.
+func (s *Scanner) Lines() []int {
+	return s.lines
 }
 
 // Scan returns the next token and its range.
@@ -185,7 +193,14 @@ func (s *Scanner) Scan() (Kind, int, int) {
 }
 
 func (s *Scanner) scanWhitespace() {
-	for s.pos < len(s.src) && isSpace(s.src[s.pos]) {
+	for s.pos < len(s.src) {
+		switch ch := s.src[s.pos]; ch {
+		case ' ', '\t', '\r':
+		case '\n', '\v', '\f':
+			s.lines = append(s.lines, s.pos+1)
+		default:
+			return
+		}
 		s.pos++
 	}
 }
@@ -197,6 +212,7 @@ func (s *Scanner) scanLine() {
 
 	//  new lines belong to the comment token. EOF does not.
 	if s.pos < len(s.src) {
+		s.lines = append(s.lines, s.pos+1)
 		s.pos++
 	}
 }
@@ -211,6 +227,9 @@ func (s *Scanner) scanMultiLineComment() Kind {
 	s.pos++ // skip the first '*'
 	for s.pos < len(s.src) {
 		ch := s.src[s.pos]
+		if ch == '\n' || ch == '\v' || ch == '\f' {
+			s.lines = append(s.lines, s.pos+1)
+		}
 		s.pos++
 		if ch == '*' && s.pos < len(s.src) && s.src[s.pos] == '/' {
 			s.pos++
@@ -230,6 +249,9 @@ func (s *Scanner) scanString() Kind {
 		}
 
 		switch ch := s.src[s.pos]; ch {
+		case '\n', '\v', '\f':
+			s.lines = append(s.lines, s.pos+1)
+			s.pos++
 		case '\\':
 			s.pos++
 		case '"':
@@ -242,13 +264,17 @@ func (s *Scanner) scanString() Kind {
 }
 
 func (s *Scanner) scanBitstring() Kind {
+L:
 	for {
 		if s.pos >= len(s.src) {
 			return Unterminated
 		}
-		if s.src[s.pos] == '\'' {
+		switch ch := s.src[s.pos]; ch {
+		case '\n', '\v', '\f':
+			s.lines = append(s.lines, s.pos+1)
+		case '\'':
 			s.pos++
-			break
+			break L
 		}
 		s.pos++
 	}
@@ -320,8 +346,4 @@ func isAlpha(ch byte) bool {
 
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
-}
-
-func isSpace(ch byte) bool {
-	return ' ' == ch || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\v' || ch == '\f'
 }
