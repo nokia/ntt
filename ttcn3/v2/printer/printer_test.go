@@ -14,6 +14,8 @@ func TestSimpleFormatter(t *testing.T) {
 	}{
 		{input: "", want: ""},
 		{input: "foo;", want: "foo;"},
+		{input: "//foo", want: "//foo"},
+		{input: "//foo\n", want: "//foo\n"},
 
 		// Remove leading whitespace
 		{input: "    leading;", want: "leading;"},
@@ -36,13 +38,27 @@ func TestSimpleFormatter(t *testing.T) {
 
 		// Keep at most one newline
 		{input: "foo;\r\n\r\nbar;", want: "foo;\n\nbar;"},
+
+		// User defined spaces
+		{input: "control{}", want: "control{}"},
+		{input: "control {}", want: "control {}"},
+		{input: "control {} // Foo", want: "control {} // Foo"},
+		{input: "control  {}  ", want: "control {}"},
+		{input: "control \n{}", want: "control\n{}"},
+		{input: "control\n {}", want: "control\n{}"},
+
+		// Verify that {,[ and ( increment the indentation level
+		{input: "{foo", want: "{foo"},
+		{input: "{\nfoo", want: "{\n\tfoo"},
+		{input: "{\n foo", want: "{\n\tfoo"},
+		{input: "{\nfoo}\nbar", want: "{\n\tfoo}\nbar"},
+		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1,2\n\t\t)\n\t]\n}"},
 	}
 
 	for _, test := range tests {
 		t.Run(t.Name(), func(t *testing.T) {
 			t.Logf("input: %q", test.input)
-			p := &printer{}
-			got, err := p.Bytes([]byte(test.input))
+			got, err := Bytes([]byte(test.input))
 			switch want := test.want.(type) {
 			case string:
 				assert.Nil(t, err)
