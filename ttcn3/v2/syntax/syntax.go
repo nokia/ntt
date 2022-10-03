@@ -42,6 +42,16 @@ type Position struct {
 // IsValid returns true if the position is valid.
 func (pos *Position) IsValid() bool { return pos.Line > 0 }
 
+// After returns true if the position is after other given position.
+func (pos *Position) After(other Position) bool {
+	return pos.Line > other.Line || pos.Line == other.Line && pos.Column > other.Column
+}
+
+// Before returns true if the position is before the other given position.
+func (pos *Position) Before(other Position) bool {
+	return pos.Line < other.Line || pos.Line == other.Line && pos.Column < other.Column
+}
+
 // String returns the position's string representation.
 func (pos *Position) String() string {
 	if !pos.IsValid() {
@@ -66,6 +76,11 @@ func (n Node) Kind() Kind {
 		return n.event().Kind()
 	}
 	return 0
+}
+
+// IsToken returns true if the node is a token node.
+func (n Node) IsToken() bool {
+	return n.Kind().IsToken()
 }
 
 // IsTerminal returns true if the node is a terminal node.
@@ -254,8 +269,9 @@ func (n Node) FindDescendant(pos int) Node {
 // Span returns the text span of the node in the source code.
 func (n Node) Span() Span {
 	return Span{
-		Begin: n.tree.position(n.Pos()),
-		End:   n.tree.position(n.End()),
+		Filename: n.tree.name,
+		Begin:    n.tree.position(n.Pos()),
+		End:      n.tree.position(n.End()),
 	}
 }
 
