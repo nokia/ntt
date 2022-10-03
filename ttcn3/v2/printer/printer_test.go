@@ -1,6 +1,7 @@
 package printer
 
 import (
+	"bytes"
 	"errors"
 	"testing"
 
@@ -62,11 +63,13 @@ func TestSimpleFormatter(t *testing.T) {
 			if test.skip {
 				t.Skip()
 			}
-			got, err := Bytes([]byte(test.input))
+			var buf bytes.Buffer
+			err := Fprint(&buf, test.input)
+			got := buf.String()
 			switch want := test.want.(type) {
 			case string:
 				assert.Nil(t, err)
-				assert.Equal(t, want, string(got))
+				assert.Equal(t, want, got)
 			case error:
 				assert.True(t, errors.Is(want, err))
 				assert.Nil(t, got)
