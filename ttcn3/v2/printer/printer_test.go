@@ -50,12 +50,16 @@ func TestSimpleFormatter(t *testing.T) {
 		{input: "control \n{}", want: "control\n{}"},
 		{input: "control\n {}", want: "control\n{}"},
 
-		// Verify that {,[ and ( increment the indentation level
+		// Verify that {, [ and ( increment the indentation level
 		{input: "{foo", want: "{foo"},
 		{input: "{\nfoo", want: "{\n\tfoo"},
 		{input: "{\n foo", want: "{\n\tfoo"},
 		{input: "{\nfoo}\nbar", want: "{\n\tfoo}\nbar"},
 		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1,2\n\t\t)\n\t]\n}"},
+
+		// Verify that tokens with newlines have correct indentation
+		{input: "{// Foo\nBar", want: "{// Foo\n\tBar"},               //  Bar must be indented.
+		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t * foo\n\t */"}, //  Comment must be indented, with one extra space.
 	}
 
 	for _, test := range tests {
