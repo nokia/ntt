@@ -19,11 +19,12 @@ type Tree struct {
 	Uses    map[string]bool
 	Err     error
 
-	filename  string
-	parents   map[ast.Node]ast.Node
-	parentsMu sync.Mutex
-	scopes    map[ast.Node]*Scope
-	scopesMu  sync.Mutex
+	filename    string
+	parents     map[ast.Node]ast.Node
+	parentsMu   sync.Mutex
+	parentsRwMu sync.RWMutex
+	scopes      map[ast.Node]*Scope
+	scopesMu    sync.Mutex
 }
 
 // Filename returns the filename of the file that was parsed.
@@ -33,13 +34,18 @@ func (t *Tree) Filename() string {
 
 // ParentOf returns the parent of the given node.
 func (t *Tree) ParentOf(n ast.Node) ast.Node {
-	t.parentsMu.Lock()
-	defer t.parentsMu.Unlock()
+	t.parentsRwMu.RLock()
+	if t.parents != nil {
+		if p, ok := t.parents[n]; ok {
+			t.parentsRwMu.RUnlock()
+			return p
+		}
+	}
+	t.parentsRwMu.RUnlock()
+	t.parentsRwMu.Lock()
+	defer t.parentsRwMu.Unlock()
 	if t.parents == nil {
 		t.parents = make(map[ast.Node]ast.Node)
-	}
-	if p, ok := t.parents[n]; ok {
-		return p
 	}
 	parents := ast.Parents(n, t.Root)
 	if len(parents) == 0 {
