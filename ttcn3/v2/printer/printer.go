@@ -4,6 +4,7 @@ package printer
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/nokia/ntt/ttcn3/v2/syntax"
 )
@@ -83,7 +84,6 @@ func (p *CanonicalPrinter) node(n syntax.Node) error {
 			if currPos.Begin.Line-p.lastPos.Line > 1 {
 				p.print("\n")
 			}
-			p.needIndent = true
 		case currPos.Begin.Column > p.lastPos.Column:
 			p.print(" ")
 		}
@@ -96,13 +96,24 @@ func (p *CanonicalPrinter) node(n syntax.Node) error {
 		//
 		// The rule is: Increment indentation after every opening brace and
 		// decrement before every closing brace.
-		switch s := n.Text(); s {
-		case "{", "[", "(":
+		switch s := n.Text(); {
+		case s == "{", s == "[", s == "(":
 			p.print(s)
 			p.indent++
-		case "}", "]", ")":
+		case s == "}", s == "]", s == ")":
 			p.indent--
 			p.print(s)
+		case strings.HasPrefix(s, "/*"):
+			lines := strings.Split(s, "\n")
+			for i, line := range lines {
+				if i == 0 {
+					p.print(line)
+				} else {
+					p.print("\n")
+					p.print(" ")
+					p.print(line)
+				}
+			}
 		default:
 			p.print(s)
 		}
@@ -112,12 +123,15 @@ func (p *CanonicalPrinter) node(n syntax.Node) error {
 	return nil
 }
 
-func (p *CanonicalPrinter) print(v interface{}) {
+func (p *CanonicalPrinter) print(s string) {
 	if p.needIndent {
 		for i := 0; i < p.indent; i++ {
 			fmt.Fprint(p.w, p.Indent)
 		}
 		p.needIndent = false
 	}
-	fmt.Fprint(p.w, v)
+	fmt.Fprint(p.w, s)
+	if strings.HasSuffix(s, "\n") {
+		p.needIndent = true
+	}
 }
