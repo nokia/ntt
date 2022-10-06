@@ -15,51 +15,56 @@ func TestSimpleFormatter(t *testing.T) {
 		skip  bool
 	}{
 		{input: "", want: ""},
-		{input: "foo;", want: "foo;"},
-		{input: "foo;\n\n", want: "foo;\n", skip: true}, // trailing newline does not work yet.
-		{input: "//foo", want: "//foo"},
+		{input: "foo;", want: "foo;\n"},
+		{input: "foo;\n\n", want: "foo;\n"},
+		{input: "//foo", want: "//foo\n"},
 		{input: "//foo\n", want: "//foo\n"},
 
 		// Remove leading whitespace
-		{input: "    leading;", want: "leading;"},
+		{input: "    leading;", want: "leading;\n"},
 
 		// Remove trailing whitespace
-		{input: "trailing;   ", want: "trailing;"},
+		{input: "trailing;   ", want: "trailing;\n"},
 
 		// At max one blank between tokens.
-		{input: "import from   all", want: "import from all"},
+		{input: "import from   all", want: "import from all\n"},
 
 		// Convert all other whitespace to blanks.
-		{input: "import \tfrom\tall", want: "import from all"},
+		{input: "import \tfrom\tall", want: "import from all\n"},
 
 		// Replace line breaks with \n
-		{input: "foo;\r\nbar;", want: "foo;\nbar;"},
-		{input: "foo;\rbar;", want: "foo; bar;"}, // \r is not a line break
-		{input: "foo;\n\rbar;", want: "foo;\nbar;"},
-		{input: "foo;\vbar;", want: "foo;\nbar;"},
-		{input: "foo;\fbar;", want: "foo;\nbar;"},
+		{input: "foo;\r\nbar;", want: "foo;\nbar;\n"},
+		{input: "foo;\rbar;", want: "foo; bar;\n"}, // \r is not a line break
+		{input: "foo;\n\rbar;", want: "foo;\nbar;\n"},
+		{input: "foo;\vbar;", want: "foo;\nbar;\n"},
+		{input: "foo;\fbar;", want: "foo;\nbar;\n"},
 
 		// Keep at most one newline
-		{input: "foo;\r\n\r\nbar;", want: "foo;\n\nbar;"},
+		{input: "foo;\r\n\r\nbar;", want: "foo;\n\nbar;\n"},
 
 		// User defined spaces
-		{input: "control{}", want: "control{}"},
-		{input: "control {}", want: "control {}"},
-		{input: "control {} // Foo", want: "control {} // Foo"},
-		{input: "control  {}  ", want: "control {}"},
-		{input: "control \n{}", want: "control\n{}"},
-		{input: "control\n {}", want: "control\n{}"},
+		{input: "control{}", want: "control{}\n"},
+		{input: "control {}", want: "control {}\n"},
+		{input: "control {} // Foo", want: "control {} // Foo\n"},
+		{input: "control  {}  ", want: "control {}\n"},
+		{input: "control \n{}", want: "control\n{}\n"},
+		{input: "control\n {}", want: "control\n{}\n"},
 
 		// Verify that {, [ and ( increment the indentation level
-		{input: "{foo", want: "{foo"},
-		{input: "{\nfoo", want: "{\n\tfoo"},
-		{input: "{\n foo", want: "{\n\tfoo"},
-		{input: "{\nfoo}\nbar", want: "{\n\tfoo}\nbar"},
-		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1,2\n\t\t)\n\t]\n}"},
+		{input: "{foo", want: "{foo\n"},
+		{input: "{\nfoo", want: "{\n\tfoo\n"},
+		{input: "{\n foo", want: "{\n\tfoo\n"},
+		{input: "{\nfoo}\nbar", want: "{\n\tfoo}\nbar\n"},
+		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1,2\n\t\t)\n\t]\n}\n"},
 
 		// Verify that tokens with newlines have correct indentation
-		{input: "{// Foo\nBar", want: "{// Foo\n\tBar"},               //  Bar must be indented.
-		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t * foo\n\t */"}, //  Comment must be indented, with one extra space.
+		{input: "{// Foo\nBar", want: "{ // Foo\n\tBar\n"},              //  Bar must be indented.
+		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t * foo\n\t */\n"}, //  Comment must be indented, with one extra space.
+
+		// Verify that comments and := are aligned.
+		{input: "{x := 1,\nx2:= 123}", want: "{x := 1,\n\tx2 := 123}\n"},
+		{input: "{\nx := 1,\nx2:= 123}", want: "{\n\tx  := 1,\n\tx2 := 123}\n"},
+		{input: "{\nx := 1, // a\nx2:= 123 /* b */}", want: "{\n\tx  := 1,  // a\n\tx2 := 123 /* b */}\n"},
 	}
 
 	for _, test := range tests {
