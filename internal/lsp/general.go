@@ -86,8 +86,8 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			},
 		},
 		ServerInfo: struct {
-			Name    string "json:\"name\""
-			Version string "json:\"version,omitempty\""
+			Name    string `json:"name"`
+			Version string `json:"version,omitempty"`
 		}{Name: "ntt", Version: "0.12.0"},
 	}, nil
 }
