@@ -3,6 +3,8 @@ package syntax
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -225,6 +227,84 @@ func TestSpans(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+var sinkSpan Span
+
+func BenchmarkSpansRandomAccess(b *testing.B) {
+	tree := benchBuildTree(1000)
+	rand.Seed(1)
+	var nodes []Node
+	tree.Inspect(func(n Node) bool {
+		if n.IsValid() {
+			nodes = append(nodes, benchRandomNode(tree.tree))
+		}
+		return true
+	})
+	b.ResetTimer()
+	var r Span
+	for i := 0; i < b.N; i++ {
+		for _, n := range nodes {
+			r = n.Span()
+		}
+	}
+	sinkSpan = r
+}
+
+func BenchmarkSpansTreeInspect(b *testing.B) {
+	tree := benchBuildTree(1000)
+	var nodes []Node
+	tree.Inspect(func(n Node) bool {
+		if n.IsValid() {
+			nodes = append(nodes, n)
+		}
+		return true
+	})
+	b.ResetTimer()
+	var r Span
+	for i := 0; i < b.N; i++ {
+		for _, n := range nodes {
+			r = n.Span()
+		}
+	}
+	sinkSpan = r
+}
+
+func BenchmarkSpansTokenList(b *testing.B) {
+	tree := benchBuildTree(1000)
+	var nodes []Node
+	tree.Inspect(func(n Node) bool {
+		if n.IsToken() {
+			nodes = append(nodes, n)
+		}
+		return true
+	})
+	b.ResetTimer()
+	var r Span
+	for i := 0; i < b.N; i++ {
+		for _, n := range nodes {
+			r = n.Span()
+		}
+	}
+	sinkSpan = r
+}
+
+func benchRandomNode(tree *tree) Node {
+	pos := rand.Intn(len(tree.events) - 1)
+	for i, e := range tree.events[pos:] {
+		if e.Type() != CloseNode {
+			return Node{i, tree}
+		}
+	}
+	return Nil
+}
+
+func benchBuildTree(n int) Node {
+	var ints []string
+	for i := 0; i < n; i++ {
+		ints = append(ints, strconv.Itoa(i))
+	}
+	return Tokenize([]byte(strings.Join(ints, "+")))
 }
 
 func testScan(input string) []string {
