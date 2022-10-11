@@ -36,8 +36,8 @@ func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 	return s.didChange(ctx, params)
 }
 
-func (s *Server) DidChangeConfiguration(context.Context, *protocol.DidChangeConfigurationParams) error {
-	return notImplemented("DidChangeConfiguration")
+func (s *Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+	return s.didChangeConfiguration(ctx, params) 
 }
 
 func (s *Server) DidChangeWatchedFiles(context.Context, *protocol.DidChangeWatchedFilesParams) error {

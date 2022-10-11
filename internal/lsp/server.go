@@ -64,6 +64,10 @@ func (s serverState) String() string {
 	return fmt.Sprintf("(unknown state: %d)", int(s))
 }
 
+type ServerConfig struct {
+	UseOwnFormatter bool
+}
+
 // Server implements the protocol.Server interface.
 type Server struct {
 	conn   jsonrpc2.Conn
@@ -84,7 +88,8 @@ type Server struct {
 	diagsMu sync.Mutex
 	diags   map[string][]protocol.Diagnostic
 
-	testCtrl *TestController
+	testCtrl     *TestController
+	serverConfig ServerConfig
 }
 
 func (s *Server) Fatal(ctx context.Context, msg string) {
