@@ -57,19 +57,20 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
-			CodeActionProvider:         false,
-			CompletionProvider:         protocol.CompletionOptions{TriggerCharacters: []string{"."}},
-			DefinitionProvider:         true,
-			TypeDefinitionProvider:     false,
-			ImplementationProvider:     false,
-			DocumentFormattingProvider: false,
-			DocumentSymbolProvider:     true,
-			WorkspaceSymbolProvider:    false,
-			FoldingRangeProvider:       false,
-			HoverProvider:              true,
-			DocumentHighlightProvider:  false,
-			DocumentLinkProvider:       protocol.DocumentLinkOptions{},
-			ReferencesProvider:         true,
+			CodeActionProvider:              false,
+			CompletionProvider:              protocol.CompletionOptions{TriggerCharacters: []string{"."}},
+			DefinitionProvider:              true,
+			TypeDefinitionProvider:          false,
+			ImplementationProvider:          false,
+			DocumentFormattingProvider:      false, // depends on configuration. Needs to be set in 'initialized()'
+			DocumentRangeFormattingProvider: false,
+			DocumentSymbolProvider:          true,
+			WorkspaceSymbolProvider:         false,
+			FoldingRangeProvider:            false,
+			HoverProvider:                   true,
+			DocumentHighlightProvider:       false,
+			DocumentLinkProvider:            protocol.DocumentLinkOptions{},
+			ReferencesProvider:              true,
 			TextDocumentSync: &protocol.TextDocumentSyncOptions{
 				Change:    protocol.Full,
 				OpenClose: true,
@@ -103,7 +104,8 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 			s.AddSuite(root)
 		}
 	}
-
+	// inside initialize() it is not possible to look for the configuration
+	s.didChangeConfiguration(ctx, &protocol.DidChangeConfigurationParams{})
 	s.testCtrl = &TestController{}
 	s.testCtrl.Start(s.client, s, &s.Suites)
 	return nil
