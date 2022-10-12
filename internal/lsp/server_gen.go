@@ -100,8 +100,8 @@ func (s *Server) FoldingRange(context.Context, *protocol.FoldingRangeParams) ([]
 	return nil, notImplemented("FoldingRange")
 }
 
-func (s *Server) Formatting(context.Context, *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
-	return nil, notImplemented("Formatting")
+func (s *Server) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
+	return s.formatting(ctx, params)
 }
 
 func (s *Server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
