@@ -12,15 +12,77 @@ var keywords = map[string]Kind{
 	{{end}}
 }
 
-{{define "token"}}p.expect({{.String}})
-{{end}}
-{{define "name"}}p.parse{{.Name.String}}()
-{{end}}
-{{define "option"}}
-{{end}}
+{{/* Generate the parser for the given productions. */}}
+{{- range .Productions -}}
+	{{if not (index $data.ImplementedProductions .Name.String)}}
+		{{- text . -}}
+		func (p *parser) parse{{.Name.String}}() bool {
+			{{- template "generate" .Expr -}}
+			return true
+			error:
+			return false
+		}
 
-{{range .Productions}}{{if index $data.ImplementedProductions .Name.String}}{{continue}}{{end}}
-{{ text . }}func (p *parser) parse{{.Name.String}}() {
-}
+	{{  end -}}
+{{- end -}}
 
-{{end}}
+{{/* Expect a token. */}}
+{{- define "token" -}}
+	if !p.expect({{kind .String}}) { goto error };
+{{- end -}}
+
+{{/* Reference a named rule or token. */}}
+{{- define "name" -}}
+	{{if lexeme .String}}
+		{{template "token" .}}
+	{{else}}
+		if !p.parse{{.String}}() { goto error};
+	{{end}}
+{{- end -}}
+
+{{/* Parse a sequence of rules */}}
+{{- define "sequence" -}}
+	{{range .}}{{template "generate" .}}{{end}}
+{{- end -}}
+
+{{/* Inline groupings. */}}
+{{- define "group" -}}
+	{{template "generate" .Body}}
+{{- end -}}
+
+{{/* Parse an optional rule */}}
+{{- define "option" -}}
+	if p.accept({{join (first .) ","}}) {
+		{{- template "generate" .Body -}}
+	};
+{{- end -}}
+
+{{- define "alternative" -}}
+	switch p.next.Kind() {
+	{{- range . -}}
+	case {{join (first .) ","}}:
+		{{- template "generate" . -}}
+	{{- end}}
+	};
+{{- end -}}
+
+{{- define "repetition" -}}
+	for p.accept({{join (first .) ","}}) {
+		{{- template "generate" .Body -}}
+	};
+{{- end -}}
+
+{{/* The generate template dispatches to the appropriate rule */}}
+{{- define "generate" -}}
+{{- $t := type . -}}
+{{-      if eq $t "token"       -}}{{- template "token" .       -}}
+{{- else if eq $t "name"        -}}{{- template "name" .        -}}
+{{- else if eq $t "option"      -}}{{- template "option" .      -}}
+{{- else if eq $t "sequence"    -}}{{- template "sequence" .    -}}
+{{- else if eq $t "alternative" -}}{{- template "alternative" . -}}
+{{- else if eq $t "repetition"  -}}{{- template "repetition" .  -}}
+{{- else if eq $t "group"       -}}{{- template "group" .       -}}
+{{- else -}}
+    panic("missing template for {{$t}}");
+{{- end -}}
+{{- end -}}

@@ -29,19 +29,26 @@ const (
 )
 
 type Data struct {
-	TokenMap      map[string]string
-	ValueTokens   []string
+	// TokenMap maps token names to their string values.
+	TokenMap map[string]string
+
+	// KindMap maps token values to their names.
+	KindMap map[string]string
+
+	// ValueTokens contains the names of tokens that have values, such as
+	// identifier, integer, etc.
+	ValueTokens []string
+
+	// KeywordTokens contains the names of tokens that are keywords.
 	KeywordTokens []string
-	OtherTokens   []string
+
+	// OtherTokens contains the names of tokens that belong to no specific
+	// group, such as comma, semicolon, etc.
+	OtherTokens []string
 
 	Productions            []*ebnf.Production
 	ImplementedProductions map[string]bool
-}
-
-var funcs = template.FuncMap{
-	"first": First,
-	"now":   time.Now,
-	"text":  Text,
+	Grammar                ebnf.Grammar
 }
 
 func main() {
@@ -55,25 +62,41 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	if err := ebnf.Verify(g, "Module"); err != nil {
+		log.Fatal(err.Error())
+	}
+
 	data := Data{
 		TokenMap:               Tokens(g),
+		KindMap:                make(map[string]string),
 		Productions:            Productions(g),
 		ImplementedProductions: ImplementedProductions("./parser.go"),
+		Grammar:                g,
+	}
+
+	lexemes := make(map[string]bool)
+	for _, s := range Lexemes(g) {
+		lexemes[s] = true
 	}
 
 	for name := range data.TokenMap {
 		switch {
 		case strings.HasSuffix(name, "Keyword"):
 			data.KeywordTokens = append(data.KeywordTokens, name)
-		case strings.HasSuffix(name, "Literal"):
+		case lexemes[name]:
 			data.ValueTokens = append(data.ValueTokens, name)
 		default:
 			data.OtherTokens = append(data.OtherTokens, name)
 		}
 	}
+
 	sort.Strings(data.KeywordTokens)
 	sort.Strings(data.ValueTokens)
 	sort.Strings(data.OtherTokens)
+
+	for k, v := range data.TokenMap {
+		data.KindMap[v] = k
+	}
 
 	files, err := filepath.Glob("./internal/gen/_templates/*")
 	if err != nil {
@@ -81,7 +104,21 @@ func main() {
 	}
 
 	for _, file := range files {
-		t, err := template.New(file).Funcs(funcs).ParseFiles(file)
+		t, err := template.New(file).Funcs(template.FuncMap{
+			"now":    time.Now,
+			"text":   Text,
+			"kind":   func(s string) string { return data.KindMap[s] },
+			"first":  func(x ebnf.Expression) []string { return First(data, x) },
+			"join":   strings.Join,
+			"lexeme": IsLexical,
+			"type": func(v interface{}) string {
+				s := strings.Split(fmt.Sprintf("%T", v), ".")
+				if len(s) > 0 {
+					return strings.ToLower(s[len(s)-1])
+				}
+				return ""
+			},
+		}).ParseFiles(file)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -125,20 +162,36 @@ func ImplementedProductions(file string) map[string]bool {
 
 func writeSource(file string, b []byte) {
 	b2, err := format.Source(b)
-	if err != nil {
-		log.Printf("%s: warning: %s\n", file, err.Error())
-	} else {
+	if err == nil {
 		b = b2
 	}
-
+	// Always write to file to help debugging.
 	if err := os.WriteFile(file, b, 0644); err != nil {
 		log.Fatal(err)
+	}
+	if err != nil {
+		log.Fatalf("%s: error: %s\n", file, err.Error())
 	}
 }
 
 // First returns the first token set of a given expression
-func First(g ebnf.Grammar, x ebnf.Expression) []string {
-	return first(g, x, make(map[ebnf.Expression]bool))
+func First(data Data, x ebnf.Expression) []string {
+	toks := make(map[string]string)
+	for k, v := range data.TokenMap {
+		toks[v] = k
+	}
+	g := data.Grammar
+	ret := first(g, x, make(map[ebnf.Expression]bool))
+	m := make(map[string]bool)
+	for _, s := range ret {
+		m[toks[s]] = true
+	}
+	ret = ret[:0]
+	for s := range m {
+		ret = append(ret, s)
+	}
+	sort.Strings(ret)
+	return ret
 }
 
 func first(g ebnf.Grammar, x ebnf.Expression, v map[ebnf.Expression]bool) []string {
@@ -155,6 +208,9 @@ func first(g ebnf.Grammar, x ebnf.Expression, v map[ebnf.Expression]bool) []stri
 		}
 		return ret
 	case *ebnf.Name:
+		if name := x.String; IsLexical(name) {
+			return []string{name}
+		}
 		if !v[x] {
 			v[x] = true
 			return first(g, g[x.String], v)
@@ -230,6 +286,27 @@ func Productions(g ebnf.Grammar) []*ebnf.Production {
 	return ret
 }
 
+// Lexemes returns the lexical productions of the grammar in the order they
+// appear in the source file.
+func Lexemes(g ebnf.Grammar) []string {
+	var prods []*ebnf.Production
+	for _, prod := range g {
+		if name := prod.Name.String; IsLexical(name) {
+			prods = append(prods, prod)
+		}
+	}
+	sort.SliceStable(prods, func(i, j int) bool {
+		return prods[i].Pos().Offset < prods[j].Pos().Offset
+	})
+
+	// return only the names
+	ret := make([]string, 0, len(prods))
+	for _, prod := range prods {
+		ret = append(ret, strings.Title(prod.Name.String))
+	}
+	return ret
+}
+
 func Tokens(g ebnf.Grammar) map[string]string {
 	names := map[string]string{
 		"+":  "Add",
@@ -290,6 +367,12 @@ func Tokens(g ebnf.Grammar) map[string]string {
 			}
 			return true
 		})
+	}
+
+	for _, prod := range g {
+		if name := prod.Name.String; IsLexical(name) {
+			m[strings.Title(name)] = name
+		}
 	}
 	return m
 }
