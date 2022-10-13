@@ -36,8 +36,8 @@ func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 	return s.didChange(ctx, params)
 }
 
-func (s *Server) DidChangeConfiguration(context.Context, *protocol.DidChangeConfigurationParams) error {
-	return notImplemented("DidChangeConfiguration")
+func (s *Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
+	return s.didChangeConfiguration(ctx, params) 
 }
 
 func (s *Server) DidChangeWatchedFiles(context.Context, *protocol.DidChangeWatchedFilesParams) error {
@@ -100,8 +100,8 @@ func (s *Server) FoldingRange(context.Context, *protocol.FoldingRangeParams) ([]
 	return nil, notImplemented("FoldingRange")
 }
 
-func (s *Server) Formatting(context.Context, *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
-	return nil, notImplemented("Formatting")
+func (s *Server) Formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
+	return s.formatting(ctx, params)
 }
 
 func (s *Server) Hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
