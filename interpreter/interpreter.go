@@ -1,7 +1,9 @@
 package interpreter
 
 import (
+	"fmt"
 	"math/big"
+	"strconv"
 
 	_ "github.com/nokia/ntt/builtins"
 	"github.com/nokia/ntt/runtime"
@@ -281,6 +283,9 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		case token.GOTO:
 			return runtime.Errorf("goto statement not implemented")
 		}
+
+	case *ast.EnumTypeDecl:
+		return evalEnumTypeDecl(n, env)
 	}
 
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
@@ -697,4 +702,151 @@ func unwrap(obj runtime.Object) runtime.Object {
 		return runtime.Errorf("break or continue statements not allowed outside loops")
 	}
 	return obj
+}
+
+func evalEnumTypeDeclRange(expr ast.Expr) ([]runtime.EnumRange, error) {
+
+	enumKeyRanges := []runtime.EnumRange{}
+
+	switch t := expr.(type) {
+	case *ast.Ident:
+		break
+
+	case *ast.CallExpr:
+		for _, callExprArg := range t.Args.List {
+
+			argRet := runtime.EnumRange{}
+			var argErr error
+
+			switch argT := callExprArg.(type) {
+			case *ast.ValueLiteral:
+				argRet.First, argErr = evalInt(argT)
+				argRet.Last = argRet.First
+			case *ast.UnaryExpr:
+				argRet.First, argErr = evalInt(argT)
+				argRet.Last = argRet.First
+			case *ast.BinaryExpr:
+				if argT.Op.Kind != token.RANGE {
+					argErr = fmt.Errorf("BinaryExpr type %s", argT.Op.Kind)
+					break
+				}
+				argRet.First, argErr = evalInt(argT.X)
+				if argErr != nil {
+					argErr = fmt.Errorf("BinaryExpr l-arguments %v", argErr)
+					break
+				}
+				argRet.Last, argErr = evalInt(argT.Y)
+				if argErr != nil {
+					argErr = fmt.Errorf("BinaryExpr r-arguments %v", argErr)
+				}
+			default:
+				argErr = fmt.Errorf("enum element has unexpected argument type %T", argT)
+			}
+
+			if argErr != nil {
+				return enumKeyRanges, fmt.Errorf("enum element has unexpected CallExpr argument, %v", argErr)
+			} else {
+				enumKeyRanges = append(enumKeyRanges, argRet)
+			}
+		}
+	default:
+		return enumKeyRanges, runtime.Errorf("enum has unexpected element %v", t)
+	}
+	return enumKeyRanges, nil
+}
+
+func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
+
+	name := ast.Name(n)
+	ret := runtime.NewEnumType(name)
+
+	validateNewEnumKeyRanges := func(ranges []runtime.EnumRange) error {
+		for eName, eRanges := range ret.Elements {
+			for _, eR := range eRanges {
+				for _, r := range ranges {
+					if eR.Contains(r.First) || eR.Contains(r.Last) {
+						return fmt.Errorf("range(%s) colides with ranges in key %s", r.ToString(), eName)
+					}
+				}
+			}
+		}
+		return nil
+	}
+
+	enumKeyId := 0
+	for _, e := range n.Enums {
+
+		eName := ast.Name(e)
+		if eName == "" {
+			return runtime.Errorf("can't add key without a name")
+		}
+		existingEnv, exists := env.Get(eName)
+		if exists {
+			return runtime.Errorf("can't add key %s, name aleady exists as %s", eName, existingEnv.Inspect())
+		}
+
+		_, hasThisKey := ret.Elements[eName]
+		if hasThisKey {
+			return runtime.Errorf("can't add key %s, key with this name aleady exists", eName)
+		}
+
+		eRanges, eErr := evalEnumTypeDeclRange(e)
+		if eErr != nil {
+			return runtime.Errorf("can't add key %s, %v", eName, eErr)
+		}
+		if len(eRanges) == 0 {
+			eRanges = []runtime.EnumRange{{First: enumKeyId, Last: enumKeyId}}
+		}
+		eRangesErr := validateNewEnumKeyRanges(eRanges)
+		if eRangesErr != nil {
+			return runtime.Errorf("can't add key %s, %v", eName, eRangesErr)
+		}
+
+		ret.Elements[eName] = eRanges
+		enumKeyId = eRanges[len(eRanges)-1].Last + 1
+	}
+
+	if len(ret.Elements) == 0 {
+		return runtime.Errorf("this enum has no elements")
+	}
+	env.Set(n.Name.String(), ret)
+
+	for enumKeyName := range ret.Elements {
+		enumKey, err := runtime.NewEnumValue(ret, enumKeyName)
+		if err != nil {
+			return runtime.Errorf("%v", err)
+		}
+		env.Set(enumKeyName, enumKey)
+	}
+	return nil
+}
+
+func evalInt(n ast.Node) (int, error) {
+	switch t := n.(type) {
+	case *ast.ValueLiteral:
+		if t.Tok.Kind != token.INT {
+			return 0, fmt.Errorf("ValueLiteral unexpected %s", t.Tok.Kind)
+		}
+		val, err := strconv.Atoi(t.Tok.Lit)
+		if err != nil {
+			return 0, fmt.Errorf("ValueLiteral '%s' is not int, %v", t.Tok.Lit, err)
+		}
+		return val, nil
+	case *ast.UnaryExpr:
+		val, err := evalInt(t.X)
+		if err != nil {
+			return 0, fmt.Errorf("UnaryExpr '%v', %v", t, err)
+		}
+		switch t.Op.Kind {
+		case token.ADD:
+			break
+		case token.SUB:
+			val = -val
+		default:
+			return 0, fmt.Errorf("UnaryExpr unexpected token type %v", t.Op.Kind)
+		}
+		return val, nil
+	default:
+		return 0, fmt.Errorf("unexpected expresiton %t", t)
+	}
 }

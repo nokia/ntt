@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
@@ -40,6 +41,8 @@ const (
 	MAP          ObjectType = "map"
 	BUILTIN_OBJ  ObjectType = "builtin function"
 	VERDICT      ObjectType = "verdict"
+	ENUM_VALUE   ObjectType = "enumerated value"
+	ENUM_TYPE    ObjectType = "enumerated type"
 	ANY          ObjectType = "?"
 	ANY_OR_NONE  ObjectType = "*"
 )
@@ -180,6 +183,96 @@ func NewInt(s string) Int {
 	i := &big.Int{}
 	i.SetString(s, 10)
 	return Int{i}
+}
+
+type EnumRange struct {
+	First, Last int
+}
+
+func (er *EnumRange) Contains(x int) bool {
+	return x >= er.First && x <= er.Last
+}
+func (er EnumRange) ToString() string {
+	if er.First == er.Last {
+		return fmt.Sprintf("%d", er.First)
+	}
+	return fmt.Sprintf("%d..%d", er.First, er.Last)
+}
+
+type EnumType struct {
+	Name     string
+	Elements map[string][]EnumRange
+}
+
+func (et *EnumType) Type() ObjectType { return ENUM_TYPE }
+func (et *EnumType) Inspect() string {
+	var ret []string
+	for name, val := range et.Elements {
+		var retE []string
+		for _, r := range val {
+			retE = append(retE, r.ToString())
+		}
+		ret = append(ret, fmt.Sprintf("%s(%s)", name, strings.Join(retE, ", ")))
+	}
+	return et.Name + "{" + strings.Join(ret, ", ") + "}"
+}
+
+func (et *EnumType) Equal(obj Object) bool {
+	other, ok := obj.(*EnumType)
+	if !ok {
+		return false
+	}
+	return reflect.DeepEqual(et, other)
+}
+
+func NewEnumType(enumTypeName string, Enums ...string) *EnumType {
+	ret := EnumType{}
+	ret.Name = enumTypeName
+	ret.Elements = make(map[string][]EnumRange)
+	for EnumId, EnumName := range Enums {
+		ranges := []EnumRange{{First: EnumId, Last: EnumId}}
+		ret.Elements[EnumName] = ranges
+	}
+	return &ret
+}
+
+type EnumValue struct {
+	typeRef *EnumType
+	key     string
+}
+
+func (ev *EnumValue) Type() ObjectType { return ENUM_VALUE }
+func (ev *EnumValue) Inspect() string  { return fmt.Sprintf("%s.%s", ev.typeRef.Name, ev.key) }
+func (ev *EnumValue) Equal(obj Object) bool {
+	other, ok := obj.(*EnumValue)
+	if !ok {
+		return false
+	}
+	return ev.key == other.key
+}
+func (ev *EnumValue) SetValueByKey(key string) error {
+	if _, ok := ev.typeRef.Elements[key]; !ok {
+		return fmt.Errorf("%s does not exist in Enum %s", key, ev.typeRef.Name)
+	}
+	ev.key = key
+	return nil
+}
+func (ev *EnumValue) SetValueById(id int) error {
+	for key, enumRanges := range ev.typeRef.Elements {
+		for _, enumRange := range enumRanges {
+			if enumRange.Contains(id) {
+				ev.key = key
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("id %d does not exist in any ranges of Enum %s", id, ev.typeRef.Name)
+}
+func NewEnumValue(enumType *EnumType, key string) (*EnumValue, error) {
+	if _, ok := enumType.Elements[key]; !ok {
+		return nil, fmt.Errorf("%s does not exist in Enum %s", key, enumType.Name)
+	}
+	return &EnumValue{typeRef: enumType, key: key}, nil
 }
 
 type String struct {
