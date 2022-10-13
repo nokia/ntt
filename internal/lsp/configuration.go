@@ -24,16 +24,6 @@ func (s *Server) Config(section string) interface{} {
 	return v
 }
 
-var regFormatCapability = protocol.RegistrationParams{
-	Registrations: []protocol.Registration{
-		{ID: "FormCap",
-			Method:          "textDocument/formatting",
-			RegisterOptions: protocol.TextDocumentRegistrationOptions{DocumentSelector: []protocol.DocumentFilter{{Language: "ttcn3"}}},
-		}}}
-var unregFormatCapability = protocol.UnregistrationParams{
-	Unregisterations: []protocol.Unregistration{{ID: "FormCap", Method: "textDocument/formatting"}},
-}
-
 func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChangeConfigurationParams) error {
 	if format, ok := s.Config("ttcn3.format.enabled").(bool); ok {
 
@@ -42,10 +32,17 @@ func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChan
 		}
 		if s.serverConfig.FormatEnabled {
 			log.Debug("didChangeConfiguration: unregister formatter capability\n")
-			s.client.UnregisterCapability(ctx, &unregFormatCapability)
+			s.client.UnregisterCapability(ctx, &protocol.UnregistrationParams{
+				Unregisterations: []protocol.Unregistration{{ID: "ttcn3.formatting", Method: "textDocument/formatting"}},
+			})
 		} else {
 			log.Debug("didChangeConfiguration: register formatter capability\n")
-			s.client.RegisterCapability(ctx, &regFormatCapability)
+			s.client.RegisterCapability(ctx, &protocol.RegistrationParams{
+				Registrations: []protocol.Registration{
+					{ID: "ttcn3.formatting",
+						Method:          "textDocument/formatting",
+						RegisterOptions: protocol.TextDocumentRegistrationOptions{DocumentSelector: []protocol.DocumentFilter{{Language: "ttcn3"}}},
+					}}})
 		}
 		s.serverConfig.FormatEnabled = format
 	}
