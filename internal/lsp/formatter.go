@@ -21,7 +21,6 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	var out bytes.Buffer
 	p := printer.NewCanonicalPrinter(&out)
 	if params.Options.InsertSpaces {
-
 		p.Indent = fmt.Sprintf("%*s", params.Options.TabSize, " ")
 	}
 
