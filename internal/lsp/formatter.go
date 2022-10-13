@@ -25,7 +25,7 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	}
 
 	if err := p.Fprint(b); err != nil {
-		log.Debug("formatting: ", err.Error())
+		log.Debug("formatting:", err.Error())
 		return nil, nil
 	}
 	fset := loc.NewFileSet()
