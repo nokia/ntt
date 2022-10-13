@@ -346,22 +346,6 @@ const (
 	CloseNode
 )
 
-// Create a new non terminal node
-func node(kind Kind, children ...treeEvent) []treeEvent {
-	var events []treeEvent
-	events = append(events, treeEvent{kind: uint16(kind)})
-	for _, c := range children {
-		if c.Type() == OpenNode || c.Type() == CloseNode {
-			c.setParent(-len(events))
-		}
-		events = append(events, c)
-	}
-	events[0].setSkip(len(events))
-	events = append(events, newCloseNode(kind, 0, -len(events)))
-	return events
-
-}
-
 func newAddToken(kind Kind, begin int, end int) treeEvent {
 	return treeEvent{
 		kind: uint16(kind),

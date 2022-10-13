@@ -113,6 +113,7 @@ func (p *parser) consume() treeEvent {
 	}
 	p.peek(1)
 	p.next = p.tokens[p.pos]
+	p.PushToken(tok.Kind(), tok.offset(), tok.offset()+tok.length())
 	return tok
 }
 
@@ -145,7 +146,6 @@ func (p *parser) parseStmt() bool { return p.parseTTCN3() }
 // statements and expressions.
 func (p *parser) parseTTCN3() bool {
 	switch tok := p.next.Kind(); tok {
-
 	case AltKeyword, InterleaveKeyword:
 		return p.parseAltStmt()
 	case LeftBrace:
@@ -241,6 +241,8 @@ func (p *parser) parseTTCN3() bool {
 			return p.parseVarDecl()
 		}
 		return p.parseExpr()
+	case EOF:
+		return false
 
 	default:
 		return p.parseExpr()
@@ -302,16 +304,15 @@ func (p *parser) parseRef() bool {
 		if p.accept(Less) {
 			return p.parseTypePars()
 		}
-		return true
+	default:
+		p.error(fmt.Errorf("unexpected token %v", p.next))
+		return false
 	}
-	p.error(fmt.Errorf("unexpected token %v", p.next))
-	return false
+	return true
 }
 
 func (p *parser) parseNestedType() bool {
 	switch p.next.Kind() {
-	case AddressKeyword, AllKeyword, AnyKeyword, Identifier, MapKeyword, MtcKeyword, SelfKeyword, SystemKeyword, ThisKeyword, TimerKeyword, UniversalKeyword, UnmapKeyword:
-		return p.parseRef()
 	case RecordKeyword, SetKeyword, UnionKeyword:
 		if p.peek(2).Kind() == LeftBrace {
 			return p.parseNestedStruct()
@@ -320,22 +321,14 @@ func (p *parser) parseNestedType() bool {
 		}
 	case EnumeratedKeyword:
 		return p.parseNestedEnum()
+	default:
+		return p.parseRef()
 	}
-	p.error(fmt.Errorf("unexpected token %v", p.next))
-	return false
-}
-
-func (p *parser) parseExprList() bool {
-	p.parseExpr()
-	for p.next.Kind() == Comma {
-		p.consume()
-		p.parseExpr()
-	}
-	return false
 }
 
 func (p *parser) parseExpr() bool {
-	return false
+	// TODO(5nord) implement pratt parser
+	return p.expect(Identifier)
 }
 
 func (p *parser) parseBinaryExpr() bool { panic("binaryExpr: not implemented") }
