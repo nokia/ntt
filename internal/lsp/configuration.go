@@ -35,19 +35,19 @@ var unregFormatCapability = protocol.UnregistrationParams{
 }
 
 func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChangeConfigurationParams) error {
-	if format, ok := s.Config("ttcn3.server.useOwnFormatter").(bool); ok {
+	if format, ok := s.Config("ttcn3.format.enabled").(bool); ok {
 
-		if format == s.serverConfig.UseOwnFormatter {
+		if format == s.serverConfig.FormatEnabled {
 			return nil
 		}
-		if s.serverConfig.UseOwnFormatter {
+		if s.serverConfig.FormatEnabled {
 			log.Debug("didChangeConfiguration: unregister formatter capability\n")
 			s.client.UnregisterCapability(ctx, &unregFormatCapability)
 		} else {
 			log.Debug("didChangeConfiguration: register formatter capability\n")
 			s.client.RegisterCapability(ctx, &regFormatCapability)
 		}
-		s.serverConfig.UseOwnFormatter = format
+		s.serverConfig.FormatEnabled = format
 	}
 	return nil
 }

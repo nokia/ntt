@@ -64,8 +64,8 @@ func (s serverState) String() string {
 	return fmt.Sprintf("(unknown state: %d)", int(s))
 }
 
-type ServerConfig struct {
-	UseOwnFormatter bool
+type Config struct {
+	FormatEnabled bool
 }
 
 // Server implements the protocol.Server interface.
@@ -89,7 +89,7 @@ type Server struct {
 	diags   map[string][]protocol.Diagnostic
 
 	testCtrl     *TestController
-	serverConfig ServerConfig
+	serverConfig Config
 }
 
 func (s *Server) Fatal(ctx context.Context, msg string) {
