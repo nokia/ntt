@@ -187,7 +187,7 @@ func (n Node) FirstChild() Node {
 func (n Node) Next() Node {
 	switch te := n.event(); te.Type() {
 	case OpenNode:
-		if i := te.skip() + 1; i < len(n.tree.events) && n.tree.events[i].Type() != CloseNode {
+		if i := n.idx + te.skip() + 1; i < len(n.tree.events) && n.tree.events[i].Type() != CloseNode {
 			return n.get(i)
 		}
 		return Nil
@@ -204,7 +204,7 @@ func (n Node) Next() Node {
 }
 
 // Inspect traverses the syntax tree in depth-first order. It calls f for each
-// node recursively followed by a call of f(Nil).
+// node recursively. If n is a non-terminal the call is followed by a call of f(Nil).
 func (n Node) Inspect(f func(n Node) bool) {
 	if !f(n) {
 		return
@@ -212,7 +212,9 @@ func (n Node) Inspect(f func(n Node) bool) {
 	for c := n.FirstChild(); c != Nil; c = c.Next() {
 		c.Inspect(f)
 	}
-	f(Nil)
+	if n.IsNonTerminal() {
+		f(Nil)
+	}
 }
 
 // Pos returns the position (offset) of the node in the source code. Or -1 if
