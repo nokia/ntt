@@ -38,6 +38,48 @@ func TestBuilder(t *testing.T) {
 	assert.Equal(t, expected, printEvents(b.events))
 }
 
+func TestInspect(t *testing.T) {
+	b := Builder{}
+	root := b.Push(Root)
+	b.Push(Module)
+	b.PushToken(ModuleKeyword, 0, 1)
+	b.Push(Name)
+	b.PushToken(Identifier, 1, 2)
+	b.Pop()
+	b.PushToken(LeftBrace, 2, 3)
+	b.PushToken(RightBrace, 3, 4)
+	b.Pop()
+	b.Pop()
+
+	var got []string
+	root.Inspect(func(n Node) bool {
+		switch {
+		case n.IsNonTerminal():
+			got = append(got, fmt.Sprintf("%d: push %s", n.idx, n.Kind()))
+		case n.IsTerminal():
+			got = append(got, fmt.Sprintf("%d: add '%s'", n.idx, n.Kind()))
+		case n == Nil:
+			got = append(got, fmt.Sprintf("x: pop"))
+		default:
+			t.Errorf("unexpected node: %v", n)
+		}
+		return true
+	})
+	want := []string{
+		"0: push Root",
+		"1: push Module",
+		"2: add 'module'",
+		"3: push Name",
+		"4: add 'identifier'",
+		"x: pop",
+		"6: add '{'",
+		"7: add '}'",
+		"x: pop",
+		"x: pop",
+	}
+	assert.Equal(t, want, got)
+}
+
 // TestNode verifies that the node methods for navgating the tree works.
 func TestNode(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
