@@ -16,8 +16,7 @@ func TestParser(t *testing.T) {
 		{"module M {}", N("Root",
 			N("Module",
 				N("module"),
-				N("Name",
-					N("M")),
+				N("M"),
 				N("{"),
 				N("}")))},
 
@@ -25,9 +24,8 @@ func TestParser(t *testing.T) {
 			N("Module",
 				N("/*1*/"),
 				N("module"),
-				N("Name",
-					N("/*2*/"),
-					N("M")),
+				N("/*2*/"),
+				N("M"),
 				N("/*3*/"),
 				N("{"),
 				N("/*4*/"),
@@ -40,4 +38,20 @@ func TestParser(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestNameLiteral(t *testing.T) {
+	input := "var integer a := b, x := y"
+	var names, ids []string
+	Parse([]byte(input)).Inspect(func(n Node) bool {
+		if n.Kind() == Name {
+			names = append(names, n.Text())
+		}
+		if n.Kind() == Identifier {
+			ids = append(ids, n.Text())
+		}
+		return true
+	})
+	assert.Equal(t, []string{"a", "x"}, names)
+	assert.Equal(t, []string{"integer", "b", "y"}, ids)
 }

@@ -112,27 +112,29 @@ func (p *parser) peek(i int) Kind {
 }
 
 // consume returns the next token, skipping past any comments and preprocessor directives.
-func (p *parser) consume() {
+func (p *parser) consume() Node {
 	p.pos++
 	if p.pos == len(p.la) {
 		p.pos = 0
 		p.la = p.la[:0]
 	}
-	p.pushToken()
+	n := p.pushToken()
 	p.next = p.peek(1)
+	return n
 }
 
 // Push all tokens to the tree until the first non-comment or
 // preprocessor directive.
-func (p *parser) pushToken() {
+func (p *parser) pushToken() Node {
 	for len(p.tokens) > 0 {
 		t := p.tokens[0]
 		p.tokens = p.tokens[1:]
-		p.PushToken(t.kind, t.begin, t.end)
+		n := p.PushToken(t.kind, t.begin, t.end)
 		if t.kind != Comment && t.kind != Preproc {
-			return
+			return n
 		}
 	}
+	return Nil
 }
 
 func (p *parser) accept(kk ...Kind) bool {
@@ -276,6 +278,17 @@ func (p *parser) parseTTCN3() bool {
 func (p *parser) parseImportStmt() bool {
 	// Conflict with Refs and "all except Refs"
 	return false
+}
+
+func (p *parser) parseName() bool {
+	if p.next == Identifier {
+		n := p.consume()
+		n.tree.events[n.idx].kind = uint16(Name)
+		return true
+	} else {
+		p.error(fmt.Errorf("expected %s, got %s", Identifier, p.next))
+		return false
+	}
 }
 
 // parseRef has conflicts with various `all` and `any` references.
