@@ -11,11 +11,16 @@ func Parse(src []byte) Node {
 	p := &parser{Scanner: NewScanner(src)}
 	p.content = src
 	root := p.Push(Root)
-	p.peek(1)
-	p.next = p.tokens[p.pos]
-	for p.next.Kind() != EOF {
+	p.next = p.peek(1)
+	for p.next != EOF {
 		p.parseTTCN3()
 	}
+
+	// Consume remaining tokens
+	for len(p.tokens) > 0 {
+		p.pushToken()
+	}
+
 	p.Pop()
 	root.tree.lines = p.Lines()
 	return root
@@ -61,17 +66,23 @@ var (
 type parser struct {
 	Builder
 	*Scanner
-
-	next   treeEvent
-	tokens []treeEvent
+	la     []Kind
+	next   Kind
+	tokens []token
 	pos    int
 }
 
-func (p *parser) scan() treeEvent {
+type token struct {
+	kind       Kind
+	begin, end int
+}
+
+func (p *parser) scan() Kind {
 	for {
 		kind, begin, end := p.Scan()
 		switch kind {
 		case Comment, Preproc:
+			p.tokens = append(p.tokens, token{kind, begin, end})
 		case Identifier:
 			// The scanner does not distinguish between identifiers and keywords.
 			// Therefore the parser must check if the identifier is a keyword.
@@ -80,21 +91,70 @@ func (p *parser) scan() treeEvent {
 			}
 			fallthrough
 		default:
-			return newAddToken(kind, begin, end)
+			if kind != EOF {
+				p.tokens = append(p.tokens, token{kind, begin, end})
+			}
+			return kind
 		}
 	}
 }
 
-func (p *parser) peek(i int) treeEvent {
+func (p *parser) peek(i int) Kind {
 	idx := p.pos + i - 1
-	last := len(p.tokens) - 1
+	last := len(p.la) - 1
 	if idx > last {
 		n := idx - last
 		for i := 0; i < n; i++ {
-			p.tokens = append(p.tokens, p.scan())
+			p.la = append(p.la, p.scan())
 		}
 	}
-	return p.tokens[idx]
+	return p.la[idx]
+}
+
+// consume returns the next token, skipping past any comments and preprocessor directives.
+func (p *parser) consume() {
+	p.pos++
+	if p.pos == len(p.la) {
+		p.pos = 0
+		p.la = p.la[:0]
+	}
+	p.pushToken()
+	p.next = p.peek(1)
+}
+
+// Push all tokens to the tree until the first non-comment or
+// preprocessor directive.
+func (p *parser) pushToken() {
+	for len(p.tokens) > 0 {
+		t := p.tokens[0]
+		p.tokens = p.tokens[1:]
+		p.PushToken(t.kind, t.begin, t.end)
+		if t.kind != Comment && t.kind != Preproc {
+			return
+		}
+	}
+}
+
+func (p *parser) accept(kk ...Kind) bool {
+	if len(kk) > 3 {
+		log.Trace("warning: accept called with more than 3 arguments")
+	}
+	for _, k := range kk {
+		if p.next == k {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *parser) expect(k Kind) bool {
+	if p.next == k {
+		p.consume()
+		return true
+	} else {
+		p.error(fmt.Errorf("expected %s, got %s", k, p.next))
+		return false
+	}
 }
 
 func (p *parser) error(err error) {
@@ -103,49 +163,13 @@ func (p *parser) error(err error) {
 	p.tree.errs = append(p.tree.errs, err)
 }
 
-// consume returns the next token, skipping past any comments and preprocessor directives.
-func (p *parser) consume() treeEvent {
-	tok := p.tokens[p.pos]
-	p.pos++
-	if p.pos == len(p.tokens) {
-		p.pos = 0
-		p.tokens = p.tokens[:0]
-	}
-	p.peek(1)
-	p.next = p.tokens[p.pos]
-	p.PushToken(tok.Kind(), tok.offset(), tok.offset()+tok.length())
-	return tok
-}
-
-func (p *parser) accept(kk ...Kind) bool {
-	if len(kk) > 3 {
-		log.Trace("warning: accept called with more than 3 arguments")
-	}
-	for _, k := range kk {
-		if p.next.Kind() == k {
-			return true
-		}
-	}
-	return false
-}
-
-func (p *parser) expect(k Kind) bool {
-	if p.next.Kind() == k {
-		p.consume()
-		return true
-	} else {
-		p.error(fmt.Errorf("expected %s, got %s", k, p.next.Kind()))
-		return false
-	}
-}
-
 func (p *parser) parseDecl() bool { return p.parseTTCN3() }
 func (p *parser) parseStmt() bool { return p.parseTTCN3() }
 
 // parseTTCN3 parses any main TTCN-3 construct: modules, declarations,
 // statements and expressions.
 func (p *parser) parseTTCN3() bool {
-	switch tok := p.next.Kind(); tok {
+	switch tok := p.next; tok {
 	case AltKeyword, InterleaveKeyword:
 		return p.parseAltStmt()
 	case LeftBrace:
@@ -194,12 +218,12 @@ func (p *parser) parseTTCN3() bool {
 		return p.parseTemplate()
 	case TestcaseKeyword:
 		// Resolve conflict between `testcase.stop` and a testcase definition.
-		if p.peek(2).Kind() == Dot {
+		if p.peek(2) == Dot {
 			return p.parseExpr()
 		}
 		return p.parseTestcase()
 	case TypeKeyword:
-		switch p.peek(2).Kind() {
+		switch p.peek(2) {
 		case AltstepKeyword:
 			return p.parseAltstepType()
 		case ClassKeyword:
@@ -217,7 +241,7 @@ func (p *parser) parseTTCN3() bool {
 		case TestcaseKeyword:
 			return p.parseTestcaseType()
 		case RecordKeyword, SetKeyword, UnionKeyword:
-			switch p.peek(3).Kind() {
+			switch p.peek(3) {
 			case LengthKeyword, OfKeyword:
 				return p.parseList()
 			default:
@@ -237,7 +261,7 @@ func (p *parser) parseTTCN3() bool {
 		// `timer t` (declaration). We resolve it by looking ahead, if
 		// the next token is an identifier, we assume it's a
 		// declaration. Everything else is parsed as expression.
-		if p.peek(2).Kind() == Identifier {
+		if p.peek(2) == Identifier {
 			return p.parseVarDecl()
 		}
 		return p.parseExpr()
@@ -257,12 +281,12 @@ func (p *parser) parseImportStmt() bool {
 // parseRef has conflicts with various `all` and `any` references.
 func (p *parser) parseRef() bool {
 
-	switch p.next.Kind() {
+	switch p.next {
 	case AddressKeyword:
 		p.expect(AddressKeyword)
 	case AllKeyword:
 		p.expect(AllKeyword)
-		switch p.next.Kind() {
+		switch p.next {
 		case ComponentKeyword:
 			return p.expect(ComponentKeyword)
 		case PortKeyword:
@@ -273,7 +297,7 @@ func (p *parser) parseRef() bool {
 		return true
 	case AnyKeyword:
 		p.expect(AnyKeyword)
-		switch p.next.Kind() {
+		switch p.next {
 		case ComponentKeyword:
 			return p.expect(ComponentKeyword)
 		case PortKeyword:
@@ -312,9 +336,9 @@ func (p *parser) parseRef() bool {
 }
 
 func (p *parser) parseNestedType() bool {
-	switch p.next.Kind() {
+	switch p.next {
 	case RecordKeyword, SetKeyword, UnionKeyword:
-		if p.peek(2).Kind() == LeftBrace {
+		if p.peek(2) == LeftBrace {
 			return p.parseNestedStruct()
 		} else {
 			return p.parseNestedList()
