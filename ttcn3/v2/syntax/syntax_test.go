@@ -349,7 +349,7 @@ func testScan(input string) []string {
 	return nodes
 }
 
-func printEvents(events []treeEvent) []string {
+func printEvents(events []event) []string {
 	var ret []string
 	for _, e := range events {
 		var s string
