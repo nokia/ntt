@@ -17,10 +17,10 @@ var keywords = map[string]Kind{
 	{{if not (index $data.ImplementedProductions .Name.String)}}
 		{{- text . -}}
 		func (p *parser) parse{{.Name.String}}() bool {
+			p.Push({{.Name.String}});
 			{{- template "generate" .Expr -}}
+			p.Pop();
 			return true
-			error:
-			return false
 		}
 
 	{{  end -}}
@@ -28,7 +28,7 @@ var keywords = map[string]Kind{
 
 {{/* Expect a token. */}}
 {{- define "token" -}}
-	if !p.expect({{kind .String}}) { goto error };
+	p.expect({{kind .String}});
 {{- end -}}
 
 {{/* Reference a named rule or token. */}}
@@ -36,7 +36,7 @@ var keywords = map[string]Kind{
 	{{if lexeme .String}}
 		{{template "token" .}}
 	{{else}}
-		if !p.parse{{.String}}() { goto error};
+		p.parse{{.String}}();
 	{{end}}
 {{- end -}}
 

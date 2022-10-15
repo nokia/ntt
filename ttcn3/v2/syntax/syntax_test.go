@@ -1,7 +1,6 @@
 package syntax
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -80,8 +79,8 @@ func TestInspect(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-// TestNode verifies that the node methods for navgating the tree works.
-func TestNode(t *testing.T) {
+// TestNodeAPI verifies that the node methods for navgating the tree works.
+func TestNodeAPI(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
 		var b Builder
 		root := b.Push(Root)
@@ -197,20 +196,6 @@ func TestScanner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, testScan(tt.input))
-		})
-	}
-}
-
-func TestParser(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"", ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			assert.Equal(t, tt.want, testParse(tt.input))
 		})
 	}
 }
@@ -362,31 +347,6 @@ func testScan(input string) []string {
 		}
 	}
 	return nodes
-}
-
-func testParse(input string) string {
-	var (
-		buf       bytes.Buffer
-		needSpace bool
-	)
-
-	Parse([]byte(input)).Inspect(func(n Node) bool {
-		if needSpace {
-			buf.WriteByte(' ')
-		}
-
-		switch {
-		case n == Nil:
-			needSpace = false
-			buf.WriteByte(')')
-		case n.IsNonTerminal():
-			fmt.Fprintf(&buf, "%s(", n.Kind())
-		case n.IsTerminal():
-			fmt.Fprintf(&buf, "%s", n.Kind())
-		}
-		return true
-	})
-	return strings.TrimSuffix(strings.TrimPrefix(buf.String(), "Root("), ")")
 }
 
 func printEvents(events []treeEvent) []string {
