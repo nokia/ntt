@@ -58,7 +58,7 @@ var keywords = map[string]Kind{
 {{- end -}}
 
 {{- define "alternative" -}}
-	switch p.next.Kind() {
+	switch p.next {
 	{{- range . -}}
 	case {{join (first .) ","}}:
 		{{- template "generate" . -}}
