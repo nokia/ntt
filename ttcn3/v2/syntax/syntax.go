@@ -97,29 +97,29 @@ func (n Node) Parent() Node {
 	if n.idx == 0 {
 		return Nil
 	}
-	switch te := n.event(); te.Type() {
+	switch ev := n.event(); ev.Type() {
 
 	// If the node is a non-terminal, we know its parent and return.
 	case OpenNode:
-		return n.get(n.idx + te.parent())
+		return n.get(n.idx + ev.parent())
 
 	// If the node is a token, we have to scan for non-terminals.
 	case AddToken:
 		for i := n.idx + 1; i < len(n.tree.events); i++ {
-			switch te := n.tree.events[i]; te.Type() {
+			switch ev := n.tree.events[i]; ev.Type() {
 
 			// If the next non-terminal is a CloseNode, we've found the parent.
 			case CloseNode:
-				return n.get(i + te.skip())
+				return n.get(i + ev.skip())
 
 			// If the next non-terminal is a OpenNode, its a child like us and we return its parent.
 			case OpenNode:
-				return n.get(i + te.parent())
+				return n.get(i + ev.parent())
 			}
 		}
 
 	default:
-		panicEvent(te)
+		panicEvent(ev)
 	}
 
 	return Nil
@@ -128,13 +128,13 @@ func (n Node) Parent() Node {
 // FirstToken returns the first token/terminal of a syntax node or Nil if
 // there is none.
 func (n Node) FirstToken() Node {
-	switch te := n.event(); te.Type() {
+	switch ev := n.event(); ev.Type() {
 
 	// If the node is a non-terminal, we iterate over the children
 	// and return the first non-terminal.
 	case OpenNode:
-		for i := n.idx + 1; i < te.skip(); i++ {
-			if te := n.tree.events[i]; te.Type() == AddToken {
+		for i := n.idx + 1; i < ev.skip(); i++ {
+			if ev := n.tree.events[i]; ev.Type() == AddToken {
 				return n.get(i)
 			}
 		}
@@ -144,17 +144,17 @@ func (n Node) FirstToken() Node {
 	case AddToken:
 		return n
 	default:
-		panicEvent(te)
+		panicEvent(ev)
 	}
 	return Nil
 }
 
 // LastToken returns the last token/terminal of a syntax node or Nil if none is available.
 func (n Node) LastToken() Node {
-	switch te := n.event(); te.Type() {
+	switch ev := n.event(); ev.Type() {
 	case OpenNode:
-		for i := te.skip() - 1; i >= n.idx; i-- {
-			if te := n.tree.events[i]; te.Type() == AddToken {
+		for i := ev.skip() - 1; i >= n.idx; i-- {
+			if ev := n.tree.events[i]; ev.Type() == AddToken {
 				return n.get(i)
 			}
 		}
@@ -162,14 +162,14 @@ func (n Node) LastToken() Node {
 	case AddToken:
 		return n
 	default:
-		panicEvent(te)
+		panicEvent(ev)
 	}
 	return Nil
 }
 
 // FirstChild returns the first child of the node or nil if there is none.
 func (n Node) FirstChild() Node {
-	switch te := n.event(); te.Type() {
+	switch ev := n.event(); ev.Type() {
 	case OpenNode:
 		if c := n.get(n.idx + 1); c.event().Type() != CloseNode {
 			return c
@@ -178,16 +178,16 @@ func (n Node) FirstChild() Node {
 	case AddToken:
 		return Nil
 	default:
-		panicEvent(te)
+		panicEvent(ev)
 	}
 	return Nil
 }
 
 // Next returns the next sibling node or Nil if there is none.
 func (n Node) Next() Node {
-	switch te := n.event(); te.Type() {
+	switch ev := n.event(); ev.Type() {
 	case OpenNode:
-		if i := n.idx + te.skip() + 1; i < len(n.tree.events) && n.tree.events[i].Type() != CloseNode {
+		if i := n.idx + ev.skip() + 1; i < len(n.tree.events) && n.tree.events[i].Type() != CloseNode {
 			return n.get(i)
 		}
 		return Nil
@@ -198,7 +198,7 @@ func (n Node) Next() Node {
 		}
 		return Nil
 	default:
-		panicEvent(te)
+		panicEvent(ev)
 	}
 	return Nil
 }
@@ -309,7 +309,7 @@ func (n Node) Err() error {
 	return nil
 }
 
-func (n Node) event() treeEvent {
+func (n Node) event() event {
 	return n.tree.events[n.idx]
 }
 
@@ -320,34 +320,34 @@ func (n Node) get(idx int) Node {
 // tree represents a parsed TTCN-3 source file.
 type tree struct {
 	name    string
-	events  []treeEvent
+	events  []event
 	lines   []int
 	content []byte
 	errs    []error
 }
 
-// treeEvent represents a single event in a Tree.
+// event represents a single event in a Tree.
 //
-// treeEvent is an opaque union and not an interface for performance reasons.
+// event is an opaque union and not an interface for performance reasons.
 // Only two properties are exported (Type and Kind). The other properties are
 // context-dependent and are accessable via the Node wrappers.
-type treeEvent struct {
+type event struct {
 	kind  uint16
 	flags uint16
 	data  [2]int32
 }
 
-// treeEventType is the type of a treeEvent.
-type treeEventType int
+// eventType is the type of a event.
+type eventType int
 
 const (
-	AddToken treeEventType = iota
+	AddToken eventType = iota
 	OpenNode
 	CloseNode
 )
 
-func newAddToken(kind Kind, begin int, end int) treeEvent {
-	return treeEvent{
+func newAddToken(kind Kind, begin int, end int) event {
+	return event{
 		kind: uint16(kind),
 		data: [2]int32{
 			int32(begin),
@@ -356,8 +356,8 @@ func newAddToken(kind Kind, begin int, end int) treeEvent {
 	}
 }
 
-func newOpenNode(kind Kind, parent int, skip int) treeEvent {
-	return treeEvent{
+func newOpenNode(kind Kind, parent int, skip int) event {
+	return event{
 		kind: uint16(kind),
 		data: [2]int32{
 			int32(parent),
@@ -366,8 +366,8 @@ func newOpenNode(kind Kind, parent int, skip int) treeEvent {
 	}
 }
 
-func newCloseNode(kind Kind, parent int, skip int) treeEvent {
-	return treeEvent{
+func newCloseNode(kind Kind, parent int, skip int) event {
+	return event{
 		kind:  uint16(kind),
 		flags: uint16(CloseNode),
 		data: [2]int32{
@@ -378,7 +378,7 @@ func newCloseNode(kind Kind, parent int, skip int) treeEvent {
 }
 
 // Type returns the type of the event, such as AddToken, OpenNode or CloseNode.
-func (e treeEvent) Type() treeEventType {
+func (e event) Type() eventType {
 	switch {
 	case e.Kind().IsToken():
 		return AddToken
@@ -390,28 +390,28 @@ func (e treeEvent) Type() treeEventType {
 }
 
 // Kind returns the syntax node kind of the event, such as Comment, Identifier, VarDecl, etc.
-func (te treeEvent) Kind() Kind {
-	return Kind(te.kind)
+func (ev event) Kind() Kind {
+	return Kind(ev.kind)
 }
 
 // MarshalJSON implements the json.Marshaler interface.
-func (te treeEvent) MarshalJSON() ([]byte, error) {
+func (ev event) MarshalJSON() ([]byte, error) {
 	var s string
-	switch te.Type() {
+	switch ev.Type() {
 	case AddToken:
-		s = fmt.Sprintf(`{"event":"add","kind":"%s","pos":%d,"len":%d}`, te.Kind().String(), te.offset(), te.length())
+		s = fmt.Sprintf(`{"event":"add","kind":"%s","pos":%d,"len":%d}`, ev.Kind().String(), ev.offset(), ev.length())
 	case OpenNode:
-		s = fmt.Sprintf(`{"event":"open","kind":"%s"}`, te.Kind().String())
+		s = fmt.Sprintf(`{"event":"open","kind":"%s"}`, ev.Kind().String())
 	case CloseNode:
 		s = fmt.Sprintf(`{"event":"close"}`)
 	default:
 		s = fmt.Sprintf(`{"event":"unknown", "d1":%d, "d2":%d, "d3":%d, "d4":%d}`,
-			te.kind, te.flags, te.data[0], te.data[1])
+			ev.kind, ev.flags, ev.data[0], ev.data[1])
 	}
 	return []byte(s), nil
 }
 
-// A treeEvent is essantially a union of a token and a node. Unions are usually
+// A event is essantially a union of a token and a node. Unions are usually
 // implemented as interfaces.
 //
 // However the overhead of interfaces is subsstantial, because we have to deal
@@ -421,24 +421,24 @@ func (te treeEvent) MarshalJSON() ([]byte, error) {
 // faster). The cost of this approach is that the code becomes more
 // complicated.
 //
-// Functions such as treeEvent.offset or treeEvent.length must be used to
+// Functions such as event.offset or event.length must be used to
 // access the union fields to avoid chaos.
 
-func (te treeEvent) offset() int { assertToken(te); return int(te.data[0]) }
-func (te treeEvent) length() int { assertToken(te); return int(te.data[1]) }
-func (te treeEvent) parent() int { assertNode(&te); return int(te.data[0]) }
-func (te treeEvent) skip() int   { assertNode(&te); return int(te.data[1]) }
+func (ev event) offset() int { assertToken(ev); return int(ev.data[0]) }
+func (ev event) length() int { assertToken(ev); return int(ev.data[1]) }
+func (ev event) parent() int { assertNode(&ev); return int(ev.data[0]) }
+func (ev event) skip() int   { assertNode(&ev); return int(ev.data[1]) }
 
-func (te *treeEvent) setParent(idx int) { assertNode(te); te.data[0] = int32(idx) }
-func (te *treeEvent) setSkip(idx int)   { assertNode(te); te.data[1] = int32(idx) }
+func (ev *event) setParent(idx int) { assertNode(ev); ev.data[0] = int32(idx) }
+func (ev *event) setSkip(idx int)   { assertNode(ev); ev.data[1] = int32(idx) }
 
-func assertToken(te treeEvent) {
-	if te.Type() != AddToken {
+func assertToken(ev event) {
+	if ev.Type() != AddToken {
 		panic("not a token")
 	}
 }
-func assertNode(te *treeEvent) {
-	if te.Type() == AddToken {
+func assertNode(ev *event) {
+	if ev.Type() == AddToken {
 		panic("not a node")
 	}
 }
@@ -466,6 +466,6 @@ func (e *Error) Error() string {
 // Because any other event means that we either have a corrumpt Node or the
 // semantics of the Node type has changed and we forgot to update our
 // functions.
-func panicEvent(te treeEvent) {
-	panic(fmt.Sprintf("logic error: unexpected event type %d", te.Type()))
+func panicEvent(ev event) {
+	panic(fmt.Sprintf("logic error: unexpected event type %d", ev.Type()))
 }
