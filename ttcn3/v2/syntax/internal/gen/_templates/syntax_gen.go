@@ -44,9 +44,10 @@ func (k Kind) String() string {
 		Unterminated: "unterminated string",
 		Comment:      "comment",
 		Preproc:      "preprocessor directive",
+		Name:	      "name",
 		{{range $name, $value := .TokenMap}}{{$name}}:"{{$value}}",
 		{{end}}
-		{{range .Productions}}{{.Name.String}}: "{{.Name.String}}",
+		{{range .Productions}}{{if ne .Name.String "Name"}}{{.Name.String}}: "{{.Name.String}}",{{end}}
 		{{end}}
 	}
 	if s, ok := m[k]; ok {
@@ -66,6 +67,7 @@ const (
 	__literals_begin
 	Comment
 	Preproc
+	Name
 	{{range .ValueTokens}}{{.}}
 	{{end -}}
 	__literals_end
@@ -81,7 +83,7 @@ const (
 
 	__nodes_begin
 	Root
-	{{range .Productions}}{{.Name.String}}
+	{{range .Productions}}{{if ne .Name.String "Name"}}{{.Name.String}}{{end}}
 	{{end}}
 	__nodes_end
 )

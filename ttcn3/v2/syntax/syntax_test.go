@@ -42,9 +42,7 @@ func TestInspect(t *testing.T) {
 	root := b.Push(Root)
 	b.Push(Module)
 	b.PushToken(ModuleKeyword, 0, 1)
-	b.Push(Name)
-	b.PushToken(Identifier, 1, 2)
-	b.Pop()
+	b.PushToken(Name, 1, 2)
 	b.PushToken(LeftBrace, 2, 3)
 	b.PushToken(RightBrace, 3, 4)
 	b.Pop()
@@ -68,11 +66,9 @@ func TestInspect(t *testing.T) {
 		"0: push Root",
 		"1: push Module",
 		"2: add 'module'",
-		"3: push Name",
-		"4: add 'identifier'",
-		"x: pop",
-		"6: add '{'",
-		"7: add '}'",
+		"3: add 'name'",
+		"4: add '{'",
+		"5: add '}'",
 		"x: pop",
 		"x: pop",
 	}
