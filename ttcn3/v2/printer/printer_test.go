@@ -55,7 +55,7 @@ func TestSimpleFormatter(t *testing.T) {
 		{input: "{\nfoo", want: "{\n\tfoo\n"},
 		{input: "{\n foo", want: "{\n\tfoo\n"},
 		{input: "{\nfoo}\nbar", want: "{\n\tfoo}\nbar\n"},
-		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1,2\n\t\t)\n\t]\n}\n"},
+		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1, 2\n\t\t)\n\t]\n}\n"},
 
 		// Verify that tokens with newlines have correct indentation
 		{input: "{// Foo\nBar", want: "{ // Foo\n\tBar\n"},              //  Bar must be indented.
@@ -63,8 +63,8 @@ func TestSimpleFormatter(t *testing.T) {
 
 		// Verify that comments and := are aligned.
 		{input: "{x := 1,\nx2:= 123}", want: "{x := 1,\n\tx2 := 123}\n"},
-		{input: "{\nx := 1,\nx2:= 123}", want: "{\n\tx  := 1,\n\tx2 := 123}\n"},
-		{input: "{\nx := 1, // a\nx2:= 123 /* b */}", want: "{\n\tx  := 1,  // a\n\tx2 := 123 /* b */}\n"},
+		{input: "{\nx := 1,\nx2:= 123}", want: "{\n\tx := 1,\n\tx2 := 123}\n"},
+		{input: "{\nx := 1, // a\nx2:= 123 /* b */}", want: "{\n\tx := 1,   // a\n\tx2 := 123 /* b */}\n"},
 	}
 
 	for _, test := range tests {
