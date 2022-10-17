@@ -13,14 +13,15 @@ func TestParser(t *testing.T) {
 	}{
 		{"", N("Root")},
 		{"//", N("Root", N("//"))},
-		{"module M {}", N("Root",
+		{"module M {};", N("Root",
 			N("Module",
 				N("module"),
 				N("M"),
 				N("{"),
-				N("}")))},
+				N("}"),
+				N(";")))},
 
-		{"/*1*/ module /*2*/ M /*3*/ { /*4*/ } /*5*/", N("Root",
+		{"/*1*/ module /*2*/ M /*3*/ { /*4*/ }; /*5*/", N("Root",
 			N("Module",
 				N("/*1*/"),
 				N("module"),
@@ -29,7 +30,8 @@ func TestParser(t *testing.T) {
 				N("/*3*/"),
 				N("{"),
 				N("/*4*/"),
-				N("}")),
+				N("}"),
+				N(";")),
 			N("/*5*/"))},
 	}
 	for _, tt := range tests {

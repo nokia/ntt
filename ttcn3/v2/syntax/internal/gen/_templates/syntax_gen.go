@@ -42,6 +42,7 @@ func (k Kind) String() string {
 		Unknown:      "unknown token",
 		Malformed:    "malformed token",
 		Unterminated: "unterminated string",
+		SyntaxError:  "syntax error",
 		Comment:      "comment",
 		Preproc:      "preprocessor directive",
 		Name:	      "name",
@@ -58,11 +59,9 @@ func (k Kind) String() string {
 
 const (
 	EOF Kind = iota
-	__errors_begin
 	Unknown
 	Malformed
 	Unterminated
-	__errors_end
 	__tokens_begin
 	__literals_begin
 	Comment
@@ -83,6 +82,7 @@ const (
 
 	__nodes_begin
 	Root
+	SyntaxError
 	{{range .Productions}}{{if ne .Name.String "Name"}}{{.Name.String}}{{end}}
 	{{end}}
 	__nodes_end

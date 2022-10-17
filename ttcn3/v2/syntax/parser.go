@@ -13,11 +13,15 @@ func Parse(src []byte) Node {
 	root := p.Push(Root)
 	p.next = p.peek(1)
 	for p.next != EOF {
-		last := p.next
-		p.parseTTCN3()
-		if last == p.next {
-			p.error(fmt.Errorf("infinite loop detected"))
-			break
+		if !p.parseTTCN3() {
+			e := p.Push(SyntaxError)
+			p.consume()
+			p.Pop()
+			p.error(&NodeError{
+				Node: e,
+				Err:  fmt.Errorf("unexpected token %s", p.next),
+				Hint: "expected declaration, statement, or expression",
+			})
 		}
 	}
 
@@ -159,14 +163,17 @@ func (p *parser) expect(k Kind) bool {
 		p.consume()
 		return true
 	} else {
-		p.error(fmt.Errorf("expected %s, got %s", k, p.next))
+		e := p.Push(SyntaxError)
+		p.Pop()
+		p.error(&NodeError{
+			Node: e,
+			Err:  fmt.Errorf("expected %s, got %s", k, p.next),
+		})
 		return false
 	}
 }
 
 func (p *parser) error(err error) {
-	// TODO(5nord) Use NodeErrors with ranges instead of error interface. This makes it easier
-	// to assign errors to subtrees.
 	p.tree.errs = append(p.tree.errs, err)
 }
 
@@ -291,7 +298,12 @@ func (p *parser) parseName() bool {
 		n.tree.events[n.idx].kind = uint16(Name)
 		return true
 	} else {
-		p.error(fmt.Errorf("expected %s, got %s", Identifier, p.next))
+		e := p.Push(SyntaxError)
+		p.Pop()
+		p.error(&NodeError{
+			Node: e,
+			Err:  fmt.Errorf("expected identifier, got %s", p.next),
+		})
 		return false
 	}
 }
@@ -347,7 +359,13 @@ func (p *parser) parseRef() bool {
 			return p.parseTypePars()
 		}
 	default:
-		p.error(fmt.Errorf("unexpected token %v", p.next))
+		e := p.Push(SyntaxError)
+		p.Pop()
+		p.error(&NodeError{
+			Node: e,
+			Err:  fmt.Errorf("unexpected token %s", p.next),
+			Hint: "expected a reference (e.g. identifier, self, all, any, ...)",
+		})
 		return false
 	}
 	return true
