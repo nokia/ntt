@@ -287,6 +287,22 @@ func (p *parser) parseTTCN3() bool {
 	}
 }
 
+func (p *parser) expectSemicolon() bool {
+	if p.next == Semicolon {
+		p.consume()
+	}
+	return true
+}
+
+func (p *parser) expectComma() bool {
+	switch p.next {
+	case RightBrace, RightBracket, RightParen, Greater:
+		return true
+	default:
+		return p.expect(Comma)
+	}
+}
+
 func (p *parser) parseImportStmt() bool {
 	// Conflict with Refs and "all except Refs"
 	return false
