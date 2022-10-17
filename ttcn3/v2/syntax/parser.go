@@ -13,7 +13,12 @@ func Parse(src []byte) Node {
 	root := p.Push(Root)
 	p.next = p.peek(1)
 	for p.next != EOF {
+		last := p.next
 		p.parseTTCN3()
+		if last == p.next {
+			p.error(fmt.Errorf("infinite loop detected"))
+			break
+		}
 	}
 
 	// Consume remaining tokens
