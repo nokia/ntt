@@ -57,3 +57,27 @@ func TestNameLiteral(t *testing.T) {
 	assert.Equal(t, []string{"a", "x"}, names)
 	assert.Equal(t, []string{"integer", "b", "y"}, ids)
 }
+
+func TestComma(t *testing.T) {
+	tests := []struct {
+		input   string
+		noError bool
+	}{
+		{"type record R { int a, int b }", true},
+		{"type record R { int a, int b, }", true},
+		{"type record R { int a, int b; }", false},
+		{"type record R { int a int b }", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			root := Parse([]byte(tt.input))
+			if err := root.Err(); tt.noError {
+				assert.NoError(t, err)
+			} else {
+				t.Logf("%v", root.tree)
+				assert.Error(t, err)
+			}
+		})
+	}
+
+}

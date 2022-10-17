@@ -28,7 +28,14 @@ var keywords = map[string]Kind{
 
 {{/* Expect a token. */}}
 {{- define "token" -}}
+	{{- $tok := .String -}}
+	{{- if eq $tok ";" -}}
+	p.expectSemicolon();
+	{{- else if eq $tok "," -}}
+	p.expectComma();
+	{{- else -}}
 	p.expect({{kind .String}});
+	{{- end -}}
 {{- end -}}
 
 {{/* Reference a named rule or token. */}}
