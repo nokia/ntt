@@ -110,9 +110,13 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 		case k == syntax.RightBrace, k == syntax.RightBracket, k == syntax.RightParen:
 			p.print(unindent, s)
 
+		// Add space after comma
+		case k == syntax.Comma:
+			p.print(",", blank)
+
 		// Align assignments.
 		case k == syntax.Assign:
-			p.print(cell, ":=", blank)
+			p.print(blank, ":=", blank)
 
 		// Every line of a comment has to be indented individually.
 		case k == syntax.Comment:
