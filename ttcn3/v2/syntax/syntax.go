@@ -2,7 +2,12 @@ package syntax
 
 //go:generate go run ./internal/gen
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/hashicorp/go-multierror"
+)
 
 var (
 	// Nil is the zero value of a Node.
@@ -305,8 +310,28 @@ func (t *tree) searchLines(pos int) int {
 }
 
 // Err returns the error of the subtree.
+// Errors without a position are attached to the root node.
 func (n Node) Err() error {
-	return nil
+	var ret *multierror.Error
+
+	if n.Kind() == Root {
+		ret = multierror.Append(ret, n.tree.errs...)
+		return ret.ErrorOrNil()
+	}
+
+	begin, end := n.Pos(), n.End()
+	for _, e := range n.tree.errs {
+		var ne *NodeError
+		if errors.As(e, &ne) {
+			if pos := ne.Pos(); begin <= pos && pos < end {
+				ret = multierror.Append(ret, e)
+			}
+		} else {
+			ret = multierror.Append(ret, e)
+		}
+
+	}
+	return ret.ErrorOrNil()
 }
 
 func (n Node) event() event {
@@ -443,18 +468,19 @@ func assertNode(ev *event) {
 	}
 }
 
-type Error struct {
-	Errors []error
+type NodeError struct {
+	Node
+	Err  error
+	Hint string
 }
 
-func (e *Error) Error() string {
-	switch len(e.Errors) {
-	case 0:
-		return ""
-	case 1:
-		return e.Errors[0].Error()
-	}
-	return fmt.Sprintf("%s (and %d more errors)", e.Errors[0], len(e.Errors)-1)
+func (e *NodeError) Error() string {
+	pos := e.Span().Begin
+	return fmt.Sprintf("%s: %s", pos.String(), e.Err.Error())
+}
+
+func (e *NodeError) Unwrap() error {
+	return e.Err
 }
 
 // panicEvent panics.
