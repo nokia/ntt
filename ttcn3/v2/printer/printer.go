@@ -149,7 +149,7 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 // multi-line comments, so they can be properly indented.
 func (p *CanonicalPrinter) comment(lines []string) {
 	line, lines := lines[0], lines[1:]
-	p.print(quote(line))
+	p.print(quote(strings.TrimSpace(line)))
 
 	if len(lines) == 0 {
 		return
@@ -165,7 +165,7 @@ func (p *CanonicalPrinter) comment(lines []string) {
 
 	for _, line := range lines {
 		p.print(newline)
-		p.print(" ", quote(strings.TrimPrefix(line, prefix)))
+		p.print(" ", quote(strings.TrimPrefix(strings.TrimSpace(line), prefix)))
 	}
 }
 

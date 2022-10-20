@@ -58,9 +58,10 @@ func TestSimpleFormatter(t *testing.T) {
 		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1, 2\n\t\t)\n\t]\n}\n"},
 
 		// Verify that tokens with newlines have correct indentation
-		{input: "{// Foo\nBar", want: "{ // Foo\n\tBar\n"},                 //  Bar must be indented.
-		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t * foo\n\t */\n"},    //  Comment must be indented, with one extra space.
-		{input: "{\n/*\n   * foo\n*/", want: "{\n\t/*\n\t * foo\n\t */\n"}, //  Comment must be indented, with one extra space. Suplementary prefixing spaces must be stripped
+		{input: "{// Foo\nBar", want: "{ // Foo\n\tBar\n"},                         //  Bar must be indented.
+		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t * foo\n\t */\n"},            //  Comment must be indented, with one extra space.
+		{input: "{\n      /*  \n   * foo\n*/", want: "{\n\t/*\n\t * foo\n\t */\n"}, //  Comment must be indented, with one extra space. Suplementary prefixing spaces must be stripped
+		{input: "{\n/*\n   * foo\n   * some prefix*/", want: "{\n\t/*\n\t * foo\n\t * some prefix*/\n"},
 		// Verify that comments and := are aligned.
 		{input: "{x := 1,\nx2:= 123}", want: "{x := 1,\n\tx2 := 123}\n"},
 		{input: "{\nx := 1,\nx2:= 123}", want: "{\n\tx := 1,\n\tx2 := 123}\n"},
