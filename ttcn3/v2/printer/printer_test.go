@@ -58,9 +58,15 @@ func TestSimpleFormatter(t *testing.T) {
 		{input: "{\n[\n(\n1,2\n)\n]\n}", want: "{\n\t[\n\t\t(\n\t\t\t1, 2\n\t\t)\n\t]\n}\n"},
 
 		// Verify that tokens with newlines have correct indentation
-		{input: "{// Foo\nBar", want: "{ // Foo\n\tBar\n"},              //  Bar must be indented.
-		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t * foo\n\t */\n"}, //  Comment must be indented, with one extra space.
-
+		{input: "{// Foo\nBar", want: "{ // Foo\n\tBar\n"},                          //  Bar must be indented.
+		{input: "{\n/*\n* foo\n*/", want: "{\n\t/*\n\t* foo\n\t*/\n"},               //  Comment must be indented, with one extra space.
+		{input: "{\n      /*  \n   * foo\n*/", want: "{\n\t/*\n\t   * foo\n\t*/\n"}, //  the least indented line is the anchor. It gets alligned to the actual indentation level. All other lines are alligned relative to it
+		{input: "{\n/*\n   * foo\n   * some prefix*/", want: "{\n\t/*\n\t   * foo\n\t   * some prefix*/\n"},
+		// Indenting multi-line comments
+		{input: "{\n  /**\n   * Foo \n   */", want: "{\n\t/**\n\t * Foo\n\t */\n"},
+		{input: "{\n  /**\n    * Bar\n    */", want: "{\n\t/**\n\t  * Bar\n\t  */\n"},
+		{input: "{\n  x:=25   /**\n             Bar\n           */", want: "{\n\tx := 25 /**\n\t   Bar\n\t */\n"},
+		{input: "{\n    /*function f() {\n        var integer x;\n\n        log(x);\n    }*/\n", want: "{\n\t/*function f() {\n\t    var integer x;\n\n\t    log(x);\n\t}*/\n"}, // including an empty line
 		// Verify that comments and := are aligned.
 		{input: "{x := 1,\nx2:= 123}", want: "{x := 1,\n\tx2 := 123}\n"},
 		{input: "{\nx := 1,\nx2:= 123}", want: "{\n\tx := 1,\n\tx2 := 123}\n"},

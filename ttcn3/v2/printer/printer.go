@@ -128,7 +128,7 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 			// This makes the logic of p.comment easier, because
 			// printing `//` comments is then identical to printing
 			// single line `/*` comments.
-			p.comment(strings.Split(strings.TrimSpace(s), "\n"))
+			p.comment(currPos.Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
 			if strings.HasSuffix(s, "\n") {
 				p.print(newline)
 			}
@@ -154,25 +154,24 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 
 // comment prints a comment line by line. It removes white-space prefixes from
 // multi-line comments, so they can be properly indented.
-func (p *CanonicalPrinter) comment(lines []string) {
+func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
+	minNrOfWs := findLeastIndentation(firstLineIndent, lines)
 	line, lines := lines[0], lines[1:]
-	p.print(quote(line))
+	// first line shall alway get aligned to the current indentation level
+	// or one space after the previous non-white space character
+	p.print(quote(strings.TrimSpace(line)))
 
 	if len(lines) == 0 {
 		return
 	}
 
-	prefix := ""
-	if l := lines[len(lines)-1]; strings.HasSuffix(l, "*/") {
-		l = l[0 : len(l)-2]
-		if strings.TrimSpace(l) == "" {
-			prefix = l
-		}
-	}
-
 	for _, line := range lines {
 		p.print(newline)
-		p.print(" ", quote(strings.TrimPrefix(line, prefix)))
+		// omit empty lines
+		if s := strings.TrimSpace(line); s != "" {
+			indent := strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs)
+			p.print(indent, quote(s))
+		}
 	}
 }
 
@@ -245,4 +244,20 @@ func toBytes(v interface{}) ([]byte, error) {
 
 func quote(s string) string {
 	return fmt.Sprintf("\xff%s\xff", s)
+}
+
+// findLeastIndentation returns the min amount of
+// prefix white spaces for the supplied lines
+func findLeastIndentation(firstLineIndent int, lines []string) int {
+	min := firstLineIndent
+	for _, l := range lines[1:] {
+		woLeadingSpaces := strings.TrimLeft(l, " ")
+		if min > len(l)-len(woLeadingSpaces) {
+			if len(woLeadingSpaces) > 0 {
+				// omit empty lines (or ones filled with white spaces)
+				min = len(l) - len(woLeadingSpaces)
+			}
+		}
+	}
+	return min
 }
