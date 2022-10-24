@@ -121,6 +121,13 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 		// Every line of a comment has to be indented individually.
 		case k == syntax.Comment:
 			p.print(cell)
+
+			// Before we split a comment into its lines, we have to
+			// remove the trailing newline of `//` comments.
+			//
+			// This makes the logic of p.comment easier, because
+			// printing `//` comments is then identical to printing
+			// single line `/*` comments.
 			p.comment(currPos.Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
 			if strings.HasSuffix(s, "\n") {
 				p.print(newline)
