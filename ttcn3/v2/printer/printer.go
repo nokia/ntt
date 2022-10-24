@@ -145,25 +145,10 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 	return p.w.Flush()
 }
 
-// findLeastIndentation returns the index of the line with the min amount of
-// ws columns and the nr of ws columns
-func findLeastIndentation(firstLineIndent int, lines []string) (idx int, min int) {
-	min = firstLineIndent
-	idx = 0
-	for i, l := range lines[1:] {
-		woLeadingSpaces := strings.TrimLeft(l, " ")
-		if min > len(l)-len(woLeadingSpaces) {
-			min = len(l) - len(woLeadingSpaces)
-			idx = i
-		}
-	}
-	return
-}
-
 // comment prints a comment line by line. It removes white-space prefixes from
 // multi-line comments, so they can be properly indented.
 func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
-	_, noWs := findLeastIndentation(firstLineIndent, lines)
+	minNrOfWs := findLeastIndentation(firstLineIndent, lines)
 	line, lines := lines[0], lines[1:]
 	p.print(quote(strings.TrimSpace(line)))
 
@@ -173,7 +158,10 @@ func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
 
 	for _, line := range lines {
 		p.print(newline)
-		p.print(quote(strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-noWs) + strings.TrimSpace(line)))
+		// omit empty lines
+		if len(strings.TrimSpace(line)) > 0 {
+			p.print(quote(strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs) + strings.TrimSpace(line)))
+		}
 	}
 }
 
@@ -246,4 +234,20 @@ func toBytes(v interface{}) ([]byte, error) {
 
 func quote(s string) string {
 	return fmt.Sprintf("\xff%s\xff", s)
+}
+
+// findLeastIndentation returns the min amount of
+// prefix white spaces for the supplied lines
+func findLeastIndentation(firstLineIndent int, lines []string) int {
+	min := firstLineIndent
+	for _, l := range lines[1:] {
+		woLeadingSpaces := strings.TrimLeft(l, " ")
+		if min > len(l)-len(woLeadingSpaces) {
+			if len(woLeadingSpaces) > 0 {
+				// omit empty lines (or ones filled with white spaces)
+				min = len(l) - len(woLeadingSpaces)
+			}
+		}
+	}
+	return min
 }
