@@ -160,7 +160,8 @@ func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
 		p.print(newline)
 		// omit empty lines
 		if s := strings.TrimSpace(line); s != "" {
-			p.print(quote(strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs) + strings.TrimSpace(line)))
+			indent := strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs) 
+			p.print(indent, quote(s))
 		}
 	}
 }
