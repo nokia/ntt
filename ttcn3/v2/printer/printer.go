@@ -121,7 +121,7 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 		// Every line of a comment has to be indented individually.
 		case k == syntax.Comment:
 			p.print(cell)
-			p.comment(strings.Split(strings.TrimSpace(s), "\n"))
+			p.comment(n.Span().Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
 			if strings.HasSuffix(s, "\n") {
 				p.print(newline)
 			}
@@ -145,9 +145,25 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 	return p.w.Flush()
 }
 
+// findLeastIndentation returns the index of the line with the min amount of
+// ws columns and the nr of ws columns
+func findLeastIndentation(firstLineIndent int, lines []string) (idx int, min int) {
+	min = firstLineIndent
+	idx = 0
+	for i, l := range lines[1:] {
+		woLeadingSpaces := strings.TrimLeft(l, " ")
+		if min > len(l)-len(woLeadingSpaces) {
+			min = len(l) - len(woLeadingSpaces)
+			idx = i
+		}
+	}
+	return
+}
+
 // comment prints a comment line by line. It removes white-space prefixes from
 // multi-line comments, so they can be properly indented.
-func (p *CanonicalPrinter) comment(lines []string) {
+func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
+	_, noWs := findLeastIndentation(firstLineIndent, lines)
 	line, lines := lines[0], lines[1:]
 	p.print(quote(strings.TrimSpace(line)))
 
@@ -155,17 +171,9 @@ func (p *CanonicalPrinter) comment(lines []string) {
 		return
 	}
 
-	prefix := ""
-	if l := lines[len(lines)-1]; strings.HasSuffix(l, "*/") {
-		l = l[0 : len(l)-2]
-		if strings.TrimSpace(l) == "" {
-			prefix = l
-		}
-	}
-
 	for _, line := range lines {
 		p.print(newline)
-		p.print(" ", quote(strings.TrimPrefix(strings.TrimSpace(line), prefix)))
+		p.print(quote(strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-noWs) + strings.TrimSpace(line)))
 	}
 }
 
