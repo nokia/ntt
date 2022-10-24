@@ -121,7 +121,7 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 		// Every line of a comment has to be indented individually.
 		case k == syntax.Comment:
 			p.print(cell)
-			p.comment(n.Span().Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
+			p.comment(currPos.Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
 			if strings.HasSuffix(s, "\n") {
 				p.print(newline)
 			}
