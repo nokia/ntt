@@ -66,6 +66,7 @@ func TestSimpleFormatter(t *testing.T) {
 		{input: "{\n  /**\n   * Foo \n   */", want: "{\n\t/**\n\t * Foo\n\t */\n"},
 		{input: "{\n  /**\n    * Bar\n    */", want: "{\n\t/**\n\t  * Bar\n\t  */\n"},
 		{input: "{\n  x:=25   /**\n             Bar\n           */", want: "{\n\tx := 25 /**\n\t   Bar\n\t */\n"},
+		{input: "{\n    /*function f() {\n        var integer x;\n\n        log(x);\n    }*/\n", want: "{\n\t/*function f() {\n\t    var integer x;\n\n\t    log(x);\n\t}*/\n"}, // including an empty line
 		// Verify that comments and := are aligned.
 		{input: "{x := 1,\nx2:= 123}", want: "{x := 1,\n\tx2 := 123}\n"},
 		{input: "{\nx := 1,\nx2:= 123}", want: "{\n\tx := 1,\n\tx2 := 123}\n"},
