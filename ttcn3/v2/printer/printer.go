@@ -150,6 +150,8 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
 	minNrOfWs := findLeastIndentation(firstLineIndent, lines)
 	line, lines := lines[0], lines[1:]
+	// first line shall alway get aligned to the current indentation level
+	// or one space after the previous non-white space character
 	p.print(quote(strings.TrimSpace(line)))
 
 	if len(lines) == 0 {
@@ -160,7 +162,7 @@ func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
 		p.print(newline)
 		// omit empty lines
 		if s := strings.TrimSpace(line); s != "" {
-			indent := strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs) 
+			indent := strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs)
 			p.print(indent, quote(s))
 		}
 	}
