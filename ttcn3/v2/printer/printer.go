@@ -159,7 +159,7 @@ func (p *CanonicalPrinter) comment(firstLineIndent int, lines []string) {
 	for _, line := range lines {
 		p.print(newline)
 		// omit empty lines
-		if len(strings.TrimSpace(line)) > 0 {
+		if s := strings.TrimSpace(line); s != "" {
 			p.print(quote(strings.Repeat(" ", len(line)-len(strings.TrimLeft(line, " "))-minNrOfWs) + strings.TrimSpace(line)))
 		}
 	}
