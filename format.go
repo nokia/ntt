@@ -99,51 +99,50 @@ func processFile(path string) error {
 	}
 	res := buf.Bytes()
 
-	if bytes.Equal(src, res) {
-		return nil
-	}
+	if !bytes.Equal(src, res) {
 
-	formattedFiles++
+		formattedFiles++
 
-	if listFiles {
-		fmt.Fprintln(os.Stdout, path)
-	}
+		if listFiles {
+			fmt.Fprintln(os.Stdout, path)
+		}
 
-	if diff {
-		d, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-			A:        difflib.SplitLines(string(src)),
-			B:        difflib.SplitLines(string(res)),
-			FromFile: fmt.Sprintf("%s.orig", path),
-			ToFile:   path,
-			Context:  1,
-		})
-		if err != nil {
-			return err
+		if diff {
+			d, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+				A:        difflib.SplitLines(string(src)),
+				B:        difflib.SplitLines(string(res)),
+				FromFile: fmt.Sprintf("%s.orig", path),
+				ToFile:   path,
+				Context:  1,
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(os.Stdout, d)
 		}
-		fmt.Fprintln(os.Stdout, d)
-	}
 
-	if inplace {
-		info, err := os.Stat(path)
-		if err != nil {
-			return err
-		}
-		perm := info.Mode().Perm()
-		backup, err := backupFile(src, perm)
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(path, res, perm); err != nil {
-			os.Rename(backup, path)
-			return err
-		}
-		if err := os.Remove(backup); err != nil {
-			return err
+		if inplace {
+			info, err := os.Stat(path)
+			if err != nil {
+				return err
+			}
+			perm := info.Mode().Perm()
+			backup, err := backupFile(src, perm)
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(path, res, perm); err != nil {
+				os.Rename(backup, path)
+				return err
+			}
+			if err := os.Remove(backup); err != nil {
+				return err
+			}
 		}
 	}
 
 	if !inplace && !diff && !listFiles {
-		fmt.Fprintln(os.Stdout, string(res))
+		fmt.Fprint(os.Stdout, string(res))
 	}
 
 	return nil
