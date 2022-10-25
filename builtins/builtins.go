@@ -168,6 +168,34 @@ func Float2Int(args ...runtime.Object) runtime.Object {
 	return runtime.Int{Int: i}
 }
 
+func Int2Enum(args ...runtime.Object) runtime.Object {
+
+	if len(args) != 2 {
+		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
+	}
+
+	number, ok := args[0].(runtime.Int)
+	if !ok {
+		return runtime.Errorf("%s arguments not supported", args[0].Type())
+	}
+	if !number.IsInt64() {
+		return runtime.Errorf("Provided argument is not integer of 64 bits.")
+	}
+	object, ok := args[1].(*runtime.EnumValue)
+	if !ok {
+		return runtime.Errorf("%s arguments not supported", args[1].Type())
+	}
+
+	n := int(number.Int64())
+
+	err := object.SetValueById(n)
+	if err != nil {
+		return runtime.Errorf("Can't find value with provided int = %d", n)
+	}
+
+	return nil
+}
+
 func Log(args ...runtime.Object) runtime.Object {
 	var ss []string
 	for _, arg := range args {
@@ -203,6 +231,7 @@ func init() {
 	runtime.AddBuiltin("int2bit", Int2Bit)
 	runtime.AddBuiltin("int2float", Int2Float)
 	runtime.AddBuiltin("float2int", Float2Int)
+	runtime.AddBuiltin("int2enum", Int2Enum)
 	runtime.AddBuiltin("int2char", Int2char)
 	runtime.AddBuiltin("int2unichar", Int2unichar)
 	runtime.AddBuiltin("unichar2int", Unichar2int)

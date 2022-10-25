@@ -545,6 +545,52 @@ func TestBuiltinFunctionInt2char(t *testing.T) {
 	}
 }
 
+func TestBuiltinFunctionInt2enum(t *testing.T) {
+
+	tests := []struct {
+		input    string
+		expected runtime.Object
+	}{
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, runtime.NewString("E1.red")},
+		{`type enumerated E1{red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, runtime.NewString("E1.red")},
+		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, runtime.NewString("E1.red")},
+		{`int2enum("wrong")`, runtime.Errorf("wrong number of arguments. got=1, want=2")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum("wrong", testVar)`, runtime.Errorf("string arguments not supported")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(9223372036854775808, testVar)`, runtime.Errorf("Provided argument is not integer of 64 bits.")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("string arguments not supported")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("Can't find value with provided int = 4")},
+	}
+
+	for _, tt := range tests {
+
+		val := testEval(t, tt.input)
+
+		switch expected := tt.expected.(type) {
+		case *runtime.Error:
+			err, ok := val.(*runtime.Error)
+			if !ok {
+				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				continue
+			}
+			if err.Error() != expected.Error() {
+				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
+			}
+		case *runtime.String:
+			enumVal, ok := val.(*runtime.EnumValue)
+			if !ok {
+				t.Errorf("wrong runtime.EnumValue. got=%v, want=%v", val, expected)
+			}
+			expectedEnum := expected.Inspect()
+			valEnum := enumVal.Inspect()
+			if expectedEnum != valEnum {
+				t.Errorf("wrong enum value. got=%s, want=%s", valEnum, expectedEnum)
+			}
+		default:
+			t.Errorf("test error, unhandeled type:%T", expected)
+		}
+	}
+}
+
 func TestBuiltinFunctionInt2unichar(t *testing.T) {
 
 	tests := []struct {
