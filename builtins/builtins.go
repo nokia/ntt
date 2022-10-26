@@ -2,7 +2,6 @@ package builtins
 
 import (
 	"fmt"
-	"math/big"
 	"math/rand"
 	"strings"
 
@@ -10,190 +9,92 @@ import (
 )
 
 func Lengthof(args ...runtime.Object) runtime.Object {
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+	type lengther interface {
+		Len() int
 	}
-
-	switch arg := args[0].(type) {
-	case *runtime.String:
-		return runtime.Int{Int: big.NewInt(int64(len(arg.Value)))}
-	case *runtime.Bitstring:
-		return runtime.Int{Int: big.NewInt(int64(arg.Length))}
-	case *runtime.UniversalString:
-		return runtime.Int{Int: big.NewInt(int64(len(arg.String)))}
+	if l, ok := args[0].(lengther); ok {
+		return runtime.NewInt(l.Len())
 	}
-	return runtime.Errorf("%s arguments not supported", args[0].Type())
+	return runtime.Errorf("%s types have no length", args[0].Type())
 }
 
-func Rnd(args ...runtime.Object) runtime.Object {
-	if len(args) != 0 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=0", len(args))
-	}
-
+func Rnd(...runtime.Object) runtime.Object {
 	return runtime.Float(rand.Float64())
 }
 
-func Int2str(args ...runtime.Object) runtime.Object {
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
-	}
-	number, ok := args[0].(runtime.Int)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
-	if !number.IsInt64() {
-		return runtime.Errorf("Provided argument is not 64bit-integer")
-	}
-	return &runtime.String{Value: []rune(fmt.Sprintf("%d", number.Int64()))}
+func Int2Str(args ...runtime.Object) runtime.Object {
+	return runtime.NewString(args[0].(runtime.Int).String())
 }
 
-func Int2char(args ...runtime.Object) runtime.Object {
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+func Int2Char(args ...runtime.Object) runtime.Object {
+	n := args[0].(runtime.Int)
+	if i := n.Uint64(); n.IsUint64() && i <= 127 {
+		return runtime.NewString(string(rune(i)))
 	}
-	number, ok := args[0].(runtime.Int)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
-	if !number.IsInt64() {
-		return runtime.Errorf("Provided argument is not integer.")
-	}
-	i := number.Int64()
-	if i < 0 || i > 127 {
-		return runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = %d", i)
-	}
-
-	return &runtime.String{Value: []rune(fmt.Sprintf("%c", i))}
+	return runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = %s", n.String())
 }
 
-func Int2unichar(args ...runtime.Object) runtime.Object {
-
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+func Int2Unichar(args ...runtime.Object) runtime.Object {
+	n := args[0].(runtime.Int)
+	if i := n.Uint64(); n.IsUint64() && i <= 2147483647 {
+		return runtime.NewUniversalString(string(rune(i)))
 	}
-	number, ok := args[0].(runtime.Int)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
-	if !number.IsInt64() {
-		return runtime.Errorf("argument is not int64")
-	}
-	numberI64 := number.Int64()
-	if numberI64 < 0 {
-		return runtime.Errorf("value must be grater or equal to 0")
-	}
-	if numberI64 > 2147483647 {
-		return runtime.Errorf("value must be less than 2147483647")
-	}
-	return runtime.NewUniversalString(fmt.Sprintf("%c", numberI64))
+	return runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = %s", n.String())
 }
 
-func Unichar2int(args ...runtime.Object) runtime.Object {
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
+func Unichar2Int(args ...runtime.Object) runtime.Object {
+	s := []rune(args[0].Inspect())
+	if len(s) != 1 {
+		return runtime.Errorf("argument must be of length=1")
 	}
-
-	switch args[0].Type() {
-	case runtime.UNISTRING:
-		ustring, _ := args[0].(*runtime.UniversalString)
-		if ustring.Len() != 1 {
-			return runtime.Errorf("argument must be of lenght=1")
-		}
-		return runtime.NewInt(fmt.Sprintf("%d", ustring.String[0]))
-	case runtime.STRING:
-		pstring, _ := args[0].(*runtime.String)
-		if pstring.Len() != 1 {
-			return runtime.Errorf("argument must be of lenght=1")
-		}
-		return runtime.NewInt(fmt.Sprintf("%d", pstring.Value[0]))
-	default:
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
+	return runtime.NewInt(int(s[0]))
 }
 
 func Int2Bit(args ...runtime.Object) runtime.Object {
-
-	if len(args) != 2 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
-	}
-	number, ok := args[0].(runtime.Int)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
-	if number.Sign() == -1 {
+	i := args[0].(runtime.Int)
+	if i.Sign() < 0 {
 		return runtime.Errorf("%s invalue is less than zero", args[0].Type())
 	}
-	lengthArg, lenOk := args[1].(runtime.Int)
-	if !lenOk {
-		return runtime.Errorf("%s arguments not supported", args[1].Type())
-	}
-	if !lengthArg.IsInt64() {
-		return runtime.Errorf("length argument out of range (int64)")
-	}
-	length := int(lengthArg.Int64())
-	if number.BitLen() > length {
-		return runtime.Errorf("%v value requires more than %d bits", number, length)
-	}
-	if length < 0 {
+
+	l := args[1].(runtime.Int)
+	if l.Sign() < 0 {
 		return runtime.Errorf("length must be greater or equal than zero")
 	}
-	return &runtime.Bitstring{String: fmt.Sprintf("'%0*s'B", length, number.Value().Text(2)), Value: number.Value(), Unit: runtime.Bit, Length: length}
+
+	if i.BitLen() > int(l.Int64()) {
+		return runtime.Errorf("%s value requires more than %d bits", i.String(), l.BitLen())
+	}
+
+	if !l.IsInt64() {
+		return runtime.Errorf("length argument out of range (int64)")
+	}
+
+	return &runtime.Bitstring{
+		String: fmt.Sprintf("'%0*s'B", l.Int64(), i.Text(2)),
+		Value:  i.Value(),
+		Unit:   runtime.Bit,
+		Length: int(l.Int64()),
+	}
 }
 
 func Int2Float(args ...runtime.Object) runtime.Object {
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
-	}
-
-	i, ok := args[0].(runtime.Int)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
-
-	f, _ := new(big.Float).SetInt(i.Int).Float64()
-	return runtime.Float(f)
+	return runtime.NewFloat(args[0].(runtime.Int).String())
 }
 
 func Float2Int(args ...runtime.Object) runtime.Object {
-	if len(args) != 1 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=1", len(args))
-	}
-
-	f, ok := args[0].(runtime.Float)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
-	}
-
-	i, _ := new(big.Float).SetFloat64(float64(f)).Int(nil)
-	return runtime.Int{Int: i}
+	return runtime.NewInt(int(args[0].(runtime.Float)))
 }
 
 func Int2Enum(args ...runtime.Object) runtime.Object {
-
-	if len(args) != 2 {
-		return runtime.Errorf("wrong number of arguments. got=%d, want=2", len(args))
+	i := args[0].(runtime.Int)
+	if !i.IsInt64() {
+		return runtime.Errorf("integer value out of range (int64)")
 	}
-
-	number, ok := args[0].(runtime.Int)
+	e, ok := args[1].(*runtime.EnumValue)
 	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[0].Type())
+		return runtime.Errorf("second argument must be an enum value")
 	}
-	if !number.IsInt64() {
-		return runtime.Errorf("Provided argument is not integer of 64 bits.")
-	}
-	object, ok := args[1].(*runtime.EnumValue)
-	if !ok {
-		return runtime.Errorf("%s arguments not supported", args[1].Type())
-	}
-
-	n := int(number.Int64())
-
-	err := object.SetValueById(n)
-	if err != nil {
-		return runtime.Errorf("Can't find value with provided int = %d", n)
-	}
-
-	return nil
+	return e.SetValueById(int(i.Int64()))
 }
 
 func Log(args ...runtime.Object) runtime.Object {
@@ -225,20 +126,29 @@ func makeSet(lt runtime.ListType, args ...runtime.Object) func(...runtime.Object
 }
 
 func init() {
-	runtime.AddBuiltin("lengthof", Lengthof)
-	runtime.AddBuiltin("rnd", Rnd)
-	runtime.AddBuiltin("int2str", Int2str)
-	runtime.AddBuiltin("int2bit", Int2Bit)
-	runtime.AddBuiltin("int2float", Int2Float)
-	runtime.AddBuiltin("float2int", Float2Int)
-	runtime.AddBuiltin("int2enum", Int2Enum)
-	runtime.AddBuiltin("int2char", Int2char)
-	runtime.AddBuiltin("int2unichar", Int2unichar)
-	runtime.AddBuiltin("unichar2int", Unichar2int)
-	runtime.AddBuiltin("log", Log)
-	runtime.AddBuiltin("match", Match)
-	runtime.AddBuiltin("superset", makeSet(runtime.SUPERSET))
-	runtime.AddBuiltin("subset", makeSet(runtime.SUBSET))
-	runtime.AddBuiltin("permutation", makeSet(runtime.PERMUTATION))
-	runtime.AddBuiltin("complement", makeSet(runtime.COMPLEMENT))
+	builtins := map[string]func(...runtime.Object) runtime.Object{
+		"float2int(in float f) return integer":                  Float2Int,
+		"int2bit(in integer i, in integer l) return bitstring":  Int2Bit,
+		"int2char(in integer i) return charstring":              Int2Char,
+		"int2enum(in integer i, out any e)":                     Int2Enum,
+		"int2float(in integer i) return float":                  Int2Float,
+		"int2str(in integer i) return charstring":               Int2Str,
+		"int2unichar(in integer i) return universal charstring": Int2Unichar,
+		"lengthof(in any a) return integer":                     Lengthof,
+		"rnd() return float":                                    Rnd,
+		"unichar2int(in universal charstring s) return integer": Unichar2Int,
+
+		"log":         Log,
+		"match":       Match,
+		"superset":    makeSet(runtime.SUPERSET),
+		"subset":      makeSet(runtime.SUBSET),
+		"permutation": makeSet(runtime.PERMUTATION),
+		"complement":  makeSet(runtime.COMPLEMENT),
+	}
+
+	for name, builtin := range builtins {
+		if err := runtime.AddBuiltin(name, builtin); err != nil {
+			panic(err)
+		}
+	}
 }

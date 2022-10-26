@@ -266,7 +266,7 @@ func TestBuiltinFunction(t *testing.T) {
 	}{
 		{`lengthof("")`, 0},
 		{`lengthof("fnord")`, 5},
-		{`lengthof(1)`, "integer arguments not supported"},
+		{`lengthof(1)`, "integer types have no length"},
 		{`lengthof("hello", "world")`, "wrong number of arguments. got=2, want=1"},
 	}
 	for _, tt := range tests {
@@ -313,7 +313,7 @@ func TestBuiltinFunctionInt2Bit(t *testing.T) {
 		case string:
 			bitstr, ok := val.(*runtime.Bitstring)
 			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
+				t.Errorf("object is not runtime.Bitstring. got=%T (%+v)", val, val)
 				continue
 			}
 
@@ -474,11 +474,9 @@ func TestBuiltinFunctionInt2str(t *testing.T) {
 		{`int2str(2, 4)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
 		{`int2str("wrong")`, runtime.Errorf("string arguments not supported")},
 		{`int2str(2.4)`, runtime.Errorf("float arguments not supported")},
-		{`int2str(9223372036854775808)`, runtime.Errorf("Provided argument is not 64bit-integer")},
-		{`int2str(9223372036854775807)`, runtime.NewString("9223372036854775807")},
+		{`int2str(9223372036854775808)`, runtime.NewString("9223372036854775808")},
 		{`int2str(0)`, runtime.NewString("0")},
-		{`int2str(-9223372036854775808)`, runtime.NewString("-9223372036854775808")},
-		{`int2str(-9223372036854775809)`, runtime.Errorf("Provided argument is not 64bit-integer")},
+		{`int2str(-9223372036854775809)`, runtime.NewString("-9223372036854775809")},
 	}
 
 	for _, tt := range tests {
@@ -513,7 +511,7 @@ func TestBuiltinFunctionInt2char(t *testing.T) {
 	}{
 		{`int2char(2, 4)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
 		{`int2char("wrong")`, runtime.Errorf("string arguments not supported")},
-		{`int2char(9223372036854775808)`, runtime.Errorf("Provided argument is not integer.")},
+		{`int2char(9223372036854775808)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 9223372036854775808")},
 		{`int2char(128)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 128")},
 		{`int2char(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = -1")},
 		{`int2char(70)`, runtime.NewString("F")},
@@ -556,9 +554,9 @@ func TestBuiltinFunctionInt2enum(t *testing.T) {
 		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, runtime.NewString("E1.red")},
 		{`int2enum("wrong")`, runtime.Errorf("wrong number of arguments. got=1, want=2")},
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum("wrong", testVar)`, runtime.Errorf("string arguments not supported")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(9223372036854775808, testVar)`, runtime.Errorf("Provided argument is not integer of 64 bits.")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("string arguments not supported")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("Can't find value with provided int = 4")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(9223372036854775808, testVar)`, runtime.Errorf("integer value out of range (int64)")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("second argument must be an enum value")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("id 4 does not exist in any ranges of Enum E1")},
 	}
 
 	for _, tt := range tests {
@@ -579,6 +577,7 @@ func TestBuiltinFunctionInt2enum(t *testing.T) {
 			enumVal, ok := val.(*runtime.EnumValue)
 			if !ok {
 				t.Errorf("wrong runtime.EnumValue. got=%v, want=%v", val, expected)
+				continue
 			}
 			expectedEnum := expected.Inspect()
 			valEnum := enumVal.Inspect()
@@ -600,8 +599,8 @@ func TestBuiltinFunctionInt2unichar(t *testing.T) {
 		{`int2unichar()`, runtime.Errorf("wrong number of arguments. got=0, want=1")},
 		{`int2unichar(1,1)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
 		{`int2unichar("wrong")`, runtime.Errorf("string arguments not supported")},
-		{`int2unichar(-1)`, runtime.Errorf("value must be grater or equal to 0")},
-		{`int2unichar(2147483648)`, runtime.Errorf("value must be less than 2147483647")},
+		{`int2unichar(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = -1")},
+		{`int2unichar(2147483648)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = 2147483648")},
 		{`int2unichar(9786)`, runtime.NewUniversalString("☺")},
 	}
 
@@ -638,7 +637,7 @@ func TestBuiltinFunctionUnichar2int(t *testing.T) {
 		{`unichar2int()`, runtime.Errorf("wrong number of arguments. got=0, want=1")},
 		{`unichar2int(1,1)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
 		{`unichar2int(1)`, runtime.Errorf("integer arguments not supported")},
-		{`unichar2int("to long")`, runtime.Errorf("argument must be of lenght=1")},
+		{`unichar2int("too long")`, runtime.Errorf("argument must be of length=1")},
 		{`unichar2int("t")`, runtime.NewInt("116")},
 		{`unichar2int("☺")`, runtime.NewInt("9786")},
 	}
