@@ -3,7 +3,6 @@ package lsp
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
@@ -20,9 +19,14 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	}
 	var out bytes.Buffer
 	p := printer.NewCanonicalPrinter(&out)
+	p.TabWidth = int(params.Options.TabSize)
 	if params.Options.InsertSpaces {
-		p.Indent = fmt.Sprintf("%*s", params.Options.TabSize, " ")
+		p.UseSpaces = true
 	}
+
+	// We don't want module defintions to be indented. By using a negative
+	// indentation level we can achieve this for most module definitions.
+	p.Indent = -1
 
 	if err := p.Fprint(b); err != nil {
 		log.Debug("formatting:", err.Error())
