@@ -21,11 +21,13 @@ func ExampleFprint() {
 func ExampleCanonicalPrinter() {
 	input := "{\n x:=1, // Comment\ny := 234, // Comment 2\n}"
 	p := printer.NewCanonicalPrinter(os.Stdout)
-	p.Indent = "  "
+	p.Indent = 1
+	p.UseSpaces = true
+	p.TabWidth = 2
 	p.Fprint(input)
 	// Output:
-	// {
-	//   x := 1,   // Comment
-	//   y := 234, // Comment 2
-	// }
+	//   {
+	//     x := 1,   // Comment
+	//     y := 234, // Comment 2
+	//   }
 }

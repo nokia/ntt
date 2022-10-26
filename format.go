@@ -79,12 +79,14 @@ this tool. Do not use it in production yet.
 
 	listFiles, diff, inplace bool
 	formattedFiles           int
+	spaces                   int
 )
 
 func init() {
 	FormatCommand.Flags().BoolVarP(&inplace, "in-place", "i", false, "format files in place")
 	FormatCommand.Flags().BoolVarP(&diff, "diff", "d", false, "display diff instead of rewriting files. Exit with non-zero status if any files need to be formatted")
 	FormatCommand.Flags().BoolVarP(&listFiles, "list", "l", false, "list files whose formatting differs. Exit with non-zero status if any files need to be formatted")
+	FormatCommand.Flags().IntVarP(&spaces, "tabs-to-spaces", "s", 0, "convert each tab to N spaces")
 }
 
 func processFile(path string) error {
@@ -94,7 +96,13 @@ func processFile(path string) error {
 	}
 
 	var buf bytes.Buffer
-	if err := printer.Fprint(&buf, src); err != nil {
+	p := printer.NewCanonicalPrinter(&buf)
+	p.Indent = -1
+	if spaces > 0 {
+		p.UseSpaces = true
+		p.TabWidth = spaces
+	}
+	if err := p.Fprint(src); err != nil {
 		return err
 	}
 	res := buf.Bytes()

@@ -31,10 +31,18 @@ func Fprint(w io.Writer, src interface{}) error {
 // CanonicalPrinter is a simple formatter that only fixes indentation and
 // various whitespace issues.
 type CanonicalPrinter struct {
-	Indent           string // Indentation string; default is "\t"
-	w                *tabwriter.Writer
+	// UseSpaces controls whether to use spaces instead of tabs for indenting.
+	UseSpaces bool
+
+	// TabWidth is the width of a tab character (equivalent to the number
+	// of spaces, default is 8).
+	TabWidth int
+
+	// Indent is the level of indentation at which to start.
+	Indent int
+
+	w                io.Writer
 	lastPos, currPos syntax.Position
-	indent           int
 	whiteBuf         string
 	firstToken       bool
 }
@@ -42,14 +50,20 @@ type CanonicalPrinter struct {
 // NewCanonicalPrinter returns a new printer that formats source code.
 func NewCanonicalPrinter(w io.Writer) *CanonicalPrinter {
 	return &CanonicalPrinter{
-		indent: 0,
-		Indent: "\t",
-		w: tabwriter.NewWriter(w, 0, 8, 1, ' ',
-			tabwriter.TabIndent|tabwriter.StripEscape|tabwriter.DiscardEmptyColumns),
+		Indent:   0,
+		TabWidth: 8,
+		w:        w,
 	}
 }
 
 func (p *CanonicalPrinter) Fprint(v interface{}) error {
+	minwidth := p.TabWidth
+	twmode := tabwriter.DiscardEmptyColumns | tabwriter.StripEscape
+	if !p.UseSpaces {
+		minwidth = 0
+		twmode |= tabwriter.TabIndent
+	}
+	p.w = tabwriter.NewWriter(p.w, minwidth, p.TabWidth, 1, ' ', twmode)
 
 	b, err := toBytes(v)
 	if err != nil {
@@ -149,7 +163,11 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 		fmt.Fprint(p.w, "\n")
 	}
 
-	return p.w.Flush()
+	if tw, ok := p.w.(*tabwriter.Writer); ok {
+		return tw.Flush()
+	}
+
+	return nil
 }
 
 // comment prints a comment line by line. It removes white-space prefixes from
@@ -184,9 +202,9 @@ func (p *CanonicalPrinter) print(args ...interface{}) {
 			case ignore:
 				continue
 			case indent:
-				p.indent++
+				p.Indent++
 			case unindent:
-				p.indent--
+				p.Indent--
 			case blank:
 				if p.whiteBuf == "" {
 					p.whiteBuf = " "
@@ -223,8 +241,8 @@ func (p *CanonicalPrinter) printSpace() {
 	}
 	fmt.Fprint(p.w, p.whiteBuf)
 	if strings.HasSuffix(p.whiteBuf, "\n") {
-		for i := 0; i < p.indent; i++ {
-			fmt.Fprint(p.w, p.Indent)
+		for i := 0; i < p.Indent; i++ {
+			fmt.Fprint(p.w, "\t")
 		}
 	}
 }
