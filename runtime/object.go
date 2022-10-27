@@ -179,10 +179,17 @@ func (i Int) hashKey() hashKey {
 	return hashKey{Type: i.Type(), Value: h.Sum64()}
 }
 
-func NewInt(s string) Int {
-	i := &big.Int{}
-	i.SetString(s, 10)
-	return Int{i}
+func NewInt(v interface{}) Int {
+	switch v := v.(type) {
+	case int:
+		return Int{big.NewInt(int64(v))}
+	case string:
+		i := &big.Int{}
+		i.SetString(v, 10)
+		return Int{i}
+	default:
+		panic(fmt.Sprintf("cannot convert %T to Int", v))
+	}
 }
 
 type EnumRange struct {
@@ -250,14 +257,14 @@ func (ev *EnumValue) Equal(obj Object) bool {
 	}
 	return ev.key == other.key
 }
-func (ev *EnumValue) SetValueByKey(key string) error {
+func (ev *EnumValue) SetValueByKey(key string) *Error {
 	if _, ok := ev.typeRef.Elements[key]; !ok {
-		return fmt.Errorf("%s does not exist in Enum %s", key, ev.typeRef.Name)
+		return Errorf("%s does not exist in Enum %s", key, ev.typeRef.Name)
 	}
 	ev.key = key
 	return nil
 }
-func (ev *EnumValue) SetValueById(id int) error {
+func (ev *EnumValue) SetValueById(id int) *Error {
 	for key, enumRanges := range ev.typeRef.Elements {
 		for _, enumRange := range enumRanges {
 			if enumRange.Contains(id) {
@@ -266,7 +273,7 @@ func (ev *EnumValue) SetValueById(id int) error {
 			}
 		}
 	}
-	return fmt.Errorf("id %d does not exist in any ranges of Enum %s", id, ev.typeRef.Name)
+	return Errorf("id %d does not exist in any ranges of Enum %s", id, ev.typeRef.Name)
 }
 func NewEnumValue(enumType *EnumType, key string) (*EnumValue, error) {
 	if _, ok := enumType.Elements[key]; !ok {

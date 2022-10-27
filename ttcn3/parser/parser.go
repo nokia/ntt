@@ -766,12 +766,7 @@ func (p *parser) parseOperand() ast.Expr {
 			}
 		}
 
-		// Workaround for deprecated port-attribute 'all'
-		if tok.Kind == token.ALL {
-			return p.make_use(tok)
-		}
-
-		p.errorExpected(p.pos(1), "'component', 'port', 'timer' or 'from'")
+		return p.make_use(tok)
 
 	case token.UNIVERSAL:
 		return p.parseUniversalCharstring()
