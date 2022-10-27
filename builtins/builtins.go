@@ -94,7 +94,10 @@ func Int2Enum(args ...runtime.Object) runtime.Object {
 	if !ok {
 		return runtime.Errorf("second argument must be an enum value")
 	}
-	return e.SetValueById(int(i.Int64()))
+	if err := e.SetValueById(int(i.Int64())); err != nil {
+		return err
+	}
+	return nil
 }
 
 func Log(args ...runtime.Object) runtime.Object {
