@@ -24,7 +24,7 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 		p.UseSpaces = true
 	}
 
-	// We don't want module defintions to be indented. By using a negative
+	// We don't want module definitions to be indented. By using a negative
 	// indentation level we can achieve this for most module definitions.
 	p.Indent = -1
 
@@ -32,16 +32,38 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 		log.Debug("formatting:", err.Error())
 		return nil, nil
 	}
+
+	// The language protocol client requires the range of the original text.
+	//
+	// Our syntax tree does not have a nice interface for that. So we just
+	// scan the whole file and calculate the range explicitly.
+	//
+	// This is inefficient, but sufficient for now.
 	fset := loc.NewFileSet()
 	f := fset.AddFile(params.TextDocument.URI.SpanURI().Filename(), 1, len(b))
 	f.SetLinesForContent(b)
-	endPos := f.Position(loc.Pos(1 + len(b)))
-	// vscode includes a standalone '\n' in a range if the line following it is addressed
-	// e.g. \n in line 2 => range(0:0, 3:0) will include it, range(0:0, 2:1) won't
+	begin, end := f.Position(1), f.Position(loc.Pos(1+len(b)))
+
+	// f.Position includes the trailing line-break in line and column
+	// calculation. For example the end of string "foo;\n" will be in line
+	// 1 and column 5.
+	//
+	// However, this causes "phantom lines" to appear in vscode, because it
+	// expects line-breaks to always start a new line. For example the end
+	// of above string should be in line 2 and column 1 instead.
+	//
+	// As a workaround we adapt the position so the client handles it
+	// properly, when a string ends with a line-break
+	//
+	// TODO(5nord) Test this workaround with other language protocol
+	// clients (e.g. emacs, vim, ...)
 	if b[len(b)-1] == '\n' {
-		endPos.Line++
-		endPos.Column = 1
+		end.Line++
+		end.Column = 1
 	}
-	return []protocol.TextEdit{{Range: setProtocolRange(f.Position(1),
-		endPos), NewText: out.String()}}, nil
+
+	return []protocol.TextEdit{{
+		Range:   setProtocolRange(begin, end),
+		NewText: out.String(),
+	}}, nil
 }
