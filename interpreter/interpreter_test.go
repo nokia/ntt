@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3/parser"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInt(t *testing.T) {
@@ -259,77 +260,82 @@ func TestBitstring(t *testing.T) {
 	}
 }
 
-func TestBuiltinFunction(t *testing.T) {
+func TestBuiltinFunctions(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected interface{}
 	}{
-		{`lengthof("")`, 0},
-		{`lengthof("fnord")`, 5},
-		{`lengthof(1)`, "integer types have no length"},
-		{`lengthof("hello", "world")`, "wrong number of arguments. got=2, want=1"},
-	}
-	for _, tt := range tests {
-		val := testEval(t, tt.input)
-		switch expected := tt.expected.(type) {
-		case int:
-			testInt(t, val, int64(expected))
-		case string:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected)
-			}
-		}
-	}
-}
+		{`lengthof("")`, `0`},
+		{`lengthof("fnord")`, `5`},
+		{`lengthof(1)`, runtime.Errorf("integer types have no length")},
 
-func TestBuiltinFunctionInt2Bit(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected interface{}
-	}{
-		{`int2bit()`, runtime.Errorf("wrong number of arguments. got=0, want=2")},
-		{`int2bit(1)`, runtime.Errorf("wrong number of arguments. got=1, want=2")},
-		{`int2bit("", 0)`, runtime.Errorf("string arguments not supported")},
-		{`int2bit(0, "")`, runtime.Errorf("string arguments not supported")},
-		{`int2bit(1, 4)`, "'0001'B"},
+		{`int2bit(1, 4)`, `'0001'B`},
 		{`int2bit(4, 1)`, runtime.Errorf("4 value requires more than 1 bits")},
 		{`int2bit(4, -1)`, runtime.Errorf("length must be greater or equal than zero")},
-		{`int2bit(0, 0)`, "'0'B"},
-		{`int2bit(1, 0)`, runtime.Errorf("1 value requires more than 1 bits")},
-		{`int2bit(1, -1)`, runtime.Errorf("no")},
-		{`int2bit(-1, 8)`, runtime.Errorf("no")},
-		{`int2bit(33569, 16)`, "'1000001100100001'B"},
-		{`int2bit(1, 3)`, "'001'B"},
-		{`int2bit(0, 2)`, "'00'B"},
+		{`int2bit(0, 0)`, `'0'B`},
+		{`int2bit(1, 0)`, runtime.Errorf("1 value requires more than 0 bits")},
+		{`int2bit(1, -1)`, runtime.Errorf("length must be greater or equal than zero")},
+		{`int2bit(-1, 8)`, runtime.Errorf("integer invalue is less than zero")},
+		{`int2bit(33569, 16)`, `'1000001100100001'B`},
+		{`int2bit(1, 3)`, `'001'B`},
+		{`int2bit(0, 2)`, `'00'B`},
+
+		{`int2str(9223372036854775808)`, `"9223372036854775808"`},
+		{`int2str(0)`, `"0"`},
+		{`int2str(-9223372036854775809)`, `"-9223372036854775809"`},
+
+		{`int2char(9223372036854775808)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 9223372036854775808")},
+		{`int2char(128)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 128")},
+		{`int2char(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = -1")},
+		{`int2char(70)`, `"F"`},
+		{`int2char(0)`, runtime.NewString(fmt.Sprintf("%c", 0))},
+		{`int2char(127)`, runtime.NewString(fmt.Sprintf("%c", 127))},
+
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, `E1.red`},
+		{`type enumerated E1{red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, `E1.red`},
+		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, `E1.red`},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(9223372036854775808, testVar)`, runtime.Errorf("integer value out of range (int64)")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("second argument must be an enum value")},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("id 4 does not exist in any ranges of Enum E1")},
+
+		{`int2unichar(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = -1")},
+		{`int2unichar(2147483648)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = 2147483648")},
+		{`int2unichar(9786)`, runtime.NewUniversalString("☺")},
+
+		{`unichar2int("too long")`, runtime.Errorf("argument must be of length=1")},
+		{`unichar2int("t")`, `116`},
+		{`unichar2int("☺")`, `9786`},
 	}
 	for _, tt := range tests {
-		val := testEval(t, tt.input)
-		switch expected := tt.expected.(type) {
-		case string:
-			bitstr, ok := val.(*runtime.Bitstring)
-			if !ok {
-				t.Errorf("object is not runtime.Bitstring. got=%T (%+v)", val, val)
-				continue
+		t.Run(t.Name(), func(t *testing.T) {
+			t.Logf("%s", tt.input)
+			got := testEval(t, tt.input)
+			if got == nil {
+				t.Fatalf("testEval(%q) = nil", tt.input)
 			}
 
-			if bitstr.Inspect() != expected {
-				t.Errorf("fail expected=%v got=%v", expected, bitstr.Inspect())
+			switch want := tt.expected.(type) {
+			case string:
+				assert.Equal(t, want, got.Inspect())
+
+			case error:
+				// TODO(5nord) replace message comparison with
+				// proper error type comparison (errors.Is(e,
+				// want))
+				if e, ok := got.(error); !ok || e.Error() != want.Error() {
+					t.Errorf("got %v, want %v", got, want)
+				}
+
+			case runtime.Object:
+				if !got.Equal(want) {
+					t.Errorf("objects not equal. got %v, want %v", got, want)
+				}
+
+			default:
+				t.Fatalf("unsupported type %T", tt.expected)
 			}
-		case runtime.Error:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
-			}
-		}
+
+		})
 	}
 }
 
@@ -463,209 +469,6 @@ func testBool(t *testing.T, obj runtime.Object, expected bool) bool {
 	}
 
 	return true
-}
-
-func TestBuiltinFunctionInt2str(t *testing.T) {
-
-	tests := []struct {
-		input    string
-		expected runtime.Object
-	}{
-		{`int2str(2, 4)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
-		{`int2str("wrong")`, runtime.Errorf("string arguments not supported")},
-		{`int2str(2.4)`, runtime.Errorf("float arguments not supported")},
-		{`int2str(9223372036854775808)`, runtime.NewString("9223372036854775808")},
-		{`int2str(0)`, runtime.NewString("0")},
-		{`int2str(-9223372036854775809)`, runtime.NewString("-9223372036854775809")},
-	}
-
-	for _, tt := range tests {
-
-		val := testEval(t, tt.input)
-
-		switch expected := tt.expected.(type) {
-		case *runtime.Error:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%s, want=%s", err.Error(), expected.Error())
-			}
-		case *runtime.String:
-			if !expected.Equal(val) {
-				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
-			}
-		default:
-			t.Errorf("test error, unhandeled type:%T", expected)
-		}
-	}
-}
-
-func TestBuiltinFunctionInt2char(t *testing.T) {
-
-	tests := []struct {
-		input    string
-		expected runtime.Object
-	}{
-		{`int2char(2, 4)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
-		{`int2char("wrong")`, runtime.Errorf("string arguments not supported")},
-		{`int2char(9223372036854775808)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 9223372036854775808")},
-		{`int2char(128)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 128")},
-		{`int2char(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = -1")},
-		{`int2char(70)`, runtime.NewString("F")},
-		{`int2char(0)`, runtime.NewString(fmt.Sprintf("%c", 0))},
-		{`int2char(127)`, runtime.NewString(fmt.Sprintf("%c", 127))},
-	}
-
-	for _, tt := range tests {
-
-		val := testEval(t, tt.input)
-
-		switch expected := tt.expected.(type) {
-		case *runtime.Error:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
-			}
-		case *runtime.String:
-			if !expected.Equal(val) {
-				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
-			}
-		default:
-			t.Errorf("test error, unhandeled type:%T", expected)
-		}
-	}
-}
-
-func TestBuiltinFunctionInt2enum(t *testing.T) {
-
-	tests := []struct {
-		input    string
-		expected runtime.Object
-	}{
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, runtime.NewString("E1.red")},
-		{`type enumerated E1{red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, runtime.NewString("E1.red")},
-		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, runtime.NewString("E1.red")},
-		{`int2enum("wrong")`, runtime.Errorf("wrong number of arguments. got=1, want=2")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum("wrong", testVar)`, runtime.Errorf("string arguments not supported")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(9223372036854775808, testVar)`, runtime.Errorf("integer value out of range (int64)")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("second argument must be an enum value")},
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("id 4 does not exist in any ranges of Enum E1")},
-	}
-
-	for _, tt := range tests {
-
-		val := testEval(t, tt.input)
-
-		switch expected := tt.expected.(type) {
-		case *runtime.Error:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
-			}
-		case *runtime.String:
-			enumVal, ok := val.(*runtime.EnumValue)
-			if !ok {
-				t.Errorf("wrong runtime.EnumValue. got=%v, want=%v", val, expected)
-				continue
-			}
-			expectedEnum := expected.Inspect()
-			valEnum := enumVal.Inspect()
-			if expectedEnum != valEnum {
-				t.Errorf("wrong enum value. got=%s, want=%s", valEnum, expectedEnum)
-			}
-		default:
-			t.Errorf("test error, unhandeled type:%T", expected)
-		}
-	}
-}
-
-func TestBuiltinFunctionInt2unichar(t *testing.T) {
-
-	tests := []struct {
-		input    string
-		expected runtime.Object
-	}{
-		{`int2unichar()`, runtime.Errorf("wrong number of arguments. got=0, want=1")},
-		{`int2unichar(1,1)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
-		{`int2unichar("wrong")`, runtime.Errorf("string arguments not supported")},
-		{`int2unichar(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = -1")},
-		{`int2unichar(2147483648)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = 2147483648")},
-		{`int2unichar(9786)`, runtime.NewUniversalString("☺")},
-	}
-
-	for _, tt := range tests {
-
-		val := testEval(t, tt.input)
-
-		switch expected := tt.expected.(type) {
-		case *runtime.Error:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
-			}
-		case *runtime.UniversalString:
-			if !expected.Equal(val) {
-				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
-			}
-		default:
-			t.Errorf("test error, unhandeled type:%T", expected)
-		}
-	}
-}
-
-func TestBuiltinFunctionUnichar2int(t *testing.T) {
-
-	tests := []struct {
-		input    string
-		expected runtime.Object
-	}{
-		{`unichar2int()`, runtime.Errorf("wrong number of arguments. got=0, want=1")},
-		{`unichar2int(1,1)`, runtime.Errorf("wrong number of arguments. got=2, want=1")},
-		{`unichar2int(1)`, runtime.Errorf("integer arguments not supported")},
-		{`unichar2int("too long")`, runtime.Errorf("argument must be of length=1")},
-		{`unichar2int("t")`, runtime.NewInt("116")},
-		{`unichar2int("☺")`, runtime.NewInt("9786")},
-	}
-
-	for _, tt := range tests {
-
-		val := testEval(t, tt.input)
-
-		switch expected := tt.expected.(type) {
-		case *runtime.Error:
-			err, ok := val.(*runtime.Error)
-			if !ok {
-				t.Errorf("object is not runtime.Error. got=%T (%+v)", val, val)
-				continue
-			}
-			if err.Error() != expected.Error() {
-				t.Errorf("wrong error message. got=%q, want=%s", err.Error(), expected.Error())
-				continue
-			}
-		case runtime.Int:
-			if !expected.Equal(val) {
-				t.Errorf("wrong runtime.String. got=%v, want=%v", val, expected)
-				continue
-			}
-		default:
-			t.Errorf("test error, unhandeled type:%T", expected)
-		}
-	}
 }
 
 func TestEnums(t *testing.T) {

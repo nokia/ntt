@@ -9,7 +9,7 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
-var builtins = map[string]*Builtin{}
+var builtins map[string]*Builtin
 
 // AddBuiltin adds a builtin function to the runtime environment.
 //
@@ -18,11 +18,14 @@ var builtins = map[string]*Builtin{}
 // If the given identifier provides formal parameters, the function will be
 // checked for the correct number and type of arguments, automatically. An
 // error is returnes if the input string contrains any syntax-errors.
-func AddBuiltin(id string, fn func(args ...Object) Object) *Error {
+func AddBuiltin(id string, fn func(args ...Object) Object) error {
+	if builtins == nil {
+		builtins = make(map[string]*Builtin)
+	}
 	if i := strings.Index(id, "("); i >= 0 {
 		name, params, err := parseFunction(id)
 		if err != nil {
-			return Errorf("%w", err)
+			return fmt.Errorf("%s: %w", id, err)
 		}
 		origFn := fn
 		fn = func(args ...Object) Object {
@@ -34,7 +37,7 @@ func AddBuiltin(id string, fn func(args ...Object) Object) *Error {
 		id = name
 	}
 	if _, ok := builtins[id]; ok {
-		return Errorf("%s already defined", id)
+		return fmt.Errorf("%s: %w", id, ErrExists)
 	}
 	builtins[id] = &Builtin{Fn: fn}
 	return nil
@@ -54,7 +57,7 @@ func parseFunction(name string) (string, *ast.FormalPars, error) {
 
 func checkArgs(pars *ast.FormalPars, args ...Object) error {
 	if len(args) != len(pars.List) {
-		return fmt.Errorf("wrong number of arguments. got=%d, want=%d", len(args), len(pars.List))
+		return ErrInvalidArgCount
 	}
 	for i := range args {
 		if err := checkArg(pars.List[i], args[i]); err != nil {
@@ -66,7 +69,7 @@ func checkArgs(pars *ast.FormalPars, args ...Object) error {
 
 func checkArg(par *ast.FormalPar, arg Object) error {
 	if par.ArrayDef != nil {
-		return fmt.Errorf("array parameters not supported")
+		return fmt.Errorf("array definition: %w", ErrNotImplemented)
 	}
 
 	// We only support the basic types for now. No typedefs, no records, no
@@ -86,14 +89,18 @@ func checkArg(par *ast.FormalPar, arg Object) error {
 
 	want := ast.Name(par.Type)
 	switch types[want] {
-	case UNKNOWN:
-		return fmt.Errorf("unsupported parameter type: %s", want)
+	case "":
+		return fmt.Errorf("%#v: %w", par.Type, ErrNotImplemented)
 	case ANY:
 		return nil
 	default:
-		if types[want] == arg.Type() {
-			return nil
+		if arg == nil {
+			return fmt.Errorf("<nil>: %w", ErrTypeMismatch)
 		}
-		return fmt.Errorf("%s arguments not supported", string(arg.Type()))
+
+		if t := arg.Type(); t != types[want] {
+			return fmt.Errorf("%s: %w", t, ErrTypeMismatch)
+		}
+		return nil
 	}
 }
