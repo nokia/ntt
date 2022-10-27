@@ -43,7 +43,11 @@ func Int2Unichar(args ...runtime.Object) runtime.Object {
 }
 
 func Unichar2Int(args ...runtime.Object) runtime.Object {
-	s := []rune(args[0].Inspect())
+	type Runer interface {
+		Runes() []rune
+	}
+
+	s := args[0].(Runer).Runes()
 	if len(s) != 1 {
 		return runtime.Errorf("argument must be of length=1")
 	}

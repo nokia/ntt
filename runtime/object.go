@@ -15,7 +15,9 @@ import (
 )
 
 type Object interface {
+	// Inspect returns a string-representation of the object for in TTCN-3 syntax.
 	Inspect() string
+
 	Type() ObjectType
 	Equal(Object) bool
 }
@@ -94,9 +96,9 @@ type Error struct {
 }
 
 func (e *Error) Error() string    { return e.Err.Error() }
+func (e *Error) Unwrap() error    { return e.Err }
 func (e *Error) Type() ObjectType { return ERROR }
 func (e *Error) Inspect() string  { return fmt.Sprintf("Error: %s", e.Error()) }
-
 func (e *Error) Equal(obj Object) bool {
 	if other, ok := obj.(*Error); ok {
 		return errors.Is(e, other)
@@ -287,7 +289,8 @@ type String struct {
 }
 
 func (s *String) Type() ObjectType { return STRING }
-func (s *String) Inspect() string  { return string(s.Value) }
+func (s *String) Inspect() string  { return fmt.Sprintf("%q", string(s.Value)) }
+func (s *String) Runes() []rune    { return s.Value }
 
 func (s *String) Equal(obj Object) bool {
 	b, ok := obj.(*String)
@@ -323,34 +326,35 @@ func NewString(s string) *String {
 }
 
 type UniversalString struct {
-	String string
+	Value string
 }
 
 func (us *UniversalString) Type() ObjectType { return UNISTRING }
-func (us *UniversalString) Inspect() string  { return us.String }
+func (us *UniversalString) Inspect() string  { return us.Value }
+func (us *UniversalString) Runes() []rune    { return []rune(us.Value) }
 func (us *UniversalString) Equal(obj Object) bool {
 	if other, ok := obj.(*UniversalString); ok {
-		return us.String == other.String
+		return us.Value == other.Value
 	}
 	return false
 }
 func (us *UniversalString) hashKey() hashKey {
 	h := fnv.New64a()
-	h.Write([]byte(us.String))
+	h.Write([]byte(us.Value))
 	return hashKey{Type: us.Type(), Value: h.Sum64()}
 }
 func (us *UniversalString) Len() int {
-	return len(us.String)
+	return len(us.Value)
 }
 
 func (us *UniversalString) Get(index int) Object {
-	if index >= len(us.String) {
-		return &UniversalString{String: ""}
+	if index >= len(us.Value) {
+		return &UniversalString{Value: ""}
 	}
-	return &UniversalString{String: string(us.String[index])}
+	return &UniversalString{Value: string(us.Value[index])}
 }
 func NewUniversalString(s string) *UniversalString {
-	return &UniversalString{String: s}
+	return &UniversalString{Value: s}
 }
 
 type Bitstring struct {
