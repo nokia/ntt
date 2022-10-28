@@ -73,7 +73,7 @@ func Int2Bit(args ...runtime.Object) runtime.Object {
 		return runtime.Errorf("length argument out of range (int64)")
 	}
 
-	return &runtime.Bitstring{
+	return &runtime.Binarystring{
 		String: fmt.Sprintf("'%0*s'B", l.Int64(), i.Text(2)),
 		Value:  i.Value(),
 		Unit:   runtime.Bit,
