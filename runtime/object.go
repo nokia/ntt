@@ -34,34 +34,41 @@ const (
 	INTEGER      ObjectType = "integer"
 	FLOAT        ObjectType = "float"
 	BOOL         ObjectType = "boolean"
-	STRING       ObjectType = "string"
-	BITSTRING    ObjectType = "bitstring"
-	UNISTRING    ObjectType = "universal string"
-	FUNCTION     ObjectType = "function"
-	LIST         ObjectType = "list"
-	RECORD       ObjectType = "record"
-	MAP          ObjectType = "map"
-	BUILTIN_OBJ  ObjectType = "builtin function"
-	VERDICT      ObjectType = "verdict"
-	ENUM_VALUE   ObjectType = "enumerated value"
-	ENUM_TYPE    ObjectType = "enumerated type"
-	ANY          ObjectType = "?"
-	ANY_OR_NONE  ObjectType = "*"
+
+	// Charstring types
+	STRING    ObjectType = "string"
+	UNISTRING ObjectType = "universal string"
+
+	// Binarystring types
+	BITSTRING   ObjectType = "bitstring"
+	HEXSTRING   ObjectType = "hexstring"
+	OCTETSTRING ObjectType = "octetstring"
+
+	FUNCTION    ObjectType = "function"
+	LIST        ObjectType = "list"
+	RECORD      ObjectType = "record"
+	MAP         ObjectType = "map"
+	BUILTIN_OBJ ObjectType = "builtin function"
+	VERDICT     ObjectType = "verdict"
+	ENUM_VALUE  ObjectType = "enumerated value"
+	ENUM_TYPE   ObjectType = "enumerated type"
+	ANY         ObjectType = "?"
+	ANY_OR_NONE ObjectType = "*"
 )
 
 type Unit int
 
 const (
-	Bit    Unit = 1
-	Hex    Unit = 4
-	Octett Unit = 8
+	Bit   Unit = 1
+	Hex   Unit = 4
+	Octet Unit = 8
 )
 
 func (u Unit) Base() int {
 	switch u {
 	case Bit:
 		return 2
-	case Hex, Octett:
+	case Hex, Octet:
 		return 16
 	default:
 		return -1
@@ -357,39 +364,51 @@ func NewUniversalString(s string) *UniversalString {
 	return &UniversalString{Value: s}
 }
 
-type Bitstring struct {
+type Binarystring struct {
 	String string
 	Value  *big.Int
 	Unit   Unit
 	Length int
 }
 
-func (b *Bitstring) Type() ObjectType { return BITSTRING }
-func (b *Bitstring) Inspect() string {
+func (b *Binarystring) Type() ObjectType {
+	switch b.Unit {
+	case Bit:
+		return BITSTRING
+	case Octet:
+		return OCTETSTRING
+	case Hex:
+		return HEXSTRING
+	default:
+		panic("Unknown unit")
+	}
+}
+
+func (b *Binarystring) Inspect() string {
 	switch b.Unit {
 	case Bit:
 		return fmt.Sprintf("'%0*b'B", b.Length, b.Value)
-	case Octett:
+	case Octet:
 		return fmt.Sprintf("'%0*h'O", b.Length, b.Value)
 	default:
 		return fmt.Sprintf("'%0*h'H", b.Length, b.Value)
 	}
 }
 
-func (b *Bitstring) Equal(obj Object) bool {
-	if other, ok := obj.(*Bitstring); ok {
+func (b *Binarystring) Equal(obj Object) bool {
+	if other, ok := obj.(*Binarystring); ok {
 		return b.Value.Cmp(other.Value) == 0
 	}
 	return false
 }
 
-func (b *Bitstring) hashKey() hashKey {
+func (b *Binarystring) hashKey() hashKey {
 	h := fnv.New64a()
 	h.Write(b.Value.Bytes())
 	return hashKey{Type: b.Type(), Value: h.Sum64()}
 }
 
-func NewBitstring(s string) (*Bitstring, error) {
+func NewBinarystring(s string) (*Binarystring, error) {
 
 	if len(s) < 3 || s[0] != '\'' || s[len(s)-2] != '\'' {
 		return nil, ErrSyntax
@@ -403,25 +422,25 @@ func NewBitstring(s string) (*Bitstring, error) {
 	case 'H':
 		unit = Hex
 	case 'O':
-		unit = Octett
+		unit = Octet
 	default:
 		return nil, ErrSyntax
 	}
 	n := removeWhitespaces(s[1 : len(s)-2])
 
 	if i, ok := new(big.Int).SetString(n, unit.Base()); ok {
-		return &Bitstring{String: s, Value: i, Unit: unit, Length: len(n)}, nil
+		return &Binarystring{String: s, Value: i, Unit: unit, Length: len(n)}, nil
 	}
 
-	return NewBitstringWithWildcards(s, unit)
+	return NewBinarystringWithWildcards(s, unit)
 }
 
-func NewBitstringWithWildcards(s string, unit Unit) (*Bitstring, error) {
+func NewBinarystringWithWildcards(s string, unit Unit) (*Binarystring, error) {
 	n := removeWhitespaces(s[1 : len(s)-2])
 
 	switch unit {
 	case Bit, Hex:
-	case Octett:
+	case Octet:
 		if !strings.Contains(n, "*") && len(n)%2 != 0 { //number of runes between '' has to be even, unless it contains *
 			return nil, ErrSyntax
 		}
@@ -440,21 +459,21 @@ func NewBitstringWithWildcards(s string, unit Unit) (*Bitstring, error) {
 			return nil, ErrSyntax
 		}
 	}
-	return &Bitstring{String: s, Value: new(big.Int).SetInt64(-1), Unit: unit, Length: len(n)}, nil
+	return &Binarystring{String: s, Value: new(big.Int).SetInt64(-1), Unit: unit, Length: len(n)}, nil
 }
 
-func (b *Bitstring) Len() int { return b.Length }
+func (b *Binarystring) Len() int { return b.Length }
 
-func (b *Bitstring) Get(index int) Object {
+func (b *Binarystring) Get(index int) Object {
 	width := int(b.Unit)/8 + 1
 	// If b.Unit is Octett, each "digit" is two bytes wide
 	s := removeWhitespaces(b.String)
 	s = "'" + s[1+index*width:1+(index+1)*width] + s[len(s)-2:]
 	n, _ := new(big.Int).SetString(s[1:len(s)-2], b.Unit.Base())
-	return &Bitstring{String: s, Value: n, Unit: b.Unit, Length: 1} //Length one, even for Octett
+	return &Binarystring{String: s, Value: n, Unit: b.Unit, Length: 1} //Length one, even for Octett
 }
 
-func BigIntToBitstring(b *big.Int, unit Unit) string {
+func BigIntToBinaryString(b *big.Int, unit Unit) string {
 	return "'" + b.Text(unit.Base()) + "'" + unit.String()
 }
 
