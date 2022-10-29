@@ -36,8 +36,7 @@ const (
 	BOOL         ObjectType = "boolean"
 
 	// Charstring types
-	STRING    ObjectType = "string"
-	UNISTRING ObjectType = "universal string"
+	CHARSTRING ObjectType = "string"
 
 	// Binarystring types
 	BITSTRING   ObjectType = "bitstring"
@@ -293,75 +292,67 @@ func NewEnumValue(enumType *EnumType, key string) (*EnumValue, error) {
 
 type String struct {
 	Value []rune
+	ascii bool
 }
 
-func (s *String) Type() ObjectType { return STRING }
-func (s *String) Inspect() string  { return fmt.Sprintf("%q", string(s.Value)) }
-func (s *String) Runes() []rune    { return s.Value }
+func NewCharstring(s string) *String {
+	return &String{Value: []rune(s), ascii: true}
+}
+func NewUniversalString(s string) *String {
+	return &String{Value: []rune(s)}
+}
+
+// Type returns the object type CHARSTRING. This type is used for both
+// charstrings and universal charstrings.
+func (s *String) Type() ObjectType {
+	return CHARSTRING
+}
+
+// IsASCII returns true if the string only contains ASCII characters.
+func (s *String) IsASCII() bool {
+	return s.ascii
+}
+
+// Inpect returns the string value as a TTCN-3 string literal.
+func (s *String) Inspect() string {
+	return fmt.Sprintf("%q", string(s.Value))
+}
+
+// String returns the string a Go string.
+func (s *String) String() string {
+	return string(s.Value)
+}
 
 func (s *String) Equal(obj Object) bool {
 	b, ok := obj.(*String)
 	if !ok || len(s.Value) != len(b.Value) {
 		return false
 	}
-
 	for i, v := range s.Value {
 		if v != b.Value[i] {
 			return false
 		}
 	}
-
 	return true
-}
-
-func (s *String) hashKey() hashKey {
-	h := fnv.New64a()
-	h.Write([]byte(string(s.Value)))
-	return hashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
 func (s *String) Len() int {
 	return len(s.Value)
 }
 
-func (s *String) Get(index int) Object {
-	return NewString(string(s.Value[index]))
-}
-
-func NewString(s string) *String {
-	return &String{Value: []rune(s)}
-}
-
-type UniversalString struct {
-	Value string
-}
-
-func (us *UniversalString) Type() ObjectType { return UNISTRING }
-func (us *UniversalString) Inspect() string  { return us.Value }
-func (us *UniversalString) Runes() []rune    { return []rune(us.Value) }
-func (us *UniversalString) Equal(obj Object) bool {
-	if other, ok := obj.(*UniversalString); ok {
-		return us.Value == other.Value
+func (s *String) Get(i int) Object {
+	if 0 <= i || i < len(s.Value) {
+		ch := NewUniversalString(string(s.Value[i]))
+		ch.ascii = s.ascii
+		return ch
 	}
-	return false
+	return Undefined
 }
-func (us *UniversalString) hashKey() hashKey {
+
+func (s *String) hashKey() hashKey {
 	h := fnv.New64a()
-	h.Write([]byte(us.Value))
-	return hashKey{Type: us.Type(), Value: h.Sum64()}
-}
-func (us *UniversalString) Len() int {
-	return len(us.Value)
-}
-
-func (us *UniversalString) Get(index int) Object {
-	if index >= len(us.Value) {
-		return &UniversalString{Value: ""}
-	}
-	return &UniversalString{Value: string(us.Value[index])}
-}
-func NewUniversalString(s string) *UniversalString {
-	return &UniversalString{Value: s}
+	h.Write([]byte(string(s.Value)))
+	return hashKey{Type: s.Type(), Value: h.Sum64()}
 }
 
 type Binarystring struct {

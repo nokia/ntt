@@ -70,7 +70,7 @@ func matchRecordOf(val, pat sliceHolder) (bool, error) {
 	for i < val.Len() && j < pat.Len() {
 		// if pat is *runtime.String, Get(i) returns another *runtime.String
 		// whose Value array contains a single rune
-		if pat.Get(j) == runtime.AnyOrNone || pat.Get(j).Equal(runtime.NewString("*")) {
+		if pat.Get(j) == runtime.AnyOrNone || pat.Get(j).Equal(runtime.NewCharstring("*")) {
 			j++
 			back_j = j          // Pattern Element after *
 			back_i = i          // First Value Element which could be matched with that *
@@ -102,7 +102,7 @@ func matchRecordOf(val, pat sliceHolder) (bool, error) {
 	// reached if i == len(val) || j == len(pat)
 	if val.Len() == i {
 		for ; j < pat.Len(); j++ {
-			if pat.Get(j) != runtime.AnyOrNone && !pat.Get(j).Equal(runtime.NewString("*")) {
+			if pat.Get(j) != runtime.AnyOrNone && !pat.Get(j).Equal(runtime.NewCharstring("*")) {
 				return false, runtime.Errorf("First RecordOf is entirely matched, second isn't")
 			}
 		}

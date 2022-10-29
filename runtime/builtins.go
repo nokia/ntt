@@ -81,8 +81,8 @@ func checkArg(par *ast.FormalPar, arg Object) error {
 		"bitstring":            BITSTRING,
 		"hexstring":            HEXSTRING,
 		"octetstring":          OCTETSTRING,
-		"charstring":           STRING,
-		"universal charstring": STRING,
+		"charstring":           CHARSTRING,
+		"universal charstring": CHARSTRING,
 		"verdicttype":          VERDICT,
 		"any":                  ANY,
 	}

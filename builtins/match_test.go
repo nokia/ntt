@@ -216,7 +216,7 @@ func List(lt runtime.ListType, elems ...interface{}) *runtime.List {
 func makeObj(v interface{}) runtime.Object {
 	switch v := v.(type) {
 	case string:
-		return runtime.NewString(v)
+		return runtime.NewCharstring(v)
 	case int:
 		return runtime.NewInt(fmt.Sprint(v))
 	case bool:
