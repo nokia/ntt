@@ -487,7 +487,7 @@ func evalBinary(n *ast.BinaryExpr, env runtime.Scope) runtime.Object {
 	case x.Type() == runtime.BOOL:
 		return evalBoolBinary(bool(x.(runtime.Bool)), bool(y.(runtime.Bool)), op, env)
 
-	case x.Type() == runtime.STRING:
+	case x.Type() == runtime.CHARSTRING:
 		return evalStringBinary(string(x.(*runtime.String).Value), string(y.(*runtime.String).Value), op, env)
 
 	case x.Type() == runtime.BITSTRING, x.Type() == runtime.HEXSTRING, x.Type() == runtime.OCTETSTRING:

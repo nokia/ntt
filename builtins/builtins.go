@@ -23,13 +23,13 @@ func Rnd(...runtime.Object) runtime.Object {
 }
 
 func Int2Str(args ...runtime.Object) runtime.Object {
-	return runtime.NewString(args[0].(runtime.Int).String())
+	return runtime.NewCharstring(args[0].(runtime.Int).String())
 }
 
 func Int2Char(args ...runtime.Object) runtime.Object {
 	n := args[0].(runtime.Int)
 	if i := n.Uint64(); n.IsUint64() && i <= 127 {
-		return runtime.NewString(string(rune(i)))
+		return runtime.NewCharstring(string(rune(i)))
 	}
 	return runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = %s", n.String())
 }
@@ -43,15 +43,11 @@ func Int2Unichar(args ...runtime.Object) runtime.Object {
 }
 
 func Unichar2Int(args ...runtime.Object) runtime.Object {
-	type Runer interface {
-		Runes() []rune
-	}
-
-	s := args[0].(Runer).Runes()
-	if len(s) != 1 {
+	s := args[0].(*runtime.String)
+	if s.Len() != 1 {
 		return runtime.Errorf("argument must be of length=1")
 	}
-	return runtime.NewInt(int(s[0]))
+	return runtime.NewInt(int(s.Value[0]))
 }
 
 func Int2Bit(args ...runtime.Object) runtime.Object {

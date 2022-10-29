@@ -288,8 +288,8 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`int2char(128)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = 128")},
 		{`int2char(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = -1")},
 		{`int2char(70)`, `"F"`},
-		{`int2char(0)`, runtime.NewString(fmt.Sprintf("%c", 0))},
-		{`int2char(127)`, runtime.NewString(fmt.Sprintf("%c", 127))},
+		{`int2char(0)`, runtime.NewCharstring(fmt.Sprintf("%c", 0))},
+		{`int2char(127)`, runtime.NewCharstring(fmt.Sprintf("%c", 127))},
 
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, `E1.red`},
 		{`type enumerated E1{red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, `E1.red`},
