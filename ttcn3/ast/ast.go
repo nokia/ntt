@@ -525,8 +525,9 @@ type (
 
 	// A AltStmt represents an alternative statement.
 	AltStmt struct {
-		Tok  Token      // ALT or INTERLEAVE
-		Body *BlockStmt // Block statement with alternations
+		Tok       Token // ALT or INTERLEAVE
+		NoDefault Token
+		Body      *BlockStmt // Block statement with alternations
 	}
 
 	// A CallStmt represents a "call" statement with communication-block.

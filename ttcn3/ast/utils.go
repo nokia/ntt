@@ -487,6 +487,7 @@ func Children(n Node) []Node {
 
 	case *AltStmt:
 		children = add(children, n.Tok)
+		children = add(children, n.NoDefault)
 		children = add(children, n.Body)
 
 	case *CallStmt:

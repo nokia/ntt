@@ -2377,7 +2377,12 @@ func (p *parser) parseStmt() ast.Stmt {
 	case token.SELECT:
 		return p.parseSelect()
 	case token.ALT, token.INTERLEAVE:
-		return &ast.AltStmt{Tok: p.consume(), Body: p.parseBlockStmt()}
+		alt := &ast.AltStmt{Tok: p.consume()}
+		if p.tok == token.MODIF {
+			alt.NoDefault = p.consume()
+		}
+		alt.Body = p.parseBlockStmt()
+		return alt
 	case token.LBRACK:
 		return p.parseAltGuard()
 	case token.FOR:
