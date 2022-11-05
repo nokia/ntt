@@ -285,12 +285,6 @@ func (t *tree) position(pos int) Position {
 	if pos < 0 {
 		return Position{}
 	}
-	if t.cachedLineBegin <= pos && pos < t.cachedLineEnd {
-		return Position{
-			Line:   t.cacheLine + 1,
-			Column: pos - t.lines[t.cacheLine] + 1,
-		}
-	}
 	if l := t.searchLines(pos); l >= 0 {
 		return Position{
 			Line:   l + 1,
@@ -303,8 +297,9 @@ func (t *tree) position(pos int) Position {
 func (t *tree) searchLines(pos int) int {
 	// TODO(5nord) add line cache
 	i, j := 0, len(t.lines)
-	t.cachedLineBegin = i
-	t.cachedLineEnd = j
+	if t.cachedLineBegin <= pos && pos < t.cachedLineEnd {
+		return t.cachedLine
+	}
 	for i < j {
 		h := int(uint(i+j) >> 1) // avoid overflow when computing h
 		// i ≤ h < j
@@ -314,8 +309,16 @@ func (t *tree) searchLines(pos int) int {
 			j = h
 		}
 	}
-	t.cacheLine = int(i) - 1
-	return int(i) - 1
+	line := int(i) - 1
+	t.cachedLine = line
+	t.cachedLineBegin = t.lines[line]
+	if line > len(t.lines) {
+		t.cachedLineEnd = t.lines[line+1]
+	} else {
+		t.cachedLineEnd = len(t.lines)
+	}
+
+	return line
 }
 
 // Err returns the error of the subtree.
@@ -358,7 +361,7 @@ type tree struct {
 	lines   []int
 	content []byte
 	errs    []error
-	cacheLine       int
+	cachedLine       int
 	cachedLineBegin int
 	cachedLineEnd   int
 }
