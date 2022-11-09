@@ -3,6 +3,7 @@ package builtins
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 
 	"github.com/nokia/ntt/runtime"
@@ -32,6 +33,15 @@ func Int2Char(args ...runtime.Object) runtime.Object {
 		return runtime.NewCharstring(string(rune(i)))
 	}
 	return runtime.Errorf("Argument is out of range. Range is from 0 to 127. Int = %s", n.String())
+}
+
+func Str2Int(args ...runtime.Object) runtime.Object {
+	s := args[0].(*runtime.String)
+	i, err := strconv.Atoi(s.String())
+	if err != nil {
+		return runtime.Errorf("invalid syntax: %s", s.String())
+	}
+	return runtime.NewInt(i)
 }
 
 func Int2Unichar(args ...runtime.Object) runtime.Object {
@@ -136,6 +146,7 @@ func init() {
 		"int2enum(in integer i, out any e)":                     Int2Enum,
 		"int2float(in integer i) return float":                  Int2Float,
 		"int2str(in integer i) return charstring":               Int2Str,
+		"str2int(in charstring s) return integer":               Str2Int,
 		"int2unichar(in integer i) return universal charstring": Int2Unichar,
 		"lengthof(in any a) return integer":                     Lengthof,
 		"rnd() return float":                                    Rnd,
