@@ -291,6 +291,11 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`int2char(0)`, runtime.NewCharstring(fmt.Sprintf("%c", 0))},
 		{`int2char(127)`, runtime.NewCharstring(fmt.Sprintf("%c", 127))},
 
+		{`str2int("wrong")`, runtime.Errorf("invalid syntax: wrong")},
+		{`str2int("2-3")`, runtime.Errorf("invalid syntax: 2-3")},
+		{`str2int("150")`, runtime.NewInt("150")},
+		{`str2int("-150")`, runtime.NewInt("-150")},
+
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, `E1.red`},
 		{`type enumerated E1{red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, `E1.red`},
 		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, `E1.red`},
