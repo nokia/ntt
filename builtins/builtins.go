@@ -44,6 +44,16 @@ func Str2Int(args ...runtime.Object) runtime.Object {
 	return runtime.NewInt(i)
 }
 
+func Str2Float(args ...runtime.Object) runtime.Object {
+	s := args[0].(*runtime.String)
+
+	_, err := strconv.ParseFloat(s.String(), 64)
+	if err != nil {
+		return runtime.Errorf("invalid syntax: %s", s.String())
+	}
+	return runtime.NewFloat(s.String())
+}
+
 func Int2Unichar(args ...runtime.Object) runtime.Object {
 	n := args[0].(runtime.Int)
 	if i := n.Uint64(); n.IsUint64() && i <= 2147483647 {
@@ -147,6 +157,7 @@ func init() {
 		"int2float(in integer i) return float":                  Int2Float,
 		"int2str(in integer i) return charstring":               Int2Str,
 		"str2int(in charstring s) return integer":               Str2Int,
+		"str2float(in charstring s) return float":               Str2Float,
 		"int2unichar(in integer i) return universal charstring": Int2Unichar,
 		"lengthof(in any a) return integer":                     Lengthof,
 		"rnd() return float":                                    Rnd,
