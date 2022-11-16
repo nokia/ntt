@@ -308,6 +308,10 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("second argument must be an enum value")},
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("id 4 does not exist in any ranges of Enum E1")},
 
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; enum2int(testVar);`, `2`},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; enum2int("wrong")`, runtime.Errorf("Argument must be an enum value")},
+		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := red; enum2int(testVar);`, `10`},
+
 		{`int2unichar(-1)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = -1")},
 		{`int2unichar(2147483648)`, runtime.Errorf("Argument is out of range. Range is from 0 to 2147483647. Int = 2147483648")},
 		{`int2unichar(9786)`, runtime.NewUniversalString("☺")},

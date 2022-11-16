@@ -283,6 +283,14 @@ func (ev *EnumValue) SetValueById(id int) *Error {
 	}
 	return Errorf("id %d does not exist in any ranges of Enum %s", id, ev.typeRef.Name)
 }
+
+func (ev *EnumValue) ReturnIdByValue() ([]EnumRange, *Error) {
+	ranges, ok := ev.typeRef.Elements[ev.key]
+	if !ok {
+		return []EnumRange{}, Errorf("%s does not exist in Enum %s", ev.key, ev.typeRef.Name)
+	}
+	return ranges, nil
+}
 func NewEnumValue(enumType *EnumType, key string) (*EnumValue, error) {
 	if _, ok := enumType.Elements[key]; !ok {
 		return nil, fmt.Errorf("%s does not exist in Enum %s", key, enumType.Name)
