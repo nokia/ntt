@@ -92,8 +92,17 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 			}
 			return ""
 		}
-
-		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
+		executable := t.Runtime
+		k3rArgs := []string{t.T3XF, "-o", t.LogFile}
+		if gdbs := os.Getenv("GDB_SERVER"); gdbs != "" {
+			if _, err := exec.LookPath("gdbserver"); err != nil {
+				events <- tests.NewErrorEvent(err)
+				return
+			}
+			executable = "gdbserver"
+			k3rArgs = append([]string{"--once", gdbs, t.Runtime}, k3rArgs...)
+		}
+		cmd := proc.CommandContext(ctx, executable, k3rArgs...)
 		if s := get("K3RFLAGS"); s != "" {
 			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
