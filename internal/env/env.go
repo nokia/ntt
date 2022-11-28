@@ -65,7 +65,7 @@ func Expand(v string, env Env) (string, error) {
 
 		v, ok := env[name]
 		if !ok {
-			if knownVars[name] {
+			if knownVars[name] || strings.HasPrefix(name, "NTT_") || strings.HasPrefix(name, "K3_") || strings.HasPrefix(name, "SCT_") {
 				return ""
 			}
 			if err == nil {
