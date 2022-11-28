@@ -94,10 +94,10 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 		}
 		cmd := proc.CommandContext(ctx, t.Runtime, t.T3XF, "-o", t.LogFile)
 		if addr := os.Getenv("GDB_SERVER"); addr != "" {
-			gdb := proc.CommandContext(ctx, "gdbserver", "--once", addr, cmd.Name)
+			gdb := proc.CommandContext(ctx, "gdbserver", "--once", addr)
 			gdb.Args = append(gdb.Args, cmd.Args...)
 			cmd = gdb
-		} 
+		}
 		if s := get("K3RFLAGS"); s != "" {
 			cmd.Args = append(cmd.Args, strings.Fields(s)...)
 		}
