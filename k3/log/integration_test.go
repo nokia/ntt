@@ -26,7 +26,7 @@ func TestAvailableCategories(t *testing.T) {
 	}
 
 	actual := make(map[string]log.Category)
-	reg := regexp.MustCompile(`^\d+: `)
+	reg := regexp.MustCompile(`^ *\d+: *`)
 	s := bufio.NewScanner(bytes.NewReader(out))
 	for s.Scan() {
 		name := s.Text()

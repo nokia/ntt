@@ -258,7 +258,6 @@ var (
 		"CONE": "CONE|Connection error|First port name|Second port name|Error detail",
 		"CONV": "CONV|Constraint violation|Type name|Constraint|Value name|Erroneous value",
 		"DEAD": "DEAD|Deadlock: no alternative available",
-		"DECF": "DECF|Decode failed|Port name|Erroneous data",
 		"DIRE": "DIRE|Discard report at port|Port name|Error detail",
 		"DIV0": "DIV0|Divide by zero|Value name",
 		"DOME": "DOME|Domain error|Value name",
