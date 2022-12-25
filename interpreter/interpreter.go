@@ -47,14 +47,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		return eval(n.Decl, env)
 
 	case *ast.ValueDecl:
-		var result runtime.Object
-		for _, decl := range n.Decls {
-			result = eval(decl, env)
-			if runtime.IsError(result) {
-				return result
-			}
-		}
-		return result
+		return evalValueDecl(n, env)
 
 	case *ast.Declarator:
 		var val runtime.Object = runtime.Undefined
@@ -780,11 +773,6 @@ func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
 		if eName == "" {
 			return runtime.Errorf("can't add key without a name")
 		}
-		existingEnv, exists := env.Get(eName)
-		if exists {
-			return runtime.Errorf("can't add key %s, name aleady exists as %s", eName, existingEnv.Inspect())
-		}
-
 		_, hasThisKey := ret.Elements[eName]
 		if hasThisKey {
 			return runtime.Errorf("can't add key %s, key with this name aleady exists", eName)
@@ -811,14 +799,40 @@ func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
 	}
 	env.Set(n.Name.String(), ret)
 
-	for enumKeyName := range ret.Elements {
-		enumKey, err := runtime.NewEnumValue(ret, enumKeyName)
-		if err != nil {
-			return runtime.Errorf("%v", err)
-		}
-		env.Set(enumKeyName, enumKey)
-	}
 	return nil
+}
+
+func evalEnumValDecl(d *ast.Declarator, enumType *runtime.EnumType) runtime.Object {
+
+	var node ast.Node = d.Value
+	switch n := node.(type) {
+
+	case *ast.CallExpr:
+
+		enumElementName := ast.Name(n)
+
+		if len(n.Args.List) != 1 {
+			return runtime.Errorf("invalid enum value")
+		}
+		arg0 := n.Args.List[0]
+		enumElementValue, err := evalInt(arg0)
+		if err != nil {
+			return runtime.Errorf("invalid enum value")
+		}
+
+		enumVal, err := runtime.NewEnumValue(enumType, enumElementName, enumElementValue)
+		if err == nil {
+			return enumVal
+		}
+
+	case *ast.Ident:
+		enumElementName := ast.Name(n)
+		enumVal, err := runtime.NewEnumValueByKey(enumType, enumElementName)
+		if err == nil {
+			return enumVal
+		}
+	}
+	return runtime.Errorf("invalid enum declarator")
 }
 
 func evalInt(n ast.Node) (int, error) {
@@ -849,4 +863,31 @@ func evalInt(n ast.Node) (int, error) {
 	default:
 		return 0, fmt.Errorf("unexpected expresiton %t", t)
 	}
+}
+
+func evalValueDecl(vd *ast.ValueDecl, env runtime.Scope) runtime.Object {
+	if vd.Type != nil {
+		if valueType, ok := env.Get(ast.Name(vd.Type)); ok {
+			switch n := valueType.(type) {
+			case *runtime.EnumType:
+				for _, decl := range vd.Decls {
+					result := evalEnumValDecl(decl, n)
+					if runtime.IsError(result) {
+						return result
+					}
+					env.Set(decl.Name.String(), result)
+				}
+				return n
+			}
+		}
+	}
+
+	var result runtime.Object
+	for _, decl := range vd.Decls {
+		result = eval(decl, env)
+		if runtime.IsError(result) {
+			return result
+		}
+	}
+	return result
 }

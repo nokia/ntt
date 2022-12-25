@@ -301,9 +301,9 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`str2float("150")`, runtime.NewFloat("150")},
 		{`str2float("-150")`, runtime.NewFloat("-150")},
 
-		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, `E1.red`},
-		{`type enumerated E1{red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, `E1.red`},
-		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, `E1.red`},
+		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, testVar); testVar`, `E1.red(0)`},
+		{`type enumerated E1 {red(10), green(0), blue(1)}; var E1 testVar := blue; int2enum(10, testVar); testVar`, `E1.red(10)`},
+		{`type enumerated E1 {red(10..20), green, blue}; var E1 testVar := blue; int2enum(11, testVar); testVar`, `E1.red(11)`},
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(9223372036854775808, testVar)`, runtime.Errorf("integer value out of range (int64)")},
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(0, "wrong")`, runtime.Errorf("second argument must be an enum value")},
 		{`type enumerated E1 {red, green, blue}; var E1 testVar := blue; int2enum(4, testVar)`, runtime.Errorf("id 4 does not exist in any ranges of Enum E1")},
@@ -493,6 +493,14 @@ func TestEnums(t *testing.T) {
 		return ret
 	}
 
+	NewEnumValue := func(enumTypeKey string, enumTypeValue int, et *runtime.EnumType) *runtime.EnumValue {
+		ret, _ := runtime.NewEnumValue(
+			et,
+			enumTypeKey,
+			enumTypeValue)
+		return ret
+	}
+
 	tests := []struct {
 		input    string
 		expected runtime.Object
@@ -530,8 +538,22 @@ func TestEnums(t *testing.T) {
 
 		//TODO:
 		//{"type record of enumerated { E } RoE", ??},
-	}
 
+		{
+			"type enumerated EB {red(0..10)}; var EB v := red(1); v;",
+			NewEnumValue("red", 1,
+				NewEnumTypeWithIds("EB", "red", []runtime.EnumRange{{First: 0, Last: 10}}),
+			),
+		},
+		{
+			"type enumerated EC {red(0..10), blue}; var EC v := blue; v;",
+			NewEnumValue("blue", 11,
+				NewEnumTypeWithIds("EC",
+					"red", []runtime.EnumRange{{First: 0, Last: 10}},
+					"blue", []runtime.EnumRange{{First: 11, Last: 11}}),
+			),
+		},
+	}
 	for _, tt := range tests {
 
 		val := testEval(t, tt.input)
@@ -547,6 +569,10 @@ func TestEnums(t *testing.T) {
 				t.Errorf("\n%s\nwrong error message.\ngot=%q,\nwant=%s", tt.input, err.Error(), expected.Error())
 			}
 		case *runtime.EnumType:
+			if !tt.expected.Equal(val) {
+				t.Errorf("\n%s\ngot=%v,\nwant=%v", tt.input, val, expected)
+			}
+		case *runtime.EnumValue:
 			if !tt.expected.Equal(val) {
 				t.Errorf("\n%s\ngot=%v,\nwant=%v", tt.input, val, expected)
 			}

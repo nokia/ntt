@@ -254,22 +254,33 @@ func NewEnumType(enumTypeName string, Enums ...string) *EnumType {
 type EnumValue struct {
 	typeRef *EnumType
 	key     string
+	value   int
 }
 
 func (ev *EnumValue) Type() ObjectType { return ENUM_VALUE }
-func (ev *EnumValue) Inspect() string  { return fmt.Sprintf("%s.%s", ev.typeRef.Name, ev.key) }
+func (ev *EnumValue) Inspect() string {
+	return fmt.Sprintf("%s.%s(%d)", ev.typeRef.Name, ev.key, ev.value)
+}
 func (ev *EnumValue) Equal(obj Object) bool {
 	other, ok := obj.(*EnumValue)
 	if !ok {
 		return false
 	}
-	return ev.key == other.key
+	return ev.key == other.key && ev.value == other.value
 }
 func (ev *EnumValue) SetValueByKey(key string) *Error {
-	if _, ok := ev.typeRef.Elements[key]; !ok {
+	keyRanges, ok := ev.typeRef.Elements[key]
+	if !ok {
 		return Errorf("%s does not exist in Enum %s", key, ev.typeRef.Name)
 	}
+	if len(keyRanges) != 1 {
+		return Errorf("Provided key has more than one value")
+	}
+	if keyRanges[0].First != keyRanges[0].Last {
+		return Errorf("Provided key has range")
+	}
 	ev.key = key
+	ev.value = keyRanges[0].First
 	return nil
 }
 func (ev *EnumValue) SetValueById(id int) *Error {
@@ -277,17 +288,35 @@ func (ev *EnumValue) SetValueById(id int) *Error {
 		for _, enumRange := range enumRanges {
 			if enumRange.Contains(id) {
 				ev.key = key
+				ev.value = id
 				return nil
 			}
 		}
 	}
 	return Errorf("id %d does not exist in any ranges of Enum %s", id, ev.typeRef.Name)
 }
-func NewEnumValue(enumType *EnumType, key string) (*EnumValue, error) {
-	if _, ok := enumType.Elements[key]; !ok {
+
+func NewEnumValueByKey(enumType *EnumType, key string) (*EnumValue, error) {
+
+	ret := &EnumValue{typeRef: enumType, key: key, value: 0}
+	if err := ret.SetValueByKey(key); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func NewEnumValue(enumType *EnumType, key string, id int) (*EnumValue, error) {
+
+	keyRanges, ok := enumType.Elements[key]
+	if !ok {
 		return nil, fmt.Errorf("%s does not exist in Enum %s", key, enumType.Name)
 	}
-	return &EnumValue{typeRef: enumType, key: key}, nil
+	for _, enumRange := range keyRanges {
+		if enumRange.Contains(id) {
+			return &EnumValue{typeRef: enumType, key: key, value: int(id)}, nil
+		}
+	}
+	return nil, fmt.Errorf("%s does no contain %d", key, id)
 }
 
 type String struct {
