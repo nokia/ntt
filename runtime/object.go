@@ -214,9 +214,11 @@ func (er EnumRange) ToString() string {
 	return fmt.Sprintf("%d..%d", er.First, er.Last)
 }
 
+type EnumElements map[string][]EnumRange
+
 type EnumType struct {
 	Name     string
-	Elements map[string][]EnumRange
+	Elements EnumElements
 }
 
 func (et *EnumType) Type() ObjectType { return ENUM_TYPE }
@@ -243,7 +245,7 @@ func (et *EnumType) Equal(obj Object) bool {
 func NewEnumType(enumTypeName string, Enums ...string) *EnumType {
 	ret := EnumType{}
 	ret.Name = enumTypeName
-	ret.Elements = make(map[string][]EnumRange)
+	ret.Elements = make(EnumElements)
 	for EnumId, EnumName := range Enums {
 		ranges := []EnumRange{{First: EnumId, Last: EnumId}}
 		ret.Elements[EnumName] = ranges

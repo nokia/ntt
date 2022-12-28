@@ -553,6 +553,20 @@ func TestEnums(t *testing.T) {
 					"blue", []runtime.EnumRange{{First: 11, Last: 11}}),
 			),
 		},
+		{
+			"type record of enumerated { red } ED; ED;",
+			runtime.NewRecordOf(
+				NewEnumTypeWithIds("",
+					"red", []runtime.EnumRange{{First: 0, Last: 0}},
+				)),
+		},
+		{
+			"type set of enumerated { blue } EE; EE;",
+			runtime.NewSetOf(
+				NewEnumTypeWithIds("",
+					"blue", []runtime.EnumRange{{First: 0, Last: 0}},
+				)),
+		},
 	}
 	for _, tt := range tests {
 
@@ -573,6 +587,10 @@ func TestEnums(t *testing.T) {
 				t.Errorf("\n%s\ngot=%v,\nwant=%v", tt.input, val, expected)
 			}
 		case *runtime.EnumValue:
+			if !tt.expected.Equal(val) {
+				t.Errorf("\n%s\ngot=%v,\nwant=%v", tt.input, val, expected)
+			}
+		case *runtime.List:
 			if !tt.expected.Equal(val) {
 				t.Errorf("\n%s\ngot=%v,\nwant=%v", tt.input, val, expected)
 			}
