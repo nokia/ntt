@@ -5,12 +5,10 @@
 //
 // Here is a simple example, opening a project configuration:
 //
-// 	conf, err := project.Open("/path/to/project")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-//
-//
+//	conf, err := project.Open("/path/to/project")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 package project
 
 import (
@@ -1077,6 +1075,12 @@ func (m *Manifest) updateVariables() {
 			m.Variables[k] = v
 		}
 	}
+	for k, v := range env.EnvironMap() {
+		if strings.HasPrefix(k, "NTT_") || strings.HasPrefix(k, "K3_") || strings.HasPrefix(k, "SCT_") {
+			m.Variables[k] = v
+		}
+	}
+
 	if len(m.Variables) == 0 {
 		m.Variables = nil
 	}
