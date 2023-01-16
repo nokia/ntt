@@ -14,10 +14,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/nokia/ntt/internal/cache"
-	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
@@ -49,11 +47,6 @@ Test baskets are also supported (see "ntt help list"). Bellow example will run
 all tests with @stable-tag:
 
 	NTT_LIST_BASKETS=stable ntt run
-
-
-Environment variables:
-
-* SCT_K3_SERVER=on	use k3s as backend.
 
 `,
 
@@ -112,32 +105,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("building test suite failed: %w", err)
 	}
 
-	files, ids := splitArgs(args, cmd.ArgsLenAtDash())
-
-	// Use Nokia-internal TTCN-3 runner, if SCT_K3_SERVER is set.
-	if s, ok := os.LookupEnv("SCT_K3_SERVER"); ok && s != "ntt" && strings.ToLower(s) != "off" {
-		k3s := proc.CommandContext(ctx, "k3s",
-			"--no-summary",
-			fmt.Sprintf("--results-file=%s", ResultsFile),
-			fmt.Sprintf("-j%d", MaxWorkers),
-		)
-		if s := env.Getenv("K3SFLAGS"); s != "" {
-			k3s.Args = append(k3s.Args, strings.Fields(s)...)
-		}
-		k3s.Args = append(k3s.Args, files...)
-		for _, f := range testsFiles {
-			tests, err := readTestsFromFile(f)
-			if err != nil {
-				return err
-			}
-			ids = append(tests, ids...)
-		}
-		k3s.Stdin = strings.NewReader(strings.Join(ids, "\n"))
-		k3s.Stdout = os.Stdout
-		k3s.Stderr = os.Stderr
-		log.Verboseln("+", k3s.String())
-		return k3s.Run()
-	}
+	_, ids := splitArgs(args, cmd.ArgsLenAtDash())
 
 	jobs, err := JobQueue(ctx, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
 	if err != nil {
