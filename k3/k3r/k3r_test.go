@@ -65,6 +65,7 @@ func TestEvents(t *testing.T) {
 			input: "X.X",
 			events: []string{
 				"ErrorEvent error (no such module)",
+				"ErrorEvent error (no such module)",
 			}},
 		{
 			input: "test3.test3",
