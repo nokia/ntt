@@ -27,11 +27,13 @@ func (c Category) String() string {
 
 const (
 	ACFG    Category = "acfg|Assembly Configuration Info|Key|Value"
+	ACLO    Category = "aclo|Adapter Control Log|detail"
 	ALEN    Category = "alen|Alt enter"
 	ALLV    Category = "allv|Alt leave"
 	ALRP    Category = "alrp|Alt repeat"
 	ALWT    Category = "alwt|Alternation wait: no alternative ready|Time at which to wake unless an alternative becomes ready"
 	ASEN    Category = "asen|Altstep enter|Altstep name + parameters"
+	ASLO    Category = "aslo|Adapter Server Log|detail"
 	ASLV    Category = "aslv|Altstep leave|Altstep name + parameters"
 	BCTR    Category = "bctr|Backtrace event tracks frames visited by components|Component name and tracked frames"
 	COAL    Category = "coal|alive operation|Component name|Result: alive/killed"
@@ -87,7 +89,7 @@ const (
 	PTUN    Category = "ptun|Port unmapped|Component port name or all|Optional system port name"
 	RVON    Category = "rvon|produces value return. To be used for switching on return value logging for functions"
 	SDBG    Category = "sdbg|SnapDebug|message"
-	SETV    Category = "setv|setverdict operation|Previous verdict|New verdict|reason"
+	SETV    Category = "setv|setverdict operation|Previous verdict|New verdict|Reason"
 	TCEN    Category = "tcen|Testcase enter|Testcase name + parameters"
 	TCFI    Category = "tcfi|Testcase finished|testcase name|verdict"
 	TCLV    Category = "tclv|Testcase leave|Testcase name + parameters"
@@ -173,11 +175,13 @@ var (
 	// and the description of the category.
 	Categories = map[string]Category{
 		"acfg": "acfg|Assembly Configuration Info|Key|Value",
+		"aclo": "aclo|Adapter Control Log|detail",
 		"alen": "alen|Alt enter",
 		"allv": "allv|Alt leave",
 		"alrp": "alrp|Alt repeat",
 		"alwt": "alwt|Alternation wait: no alternative ready|Time at which to wake unless an alternative becomes ready",
 		"asen": "asen|Altstep enter|Altstep name + parameters",
+		"aslo": "aslo|Adapter Server Log|detail",
 		"aslv": "aslv|Altstep leave|Altstep name + parameters",
 		"bctr": "bctr|Backtrace event tracks frames visited by components|Component name and tracked frames",
 		"coal": "coal|alive operation|Component name|Result: alive/killed",
@@ -233,7 +237,7 @@ var (
 		"ptun": "ptun|Port unmapped|Component port name or all|Optional system port name",
 		"rvon": "rvon|produces value return. To be used for switching on return value logging for functions",
 		"sdbg": "sdbg|SnapDebug|message",
-		"setv": "setv|setverdict operation|Previous verdict|New verdict|reason",
+		"setv": "setv|setverdict operation|Previous verdict|New verdict|Reason",
 		"tcen": "tcen|Testcase enter|Testcase name + parameters",
 		"tcfi": "tcfi|Testcase finished|testcase name|verdict",
 		"tclv": "tclv|Testcase leave|Testcase name + parameters",
