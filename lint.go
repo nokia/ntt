@@ -246,9 +246,7 @@ func lint(cmd *cobra.Command, args []string) error {
 				stack := make([]ast.Node, 1, 64)
 				cc := make(map[ast.Node]int)
 				ccID := ast.Node(mod)
-
 				caseElse := make(map[ast.Node]int)
-				var selectID *ast.SelectStmt
 
 				ast.Inspect(mod, func(n ast.Node) bool {
 					if n == nil {
@@ -341,8 +339,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					case *ast.ExceptExpr:
 						checkBraces(fset, n.LBrace, n.RBrace)
 					case *ast.SelectStmt:
-						selectID = n
-						caseElse[selectID] = 0
+						caseElse[n] = 0
 						checkBraces(fset, n.LBrace, n.RBrace)
 					case *ast.StructSpec:
 						checkBraces(fset, n.LBrace, n.RBrace)
@@ -379,8 +376,8 @@ func lint(cmd *cobra.Command, args []string) error {
 						cc[ccID]++
 
 					case *ast.CaseClause:
-						if isCaseElse(n) {
-							caseElse[selectID]++
+						if p, ok := tree.ParentOf(n).(*ast.SelectStmt); ok && isCaseElse(n) {
+							caseElse[p]++
 						} else {
 							// Do not count case else for complexity
 							cc[ccID]++
