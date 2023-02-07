@@ -189,6 +189,9 @@ func fatal(err error) {
 	switch err := err.(type) {
 	case *exec.ExitError:
 		waitStatus := err.Sys().(syscall.WaitStatus)
+		if waitStatus.ExitStatus() == -1 {
+			errors.PrintError(os.Stderr, err)
+		}
 		os.Exit(waitStatus.ExitStatus())
 	case errors.ErrorList:
 		errors.PrintError(os.Stderr, err)
