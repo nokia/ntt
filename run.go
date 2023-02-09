@@ -138,6 +138,8 @@ func runTests(cmd *cobra.Command, args []string) error {
 		log.Debugf("result: event=%#v\n", e)
 
 		switch e := e.(type) {
+		case tests.LogEvent:
+			log.Debugln(e.Text)
 
 		case tests.StartEvent:
 			running[e.Job] = e.Time()

@@ -2,13 +2,13 @@ package k3r
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nokia/ntt/internal/env"
@@ -32,9 +32,6 @@ type Test struct {
 
 	// LogFile is the path to the log file.
 	LogFile string
-
-	// Stderr is the stderr of the test.
-	Stderr bytes.Buffer
 }
 
 var (
@@ -109,8 +106,12 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 		}
 		cmd.Env = env
 		cmd.Stdin = strings.NewReader(t.request())
-		cmd.Stderr = &t.Stderr
 		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			events <- tests.NewErrorEvent(&Error{Err: err})
+			return
+		}
+		stderr, err := cmd.StderrPipe()
 		if err != nil {
 			events <- tests.NewErrorEvent(&Error{Err: err})
 			return
@@ -122,10 +123,25 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 			return
 		}
 
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			scanner := bufio.NewScanner(stderr)
+			scanner.Split(bufio.ScanLines)
+			for scanner.Scan() {
+				events <- tests.NewLogEvent(t.Job, "k3r: "+scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				events <- tests.NewErrorEvent(&Error{Err: err})
+			}
+		}()
+
 		// k3r does not have a ControlStarted event, so we'll fake it.
 		if strings.HasSuffix(t.Name, ".control") {
 			events <- tests.NewStartEvent(t.Job, t.Name)
 		}
+
 		scanner := bufio.NewScanner(stdout)
 		scanner.Split(bufio.ScanLines)
 		var name string
@@ -172,6 +188,10 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 				events <- tests.NewErrorEvent(fmt.Errorf("%w: %s", ErrInvalidMessage, line))
 			}
 		}
+		if err := scanner.Err(); err != nil {
+			events <- tests.NewErrorEvent(&Error{Err: err})
+		}
+		wg.Wait()
 		err = waitGracefully(t, cmd)
 		if ctx.Err() == context.DeadlineExceeded {
 			events <- tests.NewErrorEvent(ErrTimeout)
