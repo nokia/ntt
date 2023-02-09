@@ -71,6 +71,17 @@ func NewErrorEvent(err error) ErrorEvent {
 	return ErrorEvent{event{t: time.Now()}, err}
 }
 
+// LogEvent is an event that provided additional information about the test execution.
+type LogEvent struct {
+	Text string
+	event
+	*Job
+}
+
+func NewLogEvent(job *Job, text string) LogEvent {
+	return LogEvent{event: event{t: time.Now()}, Job: job, Text: text}
+}
+
 // StartEvent is an event that is emitted when the test is started.
 type StartEvent struct {
 	Name string
@@ -119,6 +130,8 @@ func UnwrapJob(e Event) *Job {
 	case StartEvent:
 		return e.Job
 	case StopEvent:
+		return e.Job
+	case LogEvent:
 		return e.Job
 	case ErrorEvent:
 		var err *JobError
