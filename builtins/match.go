@@ -65,38 +65,38 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 
 // matchRecordOf returns true if recordOfs match
 func matchRecordOf(val, pat sliceHolder) (bool, error) {
-	i, back_i := 0, -1
-	j, back_j := 0, -1
+	i, backI := 0, -1
+	j, backJ := 0, -1
 	for i < val.Len() && j < pat.Len() {
 		// if pat is *runtime.String, Get(i) returns another *runtime.String
 		// whose Value array contains a single rune
 		if pat.Get(j) == runtime.AnyOrNone || pat.Get(j).Equal(runtime.NewCharstring("*")) {
 			j++
-			back_j = j          // Pattern Element after *
-			back_i = i          // First Value Element which could be matched with that *
+			backJ = j           // Pattern Element after *
+			backI = i           // First Value Element which could be matched with that *
 			if j == pat.Len() { // Optimize trailing * case
 				return true, nil
 			}
 		} else if ok, _ := match(val.Get(i), pat.Get(j)); !ok { // Literal character or ?
-			if back_j < 0 {
+			if backJ < 0 {
 				return false, runtime.Errorf("Pattern doesn't match, Element number %d mismatch", i-1) /* No Backtracking possible */
 			}
 			// Try again from last *, one character later in str.
-			j = back_j
-			back_i++
-			i = back_i
+			j = backJ
+			backI++
+			i = backI
 		} else {
 			i++
 			j++
 		}
 		if j == pat.Len() && i != val.Len() {
-			if back_j < 0 {
+			if backJ < 0 {
 				return false, runtime.Errorf("Second RecordOf is matched entirely, first isn't")
 			}
 			// Try again from last *, one character later in str.
-			j = back_j
-			back_i++
-			i = back_i
+			j = backJ
+			backI++
+			i = backI
 		}
 	}
 	// reached if i == len(val) || j == len(pat)
