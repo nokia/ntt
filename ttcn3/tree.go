@@ -184,39 +184,39 @@ func (t *Tree) ModulePars() []*Definition {
 
 // Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
 // not been parsed yet, Pos will return loc.NoPos.
-func (tree *Tree) Pos(line int, column int) loc.Pos {
-	if tree.FileSet == nil {
+func (t *Tree) Pos(line int, column int) loc.Pos {
+	if t.FileSet == nil {
 		return loc.NoPos
 	}
 
 	// We assume every FileSet has only one file, to make this work.
-	return loc.Pos(int(tree.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
+	return loc.Pos(int(t.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
 // Position return a human readable position of the node.
-func (tree *Tree) Position(pos loc.Pos) loc.Position {
-	if tree.FileSet == nil {
+func (t *Tree) Position(pos loc.Pos) loc.Position {
+	if t.FileSet == nil {
 		return loc.Position{}
 	}
-	return tree.FileSet.Position(pos)
+	return t.FileSet.Position(pos)
 }
 
 // ExprAt returns the primary expression at the given position.
-func (tree *Tree) ExprAt(pos loc.Pos) ast.Expr {
-	s := tree.SliceAt(pos)
+func (t *Tree) ExprAt(pos loc.Pos) ast.Expr {
+	s := t.SliceAt(pos)
 	if len(s) == 0 {
-		log.Debugf("%s: no expression at cursor position.\n", tree.Position(pos))
+		log.Debugf("%s: no expression at cursor position.\n", t.Position(pos))
 		return nil
 	}
 
 	id, ok := s[0].(*ast.Ident)
 	if !ok {
-		log.Debugf("%s: no identifier at cursor position.\n", tree.Position(pos))
+		log.Debugf("%s: no identifier at cursor position.\n", t.Position(pos))
 		return nil
 	}
 
 	// Return the most left selector subtree (SelectorExpr is left-associative).
-	if p, ok := tree.ParentOf(id).(*ast.SelectorExpr); ok && id == p.Sel {
+	if p, ok := t.ParentOf(id).(*ast.SelectorExpr); ok && id == p.Sel {
 		return p
 	}
 
@@ -224,7 +224,7 @@ func (tree *Tree) ExprAt(pos loc.Pos) ast.Expr {
 }
 
 // SliceAt returns the slice of nodes at the given position.
-func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
+func (t *Tree) SliceAt(pos loc.Pos) []ast.Node {
 	var (
 		path  []ast.Node
 		visit func(n ast.Node)
@@ -245,7 +245,7 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 		}
 
 	}
-	visit(tree.Root)
+	visit(t.Root)
 
 	// Reverse path so leaf is first element.
 	for i := 0; i < len(path)/2; i++ {
@@ -257,13 +257,13 @@ func (tree *Tree) SliceAt(pos loc.Pos) []ast.Node {
 
 // Lookup returns the definitions of the given expression. For handling imports
 // and multiple modules, use LookupWithDB.
-func (tree *Tree) Lookup(n ast.Expr) []*Definition {
-	return newFinder(&DB{}).lookup(n, tree)
+func (t *Tree) Lookup(n ast.Expr) []*Definition {
+	return newFinder(&DB{}).lookup(n, t)
 }
 
 // LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
-func (tree *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
-	return newFinder(db).lookup(n, tree)
+func (t *Tree) LookupWithDB(n ast.Expr, db *DB) []*Definition {
+	return newFinder(db).lookup(n, t)
 
 }
 
