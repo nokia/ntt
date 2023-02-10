@@ -31,7 +31,7 @@ var (
 	RunCommand = &cobra.Command{
 		Use:   "run [ <path>... ] [ -- <test id>... ]",
 		Short: "Build and run test suite",
-		Long: `Run tests from a TTCN-3 test suite.
+		Long: `Build and run a test suite.
 
 The ntt run command first builds a test executable using the files or
 directories passed as first argument list.
