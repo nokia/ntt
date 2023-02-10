@@ -26,11 +26,13 @@ func (c Category) String() string {
 }
 
 const (
+	ACDE    Category = "acde|Adapter Control Debug Log|detail"
 	ACFG    Category = "acfg|Assembly Configuration Info|Key|Value"
 	ALEN    Category = "alen|Alt enter"
 	ALLV    Category = "allv|Alt leave"
 	ALRP    Category = "alrp|Alt repeat"
 	ALWT    Category = "alwt|Alternation wait: no alternative ready|Time at which to wake unless an alternative becomes ready"
+	ASDE    Category = "asde|Adapter Server Debug Log|detail"
 	ASEN    Category = "asen|Altstep enter|Altstep name + parameters"
 	ASLV    Category = "aslv|Altstep leave|Altstep name + parameters"
 	BCTR    Category = "bctr|Backtrace event tracks frames visited by components|Component name and tracked frames"
@@ -172,11 +174,13 @@ var (
 	// Categories is a map of all categories. The key is the category name
 	// and the description of the category.
 	Categories = map[string]Category{
+		"acde": "acde|Adapter Control Debug Log|detail",
 		"acfg": "acfg|Assembly Configuration Info|Key|Value",
 		"alen": "alen|Alt enter",
 		"allv": "allv|Alt leave",
 		"alrp": "alrp|Alt repeat",
 		"alwt": "alwt|Alternation wait: no alternative ready|Time at which to wake unless an alternative becomes ready",
+		"asde": "asde|Adapter Server Debug Log|detail",
 		"asen": "asen|Altstep enter|Altstep name + parameters",
 		"aslv": "aslv|Altstep leave|Altstep name + parameters",
 		"bctr": "bctr|Backtrace event tracks frames visited by components|Component name and tracked frames",
