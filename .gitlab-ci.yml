@@ -16,6 +16,7 @@ workflow:
 
 stages:
   - test
+  - quality
 
 golang:1.16:
   stage: test
@@ -31,9 +32,10 @@ golang:latest:
     - go test ./...
 
 coverage:
-  stage: test
+  stage: quality
   image: golang:latest
   extends: .go-cache
+  needs: []
   script:
     - go install github.com/boumenot/gocover-cobertura@latest
     - go test -coverprofile=coverage.out -covermode count ./...
@@ -47,8 +49,9 @@ coverage:
   #       path: report-coverage.xml
 
 lint:
-  stage: test
+  stage: quality
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  needs: []
   script:
     - golangci-lint run
   artifacts:
