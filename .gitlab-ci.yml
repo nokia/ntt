@@ -29,7 +29,7 @@ golang:latest:
   extends: .go-cache
   script:
     - go install gotest.tools/gotestsum@latest
-    - $GOPATH/bin/gotestsum --junitfile report-junit.xml --format testname -- -v ./...
+    - $GOPATH/bin/gotestsum --junitfile report-junit.xml --format testname -- -race ./...
   artifacts:
     reports:
       junit: report-junit.xml
