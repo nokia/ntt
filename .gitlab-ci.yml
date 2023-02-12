@@ -41,12 +41,9 @@ coverage:
     - go test -coverprofile=coverage.out -covermode count ./...
     - $GOPATH/bin/gocover-cobertura <coverage.out >report-coverage.xml
   coverage: '/coverage: \d+.\d+% of statements/'
-  # Not supported, yet. Wait for GitLab 14.10
-  # artifacts:
-  #   reports:
-  #     coverage_report:
-  #       coverage_format: cobertura
-  #       path: report-coverage.xml
+  artifacts:
+    reports:
+      cobertura: report-coverage.xml
 
 lint:
   stage: quality
