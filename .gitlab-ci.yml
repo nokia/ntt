@@ -16,7 +16,6 @@ workflow:
 
 stages:
   - test
-  - quality
 
 golang:1.16:
   stage: test
@@ -36,7 +35,7 @@ golang:latest:
       junit: report-junit.xml
 
 coverage:
-  stage: quality
+  stage: test
   image: golang:latest
   extends: .go-cache
   needs: []
@@ -50,7 +49,7 @@ coverage:
       cobertura: report-coverage.xml
 
 lint:
-  stage: quality
+  stage: test
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   needs: []
   script:
