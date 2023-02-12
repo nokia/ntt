@@ -17,7 +17,7 @@ run:
     - ttcn3/v2/syntax/internal/gen/.*
 
 output:
-  format: code-climate:gl-code-quality-report.json,colored-line-number:stdout
+  format: code-climate:report-lint.json,colored-line-number:stdout
 
 linters:
   enable-all: true

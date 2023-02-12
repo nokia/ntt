@@ -1,32 +1,51 @@
-image: golang:latest
+.go-cache:
+  variables:
+    GOPATH: $CI_PROJECT_DIR/.go
+  before_script:
+    - mkdir -p .go
+  cache:
+    paths:
+      - .go/pkg/mod/
 
 stages:
   - test
 
 golang:1.16:
-  image: golang:1.16
   stage: test
+  image: golang:1.16
   script:
     - go test ./...
 
-test:
+golang:latest:
   stage: test
+  image: golang:latest
+  extends: .go-cache
   script:
-    - go test -coverprofile=coverage.out ./...
+    - go test ./...
+
+coverage:
+  stage: test
+  image: golang:latest
+  extends: .go-cache
+  script:
+    - go install github.com/boumenot/gocover-cobertura@latest
+    - go test -coverprofile=coverage.out -covermode count ./...
+    - $GOPATH/bin/gocover-cobertura <coverage.out >report-coverage.xml
   coverage: '/coverage: \d+.\d+% of statements/'
-  artifacts:
-    when: always
-    paths:
-      - coverage.out
-    expire_in: 1 week
+  # Not supported, yet. Wait for GitLab 14.10
+  # artifacts:
+  #   reports:
+  #     coverage_report:
+  #       coverage_format: cobertura
+  #       path: report-coverage.xml
 
 lint:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   stage: test
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   script:
     - golangci-lint run
   artifacts:
     reports:
-      codequality: gl-code-quality-report.json
+      codequality: report-lint.json
     paths:
-      - gl-code-quality-report.json
+      - report-lint.json
