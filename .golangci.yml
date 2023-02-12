@@ -18,6 +18,3 @@ run:
 
 output:
   format: code-climate:report-lint.json,colored-line-number:stdout
-
-linters:
-  enable-all: true
