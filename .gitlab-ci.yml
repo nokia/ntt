@@ -3,6 +3,12 @@ image: golang:latest
 stages:
   - test
 
+golang:1.16:
+  image: golang:1.16
+  stage: test
+  script:
+    - go test ./...
+
 test:
   stage: test
   script:
@@ -14,24 +20,20 @@ test:
       - coverage.out
     expire_in: 1 week
 
+include:
+  - template: Code-Quality.gitlab-ci.yml
+
+code_quality:
+  tags: [big]
+  image: docker:stable
+  services: [] # Disable Docker-in-Docker
+  artifacts:
+    paths: [gl-code-quality-report.json]
+
 staticcheck:
+  tags: [big]
   stage: test
   script:
     - go install honnef.co/go/tools/cmd/staticcheck@latest
     - staticcheck ./...
   allow_failure: true
-
-golang:1.16:
-  image: golang:1.16
-  stage: test
-  script:
-    - go test ./...
-
-include:
-  - template: Code-Quality.gitlab-ci.yml
-
-code_quality:
-  image: docker:stable
-  services: [] # Disable Docker-in-Docker
-  artifacts:
-    paths: [gl-code-quality-report.json]
