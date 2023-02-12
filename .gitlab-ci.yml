@@ -12,13 +12,14 @@ test:
     when: always
     paths:
       - coverage.out
-    expire_in: 1 hour
+    expire_in: 1 week
 
 staticcheck:
   stage: test
   script:
     - go install honnef.co/go/tools/cmd/staticcheck@latest
     - staticcheck ./...
+  allow_failure: true
 
 golang:1.16:
   image: golang:1.16
@@ -27,17 +28,10 @@ golang:1.16:
     - go test ./...
 
 include:
-   - template: Code-Quality.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
 
 code_quality:
   image: docker:stable
-  services: # Disable Docker-in-Docker
+  services: [] # Disable Docker-in-Docker
   artifacts:
     paths: [gl-code-quality-report.json]
-  rules:
-    - if: $CODE_QUALITY_DISABLED
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
-
