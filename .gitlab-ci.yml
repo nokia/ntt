@@ -24,7 +24,7 @@ build:
   image: golang:latest
   script:
     - go build
-    - echo "BUILD_JOB_URL=${CI_JOB_URL}" >> build.env
+    - echo "BUILD_JOB_ID=${CI_JOB_ID}" >> build.env
   artifacts:
     reports:
       dotenv: build.env
@@ -76,7 +76,7 @@ lint:
 trigger-k3:
   stage: integration
   variables:
-    K3CI_NTT_BUILD_JOB_URL: ${BUILD_JOB_URL}
+    K3CI_NTT_BUILD_JOB_ID: ${BUILD_JOB_ID}
   needs: [build]
   trigger:
     project: k3/k3
