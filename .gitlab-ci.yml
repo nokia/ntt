@@ -15,7 +15,20 @@ workflow:
       - .go/pkg/mod/
 
 stages:
+  - build
   - test
+  - integration
+
+build:
+  stage: build
+  image: golang:latest
+  script:
+    - go build
+    - echo "BUILD_JOB_URL=${CI_JOB_URL}" >> build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+    paths: [ntt]
 
 golang:1.16:
   stage: test
@@ -59,3 +72,12 @@ lint:
       codequality: report-lint.json
     paths:
       - report-lint.json
+
+trigger-k3:
+  stage: integration
+  variables:
+    K3CI_NTT_BUILD_JOB_URL: ${BUILD_JOB_URL}
+  needs: [build]
+  trigger:
+    project: k3/k3
+    strategy: depend
