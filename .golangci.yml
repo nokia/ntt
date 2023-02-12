@@ -1,0 +1,23 @@
+run:
+  issues-exit-code: 0
+  tests: false
+  skip-dirs:
+    - internal/env/.*
+    - internal/fs/.*
+    - internal/loc/.*
+    - internal/lsp/fakenet/.*
+    - internal/lsp/helper/.*
+    - internal/lsp/jsonrpc2/.*
+    - internal/lsp/protocol/.*
+    - internal/lsp/span/.*
+    - internal/lsp/telemetry/.*
+    - internal/lsp/xcontext/.*
+    - internal/memoize/.*
+    - internal/session/flock/.*
+    - ttcn3/v2/syntax/internal/gen/.*
+
+output:
+  format: code-climate:gl-code-quality-report.json,colored-line-number:stdout
+
+linters:
+  enable-all: true
