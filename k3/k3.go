@@ -328,9 +328,8 @@ func glob(globs ...string) []string {
 
 // cmake returns a variable with given name from CMakeCache.txt.
 func cmake(name string) string {
-	cache, err := findCMakeCache()
-	if err != nil {
-		log.Verboseln("k3: cmake:", err.Error())
+	cache := findCMakeCache()
+	if cache == "" {
 		return ""
 	}
 
@@ -353,7 +352,7 @@ func cmake(name string) string {
 // findCMakeCache returns the path to the CMakeCache.txt file, by walking up
 // the current working directory and the file hierarchy specified by
 // environment variable K3R
-func findCMakeCache() (string, error) {
+func findCMakeCache() string {
 	find := func(path string) string {
 		var res string
 		fs.WalkUp(path, func(path string) bool {
@@ -366,16 +365,17 @@ func findCMakeCache() (string, error) {
 	}
 	cwd, err := os.Getwd()
 	if err != nil {
-		return "", err
+		log.Verboseln("k3: cmake:", err.Error())
+		return ""
 	}
 	if f := find(cwd); f != "" {
-		return f, nil
+		return f
 	}
 	if k3r := os.Getenv("K3R"); strings.HasSuffix(k3r, "src/k3r/k3r") {
-		return find(filepath.Dir(k3r)), nil
+		return find(filepath.Dir(k3r))
 	}
 
-	return "", nil
+	return ""
 }
 
 func findK3Tool(names ...string) string {
