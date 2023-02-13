@@ -343,6 +343,7 @@ func cmake(name string) string {
 	for s.Scan() {
 		if v := strings.SplitN(s.Text(), ":", 2); v[0] == name {
 			w := strings.SplitN(v[1], "=", 2)
+			log.Debugln("k3: cmake:", name, "=", w[1])
 			return w[1]
 		}
 	}
