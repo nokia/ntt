@@ -1,10 +1,3 @@
-workflow:
-  rules:
-    - if: $CI_COMMIT_TITLE =~ /-draft$/
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
 .go-cache:
   variables:
     GOPATH: $CI_PROJECT_DIR/.go
@@ -18,17 +11,6 @@ stages:
   - build
   - test
   - integration
-
-build:
-  stage: build
-  image: golang:latest
-  script:
-    - go build
-    - echo "BUILD_JOB_ID=${CI_JOB_ID}" >> build.env
-  artifacts:
-    reports:
-      dotenv: build.env
-    paths: [ntt]
 
 golang:1.16:
   stage: test
@@ -76,8 +58,8 @@ lint:
 trigger-k3:
   stage: integration
   variables:
-    K3CI_NTT_BUILD_JOB_ID: ${BUILD_JOB_ID}
-  needs: [build]
+    NTT_COMMIT_SHA: ${CI_COMMIT_SHA}
+  needs: []
   trigger:
     project: k3/k3
     strategy: depend
