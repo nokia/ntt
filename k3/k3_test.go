@@ -3,11 +3,11 @@ package k3_test
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/k3"
 )
 
@@ -21,7 +21,7 @@ func TestNewPlugin(t *testing.T) {
 	b := k3.NewPlugin(k3.DefaultEnv, "extfunc", filepath.Join(srcdir, "testdata/suite/extfunc/plugin.cc"))[0]
 	err := b.Run()
 	if err != nil {
-		t.Errorf("Run() = %v", err)
+		t.Fatalf("Run() = %v", err)
 	}
 
 	out := b.Outputs()
@@ -33,7 +33,8 @@ func TestNewPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(k3.Runtime(), "--plugin", abs)
+
+	cmd := proc.Command(k3.Runtime(), "--plugin", abs)
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Errorf("Plugin did not load correcty: %s", err.Error())
@@ -42,7 +43,6 @@ func TestNewPlugin(t *testing.T) {
 	if actual := strings.Split(string(stdout), "\n"); !sliceContains(actual, expected) {
 		t.Errorf("Plugin did not load correctly:\n%s\n", string(stdout))
 	}
-
 }
 
 func TestNewT3XF(t *testing.T) {
