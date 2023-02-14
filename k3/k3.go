@@ -82,6 +82,9 @@ func Runtime() string {
 	if k3r := os.Getenv("K3R"); k3r != "" {
 		return k3r
 	}
+	if mtc := filepath.Join(cmake("k3_BINARY_DIR"), "src/k3r/k3r"); fs.IsRegular(mtc) {
+		return mtc
+	}
 	return findK3Tool("k3r", "k3r.exe")
 }
 
@@ -389,6 +392,9 @@ func findK3Tool(names ...string) string {
 		}
 		if root := InstallDir(); root != "" {
 			if exe, err := exec.LookPath(filepath.Join(root, "bin", name)); err == nil {
+				return exe
+			}
+			if exe, err := exec.LookPath(filepath.Join(root, "libexec", name)); err == nil {
 				return exe
 			}
 		}
