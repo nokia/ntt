@@ -10,17 +10,33 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/nokia/ntt/internal/cache"
-	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/internal/session"
 )
+
+type Instance struct {
+	Compiler  string
+	Runtime   string
+	Plugins   []string
+	Includes  []string
+	LibK3     string
+	CLibs     []string
+	CIncludes []string
+	Asn1Dir   string
+
+	installDir string
+	dataDir    string
+}
+
+var k3 = &Instance{}
+
+func init() {
+}
 
 // DefaultEnv is the default environment for k3-based test suites.
 var DefaultEnv = map[string]string{
@@ -36,93 +52,34 @@ var DefaultEnv = map[string]string{
 
 // InstallDir returns the directory where k3 is probably installed.
 func InstallDir() string {
-	if s := os.Getenv("NTTROOT"); s != "" {
-		return s
-	}
-	if s := os.Getenv("K3ROOT"); s != "" {
-		return s
-	}
-	if k3r, err := exec.LookPath("k3r"); err == nil {
-		if path, _ := filepath.Abs(filepath.Join(filepath.Dir(k3r), "..")); path != "" {
-			return path
-		}
-	}
-	return ""
+	return k3.installDir
 }
 
 // DataDir returns the directory where additional files are installed (/usr/share/k3).
 func DataDir() string {
-	if s := env.Getenv("NTT_DATADIR"); s != "" {
-		return s
-	}
-	if dir := filepath.Join(InstallDir(), "share/k3"); fs.IsDir(dir) {
-		return dir
-	}
-	return ""
+	return k3.dataDir
 }
 
 // Compiler returns the path to the TTCN-3 compiler. Compiler will return "mtc"
 // if no compiler is found.
 func Compiler() string {
-	if k3c := os.Getenv("K3C"); k3c != "" {
-		return k3c
-	}
-	if mtc := os.Getenv("MTC"); mtc != "" {
-		return mtc
-	}
-	if mtc := filepath.Join(cmake("mtc_BINARY_DIR"), "source/mtc/mtc"); fs.IsRegular(mtc) {
-		return mtc
-	}
-	return findK3Tool("mtc", "k3c", "k3c.exe")
+	return k3.Compiler
 }
 
 // Runtime returns the path to the TTCN-3 runtime. Runtime will return "k3r" if
 // no runtime is found.
 func Runtime() string {
-	if k3r := os.Getenv("K3R"); k3r != "" {
-		return k3r
-	}
-	if mtc := filepath.Join(cmake("k3_BINARY_DIR"), "src/k3r/k3r"); fs.IsRegular(mtc) {
-		return mtc
-	}
-	return findK3Tool("k3r", "k3r.exe")
+	return k3.Runtime
 }
 
 // Plugins returns a list of k3 plugins.
 func Plugins() []string {
-	if dirs := k3DevelDirs(); len(dirs) > 0 {
-		return dirs
-	}
-	hints := []string{
-		"lib/k3/plugins",
-		"lib64/k3/plugins",
-		"lib/x86_64/k3/plugins",
-	}
-	for _, hint := range hints {
-		if dir := filepath.Join(InstallDir(), hint); fs.IsDir(dir) {
-			return []string{dir}
-		}
-	}
-	return nil
+	return k3.Plugins
 }
 
 // Includes returns a list of TTCN-3 include directories required by the k3 compiler.
 func Includes() []string {
-	auxDirs := Plugins()
-	if dir := DataDir(); dir != "" {
-		auxDirs = append(auxDirs, dir)
-	}
-
-	var ret []string
-	for _, dir := range auxDirs {
-		if len(fs.FindTTCN3Files(dir)) > 0 {
-			ret = append(ret, dir)
-		}
-		if dir := filepath.Join(dir, "ttcn3"); len(fs.FindTTCN3Files(dir)) > 0 {
-			ret = append(ret, dir)
-		}
-	}
-	return clean(ret...)
+	return k3.Includes
 }
 
 // NewASN1Codec returns the commands required to compile ASN.1 files.
@@ -382,34 +339,7 @@ func findCMakeCache() string {
 	return ""
 }
 
-func findK3Tool(names ...string) string {
-	if len(names) == 0 {
-		return ""
-	}
-	for _, name := range names {
-		if env := os.Getenv(strings.ToUpper(name)); env != "" {
-			return env
-		}
-		if root := InstallDir(); root != "" {
-			if exe, err := exec.LookPath(filepath.Join(root, "bin", name)); err == nil {
-				return exe
-			}
-			if exe, err := exec.LookPath(filepath.Join(root, "libexec", name)); err == nil {
-				return exe
-			}
-		}
-		if exe, err := exec.LookPath(name); err == nil {
-			return exe
-		}
-	}
-	return names[0]
-}
-
 // pathf is like fmt.Sprintf but searches the NTT_CACHE environment variable first.
 func pathf(f string, v ...interface{}) string {
 	return cache.Lookup(fmt.Sprintf(f, v...))
-}
-
-func init() {
-	session.SharedDir = "/tmp/k3"
 }
