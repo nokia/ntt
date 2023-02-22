@@ -838,7 +838,7 @@ func WithK3() ConfigOption {
 		c.K3.Runtime = k3.Runtime()
 		c.K3.Includes = k3.Includes()
 		c.K3.Plugins = k3.Plugins()
-		c.K3.OssInfo = filepath.Join(k3.DataDir(), "asn1")
+		c.K3.OssInfo = k3.OssInfo()
 		c.K3.T3XF = cache.Lookup(fmt.Sprintf("%s.t3xf", c.Name))
 		log.Debugf("project: k3 compiler : %v\n", c.K3.Compiler)
 		log.Debugf("project: k3 runtime  : %v\n", c.K3.Runtime)

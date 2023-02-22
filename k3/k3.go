@@ -20,17 +20,15 @@ import (
 )
 
 type Instance struct {
-	Compiler  string
-	Runtime   string
-	Plugins   []string
-	Includes  []string
-	LibK3     string
-	CLibs     []string
-	CIncludes []string
-	Asn1Dir   string
+	compiler  string
+	runtime   string
+	plugins   []string
+	includes  []string
+	libK3     string
+	cLibs     []string
+	cIncludes []string
 
-	installDir string
-	dataDir    string
+	ossInfo string
 }
 
 var k3 = &Instance{}
@@ -45,41 +43,36 @@ var DefaultEnv = map[string]string{
 	"ASN1C":      "asn1",
 	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
 	"ASN2TTCN":   "asn1tottcn3",
-	"OSSINFO":    filepath.Join(DataDir(), "asn1"),
+	"OSSINFO":    OssInfo(),
 	"K3C":        Compiler(),
 	"K3R":        Runtime(),
 }
 
-// InstallDir returns the directory where k3 is probably installed.
-func InstallDir() string {
-	return k3.installDir
-}
-
-// DataDir returns the directory where additional files are installed (/usr/share/k3).
-func DataDir() string {
-	return k3.dataDir
+// OssInfo returns the path to the ossinfo file.
+func OssInfo() string {
+	return k3.ossInfo
 }
 
 // Compiler returns the path to the TTCN-3 compiler. Compiler will return "mtc"
 // if no compiler is found.
 func Compiler() string {
-	return k3.Compiler
+	return k3.compiler
 }
 
 // Runtime returns the path to the TTCN-3 runtime. Runtime will return "k3r" if
 // no runtime is found.
 func Runtime() string {
-	return k3.Runtime
+	return k3.runtime
 }
 
 // Plugins returns a list of k3 plugins.
 func Plugins() []string {
-	return k3.Plugins
+	return k3.plugins
 }
 
 // Includes returns a list of TTCN-3 include directories required by the k3 compiler.
 func Includes() []string {
-	return k3.Includes
+	return k3.includes
 }
 
 // NewASN1Codec returns the commands required to compile ASN.1 files.
