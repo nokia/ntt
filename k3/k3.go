@@ -3,21 +3,26 @@
 package k3
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/nokia/ntt/internal/cache"
+	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 )
+
+// ErrNotFound is returned when no K3 installation is found.
+var ErrNotFound = errors.New("k3 or parts of k3 not found")
 
 type Instance struct {
 	compiler  string
@@ -28,12 +33,110 @@ type Instance struct {
 	cLibs     []string
 	cIncludes []string
 
-	ossInfo string
+	ossInfo     string
+	ossDefaults string
+}
+
+func New(prefix string) (*Instance, error) {
+	k := Instance{}
+
+	if k3c := env.Getenv("K3C"); k3c != "" {
+		k.compiler = k3c
+	} else {
+		k3c, err := glob(prefix + "/{bin,libexec}/{mtc,k3c}")
+		if err != nil {
+			return nil, fmt.Errorf("k3c: %w", err)
+		}
+		k.compiler = k3c[0]
+	}
+
+	if k3r := env.Getenv("K3R"); k3r != "" {
+		k.runtime = k3r
+	} else {
+		k3r, err := glob(prefix + "/{bin,libexec}/k3r")
+		if err != nil {
+			return nil, fmt.Errorf("k3r: %w", err)
+		}
+		k.runtime = k3r[0]
+	}
+
+	pluginLib, err := glob(prefix + "/{lib64,lib}/libk3-plugin.so")
+	if err != nil {
+		return nil, fmt.Errorf("libk3-plugin.so: %w", err)
+	}
+	k.cLibs = append(k.cLibs, filepath.Dir(pluginLib[0]))
+
+	cIncludes, err := glob(prefix + "/include/k3")
+	if err != nil {
+		return nil, fmt.Errorf("k3 includes: %w", err)
+	}
+	k.cIncludes = append(k.cIncludes, filepath.Dir(cIncludes[0]))
+
+	plugins, err := glob(prefix + "/{lib64,lib}/k3/plugins/")
+	if err != nil {
+		return nil, fmt.Errorf("k3 plugins: %w", err)
+	}
+	k.plugins = append(k.plugins, plugins[0])
+
+	includes, err := glob(
+		k.plugins[0]+"/ttcn3",
+		prefix+"/share/k3/ttcn3")
+	if err != nil {
+		return nil, fmt.Errorf("k3 includes: %w", err)
+	}
+	k.includes = includes
+
+	if ossInfo, err := glob(prefix + "/share/k3/asn1/ossinfo"); err == nil {
+		k.ossInfo = filepath.Dir(ossInfo[0])
+	}
+	if ossDefaults, err := glob(prefix + "/share/k3/asn1/asn1dflt.*"); err == nil {
+		k.ossDefaults = ossDefaults[0]
+	}
+
+	return &k, nil
 }
 
 var k3 = &Instance{}
 
 func init() {
+	if prefix := findPrefix(); prefix != "" {
+		k, err := New(prefix)
+		if err != nil {
+			log.Printf("k3: %s\n", err)
+		}
+		if k != nil {
+			k3 = k
+		}
+	}
+}
+
+func findPrefix() string {
+	for _, name := range []string{"k3r", "k3s"} {
+		if exe, err := exec.LookPath(name); err == nil {
+			prefix, err := filepath.EvalSymlinks(filepath.Join(filepath.Dir(exe), ".."))
+			if err != nil {
+				log.Printf("k3: %s: %s\n", exe, err)
+				continue
+			}
+			return prefix
+		}
+	}
+	return ""
+}
+
+func glob(patterns ...string) ([]string, error) {
+	var ret []string
+	for _, p := range patterns {
+		matches, err := doublestar.Glob(p)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, matches...)
+	}
+	if len(ret) == 0 {
+		return nil, ErrNotFound
+	}
+	return ret, nil
 }
 
 // DefaultEnv is the default environment for k3-based test suites.
@@ -225,111 +328,6 @@ func (l *TTCN3Library) Run() error        { return nil }
 // NewTTCN3Library returns the commands for building a TTCN-3 library.
 func NewTTCN3Library(vars map[string]string, name string, srcs ...string) []*TTCN3Library {
 	return []*TTCN3Library{{srcs}}
-}
-
-func k3DevelDirs() []string {
-	var files []string
-	if binary_dir := cmake("k3_BINARY_DIR"); binary_dir != "" {
-		files = append(files, glob(filepath.Join(binary_dir, "src/k3r-*-plugin"))...)
-	}
-	if source_dir := cmake("k3_SOURCE_DIR"); source_dir != "" {
-		files = append(files, glob(
-			filepath.Join(source_dir, "k3r-*-plugin"),
-			filepath.Join(source_dir, "src/k3r-*-plugin"),
-			filepath.Join(source_dir, "src/ttcn3"),
-			filepath.Join(source_dir, "src/libzmq"),
-		)...)
-	}
-	return clean(files...)
-}
-
-// clean resolves symlinks and removes duplicates and non-folders.
-func clean(paths ...string) []string {
-	m := make(map[string]bool)
-	for _, path := range paths {
-		path, err := filepath.EvalSymlinks(path)
-		if err != nil {
-			log.Verboseln("k3: clean:", err.Error())
-			return nil
-		}
-		info, err := os.Stat(path)
-		if err != nil {
-			log.Verboseln("k3: clean:", err.Error())
-			return nil
-		}
-		if info.IsDir() {
-			m[path] = true
-		}
-	}
-
-	ret := make([]string, 0, len(m))
-	for k := range m {
-		ret = append(ret, k)
-	}
-	return ret
-}
-
-func glob(globs ...string) []string {
-	var ret []string
-	for _, g := range globs {
-		if matches, err := filepath.Glob(g); err == nil {
-			ret = append(ret, matches...)
-		}
-	}
-	return ret
-}
-
-// cmake returns a variable with given name from CMakeCache.txt.
-func cmake(name string) string {
-	cache := findCMakeCache()
-	if cache == "" {
-		return ""
-	}
-
-	f, err := os.Open(cache)
-	if err != nil {
-		log.Verboseln("k3: cmake:", err.Error())
-		return ""
-	}
-	defer f.Close()
-	s := bufio.NewScanner(f)
-	for s.Scan() {
-		if v := strings.SplitN(s.Text(), ":", 2); v[0] == name {
-			w := strings.SplitN(v[1], "=", 2)
-			log.Debugln("k3: cmake:", name, "=", w[1])
-			return w[1]
-		}
-	}
-	return ""
-}
-
-// findCMakeCache returns the path to the CMakeCache.txt file, by walking up
-// the current working directory and the file hierarchy specified by
-// environment variable K3R
-func findCMakeCache() string {
-	find := func(path string) string {
-		var res string
-		fs.WalkUp(path, func(path string) bool {
-			if file := filepath.Join(path, "CMakeCache.txt"); fs.IsRegular(file) {
-				res = file
-			}
-			return true
-		})
-		return res
-	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Verboseln("k3: cmake:", err.Error())
-		return ""
-	}
-	if f := find(cwd); f != "" {
-		return f
-	}
-	if k3r := os.Getenv("K3R"); strings.HasSuffix(k3r, "src/k3r/k3r") {
-		return find(filepath.Dir(k3r))
-	}
-
-	return ""
 }
 
 // pathf is like fmt.Sprintf but searches the NTT_CACHE environment variable first.
