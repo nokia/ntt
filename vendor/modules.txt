@@ -1,5 +1,7 @@
 # github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 github.com/acarl005/stripansi
+# github.com/bmatcuk/doublestar v1.3.4
+github.com/bmatcuk/doublestar
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
 # github.com/dustin/go-humanize v1.0.0
