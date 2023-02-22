@@ -178,6 +178,10 @@ func Runtime() string {
 	return k3.runtime
 }
 
+func CLibDirs() []string {
+	return k3.cLibDirs
+}
+
 // Plugins returns a list of k3 plugins.
 func Plugins() []string {
 	return k3.plugins
