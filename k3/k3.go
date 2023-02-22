@@ -21,8 +21,8 @@ import (
 	"github.com/nokia/ntt/internal/proc"
 )
 
-// ErrNotFound is returned when no K3 installation is found.
-var ErrNotFound = errors.New("k3 or parts of k3 not found")
+// ErrNotFound is returned when k3 or part of k3 is not found.
+var ErrNotFound = errors.New("not found")
 
 type Instance struct {
 	compiler  string
@@ -99,6 +99,19 @@ func New(prefix string) (*Instance, error) {
 var k3 = &Instance{}
 
 func init() {
+	for _, ev := range []string{"NTTROOT", "K3ROOT"} {
+		if root := env.Getenv(ev); root != "" {
+			k, err := New(root)
+			if err != nil {
+				log.Printf("k3: %s: %s\n", ev, err)
+				return
+			}
+			if k != nil {
+				k3 = k
+			}
+		}
+	}
+
 	if prefix := findPrefix(); prefix != "" {
 		k, err := New(prefix)
 		if err != nil {
