@@ -96,7 +96,10 @@ func New(prefix string) (*Instance, error) {
 	return &k, nil
 }
 
-var k3 = &Instance{}
+var k3 = &Instance{
+	runtime:  "k3r",
+	compiler: "mtc",
+}
 
 func init() {
 	for _, ev := range []string{"NTTROOT", "K3ROOT"} {
