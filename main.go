@@ -6,14 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"runtime/pprof"
-	"strconv"
 	"syscall"
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/internal/session"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
@@ -107,13 +105,6 @@ var (
 )
 
 func init() {
-	if s := os.Getenv("K3_SESSION_ID"); s == "" {
-		sid, err := session.Get()
-		if err != nil {
-			fatal(err)
-		}
-		os.Setenv("K3_SESSION_ID", strconv.Itoa(sid))
-	}
 	root := RootCommand
 	flags := root.PersistentFlags()
 	flags.CountVarP(&verbose, "verbose", "v", "verbose output")
