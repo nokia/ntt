@@ -30,7 +30,7 @@ type Instance struct {
 	plugins   []string
 	includes  []string
 	libK3     string
-	cLibs     []string
+	cLibDirs  []string
 	cIncludes []string
 
 	ossInfo     string
@@ -64,7 +64,7 @@ func New(prefix string) (*Instance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("libk3-plugin.so: %w", err)
 	}
-	k.cLibs = append(k.cLibs, filepath.Dir(pluginLib[0]))
+	k.cLibDirs = append(k.cLibDirs, filepath.Dir(pluginLib[0]))
 
 	cIncludes, err := glob(prefix + "/include/k3")
 	if err != nil {
@@ -129,7 +129,7 @@ func findPrefix() string {
 			prefix, err := filepath.EvalSymlinks(filepath.Join(filepath.Dir(exe), ".."))
 			if err != nil {
 				log.Printf("k3: %s: %s\n", exe, err)
-				continue
+				return ""
 			}
 			return prefix
 		}
@@ -159,9 +159,6 @@ var DefaultEnv = map[string]string{
 	"ASN1C":      "asn1",
 	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
 	"ASN2TTCN":   "asn1tottcn3",
-	"OSSINFO":    OssInfo(),
-	"K3C":        Compiler(),
-	"K3R":        Runtime(),
 }
 
 // OssInfo returns the path to the ossinfo file.
@@ -199,12 +196,36 @@ func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...
 			vars[k] = v
 		}
 	}
+
+	if _, ok := vars["OSSINFO"]; !ok && k3.ossInfo != "" {
+		vars["OSSINFO"] = k3.ossInfo
+	}
+
+	var cFlags []string
+	if f, ok := vars["CFLAGS"]; ok {
+		cFlags = append(cFlags, f)
+	}
+	for _, inc := range k3.cIncludes {
+		cFlags = append(cFlags, "-I"+inc)
+	}
+	vars["CFLAGS"] = strings.Join(cFlags, " ")
+
+	var ldFlags []string
+	if f, ok := vars["LDFLAGS"]; ok {
+		ldFlags = append(ldFlags, f)
+	}
+	for _, dir := range k3.cLibDirs {
+		ldFlags = append(ldFlags, "-L"+dir)
+	}
+	vars["LDFLAGS"] = strings.Join(ldFlags, " ")
+
 	vars["name"] = name
 	vars["encoding"] = encoding
 
-	asn1 := proc.Task("$ASN1C -${encoding} $ASN1CFLAGS -output ${name}.enc -prefix ${name} $OSSINFO/asn1dflt.linux-x86_64 ${srcs}")
+	asn1 := proc.Task("$ASN1C -${encoding} $ASN1CFLAGS -output ${name}.enc -prefix ${name} ${srcs}")
 	asn1.Env = vars
-	asn1.Sources = srcs
+	asn1.Sources = []string{k3.ossDefaults}
+	asn1.Sources = append(asn1.Sources, srcs...)
 	asn1.Targets = []string{
 		pathf("%s.enc.c", name),
 		pathf("%s.enc.h", name),
@@ -235,7 +256,26 @@ func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd 
 			vars[k] = v
 		}
 	}
-	p := proc.Task("$CXX $CPPFLAGS $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
+
+	var cFlags []string
+	if f, ok := vars["CFLAGS"]; ok {
+		cFlags = append(cFlags, f)
+	}
+	for _, inc := range k3.cIncludes {
+		cFlags = append(cFlags, "-I"+inc)
+	}
+	vars["CFLAGS"] = strings.Join(cFlags, " ")
+
+	var ldFlags []string
+	if f, ok := vars["LDFLAGS"]; ok {
+		ldFlags = append(ldFlags, f)
+	}
+	for _, dir := range k3.cLibDirs {
+		ldFlags = append(ldFlags, "-L"+dir)
+	}
+	vars["LDFLAGS"] = strings.Join(ldFlags, " ")
+
+	p := proc.Task("$CXX $CPPFLAGS $CFLAGS $CXXFLAGS -shared -fPIC -o ${tgts} ${srcs} $LDFLAGS $EXTRA_LDFLAGS -lk3-plugin")
 	p.Env = vars
 	p.Sources = srcs
 	p.Targets = []string{pathf("k3r-%s-plugin.so", name)}
@@ -250,12 +290,15 @@ func NewT3XF(vars map[string]string, t3xf string, srcs []string, imports ...stri
 			vars[k] = v
 		}
 	}
+	if _, ok := vars["K3C"]; !ok {
+		vars["K3C"] = k3.compiler
+	}
 
 	// We need to remove k3 stdlib files from the source list, (if accidentally
 	// inserted by the user) because of a missing module (PCMDmod).
 	vars["_sources"] = strings.Join(removeStdlib(srcs), " ")
 
-	for _, dir := range Includes() {
+	for _, dir := range k3.includes {
 		vars["_includes"] += fmt.Sprintf(" -I%s", dir)
 	}
 
