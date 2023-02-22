@@ -15,7 +15,7 @@ import (
 
 func TestAvailableCategories(t *testing.T) {
 	k3r := k3.Runtime()
-	if k3r == "k3r" {
+	if k3r == "" {
 		t.Skip("no k3 runtime found")
 	}
 

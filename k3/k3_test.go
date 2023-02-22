@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewPlugin(t *testing.T) {
-	if k3.Runtime() == "k3r" {
+	if k3.Runtime() == "" {
 		t.Skip("Cannot locate k3 runtime. Skipping test.")
 	}
 
@@ -47,7 +47,7 @@ func TestNewPlugin(t *testing.T) {
 }
 
 func TestNewT3XF(t *testing.T) {
-	if k3.Compiler() == "mtc" {
+	if k3.Compiler() == "" {
 		t.Skip("Cannot locate k3 compiler. Skipping test.")
 	}
 	srcdir, _ := initStage(t)

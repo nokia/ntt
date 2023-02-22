@@ -257,7 +257,7 @@ func initStage(t *testing.T) (string, string) {
 
 func testBuild(t *testing.T, args ...string) string {
 	t.Helper()
-	if k3r := k3.Runtime(); k3r == "k3r" {
+	if k3r := k3.Runtime(); k3r == "" {
 		t.Skip("no k3 runtime found")
 	}
 
