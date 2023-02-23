@@ -57,7 +57,6 @@ var (
 func GlobalLevel() Level       { return lvl }
 func SetGlobalLogger(l Logger) { std = l }
 func SetGlobalLevel(level Level) {
-
 	// Stop running tracer
 	if lvl == TraceLevel && tracer != nil {
 		trace.Stop()

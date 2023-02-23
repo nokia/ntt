@@ -29,7 +29,9 @@ var (
 
 		Args: cobra.ArbitraryArgs,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			log.SetGlobalLevel(Verbosity())
+			if lvl := Verbosity(); lvl != log.GlobalLevel() {
+				log.SetGlobalLevel(Verbosity())
+			}
 
 			if chdir != "" {
 				if err := os.Chdir(chdir); err != nil {
