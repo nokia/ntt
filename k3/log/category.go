@@ -26,13 +26,11 @@ func (c Category) String() string {
 }
 
 const (
-	ACDE    Category = "acde|Adapter Control Debug Log|detail"
 	ACFG    Category = "acfg|Assembly Configuration Info|Key|Value"
 	ALEN    Category = "alen|Alt enter"
 	ALLV    Category = "allv|Alt leave"
 	ALRP    Category = "alrp|Alt repeat"
 	ALWT    Category = "alwt|Alternation wait: no alternative ready|Time at which to wake unless an alternative becomes ready"
-	ASDE    Category = "asde|Adapter Server Debug Log|detail"
 	ASEN    Category = "asen|Altstep enter|Altstep name + parameters"
 	ASLV    Category = "aslv|Altstep leave|Altstep name + parameters"
 	BCTR    Category = "bctr|Backtrace event tracks frames visited by components|Component name and tracked frames"
@@ -81,6 +79,7 @@ const (
 	PTMP    Category = "ptmp|Port mapped|Component port name|System port name"
 	PTPU    Category = "ptpu|Port published to external connector|Port name"
 	PTQU    Category = "ptqu|Item queued to port|Port name|Item detail (message, call, reply, exception) + value"
+	PTRE    Category = "ptre|Evaluate port.receive() on empty queue|[parameter name->]Port name|Match template"
 	PTRX    Category = "ptrx|Evaluate port.receive()|[parameter name->]Port name|Match template|Outcome"
 	PTSD    Category = "ptsd|Port send|Component port|System port|Message type name|Message value"
 	PTSP    Category = "ptsp|Port stopped|Port name"
@@ -89,7 +88,7 @@ const (
 	PTUN    Category = "ptun|Port unmapped|Component port name or all|Optional system port name"
 	RVON    Category = "rvon|produces value return. To be used for switching on return value logging for functions"
 	SDBG    Category = "sdbg|SnapDebug|message"
-	SETV    Category = "setv|setverdict operation|Previous verdict|New verdict|reason"
+	SETV    Category = "setv|setverdict operation|Previous verdict|New verdict|Reason"
 	TCEN    Category = "tcen|Testcase enter|Testcase name + parameters"
 	TCFI    Category = "tcfi|Testcase finished|testcase name|verdict"
 	TCLV    Category = "tclv|Testcase leave|Testcase name + parameters"
@@ -174,13 +173,11 @@ var (
 	// Categories is a map of all categories. The key is the category name
 	// and the description of the category.
 	Categories = map[string]Category{
-		"acde": "acde|Adapter Control Debug Log|detail",
 		"acfg": "acfg|Assembly Configuration Info|Key|Value",
 		"alen": "alen|Alt enter",
 		"allv": "allv|Alt leave",
 		"alrp": "alrp|Alt repeat",
 		"alwt": "alwt|Alternation wait: no alternative ready|Time at which to wake unless an alternative becomes ready",
-		"asde": "asde|Adapter Server Debug Log|detail",
 		"asen": "asen|Altstep enter|Altstep name + parameters",
 		"aslv": "aslv|Altstep leave|Altstep name + parameters",
 		"bctr": "bctr|Backtrace event tracks frames visited by components|Component name and tracked frames",
@@ -229,6 +226,7 @@ var (
 		"ptmp": "ptmp|Port mapped|Component port name|System port name",
 		"ptpu": "ptpu|Port published to external connector|Port name",
 		"ptqu": "ptqu|Item queued to port|Port name|Item detail (message, call, reply, exception) + value",
+		"ptre": "ptre|Evaluate port.receive() on empty queue|[parameter name->]Port name|Match template",
 		"ptrx": "ptrx|Evaluate port.receive()|[parameter name->]Port name|Match template|Outcome",
 		"ptsd": "ptsd|Port send|Component port|System port|Message type name|Message value",
 		"ptsp": "ptsp|Port stopped|Port name",
