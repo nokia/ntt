@@ -150,7 +150,7 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 			if line == "" {
 				continue
 			}
-			log.Traceln(">", line)
+			log.Traceln(context.TODO(), ">", line)
 			switch v := strings.Fields(line); v[0] {
 			case "tciTestCaseStarted":
 				name = v[1][1 : len(v[1])-1]
@@ -290,7 +290,7 @@ func (t *Test) request() string {
 		fmt.Fprintf(&req, "tciStartTestCase \"%s\" {%s}\n", t.Name, strings.Join(t.Args, ","))
 	}
 	s := req.String()
-	log.Traceln("<", s)
+	log.Traceln(context.TODO(), "<", s)
 	return s
 }
 

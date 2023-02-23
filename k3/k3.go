@@ -169,7 +169,7 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.compiler = k3c
 	} else {
-		k3c, err := glob(prefix + "/{bin,libexec}/{mtc,k3c}")
+		k3c, err := glob(ctx, prefix+"/{libexec,bin}/{mtc,k3c}")
 		if err != nil {
 			return nil, fmt.Errorf("%s: mtc: %w", prefix, err)
 		}
@@ -179,32 +179,32 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 	if k3r := env.Getenv("K3R"); k3r != "" {
 		k.runtime = k3r
 	} else {
-		k3r, err := glob(prefix + "/{bin,libexec}/k3r")
+		k3r, err := glob(ctx, prefix+"/{libexec,bin}/k3r")
 		if err != nil {
 			return nil, fmt.Errorf("k3r: %w", err)
 		}
 		k.runtime = k3r[0]
 	}
 
-	pluginLib, err := glob(prefix + "/{lib64,lib}/libk3-plugin.so")
+	pluginLib, err := glob(ctx, prefix+"/{lib64,lib}/libk3-plugin.so")
 	if err != nil {
 		return nil, fmt.Errorf("libk3-plugin.so: %w", err)
 	}
 	k.cLibDirs = append(k.cLibDirs, filepath.Dir(pluginLib[0]))
 
-	cIncludes, err := glob(prefix + "/include/k3")
+	cIncludes, err := glob(ctx, prefix+"/include/k3")
 	if err != nil {
 		return nil, fmt.Errorf("k3 includes: %w", err)
 	}
 	k.cIncludes = append(k.cIncludes, filepath.Dir(cIncludes[0]))
 
-	plugins, err := glob(prefix + "/{lib64,lib}/k3/plugins/")
+	plugins, err := glob(ctx, prefix+"/{lib64,lib}/k3/plugins/")
 	if err != nil {
 		return nil, fmt.Errorf("k3 plugins: %w", err)
 	}
 	k.plugins = append(k.plugins, plugins[0])
 
-	includes, err := glob(
+	includes, err := glob(ctx,
 		k.plugins[0]+"/ttcn3",
 		prefix+"/share/k3/ttcn3")
 	if err != nil {
@@ -212,10 +212,10 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 	}
 	k.includes = includes
 
-	if ossInfo, err := glob(prefix + "/share/k3/asn1/ossinfo"); err == nil {
+	if ossInfo, err := glob(ctx, prefix+"/share/k3/asn1/ossinfo"); err == nil {
 		k.ossInfo = filepath.Dir(ossInfo[0])
 	}
-	if ossDefaults, err := glob(prefix + "/share/k3/asn1/asn1dflt.*"); err == nil {
+	if ossDefaults, err := glob(ctx, prefix+"/share/k3/asn1/asn1dflt.*"); err == nil {
 		k.ossDefaults = ossDefaults[0]
 	}
 
@@ -232,7 +232,7 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.compiler = k3c
 	} else {
-		k3c, err := glob(mtcBinaryDir + "/source/mtc/mtc")
+		k3c, err := glob(ctx, mtcBinaryDir+"/source/mtc/mtc")
 		if err != nil {
 			return nil, fmt.Errorf("mtc: %w", err)
 		}
@@ -242,44 +242,44 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	if k3r := env.Getenv("K3R"); k3r != "" {
 		k.runtime = k3r
 	} else {
-		k3r, err := glob(k3BinaryDir + "/src/k3r/k3r")
+		k3r, err := glob(ctx, k3BinaryDir+"/src/k3r/k3r")
 		if err != nil {
 			return nil, fmt.Errorf("k3r: %w", err)
 		}
 		k.runtime = k3r[0]
 	}
 
-	pluginLib, err := glob(k3BinaryDir + "/src/libk3-plugin/libk3-plugin.so")
+	pluginLib, err := glob(ctx, k3BinaryDir+"/src/libk3-plugin/libk3-plugin.so")
 	if err != nil {
 		return nil, fmt.Errorf("libk3-plugin.so: %w", err)
 	}
 	k.cLibDirs = append(k.cLibDirs, filepath.Dir(pluginLib[0]))
 
-	ossLibs, err := glob(k3SourceDir + "/lib/ossasn1/lib64")
+	ossLibs, err := glob(ctx, k3SourceDir+"/lib/ossasn1/lib64")
 	if err != nil {
 		return nil, fmt.Errorf("oss libs: %w", err)
 	}
 	k.cLibDirs = append(k.cLibDirs, ossLibs...)
 
-	cIncludes, err := glob(k3SourceDir + "/include/k3")
+	cIncludes, err := glob(ctx, k3SourceDir+"/include/k3")
 	if err != nil {
 		return nil, fmt.Errorf("k3 includes: %w", err)
 	}
 	k.cIncludes = append(k.cIncludes, filepath.Dir(cIncludes[0]))
 
-	ossIncludes, err := glob(k3SourceDir + "/lib/ossasn1/include")
+	ossIncludes, err := glob(ctx, k3SourceDir+"/lib/ossasn1/include")
 	if err != nil {
 		return nil, fmt.Errorf("oss includes: %w", err)
 	}
 	k.cIncludes = append(k.cIncludes, ossIncludes...)
 
-	plugins, err := glob(k3BinaryDir + "/src/k3r-*-plugin")
+	plugins, err := glob(ctx, k3BinaryDir+"/src/k3r-*-plugin")
 	if err != nil {
 		return nil, fmt.Errorf("k3 plugins: %w", err)
 	}
 	k.plugins = append(k.plugins, plugins[0])
 
-	includes, err := glob(
+	includes, err := glob(ctx,
 		k3SourceDir+"/src/k3r-*-plugin",
 		k3SourceDir+"/src/libzmq",
 		k3SourceDir+"/src/ttcn3",
@@ -289,10 +289,10 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	}
 	k.includes = includes
 
-	if ossInfo, err := glob(k3BinaryDir + "/ossinfo"); err == nil {
+	if ossInfo, err := glob(ctx, k3BinaryDir+"/ossinfo"); err == nil {
 		k.ossInfo = filepath.Dir(ossInfo[0])
 	}
-	if ossDefaults, err := glob(k3SourceDir + "/lib/ossasn1/asn1dflt.*"); err == nil {
+	if ossDefaults, err := glob(ctx, k3SourceDir+"/lib/ossasn1/asn1dflt.*"); err == nil {
 		k.ossDefaults = ossDefaults[0]
 	}
 
@@ -300,10 +300,14 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 
 }
 
-func glob(patterns ...string) ([]string, error) {
+func glob(ctx context.Context, patterns ...string) ([]string, error) {
+	region := trace.StartRegion(ctx, "glob")
+	defer region.End()
+
 	var ret []string
 	for _, p := range patterns {
 		matches, err := doublestar.Glob(p)
+		log.Tracef(ctx, "k3", "glob: %s -> %v\n", p, matches)
 		if err != nil {
 			return nil, err
 		}

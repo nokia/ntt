@@ -1,6 +1,7 @@
 package syntax
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nokia/ntt/internal/log"
@@ -148,7 +149,7 @@ func (p *parser) pushToken() Node {
 
 func (p *parser) accept(kk ...Kind) bool {
 	if len(kk) > 3 {
-		log.Trace("warning: accept called with more than 3 arguments")
+		log.Traceln(context.TODO(), "warning", "accept called with more than 3 arguments")
 	}
 	for _, k := range kk {
 		if p.next == k {

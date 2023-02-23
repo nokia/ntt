@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"runtime/trace"
+	"strings"
 )
 
 type Level int
@@ -115,8 +116,8 @@ func Traceln(ctx context.Context, category string, v ...interface{}) {
 }
 
 func outputTrace(ctx context.Context, category, msg string) {
-	trace.Log(ctx, category, msg)
-	std.Output(TraceLevel, fmt.Sprintf("%s: %s", msg))
+	trace.Log(ctx, category, strings.TrimSpace(msg))
+	std.Output(TraceLevel, fmt.Sprintf("%s: %s", category, msg))
 }
 
 func init() {

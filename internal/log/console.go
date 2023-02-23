@@ -38,8 +38,9 @@ func (t ConsoleTracer) Start(ctx context.Context, spanName string) (context.Cont
 	}
 
 	now := time.Now()
-	Traceln(now, "trace enter", spanName)
+	Traceln(ctx, "trace enter", now, spanName)
 	return ctx, ConsoleTracer{
+		ctx:   ctx,
 		start: now,
 		name:  spanName,
 	}
@@ -51,7 +52,7 @@ func (t ConsoleTracer) End() {
 	}
 
 	end := time.Now()
-	Traceln(end, "trace leave", t.name, "took", end.Sub(t.start))
+	Traceln(t.ctx, "trace leave", end, t.name, "took", end.Sub(t.start))
 }
 
 type emptySpan struct{}
