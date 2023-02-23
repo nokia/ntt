@@ -235,7 +235,7 @@ var (
 		"ptun": "ptun|Port unmapped|Component port name or all|Optional system port name",
 		"rvon": "rvon|produces value return. To be used for switching on return value logging for functions",
 		"sdbg": "sdbg|SnapDebug|message",
-		"setv": "setv|setverdict operation|Previous verdict|New verdict|reason",
+		"setv": "setv|setverdict operation|Previous verdict|New verdict|Reason",
 		"tcen": "tcen|Testcase enter|Testcase name + parameters",
 		"tcfi": "tcfi|Testcase finished|testcase name|verdict",
 		"tclv": "tclv|Testcase leave|Testcase name + parameters",
