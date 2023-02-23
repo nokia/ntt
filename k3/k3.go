@@ -278,7 +278,7 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	if err != nil {
 		return nil, fmt.Errorf("k3 plugins: %w", err)
 	}
-	k.plugins = append(k.plugins, plugins[0])
+	k.plugins = append(k.plugins, plugins...)
 
 	includes, err := glob(ctx,
 		k3SourceDir+"/src/k3r-*-plugin",
