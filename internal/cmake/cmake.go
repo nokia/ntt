@@ -3,6 +3,7 @@ package cmake
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,8 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type Cache struct {
 	path string
@@ -30,7 +33,7 @@ func (c *Cache) Get(name string) (string, error) {
 			return w[1], nil
 		}
 	}
-	return "", nil
+	return "", ErrNotFound
 }
 
 // FindCache finds the CMakeCache.txt file by walking up the given path, and
