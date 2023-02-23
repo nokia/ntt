@@ -4,6 +4,7 @@ package k3
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/trace"
 	"strings"
 
 	"github.com/bmatcuk/doublestar"
@@ -26,6 +28,8 @@ import (
 var ErrNotFound = errors.New("not found")
 
 type Instance struct {
+	root string
+
 	compiler  string
 	runtime   string
 	plugins   []string
@@ -38,8 +42,129 @@ type Instance struct {
 	ossDefaults string
 }
 
-func New(prefix string) (*Instance, error) {
-	k := Instance{}
+var k3 = &Instance{
+	runtime:  "k3r",
+	compiler: "mtc",
+}
+
+type searchFunc func(ctx context.Context) (*Instance, error)
+
+func init() {
+	ctx, task := trace.NewTask(context.Background(), "k3.init")
+	defer task.End()
+
+	searchers := []searchFunc{
+		searchEnvionment("NTTROOT"),
+		searchEnvionment("K3ROOT"),
+		searchRepo(),
+		searchPath("k3r"),
+		searchPath("k3s"),
+		searchPath("ntt"),
+	}
+
+	for _, s := range searchers {
+		k, err := s(ctx)
+		if err != nil {
+			log.Tracef(ctx, "k3", "error: %s\n", err)
+			break
+		}
+		if k != nil {
+			log.Tracef(ctx, "k3", "using: %+v\n", k)
+			k3 = k
+			break
+		}
+	}
+}
+
+func searchEnvionment(v string) searchFunc {
+	return func(ctx context.Context) (*Instance, error) {
+		region := trace.StartRegion(ctx, "search environment")
+		defer region.End()
+		if root := env.Getenv(v); root != "" {
+			return getInstall(ctx, root)
+		}
+		return nil, nil
+	}
+}
+
+func searchRepo() searchFunc {
+	return func(ctx context.Context) (*Instance, error) {
+		region := trace.StartRegion(ctx, "search repo")
+		defer region.End()
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			return nil, err
+
+		}
+
+		cache := cmake.FindCache(cwd)
+		if cache == nil {
+			return nil, nil
+		}
+		log.Tracef(ctx, "k3", "found CMakeCache.txt: %+v\n", cache)
+
+		k3BinaryDir, err := cache.Get("k3_BINARY_DIR")
+		if err != nil {
+			if errors.Is(err, cmake.ErrNotFound) {
+				log.Tracef(ctx, "k3", "k3_BINARY_DIR not found in CMakeCache.txt\n")
+				return nil, nil
+			}
+			return nil, err
+		}
+		k3SourceDir, err := cache.Get("k3_SOURCE_DIR")
+		if err != nil {
+			return nil, err
+		}
+		mtcBinaryDir, err := cache.Get("mtc_BINARY_DIR")
+		if err != nil {
+			return nil, err
+		}
+		return getRepo(ctx, k3SourceDir, k3BinaryDir, mtcBinaryDir)
+	}
+}
+
+func searchPath(exe string) searchFunc {
+	return func(ctx context.Context) (*Instance, error) {
+		region := trace.StartRegion(ctx, "search path")
+		defer region.End()
+
+		path, err := exec.LookPath(exe)
+		if err != nil {
+			if errors.Is(err, exec.ErrNotFound) {
+				// Clear error to allow other searchers to run.
+				err = nil
+			}
+			return nil, err
+		}
+
+		prefix := filepath.Clean(filepath.Join(filepath.Dir(path), ".."))
+
+		// Symlinks make checking for directories harder. We resolve them, when possible.
+		if target, err := filepath.EvalSymlinks(prefix); err == nil {
+			log.Tracef(ctx, "k3", "resolved symlink: %s -> %s\n", prefix, target)
+			prefix = target
+		}
+
+		k, err := getInstall(ctx, prefix)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				// Clear error to allow other searchers to run.
+				err = nil
+			}
+			return nil, err
+		}
+		return k, nil
+	}
+}
+
+func getInstall(ctx context.Context, prefix string) (*Instance, error) {
+
+	region := trace.StartRegion(ctx, "get install")
+	defer region.End()
+	log.Tracef(ctx, "k3", "get install: %s\n", prefix)
+
+	k := Instance{root: prefix}
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.compiler = k3c
@@ -97,73 +222,12 @@ func New(prefix string) (*Instance, error) {
 	return &k, nil
 }
 
-var k3 = &Instance{
-	runtime:  "k3r",
-	compiler: "mtc",
-}
+func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string) (*Instance, error) {
+	region := trace.StartRegion(ctx, "get repo")
+	defer region.End()
+	log.Tracef(ctx, "k3", "get repo: %s %s %s\n", k3SourceDir, k3BinaryDir, mtcBinaryDir)
 
-func init() {
-	for _, ev := range []string{"NTTROOT", "K3ROOT"} {
-		if root := env.Getenv(ev); root != "" {
-			k, err := New(root)
-			if err != nil {
-				log.Printf("k3: %s: %s\n", ev, err)
-				return
-			}
-			if k != nil {
-				k3 = k
-			}
-		}
-	}
-
-	k, err := findDevel()
-	if err != nil {
-		log.Printf("k3: devel: %s\n", err)
-		return
-	}
-	if k != nil {
-		k3 = k
-		return
-	}
-
-	if prefix := findPrefix(); prefix != "" {
-		k, err := New(prefix)
-		if err != nil {
-			log.Printf("k3: %s\n", err)
-		}
-		if k != nil {
-			k3 = k
-		}
-	}
-}
-
-func findDevel() (*Instance, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	cache := cmake.FindCache(cwd)
-	if cache == nil {
-		return nil, nil
-	}
-
-	k3BinaryDir, err := cache.Get("K3_BINARY_DIR")
-	if err != nil {
-		if errors.Is(err, cmake.ErrNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	k3SourceDir, err := cache.Get("K3_SOURCE_DIR")
-	if err != nil {
-		return nil, err
-	}
-	mtcBinaryDir, err := cache.Get("mtc_BINARY_DIR")
-	if err != nil {
-		return nil, err
-	}
-
-	k := Instance{}
+	k := Instance{root: k3BinaryDir}
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.compiler = k3c
@@ -234,20 +298,6 @@ func findDevel() (*Instance, error) {
 
 	return &k, nil
 
-}
-
-func findPrefix() string {
-	for _, name := range []string{"k3r", "k3s"} {
-		if exe, err := exec.LookPath(name); err == nil {
-			prefix, err := filepath.EvalSymlinks(filepath.Join(filepath.Dir(exe), ".."))
-			if err != nil {
-				log.Printf("k3: %s: %s\n", exe, err)
-				return ""
-			}
-			return prefix
-		}
-	}
-	return ""
 }
 
 func glob(patterns ...string) ([]string, error) {
