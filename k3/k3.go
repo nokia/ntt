@@ -66,14 +66,15 @@ func init() {
 		k, err := s(ctx)
 		if err != nil {
 			log.Tracef(ctx, "k3", "error: %s\n", err)
-			break
+			return
 		}
 		if k != nil {
 			log.Tracef(ctx, "k3", "using: %+v\n", k)
 			k3 = k
-			break
+			return
 		}
 	}
+	log.Tracef(ctx, "k3", "not found\n")
 }
 
 func searchEnvionment(v string) searchFunc {
