@@ -65,23 +65,7 @@ type Config struct {
 		// K3 root folder
 		Root string `json:",omitempty"`
 
-		// Path to the compiler.
-		Compiler string
-
-		// Path to the runtime.
-		Runtime string
-
-		// Path to $PREFIX/share/k3
-		DataDir string `json:"data_dir"`
-
-		// Path to additional TTCN-3 files
-		Includes []string
-
-		// Path to additional plugins
-		Plugins []string
-
-		// Path to OSS Nokalva installation.
-		OssInfo string
+		k3.Instance `json:",inline"`
 
 		// T3XF is the path to the T3XF file.
 		T3XF string `json:"t3xf"`
@@ -483,7 +467,7 @@ func Files(c *Config) ([]string, error) {
 }
 
 // LibraryPaths returns the library search paths required to execute a
-// test-suite. The search order is first come first server: More important
+// test-suite. The search order is first come first serves: More important
 // directories come first
 func LibraryPaths(c *Config) ([]string, error) {
 	if c == nil {
@@ -492,6 +476,7 @@ func LibraryPaths(c *Config) ([]string, error) {
 	var paths []string
 	paths = append(paths, c.Manifest.Imports...)
 	paths = append(paths, c.K3.Plugins...)
+	paths = append(paths, c.K3.CLibDirs...)
 	return paths, nil
 }
 
@@ -834,11 +819,7 @@ func WithManifest(file string) ConfigOption {
 func WithK3() ConfigOption {
 	return func(c *Config) error {
 		c.toolchain = "k3"
-		c.K3.Compiler = k3.Compiler()
-		c.K3.Runtime = k3.Runtime()
-		c.K3.Includes = k3.Includes()
-		c.K3.Plugins = k3.Plugins()
-		c.K3.OssInfo = k3.OssInfo()
+		c.K3.Instance = k3.Find()
 		c.K3.T3XF = cache.Lookup(fmt.Sprintf("%s.t3xf", c.Name))
 		log.Debugf("project: k3 compiler : %v\n", c.K3.Compiler)
 		log.Debugf("project: k3 runtime  : %v\n", c.K3.Runtime)

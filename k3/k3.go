@@ -30,26 +30,30 @@ var ErrNotFound = errors.New("not found")
 type Instance struct {
 	root string
 
-	compiler  string
-	runtime   string
-	plugins   []string
-	includes  []string
-	libK3     string
-	cLibDirs  []string
-	cIncludes []string
+	Compiler  string
+	Runtime   string
+	Plugins   []string
+	Includes  []string
+	CLibDirs  []string
+	CIncludes []string
 
-	ossInfo     string
+	OssInfo     string
 	ossDefaults string
 }
 
 var k3 = &Instance{
-	runtime:  "k3r",
-	compiler: "mtc",
+	Runtime:  "k3r",
+	Compiler: "mtc",
 }
 
 type searchFunc func(ctx context.Context) (*Instance, error)
 
+func Find() Instance {
+	return *k3
+}
+
 func init() {
+
 	ctx, task := trace.NewTask(context.Background(), "k3.init")
 	defer task.End()
 
@@ -168,53 +172,53 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 	k := Instance{root: prefix}
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
-		k.compiler = k3c
+		k.Compiler = k3c
 	} else {
 		k3c, err := glob(ctx, prefix+"/{libexec,bin}/{mtc,k3c}")
 		if err != nil {
 			return nil, fmt.Errorf("%s: mtc: %w", prefix, err)
 		}
-		k.compiler = k3c[0]
+		k.Compiler = k3c[0]
 	}
 
 	if k3r := env.Getenv("K3R"); k3r != "" {
-		k.runtime = k3r
+		k.Runtime = k3r
 	} else {
 		k3r, err := glob(ctx, prefix+"/{libexec,bin}/k3r")
 		if err != nil {
 			return nil, fmt.Errorf("k3r: %w", err)
 		}
-		k.runtime = k3r[0]
+		k.Runtime = k3r[0]
 	}
 
 	pluginLib, err := glob(ctx, prefix+"/{lib64,lib}/libk3-plugin.so")
 	if err != nil {
 		return nil, fmt.Errorf("libk3-plugin.so: %w", err)
 	}
-	k.cLibDirs = append(k.cLibDirs, filepath.Dir(pluginLib[0]))
+	k.CLibDirs = append(k.CLibDirs, filepath.Dir(pluginLib[0]))
 
 	cIncludes, err := glob(ctx, prefix+"/include/k3")
 	if err != nil {
 		return nil, fmt.Errorf("k3 includes: %w", err)
 	}
-	k.cIncludes = append(k.cIncludes, filepath.Dir(cIncludes[0]))
+	k.CIncludes = append(k.CIncludes, filepath.Dir(cIncludes[0]))
 
 	plugins, err := glob(ctx, prefix+"/{lib64,lib}/k3/plugins/")
 	if err != nil {
 		return nil, fmt.Errorf("k3 plugins: %w", err)
 	}
-	k.plugins = append(k.plugins, plugins[0])
+	k.Plugins = append(k.Plugins, plugins[0])
 
 	includes, err := glob(ctx,
-		k.plugins[0]+"/ttcn3",
+		k.Plugins[0]+"/ttcn3",
 		prefix+"/share/k3/ttcn3")
 	if err != nil {
 		return nil, fmt.Errorf("k3 includes: %w", err)
 	}
-	k.includes = includes
+	k.Includes = includes
 
 	if ossInfo, err := glob(ctx, prefix+"/share/k3/asn1/ossinfo"); err == nil {
-		k.ossInfo = filepath.Dir(ossInfo[0])
+		k.OssInfo = filepath.Dir(ossInfo[0])
 	}
 	if ossDefaults, err := glob(ctx, prefix+"/share/k3/asn1/asn1dflt.*"); err == nil {
 		k.ossDefaults = ossDefaults[0]
@@ -231,54 +235,54 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	k := Instance{root: k3BinaryDir}
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
-		k.compiler = k3c
+		k.Compiler = k3c
 	} else {
 		k3c, err := glob(ctx, mtcBinaryDir+"/source/mtc/mtc")
 		if err != nil {
 			return nil, fmt.Errorf("mtc: %w", err)
 		}
-		k.compiler = k3c[0]
+		k.Compiler = k3c[0]
 	}
 
 	if k3r := env.Getenv("K3R"); k3r != "" {
-		k.runtime = k3r
+		k.Runtime = k3r
 	} else {
 		k3r, err := glob(ctx, k3BinaryDir+"/src/k3r/k3r")
 		if err != nil {
 			return nil, fmt.Errorf("k3r: %w", err)
 		}
-		k.runtime = k3r[0]
+		k.Runtime = k3r[0]
 	}
 
 	pluginLib, err := glob(ctx, k3BinaryDir+"/src/libk3-plugin/libk3-plugin.so")
 	if err != nil {
 		return nil, fmt.Errorf("libk3-plugin.so: %w", err)
 	}
-	k.cLibDirs = append(k.cLibDirs, filepath.Dir(pluginLib[0]))
+	k.CLibDirs = append(k.CLibDirs, filepath.Dir(pluginLib[0]))
 
 	ossLibs, err := glob(ctx, k3SourceDir+"/lib/ossasn1/lib64")
 	if err != nil {
 		return nil, fmt.Errorf("oss libs: %w", err)
 	}
-	k.cLibDirs = append(k.cLibDirs, ossLibs...)
+	k.CLibDirs = append(k.CLibDirs, ossLibs...)
 
 	cIncludes, err := glob(ctx, k3SourceDir+"/include/k3")
 	if err != nil {
 		return nil, fmt.Errorf("k3 includes: %w", err)
 	}
-	k.cIncludes = append(k.cIncludes, filepath.Dir(cIncludes[0]))
+	k.CIncludes = append(k.CIncludes, filepath.Dir(cIncludes[0]))
 
 	ossIncludes, err := glob(ctx, k3SourceDir+"/lib/ossasn1/include")
 	if err != nil {
 		return nil, fmt.Errorf("oss includes: %w", err)
 	}
-	k.cIncludes = append(k.cIncludes, ossIncludes...)
+	k.CIncludes = append(k.CIncludes, ossIncludes...)
 
 	plugins, err := glob(ctx, k3BinaryDir+"/src/k3r-*-plugin")
 	if err != nil {
 		return nil, fmt.Errorf("k3 plugins: %w", err)
 	}
-	k.plugins = append(k.plugins, plugins...)
+	k.Plugins = append(k.Plugins, plugins...)
 
 	includes, err := glob(ctx,
 		k3SourceDir+"/src/k3r-*-plugin",
@@ -288,10 +292,10 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	if err != nil {
 		return nil, fmt.Errorf("k3 includes: %w", err)
 	}
-	k.includes = includes
+	k.Includes = includes
 
 	if ossInfo, err := glob(ctx, k3BinaryDir+"/ossinfo"); err == nil {
-		k.ossInfo = filepath.Dir(ossInfo[0])
+		k.OssInfo = filepath.Dir(ossInfo[0])
 	}
 	if ossDefaults, err := glob(ctx, k3SourceDir+"/lib/ossasn1/asn1dflt.*"); err == nil {
 		k.ossDefaults = ossDefaults[0]
@@ -331,33 +335,33 @@ var DefaultEnv = map[string]string{
 
 // OssInfo returns the path to the ossinfo file.
 func OssInfo() string {
-	return k3.ossInfo
+	return k3.OssInfo
 }
 
 // Compiler returns the path to the TTCN-3 compiler. Compiler will return "mtc"
 // if no compiler is found.
 func Compiler() string {
-	return k3.compiler
+	return k3.Compiler
 }
 
 // Runtime returns the path to the TTCN-3 runtime. Runtime will return "k3r" if
 // no runtime is found.
 func Runtime() string {
-	return k3.runtime
+	return k3.Runtime
 }
 
 func CLibDirs() []string {
-	return k3.cLibDirs
+	return k3.CLibDirs
 }
 
 // Plugins returns a list of k3 plugins.
 func Plugins() []string {
-	return k3.plugins
+	return k3.Plugins
 }
 
 // Includes returns a list of TTCN-3 include directories required by the k3 compiler.
 func Includes() []string {
-	return k3.includes
+	return k3.Includes
 }
 
 // NewASN1Codec returns the commands required to compile ASN.1 files.
@@ -369,15 +373,15 @@ func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...
 		}
 	}
 
-	if _, ok := vars["OSSINFO"]; !ok && k3.ossInfo != "" {
-		vars["OSSINFO"] = k3.ossInfo
+	if _, ok := vars["OSSINFO"]; !ok && k3.OssInfo != "" {
+		vars["OSSINFO"] = k3.OssInfo
 	}
 
 	var cFlags []string
 	if f, ok := vars["CFLAGS"]; ok {
 		cFlags = append(cFlags, f)
 	}
-	for _, inc := range k3.cIncludes {
+	for _, inc := range k3.CIncludes {
 		cFlags = append(cFlags, "-I"+inc)
 	}
 	vars["CFLAGS"] = strings.Join(cFlags, " ")
@@ -386,7 +390,7 @@ func NewASN1Codec(vars map[string]string, name string, encoding string, srcs ...
 	if f, ok := vars["LDFLAGS"]; ok {
 		ldFlags = append(ldFlags, f)
 	}
-	for _, dir := range k3.cLibDirs {
+	for _, dir := range k3.CLibDirs {
 		ldFlags = append(ldFlags, "-L"+dir)
 	}
 	vars["LDFLAGS"] = strings.Join(ldFlags, " ")
@@ -433,7 +437,7 @@ func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd 
 	if f, ok := vars["CFLAGS"]; ok {
 		cFlags = append(cFlags, f)
 	}
-	for _, inc := range k3.cIncludes {
+	for _, inc := range k3.CIncludes {
 		cFlags = append(cFlags, "-I"+inc)
 	}
 	vars["CFLAGS"] = strings.Join(cFlags, " ")
@@ -442,7 +446,7 @@ func NewPlugin(vars map[string]string, name string, srcs ...string) []*proc.Cmd 
 	if f, ok := vars["LDFLAGS"]; ok {
 		ldFlags = append(ldFlags, f)
 	}
-	for _, dir := range k3.cLibDirs {
+	for _, dir := range k3.CLibDirs {
 		ldFlags = append(ldFlags, "-L"+dir)
 	}
 	vars["LDFLAGS"] = strings.Join(ldFlags, " ")
@@ -463,14 +467,14 @@ func NewT3XF(vars map[string]string, t3xf string, srcs []string, imports ...stri
 		}
 	}
 	if _, ok := vars["K3C"]; !ok {
-		vars["K3C"] = k3.compiler
+		vars["K3C"] = k3.Compiler
 	}
 
 	// We need to remove k3 stdlib files from the source list, (if accidentally
 	// inserted by the user) because of a missing module (PCMDmod).
 	vars["_sources"] = strings.Join(removeStdlib(srcs), " ")
 
-	for _, dir := range k3.includes {
+	for _, dir := range k3.Includes {
 		vars["_includes"] += fmt.Sprintf(" -I%s", dir)
 	}
 
