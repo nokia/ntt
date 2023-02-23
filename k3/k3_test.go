@@ -12,7 +12,6 @@ import (
 )
 
 func TestNewPlugin(t *testing.T) {
-	t.Skip("TODO: fix dso problem(libk3-plugin.so not found during runtime). Skipping test.")
 	if k3.Runtime() == "k3r" {
 		t.Skip("Cannot locate k3 runtime. Skipping test.")
 	}
