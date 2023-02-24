@@ -70,14 +70,14 @@ update-k3:
     refs:
       - master
   script: |
-    if [ -n "${CI-}" ]; then
-      git config user.email "${GIT_AUTHOR_EMAIL}"
-      git config user.name  "${GIT_AUTHOR_NAME}"
-    fi
     TEMP="$(mktemp -d)"
     trap "rm -rf -- $TEMP" EXIT
     git clone --depth=1 --no-tags --branch=master https://gitlabe1.ext.net.nokia.com/k3/k3.git $TEMP
     cd $TEMP
+    if [ -n "${CI-}" ]; then
+      git config user.email "${GIT_AUTHOR_EMAIL}"
+      git config user.name  "${GIT_AUTHOR_NAME}"
+    fi
     git checkout -b ntt-update-$CI_COMMIT_SHORT_SHA
     git submodule update --init lib/ntt
     (cd lib/ntt; git fetch origin; git checkout $CI_COMMIT_SHA)
