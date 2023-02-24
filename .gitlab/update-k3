@@ -1,0 +1,41 @@
+#!/bin/bash -e
+
+K3_TITLE="Update k3 (${CI_COMMIT_SHORT_SHA})"
+K3_PROJECT_ID=5154
+K3_SOURCE_BRANCH="ntt-update-$CI_COMMIT_SHORT_SHA"
+K3_TARGET_BRANCH="master"
+
+TEMP="$(mktemp -d)"
+trap "rm -rf -- $TEMP" EXIT
+
+source <(curl https://gitlabe1.ext.net.nokia.com/k3/k3ci/-/raw/master/k3ci-configure-ssh)
+
+set -x
+git clone --depth=1 --no-tags --branch=master git@gitlabe1.ext.net.nokia.com:k3/k3.git $TEMP
+cd $TEMP
+
+if [ -n "${CI-}" ]; then
+  git config user.email "${GIT_AUTHOR_EMAIL}"
+  git config user.name  "${GIT_AUTHOR_NAME}"
+fi
+
+git checkout -b ${K3_SOURCE_BRANCH}
+git submodule update --init lib/ntt
+(cd lib/ntt; git fetch origin; git checkout $CI_COMMIT_SHA)
+git add lib/ntt
+git commit -am "$K3_TITLE"
+git push --set-upstream origin ${K3_SOURCE_BRANCH}
+curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" \
+    --header "Private-Token:${GITLAB_TOKEN}" \
+    --header "Content-Type: application/json" \
+    --data @- <<EOB
+{
+    "id": ${K3_PROJECT_ID},
+    "source_branch": "${K3_SOURCE_BRANCH}",
+    "target_branch": "${K3_TARGET_BRANCH}",
+    "remove_source_branch": true,
+    "title": "${K3_TITLE}",
+    "merge_when_pipeline_succeeds": true,
+    "assignee_id":"${GITLAB_USER_ID}"
+}
+EOB
