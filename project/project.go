@@ -25,6 +25,7 @@ import (
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/ttcn3"
@@ -60,6 +61,9 @@ type Config struct {
 	//
 	// 	${NTT_CACHE}/ntt.env
 	EnvFile string `json:"env_file"`
+
+	// ResultsFile is the path to the results file.
+	ResultsFile string `json:"results_file"`
 
 	K3 struct {
 		// K3 root folder
@@ -1021,6 +1025,17 @@ func WithDefaults() ConfigOption {
 				c.LintFile = path
 				log.Debugf("project: using lint file %s\n", c.LintFile)
 			}
+		}
+
+		// Use existing test results file if available. Alternatively,
+		// use the directory of the index file (usually the
+		// CMAKE_BINARY_DIR). Otherwise, use the default name.
+		if path := cache.Lookup(results.Filename); fs.IsRegular(path) {
+			c.ResultsFile = path
+		} else if index := cache.Lookup(IndexFile); fs.IsRegular(index) {
+			c.ResultsFile = fs.JoinPath(filepath.Dir(index), results.Filename)
+		} else {
+			c.ResultsFile = results.Filename
 		}
 
 		c.updateVariables()

@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/nokia/ntt/internal/lsp/span"
 )
@@ -28,7 +27,7 @@ func Lookup(path string) string {
 	}
 
 	if cache := fromEnv(); cache != "" {
-		for _, dir := range strings.Split(cache, ":") {
+		for _, dir := range filepath.SplitList(cache) {
 			path := filepath.Join(dir, path)
 			if _, err := os.Stat(path); err == nil {
 				return path

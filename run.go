@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/nokia/ntt/internal/cache"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/results"
@@ -79,9 +78,6 @@ all tests with @stable-tag:
 	}
 
 	ErrCommandFailed = fmt.Errorf("command failed")
-
-	ResultsFile = cache.Lookup("test_results.json")
-	Start       = time.Now()
 )
 
 func init() {
@@ -113,7 +109,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	var runs []results.Run
-	os.Remove(cache.Lookup("test_results.json"))
+	os.Remove(Project.ResultsFile)
 	defer func() {
 		db := &results.DB{
 			Version: "1",
@@ -130,7 +126,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return
 		}
-		err = ioutil.WriteFile(cache.Lookup("test_results.json"), b, 0644)
+		err = ioutil.WriteFile(Project.ResultsFile, b, 0644)
 	}()
 
 	running := make(map[*tests.Job]time.Time)
