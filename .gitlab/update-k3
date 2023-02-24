@@ -43,7 +43,7 @@ curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" 
     "assignee_id":"${GITLAB_USER_ID}"
 }
 EOB
-
+cat mr.json
 MR_IID=$(grep -oP 'iid": *\K\d+' mr.json)
 curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests/${MR_IID}" \
     --header @header.txt --data '{"merge_when_pipeline_succeeds": true}'
