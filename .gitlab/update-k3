@@ -33,7 +33,7 @@ git submodule update --init lib/ntt
 git add lib/ntt
 git commit -am "$K3_TITLE"
 git push --set-upstream origin ${K3_SOURCE_BRANCH}
-curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" --header @header.txt --data @- <<EOB
+curl -o mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" --header @header.txt --data @- <<EOB
 {
     "id": ${K3_PROJECT_ID},
     "source_branch": "${K3_SOURCE_BRANCH}",
