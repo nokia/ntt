@@ -1,8 +1,8 @@
 #!/bin/bash -e
 
-K3_TITLE="Update k3 (${CI_COMMIT_SHORT_SHA})"
+K3_TITLE="Update ntt (${CI_COMMIT_SHORT_SHA})"
 K3_PROJECT_ID=5154
-K3_SOURCE_BRANCH="ntt-update-$CI_COMMIT_SHORT_SHA"
+K3_SOURCE_BRANCH="update-ntt-$CI_COMMIT_SHORT_SHA"
 K3_TARGET_BRANCH="master"
 
 TEMP="$(mktemp -d)"
@@ -25,7 +25,7 @@ git submodule update --init lib/ntt
 git add lib/ntt
 git commit -am "$K3_TITLE"
 git push --set-upstream origin ${K3_SOURCE_BRANCH}
-curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" \
+curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" \
     --header "Private-Token:${GITLAB_TOKEN}" \
     --header "Content-Type: application/json" \
     --data @- <<EOB
@@ -35,7 +35,11 @@ curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" \
     "target_branch": "${K3_TARGET_BRANCH}",
     "remove_source_branch": true,
     "title": "${K3_TITLE}",
-    "merge_when_pipeline_succeeds": true,
     "assignee_id":"${GITLAB_USER_ID}"
 }
 EOB
+MR_IID=$(grep -oP 'iid": *\K\d+' mr.json)
+curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests/${MR_IID}" \
+    --header "Private-Token:${GITLAB_TOKEN}" \
+    --header "Content-Type: application/json" \
+    --data '{"merge_when_pipeline_succeeds": true}'
