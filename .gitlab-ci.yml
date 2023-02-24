@@ -10,7 +10,7 @@
 stages:
   - build
   - test
-  - integration
+  - deploy
 
 golang:1.16:
   stage: test
@@ -56,10 +56,44 @@ lint:
       - report-lint.json
 
 trigger-k3:
-  stage: integration
+  stage: test
   variables:
     NTT_COMMIT_SHA: ${CI_COMMIT_SHA}
   needs: []
   trigger:
     project: k3/k3
     strategy: depend
+
+update-k3:
+  stage: deploy
+  only:
+    refs:
+      - master
+  script: |
+    if [ -n "${CI-}" ]; then
+      git config user.email "${GIT_AUTHOR_EMAIL}"
+      git config user.name  "${GIT_AUTHOR_NAME}"
+    fi
+    TEMP="$(mktemp -d)"
+    trap "rm -rf -- $TEMP" EXIT
+    git clone --depth=1 --no-tags --branch=master https://gitlabe1.ext.net.nokia.com/k3/k3.git
+    git checkout -b ntt-update-$CI_COMMIT_SHORT_SHA
+    (cd lib/ntt; git fetch origin; git checkout $CI_COMMIT_SHA)
+    git add lib/ntt
+    git commit -am "Update ntt"
+    git push
+    K3_PROJECT_ID=5154
+    curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" \
+        --header "PRIVATE-TOKEN:${GITLAB_TOKEN}" \
+        --header "Content-Type: application/json" \
+        --data @- <<EOB
+    {
+        "id": ${K3_PROJECT_ID},
+        "source_branch": "ntt-update-${CI_COMMIT_SHORT_SHA}",
+        "target_branch": "master",
+        "remove_source_branch": true,
+        "title": "Update ntt (${CI_COMMIT_SHORT_SHA})",
+        "assignee_id":"${GITLAB_USER_ID}"
+        "merge_when_pipeline_succeeds": true,
+    }
+    EOB
