@@ -4,23 +4,21 @@ K3_TITLE="Update ntt (${CI_COMMIT_SHORT_SHA})"
 K3_PROJECT_ID=5154
 K3_SOURCE_BRANCH="update-ntt-$CI_COMMIT_SHORT_SHA"
 K3_TARGET_BRANCH="master"
+HEADER="${CI_PROJECT_DIR}/header.txt"
 
 TEMP="$(mktemp -d)"
 trap "rm -rf -- $TEMP" EXIT
 
 source <(curl https://gitlabe1.ext.net.nokia.com/k3/k3ci/-/raw/master/k3ci-configure-ssh)
 
+cat >${HEADER} <<EOF
+Private-Token: ${GITLAB_TOKEN}
+Content-Type: application/json
+EOF
+
 set -x
 git clone --depth=1 --no-tags --branch=master git@gitlabe1.ext.net.nokia.com:k3/k3.git $TEMP
 cd $TEMP
-
-(
-set +x
-cat >header.txt <<EOF
-Private-Token:${GITLAB_TOKEN}"
-Content-Type: application/json"
-EOF
-)
 
 if [ -n "${CI-}" ]; then
   git config user.email "${GIT_AUTHOR_EMAIL}"
@@ -33,7 +31,7 @@ git submodule update --init lib/ntt
 git add lib/ntt
 git commit -am "$K3_TITLE"
 git push --set-upstream origin ${K3_SOURCE_BRANCH}
-curl -o mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" --header @header.txt --data @- <<EOB
+curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" --header @$HEADER --data @- <<EOB
 {
     "id": ${K3_PROJECT_ID},
     "source_branch": "${K3_SOURCE_BRANCH}",
@@ -46,4 +44,4 @@ EOB
 cat mr.json
 MR_IID=$(grep -oP 'iid": *\K\d+' mr.json)
 curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests/${MR_IID}" \
-    --header @header.txt --data '{"merge_when_pipeline_succeeds": true}'
+    --header @${HEADER} --data '{"merge_when_pipeline_succeeds": true}'
