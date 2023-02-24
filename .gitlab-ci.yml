@@ -79,6 +79,7 @@ update-k3:
     git clone --depth=1 --no-tags --branch=master https://gitlabe1.ext.net.nokia.com/k3/k3.git $TEMP
     cd $TEMP
     git checkout -b ntt-update-$CI_COMMIT_SHORT_SHA
+    git submodule update --init lib/ntt
     (cd lib/ntt; git fetch origin; git checkout $CI_COMMIT_SHA)
     git add lib/ntt
     git commit -am "Update ntt"
