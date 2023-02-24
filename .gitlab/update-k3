@@ -44,4 +44,9 @@ EOB
 cat mr.json
 MR_IID=$(grep -oP 'iid": *\K\d+' mr.json)
 curl -X PUT "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests/${MR_IID}" \
-    --header @${HEADER} --data '{"merge_when_pipeline_succeeds": true}'
+    --header @${HEADER} --data @- <<EOB
+{
+  "merge_when_pipeline_succeeds": true,
+  "remove_source_branch": true
+}
+EOB
