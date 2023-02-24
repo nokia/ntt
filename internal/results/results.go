@@ -13,8 +13,11 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 )
 
+// File name of the test results file
+var Filename = "test_results.json"
+
 func Latest() (*DB, error) {
-	b, err := fs.Open("test_results.json").Bytes()
+	b, err := fs.Open(Filename).Bytes()
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &DB{}, nil
