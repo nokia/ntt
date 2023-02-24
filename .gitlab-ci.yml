@@ -76,7 +76,8 @@ update-k3:
     fi
     TEMP="$(mktemp -d)"
     trap "rm -rf -- $TEMP" EXIT
-    git clone --depth=1 --no-tags --branch=master https://gitlabe1.ext.net.nokia.com/k3/k3.git
+    git clone --depth=1 --no-tags --branch=master https://gitlabe1.ext.net.nokia.com/k3/k3.git $TEMP
+    cd $TEMP
     git checkout -b ntt-update-$CI_COMMIT_SHORT_SHA
     (cd lib/ntt; git fetch origin; git checkout $CI_COMMIT_SHA)
     git add lib/ntt
