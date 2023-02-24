@@ -43,6 +43,7 @@ curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" 
 EOB
 cat mr.json
 MR_IID=$(grep -oP 'iid": *\K\d+' mr.json)
+sleep 30
 curl -X PUT "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests/${MR_IID}/merge" \
     --header @${HEADER} --data @- <<EOB
 {
