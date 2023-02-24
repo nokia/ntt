@@ -71,6 +71,7 @@ update-k3:
       - master
   script: |
     TEMP="$(mktemp -d)"
+    BRANCH="ntt-update-$CI_COMMIT_SHORT_SHA"
     trap "rm -rf -- $TEMP" EXIT
     git clone --depth=1 --no-tags --branch=master https://gitlabe1.ext.net.nokia.com/k3/k3.git $TEMP
     cd $TEMP
@@ -78,12 +79,12 @@ update-k3:
       git config user.email "${GIT_AUTHOR_EMAIL}"
       git config user.name  "${GIT_AUTHOR_NAME}"
     fi
-    git checkout -b ntt-update-$CI_COMMIT_SHORT_SHA
+    git checkout -b ${BRANCH}
     git submodule update --init lib/ntt
     (cd lib/ntt; git fetch origin; git checkout $CI_COMMIT_SHA)
     git add lib/ntt
     git commit -am "Update ntt"
-    git push
+    git push --set-upstream origin ${BRANCH}
     K3_PROJECT_ID=5154
     curl -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" \
         --header "PRIVATE-TOKEN:${GITLAB_TOKEN}" \
@@ -91,7 +92,7 @@ update-k3:
         --data @- <<EOB
     {
         "id": ${K3_PROJECT_ID},
-        "source_branch": "ntt-update-${CI_COMMIT_SHORT_SHA}",
+        "source_branch": "${BRANCH}",
         "target_branch": "master",
         "remove_source_branch": true,
         "title": "Update ntt (${CI_COMMIT_SHORT_SHA})",
