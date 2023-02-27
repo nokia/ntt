@@ -225,6 +225,7 @@ func buildEnv(t *Test) ([]string, error) {
 	}
 
 	if t.Config != nil {
+		ret = append(ret, "K3_NAME="+t.Config.Name)
 		for k, v := range t.Config.Variables {
 			if _, ok := env.LookupEnv(k); !ok {
 				ret = append(ret, fmt.Sprintf("%s=%s", k, v))
@@ -238,7 +239,6 @@ func buildEnv(t *Test) ([]string, error) {
 		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	ret = append(ret, "K3_NAME="+t.Config.Name)
 	ret = append(ret, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
 	return ret, nil
 }
