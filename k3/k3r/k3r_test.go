@@ -189,8 +189,8 @@ func TestBuildEnv(t *testing.T) {
 			"K3R_PATH=.:import1:import2",
 			"LD_LIBRARY_PATH=.:import1:import2",
 			"PATH=.:import1:import2:path",
-			"TEST_VAR_A=vartest",
 			"K3_NAME=",
+			"TEST_VAR_A=vartest",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 		}
 		reset := clearEnv()
@@ -212,9 +212,9 @@ func TestBuildEnv(t *testing.T) {
 			"K3R_PATH=.",
 			"LD_LIBRARY_PATH=.",
 			"PATH=.",
+			"K3_NAME=",
 			"FOO=fromVar",
 			"FOO=fromEnv",
-			"K3_NAME=",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
 		reset := clearEnv()
 		defer reset()
