@@ -238,6 +238,7 @@ func buildEnv(t *Test) ([]string, error) {
 		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
 	}
 
+	ret = append(ret, "K3_NAME="+t.Config.Name)
 	ret = append(ret, "K3_SERVER=pipe,/dev/fd/0,/dev/fd/1")
 	return ret, nil
 }
