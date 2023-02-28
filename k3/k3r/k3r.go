@@ -116,6 +116,10 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 			events <- tests.NewErrorEvent(&Error{Err: err})
 			return
 		}
+		log.Debugf("env:\n")
+		for _, e := range cmd.Env {
+			log.Debugf("  %s\n", e)
+		}
 		log.Debugf("+ %s\n", cmd.String())
 		err = cmd.Start()
 		if err != nil {
