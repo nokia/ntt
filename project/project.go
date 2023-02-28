@@ -314,7 +314,7 @@ type Task interface {
 func Build(c *Config) error {
 	since := time.Now()
 	defer func() {
-		log.Debugf("build took %s", time.Since(since))
+		log.Debugf("build took %s\n", time.Since(since))
 	}()
 
 	tasks, err := BuildTasks(c)
