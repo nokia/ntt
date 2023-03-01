@@ -16,7 +16,6 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/tests"
 )
 
@@ -208,36 +207,48 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 }
 
 func buildEnv(t *Test) ([]string, error) {
-	var ret []string
-
-	paths, err := project.LibraryPaths(t.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Prepend current working directory and NTT_CACHE envirnoment variable
-	// to library paths.
-	paths = append([]string{"."}, paths...)
-	if s, ok := env.LookupEnv("NTT_CACHE"); ok {
-		paths = append([]string{s}, paths...)
-	}
-
-	for _, p := range []string{"K3R_PATH", "LD_LIBRARY_PATH", "PATH"} {
-		if s := buildEnvPaths(p, paths); s != "" {
-			ret = append(ret, s)
-		}
-	}
+	var (
+		ret            []string
+		k3rPaths       []string
+		ldLibraryPaths []string
+	)
 
 	if t.Config != nil {
+		// K3_NAME is required by test hooks (aka. sut-control.sh)
 		ret = append(ret, "K3_NAME="+t.Config.Name)
+
+		// All declared (environment) variables are passed to k3r.
 		for k, v := range t.Config.Variables {
-			if _, ok := env.LookupEnv(k); !ok {
-				ret = append(ret, fmt.Sprintf("%s=%s", k, v))
-			}
+			ret = append(ret, fmt.Sprintf("%s=%s", k, v))
 		}
+
+		var commonPaths []string
+
+		// NTT_CACHE specifies the location of cached artifacts, such
+		// as additional libraries. And should be looked up before the
+		// current working directory.
+		if s, ok := env.LookupEnv("NTT_CACHE"); ok {
+			commonPaths = append(commonPaths, s)
+		}
+
+		// Artifacts without explicit path are put in the current
+		// working directory by convention.
+		//
+		// Note: We use "." instead of os.Getwd() to make our tests
+		// easier to write.
+		commonPaths = append(commonPaths, ".")
+
+		// Imports may provide additional artifacts.
+		commonPaths = append(commonPaths, t.Config.Manifest.Imports...)
+
+		k3rPaths = append(commonPaths, t.Config.K3.Plugins...)
+		ldLibraryPaths = append(commonPaths, t.Config.K3.CLibDirs...)
+
 	}
 
 	ret = append(ret, t.Env...)
+	ret = append(ret, buildEnvPaths("K3R_PATH", k3rPaths...))
+	ret = append(ret, buildEnvPaths("LD_LIBRARY_PATH", ldLibraryPaths...))
 
 	for k, v := range t.ModulePars {
 		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
@@ -247,15 +258,12 @@ func buildEnv(t *Test) ([]string, error) {
 	return ret, nil
 }
 
-// buildEnvPaths returns environment variable s with given search paths prepended.
-func buildEnvPaths(s string, paths []string) string {
-	if env, ok := env.LookupEnv(s); ok {
-		paths = append(paths, env)
+// buildEnvPaths returns environment variable 'name' with given search paths appended.
+func buildEnvPaths(name string, paths ...string) string {
+	if env, ok := env.LookupEnv(name); ok {
+		paths = append([]string{env}, paths...)
 	}
-	if len(paths) != 0 {
-		return fmt.Sprintf("%s=%s", s, strings.Join(paths, string(os.PathListSeparator)))
-	}
-	return ""
+	return fmt.Sprintf("%s=%s", name, strings.Join(paths, string(os.PathListSeparator)))
 }
 
 // waitGracefully waits for the k3 runtime to exit, checks if the log file is
