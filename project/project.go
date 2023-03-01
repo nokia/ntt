@@ -470,20 +470,6 @@ func Files(c *Config) ([]string, error) {
 	return fs.TTCN3Files(files...)
 }
 
-// LibraryPaths returns the library search paths required to execute a
-// test-suite. The search order is first come first serves: More important
-// directories come first
-func LibraryPaths(c *Config) ([]string, error) {
-	if c == nil {
-		return nil, nil
-	}
-	var paths []string
-	paths = append(paths, c.Manifest.Imports...)
-	paths = append(paths, c.K3.Plugins...)
-	paths = append(paths, c.K3.CLibDirs...)
-	return paths, nil
-}
-
 // ApplyPresets returns a list of test case configurations with optional
 // presets applied. The presets are applied in the order they are specified in
 // the list.

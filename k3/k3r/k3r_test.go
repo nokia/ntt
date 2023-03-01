@@ -129,16 +129,11 @@ func TestEvents(t *testing.T) {
 
 func TestBuildEnv(t *testing.T) {
 	clearEnv := func() func() {
-		a, okA := os.LookupEnv("PATH")
 		b, okB := os.LookupEnv("K3R_PATH")
 		c, okC := os.LookupEnv("LD_LIBRARY_PATH")
-		os.Unsetenv("PATH")
 		os.Unsetenv("K3R_PATH")
 		os.Unsetenv("LD_LIBRARY_PATH")
 		return func() {
-			if okA {
-				os.Setenv("PATH", a)
-			}
 			if okB {
 				os.Setenv("K3R_PATH", b)
 			}
@@ -151,10 +146,9 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		want := []string{
+			"K3_NAME=",
 			"K3R_PATH=.",
 			"LD_LIBRARY_PATH=.",
-			"PATH=.",
-			"K3_NAME=",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 		}
 		reset := clearEnv()
@@ -168,10 +162,9 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("library paths", func(t *testing.T) {
 		want := []string{
-			"K3R_PATH=.:import1:import2:k3-plugins",
-			"LD_LIBRARY_PATH=.:import1:import2:k3-plugins",
-			"PATH=.:import1:import2:k3-plugins",
 			"K3_NAME=",
+			"K3R_PATH=.:import1:import2:k3-plugins",
+			"LD_LIBRARY_PATH=.:import1:import2",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 		}
 		reset := clearEnv()
@@ -186,19 +179,16 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("variables", func(t *testing.T) {
 		want := []string{
-			"K3R_PATH=.:import1:import2",
-			"LD_LIBRARY_PATH=.:import1:import2",
-			"PATH=.:import1:import2:path",
 			"K3_NAME=",
 			"TEST_VAR_A=vartest",
+			"K3R_PATH=.:import1:import2",
+			"LD_LIBRARY_PATH=.:import1:import2",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1",
 		}
 		reset := clearEnv()
 		defer reset()
-		os.Setenv("PATH", "path")
 		test := newTest()
 		test.Config.Variables = map[string]string{
-			"PATH":       "varpath",
 			"TEST_VAR_A": "vartest",
 		}
 		test.Config.Imports = []string{"import1", "import2"}
@@ -209,12 +199,11 @@ func TestBuildEnv(t *testing.T) {
 
 	t.Run("test env", func(t *testing.T) {
 		want := []string{
-			"K3R_PATH=.",
-			"LD_LIBRARY_PATH=.",
-			"PATH=.",
 			"K3_NAME=",
 			"FOO=fromVar",
 			"FOO=fromEnv",
+			"K3R_PATH=.",
+			"LD_LIBRARY_PATH=.",
 			"K3_SERVER=pipe,/dev/fd/0,/dev/fd/1"}
 		reset := clearEnv()
 		defer reset()
