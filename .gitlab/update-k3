@@ -21,8 +21,8 @@ git clone --depth=1 --no-tags --branch=master git@gitlabe1.ext.net.nokia.com:k3/
 cd $TEMP
 
 if [ -n "${CI-}" ]; then
-  git config user.email "${GIT_AUTHOR_EMAIL}"
-  git config user.name  "${GIT_AUTHOR_NAME}"
+  git config --global user.email "${GIT_AUTHOR_EMAIL}"
+  git config --global user.name  "${GIT_AUTHOR_NAME}"
 fi
 
 git checkout -b ${K3_SOURCE_BRANCH}
