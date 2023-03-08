@@ -245,7 +245,9 @@ func buildEnv(t *Test) ([]string, error) {
 		ldLibraryPaths = append(commonPaths, t.Config.K3.CLibDirs...)
 
 	}
-
+	if path, ok := env.LookupEnv("PATH"); ok {
+		t.Env = append(t.Env, buildEnvPaths("PATH", path))
+	}
 	ret = append(ret, t.Env...)
 	ret = append(ret, buildEnvPaths("K3R_PATH", k3rPaths...))
 	ret = append(ret, buildEnvPaths("LD_LIBRARY_PATH", ldLibraryPaths...))

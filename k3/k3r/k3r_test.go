@@ -127,6 +127,23 @@ func TestEvents(t *testing.T) {
 
 }
 
+func ignoreEnvVars(unwanted []string, vars []string) []string {
+	var ret []string
+	for _, v := range vars {
+		found := false
+		for _, unwVar := range unwanted {
+			if strings.HasPrefix(v, unwVar+"=") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			ret = append(ret, v)
+		}
+	}
+	return ret
+}
+
 func TestBuildEnv(t *testing.T) {
 	clearEnv := func() func() {
 		b, okB := os.LookupEnv("K3R_PATH")
@@ -155,6 +172,7 @@ func TestBuildEnv(t *testing.T) {
 		defer reset()
 		test := newTest()
 		got, err := buildEnv(test)
+		got = ignoreEnvVars([]string{"PATH"}, got)
 		assert.Nil(t, err)
 		assert.Equal(t, want, got, "without K3_SERVER k3r wont communicate")
 
@@ -173,6 +191,7 @@ func TestBuildEnv(t *testing.T) {
 		test.Config.Imports = []string{"import1", "import2"}
 		test.Config.K3.Plugins = []string{"k3-plugins"}
 		got, err := buildEnv(test)
+		got = ignoreEnvVars([]string{"PATH"}, got)
 		assert.Nil(t, err)
 		assert.Equal(t, want, got, "library path need to be exported to k3r")
 	})
@@ -193,6 +212,7 @@ func TestBuildEnv(t *testing.T) {
 		}
 		test.Config.Imports = []string{"import1", "import2"}
 		got, err := buildEnv(test)
+		got = ignoreEnvVars([]string{"PATH"}, got)
 		assert.Nil(t, err)
 		assert.Equal(t, want, got, "library path need to be exported to k3r")
 	})
@@ -214,6 +234,7 @@ func TestBuildEnv(t *testing.T) {
 		test.Env = []string{"FOO=fromEnv"}
 
 		got, err := buildEnv(test)
+		got = ignoreEnvVars([]string{"PATH"}, got)
 		assert.Nil(t, err)
 		assert.Equal(t, want, got)
 	})
