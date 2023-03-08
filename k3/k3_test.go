@@ -35,7 +35,8 @@ func TestNewPlugin(t *testing.T) {
 	}
 
 	cmd := proc.Command(k3.Runtime(), "--plugin", abs)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(k3.CLibDirs(), string(os.PathListSeparator))))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(k3.CLibDirs(), string(os.PathListSeparator))),
+		"PATH="+os.Getenv("PATH"))
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Errorf("Plugin did not load correcty: %s", err.Error())
