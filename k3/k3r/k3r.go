@@ -211,6 +211,7 @@ func buildEnv(t *Test) ([]string, error) {
 		ret            []string
 		k3rPaths       []string
 		ldLibraryPaths []string
+		binPaths       []string
 	)
 
 	if t.Config != nil {
@@ -243,14 +244,16 @@ func buildEnv(t *Test) ([]string, error) {
 
 		k3rPaths = append(commonPaths, t.Config.K3.Plugins...)
 		ldLibraryPaths = append(commonPaths, t.Config.K3.CLibDirs...)
+		binPaths = commonPaths
+		if t.Config.K3.Runtime != "k3r" && t.Config.K3.Runtime != "" {
+			binPaths = append(binPaths, filepath.Dir(t.Config.K3.Runtime))
+		}
+	}
 
-	}
-	if path, ok := env.LookupEnv("PATH"); ok {
-		t.Env = append(t.Env, buildEnvPaths("PATH", path))
-	}
 	ret = append(ret, t.Env...)
 	ret = append(ret, buildEnvPaths("K3R_PATH", k3rPaths...))
 	ret = append(ret, buildEnvPaths("LD_LIBRARY_PATH", ldLibraryPaths...))
+	ret = append(ret, buildEnvPaths("PATH", binPaths...))
 
 	for k, v := range t.ModulePars {
 		ret = append(ret, fmt.Sprintf("%s=%s", k, v))
