@@ -120,6 +120,25 @@ func Int2Enum(args ...runtime.Object) runtime.Object {
 	return nil
 }
 
+func Enum2Int(args ...runtime.Object) runtime.Object {
+	e, ok := args[0].(*runtime.EnumValue)
+	if !ok {
+		return runtime.Errorf("Argument must be an enum value")
+	}
+
+	ranges, err := e.ReturnIdByValue()
+	if err != nil {
+		return runtime.Errorf("Can't find ID of provided value")
+	}
+	smallestId := 0
+	for i, enumRange := range ranges {
+		if enumRange.First < smallestId || i == 0 {
+			smallestId = enumRange.First
+		}
+	}
+	return runtime.NewInt(smallestId)
+}
+
 func Log(args ...runtime.Object) runtime.Object {
 	var ss []string
 	for _, arg := range args {
@@ -154,6 +173,7 @@ func init() {
 		"int2bit(in integer i, in integer l) return bitstring":  Int2Bit,
 		"int2char(in integer i) return charstring":              Int2Char,
 		"int2enum(in integer i, out any e)":                     Int2Enum,
+		"enum2int(in any e) return integer":                     Enum2Int,
 		"int2float(in integer i) return float":                  Int2Float,
 		"int2str(in integer i) return charstring":               Int2Str,
 		"str2int(in charstring s) return integer":               Str2Int,
