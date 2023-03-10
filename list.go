@@ -22,10 +22,10 @@ var (
 		Short: "List modules, tests, imports, ...",
 		Long: `List various types of objects.
 
-List control parts, modules, imports or tests. The list command without any explicit
-sub-commands will output tests.
+List control parts, modules, imports or control. The list command without any explicit
+sub-commands will output control.
 
-List will ignore imported directories when printing tests. If you need to list all
+List will ignore imported directories when printing control. If you need to list all
 tests from a testsuite you'll have to pass .ttcn3 files as arguments.
 Example:
 

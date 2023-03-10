@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/compdb"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +26,18 @@ func init() {
 	BuildCommand.Flags().BoolVar(&CompDB, "compdb", false, "generate compilation database")
 }
 
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func Build(cmd *cobra.Command, args []string) error {
 	tasks, err := project.BuildTasks(Project)
 	if err != nil {
@@ -35,9 +46,16 @@ func Build(cmd *cobra.Command, args []string) error {
 	if CompDB {
 		var db []compdb.Command
 		for _, t := range tasks {
-			if _, ok := t.(*k3.TTCN3Library); ok {
+
+			// NOTE(5nord) K3 does not a dedicated command building
+			// libraries. There we just skip the CompDB output,
+			// when the input list is the same as the output list.
+			//
+			// This approach is not perfect, but sufficient for now.
+			if equal(t.Inputs(), t.Outputs()) {
 				continue
 			}
+
 			cmd := t.String()
 			for _, in := range t.Inputs() {
 				for _, out := range t.Outputs() {

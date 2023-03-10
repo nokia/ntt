@@ -15,13 +15,12 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/k3"
-	"github.com/nokia/ntt/tests"
+	"github.com/nokia/ntt/control"
 )
 
 // A Test is a test case instance.
 type Test struct {
-	*tests.Job
+	*control.Job
 
 	// Path to the T3XF file.
 	T3XF string
@@ -63,15 +62,15 @@ func (r *Error) Unwrap() error {
 	return r.Err
 }
 
-func (t *Test) Run(ctx context.Context) <-chan tests.Event {
+func (t *Test) Run(ctx context.Context) <-chan control.Event {
 
-	events := make(chan tests.Event)
+	events := make(chan control.Event)
 
 	go func() {
 		defer close(events)
 
 		if !strings.Contains(t.Name, ".") {
-			events <- tests.NewErrorEvent(ErrNotQualified)
+			events <- control.NewErrorEvent(ErrNotQualified)
 			return
 		}
 
@@ -100,19 +99,19 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 		cmd.Dir = t.Dir
 		env, err := buildEnv(t)
 		if err != nil {
-			events <- tests.NewErrorEvent(err)
+			events <- control.NewErrorEvent(err)
 			return
 		}
 		cmd.Env = env
 		cmd.Stdin = strings.NewReader(t.request())
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			events <- tests.NewErrorEvent(&Error{Err: err})
+			events <- control.NewErrorEvent(&Error{Err: err})
 			return
 		}
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
-			events <- tests.NewErrorEvent(&Error{Err: err})
+			events <- control.NewErrorEvent(&Error{Err: err})
 			return
 		}
 		log.Debugf("env:\n")
@@ -122,7 +121,7 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 		log.Debugf("+ %s\n", cmd.String())
 		err = cmd.Start()
 		if err != nil {
-			events <- tests.NewErrorEvent(&Error{Err: err})
+			events <- control.NewErrorEvent(&Error{Err: err})
 			return
 		}
 
@@ -133,16 +132,16 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 			scanner := bufio.NewScanner(stderr)
 			scanner.Split(bufio.ScanLines)
 			for scanner.Scan() {
-				events <- tests.NewLogEvent(t.Job, "k3r: "+scanner.Text())
+				events <- control.NewLogEvent(t.Job, "k3r: "+scanner.Text())
 			}
 			if err := scanner.Err(); err != nil {
-				events <- tests.NewErrorEvent(&Error{Err: err})
+				events <- control.NewErrorEvent(&Error{Err: err})
 			}
 		}()
 
 		// k3r does not have a ControlStarted event, so we'll fake it.
 		if strings.HasSuffix(t.Name, ".control") {
-			events <- tests.NewStartEvent(t.Job, t.Name)
+			events <- control.NewStartEvent(t.Job, t.Name)
 		}
 
 		scanner := bufio.NewScanner(stdout)
@@ -157,49 +156,49 @@ func (t *Test) Run(ctx context.Context) <-chan tests.Event {
 			switch v := strings.Fields(line); v[0] {
 			case "tciTestCaseStarted":
 				name = v[1][1 : len(v[1])-1]
-				events <- tests.NewStartEvent(t.Job, name)
+				events <- control.NewStartEvent(t.Job, name)
 			case "tciTestCaseTerminated":
 				verdict := v[1]
-				events <- tests.NewStopEvent(t.Job, name, verdict)
+				events <- control.NewStopEvent(t.Job, name, verdict)
 			case "tciControlTerminated":
 				// k3r does not send a verdict. I just assume it's pass.
-				events <- tests.NewStopEvent(t.Job, t.Name, "pass")
+				events <- control.NewStopEvent(t.Job, t.Name, "pass")
 			case "tciError":
 				switch v[1] {
 				case "E101:":
-					events <- tests.NewErrorEvent(ErrNoSuchModule)
+					events <- control.NewErrorEvent(ErrNoSuchModule)
 				case "E102:":
-					events <- tests.NewErrorEvent(ErrNoSuchTest)
+					events <- control.NewErrorEvent(ErrNoSuchTest)
 				case "E103:":
-					events <- tests.NewErrorEvent(ErrNoSuchControl)
+					events <- control.NewErrorEvent(ErrNoSuchControl)
 				case "E200:":
-					events <- tests.NewErrorEvent(ErrRuntimeNotReady)
+					events <- control.NewErrorEvent(ErrRuntimeNotReady)
 				case "E201:":
 					// ErrModuleNotReady happens, when tciRootModule was not called.
 					// This is a spurious error, so we'll ignore it.
-					//events <- tests.NewErrorEvent(ErrModuleNotReady)
+					//events <- control.NewErrorEvent(ErrModuleNotReady)
 				case "E202:":
-					events <- tests.NewErrorEvent(ErrTestNotReady)
+					events <- control.NewErrorEvent(ErrTestNotReady)
 				case "E203:":
-					events <- tests.NewErrorEvent(ErrControlNotReady)
+					events <- control.NewErrorEvent(ErrControlNotReady)
 				case "E999:":
-					events <- tests.NewErrorEvent(fmt.Errorf("%w: %s", ErrNotImplemented, strings.Join(v[2:], " ")))
+					events <- control.NewErrorEvent(fmt.Errorf("%w: %s", ErrNotImplemented, strings.Join(v[2:], " ")))
 				default:
-					events <- tests.NewErrorEvent(fmt.Errorf("%w: %s", ErrUnknown, strings.Join(v[1:], " ")))
+					events <- control.NewErrorEvent(fmt.Errorf("%w: %s", ErrUnknown, strings.Join(v[1:], " ")))
 				}
 			default:
-				events <- tests.NewErrorEvent(fmt.Errorf("%w: %s", ErrInvalidMessage, line))
+				events <- control.NewErrorEvent(fmt.Errorf("%w: %s", ErrInvalidMessage, line))
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			events <- tests.NewErrorEvent(&Error{Err: err})
+			events <- control.NewErrorEvent(&Error{Err: err})
 		}
 		wg.Wait()
 		err = waitGracefully(t, cmd)
 		if ctx.Err() == context.DeadlineExceeded {
-			events <- tests.NewErrorEvent(ErrTimeout)
+			events <- control.NewErrorEvent(ErrTimeout)
 		} else if err != nil {
-			events <- tests.NewErrorEvent(&Error{Err: err})
+			events <- control.NewErrorEvent(&Error{Err: err})
 		}
 	}()
 
@@ -312,13 +311,11 @@ func (t *Test) request() string {
 	return s
 }
 
-// NewTest creates a new test instance ready to run.
-func NewTest(t3xf string, name string) *Test {
+// NewTest creates a new test instance from job ready to run.
+func NewTest(t3xf string, job *control.Job) *Test {
 	return &Test{
-		Job: &tests.Job{
-			Name: name,
-		},
+		Job:     job,
 		T3XF:    t3xf,
-		Runtime: k3.Runtime(),
+		Runtime: job.Config.K3.Runtime,
 	}
 }

@@ -4,37 +4,28 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 
-	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/k3/k3s"
-	"github.com/nokia/ntt/tests"
+	"github.com/nokia/ntt/control"
+	"github.com/nokia/ntt/control/k3s"
 )
 
 type TestController struct {
-	// messages is the channel where test events are sent.
-	messages chan tests.Event
-
-	// jobs maps id and test jobs.
+	// running maps id and test running.
 	//
 	// It assures that a test is not executed twice, because the CodeLens
 	// UI can only display one "run test" button at a time.
-	jobs map[TestID]*tests.Job
-	mu   sync.Mutex
-
-	// client is the LSP client. It is used to send notifications and
-	// status updates to the IDE.
-	client protocol.Client
-
-	// console is used to display test output.
-	console io.Writer
+	running map[TestID]*control.Job
+	mu      sync.Mutex
 
 	// suites is required to find test suite configurations for a given test.
 	suites *Suites
+
+	// jobs is used to schedule test jobs.
+	jobs chan *control.Job
 }
 
 type TestID struct {
@@ -44,33 +35,31 @@ type TestID struct {
 }
 
 // Start starts the test controller.
-func (c *TestController) Start(client protocol.Client, logger io.Writer, suites *Suites) error {
-	c.messages = make(chan tests.Event)
-	c.jobs = make(map[TestID]*tests.Job)
-	c.client = client
-	c.console = logger
+func (c *TestController) Start(client protocol.Client, logger io.Writer, suites *Suites) {
 	c.suites = suites
+	c.running = make(map[TestID]*control.Job)
+	c.jobs = make(chan *control.Job, 1)
 	go func() {
-		for event := range c.messages {
+		runner := k3s.NewRunner(c.jobs, logger)
+		for event := range runner.Run(context.Background()) {
 			log.Debugf("TestController: %+v\n", event)
 			switch e := event.(type) {
-			case tests.StartEvent:
-			case tests.StopEvent, tests.ErrorEvent:
-				if job := tests.UnwrapJob(e); job != nil {
+			case control.StartEvent:
+			case control.StopEvent, control.ErrorEvent:
+				if job := control.UnwrapJob(e); job != nil {
 					c.removeJob(job)
 				}
 			default:
 				log.Debugf("TestController: unknown event: %T\n", e)
 			}
-			c.client.CodeLensRefresh(context.Background())
+			client.CodeLensRefresh(context.Background())
 		}
 	}()
-	return nil
 }
 
 // Shutdown stops the test controller.
 func (c *TestController) Shutdown() error {
-	close(c.messages)
+	close(c.jobs)
 	return nil
 }
 
@@ -104,74 +93,35 @@ func (c *TestController) RunTest(id TestID) error {
 
 	// TODO(5nord): Use project.ApplyPreset to retrieve the configuration,
 	// like expected verdict for the job.
-	c.enqueueJob(id, &tests.Job{
+	job := &control.Job{
 		Name:   id.Name,
 		Config: config,
-	})
+	}
+
+	c.mu.Lock()
+	c.running[id] = job
+	c.mu.Unlock()
+
+	c.jobs <- job
+
 	return nil
 }
 
 // job returns the test job for the given id.
-func (c *TestController) lookupJob(id TestID) *tests.Job {
+func (c *TestController) lookupJob(id TestID) *control.Job {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.jobs[id]
+	return c.running[id]
 }
 
 // remove removes the test job from the controller.
-func (c *TestController) removeJob(job *tests.Job) {
-	for id, j := range c.jobs {
+func (c *TestController) removeJob(job *control.Job) {
+	for id, j := range c.running {
 		if j == job {
 			c.mu.Lock()
-			delete(c.jobs, id)
+			delete(c.running, id)
 			c.mu.Unlock()
 			return
 		}
 	}
-}
-
-func (c *TestController) enqueueJob(id TestID, job *tests.Job) {
-	c.mu.Lock()
-	c.jobs[id] = job
-	c.mu.Unlock()
-	c.messages <- tests.NewStartEvent(job, job.Name)
-
-	go func() {
-		fmt.Fprintf(c.console, `
-===============================================================================
-Compiling test %s in %q`, job.Name, job.Config.Root)
-
-		if err := k3s.Build(c.console, job.Config); err != nil {
-			fmt.Fprintln(c.console, err.Error())
-			c.messages <- tests.NewErrorEvent(&tests.JobError{Job: job, Err: err})
-			return
-		}
-
-		fmt.Fprintf(c.console, `
-===============================================================================
-Running test %s in %q`, job.Name, job.Config.Root)
-
-		logDir, _ := k3s.Run(c.console, job.Config, job.Name)
-
-		if files := fs.Abs(excludeFromListIfPresent("mtc_workspace", fs.FindFilesRecursive(logDir))...); len(files) > 0 {
-			fmt.Fprintf(c.console, `
-Content of log directory %q:
-===============================================================================
-%s
-`,
-				logDir, strings.Join(files, "\n"))
-		}
-		c.messages <- tests.NewStopEvent(job, job.Name, "")
-	}()
-
-}
-
-func excludeFromListIfPresent(str string, input []string) []string {
-	ret := make([]string, 0, len(input))
-	for _, elem := range input {
-		if !strings.Contains(elem, str) {
-			ret = append(ret, elem)
-		}
-	}
-	return ret
 }

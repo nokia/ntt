@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project/internal/k3"
 )
 
 func TestNewPlugin(t *testing.T) {
+
 	if k3.Runtime() == "k3r" {
 		t.Skip("Cannot locate k3 runtime. Skipping test.")
 	}

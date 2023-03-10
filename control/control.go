@@ -1,5 +1,5 @@
-// Package test provides interfaces for running TTCN-3 test cases.
-package tests
+// Package control provides the test control and management interface.
+package control
 
 import (
 	"context"
@@ -14,8 +14,14 @@ type Runner interface {
 	Run(context.Context) <-chan Event
 }
 
+// RunnerFactory creates a new Runner.
+type RunnerFactory func() (Runner, error)
+
 // Job describes the test or control function to be executed.
 type Job struct {
+	// ID is the unique identifier of the job.
+	ID string
+
 	// Name is the fully qualified name of the test or control function.
 	Name string
 
@@ -36,6 +42,13 @@ type Job struct {
 
 	// Config provides the project configuration
 	*project.Config
+}
+
+func NewJob(name string, conf *project.Config) *Job {
+	return &Job{
+		Name:   name,
+		Config: conf,
+	}
 }
 
 // JobError describes an error that occurred during the execution of a test or control function.

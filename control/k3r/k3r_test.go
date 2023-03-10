@@ -9,17 +9,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
-	"github.com/nokia/ntt/tests"
-	tsts "github.com/nokia/ntt/tests"
+	tsts "github.com/nokia/ntt/control"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEvents(t *testing.T) {
 	old, _ := initStage(t)
 
-	t3xf := testBuild(t, filepath.Join(old, "testdata/suite"))
+	conf, err := project.Open(filepath.Join(old, "testdata/suite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if k3r := conf.K3.Runtime; k3r == "k3r" || k3r != "" {
+		t.Skip("no k3 runtime found")
+	}
+
+	if err := project.Build(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		input   string
@@ -105,9 +113,9 @@ func TestEvents(t *testing.T) {
 			}
 
 			var actual []string
-			tst := NewTest(t3xf, tt.input)
+			tst := NewTest(conf.K3.T3XF, tsts.NewJob(tt.input, conf))
 			for e := range tst.Run(ctx) {
-				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "tests.")
+				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "control.")
 				switch e := e.(type) {
 				case tsts.StartEvent:
 					s += fmt.Sprintf(" %s", e.Name)
@@ -251,7 +259,7 @@ func TestBuildEnv(t *testing.T) {
 
 func newTest() *Test {
 	return &Test{
-		Job: &tests.Job{
+		Job: &tsts.Job{
 			Config: &project.Config{},
 		},
 	}
@@ -276,20 +284,4 @@ func initStage(t *testing.T) (string, string) {
 	})
 
 	return old, dir
-}
-
-func testBuild(t *testing.T, args ...string) string {
-	t.Helper()
-	if k3r := k3.Runtime(); k3r == "k3r" {
-		t.Skip("no k3 runtime found")
-	}
-
-	p, err := project.Open(args...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := project.Build(p); err != nil {
-		t.Fatal(err)
-	}
-	return p.K3.T3XF
 }

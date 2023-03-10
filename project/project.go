@@ -27,7 +27,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/yaml"
-	"github.com/nokia/ntt/k3"
+	"github.com/nokia/ntt/project/internal/k3"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 )

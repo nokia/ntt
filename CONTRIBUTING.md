@@ -146,7 +146,11 @@ request being accepted:
 ntt                 main binary with sub-commands (list, build, run, lint, ...)
 │
 ├── project         test suite configuration package
-├── tests           test suite control package
+├── control         test management and control
+│   ├── k3r         runner implementation for k3r
+│   ├── k3s         runner implementation for k3s
+│   └── pool        runner with support for worker pools
+│
 ├── runtime         runtime system
 ├── builtins        predefined and builtin functions
 ├── interpreter     tree walking interpreter for TTCN-3
@@ -177,8 +181,6 @@ ntt                 main binary with sub-commands (list, build, run, lint, ...)
 │   └── yaml        YAML support library
 │
 └── k3              k3 support packages
-    ├── k3r         runtime interface package
-    ├── k3s         k3s interface package
     └── log         log file parser
 ```
 

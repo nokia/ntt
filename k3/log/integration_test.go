@@ -8,14 +8,19 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/k3/log"
+	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAvailableCategories(t *testing.T) {
-	k3r := k3.Runtime()
-	if k3r == "k3r" {
+	conf, err := project.NewConfig(project.WithK3())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	k3r := conf.K3.Runtime
+	if k3r == "k3r" || k3r == "" {
 		t.Skip("no k3 runtime found")
 	}
 

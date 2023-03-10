@@ -8,7 +8,6 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 )
@@ -34,7 +33,7 @@ func (s *Suite) Files() []string {
 	if s.files == nil {
 		s.files = make(map[string]bool)
 		files, _ := project.Files(s.Config)
-		for _, dir := range k3.Includes() {
+		for _, dir := range s.Config.K3.Includes {
 			for _, file := range fs.FindTTCN3Files(dir) {
 				files = append(files, file)
 			}
@@ -109,7 +108,6 @@ func (s *Suite) guessModuleByFileName(name string) (string, error) {
 // parallel. For example, if a user edits a file, which is imports from two
 // independent test suites the language server must not throw a
 // redeclaration-error.
-//
 //
 // How do we solve this problem?
 // Virtually all lsp features initiated from a open file. For every
