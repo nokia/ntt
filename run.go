@@ -13,12 +13,13 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/nokia/ntt/control"
+	"github.com/nokia/ntt/control/k3r"
+	"github.com/nokia/ntt/control/pool"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/project"
-	"github.com/nokia/ntt/tests"
-	"github.com/nokia/ntt/tests/runner"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/doc"
@@ -129,28 +130,36 @@ func runTests(cmd *cobra.Command, args []string) error {
 		err = ioutil.WriteFile(Project.ResultsFile, b, 0644)
 	}()
 
-	running := make(map[*tests.Job]time.Time)
-	for e := range runner.New(MaxWorkers, jobs).Run(ctx) {
+	running := make(map[*control.Job]time.Time)
+	runner, err := pool.NewRunner(
+		pool.MaxWorkers(MaxWorkers),
+		pool.WithFactory(k3r.Factory(jobs)),
+	)
+	if err != nil {
+		return err
+	}
+
+	for e := range runner.Run(ctx) {
 		log.Debugf("result: event=%#v\n", e)
 
 		switch e := e.(type) {
-		case tests.LogEvent:
+		case control.LogEvent:
 			log.Debugln(e.Text)
 
-		case tests.StartEvent:
+		case control.StartEvent:
 			running[e.Job] = e.Time()
 			if Format() == "text" {
 				ColorStart.Printf("=== RUN %s\n", e.Name)
 			}
 
-		case tests.TickerEvent:
+		case control.TickerEvent:
 			if Format() == "text" {
 				for job := range running {
 					ColorRunning.Printf("... active %s\n", job.Name)
 				}
 			}
 
-		case tests.StopEvent:
+		case control.StopEvent:
 			if e.Verdict != "pass" {
 				errorCount++
 			}
@@ -164,9 +173,9 @@ func runTests(cmd *cobra.Command, args []string) error {
 			runs = append(runs, run)
 			printRun(run)
 
-		case tests.ErrorEvent:
+		case control.ErrorEvent:
 			errorCount++
-			job := tests.UnwrapJob(e)
+			job := control.UnwrapJob(e)
 			if job == nil {
 				ColorFatal.Println("+++ fatal error: " + e.Err.Error())
 				break
@@ -199,7 +208,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 
 }
 
-func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, files []string, ids []string, allTests bool) (<-chan *tests.Job, error) {
+func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, files []string, ids []string, allTests bool) (<-chan *control.Job, error) {
 	if len(files) == 0 && len(ids) == 0 {
 		return ProjectJobs(ctx, conf, flags, allTests)
 	}
@@ -253,17 +262,22 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		fileIDs = append(fileIDs, tests...)
 	}
 
-	out := make(chan *tests.Job)
+	out := make(chan *control.Job)
 	go func() {
 		defer close(out)
-		for _, id := range append(fileIDs, ids...) {
+		names := make(map[string]int)
+		for _, name := range append(fileIDs, ids...) {
 			var tags [][]string
-			if def, ok := m.Load(id); ok {
+			if def, ok := m.Load(name); ok {
 				tags = doc.FindAllTags(ast.FirstToken(def.(*ttcn3.Definition).Node).Comments())
 			}
-			if b.Match(id, tags) {
-				job := &tests.Job{
-					Name:   id,
+			if b.Match(name, tags) {
+				id := fmt.Sprintf("%s-%d", name, names[name])
+				names[name]++
+
+				job := &control.Job{
+					ID:     id,
+					Name:   name,
 					Config: conf,
 					Dir:    OutputDir,
 				}
@@ -283,7 +297,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 // configuration. The jobs are filtered by the given flags and environment
 // variable NTT_LIST_BASKETS. ProjectJobs will emit all control parts. Unless
 // allTests is true, in which case it will emit all testcases.
-func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet, allTests bool) (<-chan *tests.Job, error) {
+func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet, allTests bool) (<-chan *control.Job, error) {
 	srcs, err := fs.TTCN3Files(conf.Sources...)
 	if err != nil {
 		return nil, err
@@ -295,16 +309,20 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 	}
 	b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
 
-	out := make(chan *tests.Job)
+	out := make(chan *control.Job)
 	go func() {
 		defer close(out)
+		names := make(map[string]int)
 		for _, src := range srcs {
 			for _, def := range EntryPoints(src, allTests) {
-				id := def.QualifiedName(def.Node)
+				name := def.QualifiedName(def.Node)
 				tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
-				if b.Match(id, tags) {
-					job := &tests.Job{
-						Name:   id,
+				if b.Match(name, tags) {
+					id := fmt.Sprintf("%s-%d", name, names[name])
+					names[name]++
+					job := &control.Job{
+						ID:     id,
+						Name:   name,
 						Config: conf,
 						Dir:    OutputDir,
 					}

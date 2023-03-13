@@ -164,7 +164,7 @@ func nttArgs(p *project.Config) []string {
 }
 
 // nttEnv returns the magic environment variables required to use ntt with
-// Nokia component tests.
+// Nokia component control.
 // nttEnv also copies os.Environ for variables like PATH and LD_LIBRARY_PATH
 // required by various scripts and C++ applications.
 func nttEnv(p *project.Config) []string {

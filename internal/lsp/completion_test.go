@@ -11,24 +11,17 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
-	"github.com/nokia/ntt/k3"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	auxModulesMap, predefMap map[string]bool
+	predefMap map[string]bool
 )
 
 func init() {
 
-	auxModulesMap = make(map[string]bool)
-	for _, dir := range k3.Includes() {
-		for _, file := range fs.FindTTCN3Files(dir) {
-			auxModulesMap[fs.Stem(file)] = true
-		}
-	}
 	predefMap = make(map[string]bool)
 	for _, def := range lsp.PredefinedFunctions {
 		predefMap[def.Label] = true
@@ -47,9 +40,6 @@ func buildSuite(t *testing.T, strs ...string) *lsp.Suite {
 		fh.SetBytes([]byte(s))
 		suite.DB.Index(suite.Config.Sources[len(suite.Config.Sources)-1])
 	}
-	for _, dir := range k3.Includes() {
-		suite.DB.Index(fs.FindTTCN3Files(dir)...)
-	}
 	return suite
 }
 
@@ -66,23 +56,13 @@ func completionAt(t *testing.T, suite *lsp.Suite, pos loc.Pos) []protocol.Comple
 
 	var items []protocol.CompletionItem
 	for _, item := range lsp.NewCompListItems(suite, pos, nodeStack, name) {
-		if IsAuxModule(item) || predefMap[item.Label] {
+		if predefMap[item.Label] {
 			continue
 		}
 		items = append(items, item)
 	}
 
 	return items
-}
-
-func IsAuxModule(item protocol.CompletionItem) bool {
-	if auxModulesMap[ModuleName(item.Detail)] {
-		return true
-	}
-	if auxModulesMap[item.Label] && item.Kind == protocol.ModuleCompletion {
-		return true
-	}
-	return false
 }
 
 func ModuleName(s string) string {
