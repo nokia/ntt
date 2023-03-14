@@ -48,7 +48,7 @@ lint:
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   needs: []
   script:
-    - golangci-lint run
+    - golangci-lint run --color=always --issues-exit-code=0 --out-format=code-climate:report-lint.json,colored-line-number:stdout
   artifacts:
     reports:
       codequality: report-lint.json
