@@ -1,20 +1,63 @@
 run:
-  issues-exit-code: 0
   tests: false
   skip-dirs:
-    - internal/env/.*
-    - internal/fs/.*
-    - internal/loc/.*
-    - internal/lsp/fakenet/.*
-    - internal/lsp/helper/.*
-    - internal/lsp/jsonrpc2/.*
-    - internal/lsp/protocol/.*
-    - internal/lsp/span/.*
-    - internal/lsp/telemetry/.*
-    - internal/lsp/xcontext/.*
-    - internal/memoize/.*
-    - internal/session/flock/.*
-    - ttcn3/v2/syntax/internal/gen/.*
+    - internal/env
+    - internal/fs
+    - internal/loc
+    - internal/lsp/fakenet
+    - internal/lsp/helper
+    - internal/lsp/jsonrpc2
+    - internal/lsp/protocol
+    - internal/lsp/span
+    - internal/lsp/telemetry
+    - internal/lsp/xcontext
+    - internal/memoize
+    - internal/session/flock
+    - ttcn3/v2/syntax/internal/gen
+    - ttcn3/parser
+    - ttcn3/token
+    - ttcn3/scanner
+    - ttcn3/printer
 
 output:
-  format: code-climate:report-lint.json,colored-line-number:stdout
+  sort-results: true
+
+linters:
+  enable:
+    - gocritic
+    - dupl
+    - dupword
+    - errname
+    - errorlint
+    - exhaustive
+    - exhaustruct
+    - exportloopref
+    - forcetypeassert
+    - gocognit
+    - goconst
+    - godot
+    - godox
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - ireturn
+    - maintidx
+    - makezero
+    - misspell
+    - nestif
+    - prealloc
+    - revive
+    - stylecheck
+    - tenv
+    - unconvert
+    - usestdlibvars
+    - varnamelen
+    - wastedassign
+    - wrapcheck
+
+linters-settings:
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+        yaml: snake
