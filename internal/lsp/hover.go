@@ -13,6 +13,40 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
+func (md *MarkdownHover) Print(sign string, comment string, posRef string) protocol.MarkupContent {
+	// make line breaks conform to markdown spec
+	comment = strings.ReplaceAll(comment, "\n", "  \n")
+	return protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(sign) + "\n```\n - - -\n" + comment + "\n - - -\n" + posRef}
+}
+
+func (md *MarkdownHover) LinkForNode(def *ttcn3.Definition) string {
+	p := def.Position(def.Node.Pos())
+	return fmt.Sprintf("[module %s](%s#L%dC%d)", def.ModuleOf(def.Node).Name.String(), def.Filename(), p.Line, p.Column)
+}
+
+func (pt *PlainTextHover) Print(sign string, comment string, posRef string) protocol.MarkupContent {
+	val := sign
+	log.Debugf("@Hover: %q, comment %q, posRef: %q\n", val, comment, posRef)
+	if len(val) > 0 && val[len(val)-1] != '\n' {
+		val += "\n"
+	}
+	if len(comment) > 0 {
+		val += "__________\n" + comment
+		log.Debugf("@Hover: %v\n", val)
+		if val[len(val)-1] != '\n' {
+			val += "\n"
+		}
+	}
+	if len(posRef) > 0 {
+		val += strings.Repeat("_", len(posRef)+2) + "\n" + posRef
+	}
+	return protocol.MarkupContent{Kind: "plaintext", Value: val}
+}
+
+func (pt *PlainTextHover) LinkForNode(def *ttcn3.Definition) string {
+	return fmt.Sprintf("[module %s]", def.ModuleOf(def.Node).Name.String())
+}
+
 func getSignature(def *ttcn3.Definition) string {
 	var sig bytes.Buffer
 	var prefix = ""
@@ -51,13 +85,6 @@ func getSignature(def *ttcn3.Definition) string {
 	return prefix + sig.String()
 }
 
-func mdLinkForNode(def *ttcn3.Definition) string {
-	var mdLink bytes.Buffer
-	p := def.Position(def.Node.Pos())
-	fmt.Fprintf(&mdLink, "[module %s](%s#L%dC%d)", def.ModuleOf(def.Node).Name.String(), def.Filename(), p.Line, p.Column)
-	return mdLink.String()
-}
-
 func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	var (
 		file      = string(params.TextDocument.URI.SpanURI())
@@ -81,11 +108,10 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		if firstTok := ast.FirstToken(def.Node); firstTok == nil {
 			continue
 		} else {
-			// make line breaks conform to markdown spec
-			comment = strings.ReplaceAll(firstTok.Comments(), "\n", "  \n")
+			comment = firstTok.Comments()
 			signature = getSignature(def)
 			if tree.Root != def.Root {
-				posRef = "\n - - -\n" + mdLinkForNode(def)
+				posRef = s.clientCapability.HoverContent.LinkForNode(def)
 			}
 		}
 	}
@@ -100,7 +126,8 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 			}
 		}
 	}
-	hoverContents := protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(signature) + "\n```\n - - -\n" + comment + posRef}
+
+	hoverContents := s.clientCapability.HoverContent.Print(signature, comment, posRef)
 	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil

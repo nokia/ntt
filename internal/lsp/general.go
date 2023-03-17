@@ -13,6 +13,9 @@ import (
 	errors "golang.org/x/xerrors"
 )
 
+type PlainTextHover struct{}
+type MarkdownHover struct{}
+
 func registerSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
 	semTok := os.Getenv("NTT_SEMANTIC_TOKENS")
 	if strings.ToLower(semTok) == "on" {
@@ -44,7 +47,15 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	s.stateMu.Lock()
 	s.state = serverInitializing
 	s.stateMu.Unlock()
-
+	for _, format := range params.Capabilities.TextDocument.Hover.ContentFormat {
+		if format == "markdown" {
+			s.clientCapability.HoverContent = new(MarkdownHover)
+			break
+		}
+	}
+	if s.clientCapability.HoverContent == nil {
+		s.clientCapability.HoverContent = new(PlainTextHover)
+	}
 	s.pendingFolders = params.WorkspaceFolders
 	if len(s.pendingFolders) == 0 && params.RootURI != "" {
 		s.pendingFolders = []protocol.WorkspaceFolder{{
