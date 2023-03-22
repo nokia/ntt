@@ -114,6 +114,13 @@ func (t *Test) Run(ctx context.Context) <-chan control.Event {
 		defer session.Release(sid)
 		cmd.Env = append(cmd.Env, fmt.Sprintf("NTT_SESSION_ID=%d", sid))
 
+		abs, err := filepath.Abs(t.LogFile)
+		if err != nil {
+			events <- control.NewErrorEvent(err)
+			return
+		}
+		cmd.Env = append(cmd.Env, fmt.Sprintf("K3_TEST_LOG=%s", abs))
+
 		cmd.Stdin = strings.NewReader(t.request())
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
