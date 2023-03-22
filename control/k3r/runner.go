@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/control"
+	"github.com/nokia/ntt/internal/env"
 )
 
 // Runner executes tests using k3r.
@@ -35,6 +35,7 @@ func (r *Runner) Run(ctx context.Context) <-chan control.Event {
 	go func() {
 		defer close(results)
 		for job := range r.jobs {
+			ctx := ctx
 			if job.Dir != "" {
 				workingDir = filepath.Join(job.Dir, job.ID)
 				if err := os.MkdirAll(workingDir, 0755); err != nil {
@@ -74,10 +75,10 @@ func (r *Runner) Run(ctx context.Context) <-chan control.Event {
 				results <- control.NewErrorEvent(err)
 				continue
 			}
+
+			var cancel context.CancelFunc
 			if timeout > 0 {
-				var cancel context.CancelFunc
 				ctx, cancel = context.WithTimeout(ctx, timeout)
-				defer cancel()
 			}
 
 			// TODO(5nord) implement module parameters
@@ -89,6 +90,9 @@ func (r *Runner) Run(ctx context.Context) <-chan control.Event {
 			}
 			for e := range t.Run(ctx) {
 				results <- e
+			}
+			if cancel != nil {
+				cancel()
 			}
 		}
 	}()
