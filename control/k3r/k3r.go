@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,11 +12,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nokia/ntt/control"
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
-	"github.com/nokia/ntt/control"
+	"github.com/nokia/ntt/internal/session"
 )
 
 // A Test is a test case instance.
@@ -103,6 +105,15 @@ func (t *Test) Run(ctx context.Context) <-chan control.Event {
 			return
 		}
 		cmd.Env = env
+
+		sid, err := session.Get()
+		if err != nil {
+			events <- control.NewErrorEvent(err)
+			return
+		}
+		defer session.Release(sid)
+		cmd.Env = append(cmd.Env, fmt.Sprintf("NTT_SESSION_ID=%d", sid))
+
 		cmd.Stdin = strings.NewReader(t.request())
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
@@ -279,17 +290,17 @@ func waitGracefully(t *Test, cmd *exec.Cmd) error {
 		return err
 	}
 	defer f.Close()
-	if ofs, err := f.Seek(-1, os.SEEK_END); err == nil {
+	if ofs, err := f.Seek(-1, io.SeekEnd); err == nil {
 		b := make([]byte, 1)
 		if _, err = f.ReadAt(b, ofs); err != nil {
 			return err
 		}
 		if b[0] != '\n' {
-			f.Seek(0, os.SEEK_END)
+			f.Seek(0, io.SeekEnd)
 			f.Write([]byte{'\n'})
 		}
 	}
-	f.Seek(0, os.SEEK_END)
+	f.Seek(0, io.SeekEnd)
 	fmt.Fprintf(f, "%s.999999|exit|%d\n", time.Now().Format("20060102T150405"), cmd.ProcessState.ExitCode())
 	return cmdErr
 }
