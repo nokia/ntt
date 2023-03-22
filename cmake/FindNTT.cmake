@@ -217,7 +217,7 @@ function(add_ttcn3_suite TGT)
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
 
-    __ntt_add_db_entry("${CMAKE_BINARY_DIR}/ttcn3_suites.json" "${_WORKING_DIRECTORY}" "${CMAKE_CURRENT_LIST_DIR}")
+    __ntt_add_db_entry("${CMAKE_BINARY_DIR}/ttcn3_suites.json" "${TGT}" "${_WORKING_DIRECTORY}" "${CMAKE_CURRENT_LIST_DIR}")
 endfunction()
 
 function(protobuf_generate_ttcn3 TGT)
@@ -251,7 +251,7 @@ function(protobuf_generate_ttcn3 TGT)
         VERBATIM )
 endfunction()
 
-function(__ntt_add_db_entry JSON_FILE ROOT_DIR SOURCE_DIR)
+function(__ntt_add_db_entry JSON_FILE TGT ROOT_DIR SOURCE_DIR)
 
     # Create initial file content
     if(NOT EXISTS "${JSON_FILE}")
@@ -270,6 +270,6 @@ function(__ntt_add_db_entry JSON_FILE ROOT_DIR SOURCE_DIR)
     if(STRIPPED MATCHES "}$")
         file(APPEND "${JSON_FILE}" ",\n")
     endif()
-    file(APPEND "${JSON_FILE}" "    {\"root_dir\":\"${ROOT_DIR}\",\"source_dir\":\"${SOURCE_DIR}\"}")
+    file(APPEND "${JSON_FILE}" "    {\"root_dir\":\"${ROOT_DIR}\",\"source_dir\":\"${SOURCE_DIR}\", \"target\":\"${TGT}")
     file(APPEND "${JSON_FILE}" "]}")
 endfunction()
