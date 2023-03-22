@@ -212,6 +212,9 @@ type Suite struct {
 
 	// SourceDir is the directory where the test suite source files are located.
 	SourceDir string `json:"source_dir"`
+
+	// Target is an optional build target.
+	Target string `json:"target,omitempty"`
 }
 
 var (
