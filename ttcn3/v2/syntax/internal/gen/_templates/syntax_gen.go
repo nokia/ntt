@@ -25,7 +25,7 @@ func (k Kind) IsToken() bool {
 func (k Kind) IsNonTerminal() bool { return __nodes_begin <= k && k <= __nodes_end }
 
 // IsKeyword returns true if the kind is a keyword.
-func (k Kind) IsKeyword() bool { return __keywords_begin <= k && k <= __tokens_end }
+func (k Kind) IsKeyword() bool { return __keywords_begin <= k && k <= __keywords_end }
 
 // IsLiteral returns true if the kind is a literal token. Literal tokens are
 // tokens which have a value, such as identifier, integer, ...

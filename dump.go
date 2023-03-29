@@ -1,16 +1,19 @@
 package main
 
 import (
-	"bytes"
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/nokia/ntt/ttcn3/syntax"
+	"github.com/nokia/ntt/ttcn3/v2/printer"
+	syntax2 "github.com/nokia/ntt/ttcn3/v2/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -26,12 +29,59 @@ var (
 			files := append(srcs, imports...)
 			for _, file := range files {
 				tree := ttcn3.ParseFile(file)
-				if useTTCN3 {
-					printer.Print(os.Stdout, tree.Root)
-				} else if useDot {
+				switch format := Format(); format {
+				case "ttcn3":
+					b, err := fs.Content(file)
+					if err != nil {
+						fatal(err)
+					}
+					if err := printer.Fprint(os.Stdout, b); err != nil {
+						fatal(err)
+					}
+				case "dot":
 					dot(tree.Root)
-				} else {
-					dump(reflect.ValueOf(tree.Root), "Root: ")
+				case "text":
+					dumpAST(0, "Root", reflect.ValueOf(tree.Root.NodeList.Nodes))
+					w.Flush()
+				case "plain":
+					if !onlyTokens {
+						fatal(fmt.Errorf("parsing syntax not implemented. Please use option --only-tokens"))
+					}
+					b, err := fs.Content(file)
+					if err != nil {
+						fatal(err)
+					}
+					w := bufio.NewWriter(os.Stdout)
+					syntax2.Tokenize(b).Inspect(func(n syntax2.Node) bool {
+						if !n.IsValid() || !n.IsToken() {
+							return true
+						}
+
+						if !withTrivia && n.Kind().IsTrivia() {
+							return true
+						}
+
+						if withPosition {
+							fmt.Fprintf(w, "%d	%d	", n.Pos(), n.End())
+						}
+
+						if n.Kind().IsKeyword() {
+							fmt.Fprintf(w, "KEYWORD")
+						} else {
+							fmt.Fprintf(w, strings.ToUpper(n.Kind().String()))
+						}
+
+						if withValue {
+							fmt.Fprintf(w, "	%s", strings.ReplaceAll(n.Text(), "\n", "\\n"))
+						}
+
+						fmt.Fprintln(w)
+
+						return true
+					})
+					w.Flush()
+				default:
+					fatal(fmt.Errorf("format not supported: %s", Format()))
 				}
 			}
 
@@ -39,89 +89,84 @@ var (
 		},
 	}
 
-	useTTCN3 = false
-	useDot   = false
+	outputTTCN3 = false
+	outputDot   = false
+
+	onlyTokens   = false
+	withTrivia   = false
+	withPosition = false
+	withValue    = false
+
+	bold  = color.New(color.Bold)
+	faint = color.New(color.Faint)
+	token = color.New(color.FgMagenta)
 )
 
 func init() {
-	DumpCommand.PersistentFlags().BoolVarP(&useTTCN3, "ttcn3", "", false, "formatted TTCN-3 output")
-	DumpCommand.PersistentFlags().BoolVarP(&useDot, "dot", "", false, "graphviz output")
+	DumpCommand.PersistentFlags().BoolVarP(&outputTTCN3, "ttcn3", "", false, "formatted TTCN-3 output")
+	DumpCommand.PersistentFlags().BoolVarP(&outputDot, "dot", "", false, "graphviz output")
+
+	DumpCommand.PersistentFlags().BoolVarP(&onlyTokens, "only-tokens", "", false, "only dump tokens")
+	DumpCommand.PersistentFlags().BoolVarP(&withTrivia, "with-trivia", "", false, "dump tokens with trivia")
+	DumpCommand.PersistentFlags().BoolVarP(&withPosition, "with-position", "", false, "dump tokens with position")
+	DumpCommand.PersistentFlags().BoolVarP(&withValue, "with-value", "", false, "dump token with value")
 }
 
-func dump(v reflect.Value, f string) {
+func dumpJSON(tree *ttcn3.Tree) {
+	b, err := json.MarshalIndent(tree.Root, "", "  ")
+	if err != nil {
+		fatal(err)
+	}
+	fmt.Println(string(b))
+}
+
+func dumpAST(indent int, name string, v reflect.Value) {
 	if !v.IsValid() || v.IsZero() {
 		return
 	}
 
-	if v.Kind() != reflect.Interface && v.CanInterface() {
-		switch x := v.Interface().(type) {
-		case syntax.Token:
-			if x != nil {
-				Prefix(x, f)
-				fmt.Printf("[35m%s[0m", x.String())
-				Suffix(x)
-			}
-		case syntax.Node:
-			if x != nil {
-				Prefix(x, f)
-				fmt.Printf("[0m%s[0m", strings.TrimPrefix(v.Type().String(), "*syntax."))
-				Suffix(x)
-			}
+	span := ""
+	if v.CanInterface() {
+		if n, ok := v.Interface().(syntax.Node); ok {
+			span = fmt.Sprintf("[%d:%d)", n.Pos(), n.End())
 		}
 	}
+	fmt.Fprintf(w, "%-15s", span)
 
+	for i := 0; i < indent; i++ {
+		faint.Fprint(w, "·   ")
+	}
+
+	bold.Fprintf(w, "%s:", name)
+
+	if v.CanInterface() {
+		switch n := v.Interface().(type) {
+		case syntax.Token:
+			token.Fprintf(w, " %s\n", n.String())
+			return // do not recurse any further
+		case syntax.Node:
+			fmt.Fprintf(w, " %s", strings.TrimPrefix(reflect.TypeOf(n).String(), "*syntax."))
+		}
+	}
+	fmt.Fprintln(w)
+
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
 	switch v.Kind() {
-	case reflect.Ptr:
-		if v2 := v.Elem(); v2.IsValid() {
-			dump(v.Elem(), "")
-		}
-
-	case reflect.Interface:
-		if v2 := v.Elem(); v2.IsValid() {
-			dump(v2, f)
-		}
-
 	case reflect.Struct:
-		indent++
 		for i := 0; i < v.NumField(); i++ {
 			f := v.Field(i)
 			tf := v.Type().Field(i)
-			dump(f, fmt.Sprintf("%v: ", tf.Name))
+			dumpAST(indent+1, tf.Name, f)
 		}
-		indent--
-
 	case reflect.Slice:
-		Prefix(nil, f)
-		Suffix(nil)
-		indent++
 		for i := 0; i < v.Len(); i++ {
-			dump(v.Index(i), fmt.Sprintf("%d: ", i))
+			dumpAST(indent+1, fmt.Sprintf("[%d]", i), v.Index(i))
 		}
-		indent--
 	}
-
-}
-
-func Prefix(n syntax.Node, f string) {
-	fmt.Printf("%-15s %s[1m%s[0m", Pos(n), Indent(), f)
-}
-
-func Suffix(n syntax.Node) {
-	fmt.Println()
-}
-
-func Pos(n syntax.Node) string {
-	if n == nil {
-		return ""
-	}
-	return fmt.Sprintf("[%d-%d)", n.Pos()-1, n.End()-1)
-}
-
-func Indent() string {
-	var buf bytes.Buffer
-	fmt.Fprint(&buf, "[0;1m")
-	for i := 0; i < indent; i++ {
-		fmt.Fprint(&buf, "[37;0m·   [0m")
-	}
-	return buf.String()
 }

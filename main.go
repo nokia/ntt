@@ -157,6 +157,10 @@ func Format() string {
 		return "progress"
 	case outputTAP:
 		return "tap"
+	case outputTTCN3:
+		return "ttcn3"
+	case outputDot:
+		return "dot"
 	default:
 		return "text"
 	}
