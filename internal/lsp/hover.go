@@ -13,7 +13,7 @@ import (
 	"github.com/nokia/ntt/ttcn3/ast"
 )
 
-func getSignature(def *ttcn3.Definition) string {
+func getSignature(def *ttcn3.Node) string {
 	var sig bytes.Buffer
 	var prefix = ""
 	fh := fs.Open(def.Filename())
@@ -51,7 +51,7 @@ func getSignature(def *ttcn3.Definition) string {
 	return prefix + sig.String()
 }
 
-func mdLinkForNode(def *ttcn3.Definition) string {
+func mdLinkForNode(def *ttcn3.Node) string {
 	var mdLink bytes.Buffer
 	p := def.Position(def.Node.Pos())
 	fmt.Fprintf(&mdLink, "[module %s](%s#L%dC%d)", def.ModuleOf(def.Node).Name.String(), def.Filename(), p.Line, p.Column)

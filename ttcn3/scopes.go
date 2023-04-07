@@ -12,28 +12,28 @@ import (
 type Scope struct {
 	ast.Node
 	Tree  *Tree
-	Names map[string]*Definition
+	Names map[string]*Node
 }
 
-type Definition struct {
+type Node struct {
 	*ast.Ident
 	ast.Node
 	*Tree
-	Next *Definition
+	Next *Node
 }
 
-func Definitions(id string, n ast.Node, t *Tree) []*Definition {
+func Definitions(id string, n ast.Node, t *Tree) []*Node {
 	return NewScope(n, t).Lookup(id)
 }
 
 func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 	if scp.Names == nil {
-		scp.Names = make(map[string]*Definition)
+		scp.Names = make(map[string]*Node)
 	}
 
 	if id != nil {
 		name := id.String()
-		scp.Names[name] = &Definition{
+		scp.Names[name] = &Node{
 			Ident: id,
 			Node:  n,
 			Tree:  scp.Tree,
@@ -44,11 +44,11 @@ func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 
 // Lookup returns a list of defintions for the given identifier.
 // Lookup may be called with nil as receiver.
-func (scp *Scope) Lookup(name string) []*Definition {
+func (scp *Scope) Lookup(name string) []*Node {
 	if scp == nil {
 		return nil
 	}
-	var defs []*Definition
+	var defs []*Node
 	def := scp.Names[name]
 	for def != nil {
 		defs = append(defs, def)
