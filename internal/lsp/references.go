@@ -27,7 +27,7 @@ func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Locati
 			if idName == node.Tok.String() {
 				list = append(list, location(syntax.FileSet.Position(node.Tok.Pos())))
 			}
-			if idName == node.Tok2.String() {
+			if node.Tok2 != nil && idName == node.Tok2.String() {
 				list = append(list, location(syntax.FileSet.Position(node.Tok2.Pos())))
 			}
 			return false

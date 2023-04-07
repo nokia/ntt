@@ -53,7 +53,7 @@ func parentNodes(tree *ttcn3.Tree, cursor loc.Pos) (n ast.Expr, s []ast.Node) {
 		return nil, nil
 	}
 
-	if tok, ok := s[0].(ast.Token); ok && tok.Kind == token.IDENT {
+	if tok, ok := s[0].(ast.Token); ok && tok.Kind() == token.IDENT {
 		n, s = s[1].(ast.Expr), s[2:]
 	}
 	if len(s) > 0 {

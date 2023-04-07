@@ -20,7 +20,7 @@ func getSignature(def *ttcn3.Node) string {
 	content, _ := fh.Bytes()
 	switch node := def.Node.(type) {
 	case *ast.FuncDecl:
-		sig.WriteString(node.Kind.Lit + " " + node.Name.String())
+		sig.WriteString(node.Kind.String() + " " + node.Name.String())
 		sig.Write(content[node.Params.Pos()-1 : node.Params.End()])
 		if node.RunsOn != nil {
 			sig.WriteString("\n  ")
@@ -78,15 +78,14 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	for _, def := range tree.LookupWithDB(x, &s.db) {
 		defFound = true
 
-		if firstTok := ast.FirstToken(def.Node); firstTok == nil {
+		// make line breaks conform to markdown spec
+		comment = strings.ReplaceAll(ast.Doc(def.Tree.FileSet, def.Node), "\n", "  \n")
+		if comment == "" {
 			continue
-		} else {
-			// make line breaks conform to markdown spec
-			comment = strings.ReplaceAll(firstTok.Comments(), "\n", "  \n")
-			signature = getSignature(def)
-			if tree.Root != def.Root {
-				posRef = "\n - - -\n" + mdLinkForNode(def)
-			}
+		}
+		signature = getSignature(def)
+		if tree.Root != def.Root {
+			posRef = "\n - - -\n" + mdLinkForNode(def)
 		}
 	}
 	if !defFound {

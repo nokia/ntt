@@ -269,7 +269,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						ccID = n
 						cc[ccID] = 1 // Intial McCabe value
 
-						switch n.Kind.Kind {
+						switch n.Kind.Kind() {
 						case token.TESTCASE:
 							checkNaming(fset, n, style.Naming.Tests)
 							checkTags(fset, n, style.Tags.Tests)
@@ -359,7 +359,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					case *ast.WithSpec:
 						checkBraces(fset, n.LBrace, n.RBrace)
 					case *ast.ParenExpr:
-						if n.LParen.Kind == token.LBRACE {
+						if n.LParen.Kind() == token.LBRACE {
 							checkBraces(fset, n.LParen, n.RParen)
 						}
 
@@ -368,7 +368,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						ccID = mod
 
 					case *ast.BinaryExpr:
-						if n.Op.Kind == token.AND || n.Op.Kind == token.OR {
+						if n.Op.Kind() == token.AND || n.Op.Kind() == token.OR {
 							cc[ccID]++
 						}
 
@@ -389,7 +389,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						}
 
 						// Do not count else-guards
-						if n.Else.IsValid() {
+						if n.Else != nil {
 							return true
 						}
 						// Every AltGuard increases cyclomatic complexity.
@@ -435,7 +435,7 @@ func checkTags(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
 	}
 
 	var tags []string
-	for _, t := range doc.FindAllTags(ast.FirstToken(n).Comments()) {
+	for _, t := range doc.FindAllTags(ast.Doc(fset, n)) {
 		tags = append(tags, strings.Join(t, ":"))
 	}
 
@@ -640,15 +640,15 @@ func inGlobalScope(stack []ast.Node) bool {
 }
 
 func isPort(d *ast.ValueDecl) bool {
-	return d.Kind.Kind == token.PORT
+	return d.Kind.Kind() == token.PORT
 }
 
 func isConst(d *ast.ValueDecl) bool {
-	return d.Kind.Kind == token.CONST
+	return d.Kind.Kind() == token.CONST
 }
 
 func isVar(d *ast.ValueDecl) bool {
-	return !isVarTemplate(d) && d.Kind.Kind == token.VAR
+	return !isVarTemplate(d) && d.Kind.Kind() == token.VAR
 }
 
 func isVarTemplate(d *ast.ValueDecl) bool {

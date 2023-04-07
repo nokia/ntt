@@ -3,6 +3,7 @@ package ast
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/token"
@@ -44,114 +45,114 @@ func FindChildOf(n Node, pos loc.Pos) Node {
 }
 
 // First returns the first valid token of a syntax tree
-func FirstToken(n Node) *Token {
+func FirstToken(n Node) Token {
 	switch n := n.(type) {
 	case Token:
-		return &n
+		return n
 	case *ErrorNode:
-		return &n.From
+		return n.From
 	case *Ident:
-		return &n.Tok
+		return n.Tok
 	case *ParametrizedIdent:
 		return FirstToken(n.Ident)
 	case *ValueLiteral:
-		return &n.Tok
+		return n.Tok
 	case *CompositeLiteral:
-		return &n.LBrace
+		return n.LBrace
 	case *UnaryExpr:
-		return &n.Op
+		return n.Op
 	case *BinaryExpr:
 		if n.X != nil {
 			return FirstToken(n.X)
 		}
-		return &n.Op
+		return n.Op
 
 	case *ParenExpr:
-		return &n.LParen
+		return n.LParen
 	case *SelectorExpr:
 		return FirstToken(n.X)
 	case *IndexExpr:
 		if n.X != nil {
 			return FirstToken(n.X)
 		}
-		return &n.LBrack
+		return n.LBrack
 	case *CallExpr:
 		return FirstToken(n.Fun)
 	case *LengthExpr:
 		if n.X != nil {
 			return FirstToken(n.X)
 		}
-		return &n.Len
+		return n.Len
 	case *RedirectExpr:
 		return FirstToken(n.X)
 	case *TemplateDecl:
-		return FirstToken(&n.RestrictionSpec)
+		return FirstToken(n.RestrictionSpec)
 	case *ValueExpr:
 		return FirstToken(n.X)
 	case *ParamExpr:
 		return FirstToken(n.X)
 	case *FromExpr:
-		return &n.Kind
+		return n.Kind
 	case *ModifiesExpr:
-		return &n.Tok
+		return n.Tok
 	case *RegexpExpr:
-		return &n.Tok
+		return n.Tok
 	case *PatternExpr:
-		return &n.Tok
+		return n.Tok
 	case *DecmatchExpr:
-		return &n.Tok
+		return n.Tok
 	case *DecodedExpr:
-		return &n.Tok
+		return n.Tok
 	case *DefKindExpr:
-		return &n.Kind
+		return n.Kind
 	case *ExceptExpr:
 		return FirstToken(n.X)
 	case *BlockStmt:
-		return &n.LBrace
+		return n.LBrace
 	case *DeclStmt:
 		return FirstToken(n.Decl)
 	case *ExprStmt:
 		return FirstToken(n.Expr)
 	case *BranchStmt:
-		return &n.Tok
+		return n.Tok
 	case *ReturnStmt:
-		return &n.Tok
+		return n.Tok
 	case *CallStmt:
 		return FirstToken(n.Stmt)
 	case *AltStmt:
-		return &n.Tok
+		return n.Tok
 	case *ForStmt:
-		return &n.Tok
+		return n.Tok
 	case *WhileStmt:
-		return &n.Tok
+		return n.Tok
 	case *DoWhileStmt:
-		return &n.DoTok
+		return n.DoTok
 	case *IfStmt:
-		return &n.Tok
+		return n.Tok
 	case *SelectStmt:
-		return &n.Tok
+		return n.Tok
 	case *CaseClause:
-		return &n.Tok
+		return n.Tok
 	case *CommClause:
-		return &n.LBrack
+		return n.LBrack
 	case *Field:
-		if n.DefaultTok.IsValid() {
-			return &n.DefaultTok
+		if n.DefaultTok != nil {
+			return n.DefaultTok
 		}
 		return FirstToken(n.Type)
 	case *RefSpec:
 		return FirstToken(n.X)
 	case *StructSpec:
-		return &n.Kind
+		return n.Kind
 	case *ListSpec:
-		return &n.Kind
+		return n.Kind
 	case *EnumSpec:
-		return &n.Tok
+		return n.Tok
 	case *BehaviourSpec:
-		return &n.Kind
+		return n.Kind
 	case *ValueDecl:
-		if n.Kind.IsValid() {
-			return &n.Kind
+		if n.Kind != nil {
+			return n.Kind
 		}
 		return FirstToken(n.Type)
 
@@ -162,8 +163,8 @@ func FirstToken(n Node) *Token {
 		if len(n.ArrayDef) > 0 {
 			return FirstToken(n.ArrayDef[0])
 		}
-		if n.AssignTok.IsValid() {
-			return &n.AssignTok
+		if n.AssignTok != nil {
+			return n.AssignTok
 		}
 		if n.Value != nil {
 			return FirstToken(n.Value)
@@ -171,79 +172,79 @@ func FirstToken(n Node) *Token {
 		panic("ast.Node contains no tokens. This is probably a parser error")
 
 	case *ModuleParameterGroup:
-		return &n.Tok
+		return n.Tok
 
 	case *FuncDecl:
-		if n.External.Kind == token.EXTERNAL {
-			return &n.External
+		if n.External.Kind() == token.EXTERNAL {
+			return n.External
 		}
-		return &n.Kind
+		return n.Kind
 
 	case *SignatureDecl:
-		return &n.Tok
+		return n.Tok
 	case *SubTypeDecl:
-		return &n.TypeTok
+		return n.TypeTok
 	case *StructTypeDecl:
-		return &n.TypeTok
+		return n.TypeTok
 	case *EnumTypeDecl:
-		return &n.TypeTok
+		return n.TypeTok
 	case *BehaviourTypeDecl:
-		return &n.TypeTok
+		return n.TypeTok
 	case *PortTypeDecl:
-		return &n.TypeTok
+		return n.TypeTok
 	case *PortAttribute:
-		return &n.Kind
+		return n.Kind
 	case *PortMapAttribute:
-		return &n.MapTok
+		return n.MapTok
 	case *ComponentTypeDecl:
-		return &n.TypeTok
+		return n.TypeTok
 	case *Module:
-		return &n.Tok
+		return n.Tok
 	case *ModuleDef:
-		if n.Visibility.IsValid() {
-			return &n.Visibility
+		if n.Visibility != nil {
+			return n.Visibility
 		}
 		return FirstToken(n.Def)
 	case *ControlPart:
 		return FirstToken(n.Name)
 	case *ImportDecl:
-		return &n.ImportTok
+		return n.ImportTok
 	case *GroupDecl:
-		return &n.Tok
+		return n.Tok
 	case *FriendDecl:
-		return &n.FriendTok
+		return n.FriendTok
 	case *LanguageSpec:
-		return &n.Tok
+		return n.Tok
 	case *RestrictionSpec:
-		if n.TemplateTok.IsValid() {
-			return &n.TemplateTok
+		if n.TemplateTok != nil {
+			return n.TemplateTok
 		}
-		return &n.Tok
+		return n.Tok
 	case *RunsOnSpec:
-		return &n.RunsTok
+		return n.RunsTok
 	case *SystemSpec:
-		return &n.Tok
+		return n.Tok
 	case *MtcSpec:
-		return &n.Tok
+		return n.Tok
 	case *ReturnSpec:
-		return &n.Tok
+		return n.Tok
 	case *FormalPars:
-		return &n.LParen
+		return n.LParen
 	case *FormalPar:
-		if n.Direction.IsValid() {
-			return &n.Direction
+		if n.Direction != nil {
+			return n.Direction
 		}
 		if n.TemplateRestriction != nil {
 			return FirstToken(n.TemplateRestriction)
 		}
-		if n.Modif.IsValid() {
-			return &n.Modif
+		if n.Modif != nil {
+			return n.Modif
 		}
 		return FirstToken(n.Type)
 	case *WithSpec:
-		return &n.Tok
+		return n.Tok
 	case *WithStmt:
-		return &n.Kind
+		return n.Kind
 	default:
 		panic(fmt.Sprintf("unknown ast.Node: %T", n))
 	}
@@ -265,7 +266,7 @@ func Name(n Node) string {
 		}
 		return name
 	case *BranchStmt:
-		if n.Tok.Kind == token.LABEL {
+		if n.Tok.Kind() == token.LABEL {
 			return Name(n.Label)
 		}
 	case *ControlPart:
@@ -609,7 +610,7 @@ func Children(n Node) []Node {
 		children = add(children, n.Value)
 
 	case *TemplateDecl:
-		children = add(children, &n.RestrictionSpec)
+		children = add(children, n.RestrictionSpec)
 		children = add(children, n.Modif)
 		children = add(children, n.Type)
 		children = add(children, n.Name)
@@ -849,4 +850,80 @@ func Children(n Node) []Node {
 		children = add(children, n.Value)
 	}
 	return children
+}
+
+type span struct {
+	Begin, End loc.Position
+}
+
+func newSpan(fset *loc.FileSet, n Node) span {
+	return span{
+		Begin: fset.Position(n.Pos()),
+		End:   fset.Position(n.End()),
+	}
+}
+
+// Doc returns the documentation string for the given node.
+func Doc(fset *loc.FileSet, n Node) string {
+	if n == nil {
+		return ""
+	}
+
+	tok := n.FirstTok()
+	if tok == nil {
+		return ""
+	}
+
+	var ret string
+	prev := newSpan(fset, tok)
+L:
+	for {
+		tok = tok.PrevTok()
+		if tok == nil {
+			break
+		}
+
+		switch tok.Kind() {
+		case token.COMMENT:
+			curr := newSpan(fset, tok)
+			dist := prev.Begin.Line - curr.End.Line
+			if dist > 1 {
+				break L
+			}
+			prev = curr
+			text := tok.String()
+			switch text[1] {
+			case '/':
+				text = text[2:]
+				if len(text) > 0 && text[0] == ' ' {
+					text = text[1:]
+				}
+				ret = text + "\n" + ret
+			case '*':
+				text = text[2 : len(text)-2]
+				lines := strings.Split(text, "\n")
+				for i, line := range lines {
+					if len(line) > 0 && line[0] == ' ' {
+						line = line[1:]
+					}
+					line := strings.TrimRight(line, " ")
+					lines[i] = line
+				}
+				text = strings.Join(lines, "\n")
+				if dist > 0 {
+					text = text + "\n"
+				} else {
+					text = text + " "
+				}
+				ret = text + ret
+			}
+
+		case token.EXTERNAL, token.PRIVATE, token.PUBLIC, token.FRIEND:
+			// Modifiers might not necessarily be part
+			// of the Node and are just skipped over.
+		default:
+			break L
+		}
+	}
+	return ret
 }

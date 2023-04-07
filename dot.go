@@ -56,9 +56,6 @@ func IsValid(n ast.Node) bool {
 	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
 		return false
 	}
-	if tok, ok := n.(ast.Token); ok {
-		return tok.IsValid()
-	}
 	return true
 }
 
@@ -71,9 +68,9 @@ func nodeID(n ast.Node) string {
 
 func nodeProps(n ast.Node) string {
 	if tok, ok := n.(ast.Token); ok {
-		label := fmt.Sprintf("%v", tok.Kind)
-		if tok.Kind.IsLiteral() {
-			label = tok.Lit
+		label := fmt.Sprintf("%v", tok.Kind())
+		if tok.Kind().IsLiteral() {
+			label = tok.String()
 		}
 		return fmt.Sprintf("[label=<<B>%s</B>>; shape=box; style=filled; fillcolor=lightgrey]", escape(label))
 	}

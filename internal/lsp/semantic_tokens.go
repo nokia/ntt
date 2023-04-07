@@ -225,7 +225,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 
 			if typ != None {
 				tokens, line, col = appendToken(tokens, id.Tok, tree, typ, mod, line, col)
-				if id.Tok2.IsValid() {
+				if id.Tok2 != nil {
 					tokens, line, col = appendToken(tokens, id.Tok2, tree, typ, mod, line, col)
 				}
 			}
@@ -293,7 +293,7 @@ func DefinitionToken(tree *ttcn3.Tree, id ast.Node) (SemanticTokenType, Semantic
 		if _, ok := tree.ParentOf(tree.ParentOf(tree.ParentOf(n))).(*ast.ComponentTypeDecl); ok {
 			typ = Property
 		}
-		switch n.Kind.Kind {
+		switch n.Kind.Kind() {
 		case token.CONST, token.MODULEPAR:
 			mod |= Readonly
 		case token.PORT:

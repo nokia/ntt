@@ -269,7 +269,8 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		for _, name := range append(fileIDs, ids...) {
 			var tags [][]string
 			if def, ok := m.Load(name); ok {
-				tags = doc.FindAllTags(ast.FirstToken(def.(*ttcn3.Node).Node).Comments())
+				def := def.(*ttcn3.Node)
+				tags = doc.FindAllTags(ast.Doc(def.FileSet, def.Node))
 			}
 			if b.Match(name, tags) {
 				id := fmt.Sprintf("%s-%d", name, names[name])
@@ -316,7 +317,7 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 		for _, src := range srcs {
 			for _, def := range EntryPoints(src, allTests) {
 				name := def.QualifiedName(def.Node)
-				tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
+				tags := doc.FindAllTags(ast.Doc(def.FileSet, def.Node))
 				if b.Match(name, tags) {
 					id := fmt.Sprintf("%s-%d", name, names[name])
 					names[name]++

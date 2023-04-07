@@ -245,7 +245,7 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.add(n.Decl)
 
 	case *ast.BranchStmt:
-		if n.Tok.Kind == token.LABEL {
+		if n.Tok.Kind() == token.LABEL {
 			scp.Insert(n, n.Label)
 		}
 

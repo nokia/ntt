@@ -549,11 +549,11 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 			switch n := n.(type) {
 			case *ast.FuncDecl:
 				if n.IsTest() {
-					add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+					add(tree.QualifiedName(n), ast.Doc(tree.FileSet, n))
 				}
 				return false
 			case *ast.ControlPart:
-				add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+				add(tree.QualifiedName(n), ast.Doc(tree.FileSet, n))
 				return false
 			}
 			return true

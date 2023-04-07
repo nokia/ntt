@@ -2,9 +2,9 @@
 // traversal.
 package ast
 
-import (
-	"encoding/json"
+//go:generate go run ./internal/gen
 
+import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/token"
 )
@@ -13,7 +13,16 @@ import (
 type Node interface {
 	Pos() loc.Pos
 	End() loc.Pos
-	LastTok() *Token
+	FirstTok() Token
+	LastTok() Token
+}
+
+type Token interface {
+	Node
+	Kind() token.Kind
+	String() string
+	PrevTok() Token
+	NextTok() Token
 }
 
 // All expression nodes implement the Expr interface.
@@ -42,91 +51,6 @@ func (x ErrorNode) exprNode()     {}
 func (x ErrorNode) stmtNode()     {}
 func (x ErrorNode) declNode()     {}
 func (x ErrorNode) typeSpecNode() {}
-
-// token functionality shared by Token and Trivia
-type Terminal struct {
-	pos  loc.Pos
-	Kind token.Kind // Token kind like TESTCASE, SEMICOLON, COMMENT, ...
-	Lit  string     // Token values for non-operator tokens
-}
-
-func (x Terminal) Pos() loc.Pos { return x.pos }
-func (x Terminal) End() loc.Pos {
-	return loc.Pos(int(x.pos) + len(x.String()))
-}
-
-func (x *Terminal) String() string {
-	if x.Kind.IsLiteral() {
-		return x.Lit
-	}
-	return x.Kind.String()
-}
-
-func (t *Terminal) IsValid() bool {
-	return t.pos.IsValid()
-}
-
-// A Token represents a TTCN-3 token and implements the Node interface. Tokens are leave-nodes.
-type Token struct {
-	Terminal
-	LeadingTriv  []Trivia
-	TrailingTriv []Trivia
-}
-
-func NewToken(pos loc.Pos, kind token.Kind, val string) Token {
-	return Token{Terminal{pos, kind, val}, nil, nil}
-}
-
-// Comments concatenates all leading comments into one single string.
-func (t *Token) Comments() string {
-	return joinComments(t.LeadingTriv)
-}
-
-func (x Token) MarshalJSON() ([]byte, error) {
-	// Empty tokens become `null`. That should make it simpler to filter,
-	// compared to `""`. When Tokens use pointer semantics we can use omitempty
-	// to filter them out.
-	if !x.IsValid() {
-		return []byte("null"), nil
-	}
-
-	// Tokens without any comments become a string. That makes the output easier
-	// one the eye.
-	if len(x.LeadingTriv) == 0 && len(x.TrailingTriv) == 0 {
-		return json.Marshal(x.String())
-	}
-
-	// If there are comments we'll make an array of 3 strings out of it.
-	var strs []string
-
-	// First element is the leading trivia
-	if triv := x.LeadingTriv; len(triv) > 0 {
-		strs = append(strs, joinComments(triv))
-	}
-
-	// Second element is be token itself.
-	strs = append(strs, x.String())
-
-	// Third element is the trailing trivia
-	if triv := x.TrailingTriv; len(triv) > 0 {
-		strs = append(strs, joinComments(triv))
-	}
-
-	return json.Marshal(strs)
-}
-
-func (t Token) LastTok() *Token { return &t }
-
-// Trivia represent the parts of the source text that are largely insignificant
-// for normal understanding of the code, such as whitespace, comments, and
-// preprocessor directives.
-type Trivia struct {
-	Terminal
-}
-
-func NewTrivia(pos loc.Pos, kind token.Kind, val string) Trivia {
-	return Trivia{Terminal{pos, kind, val}}
-}
 
 type NodeList struct {
 	Nodes []Node
@@ -300,7 +224,7 @@ type (
 )
 
 func (x *Ident) String() string {
-	if x.Tok2.IsValid() {
+	if x.Tok2 != nil {
 		return x.Tok.String() + " " + x.Tok2.String()
 	}
 	return x.Tok.String()
@@ -539,7 +463,7 @@ type (
 	}
 
 	TemplateDecl struct {
-		RestrictionSpec
+		*RestrictionSpec
 		Modif       Token // "@lazy", "@fuzzy" or nil
 		Type        Expr
 		Name        *Ident
@@ -671,7 +595,7 @@ type (
 )
 
 func (x *FuncDecl) IsTest() bool {
-	return x.Kind.Kind == token.TESTCASE
+	return x.Kind.Kind() == token.TESTCASE
 }
 
 func (x *ValueDecl) declNode()            {}

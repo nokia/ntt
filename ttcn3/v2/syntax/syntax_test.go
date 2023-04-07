@@ -126,12 +126,12 @@ func TestScanner(t *testing.T) {
 		{"empty", "", []string{"[0:1): EOF"}},
 		{"spaces", "	 ", []string{"[2:3): EOF"}},
 		{"comments", "///**/\n/**///", []string{
-			"[0:7): comment",
+			"[0:6): comment",
 			"[7:11): comment",
 			"[11:13): comment",
 			"[13:14): EOF"}},
 		{"preproc", "#", []string{"[0:1): preprocessor directive", "[1:2): EOF"}},
-		{"preproc", "#foo bar\n", []string{"[0:9): preprocessor directive", "[9:10): EOF"}},
+		{"preproc", "#foo bar\n", []string{"[0:8): preprocessor directive", "[9:10): EOF"}},
 
 		// identifiers
 		{"ids", "_ f1o", []string{"[0:1): identifier", "[2:5): identifier", "[5:6): EOF"}},

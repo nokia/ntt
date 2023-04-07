@@ -169,7 +169,7 @@ func (t *Tree) ModulePars() []*Node {
 			return true
 
 		case *ast.ValueDecl:
-			if n.Kind.Kind != token.MODULEPAR && n.Kind.Kind != token.ILLEGAL {
+			if n.Kind.Kind() != token.MODULEPAR && n.Kind.Kind() != token.ILLEGAL {
 				return false
 			}
 			return true
@@ -309,7 +309,7 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Node {
 }
 
 func (f *finder) ident(id *ast.Ident, tree *Tree) []*Node {
-	if p, ok := tree.ParentOf(id).(*ast.BinaryExpr); ok && id == p.X && p.Op.Kind == token.ASSIGN {
+	if p, ok := tree.ParentOf(id).(*ast.BinaryExpr); ok && id == p.X && p.Op.Kind() == token.ASSIGN {
 		switch pp := tree.ParentOf(p).(type) {
 		case *ast.CompositeLiteral:
 			var results []*Node

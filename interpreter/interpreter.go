@@ -151,7 +151,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		return result
 
 	case *ast.ExprStmt:
-		if n, ok := n.Expr.(*ast.BinaryExpr); ok && n.Op.Kind == token.ASSIGN {
+		if n, ok := n.Expr.(*ast.BinaryExpr); ok && n.Op.Kind() == token.ASSIGN {
 			return evalAssign(n.X, n.Y, env)
 		}
 		return eval(n.Expr, env)
@@ -273,7 +273,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		}
 
 	case *ast.BranchStmt:
-		switch n.Tok.Kind {
+		switch n.Tok.Kind() {
 		case token.BREAK:
 			return runtime.Break
 		case token.CONTINUE:
@@ -292,11 +292,11 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 }
 
 func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
-	switch n.Tok.Kind {
+	switch n.Tok.Kind() {
 	case token.INT:
-		return runtime.NewInt(n.Tok.Lit)
+		return runtime.NewInt(n.Tok.String())
 	case token.FLOAT:
-		return runtime.NewFloat(n.Tok.Lit)
+		return runtime.NewFloat(n.Tok.String())
 	case token.TRUE:
 		return runtime.NewBool(true)
 	case token.FALSE:
@@ -312,13 +312,13 @@ func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 	case token.ERROR:
 		return runtime.ErrorVerdict
 	case token.STRING:
-		s, err := token.Unquote(n.Tok.Lit)
+		s, err := token.Unquote(n.Tok.String())
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
 		return &runtime.String{Value: []rune(s)}
 	case token.BSTRING:
-		b, err := runtime.NewBinarystring(n.Tok.Lit)
+		b, err := runtime.NewBinarystring(n.Tok.String())
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
@@ -329,7 +329,7 @@ func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 		return runtime.Any
 
 	}
-	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind, n.Tok.Lit)
+	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind(), n.Tok.String())
 }
 
 func evalComposite(n *ast.CompositeLiteral, env runtime.Scope) runtime.Object {
@@ -339,7 +339,7 @@ func evalComposite(n *ast.CompositeLiteral, env runtime.Scope) runtime.Object {
 	}
 
 	// The first element tells us, if we expect a value list or an assignment list.
-	if first, ok := n.List[0].(*ast.BinaryExpr); ok && first.Op.Kind == token.ASSIGN {
+	if first, ok := n.List[0].(*ast.BinaryExpr); ok && first.Op.Kind() == token.ASSIGN {
 		if _, ok := first.X.(*ast.Ident); ok {
 			return evalRecordAssignmentList(n.List, env)
 		} else {
@@ -364,7 +364,7 @@ func evalMapAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {
 	for _, expr := range exprs {
 
 		n, ok := expr.(*ast.BinaryExpr)
-		if !ok || n.Op.Kind != token.ASSIGN {
+		if !ok || n.Op.Kind() != token.ASSIGN {
 			return runtime.Errorf("missing key/value. got=%T", n)
 		}
 
@@ -402,7 +402,7 @@ func evalRecordAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Objec
 	for _, expr := range exprs {
 
 		n, ok := expr.(*ast.BinaryExpr)
-		if !ok || n.Op.Kind != token.ASSIGN {
+		if !ok || n.Op.Kind() != token.ASSIGN {
 			return runtime.Errorf("missing key/value. got=%T", n)
 		}
 
@@ -425,7 +425,7 @@ func evalUnary(n *ast.UnaryExpr, env runtime.Scope) runtime.Object {
 		return val
 	}
 
-	switch n.Op.Kind {
+	switch n.Op.Kind() {
 	case token.ADD:
 		switch val := val.(type) {
 		case runtime.Int:
@@ -452,11 +452,11 @@ func evalUnary(n *ast.UnaryExpr, env runtime.Scope) runtime.Object {
 		}
 	}
 
-	return runtime.Errorf("unknown operator: %s%s", n.Op.Kind, val.Inspect())
+	return runtime.Errorf("unknown operator: %s%s", n.Op.Kind(), val.Inspect())
 }
 
 func evalBinary(n *ast.BinaryExpr, env runtime.Scope) runtime.Object {
-	op := n.Op.Kind
+	op := n.Op.Kind()
 	x := eval(n.X, env)
 	if runtime.IsError(x) {
 		return x
@@ -726,8 +726,8 @@ func evalEnumTypeDeclRange(expr ast.Expr) ([]runtime.EnumRange, error) {
 				argRet.First, argErr = evalInt(argT)
 				argRet.Last = argRet.First
 			case *ast.BinaryExpr:
-				if argT.Op.Kind != token.RANGE {
-					argErr = fmt.Errorf("BinaryExpr type %s", argT.Op.Kind)
+				if argT.Op.Kind() != token.RANGE {
+					argErr = fmt.Errorf("BinaryExpr type %s", argT.Op.Kind())
 					break
 				}
 				argRet.First, argErr = evalInt(argT.X)
@@ -824,12 +824,12 @@ func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
 func evalInt(n ast.Node) (int, error) {
 	switch t := n.(type) {
 	case *ast.ValueLiteral:
-		if t.Tok.Kind != token.INT {
-			return 0, fmt.Errorf("ValueLiteral unexpected %s", t.Tok.Kind)
+		if t.Tok.Kind() != token.INT {
+			return 0, fmt.Errorf("ValueLiteral unexpected %s", t.Tok.Kind())
 		}
-		val, err := strconv.Atoi(t.Tok.Lit)
+		val, err := strconv.Atoi(t.Tok.String())
 		if err != nil {
-			return 0, fmt.Errorf("ValueLiteral '%s' is not int, %v", t.Tok.Lit, err)
+			return 0, fmt.Errorf("ValueLiteral '%s' is not int, %v", t.Tok.String(), err)
 		}
 		return val, nil
 	case *ast.UnaryExpr:
@@ -837,13 +837,13 @@ func evalInt(n ast.Node) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("UnaryExpr '%v', %v", t, err)
 		}
-		switch t.Op.Kind {
+		switch t.Op.Kind() {
 		case token.ADD:
 			break
 		case token.SUB:
 			val = -val
 		default:
-			return 0, fmt.Errorf("UnaryExpr unexpected token type %v", t.Op.Kind)
+			return 0, fmt.Errorf("UnaryExpr unexpected token type %v", t.Op.Kind())
 		}
 		return val, nil
 	default:

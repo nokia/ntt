@@ -172,28 +172,28 @@ func list(cmd *cobra.Command, args []string) error {
 				case *ast.Module:
 					module = ast.Name(n.Name)
 					if cmd.Use == "modules" {
-						Print(basket, tree, n.Pos(), module, n.Tok.Comments())
+						Print(basket, tree, n.Pos(), module, ast.Doc(tree.FileSet, n))
 						return false
 					}
 					return true
 				case *ast.FuncDecl:
 					if n.IsTest() && (cmd.Use == "list" || cmd.Use == "tests") {
-						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), n.Kind.Comments())
+						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), ast.Doc(tree.FileSet, n))
 					}
 				case *ast.ImportDecl:
 					if cmd.Use == "imports" {
-						Print(basket, tree, n.Pos(), fmt.Sprintf("%s\t%s", module, n.Module.String()), n.ImportTok.Comments())
+						Print(basket, tree, n.Pos(), fmt.Sprintf("%s\t%s", module, n.Module.String()), ast.Doc(tree.FileSet, n))
 					}
 				case *ast.ControlPart:
 					if cmd.Use == "controls" {
-						Print(basket, tree, n.Pos(), module+".control", ast.FirstToken(n).Comments())
+						Print(basket, tree, n.Pos(), module+".control", ast.Doc(tree.FileSet, n))
 					}
 				case *ast.Declarator:
 					if cmd.Use == "modulepars" {
-						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), ast.FirstToken(n).Comments())
+						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), ast.Doc(tree.FileSet, n))
 					}
 				case *ast.ValueDecl:
-					if n.Kind.Kind == token.MODULEPAR || n.Kind.Kind == token.ILLEGAL {
+					if n.Kind == nil && n.Kind.Kind() == token.MODULEPAR {
 						return true
 					}
 				case *ast.NodeList, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:

@@ -209,12 +209,6 @@ func (s *Scanner) scanLine() {
 	for s.pos < len(s.src) && s.src[s.pos] != '\n' {
 		s.pos++
 	}
-
-	//  new lines belong to the comment token. EOF does not.
-	if s.pos < len(s.src) {
-		s.lines = append(s.lines, s.pos+1)
-		s.pos++
-	}
 }
 
 func (s *Scanner) scanAlnum() {

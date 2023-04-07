@@ -17,13 +17,12 @@ import (
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/token"
+	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 // A Mode value is a set of flags (or 0).
 // They control the amount of source code parsed and other optional
 // parser functionality.
-//
 type Mode uint
 
 const (
@@ -51,7 +50,6 @@ const (
 // errors were found, the result is a partial AST (with Bad* nodes
 // representing the fragments of erroneous source code). Multiple errors
 // are returned via a ErrorList which is sorted by file position.
-//
 func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode) (root []*ast.Module, err error) {
 	if fset == nil {
 		panic("ParseModules: no FileSet provided (fset == nil)")
@@ -138,16 +136,16 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *ast.Node
 
 	// parse source
 	p.init(fset, filename, text, AllErrors)
-	for p.tok != token.EOF {
+	for p.tok != tokn.EOF {
 		nodes.Nodes = append(nodes.Nodes, p.parse())
 
-		if p.tok != token.EOF && !topLevelTokens[p.tok] {
+		if p.tok != tokn.EOF && !topLevelTokens[p.tok] {
 			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))
 			break
 		}
 
-		if p.tok == token.COMMA || p.tok == token.SEMICOLON {
-			p.consumeTrivia(nodes.Nodes[len(nodes.Nodes)-1].LastTok())
+		if p.tok == tokn.COMMA || p.tok == tokn.SEMICOLON {
+			p.consume()
 		}
 
 	}
@@ -157,7 +155,6 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *ast.Node
 // If src != nil, readSource converts src to a []byte if possible;
 // otherwise it returns an error. If src == nil, readSource returns
 // the result of reading the file specified by filename.
-//
 func readSource(filename string, src interface{}) ([]byte, error) {
 	if src != nil {
 		switch s := src.(type) {
