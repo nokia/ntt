@@ -2,7 +2,6 @@ package ttcn3
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -201,7 +200,7 @@ func (scp *Scope) addField(n *ast.Field) {
 
 // add adds definitions to the scope;
 func (scp *Scope) add(n ast.Node) error {
-	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+	if ast.IsNil(n) {
 		return nil
 	}
 	switch n := n.(type) {

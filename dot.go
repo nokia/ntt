@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -25,7 +24,7 @@ func dot(n ast.Node) {
 	for len(q) > 0 {
 		n := q[0]
 		q = q[1:]
-		if !IsValid(n) {
+		if ast.IsNil(n) {
 			continue
 		}
 		if tok, ok := n.(ast.Token); ok {
@@ -34,7 +33,7 @@ func dot(n ast.Node) {
 		}
 		fmt.Fprintf(w, "\t%s %s;\n", nodeID(n), nodeProps(n))
 		for _, child := range n.Children() {
-			if IsValid(child) {
+			if !ast.IsNil(child) {
 				fmt.Fprintf(w, "\t%s -> %s;\n", nodeID(n), nodeID(child))
 				q = append(q, child)
 			}
@@ -47,16 +46,6 @@ func dot(n ast.Node) {
 	}
 	w.WriteString("	}")
 	w.WriteString("}")
-}
-
-func IsValid(n ast.Node) bool {
-	if n == nil {
-		return false
-	}
-	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
-		return false
-	}
-	return true
 }
 
 func nodeID(n ast.Node) string {
