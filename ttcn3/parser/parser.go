@@ -31,8 +31,9 @@ func (n *tokenNode) End() loc.Pos {
 	return loc.Pos(int(tok.Pos) + len(tok.String()))
 }
 
-func (n *tokenNode) LastTok() ast.Token  { return n }
-func (n *tokenNode) FirstTok() ast.Token { return n }
+func (n *tokenNode) LastTok() ast.Token   { return n }
+func (n *tokenNode) FirstTok() ast.Token  { return n }
+func (n *tokenNode) Children() []ast.Node { return nil }
 func (n *tokenNode) PrevTok() ast.Token {
 	if n.idx <= 0 {
 		return nil

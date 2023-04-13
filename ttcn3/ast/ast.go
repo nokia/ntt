@@ -15,6 +15,7 @@ type Node interface {
 	End() loc.Pos
 	FirstTok() Token
 	LastTok() Token
+	Children() []Node
 }
 
 type Token interface {

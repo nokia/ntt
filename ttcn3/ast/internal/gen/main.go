@@ -147,6 +147,24 @@ func main() {
 			fmt.Fprintf(out, "\t}\n")
 			fmt.Fprintf(out, "}\n\n")
 
+			fmt.Fprintf(out, "func (n *%s) Children() []Node {\n", name)
+			fmt.Fprintf(out, "\tret := make([]Node, 0, %d)\n", len(fields))
+			for _, field := range fields {
+				switch {
+				case field.IsArray():
+					fmt.Fprintf(out, "\tfor _, c := range n.%s {\n", field.Name)
+					fmt.Fprintf(out, "\t\tret = append(ret, c)\n")
+					fmt.Fprintf(out, "\t}\n")
+				case field.IsPredefined():
+				default:
+					fmt.Fprintf(out, "\tif n.%s != nil {\n", field.Name)
+					fmt.Fprintf(out, "\t\tret = append(ret, n.%s)\n", field.Name)
+					fmt.Fprintf(out, "\t}\n")
+				}
+			}
+			fmt.Fprintf(out, "\t\treturn ret\n")
+			fmt.Fprintf(out, "}\n\n")
+
 			fmt.Fprintf(out, "func (n *%s) Pos() loc.Pos {\n", name)
 			fmt.Fprintf(out, "\tif tok := n.FirstTok(); tok != nil {\n")
 			fmt.Fprintf(out, "\t\treturn tok.Pos()\n")

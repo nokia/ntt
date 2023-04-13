@@ -33,7 +33,7 @@ func dot(n ast.Node) {
 			continue
 		}
 		fmt.Fprintf(w, "\t%s %s;\n", nodeID(n), nodeProps(n))
-		for _, child := range ast.Children(n) {
+		for _, child := range n.Children() {
 			if IsValid(child) {
 				fmt.Fprintf(w, "\t%s -> %s;\n", nodeID(n), nodeID(child))
 				q = append(q, child)

@@ -25,6 +25,17 @@ func (n *ErrorNode) LastTok() Token {
 	}
 }
 
+func (n *ErrorNode) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.From != nil {
+		ret = append(ret, n.From)
+	}
+	if n.To != nil {
+		ret = append(ret, n.To)
+	}
+		return ret
+}
+
 func (n *ErrorNode) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -55,6 +66,14 @@ func (n *NodeList) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *NodeList) Children() []Node {
+	ret := make([]Node, 0, 1)
+	for _, c := range n.Nodes {
+		ret = append(ret, c)
+	}
+		return ret
 }
 
 func (n *NodeList) Pos() loc.Pos {
@@ -93,6 +112,17 @@ func (n *Ident) LastTok() Token {
 	}
 }
 
+func (n *Ident) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Tok2 != nil {
+		ret = append(ret, n.Tok2)
+	}
+		return ret
+}
+
 func (n *Ident) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -129,6 +159,17 @@ func (n *ParametrizedIdent) LastTok() Token {
 	}
 }
 
+func (n *ParametrizedIdent) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Ident != nil {
+		ret = append(ret, n.Ident)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+		return ret
+}
+
 func (n *ParametrizedIdent) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -159,6 +200,14 @@ func (n *ValueLiteral) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ValueLiteral) Children() []Node {
+	ret := make([]Node, 0, 1)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+		return ret
 }
 
 func (n *ValueLiteral) Pos() loc.Pos {
@@ -201,6 +250,20 @@ func (n *CompositeLiteral) LastTok() Token {
 	}
 }
 
+func (n *CompositeLiteral) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
+}
+
 func (n *CompositeLiteral) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -235,6 +298,17 @@ func (n *UnaryExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *UnaryExpr) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Op != nil {
+		ret = append(ret, n.Op)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
 }
 
 func (n *UnaryExpr) Pos() loc.Pos {
@@ -277,6 +351,20 @@ func (n *BinaryExpr) LastTok() Token {
 	}
 }
 
+func (n *BinaryExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Op != nil {
+		ret = append(ret, n.Op)
+	}
+	if n.Y != nil {
+		ret = append(ret, n.Y)
+	}
+		return ret
+}
+
 func (n *BinaryExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -317,6 +405,20 @@ func (n *ParenExpr) LastTok() Token {
 	}
 }
 
+func (n *ParenExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
+	}
+		return ret
+}
+
 func (n *ParenExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -355,6 +457,20 @@ func (n *SelectorExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *SelectorExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Dot != nil {
+		ret = append(ret, n.Dot)
+	}
+	if n.Sel != nil {
+		ret = append(ret, n.Sel)
+	}
+		return ret
 }
 
 func (n *SelectorExpr) Pos() loc.Pos {
@@ -401,6 +517,23 @@ func (n *IndexExpr) LastTok() Token {
 	}
 }
 
+func (n *IndexExpr) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.LBrack != nil {
+		ret = append(ret, n.LBrack)
+	}
+	if n.Index != nil {
+		ret = append(ret, n.Index)
+	}
+	if n.RBrack != nil {
+		ret = append(ret, n.RBrack)
+	}
+		return ret
+}
+
 func (n *IndexExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -435,6 +568,17 @@ func (n *CallExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *CallExpr) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Fun != nil {
+		ret = append(ret, n.Fun)
+	}
+	if n.Args != nil {
+		ret = append(ret, n.Args)
+	}
+		return ret
 }
 
 func (n *CallExpr) Pos() loc.Pos {
@@ -475,6 +619,20 @@ func (n *LengthExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *LengthExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Len != nil {
+		ret = append(ret, n.Len)
+	}
+	if n.Size != nil {
+		ret = append(ret, n.Size)
+	}
+		return ret
 }
 
 func (n *LengthExpr) Pos() loc.Pos {
@@ -557,6 +715,50 @@ func (n *RedirectExpr) LastTok() Token {
 	}
 }
 
+func (n *RedirectExpr) Children() []Node {
+	ret := make([]Node, 0, 13)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.ValueTok != nil {
+		ret = append(ret, n.ValueTok)
+	}
+	for _, c := range n.Value {
+		ret = append(ret, c)
+	}
+	if n.ParamTok != nil {
+		ret = append(ret, n.ParamTok)
+	}
+	for _, c := range n.Param {
+		ret = append(ret, c)
+	}
+	if n.SenderTok != nil {
+		ret = append(ret, n.SenderTok)
+	}
+	if n.Sender != nil {
+		ret = append(ret, n.Sender)
+	}
+	if n.IndexTok != nil {
+		ret = append(ret, n.IndexTok)
+	}
+	if n.IndexValueTok != nil {
+		ret = append(ret, n.IndexValueTok)
+	}
+	if n.Index != nil {
+		ret = append(ret, n.Index)
+	}
+	if n.TimestampTok != nil {
+		ret = append(ret, n.TimestampTok)
+	}
+	if n.Timestamp != nil {
+		ret = append(ret, n.Timestamp)
+	}
+		return ret
+}
+
 func (n *RedirectExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -595,6 +797,20 @@ func (n *ValueExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ValueExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Y != nil {
+		ret = append(ret, n.Y)
+	}
+		return ret
 }
 
 func (n *ValueExpr) Pos() loc.Pos {
@@ -637,6 +853,20 @@ func (n *ParamExpr) LastTok() Token {
 	}
 }
 
+func (n *ParamExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Y != nil {
+		ret = append(ret, n.Y)
+	}
+		return ret
+}
+
 func (n *ParamExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -675,6 +905,20 @@ func (n *FromExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *FromExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.FromTok != nil {
+		ret = append(ret, n.FromTok)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
 }
 
 func (n *FromExpr) Pos() loc.Pos {
@@ -721,6 +965,23 @@ func (n *ModifiesExpr) LastTok() Token {
 	}
 }
 
+func (n *ModifiesExpr) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Assign != nil {
+		ret = append(ret, n.Assign)
+	}
+	if n.Y != nil {
+		ret = append(ret, n.Y)
+	}
+		return ret
+}
+
 func (n *ModifiesExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -759,6 +1020,20 @@ func (n *RegexpExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *RegexpExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.NoCase != nil {
+		ret = append(ret, n.NoCase)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
 }
 
 func (n *RegexpExpr) Pos() loc.Pos {
@@ -801,6 +1076,20 @@ func (n *PatternExpr) LastTok() Token {
 	}
 }
 
+func (n *PatternExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.NoCase != nil {
+		ret = append(ret, n.NoCase)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
+}
+
 func (n *PatternExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -839,6 +1128,20 @@ func (n *DecmatchExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *DecmatchExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
 }
 
 func (n *DecmatchExpr) Pos() loc.Pos {
@@ -881,6 +1184,20 @@ func (n *DecodedExpr) LastTok() Token {
 	}
 }
 
+func (n *DecodedExpr) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
+}
+
 func (n *DecodedExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -915,6 +1232,17 @@ func (n *DefKindExpr) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *DefKindExpr) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+		return ret
 }
 
 func (n *DefKindExpr) Pos() loc.Pos {
@@ -965,6 +1293,26 @@ func (n *ExceptExpr) LastTok() Token {
 	}
 }
 
+func (n *ExceptExpr) Children() []Node {
+	ret := make([]Node, 0, 5)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.ExceptTok != nil {
+		ret = append(ret, n.ExceptTok)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
+}
+
 func (n *ExceptExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1005,6 +1353,20 @@ func (n *BlockStmt) LastTok() Token {
 	}
 }
 
+func (n *BlockStmt) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Stmts {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
+}
+
 func (n *BlockStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1037,6 +1399,14 @@ func (n *DeclStmt) LastTok() Token {
 	}
 }
 
+func (n *DeclStmt) Children() []Node {
+	ret := make([]Node, 0, 1)
+	if n.Decl != nil {
+		ret = append(ret, n.Decl)
+	}
+		return ret
+}
+
 func (n *DeclStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1067,6 +1437,14 @@ func (n *ExprStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ExprStmt) Children() []Node {
+	ret := make([]Node, 0, 1)
+	if n.Expr != nil {
+		ret = append(ret, n.Expr)
+	}
+		return ret
 }
 
 func (n *ExprStmt) Pos() loc.Pos {
@@ -1105,6 +1483,17 @@ func (n *BranchStmt) LastTok() Token {
 	}
 }
 
+func (n *BranchStmt) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Label != nil {
+		ret = append(ret, n.Label)
+	}
+		return ret
+}
+
 func (n *BranchStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1139,6 +1528,17 @@ func (n *ReturnStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ReturnStmt) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Result != nil {
+		ret = append(ret, n.Result)
+	}
+		return ret
 }
 
 func (n *ReturnStmt) Pos() loc.Pos {
@@ -1181,6 +1581,20 @@ func (n *AltStmt) LastTok() Token {
 	}
 }
 
+func (n *AltStmt) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.NoDefault != nil {
+		ret = append(ret, n.NoDefault)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+		return ret
+}
+
 func (n *AltStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1215,6 +1629,17 @@ func (n *CallStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *CallStmt) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Stmt != nil {
+		ret = append(ret, n.Stmt)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+		return ret
 }
 
 func (n *CallStmt) Pos() loc.Pos {
@@ -1281,6 +1706,38 @@ func (n *ForStmt) LastTok() Token {
 	}
 }
 
+func (n *ForStmt) Children() []Node {
+	ret := make([]Node, 0, 9)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+	if n.Init != nil {
+		ret = append(ret, n.Init)
+	}
+	if n.InitSemi != nil {
+		ret = append(ret, n.InitSemi)
+	}
+	if n.Cond != nil {
+		ret = append(ret, n.Cond)
+	}
+	if n.CondSemi != nil {
+		ret = append(ret, n.CondSemi)
+	}
+	if n.Post != nil {
+		ret = append(ret, n.Post)
+	}
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+		return ret
+}
+
 func (n *ForStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1319,6 +1776,20 @@ func (n *WhileStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *WhileStmt) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Cond != nil {
+		ret = append(ret, n.Cond)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+		return ret
 }
 
 func (n *WhileStmt) Pos() loc.Pos {
@@ -1363,6 +1834,23 @@ func (n *DoWhileStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *DoWhileStmt) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.DoTok != nil {
+		ret = append(ret, n.DoTok)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+	if n.WhileTok != nil {
+		ret = append(ret, n.WhileTok)
+	}
+	if n.Cond != nil {
+		ret = append(ret, n.Cond)
+	}
+		return ret
 }
 
 func (n *DoWhileStmt) Pos() loc.Pos {
@@ -1411,6 +1899,26 @@ func (n *IfStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *IfStmt) Children() []Node {
+	ret := make([]Node, 0, 5)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Cond != nil {
+		ret = append(ret, n.Cond)
+	}
+	if n.Then != nil {
+		ret = append(ret, n.Then)
+	}
+	if n.ElseTok != nil {
+		ret = append(ret, n.ElseTok)
+	}
+	if n.Else != nil {
+		ret = append(ret, n.Else)
+	}
+		return ret
 }
 
 func (n *IfStmt) Pos() loc.Pos {
@@ -1465,6 +1973,29 @@ func (n *SelectStmt) LastTok() Token {
 	}
 }
 
+func (n *SelectStmt) Children() []Node {
+	ret := make([]Node, 0, 6)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Union != nil {
+		ret = append(ret, n.Union)
+	}
+	if n.Tag != nil {
+		ret = append(ret, n.Tag)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Body {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
+}
+
 func (n *SelectStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1503,6 +2034,20 @@ func (n *CaseClause) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *CaseClause) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Case != nil {
+		ret = append(ret, n.Case)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+		return ret
 }
 
 func (n *CaseClause) Pos() loc.Pos {
@@ -1555,6 +2100,29 @@ func (n *CommClause) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *CommClause) Children() []Node {
+	ret := make([]Node, 0, 6)
+	if n.LBrack != nil {
+		ret = append(ret, n.LBrack)
+	}
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+	if n.Else != nil {
+		ret = append(ret, n.Else)
+	}
+	if n.RBrack != nil {
+		ret = append(ret, n.RBrack)
+	}
+	if n.Comm != nil {
+		ret = append(ret, n.Comm)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+		return ret
 }
 
 func (n *CommClause) Pos() loc.Pos {
@@ -1617,6 +2185,35 @@ func (n *Field) LastTok() Token {
 	}
 }
 
+func (n *Field) Children() []Node {
+	ret := make([]Node, 0, 8)
+	if n.DefaultTok != nil {
+		ret = append(ret, n.DefaultTok)
+	}
+	if n.Type != nil {
+		ret = append(ret, n.Type)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	for _, c := range n.ArrayDef {
+		ret = append(ret, c)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.ValueConstraint != nil {
+		ret = append(ret, n.ValueConstraint)
+	}
+	if n.LengthConstraint != nil {
+		ret = append(ret, n.LengthConstraint)
+	}
+	if n.Optional != nil {
+		ret = append(ret, n.Optional)
+	}
+		return ret
+}
+
 func (n *Field) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1647,6 +2244,14 @@ func (n *RefSpec) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *RefSpec) Children() []Node {
+	ret := make([]Node, 0, 1)
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+		return ret
 }
 
 func (n *RefSpec) Pos() loc.Pos {
@@ -1693,6 +2298,23 @@ func (n *StructSpec) LastTok() Token {
 	}
 }
 
+func (n *StructSpec) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Fields {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
+}
+
 func (n *StructSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1737,6 +2359,23 @@ func (n *ListSpec) LastTok() Token {
 	}
 }
 
+func (n *ListSpec) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Length != nil {
+		ret = append(ret, n.Length)
+	}
+	if n.OfTok != nil {
+		ret = append(ret, n.OfTok)
+	}
+	if n.ElemType != nil {
+		ret = append(ret, n.ElemType)
+	}
+		return ret
+}
+
 func (n *ListSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1779,6 +2418,23 @@ func (n *EnumSpec) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *EnumSpec) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Enums {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
 }
 
 func (n *EnumSpec) Pos() loc.Pos {
@@ -1827,6 +2483,26 @@ func (n *BehaviourSpec) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *BehaviourSpec) Children() []Node {
+	ret := make([]Node, 0, 5)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.RunsOn != nil {
+		ret = append(ret, n.RunsOn)
+	}
+	if n.System != nil {
+		ret = append(ret, n.System)
+	}
+	if n.Return != nil {
+		ret = append(ret, n.Return)
+	}
+		return ret
 }
 
 func (n *BehaviourSpec) Pos() loc.Pos {
@@ -1881,6 +2557,29 @@ func (n *ValueDecl) LastTok() Token {
 	}
 }
 
+func (n *ValueDecl) Children() []Node {
+	ret := make([]Node, 0, 6)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.TemplateRestriction != nil {
+		ret = append(ret, n.TemplateRestriction)
+	}
+	if n.Modif != nil {
+		ret = append(ret, n.Modif)
+	}
+	if n.Type != nil {
+		ret = append(ret, n.Type)
+	}
+	for _, c := range n.Decls {
+		ret = append(ret, c)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *ValueDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1923,6 +2622,23 @@ func (n *Declarator) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *Declarator) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	for _, c := range n.ArrayDef {
+		ret = append(ret, c)
+	}
+	if n.AssignTok != nil {
+		ret = append(ret, n.AssignTok)
+	}
+	if n.Value != nil {
+		ret = append(ret, n.Value)
+	}
+		return ret
 }
 
 func (n *Declarator) Pos() loc.Pos {
@@ -1997,6 +2713,44 @@ func (n *TemplateDecl) LastTok() Token {
 	}
 }
 
+func (n *TemplateDecl) Children() []Node {
+	ret := make([]Node, 0, 11)
+	if n.RestrictionSpec != nil {
+		ret = append(ret, n.RestrictionSpec)
+	}
+	if n.Modif != nil {
+		ret = append(ret, n.Modif)
+	}
+	if n.Type != nil {
+		ret = append(ret, n.Type)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.ModifiesTok != nil {
+		ret = append(ret, n.ModifiesTok)
+	}
+	if n.Base != nil {
+		ret = append(ret, n.Base)
+	}
+	if n.AssignTok != nil {
+		ret = append(ret, n.AssignTok)
+	}
+	if n.Value != nil {
+		ret = append(ret, n.Value)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *TemplateDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2043,6 +2797,26 @@ func (n *ModuleParameterGroup) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ModuleParameterGroup) Children() []Node {
+	ret := make([]Node, 0, 5)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Decls {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
 }
 
 func (n *ModuleParameterGroup) Pos() loc.Pos {
@@ -2121,6 +2895,47 @@ func (n *FuncDecl) LastTok() Token {
 	}
 }
 
+func (n *FuncDecl) Children() []Node {
+	ret := make([]Node, 0, 12)
+	if n.External != nil {
+		ret = append(ret, n.External)
+	}
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.Modif != nil {
+		ret = append(ret, n.Modif)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.RunsOn != nil {
+		ret = append(ret, n.RunsOn)
+	}
+	if n.Mtc != nil {
+		ret = append(ret, n.Mtc)
+	}
+	if n.System != nil {
+		ret = append(ret, n.System)
+	}
+	if n.Return != nil {
+		ret = append(ret, n.Return)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *FuncDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2185,6 +3000,38 @@ func (n *SignatureDecl) LastTok() Token {
 	}
 }
 
+func (n *SignatureDecl) Children() []Node {
+	ret := make([]Node, 0, 9)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.NoBlock != nil {
+		ret = append(ret, n.NoBlock)
+	}
+	if n.Return != nil {
+		ret = append(ret, n.Return)
+	}
+	if n.ExceptionTok != nil {
+		ret = append(ret, n.ExceptionTok)
+	}
+	if n.Exception != nil {
+		ret = append(ret, n.Exception)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *SignatureDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2223,6 +3070,20 @@ func (n *SubTypeDecl) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *SubTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+	if n.Field != nil {
+		ret = append(ret, n.Field)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
 }
 
 func (n *SubTypeDecl) Pos() loc.Pos {
@@ -2285,6 +3146,35 @@ func (n *StructTypeDecl) LastTok() Token {
 	}
 }
 
+func (n *StructTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 8)
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Fields {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *StructTypeDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2343,6 +3233,35 @@ func (n *EnumTypeDecl) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *EnumTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 8)
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+	if n.EnumTok != nil {
+		ret = append(ret, n.EnumTok)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Enums {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
 }
 
 func (n *EnumTypeDecl) Pos() loc.Pos {
@@ -2407,6 +3326,38 @@ func (n *BehaviourTypeDecl) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *BehaviourTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 9)
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+	if n.RunsOn != nil {
+		ret = append(ret, n.RunsOn)
+	}
+	if n.System != nil {
+		ret = append(ret, n.System)
+	}
+	if n.Return != nil {
+		ret = append(ret, n.Return)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
 }
 
 func (n *BehaviourTypeDecl) Pos() loc.Pos {
@@ -2477,6 +3428,41 @@ func (n *PortTypeDecl) LastTok() Token {
 	}
 }
 
+func (n *PortTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 10)
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+	if n.PortTok != nil {
+		ret = append(ret, n.PortTok)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Realtime != nil {
+		ret = append(ret, n.Realtime)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Attrs {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *PortTypeDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2511,6 +3497,17 @@ func (n *PortAttribute) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *PortAttribute) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	for _, c := range n.Types {
+		ret = append(ret, c)
+	}
+		return ret
 }
 
 func (n *PortAttribute) Pos() loc.Pos {
@@ -2551,6 +3548,20 @@ func (n *PortMapAttribute) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *PortMapAttribute) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.MapTok != nil {
+		ret = append(ret, n.MapTok)
+	}
+	if n.ParamTok != nil {
+		ret = append(ret, n.ParamTok)
+	}
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+		return ret
 }
 
 func (n *PortMapAttribute) Pos() loc.Pos {
@@ -2613,6 +3624,35 @@ func (n *ComponentTypeDecl) LastTok() Token {
 	}
 }
 
+func (n *ComponentTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 8)
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+	if n.CompTok != nil {
+		ret = append(ret, n.CompTok)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+	if n.ExtendsTok != nil {
+		ret = append(ret, n.ExtendsTok)
+	}
+	for _, c := range n.Extends {
+		ret = append(ret, c)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *ComponentTypeDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2669,6 +3709,32 @@ func (n *Module) LastTok() Token {
 	}
 }
 
+func (n *Module) Children() []Node {
+	ret := make([]Node, 0, 7)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.Language != nil {
+		ret = append(ret, n.Language)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Defs {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *Module) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2703,6 +3769,17 @@ func (n *ModuleDef) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ModuleDef) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Visibility != nil {
+		ret = append(ret, n.Visibility)
+	}
+	if n.Def != nil {
+		ret = append(ret, n.Def)
+	}
+		return ret
 }
 
 func (n *ModuleDef) Pos() loc.Pos {
@@ -2743,6 +3820,20 @@ func (n *ControlPart) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *ControlPart) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
 }
 
 func (n *ControlPart) Pos() loc.Pos {
@@ -2805,6 +3896,35 @@ func (n *ImportDecl) LastTok() Token {
 	}
 }
 
+func (n *ImportDecl) Children() []Node {
+	ret := make([]Node, 0, 8)
+	if n.ImportTok != nil {
+		ret = append(ret, n.ImportTok)
+	}
+	if n.FromTok != nil {
+		ret = append(ret, n.FromTok)
+	}
+	if n.Module != nil {
+		ret = append(ret, n.Module)
+	}
+	if n.Language != nil {
+		ret = append(ret, n.Language)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *ImportDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2857,6 +3977,29 @@ func (n *GroupDecl) LastTok() Token {
 	}
 }
 
+func (n *GroupDecl) Children() []Node {
+	ret := make([]Node, 0, 6)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.Defs {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *GroupDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2901,6 +4044,23 @@ func (n *FriendDecl) LastTok() Token {
 	}
 }
 
+func (n *FriendDecl) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.FriendTok != nil {
+		ret = append(ret, n.FriendTok)
+	}
+	if n.ModuleTok != nil {
+		ret = append(ret, n.ModuleTok)
+	}
+	if n.Module != nil {
+		ret = append(ret, n.Module)
+	}
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+		return ret
+}
+
 func (n *FriendDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2935,6 +4095,17 @@ func (n *LanguageSpec) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *LanguageSpec) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+		return ret
 }
 
 func (n *LanguageSpec) Pos() loc.Pos {
@@ -2981,6 +4152,23 @@ func (n *RestrictionSpec) LastTok() Token {
 	}
 }
 
+func (n *RestrictionSpec) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.TemplateTok != nil {
+		ret = append(ret, n.TemplateTok)
+	}
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
+	}
+		return ret
+}
+
 func (n *RestrictionSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3021,6 +4209,20 @@ func (n *RunsOnSpec) LastTok() Token {
 	}
 }
 
+func (n *RunsOnSpec) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.RunsTok != nil {
+		ret = append(ret, n.RunsTok)
+	}
+	if n.OnTok != nil {
+		ret = append(ret, n.OnTok)
+	}
+	if n.Comp != nil {
+		ret = append(ret, n.Comp)
+	}
+		return ret
+}
+
 func (n *RunsOnSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3057,6 +4259,17 @@ func (n *SystemSpec) LastTok() Token {
 	}
 }
 
+func (n *SystemSpec) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Comp != nil {
+		ret = append(ret, n.Comp)
+	}
+		return ret
+}
+
 func (n *SystemSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3091,6 +4304,17 @@ func (n *MtcSpec) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *MtcSpec) Children() []Node {
+	ret := make([]Node, 0, 2)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Comp != nil {
+		ret = append(ret, n.Comp)
+	}
+		return ret
 }
 
 func (n *MtcSpec) Pos() loc.Pos {
@@ -3137,6 +4361,23 @@ func (n *ReturnSpec) LastTok() Token {
 	}
 }
 
+func (n *ReturnSpec) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.Restriction != nil {
+		ret = append(ret, n.Restriction)
+	}
+	if n.Modif != nil {
+		ret = append(ret, n.Modif)
+	}
+	if n.Type != nil {
+		ret = append(ret, n.Type)
+	}
+		return ret
+}
+
 func (n *ReturnSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3175,6 +4416,20 @@ func (n *FormalPars) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *FormalPars) Children() []Node {
+	ret := make([]Node, 0, 3)
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
+	}
+		return ret
 }
 
 func (n *FormalPars) Pos() loc.Pos {
@@ -3237,6 +4492,35 @@ func (n *FormalPar) LastTok() Token {
 	}
 }
 
+func (n *FormalPar) Children() []Node {
+	ret := make([]Node, 0, 8)
+	if n.Direction != nil {
+		ret = append(ret, n.Direction)
+	}
+	if n.TemplateRestriction != nil {
+		ret = append(ret, n.TemplateRestriction)
+	}
+	if n.Modif != nil {
+		ret = append(ret, n.Modif)
+	}
+	if n.Type != nil {
+		ret = append(ret, n.Type)
+	}
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+	for _, c := range n.ArrayDef {
+		ret = append(ret, c)
+	}
+	if n.AssignTok != nil {
+		ret = append(ret, n.AssignTok)
+	}
+	if n.Value != nil {
+		ret = append(ret, n.Value)
+	}
+		return ret
+}
+
 func (n *FormalPar) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3279,6 +4563,23 @@ func (n *WithSpec) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *WithSpec) Children() []Node {
+	ret := make([]Node, 0, 4)
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+		return ret
 }
 
 func (n *WithSpec) Pos() loc.Pos {
@@ -3331,6 +4632,29 @@ func (n *WithStmt) LastTok() Token {
 	default:
 		return nil
 	}
+}
+
+func (n *WithStmt) Children() []Node {
+	ret := make([]Node, 0, 6)
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+	if n.Override != nil {
+		ret = append(ret, n.Override)
+	}
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+	for _, c := range n.List {
+		ret = append(ret, c)
+	}
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
+	}
+	if n.Value != nil {
+		ret = append(ret, n.Value)
+	}
+		return ret
 }
 
 func (n *WithStmt) Pos() loc.Pos {

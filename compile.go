@@ -114,7 +114,7 @@ func buildSource(file string) ttcn3.Source {
 				Len:  end - begin,
 			})
 			idx := len(src.Events) - 1
-			for _, c := range ast.Children(n) {
+			for _, c := range n.Children() {
 				visit(c)
 			}
 			src.Events = append(src.Events, ttcn3.NodeEvent{
