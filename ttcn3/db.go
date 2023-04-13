@@ -86,12 +86,18 @@ func (db *DB) VisibleModules(id string, mod *ast.Module) []*Node {
 	addImport(ast.Name(mod))
 
 	// Only use imports from the current module.
-	ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
-		if n, ok := n.Def.(*ast.ImportDecl); ok {
+	mod.Inspect(func(n ast.Node) bool {
+		switch n := n.(type) {
+		case *ast.ImportDecl:
 			addImport(ast.Name(n.Module))
+			return false
+		case *ast.Module, *ast.ModuleDef:
+			return true
+		default:
+			return false
+
 		}
-		return true
-	}, mod)
+	})
 
 	// Find all files that contain the symbol.
 	var candidates []string
