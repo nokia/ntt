@@ -35,7 +35,7 @@ func enumerateIDs(root ast.Node) map[*ast.Ident]string {
 	// build ID map
 	ids := make(map[*ast.Ident]string)
 	counter := make(map[string]int)
-	ast.Inspect(root, func(n ast.Node) bool {
+	root.Inspect(func(n ast.Node) bool {
 		if x, ok := n.(*ast.Ident); ok {
 			i := counter[x.String()]
 			counter[x.String()]++

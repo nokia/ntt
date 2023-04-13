@@ -78,7 +78,7 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -132,7 +132,7 @@ func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []s
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -168,7 +168,7 @@ func getAllTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -206,7 +206,7 @@ func getAllComponentTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -228,7 +228,7 @@ func getAllPortTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -871,6 +871,8 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 }
 
 func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
+	// TODO(5nord): Replace this function with n.LastTok() and n.PrevTok()
+
 	var (
 		completed bool       = false
 		nodeStack []ast.Node = make([]ast.Node, 0, 10)
@@ -878,7 +880,7 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 		isError   bool       = false
 	)
 
-	ast.Inspect(n, func(n ast.Node) bool {
+	n.Inspect(func(n ast.Node) bool {
 		if isError {
 			return false
 		}

@@ -205,7 +205,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 	var tokens []uint32
 	line := 0
 	col := 0
-	ast.Inspect(tree.Root, func(n ast.Node) bool {
+	tree.Root.Inspect(func(n ast.Node) bool {
 		if n == nil || n.End() < begin || end < n.Pos() {
 			return false
 		}

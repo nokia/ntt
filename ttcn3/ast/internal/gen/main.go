@@ -165,6 +165,30 @@ func main() {
 			fmt.Fprintf(out, "\t\treturn ret\n")
 			fmt.Fprintf(out, "}\n\n")
 
+			fmt.Fprintf(out, "func (n *%s) Inspect(f func(Node) bool) {\n", name)
+			fmt.Fprintf(out, "\tif !f(n) {\n")
+			fmt.Fprintf(out, "\t\treturn\n")
+			fmt.Fprintf(out, "\t}\n")
+			for _, field := range fields {
+				switch {
+				case field.IsArray():
+					fmt.Fprintf(out, "\tfor _, c := range n.%s {\n", field.Name)
+					fmt.Fprintf(out, "\t\tc.Inspect(f)\n")
+					fmt.Fprintf(out, "\t}\n")
+				case field.IsPredefined():
+				default:
+					// We skip tokens, because they are not part of the AST yet.
+					if field.IsTokenType() {
+						continue
+					}
+					fmt.Fprintf(out, "\tif n.%s != nil {\n", field.Name)
+					fmt.Fprintf(out, "\t\tn.%s.Inspect(f)\n", field.Name)
+					fmt.Fprintf(out, "\t}\n")
+				}
+			}
+			fmt.Fprintf(out, "\tf(nil)\n")
+			fmt.Fprintf(out, "}\n\n")
+
 			fmt.Fprintf(out, "func (n *%s) Pos() loc.Pos {\n", name)
 			fmt.Fprintf(out, "\tif tok := n.FirstTok(); tok != nil {\n")
 			fmt.Fprintf(out, "\t\treturn tok.Pos()\n")

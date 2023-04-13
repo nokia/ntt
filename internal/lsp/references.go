@@ -16,7 +16,7 @@ import (
 func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Location {
 	list := make([]protocol.Location, 0, 10)
 	syntax := ttcn3.ParseFile(file)
-	ast.Inspect(syntax.Root, func(n ast.Node) bool {
+	syntax.Root.Inspect(func(n ast.Node) bool {
 		if n == nil {
 			// called on node exit
 			return false

@@ -36,6 +36,13 @@ func (n *ErrorNode) Children() []Node {
 		return ret
 }
 
+func (n *ErrorNode) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	f(nil)
+}
+
 func (n *ErrorNode) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -74,6 +81,16 @@ func (n *NodeList) Children() []Node {
 		ret = append(ret, c)
 	}
 		return ret
+}
+
+func (n *NodeList) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.Nodes {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *NodeList) Pos() loc.Pos {
@@ -123,6 +140,13 @@ func (n *Ident) Children() []Node {
 		return ret
 }
 
+func (n *Ident) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	f(nil)
+}
+
 func (n *Ident) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -170,6 +194,19 @@ func (n *ParametrizedIdent) Children() []Node {
 		return ret
 }
 
+func (n *ParametrizedIdent) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Ident != nil {
+		n.Ident.Inspect(f)
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ParametrizedIdent) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -208,6 +245,13 @@ func (n *ValueLiteral) Children() []Node {
 		ret = append(ret, n.Tok)
 	}
 		return ret
+}
+
+func (n *ValueLiteral) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	f(nil)
 }
 
 func (n *ValueLiteral) Pos() loc.Pos {
@@ -264,6 +308,16 @@ func (n *CompositeLiteral) Children() []Node {
 		return ret
 }
 
+func (n *CompositeLiteral) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *CompositeLiteral) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -309,6 +363,16 @@ func (n *UnaryExpr) Children() []Node {
 		ret = append(ret, n.X)
 	}
 		return ret
+}
+
+func (n *UnaryExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *UnaryExpr) Pos() loc.Pos {
@@ -365,6 +429,19 @@ func (n *BinaryExpr) Children() []Node {
 		return ret
 }
 
+func (n *BinaryExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Y != nil {
+		n.Y.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *BinaryExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -419,6 +496,16 @@ func (n *ParenExpr) Children() []Node {
 		return ret
 }
 
+func (n *ParenExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ParenExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -471,6 +558,19 @@ func (n *SelectorExpr) Children() []Node {
 		ret = append(ret, n.Sel)
 	}
 		return ret
+}
+
+func (n *SelectorExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Sel != nil {
+		n.Sel.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *SelectorExpr) Pos() loc.Pos {
@@ -534,6 +634,19 @@ func (n *IndexExpr) Children() []Node {
 		return ret
 }
 
+func (n *IndexExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Index != nil {
+		n.Index.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *IndexExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -579,6 +692,19 @@ func (n *CallExpr) Children() []Node {
 		ret = append(ret, n.Args)
 	}
 		return ret
+}
+
+func (n *CallExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Fun != nil {
+		n.Fun.Inspect(f)
+	}
+	if n.Args != nil {
+		n.Args.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *CallExpr) Pos() loc.Pos {
@@ -633,6 +759,19 @@ func (n *LengthExpr) Children() []Node {
 		ret = append(ret, n.Size)
 	}
 		return ret
+}
+
+func (n *LengthExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Size != nil {
+		n.Size.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *LengthExpr) Pos() loc.Pos {
@@ -759,6 +898,31 @@ func (n *RedirectExpr) Children() []Node {
 		return ret
 }
 
+func (n *RedirectExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	for _, c := range n.Value {
+		c.Inspect(f)
+	}
+	for _, c := range n.Param {
+		c.Inspect(f)
+	}
+	if n.Sender != nil {
+		n.Sender.Inspect(f)
+	}
+	if n.Index != nil {
+		n.Index.Inspect(f)
+	}
+	if n.Timestamp != nil {
+		n.Timestamp.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *RedirectExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -811,6 +975,19 @@ func (n *ValueExpr) Children() []Node {
 		ret = append(ret, n.Y)
 	}
 		return ret
+}
+
+func (n *ValueExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Y != nil {
+		n.Y.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *ValueExpr) Pos() loc.Pos {
@@ -867,6 +1044,19 @@ func (n *ParamExpr) Children() []Node {
 		return ret
 }
 
+func (n *ParamExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Y != nil {
+		n.Y.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ParamExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -919,6 +1109,16 @@ func (n *FromExpr) Children() []Node {
 		ret = append(ret, n.X)
 	}
 		return ret
+}
+
+func (n *FromExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *FromExpr) Pos() loc.Pos {
@@ -982,6 +1182,19 @@ func (n *ModifiesExpr) Children() []Node {
 		return ret
 }
 
+func (n *ModifiesExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Y != nil {
+		n.Y.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ModifiesExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1034,6 +1247,16 @@ func (n *RegexpExpr) Children() []Node {
 		ret = append(ret, n.X)
 	}
 		return ret
+}
+
+func (n *RegexpExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *RegexpExpr) Pos() loc.Pos {
@@ -1090,6 +1313,16 @@ func (n *PatternExpr) Children() []Node {
 		return ret
 }
 
+func (n *PatternExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *PatternExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1142,6 +1375,19 @@ func (n *DecmatchExpr) Children() []Node {
 		ret = append(ret, n.X)
 	}
 		return ret
+}
+
+func (n *DecmatchExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *DecmatchExpr) Pos() loc.Pos {
@@ -1198,6 +1444,19 @@ func (n *DecodedExpr) Children() []Node {
 		return ret
 }
 
+func (n *DecodedExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *DecodedExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1243,6 +1502,16 @@ func (n *DefKindExpr) Children() []Node {
 		ret = append(ret, c)
 	}
 		return ret
+}
+
+func (n *DefKindExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *DefKindExpr) Pos() loc.Pos {
@@ -1313,6 +1582,19 @@ func (n *ExceptExpr) Children() []Node {
 		return ret
 }
 
+func (n *ExceptExpr) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ExceptExpr) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1367,6 +1649,16 @@ func (n *BlockStmt) Children() []Node {
 		return ret
 }
 
+func (n *BlockStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.Stmts {
+		c.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *BlockStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1407,6 +1699,16 @@ func (n *DeclStmt) Children() []Node {
 		return ret
 }
 
+func (n *DeclStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Decl != nil {
+		n.Decl.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *DeclStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1445,6 +1747,16 @@ func (n *ExprStmt) Children() []Node {
 		ret = append(ret, n.Expr)
 	}
 		return ret
+}
+
+func (n *ExprStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Expr != nil {
+		n.Expr.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *ExprStmt) Pos() loc.Pos {
@@ -1494,6 +1806,16 @@ func (n *BranchStmt) Children() []Node {
 		return ret
 }
 
+func (n *BranchStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Label != nil {
+		n.Label.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *BranchStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1539,6 +1861,16 @@ func (n *ReturnStmt) Children() []Node {
 		ret = append(ret, n.Result)
 	}
 		return ret
+}
+
+func (n *ReturnStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Result != nil {
+		n.Result.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *ReturnStmt) Pos() loc.Pos {
@@ -1595,6 +1927,16 @@ func (n *AltStmt) Children() []Node {
 		return ret
 }
 
+func (n *AltStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *AltStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1640,6 +1982,19 @@ func (n *CallStmt) Children() []Node {
 		ret = append(ret, n.Body)
 	}
 		return ret
+}
+
+func (n *CallStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Stmt != nil {
+		n.Stmt.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *CallStmt) Pos() loc.Pos {
@@ -1738,6 +2093,25 @@ func (n *ForStmt) Children() []Node {
 		return ret
 }
 
+func (n *ForStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Init != nil {
+		n.Init.Inspect(f)
+	}
+	if n.Cond != nil {
+		n.Cond.Inspect(f)
+	}
+	if n.Post != nil {
+		n.Post.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ForStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -1790,6 +2164,19 @@ func (n *WhileStmt) Children() []Node {
 		ret = append(ret, n.Body)
 	}
 		return ret
+}
+
+func (n *WhileStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Cond != nil {
+		n.Cond.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *WhileStmt) Pos() loc.Pos {
@@ -1851,6 +2238,19 @@ func (n *DoWhileStmt) Children() []Node {
 		ret = append(ret, n.Cond)
 	}
 		return ret
+}
+
+func (n *DoWhileStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	if n.Cond != nil {
+		n.Cond.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *DoWhileStmt) Pos() loc.Pos {
@@ -1919,6 +2319,22 @@ func (n *IfStmt) Children() []Node {
 		ret = append(ret, n.Else)
 	}
 		return ret
+}
+
+func (n *IfStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Cond != nil {
+		n.Cond.Inspect(f)
+	}
+	if n.Then != nil {
+		n.Then.Inspect(f)
+	}
+	if n.Else != nil {
+		n.Else.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *IfStmt) Pos() loc.Pos {
@@ -1996,6 +2412,19 @@ func (n *SelectStmt) Children() []Node {
 		return ret
 }
 
+func (n *SelectStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Tag != nil {
+		n.Tag.Inspect(f)
+	}
+	for _, c := range n.Body {
+		c.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *SelectStmt) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2048,6 +2477,19 @@ func (n *CaseClause) Children() []Node {
 		ret = append(ret, n.Body)
 	}
 		return ret
+}
+
+func (n *CaseClause) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Case != nil {
+		n.Case.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *CaseClause) Pos() loc.Pos {
@@ -2123,6 +2565,22 @@ func (n *CommClause) Children() []Node {
 		ret = append(ret, n.Body)
 	}
 		return ret
+}
+
+func (n *CommClause) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	if n.Comm != nil {
+		n.Comm.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *CommClause) Pos() loc.Pos {
@@ -2214,6 +2672,31 @@ func (n *Field) Children() []Node {
 		return ret
 }
 
+func (n *Field) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Type != nil {
+		n.Type.Inspect(f)
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	for _, c := range n.ArrayDef {
+		c.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	if n.ValueConstraint != nil {
+		n.ValueConstraint.Inspect(f)
+	}
+	if n.LengthConstraint != nil {
+		n.LengthConstraint.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *Field) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2252,6 +2735,16 @@ func (n *RefSpec) Children() []Node {
 		ret = append(ret, n.X)
 	}
 		return ret
+}
+
+func (n *RefSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.X != nil {
+		n.X.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *RefSpec) Pos() loc.Pos {
@@ -2315,6 +2808,16 @@ func (n *StructSpec) Children() []Node {
 		return ret
 }
 
+func (n *StructSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.Fields {
+		c.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *StructSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2376,6 +2879,19 @@ func (n *ListSpec) Children() []Node {
 		return ret
 }
 
+func (n *ListSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Length != nil {
+		n.Length.Inspect(f)
+	}
+	if n.ElemType != nil {
+		n.ElemType.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ListSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2435,6 +2951,16 @@ func (n *EnumSpec) Children() []Node {
 		ret = append(ret, n.RBrace)
 	}
 		return ret
+}
+
+func (n *EnumSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.Enums {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *EnumSpec) Pos() loc.Pos {
@@ -2503,6 +3029,25 @@ func (n *BehaviourSpec) Children() []Node {
 		ret = append(ret, n.Return)
 	}
 		return ret
+}
+
+func (n *BehaviourSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.RunsOn != nil {
+		n.RunsOn.Inspect(f)
+	}
+	if n.System != nil {
+		n.System.Inspect(f)
+	}
+	if n.Return != nil {
+		n.Return.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *BehaviourSpec) Pos() loc.Pos {
@@ -2580,6 +3125,25 @@ func (n *ValueDecl) Children() []Node {
 		return ret
 }
 
+func (n *ValueDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.TemplateRestriction != nil {
+		n.TemplateRestriction.Inspect(f)
+	}
+	if n.Type != nil {
+		n.Type.Inspect(f)
+	}
+	for _, c := range n.Decls {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ValueDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2639,6 +3203,22 @@ func (n *Declarator) Children() []Node {
 		ret = append(ret, n.Value)
 	}
 		return ret
+}
+
+func (n *Declarator) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	for _, c := range n.ArrayDef {
+		c.Inspect(f)
+	}
+	if n.Value != nil {
+		n.Value.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *Declarator) Pos() loc.Pos {
@@ -2751,6 +3331,37 @@ func (n *TemplateDecl) Children() []Node {
 		return ret
 }
 
+func (n *TemplateDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.RestrictionSpec != nil {
+		n.RestrictionSpec.Inspect(f)
+	}
+	if n.Type != nil {
+		n.Type.Inspect(f)
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.Base != nil {
+		n.Base.Inspect(f)
+	}
+	if n.Value != nil {
+		n.Value.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *TemplateDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -2817,6 +3428,19 @@ func (n *ModuleParameterGroup) Children() []Node {
 		ret = append(ret, n.With)
 	}
 		return ret
+}
+
+func (n *ModuleParameterGroup) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.Decls {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *ModuleParameterGroup) Pos() loc.Pos {
@@ -2936,6 +3560,40 @@ func (n *FuncDecl) Children() []Node {
 		return ret
 }
 
+func (n *FuncDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.RunsOn != nil {
+		n.RunsOn.Inspect(f)
+	}
+	if n.Mtc != nil {
+		n.Mtc.Inspect(f)
+	}
+	if n.System != nil {
+		n.System.Inspect(f)
+	}
+	if n.Return != nil {
+		n.Return.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *FuncDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3032,6 +3690,31 @@ func (n *SignatureDecl) Children() []Node {
 		return ret
 }
 
+func (n *SignatureDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.Return != nil {
+		n.Return.Inspect(f)
+	}
+	if n.Exception != nil {
+		n.Exception.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *SignatureDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3084,6 +3767,19 @@ func (n *SubTypeDecl) Children() []Node {
 		ret = append(ret, n.With)
 	}
 		return ret
+}
+
+func (n *SubTypeDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Field != nil {
+		n.Field.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *SubTypeDecl) Pos() loc.Pos {
@@ -3175,6 +3871,25 @@ func (n *StructTypeDecl) Children() []Node {
 		return ret
 }
 
+func (n *StructTypeDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	for _, c := range n.Fields {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *StructTypeDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3262,6 +3977,25 @@ func (n *EnumTypeDecl) Children() []Node {
 		ret = append(ret, n.With)
 	}
 		return ret
+}
+
+func (n *EnumTypeDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	for _, c := range n.Enums {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *EnumTypeDecl) Pos() loc.Pos {
@@ -3358,6 +4092,34 @@ func (n *BehaviourTypeDecl) Children() []Node {
 		ret = append(ret, n.With)
 	}
 		return ret
+}
+
+func (n *BehaviourTypeDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	if n.RunsOn != nil {
+		n.RunsOn.Inspect(f)
+	}
+	if n.System != nil {
+		n.System.Inspect(f)
+	}
+	if n.Return != nil {
+		n.Return.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *BehaviourTypeDecl) Pos() loc.Pos {
@@ -3463,6 +4225,25 @@ func (n *PortTypeDecl) Children() []Node {
 		return ret
 }
 
+func (n *PortTypeDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	for _, c := range n.Attrs {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *PortTypeDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3508,6 +4289,16 @@ func (n *PortAttribute) Children() []Node {
 		ret = append(ret, c)
 	}
 		return ret
+}
+
+func (n *PortAttribute) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.Types {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *PortAttribute) Pos() loc.Pos {
@@ -3562,6 +4353,16 @@ func (n *PortMapAttribute) Children() []Node {
 		ret = append(ret, n.Params)
 	}
 		return ret
+}
+
+func (n *PortMapAttribute) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Params != nil {
+		n.Params.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *PortMapAttribute) Pos() loc.Pos {
@@ -3653,6 +4454,28 @@ func (n *ComponentTypeDecl) Children() []Node {
 		return ret
 }
 
+func (n *ComponentTypeDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.TypePars != nil {
+		n.TypePars.Inspect(f)
+	}
+	for _, c := range n.Extends {
+		c.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ComponentTypeDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3735,6 +4558,25 @@ func (n *Module) Children() []Node {
 		return ret
 }
 
+func (n *Module) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.Language != nil {
+		n.Language.Inspect(f)
+	}
+	for _, c := range n.Defs {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *Module) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -3780,6 +4622,16 @@ func (n *ModuleDef) Children() []Node {
 		ret = append(ret, n.Def)
 	}
 		return ret
+}
+
+func (n *ModuleDef) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Def != nil {
+		n.Def.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *ModuleDef) Pos() loc.Pos {
@@ -3834,6 +4686,22 @@ func (n *ControlPart) Children() []Node {
 		ret = append(ret, n.With)
 	}
 		return ret
+}
+
+func (n *ControlPart) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	if n.Body != nil {
+		n.Body.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *ControlPart) Pos() loc.Pos {
@@ -3925,6 +4793,25 @@ func (n *ImportDecl) Children() []Node {
 		return ret
 }
 
+func (n *ImportDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Module != nil {
+		n.Module.Inspect(f)
+	}
+	if n.Language != nil {
+		n.Language.Inspect(f)
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ImportDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4000,6 +4887,22 @@ func (n *GroupDecl) Children() []Node {
 		return ret
 }
 
+func (n *GroupDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	for _, c := range n.Defs {
+		c.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *GroupDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4061,6 +4964,19 @@ func (n *FriendDecl) Children() []Node {
 		return ret
 }
 
+func (n *FriendDecl) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Module != nil {
+		n.Module.Inspect(f)
+	}
+	if n.With != nil {
+		n.With.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *FriendDecl) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4106,6 +5022,16 @@ func (n *LanguageSpec) Children() []Node {
 		ret = append(ret, c)
 	}
 		return ret
+}
+
+func (n *LanguageSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *LanguageSpec) Pos() loc.Pos {
@@ -4169,6 +5095,13 @@ func (n *RestrictionSpec) Children() []Node {
 		return ret
 }
 
+func (n *RestrictionSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	f(nil)
+}
+
 func (n *RestrictionSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4223,6 +5156,16 @@ func (n *RunsOnSpec) Children() []Node {
 		return ret
 }
 
+func (n *RunsOnSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Comp != nil {
+		n.Comp.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *RunsOnSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4270,6 +5213,16 @@ func (n *SystemSpec) Children() []Node {
 		return ret
 }
 
+func (n *SystemSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Comp != nil {
+		n.Comp.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *SystemSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4315,6 +5268,16 @@ func (n *MtcSpec) Children() []Node {
 		ret = append(ret, n.Comp)
 	}
 		return ret
+}
+
+func (n *MtcSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Comp != nil {
+		n.Comp.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *MtcSpec) Pos() loc.Pos {
@@ -4378,6 +5341,19 @@ func (n *ReturnSpec) Children() []Node {
 		return ret
 }
 
+func (n *ReturnSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.Restriction != nil {
+		n.Restriction.Inspect(f)
+	}
+	if n.Type != nil {
+		n.Type.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *ReturnSpec) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4430,6 +5406,16 @@ func (n *FormalPars) Children() []Node {
 		ret = append(ret, n.RParen)
 	}
 		return ret
+}
+
+func (n *FormalPars) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *FormalPars) Pos() loc.Pos {
@@ -4521,6 +5507,28 @@ func (n *FormalPar) Children() []Node {
 		return ret
 }
 
+func (n *FormalPar) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	if n.TemplateRestriction != nil {
+		n.TemplateRestriction.Inspect(f)
+	}
+	if n.Type != nil {
+		n.Type.Inspect(f)
+	}
+	if n.Name != nil {
+		n.Name.Inspect(f)
+	}
+	for _, c := range n.ArrayDef {
+		c.Inspect(f)
+	}
+	if n.Value != nil {
+		n.Value.Inspect(f)
+	}
+	f(nil)
+}
+
 func (n *FormalPar) Pos() loc.Pos {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
@@ -4580,6 +5588,16 @@ func (n *WithSpec) Children() []Node {
 		ret = append(ret, n.RBrace)
 	}
 		return ret
+}
+
+func (n *WithSpec) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *WithSpec) Pos() loc.Pos {
@@ -4655,6 +5673,19 @@ func (n *WithStmt) Children() []Node {
 		ret = append(ret, n.Value)
 	}
 		return ret
+}
+
+func (n *WithStmt) Inspect(f func(Node) bool) {
+	if !f(n) {
+		return
+	}
+	for _, c := range n.List {
+		c.Inspect(f)
+	}
+	if n.Value != nil {
+		n.Value.Inspect(f)
+	}
+	f(nil)
 }
 
 func (n *WithStmt) Pos() loc.Pos {

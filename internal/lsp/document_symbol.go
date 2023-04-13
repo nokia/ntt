@@ -302,7 +302,7 @@ func getElemTypeInfo(tree *ttcn3.Tree, n ast.TypeSpec) []protocol.DocumentSymbol
 func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 	list := make([]interface{}, 0, 20)
 
-	ast.Inspect(tree.Root, func(n ast.Node) bool {
+	tree.Root.Inspect(func(n ast.Node) bool {
 
 		if n == nil {
 			return false

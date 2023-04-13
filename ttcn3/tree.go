@@ -79,7 +79,7 @@ func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 
 func (t *Tree) Modules() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.Module); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -91,7 +91,7 @@ func (t *Tree) Modules() []*Node {
 
 func (t *Tree) Funcs() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.FuncDecl); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -103,7 +103,7 @@ func (t *Tree) Funcs() []*Node {
 
 func (t *Tree) Tests() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.FuncDecl); ok && n.IsTest() {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -115,7 +115,7 @@ func (t *Tree) Tests() []*Node {
 
 func (t *Tree) Imports() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.ImportDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
@@ -127,7 +127,7 @@ func (t *Tree) Imports() []*Node {
 
 func (t *Tree) Ports() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.PortTypeDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
@@ -139,7 +139,7 @@ func (t *Tree) Ports() []*Node {
 
 func (t *Tree) Components() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.ComponentTypeDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
@@ -151,7 +151,7 @@ func (t *Tree) Components() []*Node {
 
 func (t *Tree) Controls() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		if n, ok := n.(*ast.ControlPart); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -163,7 +163,7 @@ func (t *Tree) Controls() []*Node {
 
 func (t *Tree) ModulePars() []*Node {
 	var defs []*Node
-	ast.Inspect(t.Root, func(n ast.Node) bool {
+	t.Root.Inspect(func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
 			return true

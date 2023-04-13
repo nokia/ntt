@@ -248,7 +248,7 @@ func lint(cmd *cobra.Command, args []string) error {
 				ccID := ast.Node(mod)
 				caseElse := make(map[ast.Node]int)
 
-				ast.Inspect(mod, func(n ast.Node) bool {
+				mod.Inspect(func(n ast.Node) bool {
 					if n == nil {
 						stack = stack[:len(stack)-1]
 						return false

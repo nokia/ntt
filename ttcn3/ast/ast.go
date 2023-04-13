@@ -16,6 +16,7 @@ type Node interface {
 	FirstTok() Token
 	LastTok() Token
 	Children() []Node
+	Inspect(func(Node) bool)
 }
 
 type Token interface {

@@ -24,7 +24,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 	if tree == nil || tree.Root == nil {
 		return nil, nil
 	}
-	ast.Inspect(tree.Root, func(n ast.Node) bool {
+	tree.Root.Inspect(func(n ast.Node) bool {
 		switch n := n.(type) {
 		case *ast.NodeList, *ast.Module, *ast.ModuleDef:
 			return true

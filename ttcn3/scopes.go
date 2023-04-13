@@ -154,7 +154,7 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		scp.add(n.Params)
 
 	case *ast.Module:
-		ast.Inspect(n, func(n ast.Node) bool {
+		n.Inspect(func(n ast.Node) bool {
 			switch n := n.(type) {
 			// Groups are not visible in the global scope.
 			case *ast.GroupDecl:

@@ -52,6 +52,10 @@ func (n *tokenNode) String() string {
 	return n.tokens[n.idx].String()
 }
 
+func (n *tokenNode) Inspect(fn func(ast.Node) bool) {
+	fn(n)
+}
+
 type tree struct {
 	tokens []token
 }
