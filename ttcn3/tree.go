@@ -41,7 +41,7 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	if p, ok := t.parents[n]; ok {
 		return p
 	}
-	parents := ast.Parents(n, t.Root)
+	parents := parentsSlow(n, t.Root)
 	if len(parents) == 0 {
 		t.parents[n] = nil
 		return nil
@@ -54,6 +54,39 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 		n = p
 	}
 	return parents[0]
+}
+
+func parentsSlow(tgt, root ast.Node) []ast.Node {
+	var (
+		path  []ast.Node
+		visit func(n ast.Node)
+	)
+
+	pos := tgt.Pos()
+	visit = func(n ast.Node) {
+		if ast.IsNil(n) {
+			return
+		}
+
+		if inside := n.Pos() <= pos && pos < n.End(); inside {
+			if n == tgt {
+				return
+			}
+			path = append(path, n)
+			if child := ast.FindChildOf(n, pos); !ast.IsNil(child) {
+				visit(child)
+			}
+		}
+
+	}
+	visit(root)
+
+	// Reverse path so leaf is first element.
+	for i := 0; i < len(path)/2; i++ {
+		path[i], path[len(path)-1-i] = path[len(path)-1-i], path[i]
+	}
+
+	return path
 }
 
 // Returns the qualified name of the given node.
@@ -345,8 +378,7 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Node {
 	var defs, q []*Node
 
 	// Traverse parent scopes (P+) and collect imports scopes (I*)
-	parents := ast.Parents(id, tree.Root)
-	for _, n := range parents {
+	for n := tree.ParentOf(id); n != nil; n = tree.ParentOf(n) {
 		switch n := n.(type) {
 		case *ast.FuncDecl:
 			if n.RunsOn != nil {
