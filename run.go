@@ -227,15 +227,15 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		go func(src string) {
 			defer wg.Done()
 			tree := ttcn3.ParseFile(src)
-			ast.Inspect(tree.Root, func(n ast.Node) bool {
+			tree.Root.Inspect(func(n ast.Node) bool {
 				switch n := n.(type) {
 				case *ast.FuncDecl:
 					name := tree.QualifiedName(n)
-					m.Store(name, &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree})
+					m.Store(name, &ttcn3.Node{Ident: n.Name, Node: n, Tree: tree})
 					return false
 				case *ast.ControlPart:
 					name := tree.QualifiedName(n)
-					m.Store(name, &ttcn3.Definition{Ident: n.Name, Node: n, Tree: tree})
+					m.Store(name, &ttcn3.Node{Ident: n.Name, Node: n, Tree: tree})
 					return false
 				default:
 					return true
@@ -269,7 +269,8 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		for _, name := range append(fileIDs, ids...) {
 			var tags [][]string
 			if def, ok := m.Load(name); ok {
-				tags = doc.FindAllTags(ast.FirstToken(def.(*ttcn3.Definition).Node).Comments())
+				def := def.(*ttcn3.Node)
+				tags = doc.FindAllTags(ast.Doc(def.FileSet, def.Node))
 			}
 			if b.Match(name, tags) {
 				id := fmt.Sprintf("%s-%d", name, names[name])
@@ -316,7 +317,7 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 		for _, src := range srcs {
 			for _, def := range EntryPoints(src, allTests) {
 				name := def.QualifiedName(def.Node)
-				tags := doc.FindAllTags(ast.FirstToken(def.Node).Comments())
+				tags := doc.FindAllTags(ast.Doc(def.FileSet, def.Node))
 				if b.Match(name, tags) {
 					id := fmt.Sprintf("%s-%d", name, names[name])
 					names[name]++
@@ -339,7 +340,7 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 }
 
 // EntryPoints returns controls parts of the given TTCN-3 source file. When tests is true, it returns all testcases instead.
-func EntryPoints(file string, tests bool) []*ttcn3.Definition {
+func EntryPoints(file string, tests bool) []*ttcn3.Node {
 	tree := ttcn3.ParseFile(file)
 	if tests {
 		return tree.Tests()

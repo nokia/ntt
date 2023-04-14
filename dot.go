@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -25,7 +24,7 @@ func dot(n ast.Node) {
 	for len(q) > 0 {
 		n := q[0]
 		q = q[1:]
-		if !IsValid(n) {
+		if ast.IsNil(n) {
 			continue
 		}
 		if tok, ok := n.(ast.Token); ok {
@@ -33,8 +32,8 @@ func dot(n ast.Node) {
 			continue
 		}
 		fmt.Fprintf(w, "\t%s %s;\n", nodeID(n), nodeProps(n))
-		for _, child := range ast.Children(n) {
-			if IsValid(child) {
+		for _, child := range n.Children() {
+			if !ast.IsNil(child) {
 				fmt.Fprintf(w, "\t%s -> %s;\n", nodeID(n), nodeID(child))
 				q = append(q, child)
 			}
@@ -49,19 +48,6 @@ func dot(n ast.Node) {
 	w.WriteString("}")
 }
 
-func IsValid(n ast.Node) bool {
-	if n == nil {
-		return false
-	}
-	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
-		return false
-	}
-	if tok, ok := n.(ast.Token); ok {
-		return tok.IsValid()
-	}
-	return true
-}
-
 func nodeID(n ast.Node) string {
 	if tok, ok := n.(ast.Token); ok {
 		return fmt.Sprintf("t%d", tok.Pos())
@@ -71,9 +57,9 @@ func nodeID(n ast.Node) string {
 
 func nodeProps(n ast.Node) string {
 	if tok, ok := n.(ast.Token); ok {
-		label := fmt.Sprintf("%v", tok.Kind)
-		if tok.Kind.IsLiteral() {
-			label = tok.Lit
+		label := fmt.Sprintf("%v", tok.Kind())
+		if tok.Kind().IsLiteral() {
+			label = tok.String()
 		}
 		return fmt.Sprintf("[label=<<B>%s</B>>; shape=box; style=filled; fillcolor=lightgrey]", escape(label))
 	}

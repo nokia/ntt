@@ -19,20 +19,19 @@ func (md *MarkdownHover) Print(sign string, comment string, posRef string) proto
 	return protocol.MarkupContent{Kind: "markdown", Value: "```typescript\n" + string(sign) + "\n```\n - - -\n" + comment + "\n - - -\n" + posRef}
 }
 
-func (md *MarkdownHover) LinkForNode(def *ttcn3.Definition) string {
+func (md *MarkdownHover) LinkForNode(def *ttcn3.Node) string {
 	p := def.Position(def.Node.Pos())
 	return fmt.Sprintf("[module %s](%s#L%dC%d)", def.ModuleOf(def.Node).Name.String(), def.Filename(), p.Line, p.Column)
 }
 
 func (pt *PlainTextHover) Print(sign string, comment string, posRef string) protocol.MarkupContent {
 	val := sign
-	log.Debugf("@Hover: %q, comment %q, posRef: %q\n", val, comment, posRef)
 	if len(val) > 0 && val[len(val)-1] != '\n' {
 		val += "\n"
 	}
 	if len(comment) > 0 {
 		val += "__________\n" + comment
-		log.Debugf("@Hover: %v\n", val)
+
 		if val[len(val)-1] != '\n' {
 			val += "\n"
 		}
@@ -43,11 +42,11 @@ func (pt *PlainTextHover) Print(sign string, comment string, posRef string) prot
 	return protocol.MarkupContent{Kind: "plaintext", Value: val}
 }
 
-func (pt *PlainTextHover) LinkForNode(def *ttcn3.Definition) string {
+func (pt *PlainTextHover) LinkForNode(def *ttcn3.Node) string {
 	return fmt.Sprintf("[module %s]", def.ModuleOf(def.Node).Name.String())
 }
 
-func getSignature(def *ttcn3.Definition) string {
+func getSignature(def *ttcn3.Node) string {
 	var sig bytes.Buffer
 	var prefix = ""
 	fh := fs.Open(def.Filename())
@@ -105,14 +104,10 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	for _, def := range tree.LookupWithDB(x, &s.db) {
 		defFound = true
 
-		if firstTok := ast.FirstToken(def.Node); firstTok == nil {
-			continue
-		} else {
-			comment = firstTok.Comments()
-			signature = getSignature(def)
-			if tree.Root != def.Root {
-				posRef = s.clientCapability.HoverContent.LinkForNode(def)
-			}
+		comment = ast.Doc(def.Tree.FileSet, def.Node)
+		signature = getSignature(def)
+		if tree.Root != def.Root {
+			posRef = s.clientCapability.HoverContent.LinkForNode(def)
 		}
 	}
 	if !defFound {

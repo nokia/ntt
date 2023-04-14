@@ -16,7 +16,7 @@ import (
 func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Location {
 	list := make([]protocol.Location, 0, 10)
 	syntax := ttcn3.ParseFile(file)
-	ast.Inspect(syntax.Root, func(n ast.Node) bool {
+	syntax.Root.Inspect(func(n ast.Node) bool {
 		if n == nil {
 			// called on node exit
 			return false
@@ -27,7 +27,7 @@ func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Locati
 			if idName == node.Tok.String() {
 				list = append(list, location(syntax.FileSet.Position(node.Tok.Pos())))
 			}
-			if idName == node.Tok2.String() {
+			if node.Tok2 != nil && idName == node.Tok2.String() {
 				list = append(list, location(syntax.FileSet.Position(node.Tok2.Pos())))
 			}
 			return false

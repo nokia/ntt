@@ -24,7 +24,7 @@ func (e errPattern) Error() string {
 	return fmt.Sprintf("%s: error: %s", e.fset.Position(e.node.Pos()), e.msg)
 }
 
-func (e errPattern) IsSilent() bool { return isSilent(e.node, "TemplateDef") }
+func (e errPattern) IsSilent() bool { return isSilent(e.fset, e.node, "TemplateDef") }
 
 type errLines struct {
 	fset  *loc.FileSet
@@ -37,7 +37,7 @@ func (e errLines) Error() string {
 		e.fset.Position(e.node.Pos()), ast.Name(e.node), style.MaxLines, e.lines)
 }
 
-func (e errLines) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooLong") }
+func (e errLines) IsSilent() bool { return isSilent(e.fset, e.node, "CodeStatistics.TooLong") }
 
 type errBraces struct {
 	fset        *loc.FileSet
@@ -60,7 +60,7 @@ func (e errComplexity) Error() string {
 		e.fset.Position(e.node.Pos()), ast.Name(e.node), e.complexity, style.Complexity.Max)
 }
 
-func (e errComplexity) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooComplex") }
+func (e errComplexity) IsSilent() bool { return isSilent(e.fset, e.node, "CodeStatistics.TooComplex") }
 
 type errMissingCaseElse struct {
 	fset *loc.FileSet
@@ -92,8 +92,8 @@ func (e errUnusedModule) Error() string {
 	return fmt.Sprintf("%s: error: unused module", e.file)
 }
 
-func isSilent(n ast.Node, checks ...string) bool {
-	scanner := bufio.NewScanner(strings.NewReader(ast.FirstToken(n).Comments()))
+func isSilent(fset *loc.FileSet, n ast.Node, checks ...string) bool {
+	scanner := bufio.NewScanner(strings.NewReader(ast.Doc(fset, n)))
 	for scanner.Scan() {
 		if s := nolintRegex.FindStringSubmatch(scanner.Text()); len(s) == 2 {
 			for _, s := range strings.Split(s[1], ",") {

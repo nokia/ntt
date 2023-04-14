@@ -212,6 +212,9 @@ type Suite struct {
 
 	// SourceDir is the directory where the test suite source files are located.
 	SourceDir string `json:"source_dir"`
+
+	// Target is an optional build target.
+	Target string `json:"target,omitempty"`
 }
 
 var (
@@ -542,15 +545,15 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 
 	for _, file := range files {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			switch n := n.(type) {
 			case *ast.FuncDecl:
 				if n.IsTest() {
-					add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+					add(tree.QualifiedName(n), ast.Doc(tree.FileSet, n))
 				}
 				return false
 			case *ast.ControlPart:
-				add(tree.QualifiedName(n), ast.FirstToken(n).Comments())
+				add(tree.QualifiedName(n), ast.Doc(tree.FileSet, n))
 				return false
 			}
 			return true

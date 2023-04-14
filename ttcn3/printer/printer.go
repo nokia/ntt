@@ -819,9 +819,7 @@ func (p *printer) print(values ...interface{}) {
 			}
 
 		case ast.Token:
-			if n.IsValid() {
-				p.print(n.String())
-			}
+			p.print(n.String())
 
 		default:
 			if n == nil {

@@ -9,7 +9,7 @@ internal test tool (k3-run) to ntt and maybe replaced in the future.
 */
 package session
 
-var SharedDir = "/var/run/ntt"
+var SharedDir = "/tmp/k3"
 
 // Get returns the next free unqiue seesion id. If an error occures, Get returns
 // -1 and the error.

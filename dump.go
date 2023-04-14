@@ -56,7 +56,7 @@ func dump(v reflect.Value, f string) {
 	if v.Kind() != reflect.Interface && v.CanInterface() {
 		switch x := v.Interface().(type) {
 		case ast.Token:
-			if x.IsValid() {
+			if x != nil {
 				Prefix(x, f)
 				fmt.Printf("[35m%s[0m", x.String())
 				Suffix(x)

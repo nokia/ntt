@@ -78,7 +78,7 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -86,10 +86,10 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 
 			switch node := n.(type) {
 			case *ast.FuncDecl:
-				if node.Kind.Kind == kind {
+				if node.Kind.Kind() == kind {
 					var sig bytes.Buffer
 					textFormat := protocol.PlainTextTextFormat
-					sig.WriteString(node.Kind.Lit + " " + mname + "." + node.Name.String())
+					sig.WriteString(node.Kind.String() + " " + mname + "." + node.Name.String())
 					len1 := len(sig.String())
 					printer.Print(&sig, tree.FileSet, node.Params)
 					hasParams := (len(sig.String()) - len1) > 2
@@ -108,14 +108,12 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 						sig.WriteString("\n  ")
 						printer.Print(&sig, tree.FileSet, node.Return)
 					}
-					tok := ast.FirstToken(node)
-
 					list = append(list, &FunctionDetails{
 						Label:         node.Name.String(),
 						HasRunsOn:     (node.RunsOn != nil),
 						HasReturn:     (node.Return != nil),
 						Signature:     sig.String(),
-						Documentation: tok.Comments(),
+						Documentation: ast.Doc(tree.FileSet, node),
 						HasParameters: hasParams,
 						TextFormat:    textFormat})
 				}
@@ -134,7 +132,7 @@ func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []s
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -146,7 +144,7 @@ func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []s
 				// component type
 				return false
 			case *ast.ValueDecl:
-				if node.Kind.Kind != kind {
+				if node.Kind.Kind() != kind {
 					return false
 				}
 				return true
@@ -170,7 +168,7 @@ func getAllTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -208,7 +206,7 @@ func getAllComponentTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -230,7 +228,7 @@ func getAllPortTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		ast.Inspect(tree.Root, func(n ast.Node) bool {
+		tree.Root.Inspect(func(n ast.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -581,7 +579,7 @@ func getTemplateDeclNode(nodes []ast.Node) *ast.TemplateDecl {
 
 func isStartId(n ast.Expr) bool {
 	if id, ok := n.(*ast.Ident); ok {
-		return id.Tok.Lit == "start"
+		return id.Tok.String() == "start"
 	}
 	return false
 }
@@ -728,9 +726,9 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 		if nodet := getTemplateDeclNode(nodes); nodet != nil {
 			scndNode, _ := nodes[l-2].(*ast.SelectorExpr)
 
-			if nodet.ModifiesTok.LastTok().IsValid() && nodet.AssignTok.Pos() > pos {
+			if nodet.ModifiesTok != nil && nodet.AssignTok.Pos() > pos {
 				if scndNode != nil && scndNode.X != nil {
-					list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), nodet.TemplateTok.Kind, false)
+					list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), nodet.TemplateTok.Kind(), false)
 				} else {
 					list = newAllValueDecls(suite, token.TEMPLATE)
 					list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
@@ -768,7 +766,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 				case *ast.ModuleDef:
 					list = newModuleDefKw()
 				case *ast.ImportDecl:
-					if scndNode.LBrace.IsValid() {
+					if scndNode.LBrace != nil {
 						list = newImportkinds()
 					} else if nodet.End() >= pos {
 						// look for available modules for import
@@ -782,9 +780,9 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 					// * inside the exception list after { while typing the kind
 					if l == 8 {
 						if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
-							if scndNode.Kind.IsValid() {
+							if scndNode.Kind != nil {
 								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-									list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
+									list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 								}
 							} else {
 								list = newImportkinds()
@@ -792,7 +790,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 						}
 					} else {
 						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-							list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
+							list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 						}
 					}
 
@@ -810,7 +808,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 					}
 				case *ast.ComponentTypeDecl:
 					// for ctrl+spc, after beginning to type an id after extends Token
-					if scndNode.ExtendsTok.LastTok().IsValid() && scndNode.Body.LBrace.Pos() > pos {
+					if scndNode.ExtendsTok.LastTok() != nil && scndNode.Body.LBrace.Pos() > pos {
 						list = newAllComponentTypes(suite, " 1")
 						list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 					}
@@ -823,14 +821,14 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 				list = moduleNameListFromSuite(suite, ownModName, " ")
 			}
 		case *ast.DefKindExpr:
-			if !nodet.Kind.IsValid() {
+			if nodet.Kind == nil {
 				list = newImportkinds()
 			} else {
 				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
-					list = newImportCompletions(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
+					list = newImportCompletions(suite, nodet.Kind.Kind(), impDecl.Module.Tok.String())
 				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
 					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
-						list = newImportCompletions(suite, nodet.Kind.Kind, impDecl.Module.Tok.String())
+						list = newImportCompletions(suite, nodet.Kind.Kind(), impDecl.Module.Tok.String())
 					}
 				}
 			}
@@ -848,10 +846,10 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 					// NOTE: not able to reproduce this situation. Maybe it is safe to remove this code.
 					// happens streight after the altstep kw if ctrl+space is pressed
 					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
-						list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
+						list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 					} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
 						if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
-							list = newImportCompletions(suite, scndNode.Kind.Kind, impDecl.Module.Tok.String())
+							list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 						}
 					}
 				}
@@ -859,7 +857,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 		case *ast.Declarator:
 			if l > 2 {
 				if valueDecl, ok := nodes[l-2].(*ast.ValueDecl); ok {
-					if valueDecl.Kind.Kind == token.PORT {
+					if valueDecl.Kind.Kind() == token.PORT {
 						list = newAllPortTypes(suite, ownModName)
 						list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 					}
@@ -873,6 +871,8 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 }
 
 func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
+	// TODO(5nord): Replace this function with n.LastTok() and n.PrevTok()
+
 	var (
 		completed bool       = false
 		nodeStack []ast.Node = make([]ast.Node, 0, 10)
@@ -880,7 +880,7 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 		isError   bool       = false
 	)
 
-	ast.Inspect(n, func(n ast.Node) bool {
+	n.Inspect(func(n ast.Node) bool {
 		if isError {
 			return false
 		}

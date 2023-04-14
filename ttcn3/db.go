@@ -69,7 +69,7 @@ func (db *DB) Index(files ...string) {
 // VisibleModules returns a list of modules that may contain the given
 // symbol. First parameter id specifies the symbol to look for and second
 // parameter module specifies where the imports come from.
-func (db *DB) VisibleModules(id string, mod *ast.Module) []*Definition {
+func (db *DB) VisibleModules(id string, mod *ast.Module) []*Node {
 	importedModules := make(map[string]bool)
 	importedFiles := make(map[string]bool)
 
@@ -86,12 +86,18 @@ func (db *DB) VisibleModules(id string, mod *ast.Module) []*Definition {
 	addImport(ast.Name(mod))
 
 	// Only use imports from the current module.
-	ast.WalkModuleDefs(func(n *ast.ModuleDef) bool {
-		if n, ok := n.Def.(*ast.ImportDecl); ok {
+	mod.Inspect(func(n ast.Node) bool {
+		switch n := n.(type) {
+		case *ast.ImportDecl:
 			addImport(ast.Name(n.Module))
+			return false
+		case *ast.Module, *ast.ModuleDef:
+			return true
+		default:
+			return false
+
 		}
-		return true
-	}, mod)
+	})
 
 	// Find all files that contain the symbol.
 	var candidates []string
@@ -103,7 +109,7 @@ func (db *DB) VisibleModules(id string, mod *ast.Module) []*Definition {
 	}
 
 	// Parse all imported modules that contain the symbol.
-	var mods []*Definition
+	var mods []*Node
 	for _, file := range candidates {
 		tree := ParseFile(file)
 		for _, m := range tree.Modules() {

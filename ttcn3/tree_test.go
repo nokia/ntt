@@ -77,6 +77,7 @@ func TestExprAt(t *testing.T) {
 		{"foo(23, ¶x:= 1)", "*ast.Ident(x)"},
 		{"a := { ¶x:= 1}", "*ast.Ident(x)"},
 		{"a := { [¶x]:= 1}", "*ast.Ident(x)"},
+		{"type ¶x y", "*ast.Ident(x)"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

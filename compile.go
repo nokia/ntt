@@ -97,10 +97,8 @@ func buildSource(file string) ttcn3.Source {
 		end := int(n.End())
 
 		switch n := n.(type) {
-		case *ast.Token:
-			visit(*n)
 		case ast.Token:
-			if !n.IsValid() {
+			if n == nil {
 				break
 			}
 			src.Events = append(src.Events, ttcn3.NodeEvent{
@@ -116,7 +114,7 @@ func buildSource(file string) ttcn3.Source {
 				Len:  end - begin,
 			})
 			idx := len(src.Events) - 1
-			for _, c := range ast.Children(n) {
+			for _, c := range n.Children() {
 				visit(c)
 			}
 			src.Events = append(src.Events, ttcn3.NodeEvent{

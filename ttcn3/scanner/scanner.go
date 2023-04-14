@@ -14,13 +14,11 @@ import (
 // encountered and a handler was installed, the handler is called with a
 // position and an error message. The position points to the beginning of
 // the offending
-//
 type ErrorHandler func(pos loc.Position, msg string)
 
 // A Scanner holds the scanner's internal state while processing
 // a given text. It can be allocated as part of another data
 // structure but must be initialized via Init before use.
-//
 type Scanner struct {
 	// immutable state
 	file *loc.File    // source file handle
@@ -42,7 +40,6 @@ const bom = 0xFEFF // byte order mark, only permitted as very first character
 
 // Read the next Unicode char into s.ch.
 // s.ch < 0 means end-of-file.
-//
 func (s *Scanner) next() {
 	if s.rdOffset < len(s.src) {
 		s.offset = s.rdOffset
@@ -77,7 +74,6 @@ func (s *Scanner) next() {
 
 // A SMode value is a set of flags (or 0).
 // They control scanner behavior.
-//
 type SMode uint
 
 const (
@@ -97,7 +93,6 @@ const (
 //
 // Note that Init may call Err if there is an error in the first character
 // of the file.
-//
 func (s *Scanner) Init(file *loc.File, src []byte, err ErrorHandler) {
 	// Explicitly initialize all fields since a scanner may be reused.
 	if file.Size() != len(src) {
@@ -141,7 +136,6 @@ func (s *Scanner) scanComment() string {
 			}
 			s.next()
 		}
-		s.next()
 		goto exit
 	}
 
@@ -391,7 +385,6 @@ func (s *Scanner) switch2(ch rune, tok1, tok2 token.Kind) token.Kind {
 // Scan adds line information to the file added to the file
 // set with Init. Kind positions are relative to that file
 // and thus relative to the file set.
-//
 func (s *Scanner) Scan() (pos loc.Pos, tok token.Kind, lit string) {
 	s.skipWhitespace()
 

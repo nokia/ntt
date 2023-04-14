@@ -2,7 +2,6 @@ package ttcn3
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/ast"
@@ -12,28 +11,28 @@ import (
 type Scope struct {
 	ast.Node
 	Tree  *Tree
-	Names map[string]*Definition
+	Names map[string]*Node
 }
 
-type Definition struct {
+type Node struct {
 	*ast.Ident
 	ast.Node
 	*Tree
-	Next *Definition
+	Next *Node
 }
 
-func Definitions(id string, n ast.Node, t *Tree) []*Definition {
+func Definitions(id string, n ast.Node, t *Tree) []*Node {
 	return NewScope(n, t).Lookup(id)
 }
 
 func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 	if scp.Names == nil {
-		scp.Names = make(map[string]*Definition)
+		scp.Names = make(map[string]*Node)
 	}
 
 	if id != nil {
 		name := id.String()
-		scp.Names[name] = &Definition{
+		scp.Names[name] = &Node{
 			Ident: id,
 			Node:  n,
 			Tree:  scp.Tree,
@@ -44,11 +43,11 @@ func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
 
 // Lookup returns a list of defintions for the given identifier.
 // Lookup may be called with nil as receiver.
-func (scp *Scope) Lookup(name string) []*Definition {
+func (scp *Scope) Lookup(name string) []*Node {
 	if scp == nil {
 		return nil
 	}
-	var defs []*Definition
+	var defs []*Node
 	def := scp.Names[name]
 	for def != nil {
 		defs = append(defs, def)
@@ -154,7 +153,7 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 		scp.add(n.Params)
 
 	case *ast.Module:
-		ast.Inspect(n, func(n ast.Node) bool {
+		n.Inspect(func(n ast.Node) bool {
 			switch n := n.(type) {
 			// Groups are not visible in the global scope.
 			case *ast.GroupDecl:
@@ -201,7 +200,7 @@ func (scp *Scope) addField(n *ast.Field) {
 
 // add adds definitions to the scope;
 func (scp *Scope) add(n ast.Node) error {
-	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() || n == nil {
+	if ast.IsNil(n) {
 		return nil
 	}
 	switch n := n.(type) {
@@ -245,7 +244,7 @@ func (scp *Scope) add(n ast.Node) error {
 		scp.add(n.Decl)
 
 	case *ast.BranchStmt:
-		if n.Tok.Kind == token.LABEL {
+		if n.Tok.Kind() == token.LABEL {
 			scp.Insert(n, n.Label)
 		}
 
