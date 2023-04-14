@@ -54,7 +54,7 @@ func getSignature(def *ttcn3.Definition) string {
 	content, _ := fh.Bytes()
 	switch node := def.Node.(type) {
 	case *ast.FuncDecl:
-		sig.WriteString(node.Kind.Lit + " " + node.Name.String())
+		sig.WriteString(node.Kind.String() + " " + node.Name.String())
 		sig.Write(content[node.Params.Pos()-1 : node.Params.End()])
 		if node.RunsOn != nil {
 			sig.WriteString("\n  ")
