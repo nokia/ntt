@@ -18,6 +18,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/ttcn3"
 	errors "golang.org/x/xerrors"
 )
 
@@ -64,17 +65,24 @@ func (s serverState) String() string {
 	return fmt.Sprintf("(unknown state: %d)", int(s))
 }
 
+type HoverContentProvider interface {
+	Print(sign string, comment string, posRef string) protocol.MarkupContent
+	LinkForNode(def *ttcn3.Node) string
+}
+type ClientCapability struct {
+	HoverContent HoverContentProvider
+}
 type Config struct {
 	FormatEnabled bool
 }
 
 // Server implements the protocol.Server interface.
 type Server struct {
-	conn   jsonrpc2.Conn
-	client protocol.Client
-
-	stateMu sync.Mutex
-	state   serverState
+	conn             jsonrpc2.Conn
+	client           protocol.Client
+	clientCapability ClientCapability
+	stateMu          sync.Mutex
+	state            serverState
 
 	// folders is only valid between initialize and initialized, and holds the
 	// set of folders to build views for when we are ready
