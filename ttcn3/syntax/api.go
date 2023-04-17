@@ -6,7 +6,7 @@ Parametrisation, Behaviour Types, Performance and Realtime Testing, simplistic
 preprocessor support, multi-line string literals for Titan TestPorts, and
 optional semicolon for backward compatibility.
 */
-package parser
+package syntax
 
 import (
 	"bytes"

@@ -12,7 +12,7 @@ import (
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/pmezard/go-difflib/difflib"
 )
@@ -87,7 +87,7 @@ func tests(path string) []Test {
 		}
 
 		fset := loc.NewFileSet()
-		mods, _ := parser.ParseModules(fset, path, input, parser.AllErrors)
+		mods, _ := syntax.ParseModules(fset, path, input, syntax.AllErrors)
 		if len(mods) != 1 {
 			panic(fmt.Sprintf("test requires %q to have exactly one module", path))
 		}

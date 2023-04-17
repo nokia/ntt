@@ -8,7 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
-	"github.com/nokia/ntt/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 func repl() error {
@@ -23,7 +23,7 @@ func repl() error {
 		}
 
 		fset := loc.NewFileSet()
-		root, _, _, err := parser.Parse(fset, "<stdin>", s.Text())
+		root, _, _, err := syntax.Parse(fset, "<stdin>", s.Text())
 		if err != nil {
 			fmt.Println(err.Error())
 			continue

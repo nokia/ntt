@@ -5,7 +5,7 @@ import (
 
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/parser"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +14,7 @@ func TestDoc(t *testing.T) {
 
 	testDoc := func(t *testing.T, input string) string {
 		fset := loc.NewFileSet()
-		root, _, _, err := parser.Parse(fset, t.Name(), input)
+		root, _, _, err := syntax.Parse(fset, t.Name(), input)
 		if err != nil {
 			t.Fatal(err)
 		}
