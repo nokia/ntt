@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 
 type errPattern struct {
 	fset *loc.FileSet
-	node ast.Node
+	node syntax.Node
 	msg  string
 }
 
@@ -28,20 +28,20 @@ func (e errPattern) IsSilent() bool { return isSilent(e.fset, e.node, "TemplateD
 
 type errLines struct {
 	fset  *loc.FileSet
-	node  ast.Node
+	node  syntax.Node
 	lines int
 }
 
 func (e errLines) Error() string {
 	return fmt.Sprintf("%s: error: %q must not have more than %d lines (%d)",
-		e.fset.Position(e.node.Pos()), ast.Name(e.node), style.MaxLines, e.lines)
+		e.fset.Position(e.node.Pos()), syntax.Name(e.node), style.MaxLines, e.lines)
 }
 
 func (e errLines) IsSilent() bool { return isSilent(e.fset, e.node, "CodeStatistics.TooLong") }
 
 type errBraces struct {
 	fset        *loc.FileSet
-	left, right ast.Node
+	left, right syntax.Node
 }
 
 func (e errBraces) Error() string {
@@ -51,20 +51,20 @@ func (e errBraces) Error() string {
 
 type errComplexity struct {
 	fset       *loc.FileSet
-	node       ast.Node
+	node       syntax.Node
 	complexity int
 }
 
 func (e errComplexity) Error() string {
 	return fmt.Sprintf("%s: error: cyclomatic complexity of %q (%d) must not be higher than %d",
-		e.fset.Position(e.node.Pos()), ast.Name(e.node), e.complexity, style.Complexity.Max)
+		e.fset.Position(e.node.Pos()), syntax.Name(e.node), e.complexity, style.Complexity.Max)
 }
 
 func (e errComplexity) IsSilent() bool { return isSilent(e.fset, e.node, "CodeStatistics.TooComplex") }
 
 type errMissingCaseElse struct {
 	fset *loc.FileSet
-	node ast.Node
+	node syntax.Node
 }
 
 func (e errMissingCaseElse) Error() string {
@@ -73,7 +73,7 @@ func (e errMissingCaseElse) Error() string {
 
 type errUsageExceedsLimit struct {
 	fset  *loc.FileSet
-	node  ast.Node
+	node  syntax.Node
 	usage int
 	limit int
 	text  string
@@ -81,7 +81,7 @@ type errUsageExceedsLimit struct {
 
 func (e errUsageExceedsLimit) Error() string {
 	return fmt.Sprintf("%s: error: %q must not be used more than %d times. %s",
-		e.fset.Position(e.node.Pos()), ast.Name(e.node), e.limit, e.text)
+		e.fset.Position(e.node.Pos()), syntax.Name(e.node), e.limit, e.text)
 }
 
 type errUnusedModule struct {
@@ -92,8 +92,8 @@ func (e errUnusedModule) Error() string {
 	return fmt.Sprintf("%s: error: unused module", e.file)
 }
 
-func isSilent(fset *loc.FileSet, n ast.Node, checks ...string) bool {
-	scanner := bufio.NewScanner(strings.NewReader(ast.Doc(fset, n)))
+func isSilent(fset *loc.FileSet, n syntax.Node, checks ...string) bool {
+	scanner := bufio.NewScanner(strings.NewReader(syntax.Doc(fset, n)))
 	for scanner.Scan() {
 		if s := nolintRegex.FindStringSubmatch(scanner.Text()); len(s) == 2 {
 			for _, s := range strings.Split(s[1], ",") {

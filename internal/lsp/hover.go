@@ -10,7 +10,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 func (md *MarkdownHover) Print(sign string, comment string, posRef string) protocol.MarkupContent {
@@ -52,7 +52,7 @@ func getSignature(def *ttcn3.Node) string {
 	fh := fs.Open(def.Filename())
 	content, _ := fh.Bytes()
 	switch node := def.Node.(type) {
-	case *ast.FuncDecl:
+	case *syntax.FuncDecl:
 		sig.WriteString(node.Kind.String() + " " + node.Name.String())
 		sig.Write(content[node.Params.Pos()-1 : node.Params.End()])
 		if node.RunsOn != nil {
@@ -67,16 +67,16 @@ func getSignature(def *ttcn3.Node) string {
 			sig.WriteString("\n  ")
 			sig.Write(content[node.Return.Pos()-1 : node.Return.End()])
 		}
-	case *ast.ValueDecl, *ast.TemplateDecl, *ast.FormalPar, *ast.StructTypeDecl, *ast.ComponentTypeDecl, *ast.EnumTypeDecl, *ast.PortTypeDecl:
+	case *syntax.ValueDecl, *syntax.TemplateDecl, *syntax.FormalPar, *syntax.StructTypeDecl, *syntax.ComponentTypeDecl, *syntax.EnumTypeDecl, *syntax.PortTypeDecl:
 		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
-	case *ast.Field:
+	case *syntax.Field:
 		if parent := def.ParentOf(node); parent != nil {
-			if _, ok := parent.(*ast.SubTypeDecl); ok {
+			if _, ok := parent.(*syntax.SubTypeDecl); ok {
 				prefix = "type "
 			}
 		}
 		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
-	case *ast.Module:
+	case *syntax.Module:
 		fmt.Fprintf(&sig, "module %s\n", node.Name)
 	default:
 		log.Debugf("getSignature: unknown Type:%T\n", node)
@@ -104,7 +104,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	for _, def := range tree.LookupWithDB(x, &s.db) {
 		defFound = true
 
-		comment = ast.Doc(def.Tree.FileSet, def.Node)
+		comment = syntax.Doc(def.Tree.FileSet, def.Node)
 		signature = getSignature(def)
 		if tree.Root != def.Root {
 			posRef = s.clientCapability.HoverContent.LinkForNode(def)
@@ -112,7 +112,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	}
 	if !defFound {
 		// look for predefined functions
-		if id := ast.Name(x); len(id) > 0 {
+		if id := syntax.Name(x); len(id) > 0 {
 			for _, predef := range PredefinedFunctions {
 				if predef.Label == id+"(...)" {
 					comment = predef.Documentation

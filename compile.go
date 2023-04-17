@@ -10,7 +10,7 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -86,18 +86,18 @@ func buildSource(file string) ttcn3.Source {
 	src := ttcn3.Source{
 		Filename: file,
 	}
-	var visit func(n ast.Node)
-	visit = func(n ast.Node) {
+	var visit func(n syntax.Node)
+	visit = func(n syntax.Node) {
 		if n == nil {
 			return
 		}
 
-		k := strings.TrimPrefix(strings.TrimPrefix(fmt.Sprintf("%T", n), "*"), "ast.")
+		k := strings.TrimPrefix(strings.TrimPrefix(fmt.Sprintf("%T", n), "*"), "syntax.")
 		begin := int(n.Pos())
 		end := int(n.End())
 
 		switch n := n.(type) {
-		case ast.Token:
+		case syntax.Token:
 			if n == nil {
 				break
 			}

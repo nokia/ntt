@@ -1,10 +1,9 @@
-package ast_test
+package syntax_test
 
 import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/ast"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +17,7 @@ func TestDoc(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return ast.Doc(fset, root)
+		return syntax.Doc(fset, root)
 	}
 
 	t.Run("empty", func(t *testing.T) {

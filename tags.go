@@ -10,7 +10,7 @@ import (
 
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +46,7 @@ func tags(cmd *cobra.Command, args []string) error {
 			tree := ttcn3.ParseFile(files[i])
 			for _, n := range tree.Tags() {
 				pos := tree.Position(n.Pos())
-				tags[i] = append(tags[i], NewTag(ast.Name(n), pos.Filename, pos.Line, Kind(n)))
+				tags[i] = append(tags[i], NewTag(syntax.Name(n), pos.Filename, pos.Line, Kind(n)))
 			}
 		}(i)
 	}
@@ -73,31 +73,31 @@ func NewTag(name string, file string, line int, kind string) string {
 	return fmt.Sprintf("%s\t%s\t%d;\"\t%s", name, file, line, kind)
 }
 
-func Kind(n ast.Node) string {
+func Kind(n syntax.Node) string {
 	switch n.(type) {
-	case *ast.Module:
+	case *syntax.Module:
 		return "n"
-	case *ast.Field:
+	case *syntax.Field:
 		return "t"
-	case *ast.PortTypeDecl:
+	case *syntax.PortTypeDecl:
 		return "t"
-	case *ast.ComponentTypeDecl:
+	case *syntax.ComponentTypeDecl:
 		return "c"
-	case *ast.StructTypeDecl:
+	case *syntax.StructTypeDecl:
 		return "m"
-	case *ast.EnumTypeDecl:
+	case *syntax.EnumTypeDecl:
 		return "e"
-	case *ast.BehaviourTypeDecl:
+	case *syntax.BehaviourTypeDecl:
 		return "t"
-	case *ast.Declarator:
+	case *syntax.Declarator:
 		return "v"
-	case *ast.FormalPar:
+	case *syntax.FormalPar:
 		return "v"
-	case *ast.TemplateDecl:
+	case *syntax.TemplateDecl:
 		return "d"
-	case *ast.FuncDecl:
+	case *syntax.FuncDecl:
 		return "f"
-	case *ast.SignatureDecl:
+	case *syntax.SignatureDecl:
 		return "f"
 	default:
 		return "e"

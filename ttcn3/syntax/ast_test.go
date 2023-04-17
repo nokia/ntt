@@ -1,4 +1,4 @@
-package ast_test
+package syntax_test
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 func TestFindChildOf(t *testing.T) {
@@ -32,7 +32,7 @@ func TestFindChildOf(t *testing.T) {
 	for _, tt := range tests {
 		cursor, input := extractCursor(tt.input)
 		tree := parseFile(t, "test", input)
-		actual := printNode(ast.FindChildOf(tree.Root, cursor))
+		actual := printNode(syntax.FindChildOf(tree.Root, cursor))
 		if actual != tt.want {
 			t.Errorf("FindChildOf(%q) = %q, want %q", tt.input, actual, tt.want)
 		}
@@ -56,11 +56,11 @@ func parseFile(t *testing.T, name string, input string) *ttcn3.Tree {
 	return tree
 }
 
-func printNode(n ast.Node) string {
+func printNode(n syntax.Node) string {
 	switch n := n.(type) {
-	case *ast.ExprStmt:
+	case *syntax.ExprStmt:
 		return printNode(n.Expr)
 	default:
-		return ast.Name(n)
+		return syntax.Name(n)
 	}
 }

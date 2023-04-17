@@ -10,25 +10,25 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Location {
 	list := make([]protocol.Location, 0, 10)
-	syntax := ttcn3.ParseFile(file)
-	syntax.Root.Inspect(func(n ast.Node) bool {
+	tree := ttcn3.ParseFile(file)
+	tree.Root.Inspect(func(n syntax.Node) bool {
 		if n == nil {
 			// called on node exit
 			return false
 		}
 
 		switch node := n.(type) {
-		case *ast.Ident:
+		case *syntax.Ident:
 			if idName == node.Tok.String() {
-				list = append(list, location(syntax.FileSet.Position(node.Tok.Pos())))
+				list = append(list, location(tree.FileSet.Position(node.Tok.Pos())))
 			}
 			if node.Tok2 != nil && idName == node.Tok2.String() {
-				list = append(list, location(syntax.FileSet.Position(node.Tok2.Pos())))
+				list = append(list, location(tree.FileSet.Position(node.Tok2.Pos())))
 			}
 			return false
 		default:
@@ -66,7 +66,7 @@ func (s *Server) references(ctx context.Context, params *protocol.ReferenceParam
 	}()
 
 	tree := ttcn3.ParseFile(file)
-	id, ok := tree.ExprAt(tree.Pos(line, col)).(*ast.Ident)
+	id, ok := tree.ExprAt(tree.Pos(line, col)).(*syntax.Ident)
 	if !ok || id == nil {
 		return nil, errors.New("no identifier at cursor")
 	}

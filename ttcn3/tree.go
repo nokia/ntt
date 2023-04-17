@@ -7,22 +7,22 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
 	FileSet *loc.FileSet
-	Root    ast.Node
+	Root    syntax.Node
 	Names   map[string]bool
 	Uses    map[string]bool
 	Err     error
 
 	filename  string
-	parents   map[ast.Node]ast.Node
+	parents   map[syntax.Node]syntax.Node
 	parentsMu sync.Mutex
-	scopes    map[ast.Node]*Scope
+	scopes    map[syntax.Node]*Scope
 	scopesMu  sync.Mutex
 }
 
@@ -32,11 +32,11 @@ func (t *Tree) Filename() string {
 }
 
 // ParentOf returns the parent of the given node.
-func (t *Tree) ParentOf(n ast.Node) ast.Node {
+func (t *Tree) ParentOf(n syntax.Node) syntax.Node {
 	t.parentsMu.Lock()
 	defer t.parentsMu.Unlock()
 	if t.parents == nil {
-		t.parents = make(map[ast.Node]ast.Node)
+		t.parents = make(map[syntax.Node]syntax.Node)
 	}
 	if p, ok := t.parents[n]; ok {
 		return p
@@ -56,15 +56,15 @@ func (t *Tree) ParentOf(n ast.Node) ast.Node {
 	return parents[0]
 }
 
-func parentsSlow(tgt, root ast.Node) []ast.Node {
+func parentsSlow(tgt, root syntax.Node) []syntax.Node {
 	var (
-		path  []ast.Node
-		visit func(n ast.Node)
+		path  []syntax.Node
+		visit func(n syntax.Node)
 	)
 
 	pos := tgt.Pos()
-	visit = func(n ast.Node) {
-		if ast.IsNil(n) {
+	visit = func(n syntax.Node) {
+		if syntax.IsNil(n) {
 			return
 		}
 
@@ -73,7 +73,7 @@ func parentsSlow(tgt, root ast.Node) []ast.Node {
 				return
 			}
 			path = append(path, n)
-			if child := ast.FindChildOf(n, pos); !ast.IsNil(child) {
+			if child := syntax.FindChildOf(n, pos); !syntax.IsNil(child) {
 				visit(child)
 			}
 		}
@@ -90,10 +90,10 @@ func parentsSlow(tgt, root ast.Node) []ast.Node {
 }
 
 // Returns the qualified name of the given node.
-func (t *Tree) QualifiedName(n ast.Node) string {
-	if name := ast.Name(n); name != "" {
+func (t *Tree) QualifiedName(n syntax.Node) string {
+	if name := syntax.Name(n); name != "" {
 		if mod := t.ModuleOf(n); mod != nil {
-			return fmt.Sprintf("%s.%s", ast.Name(mod.Name), name)
+			return fmt.Sprintf("%s.%s", syntax.Name(mod.Name), name)
 		}
 		return name
 	}
@@ -101,9 +101,9 @@ func (t *Tree) QualifiedName(n ast.Node) string {
 }
 
 // ModuleOf returns the module of the given node, by walking up the tree.
-func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
+func (t *Tree) ModuleOf(n syntax.Node) *syntax.Module {
 	for n := n; n != nil; n = t.ParentOf(n) {
-		if m, ok := n.(*ast.Module); ok {
+		if m, ok := n.(*syntax.Module); ok {
 			return m
 		}
 	}
@@ -112,8 +112,8 @@ func (t *Tree) ModuleOf(n ast.Node) *ast.Module {
 
 func (t *Tree) Modules() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.Module); ok {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.Module); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
@@ -124,8 +124,8 @@ func (t *Tree) Modules() []*Node {
 
 func (t *Tree) Funcs() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.FuncDecl); ok {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.FuncDecl); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
@@ -136,8 +136,8 @@ func (t *Tree) Funcs() []*Node {
 
 func (t *Tree) Tests() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.FuncDecl); ok && n.IsTest() {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.FuncDecl); ok && n.IsTest() {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
@@ -148,8 +148,8 @@ func (t *Tree) Tests() []*Node {
 
 func (t *Tree) Imports() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.ImportDecl); ok {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.ImportDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
 		}
@@ -160,8 +160,8 @@ func (t *Tree) Imports() []*Node {
 
 func (t *Tree) Ports() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.PortTypeDecl); ok {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.PortTypeDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
 		}
@@ -172,8 +172,8 @@ func (t *Tree) Ports() []*Node {
 
 func (t *Tree) Components() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.ComponentTypeDecl); ok {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.ComponentTypeDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
 		}
@@ -184,8 +184,8 @@ func (t *Tree) Components() []*Node {
 
 func (t *Tree) Controls() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
-		if n, ok := n.(*ast.ControlPart); ok {
+	t.Root.Inspect(func(n syntax.Node) bool {
+		if n, ok := n.(*syntax.ControlPart); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}
@@ -196,18 +196,18 @@ func (t *Tree) Controls() []*Node {
 
 func (t *Tree) ModulePars() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n ast.Node) bool {
+	t.Root.Inspect(func(n syntax.Node) bool {
 		switch n := n.(type) {
-		case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
+		case *syntax.Module, *syntax.ModuleDef, *syntax.GroupDecl, *syntax.ModuleParameterGroup:
 			return true
 
-		case *ast.ValueDecl:
+		case *syntax.ValueDecl:
 			if n.Kind.Kind() != token.MODULEPAR && n.Kind.Kind() != token.ILLEGAL {
 				return false
 			}
 			return true
 
-		case *ast.Declarator:
+		case *syntax.Declarator:
 			defs = append(defs, &Node{Node: n, Tree: t})
 		}
 		return false
@@ -235,21 +235,21 @@ func (t *Tree) Position(pos loc.Pos) loc.Position {
 }
 
 // ExprAt returns the primary expression at the given position.
-func (t *Tree) ExprAt(pos loc.Pos) ast.Expr {
+func (t *Tree) ExprAt(pos loc.Pos) syntax.Expr {
 	s := t.SliceAt(pos)
 	if len(s) == 0 {
 		log.Debugf("%s: no expression at cursor position.\n", t.Position(pos))
 		return nil
 	}
 
-	id, ok := s[0].(*ast.Ident)
+	id, ok := s[0].(*syntax.Ident)
 	if !ok {
 		log.Debugf("%s: no identifier at cursor position.\n", t.Position(pos))
 		return nil
 	}
 
 	// Return the most left selector subtree (SelectorExpr is left-associative).
-	if p, ok := t.ParentOf(id).(*ast.SelectorExpr); ok && id == p.Sel {
+	if p, ok := t.ParentOf(id).(*syntax.SelectorExpr); ok && id == p.Sel {
 		return p
 	}
 
@@ -257,23 +257,23 @@ func (t *Tree) ExprAt(pos loc.Pos) ast.Expr {
 }
 
 // SliceAt returns the slice of nodes at the given position.
-func (t *Tree) SliceAt(pos loc.Pos) []ast.Node {
+func (t *Tree) SliceAt(pos loc.Pos) []syntax.Node {
 	var (
-		path  []ast.Node
-		visit func(n ast.Node)
+		path  []syntax.Node
+		visit func(n syntax.Node)
 	)
 
-	visit = func(n ast.Node) {
-		if ast.IsNil(n) {
+	visit = func(n syntax.Node) {
+		if syntax.IsNil(n) {
 			return
 		}
 
-		if _, ok := n.(ast.Token); ok {
+		if _, ok := n.(syntax.Token); ok {
 			return
 		}
 
 		path = append(path, n)
-		if child := ast.FindChildOf(n, pos); !ast.IsNil(child) {
+		if child := syntax.FindChildOf(n, pos); !syntax.IsNil(child) {
 			visit(child)
 		}
 
@@ -290,26 +290,26 @@ func (t *Tree) SliceAt(pos loc.Pos) []ast.Node {
 
 // Lookup returns the definitions of the given expression. For handling imports
 // and multiple modules, use LookupWithDB.
-func (t *Tree) Lookup(n ast.Expr) []*Node {
+func (t *Tree) Lookup(n syntax.Expr) []*Node {
 	return newFinder(&DB{}).lookup(n, t)
 }
 
 // LookupWithDB returns the definitions of the given expression, but uses the database for import resoltion.
-func (t *Tree) LookupWithDB(n ast.Expr, db *DB) []*Node {
+func (t *Tree) LookupWithDB(n syntax.Expr, db *DB) []*Node {
 	return newFinder(db).lookup(n, t)
 
 }
 
 func newFinder(db *DB) *finder {
-	return &finder{DB: db, cache: make(map[ast.Node][]*Node)}
+	return &finder{DB: db, cache: make(map[syntax.Node][]*Node)}
 }
 
 type finder struct {
 	*DB
-	cache map[ast.Node][]*Node
+	cache map[syntax.Node][]*Node
 }
 
-func (f *finder) lookup(n ast.Expr, tree *Tree) []*Node {
+func (f *finder) lookup(n syntax.Expr, tree *Tree) []*Node {
 	if n == nil {
 		return nil
 	}
@@ -321,16 +321,16 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Node {
 
 	var results []*Node
 	switch n := n.(type) {
-	case *ast.Ident:
+	case *syntax.Ident:
 		results = f.ident(n, tree)
 
-	case *ast.SelectorExpr:
+	case *syntax.SelectorExpr:
 		results = f.dot(n, tree)
 
-	case *ast.IndexExpr:
+	case *syntax.IndexExpr:
 		results = f.index(n, tree)
 
-	case *ast.CallExpr:
+	case *syntax.CallExpr:
 		results = f.call(n, tree)
 
 	default:
@@ -341,17 +341,17 @@ func (f *finder) lookup(n ast.Expr, tree *Tree) []*Node {
 	return results
 }
 
-func (f *finder) ident(id *ast.Ident, tree *Tree) []*Node {
-	if p, ok := tree.ParentOf(id).(*ast.BinaryExpr); ok && id == p.X && p.Op.Kind() == token.ASSIGN {
+func (f *finder) ident(id *syntax.Ident, tree *Tree) []*Node {
+	if p, ok := tree.ParentOf(id).(*syntax.BinaryExpr); ok && id == p.X && p.Op.Kind() == token.ASSIGN {
 		switch pp := tree.ParentOf(p).(type) {
-		case *ast.CompositeLiteral:
+		case *syntax.CompositeLiteral:
 			var results []*Node
 			for _, c := range f.typeOf(&Node{Node: pp, Tree: tree}) {
 				results = append(results, Definitions(id.String(), c.Node, c.Tree)...)
 			}
 			return results
-		case *ast.ParenExpr:
-			if ppp, ok := tree.ParentOf(pp).(*ast.CallExpr); ok {
+		case *syntax.ParenExpr:
+			if ppp, ok := tree.ParentOf(pp).(*syntax.CallExpr); ok {
 				var results []*Node
 				for _, c := range f.lookup(ppp.Fun, tree) {
 					results = append(results, Definitions(id.String(), c.Node, c.Tree)...)
@@ -360,7 +360,7 @@ func (f *finder) ident(id *ast.Ident, tree *Tree) []*Node {
 					//
 					// This brute force solution is not ideal, but it works for now.
 					switch c.Node.(type) {
-					case *ast.Field, *ast.RefSpec:
+					case *syntax.Field, *syntax.RefSpec:
 						for _, t := range f.typeOf(c) {
 							results = append(results, Definitions(id.String(), t.Node, t.Tree)...)
 						}
@@ -374,13 +374,13 @@ func (f *finder) ident(id *ast.Ident, tree *Tree) []*Node {
 	return f.globals(id, tree)
 }
 
-func (f *finder) globals(id *ast.Ident, tree *Tree) []*Node {
+func (f *finder) globals(id *syntax.Ident, tree *Tree) []*Node {
 	var defs, q []*Node
 
 	// Traverse parent scopes (P+) and collect imports scopes (I*)
 	for n := tree.ParentOf(id); n != nil; n = tree.ParentOf(n) {
 		switch n := n.(type) {
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			if n.RunsOn != nil {
 				q = append(q, &Node{Node: n.RunsOn.Comp, Tree: tree})
 			}
@@ -390,14 +390,14 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Node {
 			if n.Mtc != nil {
 				q = append(q, &Node{Node: n.Mtc.Comp, Tree: tree})
 			}
-		case *ast.BehaviourSpec:
+		case *syntax.BehaviourSpec:
 			if n.RunsOn != nil {
 				q = append(q, &Node{Node: n.RunsOn.Comp, Tree: tree})
 			}
 			if n.System != nil {
 				q = append(q, &Node{Node: n.System.Comp, Tree: tree})
 			}
-		case *ast.BehaviourTypeDecl:
+		case *syntax.BehaviourTypeDecl:
 			if n.RunsOn != nil {
 				q = append(q, &Node{Node: n.RunsOn.Comp, Tree: tree})
 			}
@@ -414,14 +414,14 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Node {
 		def := q[0]
 		q = q[1:]
 
-		n, ok := def.Node.(ast.Expr)
+		n, ok := def.Node.(syntax.Expr)
 		if !ok {
 			continue
 		}
 
 		for _, d := range f.lookup(n, def.Tree) {
 			defs = append(defs, Definitions(id.String(), d.Node, d.Tree)...)
-			if c, ok := d.Node.(*ast.ComponentTypeDecl); ok {
+			if c, ok := d.Node.(*syntax.ComponentTypeDecl); ok {
 				for _, e := range c.Extends {
 					q = append(q, &Node{Node: e, Tree: d.Tree})
 				}
@@ -445,12 +445,12 @@ func (f *finder) globals(id *ast.Ident, tree *Tree) []*Node {
 	return defs
 }
 
-func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Node {
+func (f *finder) dot(n *syntax.SelectorExpr, tree *Tree) []*Node {
 	var result []*Node
 	candidates := f.lookup(n.X, tree)
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
-			if defs := Definitions(ast.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
+			if defs := Definitions(syntax.Name(n.Sel), t.Node, t.Tree); len(defs) > 0 {
 				result = append(result, defs...)
 			}
 		}
@@ -458,12 +458,12 @@ func (f *finder) dot(n *ast.SelectorExpr, tree *Tree) []*Node {
 	return result
 }
 
-func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Node {
+func (f *finder) index(n *syntax.IndexExpr, tree *Tree) []*Node {
 	var result []*Node
 	candidates := f.lookup(n.X, tree)
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
-			if l, ok := t.Node.(*ast.ListSpec); ok {
+			if l, ok := t.Node.(*syntax.ListSpec); ok {
 				result = append(result, &Node{Node: l.ElemType, Tree: t.Tree})
 			} else {
 				result = append(result, c)
@@ -473,21 +473,21 @@ func (f *finder) index(n *ast.IndexExpr, tree *Tree) []*Node {
 	return result
 }
 
-func (f *finder) call(n *ast.CallExpr, tree *Tree) []*Node {
+func (f *finder) call(n *syntax.CallExpr, tree *Tree) []*Node {
 	var result []*Node
 	candidates := f.lookup(n.Fun, tree)
 	for _, c := range candidates {
 		for _, t := range f.typeOf(c) {
 			switch n := t.Node.(type) {
-			case *ast.BehaviourTypeDecl:
+			case *syntax.BehaviourTypeDecl:
 				if n.Return != nil {
 					result = append(result, &Node{Node: n.Return.Type, Tree: t.Tree})
 				}
-			case *ast.FuncDecl:
+			case *syntax.FuncDecl:
 				if n.Return != nil {
 					result = append(result, &Node{Node: n.Return.Type, Tree: t.Tree})
 				}
-			case *ast.SignatureDecl:
+			case *syntax.SignatureDecl:
 				if n.Return != nil {
 					result = append(result, &Node{Node: n.Return.Type, Tree: t.Tree})
 				}
@@ -510,55 +510,55 @@ func (f *finder) typeOf(def *Node) []*Node {
 		q = q[1:]
 
 		switch n := def.Node.(type) {
-		case *ast.CompositeLiteral:
+		case *syntax.CompositeLiteral:
 			q = append(q, &Node{Node: def.ParentOf(n), Tree: def.Tree})
 
-		case *ast.BinaryExpr:
+		case *syntax.BinaryExpr:
 			q = append(q, &Node{Node: n.X, Tree: def.Tree})
 
-		case *ast.TemplateDecl:
+		case *syntax.TemplateDecl:
 			q = append(q, &Node{Node: n.Type, Tree: def.Tree})
 
-		case *ast.ValueDecl:
+		case *syntax.ValueDecl:
 			q = append(q, &Node{Node: n.Type, Tree: def.Tree})
 
-		case *ast.FormalPar:
+		case *syntax.FormalPar:
 			q = append(q, &Node{Node: n.Type, Tree: def.Tree})
 
-		case *ast.Field:
+		case *syntax.Field:
 			q = append(q, &Node{Node: n.Type, Tree: def.Tree})
 
-		case *ast.SubTypeDecl:
+		case *syntax.SubTypeDecl:
 			if n.Field != nil {
 				q = append(q, &Node{Node: n.Field.Type, Tree: def.Tree})
 			}
 
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			if n.Return != nil {
 				q = append(q, &Node{Node: n.Return.Type, Tree: def.Tree})
 			}
 
-		case *ast.SignatureDecl:
+		case *syntax.SignatureDecl:
 			if n.Return != nil {
 				q = append(q, &Node{Node: n.Return.Type, Tree: def.Tree})
 			}
 
-		case ast.Expr:
+		case syntax.Expr:
 			q = append(q, f.lookup(n, def.Tree)...)
 
-		case *ast.RefSpec:
+		case *syntax.RefSpec:
 			q = append(q, f.lookup(n.X, def.Tree)...)
 
-		case *ast.BehaviourSpec,
-			*ast.BehaviourTypeDecl,
-			*ast.ComponentTypeDecl,
-			*ast.EnumSpec,
-			*ast.EnumTypeDecl,
-			*ast.Module,
-			*ast.PortTypeDecl,
-			*ast.ListSpec,
-			*ast.StructSpec,
-			*ast.StructTypeDecl:
+		case *syntax.BehaviourSpec,
+			*syntax.BehaviourTypeDecl,
+			*syntax.ComponentTypeDecl,
+			*syntax.EnumSpec,
+			*syntax.EnumTypeDecl,
+			*syntax.Module,
+			*syntax.PortTypeDecl,
+			*syntax.ListSpec,
+			*syntax.StructSpec,
+			*syntax.StructTypeDecl:
 			result = append(result, &Node{Node: n, Tree: def.Tree})
 		}
 	}

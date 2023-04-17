@@ -10,7 +10,7 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/spf13/cobra"
@@ -166,37 +166,37 @@ func list(cmd *cobra.Command, args []string) error {
 		}
 
 		var module string
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			if n != nil {
 				switch n := n.(type) {
-				case *ast.Module:
-					module = ast.Name(n.Name)
+				case *syntax.Module:
+					module = syntax.Name(n.Name)
 					if cmd.Use == "modules" {
-						Print(basket, tree, n.Pos(), module, ast.Doc(tree.FileSet, n))
+						Print(basket, tree, n.Pos(), module, syntax.Doc(tree.FileSet, n))
 						return false
 					}
 					return true
-				case *ast.FuncDecl:
+				case *syntax.FuncDecl:
 					if n.IsTest() && (cmd.Use == "list" || cmd.Use == "tests") {
-						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), ast.Doc(tree.FileSet, n))
+						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), syntax.Doc(tree.FileSet, n))
 					}
-				case *ast.ImportDecl:
+				case *syntax.ImportDecl:
 					if cmd.Use == "imports" {
-						Print(basket, tree, n.Pos(), fmt.Sprintf("%s\t%s", module, n.Module.String()), ast.Doc(tree.FileSet, n))
+						Print(basket, tree, n.Pos(), fmt.Sprintf("%s\t%s", module, n.Module.String()), syntax.Doc(tree.FileSet, n))
 					}
-				case *ast.ControlPart:
+				case *syntax.ControlPart:
 					if cmd.Use == "controls" {
-						Print(basket, tree, n.Pos(), module+".control", ast.Doc(tree.FileSet, n))
+						Print(basket, tree, n.Pos(), module+".control", syntax.Doc(tree.FileSet, n))
 					}
-				case *ast.Declarator:
+				case *syntax.Declarator:
 					if cmd.Use == "modulepars" {
-						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), ast.Doc(tree.FileSet, n))
+						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), syntax.Doc(tree.FileSet, n))
 					}
-				case *ast.ValueDecl:
+				case *syntax.ValueDecl:
 					if n.Kind == nil && n.Kind.Kind() == token.MODULEPAR {
 						return true
 					}
-				case *ast.NodeList, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
+				case *syntax.NodeList, *syntax.ModuleDef, *syntax.GroupDecl, *syntax.ModuleParameterGroup:
 					return true
 
 				}

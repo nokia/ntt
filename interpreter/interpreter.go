@@ -7,21 +7,21 @@ import (
 
 	_ "github.com/nokia/ntt/builtins"
 	"github.com/nokia/ntt/runtime"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
-func Eval(n ast.Node, env runtime.Scope) runtime.Object {
+func Eval(n syntax.Node, env runtime.Scope) runtime.Object {
 	return unwrap(eval(n, env))
 }
 
-func eval(n ast.Node, env runtime.Scope) runtime.Object {
+func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 	if n == nil {
 		return nil
 	}
 
 	switch n := n.(type) {
-	case *ast.Module:
+	case *syntax.Module:
 		for _, d := range n.Defs {
 			if ret := eval(d, env); runtime.IsError(ret) {
 				return ret
@@ -29,7 +29,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		}
 		return nil
 
-	case *ast.GroupDecl:
+	case *syntax.GroupDecl:
 		for _, d := range n.Defs {
 			if ret := eval(d, env); runtime.IsError(ret) {
 				return ret
@@ -37,19 +37,19 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		}
 		return nil
 
-	case *ast.ModuleDef:
+	case *syntax.ModuleDef:
 		return eval(n.Def, env)
 
-	case *ast.ControlPart:
+	case *syntax.ControlPart:
 		return eval(n.Body, env)
 
-	case *ast.DeclStmt:
+	case *syntax.DeclStmt:
 		return eval(n.Decl, env)
 
-	case *ast.ValueDecl:
+	case *syntax.ValueDecl:
 		return evalValueDecl(n, env)
 
-	case *ast.Declarator:
+	case *syntax.Declarator:
 		var val runtime.Object = runtime.Undefined
 		if n.Value != nil {
 			val = eval(n.Value, env)
@@ -60,7 +60,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		env.Set(n.Name.String(), val)
 		return nil
 
-	case *ast.NodeList:
+	case *syntax.NodeList:
 		var result runtime.Object
 		for _, stmt := range n.Nodes {
 			result = eval(stmt, env)
@@ -70,26 +70,26 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		}
 		return result
 
-	case *ast.Ident:
+	case *syntax.Ident:
 		name := n.String()
 		if val, ok := env.Get(name); ok {
 			return val
 		}
 		return runtime.Errorf("identifier not found: %s", name)
 
-	case *ast.CompositeLiteral:
+	case *syntax.CompositeLiteral:
 		return evalComposite(n, env)
 
-	case *ast.ValueLiteral:
+	case *syntax.ValueLiteral:
 		return evalLiteral(n, env)
 
-	case *ast.UnaryExpr:
+	case *syntax.UnaryExpr:
 		return evalUnary(n, env)
 
-	case *ast.BinaryExpr:
+	case *syntax.BinaryExpr:
 		return evalBinary(n, env)
 
-	case *ast.SelectorExpr:
+	case *syntax.SelectorExpr:
 		left := eval(n.X, env)
 		if runtime.IsError(left) {
 			return left
@@ -102,7 +102,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 
 		return eval(n.Sel, env)
 
-	case *ast.IndexExpr:
+	case *syntax.IndexExpr:
 		left := eval(n.X, env)
 		if runtime.IsError(left) {
 			return left
@@ -127,13 +127,13 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		}
 		return runtime.Errorf("index operator not supported: %s", left.Type())
 
-	case *ast.ParenExpr:
+	case *syntax.ParenExpr:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`.
 		// For now, we assume it's an arithmetic expression, when there's only one child.
 		if len(n.List) == 1 {
 			return eval(n.List[0], env)
 		}
-	case *ast.BlockStmt:
+	case *syntax.BlockStmt:
 		var result runtime.Object
 		for _, stmt := range n.Stmts {
 			result = eval(stmt, env)
@@ -143,13 +143,13 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		}
 		return result
 
-	case *ast.ExprStmt:
-		if n, ok := n.Expr.(*ast.BinaryExpr); ok && n.Op.Kind() == token.ASSIGN {
+	case *syntax.ExprStmt:
+		if n, ok := n.Expr.(*syntax.BinaryExpr); ok && n.Op.Kind() == token.ASSIGN {
 			return evalAssign(n.X, n.Y, env)
 		}
 		return eval(n.Expr, env)
 
-	case *ast.IfStmt:
+	case *syntax.IfStmt:
 		b, err := evalBoolExpr(n.Cond, env)
 		if runtime.IsError(err) {
 			return err
@@ -166,14 +166,14 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 			return nil
 		}
 
-	case *ast.ReturnStmt:
+	case *syntax.ReturnStmt:
 		val := eval(n.Result, env)
 		if runtime.IsError(val) {
 			return val
 		}
 		return &runtime.ReturnValue{Value: val}
 
-	case *ast.FuncDecl:
+	case *syntax.FuncDecl:
 		f := &runtime.Function{
 			Env:    env,
 			Params: n.Params,
@@ -182,7 +182,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 		env.Set(n.Name.String(), f)
 		return nil
 
-	case *ast.CallExpr:
+	case *syntax.CallExpr:
 		f := eval(n.Fun, env)
 		if runtime.IsError(f) {
 			return f
@@ -195,7 +195,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 
 		return apply(f, args)
 
-	case *ast.WhileStmt:
+	case *syntax.WhileStmt:
 		for {
 			cond, err := evalBoolExpr(n.Cond, env)
 			if runtime.IsError(err) {
@@ -214,7 +214,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 			}
 		}
 
-	case *ast.DoWhileStmt:
+	case *syntax.DoWhileStmt:
 		for {
 			result := eval(n.Body, env)
 			switch {
@@ -233,7 +233,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 			}
 		}
 
-	case *ast.ForStmt:
+	case *syntax.ForStmt:
 		if n.Init != nil {
 			val := eval(n.Init, env)
 			if runtime.IsError(val) {
@@ -265,7 +265,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 
 		}
 
-	case *ast.BranchStmt:
+	case *syntax.BranchStmt:
 		switch n.Tok.Kind() {
 		case token.BREAK:
 			return runtime.Break
@@ -277,15 +277,15 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 			return runtime.Errorf("goto statement not implemented")
 		}
 
-	case *ast.EnumTypeDecl:
+	case *syntax.EnumTypeDecl:
 		return evalEnumTypeDecl(n, env)
 
-	case *ast.EnumSpec:
+	case *syntax.EnumSpec:
 		return evalEnumSpec(n)
 
-	case *ast.SubTypeDecl:
+	case *syntax.SubTypeDecl:
 		switch t := n.Field.Type.(type) {
-		case *ast.ListSpec:
+		case *syntax.ListSpec:
 			list := evalListSpec(t, env)
 			if list != nil && !runtime.IsError(list) {
 				env.Set(n.Field.Name.String(), list)
@@ -298,7 +298,7 @@ func eval(n ast.Node, env runtime.Scope) runtime.Object {
 	return runtime.Errorf("unknown syntax node type: %T (%+v)", n, n)
 }
 
-func evalListSpec(t *ast.ListSpec, env runtime.Scope) runtime.Object {
+func evalListSpec(t *syntax.ListSpec, env runtime.Scope) runtime.Object {
 	listElement := eval(t.ElemType, env)
 	if listElement == nil || runtime.IsError(listElement) {
 		return listElement
@@ -313,7 +313,7 @@ func evalListSpec(t *ast.ListSpec, env runtime.Scope) runtime.Object {
 	}
 }
 
-func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
+func evalLiteral(n *syntax.ValueLiteral, env runtime.Scope) runtime.Object {
 	switch n.Tok.Kind() {
 	case token.INT:
 		return runtime.NewInt(n.Tok.String())
@@ -354,15 +354,15 @@ func evalLiteral(n *ast.ValueLiteral, env runtime.Scope) runtime.Object {
 	return runtime.Errorf("unknown literal kind %q (%s)", n.Tok.Kind(), n.Tok.String())
 }
 
-func evalComposite(n *ast.CompositeLiteral, env runtime.Scope) runtime.Object {
+func evalComposite(n *syntax.CompositeLiteral, env runtime.Scope) runtime.Object {
 	// An empty composite literal will evaluate as List.
 	if len(n.List) == 0 {
 		return evalValueList(n.List, env)
 	}
 
 	// The first element tells us, if we expect a value list or an assignment list.
-	if first, ok := n.List[0].(*ast.BinaryExpr); ok && first.Op.Kind() == token.ASSIGN {
-		if _, ok := first.X.(*ast.Ident); ok {
+	if first, ok := n.List[0].(*syntax.BinaryExpr); ok && first.Op.Kind() == token.ASSIGN {
+		if _, ok := first.X.(*syntax.Ident); ok {
 			return evalRecordAssignmentList(n.List, env)
 		} else {
 			return evalMapAssignmentList(n.List, env)
@@ -372,7 +372,7 @@ func evalComposite(n *ast.CompositeLiteral, env runtime.Scope) runtime.Object {
 	return evalValueList(n.List, env)
 }
 
-func evalValueList(s []ast.Expr, env runtime.Scope) runtime.Object {
+func evalValueList(s []syntax.Expr, env runtime.Scope) runtime.Object {
 	objs := evalExprList(s, env)
 	if len(objs) == 1 && runtime.IsError(objs[0]) {
 		return objs[0]
@@ -380,12 +380,12 @@ func evalValueList(s []ast.Expr, env runtime.Scope) runtime.Object {
 	return runtime.NewList(objs...)
 }
 
-func evalMapAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {
+func evalMapAssignmentList(exprs []syntax.Expr, env runtime.Scope) runtime.Object {
 	m := runtime.NewMap()
 
 	for _, expr := range exprs {
 
-		n, ok := expr.(*ast.BinaryExpr)
+		n, ok := expr.(*syntax.BinaryExpr)
 		if !ok || n.Op.Kind() != token.ASSIGN {
 			return runtime.Errorf("missing key/value. got=%T", n)
 		}
@@ -408,9 +408,9 @@ func evalMapAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {
 	return m
 }
 
-func evalKeyExpr(n ast.Expr, env runtime.Scope) runtime.Object {
+func evalKeyExpr(n syntax.Expr, env runtime.Scope) runtime.Object {
 	switch n := n.(type) {
-	case *ast.IndexExpr:
+	case *syntax.IndexExpr:
 		if n.X == nil {
 			return eval(n.Index, env)
 		}
@@ -418,12 +418,12 @@ func evalKeyExpr(n ast.Expr, env runtime.Scope) runtime.Object {
 	return runtime.Errorf("syntax error. Expecting a key expression. got=%T", n)
 }
 
-func evalRecordAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Object {
+func evalRecordAssignmentList(exprs []syntax.Expr, env runtime.Scope) runtime.Object {
 	r := runtime.NewRecord()
 
 	for _, expr := range exprs {
 
-		n, ok := expr.(*ast.BinaryExpr)
+		n, ok := expr.(*syntax.BinaryExpr)
 		if !ok || n.Op.Kind() != token.ASSIGN {
 			return runtime.Errorf("missing key/value. got=%T", n)
 		}
@@ -433,7 +433,7 @@ func evalRecordAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Objec
 			return val
 		}
 
-		if ret := r.Set(n.X.(*ast.Ident).String(), val); runtime.IsError(ret) {
+		if ret := r.Set(n.X.(*syntax.Ident).String(), val); runtime.IsError(ret) {
 			return ret
 		}
 
@@ -441,7 +441,7 @@ func evalRecordAssignmentList(exprs []ast.Expr, env runtime.Scope) runtime.Objec
 	return r
 }
 
-func evalUnary(n *ast.UnaryExpr, env runtime.Scope) runtime.Object {
+func evalUnary(n *syntax.UnaryExpr, env runtime.Scope) runtime.Object {
 	val := eval(n.X, env)
 	if runtime.IsError(val) {
 		return val
@@ -477,7 +477,7 @@ func evalUnary(n *ast.UnaryExpr, env runtime.Scope) runtime.Object {
 	return runtime.Errorf("unknown operator: %s%s", n.Op.Kind(), val.Inspect())
 }
 
-func evalBinary(n *ast.BinaryExpr, env runtime.Scope) runtime.Object {
+func evalBinary(n *syntax.BinaryExpr, env runtime.Scope) runtime.Object {
 	op := n.Op.Kind()
 	x := eval(n.X, env)
 	if runtime.IsError(x) {
@@ -641,7 +641,7 @@ func evalBinarystringBinary(x *runtime.Binarystring, y *runtime.Binarystring, op
 	return runtime.Errorf("unknown operator: binarstring %s binarystring", op)
 }
 
-func evalBoolExpr(n ast.Expr, env runtime.Scope) (bool, runtime.Object) {
+func evalBoolExpr(n syntax.Expr, env runtime.Scope) (bool, runtime.Object) {
 	val := eval(n, env)
 	if runtime.IsError(val) {
 		return false, val
@@ -655,7 +655,7 @@ func evalBoolExpr(n ast.Expr, env runtime.Scope) (bool, runtime.Object) {
 
 }
 
-func evalExprList(exprs []ast.Expr, env runtime.Scope) []runtime.Object {
+func evalExprList(exprs []syntax.Expr, env runtime.Scope) []runtime.Object {
 	var result []runtime.Object
 	for _, e := range exprs {
 		val := eval(e, env)
@@ -667,13 +667,13 @@ func evalExprList(exprs []ast.Expr, env runtime.Scope) []runtime.Object {
 	return result
 }
 
-func evalAssign(lhs ast.Expr, rhs ast.Expr, env runtime.Scope) runtime.Object {
+func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) runtime.Object {
 	val := eval(rhs, env)
 	if runtime.IsError(val) {
 		return val
 	}
 
-	id, ok := lhs.(*ast.Ident)
+	id, ok := lhs.(*syntax.Ident)
 	if !ok {
 		return runtime.Errorf("expected an identifier. not supported: %T (%+v)", lhs, lhs)
 	}
@@ -726,28 +726,28 @@ func unwrap(obj runtime.Object) runtime.Object {
 	return obj
 }
 
-func evalEnumTypeDeclRange(expr ast.Expr) ([]runtime.EnumRange, error) {
+func evalEnumTypeDeclRange(expr syntax.Expr) ([]runtime.EnumRange, error) {
 
 	enumKeyRanges := []runtime.EnumRange{}
 
 	switch t := expr.(type) {
-	case *ast.Ident:
+	case *syntax.Ident:
 		break
 
-	case *ast.CallExpr:
+	case *syntax.CallExpr:
 		for _, callExprArg := range t.Args.List {
 
 			argRet := runtime.EnumRange{}
 			var argErr error
 
 			switch argT := callExprArg.(type) {
-			case *ast.ValueLiteral:
+			case *syntax.ValueLiteral:
 				argRet.First, argErr = evalInt(argT)
 				argRet.Last = argRet.First
-			case *ast.UnaryExpr:
+			case *syntax.UnaryExpr:
 				argRet.First, argErr = evalInt(argT)
 				argRet.Last = argRet.First
-			case *ast.BinaryExpr:
+			case *syntax.BinaryExpr:
 				if argT.Op.Kind() != token.RANGE {
 					argErr = fmt.Errorf("BinaryExpr type %s", argT.Op.Kind())
 					break
@@ -777,7 +777,7 @@ func evalEnumTypeDeclRange(expr ast.Expr) ([]runtime.EnumRange, error) {
 	return enumKeyRanges, nil
 }
 
-func evalEnumElements(enums []ast.Expr) (runtime.EnumElements, error) {
+func evalEnumElements(enums []syntax.Expr) (runtime.EnumElements, error) {
 	ret := make(runtime.EnumElements)
 
 	validateNewEnumKeyRanges := func(ranges []runtime.EnumRange) error {
@@ -796,7 +796,7 @@ func evalEnumElements(enums []ast.Expr) (runtime.EnumElements, error) {
 	enumKeyId := 0
 	for _, e := range enums {
 
-		eName := ast.Name(e)
+		eName := syntax.Name(e)
 		if eName == "" {
 			return ret, fmt.Errorf("can't add key without a name")
 		}
@@ -826,7 +826,7 @@ func evalEnumElements(enums []ast.Expr) (runtime.EnumElements, error) {
 	return ret, nil
 }
 
-func evalEnumSpec(n *ast.EnumSpec) runtime.Object {
+func evalEnumSpec(n *syntax.EnumSpec) runtime.Object {
 	ret := runtime.NewEnumType("")
 	var err error = nil
 	ret.Elements, err = evalEnumElements(n.Enums)
@@ -836,9 +836,9 @@ func evalEnumSpec(n *ast.EnumSpec) runtime.Object {
 	return ret
 }
 
-func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
+func evalEnumTypeDecl(n *syntax.EnumTypeDecl, env runtime.Scope) runtime.Object {
 
-	name := ast.Name(n)
+	name := syntax.Name(n)
 	ret := runtime.NewEnumType(name)
 
 	var err error = nil
@@ -850,14 +850,14 @@ func evalEnumTypeDecl(n *ast.EnumTypeDecl, env runtime.Scope) runtime.Object {
 	return ret
 }
 
-func evalEnumValDecl(d *ast.Declarator, enumType *runtime.EnumType) runtime.Object {
+func evalEnumValDecl(d *syntax.Declarator, enumType *runtime.EnumType) runtime.Object {
 
-	var node ast.Node = d.Value
+	var node syntax.Node = d.Value
 	switch n := node.(type) {
 
-	case *ast.CallExpr:
+	case *syntax.CallExpr:
 
-		enumElementName := ast.Name(n)
+		enumElementName := syntax.Name(n)
 
 		if len(n.Args.List) != 1 {
 			return runtime.Errorf("invalid enum value")
@@ -873,8 +873,8 @@ func evalEnumValDecl(d *ast.Declarator, enumType *runtime.EnumType) runtime.Obje
 			return enumVal
 		}
 
-	case *ast.Ident:
-		enumElementName := ast.Name(n)
+	case *syntax.Ident:
+		enumElementName := syntax.Name(n)
 		enumVal, err := runtime.NewEnumValueByKey(enumType, enumElementName)
 		if err == nil {
 			return enumVal
@@ -883,9 +883,9 @@ func evalEnumValDecl(d *ast.Declarator, enumType *runtime.EnumType) runtime.Obje
 	return runtime.Errorf("invalid enum declarator")
 }
 
-func evalInt(n ast.Node) (int, error) {
+func evalInt(n syntax.Node) (int, error) {
 	switch t := n.(type) {
-	case *ast.ValueLiteral:
+	case *syntax.ValueLiteral:
 		if t.Tok.Kind() != token.INT {
 			return 0, fmt.Errorf("ValueLiteral unexpected %s", t.Tok.Kind())
 		}
@@ -894,7 +894,7 @@ func evalInt(n ast.Node) (int, error) {
 			return 0, fmt.Errorf("ValueLiteral '%s' is not int, %v", t.Tok.String(), err)
 		}
 		return val, nil
-	case *ast.UnaryExpr:
+	case *syntax.UnaryExpr:
 		val, err := evalInt(t.X)
 		if err != nil {
 			return 0, fmt.Errorf("UnaryExpr '%v', %v", t, err)
@@ -913,9 +913,9 @@ func evalInt(n ast.Node) (int, error) {
 	}
 }
 
-func evalValueDecl(vd *ast.ValueDecl, env runtime.Scope) runtime.Object {
+func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 	if vd.Type != nil {
-		if valueType, ok := env.Get(ast.Name(vd.Type)); ok {
+		if valueType, ok := env.Get(syntax.Name(vd.Type)); ok {
 			switch n := valueType.(type) {
 			case *runtime.EnumType:
 				for _, decl := range vd.Decls {

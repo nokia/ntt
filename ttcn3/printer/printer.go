@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 type whiteSpace byte
@@ -20,7 +20,7 @@ const (
 	unindent = whiteSpace('<')
 )
 
-func Print(w io.Writer, fset *loc.FileSet, n ast.Node) error {
+func Print(w io.Writer, fset *loc.FileSet, n syntax.Node) error {
 	p := printer{w: w, fset: fset, lineStart: true}
 	p.print(n)
 	return p.err
@@ -49,7 +49,7 @@ func (p *printer) print(values ...interface{}) {
 				fmt.Fprint(p.w, n)
 			}
 
-		case *ast.ErrorNode:
+		case *syntax.ErrorNode:
 			if n == nil {
 				return
 			}
@@ -57,27 +57,27 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.From)
 			p.print(n.To)
 
-		case *ast.Ident:
+		case *syntax.Ident:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.Tok2)
 
-		case *ast.ParametrizedIdent:
+		case *syntax.ParametrizedIdent:
 			if n == nil {
 				return
 			}
 			p.print(n.Ident)
 			p.print(n.Params)
 
-		case *ast.ValueLiteral:
+		case *syntax.ValueLiteral:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 
-		case *ast.CompositeLiteral:
+		case *syntax.CompositeLiteral:
 			if n == nil {
 				return
 			}
@@ -85,14 +85,14 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.List)
 			p.print(unindent, n.RBrace)
 
-		case *ast.UnaryExpr:
+		case *syntax.UnaryExpr:
 			if n == nil {
 				return
 			}
 			p.print(n.Op)
 			p.print(n.X)
 
-		case *ast.BinaryExpr:
+		case *syntax.BinaryExpr:
 			if n == nil {
 				return
 			}
@@ -100,7 +100,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Op)
 			p.print(n.Y)
 
-		case *ast.ParenExpr:
+		case *syntax.ParenExpr:
 			if n == nil {
 				return
 			}
@@ -108,7 +108,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.List)
 			p.print(n.RParen)
 
-		case *ast.SelectorExpr:
+		case *syntax.SelectorExpr:
 			if n == nil {
 				return
 			}
@@ -116,7 +116,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Dot)
 			p.print(n.Sel)
 
-		case *ast.IndexExpr:
+		case *syntax.IndexExpr:
 			if n == nil {
 				return
 			}
@@ -125,14 +125,14 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Index)
 			p.print(n.RBrack)
 
-		case *ast.CallExpr:
+		case *syntax.CallExpr:
 			if n == nil {
 				return
 			}
 			p.print(n.Fun)
 			p.print(n.Args)
 
-		case *ast.LengthExpr:
+		case *syntax.LengthExpr:
 			if n == nil {
 				return
 			}
@@ -140,7 +140,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Len)
 			p.print(n.Size)
 
-		case *ast.RedirectExpr:
+		case *syntax.RedirectExpr:
 			if n == nil {
 				return
 			}
@@ -158,7 +158,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.TimestampTok)
 			p.print(n.Timestamp)
 
-		case *ast.ValueExpr:
+		case *syntax.ValueExpr:
 			if n == nil {
 				return
 			}
@@ -166,7 +166,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Tok)
 			p.print(n.Y)
 
-		case *ast.ParamExpr:
+		case *syntax.ParamExpr:
 			if n == nil {
 				return
 			}
@@ -174,7 +174,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Tok)
 			p.print(n.Y)
 
-		case *ast.FromExpr:
+		case *syntax.FromExpr:
 			if n == nil {
 				return
 			}
@@ -182,7 +182,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.FromTok)
 			p.print(n.X)
 
-		case *ast.ModifiesExpr:
+		case *syntax.ModifiesExpr:
 			if n == nil {
 				return
 			}
@@ -191,7 +191,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Assign)
 			p.print(n.Y)
 
-		case *ast.RegexpExpr:
+		case *syntax.RegexpExpr:
 			if n == nil {
 				return
 			}
@@ -199,7 +199,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.NoCase)
 			p.print(n.X)
 
-		case *ast.PatternExpr:
+		case *syntax.PatternExpr:
 			if n == nil {
 				return
 			}
@@ -207,7 +207,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.NoCase)
 			p.print(n.X)
 
-		case *ast.DecmatchExpr:
+		case *syntax.DecmatchExpr:
 			if n == nil {
 				return
 			}
@@ -215,7 +215,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Params)
 			p.print(n.X)
 
-		case *ast.DecodedExpr:
+		case *syntax.DecodedExpr:
 			if n == nil {
 				return
 			}
@@ -223,14 +223,14 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Params)
 			p.print(n.X)
 
-		case *ast.DefKindExpr:
+		case *syntax.DefKindExpr:
 			if n == nil {
 				return
 			}
 			p.print(n.Kind)
 			p.print(n.List)
 
-		case *ast.ExceptExpr:
+		case *syntax.ExceptExpr:
 			if n == nil {
 				return
 			}
@@ -240,7 +240,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.List)
 			p.print(unindent, n.RBrace)
 
-		case *ast.BlockStmt:
+		case *syntax.BlockStmt:
 			if n == nil {
 				return
 			}
@@ -248,47 +248,47 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Stmts)
 			p.print(unindent, n.RBrace)
 
-		case *ast.DeclStmt:
+		case *syntax.DeclStmt:
 			if n == nil {
 				return
 			}
 			p.print(n.Decl)
 
-		case *ast.ExprStmt:
+		case *syntax.ExprStmt:
 			if n == nil {
 				return
 			}
 			p.print(n.Expr)
 
-		case *ast.BranchStmt:
+		case *syntax.BranchStmt:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.Label)
 
-		case *ast.ReturnStmt:
+		case *syntax.ReturnStmt:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.Result)
 
-		case *ast.AltStmt:
+		case *syntax.AltStmt:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.Body)
 
-		case *ast.CallStmt:
+		case *syntax.CallStmt:
 			if n == nil {
 				return
 			}
 			p.print(n.Stmt)
 			p.print(n.Body)
 
-		case *ast.ForStmt:
+		case *syntax.ForStmt:
 			if n == nil {
 				return
 			}
@@ -302,7 +302,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.RParen)
 			p.print(n.Body)
 
-		case *ast.WhileStmt:
+		case *syntax.WhileStmt:
 			if n == nil {
 				return
 			}
@@ -310,7 +310,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Cond)
 			p.print(n.Body)
 
-		case *ast.DoWhileStmt:
+		case *syntax.DoWhileStmt:
 			if n == nil {
 				return
 			}
@@ -319,7 +319,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.WhileTok)
 			p.print(n.Cond)
 
-		case *ast.IfStmt:
+		case *syntax.IfStmt:
 			if n == nil {
 				return
 			}
@@ -329,7 +329,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.ElseTok)
 			p.print(n.Else)
 
-		case *ast.SelectStmt:
+		case *syntax.SelectStmt:
 			if n == nil {
 				return
 			}
@@ -340,7 +340,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Body)
 			p.print(unindent, n.RBrace)
 
-		case *ast.CaseClause:
+		case *syntax.CaseClause:
 			if n == nil {
 				return
 			}
@@ -348,7 +348,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Case)
 			p.print(n.Body)
 
-		case *ast.CommClause:
+		case *syntax.CommClause:
 			if n == nil {
 				return
 			}
@@ -359,7 +359,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Comm)
 			p.print(n.Body)
 
-		case *ast.Field:
+		case *syntax.Field:
 			if n == nil {
 				return
 			}
@@ -372,13 +372,13 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.LengthConstraint)
 			p.print(n.Optional)
 
-		case *ast.RefSpec:
+		case *syntax.RefSpec:
 			if n == nil {
 				return
 			}
 			p.print(n.X)
 
-		case *ast.StructSpec:
+		case *syntax.StructSpec:
 			if n == nil {
 				return
 			}
@@ -387,7 +387,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Fields)
 			p.print(unindent, n.RBrace)
 
-		case *ast.ListSpec:
+		case *syntax.ListSpec:
 			if n == nil {
 				return
 			}
@@ -396,7 +396,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.OfTok)
 			p.print(n.ElemType)
 
-		case *ast.EnumSpec:
+		case *syntax.EnumSpec:
 			if n == nil {
 				return
 			}
@@ -405,7 +405,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Enums)
 			p.print(unindent, n.RBrace)
 
-		case *ast.BehaviourSpec:
+		case *syntax.BehaviourSpec:
 			if n == nil {
 				return
 			}
@@ -415,7 +415,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.System)
 			p.print(n.Return)
 
-		case *ast.ValueDecl:
+		case *syntax.ValueDecl:
 			if n == nil {
 				return
 			}
@@ -426,7 +426,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Decls)
 			p.print(n.With)
 
-		case *ast.Declarator:
+		case *syntax.Declarator:
 			if n == nil {
 				return
 			}
@@ -435,7 +435,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.AssignTok)
 			p.print(n.Value)
 
-		case *ast.TemplateDecl:
+		case *syntax.TemplateDecl:
 			if n == nil {
 				return
 			}
@@ -451,7 +451,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Value)
 			p.print(n.With)
 
-		case *ast.ModuleParameterGroup:
+		case *syntax.ModuleParameterGroup:
 			if n == nil {
 				return
 			}
@@ -461,7 +461,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			if n == nil {
 				return
 			}
@@ -478,7 +478,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Body)
 			p.print(n.With)
 
-		case *ast.SignatureDecl:
+		case *syntax.SignatureDecl:
 			if n == nil {
 				return
 			}
@@ -492,7 +492,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Exception)
 			p.print(n.With)
 
-		case *ast.SubTypeDecl:
+		case *syntax.SubTypeDecl:
 			if n == nil {
 				return
 			}
@@ -500,7 +500,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Field)
 			p.print(n.With)
 
-		case *ast.StructTypeDecl:
+		case *syntax.StructTypeDecl:
 			if n == nil {
 				return
 			}
@@ -513,7 +513,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.EnumTypeDecl:
+		case *syntax.EnumTypeDecl:
 			if n == nil {
 				return
 			}
@@ -526,7 +526,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.BehaviourTypeDecl:
+		case *syntax.BehaviourTypeDecl:
 			if n == nil {
 				return
 			}
@@ -540,7 +540,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Return)
 			p.print(n.With)
 
-		case *ast.PortTypeDecl:
+		case *syntax.PortTypeDecl:
 			if n == nil {
 				return
 			}
@@ -555,14 +555,14 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.PortAttribute:
+		case *syntax.PortAttribute:
 			if n == nil {
 				return
 			}
 			p.print(n.Kind)
 			p.print(n.Types)
 
-		case *ast.PortMapAttribute:
+		case *syntax.PortMapAttribute:
 			if n == nil {
 				return
 			}
@@ -570,7 +570,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.ParamTok)
 			p.print(n.Params)
 
-		case *ast.ComponentTypeDecl:
+		case *syntax.ComponentTypeDecl:
 			if n == nil {
 				return
 			}
@@ -583,7 +583,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Body)
 			p.print(n.With)
 
-		case *ast.Module:
+		case *syntax.Module:
 			if n == nil {
 				return
 			}
@@ -595,14 +595,14 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.ModuleDef:
+		case *syntax.ModuleDef:
 			if n == nil {
 				return
 			}
 			p.print(n.Def)
 			p.print(n.Visibility)
 
-		case *ast.ControlPart:
+		case *syntax.ControlPart:
 			if n == nil {
 				return
 			}
@@ -610,7 +610,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Body)
 			p.print(n.With)
 
-		case *ast.ImportDecl:
+		case *syntax.ImportDecl:
 			if n == nil {
 				return
 			}
@@ -623,7 +623,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.GroupDecl:
+		case *syntax.GroupDecl:
 			if n == nil {
 				return
 			}
@@ -635,7 +635,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *ast.FriendDecl:
+		case *syntax.FriendDecl:
 			if n == nil {
 				return
 			}
@@ -644,14 +644,14 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Module)
 			p.print(n.With)
 
-		case *ast.LanguageSpec:
+		case *syntax.LanguageSpec:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.List)
 
-		case *ast.RestrictionSpec:
+		case *syntax.RestrictionSpec:
 			if n == nil {
 				return
 			}
@@ -660,7 +660,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Tok)
 			p.print(n.RParen)
 
-		case *ast.RunsOnSpec:
+		case *syntax.RunsOnSpec:
 			if n == nil {
 				return
 			}
@@ -668,21 +668,21 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.OnTok)
 			p.print(n.Comp)
 
-		case *ast.SystemSpec:
+		case *syntax.SystemSpec:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.Comp)
 
-		case *ast.MtcSpec:
+		case *syntax.MtcSpec:
 			if n == nil {
 				return
 			}
 			p.print(n.Tok)
 			p.print(n.Comp)
 
-		case *ast.ReturnSpec:
+		case *syntax.ReturnSpec:
 			if n == nil {
 				return
 			}
@@ -691,7 +691,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Modif)
 			p.print(n.Type)
 
-		case *ast.FormalPars:
+		case *syntax.FormalPars:
 			if n == nil {
 				return
 			}
@@ -699,7 +699,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.List)
 			p.print(n.RParen)
 
-		case *ast.FormalPar:
+		case *syntax.FormalPar:
 			if n == nil {
 				return
 			}
@@ -712,7 +712,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.AssignTok)
 			p.print(n.Value)
 
-		case *ast.WithSpec:
+		case *syntax.WithSpec:
 			if n == nil {
 				return
 			}
@@ -721,7 +721,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.List)
 			p.print(unindent, n.RBrace)
 
-		case *ast.WithStmt:
+		case *syntax.WithStmt:
 			if n == nil {
 				return
 			}
@@ -732,47 +732,47 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.RParen)
 			p.print(n.Value)
 
-		case []*ast.CaseClause:
+		case []*syntax.CaseClause:
 			for _, item := range n {
 				p.print(item, "")
 			}
-		case []*ast.DefKindExpr:
+		case []*syntax.DefKindExpr:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []*ast.Field:
+		case []*syntax.Field:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []*ast.FormalPar:
+		case []*syntax.FormalPar:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []*ast.ModuleDef:
+		case []*syntax.ModuleDef:
 			for _, item := range n {
 				p.print(item, ";", "\n")
 			}
-		case []*ast.ParenExpr:
+		case []*syntax.ParenExpr:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []*ast.ValueDecl:
+		case []*syntax.ValueDecl:
 			for _, item := range n {
 				p.print(item, ";", "\n")
 			}
-		case []*ast.Declarator:
+		case []*syntax.Declarator:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
@@ -781,36 +781,36 @@ func (p *printer) print(values ...interface{}) {
 					p.print(";", "\n")
 				}
 			}
-		case []*ast.WithStmt:
+		case []*syntax.WithStmt:
 			for _, item := range n {
 				p.print(item, ";", "\n")
 			}
-		case []ast.Decl:
+		case []syntax.Decl:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []ast.Expr:
+		case []syntax.Expr:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []ast.Node:
+		case []syntax.Node:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
 					p.print(",")
 				}
 			}
-		case []ast.Stmt:
+		case []syntax.Stmt:
 			for _, item := range n {
 				p.print(item, ";", "\n")
 			}
-		case []ast.Token:
+		case []syntax.Token:
 			for i, item := range n {
 				p.print(item)
 				if i < len(n)-1 {
@@ -818,7 +818,7 @@ func (p *printer) print(values ...interface{}) {
 				}
 			}
 
-		case ast.Token:
+		case syntax.Token:
 			p.print(n.String())
 
 		default:

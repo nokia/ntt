@@ -4,28 +4,28 @@ import (
 	"fmt"
 
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
 type Scope struct {
-	ast.Node
+	syntax.Node
 	Tree  *Tree
 	Names map[string]*Node
 }
 
 type Node struct {
-	*ast.Ident
-	ast.Node
+	*syntax.Ident
+	syntax.Node
 	*Tree
 	Next *Node
 }
 
-func Definitions(id string, n ast.Node, t *Tree) []*Node {
+func Definitions(id string, n syntax.Node, t *Tree) []*Node {
 	return NewScope(n, t).Lookup(id)
 }
 
-func (scp *Scope) Insert(n ast.Node, id *ast.Ident) {
+func (scp *Scope) Insert(n syntax.Node, id *syntax.Ident) {
 	if scp.Names == nil {
 		scp.Names = make(map[string]*Node)
 	}
@@ -58,12 +58,12 @@ func (scp *Scope) Lookup(name string) []*Node {
 
 // NewScope builts and populares a new scope from the given syntax node.
 // NewScope returns nil if no valid scope could be built.
-func NewScope(n ast.Node, tree *Tree) *Scope {
+func NewScope(n syntax.Node, tree *Tree) *Scope {
 	tree.scopesMu.Lock()
 	defer tree.scopesMu.Unlock()
 
 	if tree.scopes == nil {
-		tree.scopes = make(map[ast.Node]*Scope)
+		tree.scopes = make(map[syntax.Node]*Scope)
 	}
 	if s, ok := tree.scopes[n]; ok {
 		return s
@@ -75,49 +75,49 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	}
 
 	switch n := n.(type) {
-	case *ast.TemplateDecl:
+	case *syntax.TemplateDecl:
 		scp.add(n.TypePars)
 		scp.add(n.Params)
 
-	case *ast.FuncDecl:
+	case *syntax.FuncDecl:
 		scp.add(n.TypePars)
 		scp.add(n.Params)
 
-	case *ast.SignatureDecl:
+	case *syntax.SignatureDecl:
 		scp.add(n.TypePars)
 		scp.add(n.Params)
 
-	case *ast.SubTypeDecl:
+	case *syntax.SubTypeDecl:
 		if n.Field != nil {
 			scp.addField(n.Field)
 		}
 
-	case *ast.Field:
+	case *syntax.Field:
 		scp.addField(n)
 
-	case *ast.StructTypeDecl:
+	case *syntax.StructTypeDecl:
 		scp.add(n.TypePars)
 		for _, n := range n.Fields {
 			scp.add(n)
 		}
 
-	case *ast.EnumTypeDecl:
+	case *syntax.EnumTypeDecl:
 		scp.add(n.TypePars)
 		for _, e := range n.Enums {
 			scp.addEnum(n, e)
 		}
 
-	case *ast.BehaviourTypeDecl:
+	case *syntax.BehaviourTypeDecl:
 		scp.add(n.TypePars)
 		scp.add(n.Params)
 
-	case *ast.PortTypeDecl:
+	case *syntax.PortTypeDecl:
 		scp.add(n.TypePars)
 
-	case *ast.PortMapAttribute:
+	case *syntax.PortMapAttribute:
 		scp.add(n.Params)
 
-	case *ast.ComponentTypeDecl:
+	case *syntax.ComponentTypeDecl:
 		scp.add(n.TypePars)
 		if n.Body != nil {
 			for _, stmt := range n.Body.Stmts {
@@ -125,46 +125,46 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 			}
 		}
 
-	case *ast.BlockStmt:
+	case *syntax.BlockStmt:
 		for _, stmt := range n.Stmts {
 			scp.add(stmt)
 		}
 
-	case *ast.AltStmt:
+	case *syntax.AltStmt:
 
-	case *ast.ForStmt:
+	case *syntax.ForStmt:
 		scp.add(n.Init)
 
-	case *ast.IfStmt:
+	case *syntax.IfStmt:
 		scp.add(n.Then)
 		scp.add(n.Else)
 
-	case *ast.StructSpec:
+	case *syntax.StructSpec:
 		for _, n := range n.Fields {
 			scp.add(n)
 		}
 
-	case *ast.EnumSpec:
+	case *syntax.EnumSpec:
 		for _, e := range n.Enums {
 			scp.addEnum(n, e)
 		}
 
-	case *ast.BehaviourSpec:
+	case *syntax.BehaviourSpec:
 		scp.add(n.Params)
 
-	case *ast.Module:
-		n.Inspect(func(n ast.Node) bool {
+	case *syntax.Module:
+		n.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			// Groups are not visible in the global scope.
-			case *ast.GroupDecl:
+			case *syntax.GroupDecl:
 
-			case *ast.ModuleDef:
+			case *syntax.ModuleDef:
 				scp.add(n.Def)
-			case *ast.EnumTypeDecl:
+			case *syntax.EnumTypeDecl:
 				for _, e := range n.Enums {
 					scp.addEnum(n, e)
 				}
-			case *ast.EnumSpec:
+			case *syntax.EnumSpec:
 				for _, e := range n.Enums {
 					scp.addEnum(n, e)
 				}
@@ -180,107 +180,107 @@ func NewScope(n ast.Node, tree *Tree) *Scope {
 	return scp
 }
 
-func (scp *Scope) addEnum(n ast.Node, e ast.Expr) {
+func (scp *Scope) addEnum(n syntax.Node, e syntax.Expr) {
 	switch e := e.(type) {
-	case *ast.CallExpr:
-		if e, ok := e.Fun.(*ast.Ident); ok {
+	case *syntax.CallExpr:
+		if e, ok := e.Fun.(*syntax.Ident); ok {
 			scp.Insert(n, e)
 		}
-	case *ast.Ident:
+	case *syntax.Ident:
 		scp.Insert(n, e)
 	default:
 		log.Debugf("scopes.go: unknown enumeration syntax: %T", n)
 	}
 }
 
-func (scp *Scope) addField(n *ast.Field) {
+func (scp *Scope) addField(n *syntax.Field) {
 	scp.add(n.Type)
 	scp.add(n.TypePars)
 }
 
 // add adds definitions to the scope;
-func (scp *Scope) add(n ast.Node) error {
-	if ast.IsNil(n) {
+func (scp *Scope) add(n syntax.Node) error {
+	if syntax.IsNil(n) {
 		return nil
 	}
 	switch n := n.(type) {
 
-	case *ast.ModuleDef:
+	case *syntax.ModuleDef:
 		scp.add(n.Def)
 
-	case *ast.TemplateDecl:
+	case *syntax.TemplateDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.ValueDecl:
+	case *syntax.ValueDecl:
 		for _, d := range n.Decls {
 			scp.Insert(n, d.Name)
 		}
 
-	case *ast.FuncDecl:
+	case *syntax.FuncDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.SignatureDecl:
+	case *syntax.SignatureDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.SubTypeDecl:
+	case *syntax.SubTypeDecl:
 		scp.add(n.Field)
 
-	case *ast.StructTypeDecl:
+	case *syntax.StructTypeDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.EnumTypeDecl:
+	case *syntax.EnumTypeDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.BehaviourTypeDecl:
+	case *syntax.BehaviourTypeDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.PortTypeDecl:
+	case *syntax.PortTypeDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.ComponentTypeDecl:
+	case *syntax.ComponentTypeDecl:
 		scp.Insert(n, n.Name)
 
-	case *ast.DeclStmt:
+	case *syntax.DeclStmt:
 		scp.add(n.Decl)
 
-	case *ast.BranchStmt:
+	case *syntax.BranchStmt:
 		if n.Tok.Kind() == token.LABEL {
 			scp.Insert(n, n.Label)
 		}
 
-	case *ast.Field:
+	case *syntax.Field:
 		scp.Insert(n, n.Name)
 
-	case *ast.Module:
+	case *syntax.Module:
 		scp.Insert(n, n.Name)
 
-	case *ast.ControlPart:
+	case *syntax.ControlPart:
 		scp.Insert(n, n.Name)
 
-	case *ast.ImportDecl:
+	case *syntax.ImportDecl:
 		scp.Insert(n, n.Module)
 
-	case *ast.GroupDecl:
+	case *syntax.GroupDecl:
 		// GroupDecl are not added to the scope, but their members are.
 		for _, n := range n.Defs {
 			scp.add(n)
 		}
 
-	case *ast.StructSpec:
+	case *syntax.StructSpec:
 		for _, n := range n.Fields {
 			scp.add(n)
 		}
-	case *ast.FormalPars:
+	case *syntax.FormalPars:
 		for _, n := range n.List {
 			scp.add(n)
 		}
 
-	case *ast.NodeList:
+	case *syntax.NodeList:
 		for _, n := range n.Nodes {
 			scp.add(n)
 		}
 
-	case *ast.FormalPar:
+	case *syntax.FormalPar:
 		scp.Insert(n, n.Name)
 	}
 

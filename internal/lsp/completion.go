@@ -12,7 +12,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/nokia/ntt/ttcn3/token"
 )
@@ -78,14 +78,14 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
 			}
 
 			switch node := n.(type) {
-			case *ast.FuncDecl:
+			case *syntax.FuncDecl:
 				if node.Kind.Kind() == kind {
 					var sig bytes.Buffer
 					textFormat := protocol.PlainTextTextFormat
@@ -113,7 +113,7 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 						HasRunsOn:     (node.RunsOn != nil),
 						HasReturn:     (node.Return != nil),
 						Signature:     sig.String(),
-						Documentation: ast.Doc(tree.FileSet, node),
+						Documentation: syntax.Doc(tree.FileSet, node),
 						HasParameters: hasParams,
 						TextFormat:    textFormat})
 				}
@@ -132,26 +132,26 @@ func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []s
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
 			}
 
 			switch node := n.(type) {
-			case *ast.FuncDecl, *ast.ComponentTypeDecl:
+			case *syntax.FuncDecl, *syntax.ComponentTypeDecl:
 				// do not descent into TESTCASE, FUNCTION, ALTSTEP,
 				// component type
 				return false
-			case *ast.ValueDecl:
+			case *syntax.ValueDecl:
 				if node.Kind.Kind() != kind {
 					return false
 				}
 				return true
-			case *ast.Declarator:
+			case *syntax.Declarator:
 				list = append(list, node.Name.String())
 				return false
-			case *ast.TemplateDecl:
+			case *syntax.TemplateDecl:
 				if kind == token.TEMPLATE {
 					list = append(list, node.Name.String())
 				}
@@ -168,29 +168,29 @@ func getAllTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
 			}
 
 			switch node := n.(type) {
-			case *ast.BehaviourTypeDecl:
+			case *syntax.BehaviourTypeDecl:
 				list = append(list, node.Name.String())
 				return false
-			case *ast.ComponentTypeDecl:
+			case *syntax.ComponentTypeDecl:
 				list = append(list, node.Name.String())
 				return false
-			case *ast.EnumTypeDecl:
+			case *syntax.EnumTypeDecl:
 				list = append(list, node.Name.String())
 				return false
-			case *ast.PortTypeDecl:
+			case *syntax.PortTypeDecl:
 				list = append(list, node.Name.String())
 				return false
-			case *ast.StructTypeDecl:
+			case *syntax.StructTypeDecl:
 				list = append(list, node.Name.String())
 				return true
-			case *ast.SubTypeDecl:
+			case *syntax.SubTypeDecl:
 				// for typpe defs as well as for record of/set of types
 				list = append(list, node.Field.Name.String())
 				return false
@@ -206,14 +206,14 @@ func getAllComponentTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
 			}
 
 			switch node := n.(type) {
-			case *ast.ComponentTypeDecl:
+			case *syntax.ComponentTypeDecl:
 				list = append(list, node.Name.String())
 				return false
 			default:
@@ -228,14 +228,14 @@ func getAllPortTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
 			}
 
 			switch node := n.(type) {
-			case *ast.PortTypeDecl:
+			case *syntax.PortTypeDecl:
 				list = append(list, node.Name.String())
 				return false
 			default:
@@ -508,13 +508,13 @@ func newAllValueDecls(suite *Suite, kind token.Kind) []protocol.CompletionItem {
 	return complList
 }
 
-func isBehaviourBodyScope(nodes []ast.Node) bool {
+func isBehaviourBodyScope(nodes []syntax.Node) bool {
 	insideBehav := false
 	for _, node := range nodes {
 		switch node.(type) {
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			insideBehav = true
-		case *ast.BlockStmt:
+		case *syntax.BlockStmt:
 			if insideBehav {
 				return true
 			}
@@ -522,13 +522,13 @@ func isBehaviourBodyScope(nodes []ast.Node) bool {
 	}
 	return false
 }
-func isControlBodyScope(nodes []ast.Node) bool {
+func isControlBodyScope(nodes []syntax.Node) bool {
 	insideControl := false
 	for _, node := range nodes {
 		switch node.(type) {
-		case *ast.ControlPart:
+		case *syntax.ControlPart:
 			insideControl = true
-		case *ast.BlockStmt:
+		case *syntax.BlockStmt:
 			if insideControl {
 				return true
 			}
@@ -537,10 +537,10 @@ func isControlBodyScope(nodes []ast.Node) bool {
 	return false
 }
 
-func isConstDeclScope(nodes []ast.Node) bool {
+func isConstDeclScope(nodes []syntax.Node) bool {
 	for i := len(nodes) - 1; i > 0; i-- {
-		if _, ok := nodes[i].(*ast.ValueDecl); ok {
-			if _, ok := nodes[i-1].(*ast.ModuleDef); ok {
+		if _, ok := nodes[i].(*syntax.ValueDecl); ok {
+			if _, ok := nodes[i-1].(*syntax.ModuleDef); ok {
 				return true
 			}
 		}
@@ -548,19 +548,19 @@ func isConstDeclScope(nodes []ast.Node) bool {
 	return false
 }
 
-func getConstDeclNode(nodes []ast.Node) *ast.ValueDecl {
+func getConstDeclNode(nodes []syntax.Node) *syntax.ValueDecl {
 	for _, n := range nodes {
-		if val, ok := n.(*ast.ValueDecl); ok {
+		if val, ok := n.(*syntax.ValueDecl); ok {
 			return val
 		}
 	}
 	return nil
 }
 
-func isTemplateDeclScope(nodes []ast.Node) bool {
+func isTemplateDeclScope(nodes []syntax.Node) bool {
 	for i := len(nodes) - 1; i > 0; i-- {
-		if _, ok := nodes[i].(*ast.TemplateDecl); ok {
-			if _, ok := nodes[i-1].(*ast.ModuleDef); ok {
+		if _, ok := nodes[i].(*syntax.TemplateDecl); ok {
+			if _, ok := nodes[i-1].(*syntax.ModuleDef); ok {
 				return true
 			}
 		}
@@ -568,27 +568,27 @@ func isTemplateDeclScope(nodes []ast.Node) bool {
 	return false
 }
 
-func getTemplateDeclNode(nodes []ast.Node) *ast.TemplateDecl {
+func getTemplateDeclNode(nodes []syntax.Node) *syntax.TemplateDecl {
 	for _, n := range nodes {
-		if templ, ok := n.(*ast.TemplateDecl); ok {
+		if templ, ok := n.(*syntax.TemplateDecl); ok {
 			return templ
 		}
 	}
 	return nil
 }
 
-func isStartId(n ast.Expr) bool {
-	if id, ok := n.(*ast.Ident); ok {
+func isStartId(n syntax.Expr) bool {
+	if id, ok := n.(*syntax.Ident); ok {
 		return id.Tok.String() == "start"
 	}
 	return false
 }
 
-func isInsideExpression(nodes []ast.Node, fromModuleDot bool) bool {
+func isInsideExpression(nodes []syntax.Node, fromModuleDot bool) bool {
 	i := len(nodes)
 	if i > 1 {
 		i--
-		if _, ok := nodes[i].(*ast.Ident); ok {
+		if _, ok := nodes[i].(*syntax.Ident); ok {
 			i--
 		}
 		if fromModuleDot {
@@ -598,11 +598,11 @@ func isInsideExpression(nodes []ast.Node, fromModuleDot bool) bool {
 			i--
 		}
 		switch nodes[i].(type) {
-		case *ast.SelectorExpr:
+		case *syntax.SelectorExpr:
 			return false
-		case *ast.ExprStmt:
+		case *syntax.ExprStmt:
 			return false
-		case *ast.BlockStmt:
+		case *syntax.BlockStmt:
 			return false
 		default:
 			return true
@@ -611,12 +611,12 @@ func isInsideExpression(nodes []ast.Node, fromModuleDot bool) bool {
 	return false
 }
 
-func isStartOpArgument(nodes []ast.Node) bool {
+func isStartOpArgument(nodes []syntax.Node) bool {
 	for i := len(nodes) - 1; i >= 0; i-- {
-		if _, ok := nodes[i].(*ast.ParenExpr); ok {
+		if _, ok := nodes[i].(*syntax.ParenExpr); ok {
 			if i >= 1 {
-				if n, ok := nodes[i-1].(*ast.CallExpr); ok {
-					if fun, ok := n.Fun.(*ast.SelectorExpr); ok {
+				if n, ok := nodes[i-1].(*syntax.CallExpr); ok {
+					if fun, ok := n.Fun.(*syntax.SelectorExpr); ok {
 						return isStartId(fun.Sel)
 					} else {
 						return false
@@ -627,7 +627,7 @@ func isStartOpArgument(nodes []ast.Node) bool {
 	}
 	return false
 }
-func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName string) []protocol.CompletionItem {
+func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	l := len(nodes)
 	if nodes == nil || l == 0 {
@@ -636,7 +636,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 	switch {
 	case isBehaviourBodyScope(nodes):
 		switch n := nodes[l-2].(type) {
-		case *ast.SelectorExpr:
+		case *syntax.SelectorExpr:
 			if n.X != nil {
 				switch {
 				case isStartOpArgument(nodes):
@@ -671,7 +671,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 		}
 	case isControlBodyScope(nodes):
 		switch n := nodes[l-2].(type) {
-		case *ast.SelectorExpr:
+		case *syntax.SelectorExpr:
 			if n.X != nil {
 				switch {
 				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
@@ -698,7 +698,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 		}
 	case isConstDeclScope(nodes):
 		if nodec := getConstDeclNode(nodes); nodec != nil {
-			scndNode, _ := nodes[l-2].(*ast.SelectorExpr)
+			scndNode, _ := nodes[l-2].(*syntax.SelectorExpr)
 
 			if nodec.Type == nil || (nodec.Type != nil && (nodec.Type.Pos() > pos)) {
 				if scndNode != nil && scndNode.X != nil {
@@ -724,7 +724,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 		}
 	case isTemplateDeclScope(nodes):
 		if nodet := getTemplateDeclNode(nodes); nodet != nil {
-			scndNode, _ := nodes[l-2].(*ast.SelectorExpr)
+			scndNode, _ := nodes[l-2].(*syntax.SelectorExpr)
 
 			if nodet.ModifiesTok != nil && nodet.AssignTok.Pos() > pos {
 				if scndNode != nil && scndNode.X != nil {
@@ -757,15 +757,15 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 		}
 	default:
 		switch nodet := nodes[l-1].(type) {
-		case *ast.Ident:
-			if _, ok := nodes[0].(*ast.Module); l == 2 && ok {
+		case *syntax.Ident:
+			if _, ok := nodes[0].(*syntax.Module); l == 2 && ok {
 				list = newModuleDefKw()
 			}
 			if l > 2 {
 				switch scndNode := nodes[l-2].(type) {
-				case *ast.ModuleDef:
+				case *syntax.ModuleDef:
 					list = newModuleDefKw()
-				case *ast.ImportDecl:
+				case *syntax.ImportDecl:
 					if scndNode.LBrace != nil {
 						list = newImportkinds()
 					} else if nodet.End() >= pos {
@@ -774,14 +774,14 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 					} else {
 						list = newImportAfterModName()
 					}
-				case *ast.DefKindExpr:
+				case *syntax.DefKindExpr:
 					// happens after
 					// * the altstep/function/testcase kw while typing the identifier
 					// * inside the exception list after { while typing the kind
 					if l == 8 {
-						if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
+						if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
 							if scndNode.Kind != nil {
-								if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+								if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
 									list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 								}
 							} else {
@@ -789,24 +789,24 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 							}
 						}
 					} else {
-						if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+						if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
 							list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 						}
 					}
 
-				case *ast.ExceptExpr:
+				case *syntax.ExceptExpr:
 					list = newImportkinds()
-				case *ast.RunsOnSpec, *ast.SystemSpec:
+				case *syntax.RunsOnSpec, *syntax.SystemSpec:
 					list = newAllComponentTypes(suite, " 1")
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
-				case *ast.SelectorExpr:
+				case *syntax.SelectorExpr:
 					if scndNode.X != nil {
 						switch nodes[l-3].(type) {
-						case *ast.RunsOnSpec, *ast.SystemSpec, *ast.ComponentTypeDecl:
+						case *syntax.RunsOnSpec, *syntax.SystemSpec, *syntax.ComponentTypeDecl:
 							list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String(), " 1")
 						}
 					}
-				case *ast.ComponentTypeDecl:
+				case *syntax.ComponentTypeDecl:
 					// for ctrl+spc, after beginning to type an id after extends Token
 					if scndNode.ExtendsTok.LastTok() != nil && scndNode.Body.LBrace.Pos() > pos {
 						list = newAllComponentTypes(suite, " 1")
@@ -815,48 +815,48 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 				}
 			}
 
-		case *ast.ImportDecl:
+		case *syntax.ImportDecl:
 			if nodet.Module == nil {
 				// look for available modules for import
 				list = moduleNameListFromSuite(suite, ownModName, " ")
 			}
-		case *ast.DefKindExpr:
+		case *syntax.DefKindExpr:
 			if nodet.Kind == nil {
 				list = newImportkinds()
 			} else {
-				if impDecl, ok := nodes[l-2].(*ast.ImportDecl); ok {
+				if impDecl, ok := nodes[l-2].(*syntax.ImportDecl); ok {
 					list = newImportCompletions(suite, nodet.Kind.Kind(), impDecl.Module.Tok.String())
-				} else if _, ok := nodes[l-2].(*ast.ExceptExpr); ok {
-					if impDecl, ok := nodes[l-4].(*ast.ImportDecl); ok {
+				} else if _, ok := nodes[l-2].(*syntax.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-4].(*syntax.ImportDecl); ok {
 						list = newImportCompletions(suite, nodet.Kind.Kind(), impDecl.Module.Tok.String())
 					}
 				}
 			}
-		case *ast.RunsOnSpec, *ast.SystemSpec:
+		case *syntax.RunsOnSpec, *syntax.SystemSpec:
 			list = newAllComponentTypes(suite, " 1")
 			list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
-		case *ast.ErrorNode:
-			// i.e. user started typing => ast.Ident might be detected instead of a kw
+		case *syntax.ErrorNode:
+			// i.e. user started typing => syntax.Ident might be detected instead of a kw
 			if l > 1 {
 				switch scndNode := nodes[l-2].(type) {
-				case *ast.ModuleDef:
+				case *syntax.ModuleDef:
 					// start a new module def
 					list = newModuleDefKw()
-				case *ast.DefKindExpr:
+				case *syntax.DefKindExpr:
 					// NOTE: not able to reproduce this situation. Maybe it is safe to remove this code.
 					// happens streight after the altstep kw if ctrl+space is pressed
-					if impDecl, ok := nodes[l-3].(*ast.ImportDecl); ok {
+					if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
 						list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
-					} else if _, ok := nodes[l-3].(*ast.ExceptExpr); ok {
-						if impDecl, ok := nodes[l-5].(*ast.ImportDecl); ok {
+					} else if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
+						if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
 							list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
 						}
 					}
 				}
 			}
-		case *ast.Declarator:
+		case *syntax.Declarator:
 			if l > 2 {
-				if valueDecl, ok := nodes[l-2].(*ast.ValueDecl); ok {
+				if valueDecl, ok := nodes[l-2].(*syntax.ValueDecl); ok {
 					if valueDecl.Kind.Kind() == token.PORT {
 						list = newAllPortTypes(suite, ownModName)
 						list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
@@ -870,17 +870,17 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []ast.Node, ownModName st
 	return list
 }
 
-func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
+func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
 	// TODO(5nord): Replace this function with n.LastTok() and n.PrevTok()
 
 	var (
 		completed bool       = false
-		nodeStack []ast.Node = make([]ast.Node, 0, 10)
-		lastStack []ast.Node = nil
+		nodeStack []syntax.Node = make([]syntax.Node, 0, 10)
+		lastStack []syntax.Node = nil
 		isError   bool       = false
 	)
 
-	n.Inspect(func(n ast.Node) bool {
+	n.Inspect(func(n syntax.Node) bool {
 		if isError {
 			return false
 		}
@@ -892,11 +892,11 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 			return false
 		}
 		log.Debugln(fmt.Sprintf("looking for %d In node[%d .. %d] (node: %#v)", pos, n.Pos(), n.End(), n))
-		if errNode, ok := n.(*ast.ErrorNode); ok {
+		if errNode, ok := n.(*syntax.ErrorNode); ok {
 			if errNode.LastTok().End() == pos {
 				isError = true
 				nodeStack = append(nodeStack, n)
-				lastStack = make([]ast.Node, len(nodeStack))
+				lastStack = make([]syntax.Node, len(nodeStack))
 				copy(lastStack, nodeStack)
 				return false
 			}
@@ -908,7 +908,7 @@ func LastNonWsToken(n ast.Node, pos loc.Pos) []ast.Node {
 			return false
 		}
 		nodeStack = append(nodeStack, n)
-		lastStack = make([]ast.Node, len(nodeStack))
+		lastStack = make([]syntax.Node, len(nodeStack))
 		copy(lastStack, nodeStack)
 		return !completed
 	})

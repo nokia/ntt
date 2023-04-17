@@ -9,7 +9,7 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
 	"github.com/spf13/cobra"
 )
@@ -55,16 +55,16 @@ func dump(v reflect.Value, f string) {
 
 	if v.Kind() != reflect.Interface && v.CanInterface() {
 		switch x := v.Interface().(type) {
-		case ast.Token:
+		case syntax.Token:
 			if x != nil {
 				Prefix(x, f)
 				fmt.Printf("[35m%s[0m", x.String())
 				Suffix(x)
 			}
-		case ast.Node:
+		case syntax.Node:
 			if x != nil {
 				Prefix(x, f)
-				fmt.Printf("[0m%s[0m", strings.TrimPrefix(v.Type().String(), "*ast."))
+				fmt.Printf("[0m%s[0m", strings.TrimPrefix(v.Type().String(), "*syntax."))
 				Suffix(x)
 			}
 		}
@@ -102,15 +102,15 @@ func dump(v reflect.Value, f string) {
 
 }
 
-func Prefix(n ast.Node, f string) {
+func Prefix(n syntax.Node, f string) {
 	fmt.Printf("%-15s %s[1m%s[0m", Pos(n), Indent(), f)
 }
 
-func Suffix(n ast.Node) {
+func Suffix(n syntax.Node) {
 	fmt.Println()
 }
 
-func Pos(n ast.Node) string {
+func Pos(n syntax.Node) string {
 	if n == nil {
 		return ""
 	}

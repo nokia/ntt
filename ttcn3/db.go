@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 // DB implements database for querying TTCN-3 source code bases.
@@ -47,7 +47,7 @@ func (db *DB) Index(files ...string) {
 			db.mu.Lock()
 			for _, n := range tree.Modules() {
 				syms++
-				db.addModule(path, ast.Name(n.Node))
+				db.addModule(path, syntax.Name(n.Node))
 			}
 
 			for k := range tree.Names {
@@ -69,7 +69,7 @@ func (db *DB) Index(files ...string) {
 // VisibleModules returns a list of modules that may contain the given
 // symbol. First parameter id specifies the symbol to look for and second
 // parameter module specifies where the imports come from.
-func (db *DB) VisibleModules(id string, mod *ast.Module) []*Node {
+func (db *DB) VisibleModules(id string, mod *syntax.Module) []*Node {
 	importedModules := make(map[string]bool)
 	importedFiles := make(map[string]bool)
 
@@ -83,15 +83,15 @@ func (db *DB) VisibleModules(id string, mod *ast.Module) []*Node {
 	// TTCN-3 standard requires, that all global definition may have a
 	// module prefix. We handle this by "self-importing" the current
 	// module.
-	addImport(ast.Name(mod))
+	addImport(syntax.Name(mod))
 
 	// Only use imports from the current module.
-	mod.Inspect(func(n ast.Node) bool {
+	mod.Inspect(func(n syntax.Node) bool {
 		switch n := n.(type) {
-		case *ast.ImportDecl:
-			addImport(ast.Name(n.Module))
+		case *syntax.ImportDecl:
+			addImport(syntax.Name(n.Module))
 			return false
-		case *ast.Module, *ast.ModuleDef:
+		case *syntax.Module, *syntax.ModuleDef:
 			return true
 		default:
 			return false
@@ -113,7 +113,7 @@ func (db *DB) VisibleModules(id string, mod *ast.Module) []*Node {
 	for _, file := range candidates {
 		tree := ParseFile(file)
 		for _, m := range tree.Modules() {
-			if importedModules[ast.Name(m.Node)] {
+			if importedModules[syntax.Name(m.Node)] {
 				mods = append(mods, m)
 			}
 		}

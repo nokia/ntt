@@ -1,77 +1,77 @@
 package ttcn3
 
 import (
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
-func (tree *Tree) Tags() []ast.Node {
-	var t []ast.Node
-	tree.Root.Inspect(func(n ast.Node) bool {
+func (tree *Tree) Tags() []syntax.Node {
+	var t []syntax.Node
+	tree.Root.Inspect(func(n syntax.Node) bool {
 		if n == nil {
 			return false
 		}
 
 		switch n := n.(type) {
-		case *ast.Module:
+		case *syntax.Module:
 			t = append(t, n)
 			return true
 
-		case *ast.ImportDecl:
+		case *syntax.ImportDecl:
 			return false
 
-		case *ast.FriendDecl:
+		case *syntax.FriendDecl:
 			return false
 
-		case *ast.Field:
+		case *syntax.Field:
 			t = append(t, n)
 			return true
 
-		case *ast.PortTypeDecl:
+		case *syntax.PortTypeDecl:
 			t = append(t, n)
 			return false
 
-		case *ast.ComponentTypeDecl:
+		case *syntax.ComponentTypeDecl:
 			t = append(t, n)
 			return true
 
-		case *ast.StructTypeDecl:
+		case *syntax.StructTypeDecl:
 			t = append(t, n)
 			return true
 
-		case *ast.EnumTypeDecl:
+		case *syntax.EnumTypeDecl:
 			t = append(t, n)
 			for _, e := range n.Enums {
 				t = append(t, e)
 			}
 			return false
 
-		case *ast.EnumSpec:
+		case *syntax.EnumSpec:
 			for _, e := range n.Enums {
 				t = append(t, e)
 			}
 			return false
 
-		case *ast.BehaviourTypeDecl:
+		case *syntax.BehaviourTypeDecl:
 			t = append(t, n)
 			return false
 
-		case *ast.Declarator:
+		case *syntax.Declarator:
 			t = append(t, n)
 			return false
 
-		case *ast.FormalPar:
+		case *syntax.FormalPar:
 			t = append(t, n)
 			return false
 
-		case *ast.TemplateDecl:
+		case *syntax.TemplateDecl:
 			t = append(t, n)
 			return true
 
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			t = append(t, n)
 			return true
 
-		case *ast.SignatureDecl:
+		case *syntax.SignatureDecl:
 			t = append(t, n)
 			return false
 

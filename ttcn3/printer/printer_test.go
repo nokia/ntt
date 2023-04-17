@@ -11,9 +11,8 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -123,7 +122,7 @@ type Test struct {
 	expected string
 
 	fset *loc.FileSet
-	node ast.Node
+	node syntax.Node
 }
 
 func (t Test) Name() string {

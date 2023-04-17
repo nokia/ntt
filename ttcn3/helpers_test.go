@@ -8,7 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
@@ -31,12 +31,12 @@ func parseFile(t *testing.T, name string, input string) *ttcn3.Tree {
 	return tree
 }
 
-func enumerateIDs(root ast.Node) map[*ast.Ident]string {
+func enumerateIDs(root syntax.Node) map[*syntax.Ident]string {
 	// build ID map
-	ids := make(map[*ast.Ident]string)
+	ids := make(map[*syntax.Ident]string)
 	counter := make(map[string]int)
-	root.Inspect(func(n ast.Node) bool {
-		if x, ok := n.(*ast.Ident); ok {
+	root.Inspect(func(n syntax.Node) bool {
+		if x, ok := n.(*syntax.Ident); ok {
 			i := counter[x.String()]
 			counter[x.String()]++
 			ids[x] = fmt.Sprintf("%s%d", x.String(), i)
@@ -47,17 +47,17 @@ func enumerateIDs(root ast.Node) map[*ast.Ident]string {
 	return ids
 }
 
-func parentNodes(tree *ttcn3.Tree, cursor loc.Pos) (n ast.Expr, s []ast.Node) {
+func parentNodes(tree *ttcn3.Tree, cursor loc.Pos) (n syntax.Expr, s []syntax.Node) {
 	s = tree.SliceAt(cursor)
 	if len(s) < 2 {
 		return nil, nil
 	}
 
-	if tok, ok := s[0].(ast.Token); ok && tok.Kind() == token.IDENT {
-		n, s = s[1].(ast.Expr), s[2:]
+	if tok, ok := s[0].(syntax.Token); ok && tok.Kind() == token.IDENT {
+		n, s = s[1].(syntax.Expr), s[2:]
 	}
 	if len(s) > 0 {
-		if x, ok := s[0].(*ast.SelectorExpr); ok && n == x.Sel {
+		if x, ok := s[0].(*syntax.SelectorExpr); ok && n == x.Sel {
 			n, s = x, s[1:]
 		}
 	}
@@ -68,18 +68,18 @@ func importedDefs(db *ttcn3.DB, id string, module string) []string {
 	var s []string
 	mod := moduleFrom("file1.ttcn3", module)
 	for _, d := range db.VisibleModules(id, mod) {
-		name := ast.Name(d.Node)
+		name := syntax.Name(d.Node)
 		file := d.Tree.Position(d.Node.Pos()).Filename
 		s = append(s, fmt.Sprintf("%s:%s", name, file))
 	}
 	return s
 }
 
-func moduleFrom(file, module string) *ast.Module {
+func moduleFrom(file, module string) *syntax.Module {
 	tree := ttcn3.ParseFile(file)
 	for _, m := range tree.Modules() {
-		if ast.Name(m.Node) == module {
-			return m.Node.(*ast.Module)
+		if syntax.Name(m.Node) == module {
+			return m.Node.(*syntax.Module)
 		}
 	}
 	return nil
@@ -116,18 +116,18 @@ func makeSliceMap(m map[string]map[string]bool) SliceMap {
 }
 
 // Unwrap first node from NodeLists
-func unwrapFirst(n ast.Node) ast.Node {
+func unwrapFirst(n syntax.Node) syntax.Node {
 	switch n := n.(type) {
-	case *ast.NodeList:
+	case *syntax.NodeList:
 		if len(n.Nodes) == 0 {
 			return nil
 		}
 		return unwrapFirst(n.Nodes[0])
-	case *ast.ExprStmt:
+	case *syntax.ExprStmt:
 		return unwrapFirst(n.Expr)
-	case *ast.DeclStmt:
+	case *syntax.DeclStmt:
 		return unwrapFirst(n.Decl)
-	case *ast.ModuleDef:
+	case *syntax.ModuleDef:
 		return unwrapFirst(n.Def)
 	default:
 		return n
@@ -160,9 +160,9 @@ func nameSlice(scp *ttcn3.Scope) []string {
 	return s
 }
 
-func nodeDesc(n ast.Node) string {
+func nodeDesc(n syntax.Node) string {
 	s := fmt.Sprintf("%T", n)
-	if n := ast.Name(n); n != "" {
+	if n := syntax.Name(n); n != "" {
 		s += fmt.Sprintf("(%s)", n)
 	}
 	return s

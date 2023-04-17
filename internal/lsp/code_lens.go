@@ -6,7 +6,7 @@ import (
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) ([]protocol.CodeLens, error) {
@@ -24,11 +24,11 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 	if tree == nil || tree.Root == nil {
 		return nil, nil
 	}
-	tree.Root.Inspect(func(n ast.Node) bool {
+	tree.Root.Inspect(func(n syntax.Node) bool {
 		switch n := n.(type) {
-		case *ast.NodeList, *ast.Module, *ast.ModuleDef:
+		case *syntax.NodeList, *syntax.Module, *syntax.ModuleDef:
 			return true
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			if !n.IsTest() {
 				return false
 			}

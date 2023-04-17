@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 var builtins map[string]*Builtin
@@ -43,7 +43,7 @@ func AddBuiltin(id string, fn func(args ...Object) Object) error {
 	return nil
 }
 
-func parseFunction(name string) (string, *ast.FormalPars, error) {
+func parseFunction(name string) (string, *syntax.FormalPars, error) {
 	tree := ttcn3.Parse("function " + name + ";")
 	if tree.Err != nil {
 		return "", nil, tree.Err
@@ -52,10 +52,10 @@ func parseFunction(name string) (string, *ast.FormalPars, error) {
 	if len(funcs) != 1 {
 		return "", nil, errors.New("invalid signature")
 	}
-	return ast.Name(funcs[0].Node), funcs[0].Node.(*ast.FuncDecl).Params, nil
+	return syntax.Name(funcs[0].Node), funcs[0].Node.(*syntax.FuncDecl).Params, nil
 }
 
-func checkArgs(pars *ast.FormalPars, args ...Object) error {
+func checkArgs(pars *syntax.FormalPars, args ...Object) error {
 	if len(args) != len(pars.List) {
 		return ErrInvalidArgCount
 	}
@@ -67,7 +67,7 @@ func checkArgs(pars *ast.FormalPars, args ...Object) error {
 	return nil
 }
 
-func checkArg(par *ast.FormalPar, arg Object) error {
+func checkArg(par *syntax.FormalPar, arg Object) error {
 	if par.ArrayDef != nil {
 		return fmt.Errorf("array definition: %w", ErrNotImplemented)
 	}
@@ -87,7 +87,7 @@ func checkArg(par *ast.FormalPar, arg Object) error {
 		"any":                  ANY,
 	}
 
-	want := ast.Name(par.Type)
+	want := syntax.Name(par.Type)
 	switch types[want] {
 	case "":
 		return fmt.Errorf("%#v: %w", par.Type, ErrNotImplemented)

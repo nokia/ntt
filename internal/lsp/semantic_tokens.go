@@ -9,7 +9,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
@@ -205,12 +205,12 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 	var tokens []uint32
 	line := 0
 	col := 0
-	tree.Root.Inspect(func(n ast.Node) bool {
+	tree.Root.Inspect(func(n syntax.Node) bool {
 		if n == nil || n.End() < begin || end < n.Pos() {
 			return false
 		}
 
-		if id, ok := n.(*ast.Ident); ok {
+		if id, ok := n.(*syntax.Ident); ok {
 
 			// token type and modifiers
 			var (
@@ -236,7 +236,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 	return tokens
 }
 
-func appendToken(tokens []uint32, tok ast.Token, tree *ttcn3.Tree, typ SemanticTokenType, mod SemanticTokenModifiers, line int, col int) ([]uint32, int, int) {
+func appendToken(tokens []uint32, tok syntax.Token, tree *ttcn3.Tree, typ SemanticTokenType, mod SemanticTokenModifiers, line int, col int) ([]uint32, int, int) {
 	pos := tree.Position(tok.Pos())
 	pos.Line -= 1
 	pos.Column -= 1
@@ -258,39 +258,39 @@ func appendToken(tokens []uint32, tok ast.Token, tree *ttcn3.Tree, typ SemanticT
 	return tokens, line, col
 }
 
-func DefinitionToken(tree *ttcn3.Tree, id ast.Node) (SemanticTokenType, SemanticTokenModifiers) {
+func DefinitionToken(tree *ttcn3.Tree, id syntax.Node) (SemanticTokenType, SemanticTokenModifiers) {
 	switch n := tree.ParentOf(id).(type) {
-	case *ast.Module:
+	case *syntax.Module:
 		return Namespace, Definition
-	case *ast.ImportDecl:
+	case *syntax.ImportDecl:
 		return Namespace, Undefined
-	case *ast.FormalPar:
+	case *syntax.FormalPar:
 		return Parameter, Declaration
-	case *ast.StructTypeDecl:
+	case *syntax.StructTypeDecl:
 		return Struct, Definition
-	case *ast.EnumTypeDecl:
+	case *syntax.EnumTypeDecl:
 		if id == n.Name {
 			return Enum, Definition
 		}
 		return EnumMember, Definition
-	case *ast.EnumSpec:
+	case *syntax.EnumSpec:
 		return EnumMember, Definition
-	case *ast.Field:
-		if _, ok := tree.ParentOf(n).(*ast.SubTypeDecl); ok {
+	case *syntax.Field:
+		if _, ok := tree.ParentOf(n).(*syntax.SubTypeDecl); ok {
 			return Type, Definition
 		}
-	case *ast.PortTypeDecl:
+	case *syntax.PortTypeDecl:
 		return Interface, Definition
-	case *ast.ComponentTypeDecl:
+	case *syntax.ComponentTypeDecl:
 		return Class, Definition
-	case *ast.FuncDecl:
+	case *syntax.FuncDecl:
 		return Function, Definition
-	case *ast.TemplateDecl:
+	case *syntax.TemplateDecl:
 		return Variable, Declaration | Readonly
-	case *ast.ValueDecl:
+	case *syntax.ValueDecl:
 		typ := Variable
 		mod := Declaration
-		if _, ok := tree.ParentOf(tree.ParentOf(tree.ParentOf(n))).(*ast.ComponentTypeDecl); ok {
+		if _, ok := tree.ParentOf(tree.ParentOf(tree.ParentOf(n))).(*syntax.ComponentTypeDecl); ok {
 			typ = Property
 		}
 		switch n.Kind.Kind() {
@@ -300,13 +300,13 @@ func DefinitionToken(tree *ttcn3.Tree, id ast.Node) (SemanticTokenType, Semantic
 			typ = Interface
 		}
 		return typ, mod
-	case *ast.Declarator:
+	case *syntax.Declarator:
 		return DefinitionToken(tree, n)
 	}
 	return None, Undefined
 }
 
-func ReferenceToken(tree *ttcn3.Tree, db *ttcn3.DB, id *ast.Ident) (SemanticTokenType, SemanticTokenModifiers) {
+func ReferenceToken(tree *ttcn3.Tree, db *ttcn3.DB, id *syntax.Ident) (SemanticTokenType, SemanticTokenModifiers) {
 	name := id.String()
 	if typ, ok := builtins[name]; ok {
 		return typ, DefaultLibrary

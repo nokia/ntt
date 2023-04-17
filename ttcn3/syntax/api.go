@@ -16,7 +16,6 @@ import (
 	"io/ioutil"
 
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/ast"
 	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
@@ -50,7 +49,7 @@ const (
 // errors were found, the result is a partial AST (with Bad* nodes
 // representing the fragments of erroneous source code). Multiple errors
 // are returned via a ErrorList which is sorted by file position.
-func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode) (root []*ast.Module, err error) {
+func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode) (root []*Module, err error) {
 	if fset == nil {
 		panic("ParseModules: no FileSet provided (fset == nil)")
 	}
@@ -79,7 +78,7 @@ func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode
 	return p.parseModuleList(), nil
 }
 
-func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (ast.Expr, error) {
+func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (Expr, error) {
 	if fset == nil {
 		panic("ParseExpr: no FileSet provided (fset == nil)")
 	}
@@ -108,7 +107,7 @@ func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (ast.Expr, e
 	return p.parseExpr(), nil
 }
 
-func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *ast.NodeList, names map[string]bool, uses map[string]bool, err error) {
+func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList, names map[string]bool, uses map[string]bool, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
 	}
@@ -132,7 +131,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *ast.Node
 		err = p.errors.Err()
 	}()
 
-	nodes = &ast.NodeList{}
+	nodes = &NodeList{}
 
 	// parse source
 	p.init(fset, filename, text, AllErrors)

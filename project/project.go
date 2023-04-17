@@ -29,7 +29,7 @@ import (
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project/internal/k3"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 var (
@@ -545,15 +545,15 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 
 	for _, file := range files {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n ast.Node) bool {
+		tree.Root.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
-			case *ast.FuncDecl:
+			case *syntax.FuncDecl:
 				if n.IsTest() {
-					add(tree.QualifiedName(n), ast.Doc(tree.FileSet, n))
+					add(tree.QualifiedName(n), syntax.Doc(tree.FileSet, n))
 				}
 				return false
-			case *ast.ControlPart:
-				add(tree.QualifiedName(n), ast.Doc(tree.FileSet, n))
+			case *syntax.ControlPart:
+				add(tree.QualifiedName(n), syntax.Doc(tree.FileSet, n))
 				return false
 			}
 			return true

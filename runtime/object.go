@@ -11,7 +11,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 type Object interface {
@@ -594,8 +594,8 @@ func NewPermutation(objs ...Object) *List { return &List{Elements: objs, ListTyp
 func NewComplement(objs ...Object) *List  { return &List{Elements: objs, ListType: COMPLEMENT} }
 
 type Function struct {
-	Params *ast.FormalPars
-	Body   *ast.BlockStmt
+	Params *syntax.FormalPars
+	Body   *syntax.BlockStmt
 	Env    Scope
 }
 

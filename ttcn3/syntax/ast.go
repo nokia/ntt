@@ -1,12 +1,12 @@
 // Package ast provides TTCN-3 syntax tree nodes and functions for tree
 // traversal.
-package ast
+package syntax
 
 //go:generate go run ./internal/gen
 
 import (
 	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/ttcn3/token"
+	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 // All node types implement the Node interface.
@@ -21,7 +21,7 @@ type Node interface {
 
 type Token interface {
 	Node
-	Kind() token.Kind
+	Kind() tokn.Kind
 	String() string
 	PrevTok() Token
 	NextTok() Token
@@ -597,7 +597,7 @@ type (
 )
 
 func (x *FuncDecl) IsTest() bool {
-	return x.Kind.Kind() == token.TESTCASE
+	return x.Kind.Kind() == tokn.TESTCASE
 }
 
 func (x *ValueDecl) declNode()            {}

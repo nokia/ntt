@@ -14,7 +14,7 @@ import (
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
 	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/spf13/cobra"
@@ -181,7 +181,7 @@ For information on writing new checks, see <TBD>.
 
 type Import struct {
 	Fset     *loc.FileSet
-	Node     *ast.ImportDecl
+	Node     *syntax.ImportDecl
 	Path     string
 	From     string
 	Imported string
@@ -237,18 +237,18 @@ func lint(cmd *cobra.Command, args []string) error {
 			}
 
 			for _, def := range tree.Modules() {
-				mod := def.Node.(*ast.Module)
+				mod := def.Node.(*syntax.Module)
 
-				if isWhiteListed(style.Ignore.Modules, ast.Name(mod.Name)) {
+				if isWhiteListed(style.Ignore.Modules, syntax.Name(mod.Name)) {
 					continue
 				}
 
-				stack := make([]ast.Node, 1, 64)
-				cc := make(map[ast.Node]int)
-				ccID := ast.Node(mod)
-				caseElse := make(map[ast.Node]int)
+				stack := make([]syntax.Node, 1, 64)
+				cc := make(map[syntax.Node]int)
+				ccID := syntax.Node(mod)
+				caseElse := make(map[syntax.Node]int)
 
-				mod.Inspect(func(n ast.Node) bool {
+				mod.Inspect(func(n syntax.Node) bool {
 					if n == nil {
 						stack = stack[:len(stack)-1]
 						return false
@@ -258,14 +258,14 @@ func lint(cmd *cobra.Command, args []string) error {
 					fset := tree.FileSet
 
 					switch n := n.(type) {
-					case *ast.Ident:
+					case *syntax.Ident:
 						checkUsage(fset, n)
 
-					case *ast.Module:
+					case *syntax.Module:
 						checkNaming(fset, n, style.Naming.Modules)
 						checkBraces(fset, n.LBrace, n.RBrace)
 
-					case *ast.FuncDecl:
+					case *syntax.FuncDecl:
 						ccID = n
 						cc[ccID] = 1 // Intial McCabe value
 
@@ -281,7 +281,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 						checkLines(fset, n)
 
-					case *ast.FormalPar:
+					case *syntax.FormalPar:
 						checkNaming(fset, n, style.Naming.Parameters)
 
 						// We do not descent any further,
@@ -290,11 +290,11 @@ func lint(cmd *cobra.Command, args []string) error {
 						// values.
 						return false
 
-					case *ast.PortTypeDecl:
+					case *syntax.PortTypeDecl:
 						checkNaming(fset, n, style.Naming.PortTypes)
 						checkBraces(fset, n.LBrace, n.RBrace)
 
-					case *ast.Declarator:
+					case *syntax.Declarator:
 						if len(stack) <= 2 {
 							return true
 						}
@@ -303,7 +303,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						// always be a ValueDecl.  If not, we
 						// have some internal issues, it's okay
 						// to panic then.
-						parent := stack[len(stack)-2].(*ast.ValueDecl)
+						parent := stack[len(stack)-2].(*syntax.ValueDecl)
 						scope := stack[:len(stack)-2]
 
 						switch {
@@ -329,61 +329,61 @@ func lint(cmd *cobra.Command, args []string) error {
 
 						return true
 
-					case *ast.TemplateDecl:
+					case *syntax.TemplateDecl:
 						checkNaming(fset, n, style.Naming.Templates)
 
-					case *ast.BlockStmt:
+					case *syntax.BlockStmt:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.CompositeLiteral:
+					case *syntax.CompositeLiteral:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.ExceptExpr:
+					case *syntax.ExceptExpr:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.SelectStmt:
+					case *syntax.SelectStmt:
 						caseElse[n] = 0
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.StructSpec:
+					case *syntax.StructSpec:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.EnumSpec:
+					case *syntax.EnumSpec:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.ModuleParameterGroup:
+					case *syntax.ModuleParameterGroup:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.StructTypeDecl:
+					case *syntax.StructTypeDecl:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.EnumTypeDecl:
+					case *syntax.EnumTypeDecl:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.ImportDecl:
+					case *syntax.ImportDecl:
 						checkBraces(fset, n.LBrace, n.RBrace)
 						checkImport(fset, n, mod)
-					case *ast.GroupDecl:
+					case *syntax.GroupDecl:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.WithSpec:
+					case *syntax.WithSpec:
 						checkBraces(fset, n.LBrace, n.RBrace)
-					case *ast.ParenExpr:
+					case *syntax.ParenExpr:
 						if n.LParen.Kind() == token.LBRACE {
 							checkBraces(fset, n.LParen, n.RParen)
 						}
 
-					case *ast.ModuleDef:
+					case *syntax.ModuleDef:
 						// Reset ID for counting cyclomatic complexity.
 						ccID = mod
 
-					case *ast.BinaryExpr:
+					case *syntax.BinaryExpr:
 						if n.Op.Kind() == token.AND || n.Op.Kind() == token.OR {
 							cc[ccID]++
 						}
 
-					case *ast.IfStmt:
+					case *syntax.IfStmt:
 						cc[ccID]++
 
-					case *ast.CaseClause:
-						if p, ok := tree.ParentOf(n).(*ast.SelectStmt); ok && isCaseElse(n) {
+					case *syntax.CaseClause:
+						if p, ok := tree.ParentOf(n).(*syntax.SelectStmt); ok && isCaseElse(n) {
 							caseElse[p]++
 						} else {
 							// Do not count case else for complexity
 							cc[ccID]++
 						}
 
-					case *ast.CommClause:
+					case *syntax.CommClause:
 						if style.Complexity.IgnoreGuards {
 							return true
 						}
@@ -425,24 +425,24 @@ func lint(cmd *cobra.Command, args []string) error {
 
 }
 
-func checkNaming(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
-	checkPatterns(fset, n, patterns, ast.Name(n))
+func checkNaming(fset *loc.FileSet, n syntax.Node, patterns map[string]string) {
+	checkPatterns(fset, n, patterns, syntax.Name(n))
 }
 
-func checkTags(fset *loc.FileSet, n ast.Node, patterns map[string]string) {
+func checkTags(fset *loc.FileSet, n syntax.Node, patterns map[string]string) {
 	if len(patterns) == 0 {
 		return
 	}
 
 	var tags []string
-	for _, t := range doc.FindAllTags(ast.Doc(fset, n)) {
+	for _, t := range doc.FindAllTags(syntax.Doc(fset, n)) {
 		tags = append(tags, strings.Join(t, ":"))
 	}
 
 	checkPatterns(fset, n, patterns, tags...)
 }
 
-func checkPatterns(fset *loc.FileSet, n ast.Node, patterns map[string]string, ss ...string) {
+func checkPatterns(fset *loc.FileSet, n syntax.Node, patterns map[string]string, ss ...string) {
 next:
 	for p, msg := range patterns {
 		expect := true
@@ -463,7 +463,7 @@ next:
 	}
 }
 
-func checkLines(fset *loc.FileSet, n ast.Node) {
+func checkLines(fset *loc.FileSet, n syntax.Node) {
 	if style.MaxLines == 0 {
 		return
 	}
@@ -477,7 +477,7 @@ func checkLines(fset *loc.FileSet, n ast.Node) {
 
 }
 
-func checkBraces(fset *loc.FileSet, left ast.Node, right ast.Node) {
+func checkBraces(fset *loc.FileSet, left syntax.Node, right syntax.Node) {
 	if !style.AlignedBraces {
 		return
 	}
@@ -489,7 +489,7 @@ func checkBraces(fset *loc.FileSet, left ast.Node, right ast.Node) {
 	}
 }
 
-func checkComplexity(fset *loc.FileSet, cc map[ast.Node]int) {
+func checkComplexity(fset *loc.FileSet, cc map[syntax.Node]int) {
 	if style.Complexity.Max == 0 {
 		return
 	}
@@ -502,7 +502,7 @@ func checkComplexity(fset *loc.FileSet, cc map[ast.Node]int) {
 	}
 }
 
-func checkCaseElse(fset *loc.FileSet, caseElse map[ast.Node]int) {
+func checkCaseElse(fset *loc.FileSet, caseElse map[syntax.Node]int) {
 	if !style.RequireCaseElse {
 		return
 	}
@@ -513,7 +513,7 @@ func checkCaseElse(fset *loc.FileSet, caseElse map[ast.Node]int) {
 	}
 }
 
-func checkUsage(fset *loc.FileSet, n *ast.Ident) {
+func checkUsage(fset *loc.FileSet, n *syntax.Ident) {
 
 	if style.Usage == nil {
 		return
@@ -534,13 +534,13 @@ func checkUsage(fset *loc.FileSet, n *ast.Ident) {
 	}
 }
 
-func checkImport(fset *loc.FileSet, n *ast.ImportDecl, mod *ast.Module) {
+func checkImport(fset *loc.FileSet, n *syntax.ImportDecl, mod *syntax.Module) {
 	if !style.Unused.Modules {
 		return
 	}
 
-	imported := ast.Name(n.Module)
-	importing := ast.Name(mod.Name)
+	imported := syntax.Name(n.Module)
+	importing := syntax.Name(mod.Name)
 
 	usedModuleMu.Lock()
 	usedModules[imported] = Import{
@@ -618,19 +618,19 @@ func isWhiteListed(list []string, s string) bool {
 	return matchAny(list, s)
 }
 
-func inComponentScope(stack []ast.Node) bool {
+func inComponentScope(stack []syntax.Node) bool {
 	for _, n := range stack {
-		if _, ok := n.(*ast.ComponentTypeDecl); ok {
+		if _, ok := n.(*syntax.ComponentTypeDecl); ok {
 			return true
 		}
 	}
 	return false
 }
 
-func inGlobalScope(stack []ast.Node) bool {
+func inGlobalScope(stack []syntax.Node) bool {
 	for _, n := range stack {
 		switch n.(type) {
-		case *ast.Module, *ast.ModuleDef, *ast.GroupDecl, *ast.ModuleParameterGroup:
+		case *syntax.Module, *syntax.ModuleDef, *syntax.GroupDecl, *syntax.ModuleParameterGroup:
 		default:
 			return false
 		}
@@ -639,23 +639,23 @@ func inGlobalScope(stack []ast.Node) bool {
 	return true
 }
 
-func isPort(d *ast.ValueDecl) bool {
+func isPort(d *syntax.ValueDecl) bool {
 	return d.Kind.Kind() == token.PORT
 }
 
-func isConst(d *ast.ValueDecl) bool {
+func isConst(d *syntax.ValueDecl) bool {
 	return d.Kind.Kind() == token.CONST
 }
 
-func isVar(d *ast.ValueDecl) bool {
+func isVar(d *syntax.ValueDecl) bool {
 	return !isVarTemplate(d) && d.Kind.Kind() == token.VAR
 }
 
-func isVarTemplate(d *ast.ValueDecl) bool {
+func isVarTemplate(d *syntax.ValueDecl) bool {
 	return d.TemplateRestriction != nil
 }
 
-func isCaseElse(n *ast.CaseClause) bool {
+func isCaseElse(n *syntax.CaseClause) bool {
 	return n.Case == nil
 }
 

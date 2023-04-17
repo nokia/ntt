@@ -8,7 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/ast"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/token"
 )
 
@@ -22,7 +22,7 @@ func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 		End:   protocol.Position{Line: uint32(end.Line - 1), Character: uint32(end.Column - 1)}}
 }
 
-func getComponentTypeDecl(tree *ttcn3.Tree, node *ast.ComponentTypeDecl) protocol.DocumentSymbol {
+func getComponentTypeDecl(tree *ttcn3.Tree, node *syntax.ComponentTypeDecl) protocol.DocumentSymbol {
 	var children []protocol.DocumentSymbol = nil
 	begin := tree.Position(node.Pos())
 	end := tree.Position(node.LastTok().End())
@@ -42,14 +42,14 @@ func getComponentTypeDecl(tree *ttcn3.Tree, node *ast.ComponentTypeDecl) protoco
 		SelectionRange: setProtocolRange(begin, end),
 		Children:       children}
 }
-func getExtendsComponents(tree *ttcn3.Tree, expr []ast.Expr) []protocol.DocumentSymbol {
+func getExtendsComponents(tree *ttcn3.Tree, expr []syntax.Expr) []protocol.DocumentSymbol {
 	l := len(expr)
 	list := make([]protocol.DocumentSymbol, 0, l)
 
 	for _, v := range expr {
 		begin := tree.Position(v.Pos())
 		end := tree.Position(v.LastTok().End())
-		list = append(list, protocol.DocumentSymbol{Name: ast.Name(v), Kind: protocol.Class,
+		list = append(list, protocol.DocumentSymbol{Name: syntax.Name(v), Kind: protocol.Class,
 			Range:          setProtocolRange(begin, end),
 			SelectionRange: setProtocolRange(begin, end)})
 	}
@@ -62,7 +62,7 @@ func getExtendsComponents(tree *ttcn3.Tree, expr []ast.Expr) []protocol.Document
 	return extends
 }
 
-func getFunctionDecl(tree *ttcn3.Tree, node *ast.FuncDecl) protocol.DocumentSymbol {
+func getFunctionDecl(tree *ttcn3.Tree, node *syntax.FuncDecl) protocol.DocumentSymbol {
 	begin := tree.Position(node.Pos())
 	end := tree.Position(node.LastTok().End())
 	kind := protocol.Function
@@ -71,7 +71,7 @@ func getFunctionDecl(tree *ttcn3.Tree, node *ast.FuncDecl) protocol.DocumentSymb
 		kind = protocol.Method
 		idBegin := tree.Position(node.RunsOn.Comp.Pos())
 		idEnd := tree.Position(node.RunsOn.Comp.LastTok().End())
-		children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: ast.Name(node.RunsOn.Comp),
+		children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: syntax.Name(node.RunsOn.Comp),
 			Kind:           protocol.Class,
 			Range:          setProtocolRange(idBegin, idEnd),
 			SelectionRange: setProtocolRange(idBegin, idEnd)})
@@ -80,7 +80,7 @@ func getFunctionDecl(tree *ttcn3.Tree, node *ast.FuncDecl) protocol.DocumentSymb
 		kind = protocol.Method
 		idBegin := tree.Position(node.System.Comp.Pos())
 		idEnd := tree.Position(node.System.Comp.LastTok().End())
-		children = append(children, protocol.DocumentSymbol{Name: "system", Detail: ast.Name(node.System.Comp),
+		children = append(children, protocol.DocumentSymbol{Name: "system", Detail: syntax.Name(node.System.Comp),
 			Kind:           protocol.Class,
 			Range:          setProtocolRange(idBegin, idEnd),
 			SelectionRange: setProtocolRange(idBegin, idEnd)})
@@ -88,7 +88,7 @@ func getFunctionDecl(tree *ttcn3.Tree, node *ast.FuncDecl) protocol.DocumentSymb
 	if node.Return != nil && node.Return.Type != nil {
 		idBegin := tree.Position(node.Return.Type.Pos())
 		idEnd := tree.Position(node.Return.Type.LastTok().End())
-		children = append(children, protocol.DocumentSymbol{Name: "return", Detail: ast.Name(node.Return.Type),
+		children = append(children, protocol.DocumentSymbol{Name: "return", Detail: syntax.Name(node.Return.Type),
 			Kind:           protocol.Struct,
 			Range:          setProtocolRange(idBegin, idEnd),
 			SelectionRange: setProtocolRange(idBegin, idEnd)})
@@ -103,12 +103,12 @@ func getFunctionDecl(tree *ttcn3.Tree, node *ast.FuncDecl) protocol.DocumentSymb
 		Children:       children}
 }
 
-func getTypeList(tree *ttcn3.Tree, types []ast.Expr) []protocol.DocumentSymbol {
+func getTypeList(tree *ttcn3.Tree, types []syntax.Expr) []protocol.DocumentSymbol {
 	retv := make([]protocol.DocumentSymbol, 0, len(types))
 	for _, t := range types {
 		begin := tree.Position(t.Pos())
 		end := tree.Position(t.LastTok().End())
-		if name := ast.Name(t); len(name) > 0 {
+		if name := syntax.Name(t); len(name) > 0 {
 			retv = append(retv, protocol.DocumentSymbol{
 				Name:           name,
 				Detail:         "type",
@@ -120,7 +120,7 @@ func getTypeList(tree *ttcn3.Tree, types []ast.Expr) []protocol.DocumentSymbol {
 	return retv
 }
 
-func getPortTypeDecl(tree *ttcn3.Tree, node *ast.PortTypeDecl) protocol.DocumentSymbol {
+func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.DocumentSymbol {
 	begin := tree.Position(node.Pos())
 	end := tree.Position(node.LastTok().End())
 	kindstr := ""
@@ -138,12 +138,12 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *ast.PortTypeDecl) protocol.Document
 		begin := tree.Position(attr.Pos())
 		end := tree.Position(attr.LastTok().End())
 		switch node := attr.(type) {
-		case *ast.PortAttribute:
+		case *syntax.PortAttribute:
 			switch node.Kind.Kind() {
 			case token.ADDRESS:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
 					Name:           "address",
-					Detail:         ast.Name(node.Types[0]) + " type",
+					Detail:         syntax.Name(node.Types[0]) + " type",
 					Kind:           protocol.Struct,
 					Range:          setProtocolRange(begin, end),
 					SelectionRange: setProtocolRange(begin, end)})
@@ -156,14 +156,14 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *ast.PortTypeDecl) protocol.Document
 					Children:       getTypeList(tree, node.Types)})
 			}
 
-		case *ast.PortMapAttribute:
+		case *syntax.PortMapAttribute:
 		}
 	}
 	retv.Children = portChildren
 	return retv
 }
 
-func getSignatureDecl(tree *ttcn3.Tree, sig *ast.SignatureDecl) protocol.DocumentSymbol {
+func getSignatureDecl(tree *ttcn3.Tree, sig *syntax.SignatureDecl) protocol.DocumentSymbol {
 	begin := tree.Position(sig.Pos())
 	end := tree.Position(sig.LastTok().End())
 	kindstr := "blocking"
@@ -182,7 +182,7 @@ func getSignatureDecl(tree *ttcn3.Tree, sig *ast.SignatureDecl) protocol.Documen
 			begin := tree.Position(sig.Return.Type.Pos())
 			end := tree.Position(sig.Return.Type.LastTok().End())
 			retv.Children = append(retv.Children, protocol.DocumentSymbol{
-				Name:           ast.Name(sig.Return.Type),
+				Name:           syntax.Name(sig.Return.Type),
 				Detail:         "return type",
 				Kind:           protocol.Struct,
 				Range:          setProtocolRange(begin, end),
@@ -202,13 +202,13 @@ func getSignatureDecl(tree *ttcn3.Tree, sig *ast.SignatureDecl) protocol.Documen
 	return retv
 }
 
-func getSubTypeDecl(tree *ttcn3.Tree, node *ast.SubTypeDecl) protocol.DocumentSymbol {
+func getSubTypeDecl(tree *ttcn3.Tree, node *syntax.SubTypeDecl) protocol.DocumentSymbol {
 	var children []protocol.DocumentSymbol = nil
 	begin := tree.Position(node.Pos())
 	end := tree.Position(node.LastTok().End())
 	detail := "subtype"
 	kind := protocol.Struct
-	if listNode, ok := node.Field.Type.(*ast.ListSpec); ok {
+	if listNode, ok := node.Field.Type.(*syntax.ListSpec); ok {
 		detail = kindToStringMap[listNode.Kind.Kind()] + " of type"
 		kind = protocol.Array
 		children = getElemTypeInfo(tree, listNode.ElemType)
@@ -220,12 +220,12 @@ func getSubTypeDecl(tree *ttcn3.Tree, node *ast.SubTypeDecl) protocol.DocumentSy
 		Children:       children}
 }
 
-func getTemplateDecl(tree *ttcn3.Tree, node *ast.TemplateDecl) protocol.DocumentSymbol {
+func getTemplateDecl(tree *ttcn3.Tree, node *syntax.TemplateDecl) protocol.DocumentSymbol {
 	var modifies []protocol.DocumentSymbol = nil
 	begin := tree.Position(node.Pos())
 	end := tree.Position(node.LastTok().End())
 	if node.ModifiesTok != nil {
-		modifName := ast.Name(node.Base)
+		modifName := syntax.Name(node.Base)
 		if len(modifName) > 0 {
 			begin := tree.Position(node.Base.Pos())
 			end := tree.Position(node.Base.End())
@@ -236,7 +236,7 @@ func getTemplateDecl(tree *ttcn3.Tree, node *ast.TemplateDecl) protocol.Document
 				Children:       nil})
 		}
 	}
-	typeName := ast.Name(node.Type)
+	typeName := syntax.Name(node.Type)
 
 	return protocol.DocumentSymbol{Name: node.Name.String(), Detail: "template " + typeName, Kind: protocol.Constant,
 		Range:          setProtocolRange(begin, end),
@@ -244,12 +244,12 @@ func getTemplateDecl(tree *ttcn3.Tree, node *ast.TemplateDecl) protocol.Document
 		Children:       modifies}
 }
 
-func getValueDecls(tree *ttcn3.Tree, val *ast.ValueDecl) []protocol.DocumentSymbol {
+func getValueDecls(tree *ttcn3.Tree, val *syntax.ValueDecl) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, 2)
 	begin := tree.Position(val.Pos())
 	end := tree.Position(val.LastTok().End())
 	kind := protocol.Variable
-	typeName := ast.Name(val.Type)
+	typeName := syntax.Name(val.Type)
 	if len(typeName) > 0 {
 		typeName = " " + typeName
 	}
@@ -263,7 +263,7 @@ func getValueDecls(tree *ttcn3.Tree, val *ast.ValueDecl) []protocol.DocumentSymb
 	}
 
 	for _, name := range val.Decls {
-		vdecls = append(vdecls, protocol.DocumentSymbol{Name: ast.Name(name), Detail: val.Kind.String() + typeName, Kind: kind,
+		vdecls = append(vdecls, protocol.DocumentSymbol{Name: syntax.Name(name), Detail: val.Kind.String() + typeName, Kind: kind,
 			Range:          setProtocolRange(begin, end),
 			SelectionRange: setProtocolRange(begin, end),
 			Children:       nil})
@@ -271,12 +271,12 @@ func getValueDecls(tree *ttcn3.Tree, val *ast.ValueDecl) []protocol.DocumentSymb
 	return vdecls
 }
 
-func getComponentVars(tree *ttcn3.Tree, stmt []ast.Stmt) []protocol.DocumentSymbol {
+func getComponentVars(tree *ttcn3.Tree, stmt []syntax.Stmt) []protocol.DocumentSymbol {
 	vdecls := make([]protocol.DocumentSymbol, 0, len(stmt))
 	for _, v := range stmt {
-		if n, ok := v.(*ast.DeclStmt); ok {
+		if n, ok := v.(*syntax.DeclStmt); ok {
 			switch node := n.Decl.(type) {
-			case *ast.ValueDecl:
+			case *syntax.ValueDecl:
 				vdecls = append(vdecls, getValueDecls(tree, node)...)
 			default:
 			}
@@ -285,13 +285,13 @@ func getComponentVars(tree *ttcn3.Tree, stmt []ast.Stmt) []protocol.DocumentSymb
 	return vdecls
 }
 
-func getElemTypeInfo(tree *ttcn3.Tree, n ast.TypeSpec) []protocol.DocumentSymbol {
+func getElemTypeInfo(tree *ttcn3.Tree, n syntax.TypeSpec) []protocol.DocumentSymbol {
 	typeSymb := make([]protocol.DocumentSymbol, 0, 1)
 	begin := tree.Position(n.Pos())
 	end := tree.Position(n.LastTok().End())
 	switch node := n.(type) {
-	case *ast.RefSpec:
-		typeSymb = append(typeSymb, protocol.DocumentSymbol{Name: ast.Name(node), Detail: "element type", Kind: protocol.Struct,
+	case *syntax.RefSpec:
+		typeSymb = append(typeSymb, protocol.DocumentSymbol{Name: syntax.Name(node), Detail: "element type", Kind: protocol.Struct,
 			Range:          setProtocolRange(begin, end),
 			SelectionRange: setProtocolRange(begin, end),
 			Children:       nil})
@@ -302,7 +302,7 @@ func getElemTypeInfo(tree *ttcn3.Tree, n ast.TypeSpec) []protocol.DocumentSymbol
 func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 	list := make([]interface{}, 0, 20)
 
-	tree.Root.Inspect(func(n ast.Node) bool {
+	tree.Root.Inspect(func(n syntax.Node) bool {
 
 		if n == nil {
 			return false
@@ -310,26 +310,26 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 		begin := tree.Position(n.Pos())
 		end := tree.Position(n.LastTok().End())
 		switch node := n.(type) {
-		case *ast.FuncDecl:
+		case *syntax.FuncDecl:
 			if node.Name == nil {
 				// looks like a tree error
 				return false
 			}
 			list = append(list, getFunctionDecl(tree, node))
 			return false
-		case *ast.ComponentTypeDecl:
+		case *syntax.ComponentTypeDecl:
 			if node.Name == nil {
 				return false
 			}
 			list = append(list, getComponentTypeDecl(tree, node))
 			return false
-		case *ast.PortTypeDecl:
+		case *syntax.PortTypeDecl:
 			if node.Name == nil {
 				return false
 			}
 			list = append(list, getPortTypeDecl(tree, node))
 			return false
-		case *ast.EnumTypeDecl:
+		case *syntax.EnumTypeDecl:
 			if node.Name == nil {
 				return false
 			}
@@ -338,19 +338,19 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
-		case *ast.SignatureDecl:
+		case *syntax.SignatureDecl:
 			if node.Name == nil {
 				return false
 			}
 			list = append(list, getSignatureDecl(tree, node))
 			return false
-		case *ast.SubTypeDecl:
+		case *syntax.SubTypeDecl:
 			if node.Field == nil || node.Field.Name == nil {
 				return false
 			}
 			list = append(list, getSubTypeDecl(tree, node))
 			return false
-		case *ast.StructTypeDecl:
+		case *syntax.StructTypeDecl:
 			if node.Name == nil {
 				return false
 			}
@@ -360,7 +360,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
-		case *ast.BehaviourTypeDecl:
+		case *syntax.BehaviourTypeDecl:
 			if node.Name == nil {
 				return false
 			}
@@ -369,12 +369,12 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
-		case *ast.ValueDecl:
+		case *syntax.ValueDecl:
 			for _, vdecl := range getValueDecls(tree, node) {
 				list = append(list, vdecl)
 			}
 			return false
-		case *ast.TemplateDecl:
+		case *syntax.TemplateDecl:
 			if node.Name == nil {
 				return false
 			}
