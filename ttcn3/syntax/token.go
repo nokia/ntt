@@ -1,7 +1,4 @@
-// Package token defines constants representing the lexical tokens of the TTCN-3
-// programming language and basic operations on tokens (printing, predicates).
-//
-package token
+package syntax
 
 import (
 	"strconv"
@@ -351,7 +348,6 @@ var tokens = [...]string{
 // token character sequence (e.g., for the token ADD, the string is
 // "+"). For all other tokens the string corresponds to the token
 // constant name (e.g. for the token IDENT, the string is "IDENT").
-//
 func (tok Kind) String() string {
 	s := ""
 	if 0 <= tok && tok < Kind(len(tokens)) {
@@ -368,7 +364,6 @@ func (tok Kind) String() string {
 // starting with precedence 1 up to unary operators. The highest
 // precedence serves as "catch-all" precedence for selector,
 // indexing, and other operator and delimiter tokens.
-//
 const (
 	LowestPrec  = 0 // non-operators
 	UnaryPrec   = 6
@@ -378,7 +373,6 @@ const (
 // Precedence returns the operator precedence of the binary
 // operator op. If op is not a binary operator, the result
 // is LowestPrecedence.
-//
 func (tok Kind) Precedence() int {
 	switch tok {
 	case ASSIGN:
@@ -433,7 +427,6 @@ func init() {
 }
 
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
-//
 func Lookup(ident string) Kind {
 	if tok, isKeyword := keywords[ident]; isKeyword {
 		return tok
@@ -454,15 +447,12 @@ func Unquote(s string) (string, error) {
 
 // IsLiteral returns true for tokens corresponding to identifiers
 // and basic type literals; it returns false otherwise.
-//
 func (tok Kind) IsLiteral() bool { return literal_beg < tok && tok < literal_end }
 
 // IsOperator returns true for tokens corresponding to operators and
 // delimiters; it returns false otherwise.
-//
 func (tok Kind) IsOperator() bool { return operator_beg < tok && tok < operator_end }
 
 // IsKeyword returns true for tokens corresponding to keywords;
 // it returns false otherwise.
-//
 func (tok Kind) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/loc"
-	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 // IsNil returns true if the node is nil.
@@ -58,7 +57,7 @@ func Name(n Node) string {
 		}
 		return name
 	case *BranchStmt:
-		if n.Tok.Kind() == tokn.LABEL {
+		if n.Tok.Kind() == LABEL {
 			return Name(n.Label)
 		}
 	case *ControlPart:
@@ -138,7 +137,7 @@ L:
 		}
 
 		switch tok.Kind() {
-		case tokn.COMMENT:
+		case COMMENT:
 			curr := newSpan(fset, tok)
 			dist := prev.Begin.Line - curr.End.Line
 			if dist > 1 {
@@ -172,7 +171,7 @@ L:
 				ret = text + ret
 			}
 
-		case tokn.EXTERNAL, tokn.PRIVATE, tokn.PUBLIC, tokn.FRIEND:
+		case EXTERNAL, PRIVATE, PUBLIC, FRIEND:
 			// Modifiers might not necessarily be part
 			// of the Node and are just skipped over.
 		default:

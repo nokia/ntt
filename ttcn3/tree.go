@@ -8,7 +8,6 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
@@ -202,7 +201,7 @@ func (t *Tree) ModulePars() []*Node {
 			return true
 
 		case *syntax.ValueDecl:
-			if n.Kind.Kind() != token.MODULEPAR && n.Kind.Kind() != token.ILLEGAL {
+			if n.Kind.Kind() != syntax.MODULEPAR && n.Kind.Kind() != syntax.ILLEGAL {
 				return false
 			}
 			return true
@@ -342,7 +341,7 @@ func (f *finder) lookup(n syntax.Expr, tree *Tree) []*Node {
 }
 
 func (f *finder) ident(id *syntax.Ident, tree *Tree) []*Node {
-	if p, ok := tree.ParentOf(id).(*syntax.BinaryExpr); ok && id == p.X && p.Op.Kind() == token.ASSIGN {
+	if p, ok := tree.ParentOf(id).(*syntax.BinaryExpr); ok && id == p.X && p.Op.Kind() == syntax.ASSIGN {
 		switch pp := tree.ParentOf(p).(type) {
 		case *syntax.CompositeLiteral:
 			var results []*Node

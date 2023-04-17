@@ -6,7 +6,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/nokia/ntt/internal/loc"
-	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 // An ErrorHandler may be provided to Scanner.Init. If a syntax error is
@@ -235,9 +234,9 @@ func (s *Scanner) scanDigits() {
 	}
 }
 
-func (s *Scanner) scanNumber() (tok tokn.Kind, lit string) {
+func (s *Scanner) scanNumber() (tok Kind, lit string) {
 	offs := s.offset
-	tok = tokn.INT
+	tok = INT
 
 	if s.ch == '0' {
 		s.next()
@@ -251,14 +250,14 @@ func (s *Scanner) scanNumber() (tok tokn.Kind, lit string) {
 		if s.rdOffset < len(s.src) && s.src[s.rdOffset] == '.' {
 			goto out
 		}
-		tok = tokn.FLOAT
+		tok = FLOAT
 		s.next()
 		s.scanDigits()
 	}
 
 	// exponent
 	if s.ch == 'e' || s.ch == 'E' {
-		tok = tokn.FLOAT
+		tok = FLOAT
 		s.next()
 		if s.ch == '-' || s.ch == '+' {
 			s.next()
@@ -269,7 +268,7 @@ func (s *Scanner) scanNumber() (tok tokn.Kind, lit string) {
 	// FIXME: In standard TTCN-3:2014 some identifiers start with a number.
 	//        For instance predefined function 291oolea.
 	if isAlpha(s.ch) {
-		tok = tokn.ILLEGAL
+		tok = ILLEGAL
 		for isAlpha(s.ch) || isDigit(s.ch) {
 			s.next()
 		}
@@ -351,7 +350,7 @@ func (s *Scanner) skipWhitespace() {
 	}
 }
 
-func (s *Scanner) switch2(ch rune, tok1, tok2 tokn.Kind) tokn.Kind {
+func (s *Scanner) switch2(ch rune, tok1, tok2 Kind) Kind {
 	if s.ch == ch {
 		s.next()
 		return tok1
@@ -384,7 +383,7 @@ func (s *Scanner) switch2(ch rune, tok1, tok2 tokn.Kind) tokn.Kind {
 // Scan adds line information to the file added to the file
 // set with Init. Kind positions are relative to that file
 // and thus relative to the file set.
-func (s *Scanner) Scan() (pos loc.Pos, tok tokn.Kind, lit string) {
+func (s *Scanner) Scan() (pos loc.Pos, tok Kind, lit string) {
 	s.skipWhitespace()
 
 	// current token start
@@ -396,9 +395,9 @@ func (s *Scanner) Scan() (pos loc.Pos, tok tokn.Kind, lit string) {
 		lit = s.scanIdentifier()
 		if len(lit) > 1 {
 			// keywords are longer than one letter - avoid lookup otherwise
-			tok = tokn.Lookup(lit)
+			tok = Lookup(lit)
 		} else {
-			tok = tokn.IDENT
+			tok = IDENT
 		}
 	case isDigit(ch):
 		tok, lit = s.scanNumber()
@@ -406,124 +405,124 @@ func (s *Scanner) Scan() (pos loc.Pos, tok tokn.Kind, lit string) {
 		s.next() // always make progress
 		switch ch {
 		case -1:
-			tok = tokn.EOF
+			tok = EOF
 		case '"':
-			tok = tokn.STRING
+			tok = STRING
 			lit = s.scanString()
 		case '\'':
-			tok = tokn.BSTRING
+			tok = BSTRING
 			lit = s.scanBString()
 		case '@':
 			if s.ch == '>' {
-				tok = tokn.ROR
+				tok = ROR
 				s.next()
 			} else {
-				tok = tokn.MODIF
+				tok = MODIF
 				lit = s.scanModifier()
 			}
 		case '#':
-			tok = tokn.PREPROC
+			tok = PREPROC
 			lit = s.scanPreproc()
 		case '%':
-			tok = tokn.IDENT
+			tok = IDENT
 			lit = s.scanTitanMacro()
 		case '.':
-			tok = s.switch2('.', tokn.RANGE, tokn.DOT)
+			tok = s.switch2('.', RANGE, DOT)
 		case ',':
-			tok = tokn.COMMA
+			tok = COMMA
 		case ';':
-			tok = tokn.SEMICOLON
+			tok = SEMICOLON
 		case '(':
-			tok = tokn.LPAREN
+			tok = LPAREN
 		case ')':
-			tok = tokn.RPAREN
+			tok = RPAREN
 		case '[':
-			tok = tokn.LBRACK
+			tok = LBRACK
 		case ']':
-			tok = tokn.RBRACK
+			tok = RBRACK
 		case '{':
-			tok = tokn.LBRACE
+			tok = LBRACE
 		case '}':
-			tok = tokn.RBRACE
+			tok = RBRACE
 		case '+':
-			tok = tokn.ADD
+			tok = ADD
 		case '-':
-			tok = s.switch2('>', tokn.REDIR, tokn.SUB)
+			tok = s.switch2('>', REDIR, SUB)
 		case '*':
-			tok = tokn.MUL
+			tok = MUL
 		case '/':
 			if s.ch == '/' || s.ch == '*' {
 				comment := s.scanComment()
-				tok = tokn.COMMENT
+				tok = COMMENT
 				lit = comment
 			} else {
-				tok = tokn.DIV
+				tok = DIV
 			}
 		case ':':
 			switch s.ch {
 			case '=':
-				tok = tokn.ASSIGN
+				tok = ASSIGN
 				s.next()
 			case ':':
-				tok = tokn.COLONCOLON
+				tok = COLONCOLON
 				s.next()
 			default:
-				tok = tokn.COLON
+				tok = COLON
 			}
 		case '>':
 			switch s.ch {
 			case '>':
-				tok = tokn.SHR
+				tok = SHR
 				s.next()
 			case '=':
-				tok = tokn.GE
+				tok = GE
 				s.next()
 			default:
-				tok = tokn.GT
+				tok = GT
 			}
 
 		case '<':
 			switch s.ch {
 			case '<':
-				tok = tokn.SHL
+				tok = SHL
 				s.next()
 			case '@':
-				tok = tokn.ROL
+				tok = ROL
 				s.next()
 			case '=':
-				tok = tokn.LE
+				tok = LE
 				s.next()
 			default:
-				tok = tokn.LT
+				tok = LT
 			}
 
 		case '=':
 			switch s.ch {
 			case '=':
-				tok = tokn.EQ
+				tok = EQ
 				s.next()
 			case '>':
-				tok = tokn.DECODE
+				tok = DECODE
 				s.next()
 			default:
-				tok = tokn.ILLEGAL
+				tok = ILLEGAL
 				lit = "="
 				s.error(s.offset, fmt.Sprintf("stray %q", "="))
 
 			}
 		case '!':
-			tok = s.switch2('=', tokn.NE, tokn.EXCL)
+			tok = s.switch2('=', NE, EXCL)
 		case '&':
-			tok = tokn.CONCAT
+			tok = CONCAT
 		case '?':
-			tok = tokn.ANY
+			tok = ANY
 
 		default:
 			// next reports unexpected BOMs - don't repeat
 			if ch != bom {
 				s.error(s.file.Offset(pos), fmt.Sprintf("illegal character %#U", ch))
 			}
-			tok = tokn.ILLEGAL
+			tok = ILLEGAL
 			lit = string(ch)
 		}
 	}

@@ -4,97 +4,96 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/loc"
-	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 type tt struct {
-	tok tokn.Kind
+	tok Kind
 	lit string
 }
 
 type elt struct {
-	tok tokn.Kind
+	tok Kind
 	lit string
 }
 
 var ttokens = [...]elt{
 	// value tokens
-	{tokn.IDENT, `_`},
-	{tokn.IDENT, `_foo`},
-	{tokn.IDENT, `f__2bar`},
-	{tokn.IDENT, `%definitionId`}, // Titan macros are like identifiers
+	{IDENT, `_`},
+	{IDENT, `_foo`},
+	{IDENT, `f__2bar`},
+	{IDENT, `%definitionId`}, // Titan macros are like identifiers
 
-	{tokn.INT, `0`},
-	{tokn.INT, `1`},
-	{tokn.INT, `100000000000000000000000000000`},
-	{tokn.INT, `3`},
+	{INT, `0`},
+	{INT, `1`},
+	{INT, `100000000000000000000000000000`},
+	{INT, `3`},
 
-	{tokn.FLOAT, `0.0`},
-	{tokn.FLOAT, `0.00001`},
-	{tokn.FLOAT, `1E2`},
-	{tokn.FLOAT, `1e2`},
-	{tokn.FLOAT, `12.3e-4`},
+	{FLOAT, `0.0`},
+	{FLOAT, `0.00001`},
+	{FLOAT, `1E2`},
+	{FLOAT, `1e2`},
+	{FLOAT, `12.3e-4`},
 
-	{tokn.STRING, `"@foo "`},
-	{tokn.STRING, `""`},
-	{tokn.STRING, `"\""`},
-	{tokn.STRING, `"\\"`},
-	{tokn.STRING, `""""`},
+	{STRING, `"@foo "`},
+	{STRING, `""`},
+	{STRING, `"\""`},
+	{STRING, `"\\"`},
+	{STRING, `""""`},
 
-	{tokn.BSTRING, `'1101'b`},
-	{tokn.BSTRING, `'11?*1'x`},
+	{BSTRING, `'1101'b`},
+	{BSTRING, `'11?*1'x`},
 
-	{tokn.MODIF, `@`},
-	{tokn.MODIF, `@lazy`},
-	{tokn.MODIF, `@123`},
+	{MODIF, `@`},
+	{MODIF, `@lazy`},
+	{MODIF, `@123`},
 
-	{tokn.ADD, `+`},
-	{tokn.SUB, `-`},
-	{tokn.MUL, `*`},
-	{tokn.DIV, `/`},
-	{tokn.MOD, `mod`},
-	{tokn.REM, `rem`},
+	{ADD, `+`},
+	{SUB, `-`},
+	{MUL, `*`},
+	{DIV, `/`},
+	{MOD, `mod`},
+	{REM, `rem`},
 
-	{tokn.AND, `and`},
-	{tokn.OR, `or`},
-	{tokn.XOR, `xor`},
-	{tokn.NOT, `not`},
+	{AND, `and`},
+	{OR, `or`},
+	{XOR, `xor`},
+	{NOT, `not`},
 
-	{tokn.AND4B, `and4b`},
-	{tokn.OR4B, `or4b`},
-	{tokn.XOR4B, `xor4b`},
-	{tokn.NOT4B, `not4b`},
-	{tokn.SHR, `>>`},
-	{tokn.SHL, `<<`},
-	{tokn.ROR, `@>`},
-	{tokn.ROL, `<@`},
-	{tokn.CONCAT, `&`},
+	{AND4B, `and4b`},
+	{OR4B, `or4b`},
+	{XOR4B, `xor4b`},
+	{NOT4B, `not4b`},
+	{SHR, `>>`},
+	{SHL, `<<`},
+	{ROR, `@>`},
+	{ROL, `<@`},
+	{CONCAT, `&`},
 
-	{tokn.REDIR, `->`},
-	{tokn.ANY, `?`},
-	{tokn.EXCL, `!`},
-	{tokn.RANGE, `..`},
-	{tokn.ASSIGN, `:=`},
+	{REDIR, `->`},
+	{ANY, `?`},
+	{EXCL, `!`},
+	{RANGE, `..`},
+	{ASSIGN, `:=`},
 
-	{tokn.EQ, `==`},
-	{tokn.NE, `!=`},
-	{tokn.LT, `<`},
-	{tokn.LE, `<=`},
-	{tokn.GT, `>`},
-	{tokn.GE, `>=`},
+	{EQ, `==`},
+	{NE, `!=`},
+	{LT, `<`},
+	{LE, `<=`},
+	{GT, `>`},
+	{GE, `>=`},
 
-	{tokn.LPAREN, `(`},
-	{tokn.LBRACK, `[`},
-	{tokn.LBRACE, `{`},
-	{tokn.COMMA, `,`},
-	{tokn.DOT, `.`},
+	{LPAREN, `(`},
+	{LBRACK, `[`},
+	{LBRACE, `{`},
+	{COMMA, `,`},
+	{DOT, `.`},
 
-	{tokn.RPAREN, `)`},
-	{tokn.RBRACE, `}`},
-	{tokn.RBRACK, `]`},
-	{tokn.SEMICOLON, `;`},
-	{tokn.COLON, `:`},
-	{tokn.COLONCOLON, `::`},
+	{RPAREN, `)`},
+	{RBRACE, `}`},
+	{RBRACK, `]`},
+	{SEMICOLON, `;`},
+	{COLON, `:`},
+	{COLONCOLON, `::`},
 }
 
 const whitespace string = "\t \n \r\n\n"
@@ -132,7 +131,7 @@ func TestScan(t *testing.T) {
 	for {
 		pos, tok, lit := s.Scan()
 
-		if tok == tokn.EOF {
+		if tok == EOF {
 			break
 		}
 

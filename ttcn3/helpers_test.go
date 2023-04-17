@@ -9,7 +9,6 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 const CURSOR = "¶"
@@ -53,7 +52,7 @@ func parentNodes(tree *ttcn3.Tree, cursor loc.Pos) (n syntax.Expr, s []syntax.No
 		return nil, nil
 	}
 
-	if tok, ok := s[0].(syntax.Token); ok && tok.Kind() == token.IDENT {
+	if tok, ok := s[0].(syntax.Token); ok && tok.Kind() == syntax.IDENT {
 		n, s = s[1].(syntax.Expr), s[2:]
 	}
 	if len(s) > 0 {

@@ -16,7 +16,6 @@ import (
 	"io/ioutil"
 
 	"github.com/nokia/ntt/internal/loc"
-	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 // A Mode value is a set of flags (or 0).
@@ -135,15 +134,15 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList
 
 	// parse source
 	p.init(fset, filename, text, AllErrors)
-	for p.tok != tokn.EOF {
+	for p.tok != EOF {
 		nodes.Nodes = append(nodes.Nodes, p.parse())
 
-		if p.tok != tokn.EOF && !topLevelTokens[p.tok] {
+		if p.tok != EOF && !topLevelTokens[p.tok] {
 			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))
 			break
 		}
 
-		if p.tok == tokn.COMMA || p.tok == tokn.SEMICOLON {
+		if p.tok == COMMA || p.tok == SEMICOLON {
 			p.consume()
 		}
 

@@ -8,7 +8,6 @@ import (
 	_ "github.com/nokia/ntt/builtins"
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 func Eval(n syntax.Node, env runtime.Scope) runtime.Object {
@@ -144,7 +143,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		return result
 
 	case *syntax.ExprStmt:
-		if n, ok := n.Expr.(*syntax.BinaryExpr); ok && n.Op.Kind() == token.ASSIGN {
+		if n, ok := n.Expr.(*syntax.BinaryExpr); ok && n.Op.Kind() == syntax.ASSIGN {
 			return evalAssign(n.X, n.Y, env)
 		}
 		return eval(n.Expr, env)
@@ -267,13 +266,13 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 
 	case *syntax.BranchStmt:
 		switch n.Tok.Kind() {
-		case token.BREAK:
+		case syntax.BREAK:
 			return runtime.Break
-		case token.CONTINUE:
+		case syntax.CONTINUE:
 			return runtime.Continue
-		case token.LABEL:
+		case syntax.LABEL:
 			return nil
-		case token.GOTO:
+		case syntax.GOTO:
 			return runtime.Errorf("goto statement not implemented")
 		}
 
@@ -315,39 +314,39 @@ func evalListSpec(t *syntax.ListSpec, env runtime.Scope) runtime.Object {
 
 func evalLiteral(n *syntax.ValueLiteral, env runtime.Scope) runtime.Object {
 	switch n.Tok.Kind() {
-	case token.INT:
+	case syntax.INT:
 		return runtime.NewInt(n.Tok.String())
-	case token.FLOAT:
+	case syntax.FLOAT:
 		return runtime.NewFloat(n.Tok.String())
-	case token.TRUE:
+	case syntax.TRUE:
 		return runtime.NewBool(true)
-	case token.FALSE:
+	case syntax.FALSE:
 		return runtime.NewBool(false)
-	case token.NONE:
+	case syntax.NONE:
 		return runtime.NoneVerdict
-	case token.PASS:
+	case syntax.PASS:
 		return runtime.PassVerdict
-	case token.INCONC:
+	case syntax.INCONC:
 		return runtime.InconcVerdict
-	case token.FAIL:
+	case syntax.FAIL:
 		return runtime.FailVerdict
-	case token.ERROR:
+	case syntax.ERROR:
 		return runtime.ErrorVerdict
-	case token.STRING:
-		s, err := token.Unquote(n.Tok.String())
+	case syntax.STRING:
+		s, err := syntax.Unquote(n.Tok.String())
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
 		return &runtime.String{Value: []rune(s)}
-	case token.BSTRING:
+	case syntax.BSTRING:
 		b, err := runtime.NewBinarystring(n.Tok.String())
 		if err != nil {
 			return runtime.Errorf("%s", err.Error())
 		}
 		return b
-	case token.MUL:
+	case syntax.MUL:
 		return runtime.AnyOrNone
-	case token.ANY:
+	case syntax.ANY:
 		return runtime.Any
 
 	}
@@ -361,7 +360,7 @@ func evalComposite(n *syntax.CompositeLiteral, env runtime.Scope) runtime.Object
 	}
 
 	// The first element tells us, if we expect a value list or an assignment list.
-	if first, ok := n.List[0].(*syntax.BinaryExpr); ok && first.Op.Kind() == token.ASSIGN {
+	if first, ok := n.List[0].(*syntax.BinaryExpr); ok && first.Op.Kind() == syntax.ASSIGN {
 		if _, ok := first.X.(*syntax.Ident); ok {
 			return evalRecordAssignmentList(n.List, env)
 		} else {
@@ -386,7 +385,7 @@ func evalMapAssignmentList(exprs []syntax.Expr, env runtime.Scope) runtime.Objec
 	for _, expr := range exprs {
 
 		n, ok := expr.(*syntax.BinaryExpr)
-		if !ok || n.Op.Kind() != token.ASSIGN {
+		if !ok || n.Op.Kind() != syntax.ASSIGN {
 			return runtime.Errorf("missing key/value. got=%T", n)
 		}
 
@@ -424,7 +423,7 @@ func evalRecordAssignmentList(exprs []syntax.Expr, env runtime.Scope) runtime.Ob
 	for _, expr := range exprs {
 
 		n, ok := expr.(*syntax.BinaryExpr)
-		if !ok || n.Op.Kind() != token.ASSIGN {
+		if !ok || n.Op.Kind() != syntax.ASSIGN {
 			return runtime.Errorf("missing key/value. got=%T", n)
 		}
 
@@ -448,14 +447,14 @@ func evalUnary(n *syntax.UnaryExpr, env runtime.Scope) runtime.Object {
 	}
 
 	switch n.Op.Kind() {
-	case token.ADD:
+	case syntax.ADD:
 		switch val := val.(type) {
 		case runtime.Int:
 			return val
 		case runtime.Float:
 			return val
 		}
-	case token.SUB:
+	case syntax.SUB:
 		switch val := val.(type) {
 		case runtime.Int:
 			return runtime.Int{Int: val.Neg(val.Int)}
@@ -463,11 +462,11 @@ func evalUnary(n *syntax.UnaryExpr, env runtime.Scope) runtime.Object {
 			return -val
 
 		}
-	case token.NOT:
+	case syntax.NOT:
 		if b, ok := val.(runtime.Bool); ok {
 			return !b
 		}
-	case token.NOT4B:
+	case syntax.NOT4B:
 		if b, ok := val.(*runtime.Binarystring); ok {
 			z := new(big.Int).Abs(new(big.Int).Not(b.Value))
 			return &runtime.Binarystring{String: runtime.BigIntToBinaryString(z, b.Unit), Value: z, Unit: b.Unit, Length: len(z.Text(b.Unit.Base()))}
@@ -494,10 +493,10 @@ func evalBinary(n *syntax.BinaryExpr, env runtime.Scope) runtime.Object {
 	}
 
 	switch {
-	case op == token.EQ:
+	case op == syntax.EQ:
 		return runtime.NewBool(x.Equal(y))
 
-	case op == token.NE:
+	case op == syntax.NE:
 		return runtime.NewBool(!x.Equal(y))
 
 	case x.Type() == runtime.INTEGER:
@@ -519,44 +518,44 @@ func evalBinary(n *syntax.BinaryExpr, env runtime.Scope) runtime.Object {
 	return runtime.Errorf("unknown operator: %s %s %s", x.Inspect(), op, y.Inspect())
 }
 
-func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env runtime.Scope) runtime.Object {
+func evalIntBinary(x runtime.Int, y runtime.Int, op syntax.Kind, env runtime.Scope) runtime.Object {
 	switch op {
-	case token.ADD:
+	case syntax.ADD:
 		return runtime.Int{Int: new(big.Int).Add(x.Int, y.Int)}
 
-	case token.SUB:
+	case syntax.SUB:
 		return runtime.Int{Int: new(big.Int).Sub(x.Int, y.Int)}
 
-	case token.MUL:
+	case syntax.MUL:
 		return runtime.Int{Int: new(big.Int).Mul(x.Int, y.Int)}
 
-	case token.DIV:
+	case syntax.DIV:
 		return runtime.Int{Int: new(big.Int).Div(x.Int, y.Int)}
 
-	case token.REM:
+	case syntax.REM:
 		return runtime.Int{Int: new(big.Int).Rem(x.Int, y.Int)}
 
-	case token.MOD:
+	case syntax.MOD:
 		return runtime.Int{Int: new(big.Int).Mod(x.Int, y.Int)}
 
-	case token.LT:
+	case syntax.LT:
 		if x.Cmp(y.Int) < 0 {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
-	case token.LE:
+	case syntax.LE:
 		if x.Cmp(y.Int) <= 0 {
 			return runtime.NewBool(true)
 		}
 
-	case token.GT:
+	case syntax.GT:
 		if x.Cmp(y.Int) > 0 {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
-	case token.GE:
+	case syntax.GE:
 		if x.Cmp(y.Int) >= 0 {
 			return runtime.NewBool(true)
 		}
@@ -565,38 +564,38 @@ func evalIntBinary(x runtime.Int, y runtime.Int, op token.Kind, env runtime.Scop
 	return runtime.Errorf("unknown operator: integer %s integer", op)
 }
 
-func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env runtime.Scope) runtime.Object {
+func evalFloatBinary(x runtime.Float, y runtime.Float, op syntax.Kind, env runtime.Scope) runtime.Object {
 	switch op {
-	case token.ADD:
+	case syntax.ADD:
 		return runtime.Float(x + y)
 
-	case token.SUB:
+	case syntax.SUB:
 		return runtime.Float(x - y)
 
-	case token.MUL:
+	case syntax.MUL:
 		return runtime.Float(x * y)
 
-	case token.DIV:
+	case syntax.DIV:
 		return runtime.Float(x / y)
 
-	case token.LT:
+	case syntax.LT:
 		if x < y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
-	case token.LE:
+	case syntax.LE:
 		if x <= y {
 			return runtime.NewBool(true)
 		}
 
-	case token.GT:
+	case syntax.GT:
 		if x > y {
 			return runtime.NewBool(true)
 		}
 		return runtime.NewBool(false)
 
-	case token.GE:
+	case syntax.GE:
 		if x >= y {
 			return runtime.NewBool(true)
 		}
@@ -605,36 +604,36 @@ func evalFloatBinary(x runtime.Float, y runtime.Float, op token.Kind, env runtim
 	return runtime.Errorf("unknown operator: float %s float", op)
 }
 
-func evalBoolBinary(x bool, y bool, op token.Kind, env runtime.Scope) runtime.Object {
+func evalBoolBinary(x bool, y bool, op syntax.Kind, env runtime.Scope) runtime.Object {
 	switch op {
-	case token.AND:
+	case syntax.AND:
 		return runtime.NewBool(x && y)
-	case token.OR:
+	case syntax.OR:
 		return runtime.NewBool(x || y)
-	case token.XOR:
+	case syntax.XOR:
 		return runtime.NewBool(x && !y || !x && y)
 	}
 
 	return runtime.Errorf("unknown operator: boolean %s boolean", op)
 }
 
-func evalStringBinary(x string, y string, op token.Kind, env runtime.Scope) runtime.Object {
-	if op == token.CONCAT {
+func evalStringBinary(x string, y string, op syntax.Kind, env runtime.Scope) runtime.Object {
+	if op == syntax.CONCAT {
 		return &runtime.String{Value: []rune(string(x) + string(y))}
 	}
 	return runtime.Errorf("unknown operator: charstring %s charstring", op)
 
 }
 
-func evalBinarystringBinary(x *runtime.Binarystring, y *runtime.Binarystring, op token.Kind, env runtime.Scope) runtime.Object {
+func evalBinarystringBinary(x *runtime.Binarystring, y *runtime.Binarystring, op syntax.Kind, env runtime.Scope) runtime.Object {
 	switch op {
-	case token.AND4B:
+	case syntax.AND4B:
 		z := new(big.Int).And(x.Value, y.Value)
 		return &runtime.Binarystring{String: runtime.BigIntToBinaryString(z, x.Unit), Value: z, Unit: x.Unit, Length: len(z.Text(x.Unit.Base()))}
-	case token.OR4B:
+	case syntax.OR4B:
 		z := new(big.Int).Or(x.Value, y.Value)
 		return &runtime.Binarystring{String: runtime.BigIntToBinaryString(z, x.Unit), Value: z, Unit: x.Unit, Length: len(z.Text(x.Unit.Base()))}
-	case token.XOR4B:
+	case syntax.XOR4B:
 		z := new(big.Int).Xor(x.Value, y.Value)
 		return &runtime.Binarystring{String: runtime.BigIntToBinaryString(z, x.Unit), Value: z, Unit: x.Unit, Length: len(z.Text(x.Unit.Base()))}
 	}
@@ -748,7 +747,7 @@ func evalEnumTypeDeclRange(expr syntax.Expr) ([]runtime.EnumRange, error) {
 				argRet.First, argErr = evalInt(argT)
 				argRet.Last = argRet.First
 			case *syntax.BinaryExpr:
-				if argT.Op.Kind() != token.RANGE {
+				if argT.Op.Kind() != syntax.RANGE {
 					argErr = fmt.Errorf("BinaryExpr type %s", argT.Op.Kind())
 					break
 				}
@@ -886,7 +885,7 @@ func evalEnumValDecl(d *syntax.Declarator, enumType *runtime.EnumType) runtime.O
 func evalInt(n syntax.Node) (int, error) {
 	switch t := n.(type) {
 	case *syntax.ValueLiteral:
-		if t.Tok.Kind() != token.INT {
+		if t.Tok.Kind() != syntax.INT {
 			return 0, fmt.Errorf("ValueLiteral unexpected %s", t.Tok.Kind())
 		}
 		val, err := strconv.Atoi(t.Tok.String())
@@ -900,9 +899,9 @@ func evalInt(n syntax.Node) (int, error) {
 			return 0, fmt.Errorf("UnaryExpr '%v', %v", t, err)
 		}
 		switch t.Op.Kind() {
-		case token.ADD:
+		case syntax.ADD:
 			break
-		case token.SUB:
+		case syntax.SUB:
 			val = -val
 		default:
 			return 0, fmt.Errorf("UnaryExpr unexpected token type %v", t.Op.Kind())

@@ -5,7 +5,6 @@ import (
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 type Scope struct {
@@ -244,7 +243,7 @@ func (scp *Scope) add(n syntax.Node) error {
 		scp.add(n.Decl)
 
 	case *syntax.BranchStmt:
-		if n.Tok.Kind() == token.LABEL {
+		if n.Tok.Kind() == syntax.LABEL {
 			scp.Insert(n, n.Label)
 		}
 

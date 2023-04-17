@@ -10,7 +10,6 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 type SemanticTokenType uint32
@@ -294,9 +293,9 @@ func DefinitionToken(tree *ttcn3.Tree, id syntax.Node) (SemanticTokenType, Seman
 			typ = Property
 		}
 		switch n.Kind.Kind() {
-		case token.CONST, token.MODULEPAR:
+		case syntax.CONST, syntax.MODULEPAR:
 			mod |= Readonly
-		case token.PORT:
+		case syntax.PORT:
 			typ = Interface
 		}
 		return typ, mod

@@ -14,7 +14,6 @@ import (
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
 type FunctionDetails struct {
@@ -74,7 +73,7 @@ func newPredefinedTypes() []protocol.CompletionItem {
 	return complList
 }
 
-func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*FunctionDetails {
+func getAllBehavioursFromModule(suite *Suite, kind syntax.Kind, mname string) []*FunctionDetails {
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -128,7 +127,7 @@ func getAllBehavioursFromModule(suite *Suite, kind token.Kind, mname string) []*
 	return list
 }
 
-func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []string {
+func getAllValueDeclsFromModule(suite *Suite, mname string, kind syntax.Kind) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
@@ -152,7 +151,7 @@ func getAllValueDeclsFromModule(suite *Suite, mname string, kind token.Kind) []s
 				list = append(list, node.Name.String())
 				return false
 			case *syntax.TemplateDecl:
-				if kind == token.TEMPLATE {
+				if kind == syntax.TEMPLATE {
 					list = append(list, node.Name.String())
 				}
 				return false
@@ -246,7 +245,7 @@ func getAllPortTypesFromModule(suite *Suite, mname string) []string {
 	return list
 }
 
-func newImportBehaviours(suite *Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+func newImportBehaviours(suite *Suite, kind syntax.Kind, mname string) []protocol.CompletionItem {
 	items := getAllBehavioursFromModule(suite, kind, mname)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
@@ -255,7 +254,7 @@ func newImportBehaviours(suite *Suite, kind token.Kind, mname string) []protocol
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
 }
-func newAllBehavioursFromModule(suite *Suite, kinds []token.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
+func newAllBehavioursFromModule(suite *Suite, kinds []syntax.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
 
 	complList := make([]protocol.CompletionItem, 0, 10)
 	var items []*FunctionDetails
@@ -288,7 +287,7 @@ func newAllBehavioursFromModule(suite *Suite, kinds []token.Kind, attribs []Beha
 	}
 	return complList
 }
-func newAllBehaviours(suite *Suite, kinds []token.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
+func newAllBehaviours(suite *Suite, kinds []syntax.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
 	var sortPref string
 
 	if files := suite.Files(); len(files) > 0 {
@@ -309,7 +308,7 @@ func newAllBehaviours(suite *Suite, kinds []token.Kind, attribs []BehavAttrib, m
 	return nil
 }
 
-func newValueDeclsFromModule(suite *Suite, mname string, kind token.Kind, withDetail bool) []protocol.CompletionItem {
+func newValueDeclsFromModule(suite *Suite, mname string, kind syntax.Kind, withDetail bool) []protocol.CompletionItem {
 	items := getAllValueDeclsFromModule(suite, mname, kind)
 	complList := make([]protocol.CompletionItem, 0, len(items)+1)
 	for _, v := range items {
@@ -322,7 +321,7 @@ func newValueDeclsFromModule(suite *Suite, mname string, kind token.Kind, withDe
 	return complList
 }
 
-func newImportValueDecls(suite *Suite, mname string, kind token.Kind) []protocol.CompletionItem {
+func newImportValueDecls(suite *Suite, mname string, kind syntax.Kind) []protocol.CompletionItem {
 	complList := newValueDeclsFromModule(suite, mname, kind, false)
 	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 	return complList
@@ -357,14 +356,14 @@ func newImportAfterModName() []protocol.CompletionItem {
 	return complList
 }
 
-func newImportCompletions(suite *Suite, kind token.Kind, mname string) []protocol.CompletionItem {
+func newImportCompletions(suite *Suite, kind syntax.Kind, mname string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem = nil
 	switch kind {
-	case token.ALTSTEP, token.FUNCTION, token.TESTCASE:
+	case syntax.ALTSTEP, syntax.FUNCTION, syntax.TESTCASE:
 		list = newImportBehaviours(suite, kind, mname)
-	case token.TEMPLATE, token.CONST, token.MODULEPAR:
+	case syntax.TEMPLATE, syntax.CONST, syntax.MODULEPAR:
 		list = newImportValueDecls(suite, mname, kind)
-	case token.TYPE:
+	case syntax.TYPE:
 		list = newImportTypes(suite, mname)
 	default:
 		log.Debugln(fmt.Sprintf("Kind not considered yet: %#v)", kind))
@@ -494,7 +493,7 @@ func newAllTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
 	return complList
 }
 
-func newAllValueDecls(suite *Suite, kind token.Kind) []protocol.CompletionItem {
+func newAllValueDecls(suite *Suite, kind syntax.Kind) []protocol.CompletionItem {
 	var complList []protocol.CompletionItem = nil
 	if files := suite.Files(); len(files) > 0 {
 		complList = make([]protocol.CompletionItem, 0, len(files))
@@ -640,30 +639,30 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 			if n.X != nil {
 				switch {
 				case isStartOpArgument(nodes):
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
 				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN}, n.X.LastTok().String(), " 1")
 				default:
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION, syntax.ALTSTEP},
 						[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
 				}
 			}
 		default:
 			switch {
 			case isStartOpArgument(nodes):
-				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 					[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			case isInsideExpression(nodes, false): // less restrictive than isStartOpArgument
-				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 					[]BehavAttrib{WITH_RETURN}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			default:
-				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION, token.ALTSTEP},
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION, syntax.ALTSTEP},
 					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
@@ -675,22 +674,22 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 			if n.X != nil {
 				switch {
 				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN}, n.X.LastTok().String(), " 1")
 				default:
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{NONE, WITH_RETURN}, n.X.LastTok().String(), " 1")
 				}
 			}
 		default:
 			switch {
 			case isInsideExpression(nodes, false): // less restrictive than isStartOpArgument
-				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 					[]BehavAttrib{WITH_RETURN}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			default:
-				list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
 				list = append(list, newPredefinedFunctions()...)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
@@ -712,10 +711,10 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 			} else {
 				switch {
 				case scndNode != nil && scndNode.X != nil:
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
 				default:
-					list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN}, ownModName)
 					list = append(list, newPredefinedFunctions()...)
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
@@ -730,7 +729,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 				if scndNode != nil && scndNode.X != nil {
 					list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), nodet.TemplateTok.Kind(), false)
 				} else {
-					list = newAllValueDecls(suite, token.TEMPLATE)
+					list = newAllValueDecls(suite, syntax.TEMPLATE)
 					list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
 				}
 			} else if nodet.Type == nil || nodet.Name == nil || (nodet.Name != nil && (nodet.Name.Pos() > pos)) {
@@ -745,10 +744,10 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 			} else {
 				switch {
 				case scndNode != nil && scndNode.X != nil:
-					list = newAllBehavioursFromModule(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
 				default:
-					list = newAllBehaviours(suite, []token.Kind{token.FUNCTION},
+					list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 						[]BehavAttrib{WITH_RETURN}, ownModName)
 					list = append(list, newPredefinedFunctions()...)
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
@@ -857,7 +856,7 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 		case *syntax.Declarator:
 			if l > 2 {
 				if valueDecl, ok := nodes[l-2].(*syntax.ValueDecl); ok {
-					if valueDecl.Kind.Kind() == token.PORT {
+					if valueDecl.Kind.Kind() == syntax.PORT {
 						list = newAllPortTypes(suite, ownModName)
 						list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 					}

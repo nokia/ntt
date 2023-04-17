@@ -16,7 +16,6 @@ import (
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
-	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/spf13/cobra"
 )
 
@@ -270,12 +269,12 @@ func lint(cmd *cobra.Command, args []string) error {
 						cc[ccID] = 1 // Intial McCabe value
 
 						switch n.Kind.Kind() {
-						case token.TESTCASE:
+						case syntax.TESTCASE:
 							checkNaming(fset, n, style.Naming.Tests)
 							checkTags(fset, n, style.Tags.Tests)
-						case token.FUNCTION:
+						case syntax.FUNCTION:
 							checkNaming(fset, n, style.Naming.Functions)
-						case token.ALTSTEP:
+						case syntax.ALTSTEP:
 							checkNaming(fset, n, style.Naming.Altsteps)
 						}
 
@@ -359,7 +358,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					case *syntax.WithSpec:
 						checkBraces(fset, n.LBrace, n.RBrace)
 					case *syntax.ParenExpr:
-						if n.LParen.Kind() == token.LBRACE {
+						if n.LParen.Kind() == syntax.LBRACE {
 							checkBraces(fset, n.LParen, n.RParen)
 						}
 
@@ -368,7 +367,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						ccID = mod
 
 					case *syntax.BinaryExpr:
-						if n.Op.Kind() == token.AND || n.Op.Kind() == token.OR {
+						if n.Op.Kind() == syntax.AND || n.Op.Kind() == syntax.OR {
 							cc[ccID]++
 						}
 
@@ -640,15 +639,15 @@ func inGlobalScope(stack []syntax.Node) bool {
 }
 
 func isPort(d *syntax.ValueDecl) bool {
-	return d.Kind.Kind() == token.PORT
+	return d.Kind.Kind() == syntax.PORT
 }
 
 func isConst(d *syntax.ValueDecl) bool {
-	return d.Kind.Kind() == token.CONST
+	return d.Kind.Kind() == syntax.CONST
 }
 
 func isVar(d *syntax.ValueDecl) bool {
-	return !isVarTemplate(d) && d.Kind.Kind() == token.VAR
+	return !isVarTemplate(d) && d.Kind.Kind() == syntax.VAR
 }
 
 func isVarTemplate(d *syntax.ValueDecl) bool {

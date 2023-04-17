@@ -6,7 +6,6 @@ package syntax
 
 import (
 	"github.com/nokia/ntt/internal/loc"
-	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 // All node types implement the Node interface.
@@ -21,7 +20,7 @@ type Node interface {
 
 type Token interface {
 	Node
-	Kind() tokn.Kind
+	Kind() Kind
 	String() string
 	PrevTok() Token
 	NextTok() Token
@@ -597,7 +596,7 @@ type (
 )
 
 func (x *FuncDecl) IsTest() bool {
-	return x.Kind.Kind() == tokn.TESTCASE
+	return x.Kind.Kind() == TESTCASE
 }
 
 func (x *ValueDecl) declNode()            {}

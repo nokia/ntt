@@ -9,12 +9,11 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/token"
 )
 
-var kindToStringMap = map[token.Kind]string{
-	token.ALTSTEP: "altstep", token.FUNCTION: "function", token.TESTCASE: "testcase",
-	token.UNION: "union", token.RECORD: "record", token.SET: "set"}
+var kindToStringMap = map[syntax.Kind]string{
+	syntax.ALTSTEP: "altstep", syntax.FUNCTION: "function", syntax.TESTCASE: "testcase",
+	syntax.UNION: "union", syntax.RECORD: "record", syntax.SET: "set"}
 
 func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
 	return protocol.Range{
@@ -140,14 +139,14 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.Docum
 		switch node := attr.(type) {
 		case *syntax.PortAttribute:
 			switch node.Kind.Kind() {
-			case token.ADDRESS:
+			case syntax.ADDRESS:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
 					Name:           "address",
 					Detail:         syntax.Name(node.Types[0]) + " type",
 					Kind:           protocol.Struct,
 					Range:          setProtocolRange(begin, end),
 					SelectionRange: setProtocolRange(begin, end)})
-			case token.IN, token.OUT, token.INOUT:
+			case syntax.IN, syntax.OUT, syntax.INOUT:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
 					Name:           node.Kind.String(),
 					Kind:           protocol.Array,
@@ -254,11 +253,11 @@ func getValueDecls(tree *ttcn3.Tree, val *syntax.ValueDecl) []protocol.DocumentS
 		typeName = " " + typeName
 	}
 	switch val.Kind.Kind() {
-	case token.PORT:
+	case syntax.PORT:
 		kind = protocol.Interface
-	case token.TIMER:
+	case syntax.TIMER:
 		kind = protocol.Event
-	case token.CONST, token.TEMPLATE, token.MODULEPAR:
+	case syntax.CONST, syntax.TEMPLATE, syntax.MODULEPAR:
 		kind = protocol.Constant
 	}
 

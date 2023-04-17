@@ -12,7 +12,6 @@ import (
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
-	"github.com/nokia/ntt/ttcn3/token"
 	"github.com/spf13/cobra"
 )
 
@@ -193,7 +192,7 @@ func list(cmd *cobra.Command, args []string) error {
 						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), syntax.Doc(tree.FileSet, n))
 					}
 				case *syntax.ValueDecl:
-					if n.Kind == nil && n.Kind.Kind() == token.MODULEPAR {
+					if n.Kind == nil && n.Kind.Kind() == syntax.MODULEPAR {
 						return true
 					}
 				case *syntax.NodeList, *syntax.ModuleDef, *syntax.GroupDecl, *syntax.ModuleParameterGroup:

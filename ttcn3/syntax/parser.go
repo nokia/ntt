@@ -8,7 +8,6 @@ import (
 
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/loc"
-	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
 type tokenNode struct {
@@ -16,7 +15,7 @@ type tokenNode struct {
 	idx int
 }
 
-func (n *tokenNode) Kind() tokn.Kind {
+func (n *tokenNode) Kind() Kind {
 	return n.tokens[n.idx].Kind
 }
 
@@ -59,7 +58,7 @@ type tree struct {
 }
 
 type token struct {
-	Kind tokn.Kind
+	Kind Kind
 	Lit  string
 	Pos  loc.Pos
 }
@@ -89,7 +88,7 @@ type parser struct {
 	cursor  int
 	queue   []Token
 	markers []int
-	tok     tokn.Kind // for convenience (p.tok is used frequently)
+	tok     Kind // for convenience (p.tok is used frequently)
 
 	// Semicolon helper
 	seenBrace bool
@@ -202,7 +201,7 @@ func (p *parser) consume() Token {
 
 	// Track curly braces for TTCN-3 semicolon rules
 	p.seenBrace = false
-	if p.tok == tokn.RBRACE {
+	if p.tok == RBRACE {
 		p.seenBrace = true
 	}
 
@@ -216,14 +215,14 @@ func (p *parser) consume() Token {
 	return tok
 }
 
-func (p *parser) ignoreToken(tok tokn.Kind) bool {
+func (p *parser) ignoreToken(tok Kind) bool {
 	switch {
-	case tok == tokn.COMMENT:
+	case tok == COMMENT:
 		return true
-	case tok == tokn.PREPROC:
+	case tok == PREPROC:
 		return true
 	default:
-		if p.ppSkip && tok != tokn.EOF {
+		if p.ppSkip && tok != EOF {
 			return true
 		}
 		return false
@@ -341,7 +340,7 @@ func (p *parser) errorExpected(pos loc.Pos, msg string) {
 	p.error(pos, msg)
 }
 
-func (p *parser) expect(k tokn.Kind) Token {
+func (p *parser) expect(k Kind) Token {
 	if p.tok != k {
 		tok := p.peek(1)
 		p.errorExpected(tok.Pos(), "'"+k.String()+"'")
@@ -350,7 +349,7 @@ func (p *parser) expect(k tokn.Kind) Token {
 }
 
 func (p *parser) expectSemi(tok Token) {
-	if p.tok == tokn.SEMICOLON {
+	if p.tok == SEMICOLON {
 		p.consume()
 		return
 	}
@@ -358,7 +357,7 @@ func (p *parser) expectSemi(tok Token) {
 	// pedantic semicolon
 	if p.semi {
 		// semicolon is optional before a closing '}'
-		if !p.seenBrace && p.tok == tokn.RBRACE && p.tok != tokn.EOF {
+		if !p.seenBrace && p.tok == RBRACE && p.tok != EOF {
 			p.errorExpected(p.pos(1), "';'")
 			p.advance(stmtStart)
 		}
@@ -367,8 +366,8 @@ func (p *parser) expectSemi(tok Token) {
 
 // advance consumes tokens until the current token p.tok
 // is in the 'to' set, or EOF. For error recovery.
-func (p *parser) advance(to map[tokn.Kind]bool) {
-	for ; p.tok != tokn.EOF; p.consume() {
+func (p *parser) advance(to map[Kind]bool) {
+	for ; p.tok != EOF; p.consume() {
 		if to[p.tok] {
 			// Return only if parser made some progress since last
 			// sync or if it has not reached 10 advance calls without
@@ -395,167 +394,167 @@ func (p *parser) advance(to map[tokn.Kind]bool) {
 	}
 }
 
-var stmtStart = map[tokn.Kind]bool{
-	tokn.ALT:        true,
-	tokn.ALTSTEP:    true,
-	tokn.BREAK:      true,
-	tokn.CASE:       true,
-	tokn.CONST:      true,
-	tokn.CONTINUE:   true,
-	tokn.CONTROL:    true,
-	tokn.DISPLAY:    true,
-	tokn.DO:         true,
-	tokn.ELSE:       true,
-	tokn.ENCODE:     true,
-	tokn.EXTENSION:  true,
-	tokn.FOR:        true,
-	tokn.FRIEND:     true,
-	tokn.FUNCTION:   true,
-	tokn.GOTO:       true,
-	tokn.GROUP:      true,
-	tokn.IF:         true,
-	tokn.IMPORT:     true,
-	tokn.INTERLEAVE: true,
-	tokn.LABEL:      true,
-	tokn.MAP:        true,
-	tokn.MODULE:     true,
-	tokn.MODULEPAR:  true,
-	tokn.PORT:       true,
-	tokn.PRIVATE:    true,
-	tokn.PUBLIC:     true,
-	tokn.RBRACE:     true,
-	tokn.REPEAT:     true,
-	tokn.RETURN:     true,
-	tokn.SELECT:     true,
-	tokn.SEMICOLON:  true,
-	tokn.SIGNATURE:  true,
-	tokn.TEMPLATE:   true,
-	tokn.TESTCASE:   true,
-	tokn.TIMER:      true,
-	tokn.TYPE:       true,
-	tokn.UNMAP:      true,
-	tokn.VAR:        true,
-	tokn.VARIANT:    true,
-	tokn.WHILE:      true,
+var stmtStart = map[Kind]bool{
+	ALT:        true,
+	ALTSTEP:    true,
+	BREAK:      true,
+	CASE:       true,
+	CONST:      true,
+	CONTINUE:   true,
+	CONTROL:    true,
+	DISPLAY:    true,
+	DO:         true,
+	ELSE:       true,
+	ENCODE:     true,
+	EXTENSION:  true,
+	FOR:        true,
+	FRIEND:     true,
+	FUNCTION:   true,
+	GOTO:       true,
+	GROUP:      true,
+	IF:         true,
+	IMPORT:     true,
+	INTERLEAVE: true,
+	LABEL:      true,
+	MAP:        true,
+	MODULE:     true,
+	MODULEPAR:  true,
+	PORT:       true,
+	PRIVATE:    true,
+	PUBLIC:     true,
+	RBRACE:     true,
+	REPEAT:     true,
+	RETURN:     true,
+	SELECT:     true,
+	SEMICOLON:  true,
+	SIGNATURE:  true,
+	TEMPLATE:   true,
+	TESTCASE:   true,
+	TIMER:      true,
+	TYPE:       true,
+	UNMAP:      true,
+	VAR:        true,
+	VARIANT:    true,
+	WHILE:      true,
 }
 
-var operandStart = map[tokn.Kind]bool{
-	tokn.ADDRESS:    true,
-	tokn.ALL:        true,
-	tokn.ANY:        true,
-	tokn.ANYKW:      true,
-	tokn.BSTRING:    true,
-	tokn.CHARSTRING: true,
-	tokn.ERROR:      true,
-	tokn.FAIL:       true,
-	tokn.FALSE:      true,
-	tokn.FLOAT:      true,
-	//tokn.IDENT: true, TODO(5nord) fix conflict, see failing parser tests
-	tokn.INCONC:    true,
-	tokn.INT:       true,
-	tokn.MAP:       true,
-	tokn.MTC:       true,
-	tokn.MUL:       true,
-	tokn.NAN:       true,
-	tokn.NONE:      true,
-	tokn.NULL:      true,
-	tokn.OMIT:      true,
-	tokn.PASS:      true,
-	tokn.STRING:    true,
-	tokn.SYSTEM:    true,
-	tokn.TESTCASE:  true,
-	tokn.TIMER:     true,
-	tokn.TRUE:      true,
-	tokn.UNIVERSAL: true,
-	tokn.UNMAP:     true,
+var operandStart = map[Kind]bool{
+	ADDRESS:    true,
+	ALL:        true,
+	ANY:        true,
+	ANYKW:      true,
+	BSTRING:    true,
+	CHARSTRING: true,
+	ERROR:      true,
+	FAIL:       true,
+	FALSE:      true,
+	FLOAT:      true,
+	//IDENT: true, TODO(5nord) fix conflict, see failing parser tests
+	INCONC:    true,
+	INT:       true,
+	MAP:       true,
+	MTC:       true,
+	MUL:       true,
+	NAN:       true,
+	NONE:      true,
+	NULL:      true,
+	OMIT:      true,
+	PASS:      true,
+	STRING:    true,
+	SYSTEM:    true,
+	TESTCASE:  true,
+	TIMER:     true,
+	TRUE:      true,
+	UNIVERSAL: true,
+	UNMAP:     true,
 }
 
-var topLevelTokens = map[tokn.Kind]bool{
-	tokn.COMMA:      true,
-	tokn.SEMICOLON:  true,
-	tokn.MODULE:     true,
-	tokn.CONTROL:    true,
-	tokn.EXTERNAL:   true,
-	tokn.FRIEND:     true,
-	tokn.FUNCTION:   true,
-	tokn.GROUP:      true,
-	tokn.IMPORT:     true,
-	tokn.MODULEPAR:  true,
-	tokn.SIGNATURE:  true,
-	tokn.TEMPLATE:   true,
-	tokn.TYPE:       true,
-	tokn.VAR:        true,
-	tokn.ALTSTEP:    true,
-	tokn.CONST:      true,
-	tokn.PRIVATE:    true,
-	tokn.PUBLIC:     true,
-	tokn.TIMER:      true,
-	tokn.PORT:       true,
-	tokn.REPEAT:     true,
-	tokn.BREAK:      true,
-	tokn.CONTINUE:   true,
-	tokn.LABEL:      true,
-	tokn.GOTO:       true,
-	tokn.RETURN:     true,
-	tokn.SELECT:     true,
-	tokn.ALT:        true,
-	tokn.INTERLEAVE: true,
-	tokn.LBRACK:     true,
-	tokn.FOR:        true,
-	tokn.WHILE:      true,
-	tokn.DO:         true,
-	tokn.IF:         true,
-	tokn.LBRACE:     true,
-	tokn.IDENT:      true,
-	tokn.ANYKW:      true,
-	tokn.ALL:        true,
-	tokn.MAP:        true,
-	tokn.UNMAP:      true,
-	tokn.MTC:        true,
-	tokn.TESTCASE:   true,
+var topLevelTokens = map[Kind]bool{
+	COMMA:      true,
+	SEMICOLON:  true,
+	MODULE:     true,
+	CONTROL:    true,
+	EXTERNAL:   true,
+	FRIEND:     true,
+	FUNCTION:   true,
+	GROUP:      true,
+	IMPORT:     true,
+	MODULEPAR:  true,
+	SIGNATURE:  true,
+	TEMPLATE:   true,
+	TYPE:       true,
+	VAR:        true,
+	ALTSTEP:    true,
+	CONST:      true,
+	PRIVATE:    true,
+	PUBLIC:     true,
+	TIMER:      true,
+	PORT:       true,
+	REPEAT:     true,
+	BREAK:      true,
+	CONTINUE:   true,
+	LABEL:      true,
+	GOTO:       true,
+	RETURN:     true,
+	SELECT:     true,
+	ALT:        true,
+	INTERLEAVE: true,
+	LBRACK:     true,
+	FOR:        true,
+	WHILE:      true,
+	DO:         true,
+	IF:         true,
+	LBRACE:     true,
+	IDENT:      true,
+	ANYKW:      true,
+	ALL:        true,
+	MAP:        true,
+	UNMAP:      true,
+	MTC:        true,
+	TESTCASE:   true,
 }
 
 // parse is a generic entry point
 func (p *parser) parse() Node {
 	switch p.tok {
-	case tokn.MODULE:
+	case MODULE:
 		return p.parseModule()
 
-	case tokn.CONTROL,
-		tokn.EXTERNAL,
-		tokn.FRIEND,
-		tokn.FUNCTION,
-		tokn.GROUP,
-		tokn.IMPORT,
-		tokn.MODULEPAR,
-		tokn.SIGNATURE,
-		tokn.TEMPLATE,
-		tokn.TYPE,
-		tokn.VAR,
-		tokn.ALTSTEP,
-		tokn.CONST,
-		tokn.PRIVATE,
-		tokn.PUBLIC:
+	case CONTROL,
+		EXTERNAL,
+		FRIEND,
+		FUNCTION,
+		GROUP,
+		IMPORT,
+		MODULEPAR,
+		SIGNATURE,
+		TEMPLATE,
+		TYPE,
+		VAR,
+		ALTSTEP,
+		CONST,
+		PRIVATE,
+		PUBLIC:
 		return p.parseModuleDef()
 
-	case tokn.TIMER, tokn.PORT,
-		tokn.REPEAT, tokn.BREAK, tokn.CONTINUE,
-		tokn.LABEL,
-		tokn.GOTO,
-		tokn.RETURN,
-		tokn.SELECT,
-		tokn.ALT, tokn.INTERLEAVE,
-		tokn.LBRACK,
-		tokn.FOR,
-		tokn.WHILE,
-		tokn.DO,
-		tokn.IF,
-		tokn.LBRACE,
-		tokn.IDENT, tokn.ANYKW, tokn.ALL, tokn.MAP, tokn.UNMAP, tokn.MTC:
+	case TIMER, PORT,
+		REPEAT, BREAK, CONTINUE,
+		LABEL,
+		GOTO,
+		RETURN,
+		SELECT,
+		ALT, INTERLEAVE,
+		LBRACK,
+		FOR,
+		WHILE,
+		DO,
+		IF,
+		LBRACE,
+		IDENT, ANYKW, ALL, MAP, UNMAP, MTC:
 		return p.parseStmt()
 
-	case tokn.TESTCASE:
-		if p.peek(1).Kind() == tokn.DOT {
+	case TESTCASE:
+		if p.peek(1).Kind() == DOT {
 			return p.parseStmt()
 		}
 		return p.parseModuleDef()
@@ -575,7 +574,7 @@ func (p *parser) parseExprList() (list []Expr) {
 	}
 
 	list = append(list, p.parseExpr())
-	for p.tok == tokn.COMMA {
+	for p.tok == COMMA {
 		p.consume()
 		list = append(list, p.parseExpr())
 	}
@@ -588,7 +587,7 @@ func (p *parser) parseExpr() Expr {
 		defer un(trace(p, "Expr"))
 	}
 
-	return p.parseBinaryExpr(tokn.LowestPrec + 1)
+	return p.parseBinaryExpr(LowestPrec + 1)
 }
 
 // BinaryExpr ::= UnaryExpr
@@ -613,17 +612,17 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 //	| PrimaryExpr
 func (p *parser) parseUnaryExpr() Expr {
 	switch p.tok {
-	case tokn.ADD, tokn.EXCL, tokn.NOT, tokn.NOT4B, tokn.SUB:
+	case ADD, EXCL, NOT, NOT4B, SUB:
 		tok := p.consume()
 		// handle unused expr '-'
-		if tok.Kind() == tokn.SUB {
+		if tok.Kind() == SUB {
 			switch p.tok {
-			case tokn.COMMA, tokn.SEMICOLON, tokn.RBRACE, tokn.RBRACK, tokn.RPAREN, tokn.EOF:
+			case COMMA, SEMICOLON, RBRACE, RBRACK, RPAREN, EOF:
 				return &ValueLiteral{Tok: tok}
 			}
 		}
 		return &UnaryExpr{Op: tok, X: p.parseUnaryExpr()}
-	case tokn.COLONCOLON:
+	case COLONCOLON:
 		tok := p.consume()
 		return &BinaryExpr{Op: tok, Y: p.parseExpr()}
 	}
@@ -653,11 +652,11 @@ func (p *parser) parsePrimaryExpr() Expr {
 L:
 	for {
 		switch p.tok {
-		case tokn.DOT:
+		case DOT:
 			x = p.parseSelectorExpr(x)
-		case tokn.LBRACK:
+		case LBRACK:
 			x = p.parseIndexExpr(x)
-		case tokn.LPAREN:
+		case LPAREN:
 			x = p.parseCallExpr(x)
 			// Not supporting chained function calls like 'get().x'
 			// eleminates conflicts with alt-guards.
@@ -667,31 +666,31 @@ L:
 		}
 	}
 
-	if p.tok == tokn.LENGTH {
+	if p.tok == LENGTH {
 		x = p.parseLength(x)
 	}
 
-	if p.tok == tokn.IFPRESENT {
+	if p.tok == IFPRESENT {
 		x = &UnaryExpr{Op: p.consume(), X: x}
 	}
 
-	if p.tok == tokn.TO || p.tok == tokn.FROM {
+	if p.tok == TO || p.tok == FROM {
 		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
 	}
 
-	if p.tok == tokn.REDIR {
+	if p.tok == REDIR {
 		x = p.parseRedirect(x)
 	}
 
-	if p.tok == tokn.VALUE {
+	if p.tok == VALUE {
 		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
 	}
 
-	if p.tok == tokn.PARAM {
+	if p.tok == PARAM {
 		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
 	}
 
-	if p.tok == tokn.ALIVE {
+	if p.tok == ALIVE {
 		x = &UnaryExpr{Op: p.consume(), X: x}
 	}
 
@@ -719,12 +718,12 @@ L:
 func (p *parser) parseOperand() Expr {
 	etok := p.peek(1)
 	switch p.tok {
-	case tokn.ANYKW, tokn.ALL:
+	case ANYKW, ALL:
 		tok := p.consume()
 		switch p.tok {
-		case tokn.COMPONENT, tokn.PORT, tokn.TIMER:
+		case COMPONENT, PORT, TIMER:
 			return p.make_use(tok, p.consume())
-		case tokn.FROM:
+		case FROM:
 			return &FromExpr{
 				Kind:    tok,
 				FromTok: p.consume(),
@@ -734,68 +733,68 @@ func (p *parser) parseOperand() Expr {
 
 		return p.make_use(tok)
 
-	case tokn.UNIVERSAL:
+	case UNIVERSAL:
 		return p.parseUniversalCharstring()
 
-	case tokn.ADDRESS,
-		tokn.CHARSTRING,
-		tokn.MAP,
-		tokn.MTC,
-		tokn.SYSTEM,
-		tokn.TESTCASE,
-		tokn.TIMER,
-		tokn.UNMAP:
+	case ADDRESS,
+		CHARSTRING,
+		MAP,
+		MTC,
+		SYSTEM,
+		TESTCASE,
+		TIMER,
+		UNMAP:
 		return p.make_use(p.consume())
 
-	case tokn.IDENT:
+	case IDENT:
 		return p.parseRef()
 
-	case tokn.INT,
-		tokn.ANY,
-		tokn.BSTRING,
-		tokn.ERROR,
-		tokn.NULL,
-		tokn.OMIT,
-		tokn.FAIL,
-		tokn.FALSE,
-		tokn.FLOAT,
-		tokn.INCONC,
-		tokn.MUL,
-		tokn.NAN,
-		tokn.NONE,
-		tokn.PASS,
-		tokn.STRING,
-		tokn.TRUE:
+	case INT,
+		ANY,
+		BSTRING,
+		ERROR,
+		NULL,
+		OMIT,
+		FAIL,
+		FALSE,
+		FLOAT,
+		INCONC,
+		MUL,
+		NAN,
+		NONE,
+		PASS,
+		STRING,
+		TRUE:
 		return &ValueLiteral{Tok: p.consume()}
 
-	case tokn.LPAREN:
+	case LPAREN:
 		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
 		return p.parseParenExpr()
 
-	case tokn.LBRACK:
+	case LBRACK:
 		return p.parseIndexExpr(nil)
 
-	case tokn.LBRACE:
+	case LBRACE:
 		return p.parseCompositeLiteral()
 
-	case tokn.MODIFIES:
+	case MODIFIES:
 		return &ModifiesExpr{
 			Tok:    p.consume(),
 			X:      p.parsePrimaryExpr(),
-			Assign: p.expect(tokn.ASSIGN),
+			Assign: p.expect(ASSIGN),
 			Y:      p.parseExpr(),
 		}
 
-	case tokn.REGEXP:
+	case REGEXP:
 		return p.parseCallRegexp()
 
-	case tokn.PATTERN:
+	case PATTERN:
 		return p.parseCallPattern()
 
-	case tokn.DECMATCH:
+	case DECMATCH:
 		return p.parseCallDecmatch()
 
-	case tokn.MODIF:
+	case MODIF:
 		return p.parseDecodedModifier()
 
 	default:
@@ -811,7 +810,7 @@ func (p *parser) parseRef() Expr {
 		return nil
 	}
 
-	if p.tok != tokn.LT {
+	if p.tok != LT {
 		return id
 	}
 
@@ -826,30 +825,30 @@ func (p *parser) parseRef() Expr {
 
 func (p *parser) parseParenExpr() *ParenExpr {
 	return &ParenExpr{
-		LParen: p.expect(tokn.LPAREN),
+		LParen: p.expect(LPAREN),
 		List:   p.parseExprList(),
-		RParen: p.expect(tokn.RPAREN),
+		RParen: p.expect(RPAREN),
 	}
 }
 
 func (p *parser) parseUniversalCharstring() *Ident {
-	return p.make_use(p.expect(tokn.UNIVERSAL), p.expect(tokn.CHARSTRING))
+	return p.make_use(p.expect(UNIVERSAL), p.expect(CHARSTRING))
 }
 
 func (p *parser) parseCompositeLiteral() *CompositeLiteral {
 	c := new(CompositeLiteral)
-	c.LBrace = p.expect(tokn.LBRACE)
-	if p.tok != tokn.RBRACE {
+	c.LBrace = p.expect(LBRACE)
+	if p.tok != RBRACE {
 		c.List = p.parseExprList()
 	}
-	c.RBrace = p.expect(tokn.RBRACE)
+	c.RBrace = p.expect(RBRACE)
 	return c
 }
 
 func (p *parser) parseCallRegexp() *RegexpExpr {
 	c := new(RegexpExpr)
-	c.Tok = p.expect(tokn.REGEXP)
-	if p.tok == tokn.MODIF {
+	c.Tok = p.expect(REGEXP)
+	if p.tok == MODIF {
 		c.NoCase = p.consume()
 	}
 	c.X = p.parseParenExpr()
@@ -858,8 +857,8 @@ func (p *parser) parseCallRegexp() *RegexpExpr {
 
 func (p *parser) parseCallPattern() *PatternExpr {
 	c := new(PatternExpr)
-	c.Tok = p.expect(tokn.PATTERN)
-	if p.tok == tokn.MODIF {
+	c.Tok = p.expect(PATTERN)
+	if p.tok == MODIF {
 		c.NoCase = p.consume()
 	}
 	c.X = p.parseExpr()
@@ -868,8 +867,8 @@ func (p *parser) parseCallPattern() *PatternExpr {
 
 func (p *parser) parseCallDecmatch() *DecmatchExpr {
 	c := new(DecmatchExpr)
-	c.Tok = p.expect(tokn.DECMATCH)
-	if p.tok == tokn.LPAREN {
+	c.Tok = p.expect(DECMATCH)
+	if p.tok == LPAREN {
 		c.Params = p.parseParenExpr()
 	}
 	c.X = p.parseExpr()
@@ -878,12 +877,12 @@ func (p *parser) parseCallDecmatch() *DecmatchExpr {
 
 func (p *parser) parseDecodedModifier() *DecodedExpr {
 	d := new(DecodedExpr)
-	d.Tok = p.expect(tokn.MODIF)
+	d.Tok = p.expect(MODIF)
 	if d.Tok.String() != "@decoded" {
 		p.errorExpected(d.Tok.Pos(), "@decoded")
 	}
 
-	if p.tok == tokn.LPAREN {
+	if p.tok == LPAREN {
 		d.Params = p.parseParenExpr()
 	}
 	d.X = p.parsePrimaryExpr()
@@ -897,9 +896,9 @@ func (p *parser) parseSelectorExpr(x Expr) *SelectorExpr {
 func (p *parser) parseIndexExpr(x Expr) *IndexExpr {
 	return &IndexExpr{
 		X:      x,
-		LBrack: p.expect(tokn.LBRACK),
+		LBrack: p.expect(LBRACK),
 		Index:  p.parseExpr(),
-		RBrack: p.expect(tokn.RBRACK),
+		RBrack: p.expect(RBRACK),
 	}
 }
 
@@ -907,16 +906,16 @@ func (p *parser) parseCallExpr(x Expr) *CallExpr {
 	c := new(CallExpr)
 	c.Fun = x
 	c.Args = new(ParenExpr)
-	c.Args.LParen = p.expect(tokn.LPAREN)
-	if p.tok != tokn.RPAREN {
+	c.Args.LParen = p.expect(LPAREN)
+	if p.tok != RPAREN {
 		switch p.tok {
-		case tokn.TO, tokn.FROM, tokn.REDIR:
+		case TO, FROM, REDIR:
 			var x Expr
-			if p.tok == tokn.TO || p.tok == tokn.FROM {
+			if p.tok == TO || p.tok == FROM {
 				// TODO: Shouldn't this be a FromExpr?
 				x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
 			}
-			if p.tok == tokn.REDIR {
+			if p.tok == REDIR {
 				x = p.parseRedirect(x)
 			}
 			c.Args.List = []Expr{x}
@@ -924,14 +923,14 @@ func (p *parser) parseCallExpr(x Expr) *CallExpr {
 			c.Args.List = append(c.Args.List, p.parseExprList()...)
 		}
 	}
-	c.Args.RParen = p.expect(tokn.RPAREN)
+	c.Args.RParen = p.expect(RPAREN)
 	return c
 }
 
 func (p *parser) parseLength(x Expr) *LengthExpr {
 	return &LengthExpr{
 		X:    x,
-		Len:  p.expect(tokn.LENGTH),
+		Len:  p.expect(LENGTH),
 		Size: p.parseParenExpr(),
 	}
 }
@@ -940,38 +939,38 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 
 	r := &RedirectExpr{
 		X:   x,
-		Tok: p.expect(tokn.REDIR),
+		Tok: p.expect(REDIR),
 	}
 
-	if p.tok == tokn.VALUE {
-		r.ValueTok = p.expect(tokn.VALUE)
+	if p.tok == VALUE {
+		r.ValueTok = p.expect(VALUE)
 		r.Value = p.parseExprList()
 	}
 
-	if p.tok == tokn.PARAM {
-		r.ParamTok = p.expect(tokn.PARAM)
+	if p.tok == PARAM {
+		r.ParamTok = p.expect(PARAM)
 		r.Param = p.parseExprList()
 	}
 
-	if p.tok == tokn.SENDER {
-		r.SenderTok = p.expect(tokn.SENDER)
+	if p.tok == SENDER {
+		r.SenderTok = p.expect(SENDER)
 		r.Sender = p.parsePrimaryExpr()
 	}
 
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		if p.lit(1) != "@index" {
 			p.errorExpected(p.pos(1), "@index")
 		}
 
 		r.IndexTok = p.consume()
-		if p.tok == tokn.VALUE {
+		if p.tok == VALUE {
 			r.IndexValueTok = p.consume()
 		}
 		r.Index = p.parsePrimaryExpr()
 	}
 
-	if p.tok == tokn.TIMESTAMP {
-		r.TimestampTok = p.expect(tokn.TIMESTAMP)
+	if p.tok == TIMESTAMP {
+		r.TimestampTok = p.expect(TIMESTAMP)
 		r.Timestamp = p.parsePrimaryExpr()
 	}
 
@@ -980,31 +979,31 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 
 func (p *parser) parseName() *Ident {
 	switch p.tok {
-	case tokn.IDENT, tokn.ADDRESS, tokn.CONTROL:
+	case IDENT, ADDRESS, CONTROL:
 		id := &Ident{Tok: p.consume(), IsName: true}
 		p.names[id.String()] = true
 		return id
 	}
-	p.expect(tokn.IDENT)
+	p.expect(IDENT)
 	return nil
 
 }
 
 func (p *parser) parseIdent() *Ident {
 	switch p.tok {
-	case tokn.UNIVERSAL:
+	case UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case tokn.IDENT, tokn.ADDRESS, tokn.ALIVE, tokn.CHARSTRING, tokn.CONTROL:
+	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL:
 		return p.make_use(p.consume())
 	default:
-		p.expect(tokn.IDENT) // use expect() error handling
+		p.expect(IDENT) // use expect() error handling
 		return nil
 	}
 }
 
 func (p *parser) parseArrayDefs() []*ParenExpr {
 	var l []*ParenExpr
-	for p.tok == tokn.LBRACK {
+	for p.tok == LBRACK {
 		l = append(l, p.parseArrayDef())
 	}
 	return l
@@ -1012,9 +1011,9 @@ func (p *parser) parseArrayDefs() []*ParenExpr {
 
 func (p *parser) parseArrayDef() *ParenExpr {
 	return &ParenExpr{
-		LParen: p.expect(tokn.LBRACK),
+		LParen: p.expect(LBRACK),
 		List:   p.parseExprList(),
-		RParen: p.expect(tokn.RBRACK),
+		RParen: p.expect(RBRACK),
 	}
 }
 
@@ -1022,7 +1021,7 @@ func (p *parser) parseRefList() []Expr {
 	l := make([]Expr, 0, 1)
 	for {
 		l = append(l, p.parseTypeRef())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
@@ -1044,19 +1043,19 @@ func (p *parser) tryTypeParameters() *ParenExpr {
 	x := &ParenExpr{
 		LParen: p.consume(),
 	}
-	for p.tok != tokn.GT {
+	for p.tok != GT {
 		y := p.tryTypeParameter()
 		if y == nil {
 			return nil
 		}
 		x.List = append(x.List, y)
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
 
-	if p.tok != tokn.GT {
+	if p.tok != GT {
 		return nil
 	}
 	x.RParen = p.consume()
@@ -1071,7 +1070,7 @@ func (p *parser) tryTypeParameter() Expr {
 L:
 	for {
 		switch p.tok {
-		case tokn.DOT:
+		case DOT:
 			x = &SelectorExpr{
 				X:   x,
 				Dot: p.consume(),
@@ -1080,11 +1079,11 @@ L:
 			if x.(*SelectorExpr).Sel == nil {
 				return nil
 			}
-		case tokn.LBRACK:
+		case LBRACK:
 			lbrack := p.consume()
 			dash := p.consume()
 			rbrack := p.consume()
-			if dash.Kind() != tokn.SUB || rbrack.Kind() != tokn.RBRACK {
+			if dash.Kind() != SUB || rbrack.Kind() != RBRACK {
 				return nil
 			}
 			x = &IndexExpr{
@@ -1108,15 +1107,15 @@ func (p *parser) tryTypeIdent() Expr {
 
 	var x *Ident
 	switch p.tok {
-	case tokn.IDENT, tokn.ADDRESS, tokn.CHARSTRING:
+	case IDENT, ADDRESS, CHARSTRING:
 		x = p.make_use(p.consume())
-	case tokn.UNIVERSAL:
+	case UNIVERSAL:
 		x = p.parseUniversalCharstring()
 	default:
 		return nil
 	}
 
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		if y := p.tryTypeParameters(); y == nil {
 			return &ParametrizedIdent{
 				Ident:  x,
@@ -1137,13 +1136,13 @@ func (p *parser) parseModuleList() []*Module {
 		list = append(list, m)
 		p.expectSemi(m.LastTok())
 	}
-	for p.tok == tokn.MODULE {
+	for p.tok == MODULE {
 		if m := p.parseModule(); m != nil {
 			list = append(list, m)
 			p.expectSemi(m.LastTok())
 		}
 	}
-	p.expect(tokn.EOF)
+	p.expect(EOF)
 	return list
 }
 
@@ -1153,20 +1152,20 @@ func (p *parser) parseModule() *Module {
 	}
 
 	m := new(Module)
-	m.Tok = p.expect(tokn.MODULE)
+	m.Tok = p.expect(MODULE)
 	m.Name = p.parseName()
 
-	if p.tok == tokn.LANGUAGE {
+	if p.tok == LANGUAGE {
 		m.Language = p.parseLanguageSpec()
 	}
 
-	m.LBrace = p.expect(tokn.LBRACE)
+	m.LBrace = p.expect(LBRACE)
 
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		m.Defs = append(m.Defs, p.parseModuleDef())
 		p.expectSemi(m.Defs[len(m.Defs)-1].LastTok())
 	}
-	m.RBrace = p.expect(tokn.RBRACE)
+	m.RBrace = p.expect(RBRACE)
 	m.With = p.parseWith()
 	return m
 }
@@ -1175,8 +1174,8 @@ func (p *parser) parseLanguageSpec() *LanguageSpec {
 	l := new(LanguageSpec)
 	l.Tok = p.consume()
 	for {
-		l.List = append(l.List, p.expect(tokn.STRING))
-		if p.tok != tokn.COMMA {
+		l.List = append(l.List, p.expect(STRING))
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
@@ -1187,41 +1186,41 @@ func (p *parser) parseLanguageSpec() *LanguageSpec {
 func (p *parser) parseModuleDef() *ModuleDef {
 	m := new(ModuleDef)
 	switch p.tok {
-	case tokn.PRIVATE, tokn.PUBLIC:
+	case PRIVATE, PUBLIC:
 		m.Visibility = p.consume()
-	case tokn.FRIEND:
-		if p.peek(2).Kind() != tokn.MODULE {
+	case FRIEND:
+		if p.peek(2).Kind() != MODULE {
 			m.Visibility = p.consume()
 		}
 	}
 
 	etok := p.peek(1)
 	switch p.tok {
-	case tokn.IMPORT:
+	case IMPORT:
 		m.Def = p.parseImport()
-	case tokn.GROUP:
+	case GROUP:
 		m.Def = p.parseGroup()
-	case tokn.FRIEND:
+	case FRIEND:
 		m.Def = p.parseFriend()
-	case tokn.TYPE:
+	case TYPE:
 		m.Def = p.parseTypeDecl()
-	case tokn.TEMPLATE:
+	case TEMPLATE:
 		m.Def = p.parseTemplateDecl()
-	case tokn.MODULEPAR:
+	case MODULEPAR:
 		m.Def = p.parseModulePar()
-	case tokn.VAR, tokn.CONST:
+	case VAR, CONST:
 		m.Def = p.parseValueDecl()
-	case tokn.SIGNATURE:
+	case SIGNATURE:
 		m.Def = p.parseSignatureDecl()
-	case tokn.FUNCTION, tokn.TESTCASE, tokn.ALTSTEP:
+	case FUNCTION, TESTCASE, ALTSTEP:
 		m.Def = p.parseFuncDecl()
-	case tokn.CONTROL:
+	case CONTROL:
 		m.Def = &ControlPart{Name: p.parseIdent(), Body: p.parseBlockStmt(), With: p.parseWith()}
-	case tokn.EXTERNAL:
+	case EXTERNAL:
 		switch p.peek(2).Kind() {
-		case tokn.FUNCTION:
+		case FUNCTION:
 			m.Def = p.parseExtFuncDecl()
-		case tokn.CONST:
+		case CONST:
 			p.error(p.pos(1), "external constants not suppored")
 			p.consume()
 			m.Def = p.parseValueDecl()
@@ -1279,35 +1278,35 @@ func (p *parser) parseImport() *ImportDecl {
 
 	x := new(ImportDecl)
 	x.ImportTok = p.consume()
-	x.FromTok = p.expect(tokn.FROM)
+	x.FromTok = p.expect(FROM)
 	x.Module = p.parseIdent()
 
-	if p.tok == tokn.LANGUAGE {
+	if p.tok == LANGUAGE {
 		x.Language = p.parseLanguageSpec()
 	}
 
 	switch p.tok {
-	case tokn.ALL:
+	case ALL:
 		y := &DefKindExpr{}
 		var z Expr = p.make_use(p.consume())
-		if p.tok == tokn.EXCEPT {
+		if p.tok == EXCEPT {
 			z = &ExceptExpr{
 				X:         z,
 				ExceptTok: p.consume(),
-				LBrace:    p.expect(tokn.LBRACE),
+				LBrace:    p.expect(LBRACE),
 				List:      p.parseExceptStmts(),
-				RBrace:    p.expect(tokn.RBRACE),
+				RBrace:    p.expect(RBRACE),
 			}
 		}
 		y.List = []Expr{z}
 		x.List = append(x.List, y)
-	case tokn.LBRACE:
-		x.LBrace = p.expect(tokn.LBRACE)
-		for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	case LBRACE:
+		x.LBrace = p.expect(LBRACE)
+		for p.tok != RBRACE && p.tok != EOF {
 			x.List = append(x.List, p.parseImportStmt())
 			p.expectSemi(x.List[len(x.List)-1].LastTok())
 		}
-		x.RBrace = p.expect(tokn.RBRACE)
+		x.RBrace = p.expect(RBRACE)
 	default:
 		p.errorExpected(p.pos(1), "'all' or import spec")
 	}
@@ -1320,12 +1319,12 @@ func (p *parser) parseImport() *ImportDecl {
 func (p *parser) parseImportStmt() *DefKindExpr {
 	x := new(DefKindExpr)
 	switch p.tok {
-	case tokn.ALTSTEP, tokn.CONST, tokn.FUNCTION, tokn.MODULEPAR,
-		tokn.SIGNATURE, tokn.TEMPLATE, tokn.TESTCASE, tokn.TYPE:
+	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
+		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
 		x.Kind = p.consume()
-		if p.tok == tokn.ALL {
+		if p.tok == ALL {
 			var y Expr = p.make_use(p.consume())
-			if p.tok == tokn.EXCEPT {
+			if p.tok == EXCEPT {
 				y = &ExceptExpr{
 					X:         y,
 					ExceptTok: p.consume(),
@@ -1336,28 +1335,28 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 		} else {
 			x.List = p.parseRefList()
 		}
-	case tokn.GROUP:
+	case GROUP:
 		x.Kind = p.consume()
 		for {
 			y := p.parseTypeRef()
-			if p.tok == tokn.EXCEPT {
+			if p.tok == EXCEPT {
 				y = &ExceptExpr{
 					X:         y,
 					ExceptTok: p.consume(),
-					LBrace:    p.expect(tokn.LBRACE),
+					LBrace:    p.expect(LBRACE),
 					List:      p.parseExceptStmts(),
-					RBrace:    p.expect(tokn.RBRACE),
+					RBrace:    p.expect(RBRACE),
 				}
 			}
 			x.List = append(x.List, y)
-			if p.tok != tokn.COMMA {
+			if p.tok != COMMA {
 				break
 			}
 			p.consume()
 		}
-	case tokn.IMPORT:
+	case IMPORT:
 		x.Kind = p.consume()
-		x.List = []Expr{p.make_use(p.expect(tokn.ALL))}
+		x.List = []Expr{p.make_use(p.expect(ALL))}
 	default:
 		p.errorExpected(p.pos(1), "import definition qualifier")
 		p.advance(stmtStart)
@@ -1367,7 +1366,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 
 func (p *parser) parseExceptStmts() []Expr {
 	var list []Expr
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		x := p.parseExceptStmt()
 		p.expectSemi(x.LastTok())
 		list = append(list, x)
@@ -1378,15 +1377,15 @@ func (p *parser) parseExceptStmts() []Expr {
 func (p *parser) parseExceptStmt() *DefKindExpr {
 	x := new(DefKindExpr)
 	switch p.tok {
-	case tokn.ALTSTEP, tokn.CONST, tokn.FUNCTION, tokn.GROUP,
-		tokn.IMPORT, tokn.MODULEPAR, tokn.SIGNATURE, tokn.TEMPLATE,
-		tokn.TESTCASE, tokn.TYPE:
+	case ALTSTEP, CONST, FUNCTION, GROUP,
+		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
+		TESTCASE, TYPE:
 		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "definition qualifier")
 	}
 
-	if p.tok == tokn.ALL {
+	if p.tok == ALL {
 		x.List = []Expr{p.make_use(p.consume())}
 	} else {
 		x.List = p.parseRefList()
@@ -1402,21 +1401,21 @@ func (p *parser) parseGroup() *GroupDecl {
 	x := new(GroupDecl)
 	x.Tok = p.consume()
 	x.Name = p.parseName()
-	x.LBrace = p.expect(tokn.LBRACE)
+	x.LBrace = p.expect(LBRACE)
 
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Defs = append(x.Defs, p.parseModuleDef())
 		p.expectSemi(x.Defs[len(x.Defs)-1].LastTok())
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
 	return x
 }
 
 func (p *parser) parseFriend() *FriendDecl {
 	return &FriendDecl{
-		FriendTok: p.expect(tokn.FRIEND),
-		ModuleTok: p.expect(tokn.MODULE),
+		FriendTok: p.expect(FRIEND),
+		ModuleTok: p.expect(MODULE),
 		Module:    p.parseIdent(),
 		With:      p.parseWith(),
 	}
@@ -1427,17 +1426,17 @@ func (p *parser) parseFriend() *FriendDecl {
  *************************************************************************/
 
 func (p *parser) parseWith() *WithSpec {
-	if p.tok != tokn.WITH {
+	if p.tok != WITH {
 		return nil
 	}
 	x := new(WithSpec)
 	x.Tok = p.consume()
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
 		x.List = append(x.List, p.parseWithStmt())
 		p.expectSemi(x.List[len(x.List)-1].LastTok())
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	return x
 }
 
@@ -1449,13 +1448,13 @@ func (p *parser) parseWithStmt() *WithStmt {
 	x := new(WithStmt)
 
 	switch p.tok {
-	case tokn.ENCODE,
-		tokn.VARIANT,
-		tokn.DISPLAY,
-		tokn.EXTENSION,
-		tokn.OPTIONAL,
-		tokn.STEPSIZE,
-		tokn.OVERRIDE:
+	case ENCODE,
+		VARIANT,
+		DISPLAY,
+		EXTENSION,
+		OPTIONAL,
+		STEPSIZE,
+		OVERRIDE:
 		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "with-attribute")
@@ -1463,33 +1462,33 @@ func (p *parser) parseWithStmt() *WithStmt {
 	}
 
 	switch p.tok {
-	case tokn.OVERRIDE:
+	case OVERRIDE:
 		x.Override = p.consume()
-	case tokn.MODIF:
+	case MODIF:
 		if p.lit(1) != "@local" {
 			p.errorExpected(p.pos(1), "@local")
 		}
 		x.Override = p.consume()
 	}
 
-	if p.tok == tokn.LPAREN {
+	if p.tok == LPAREN {
 		x.LParen = p.consume()
 		for {
 			x.List = append(x.List, p.parseWithQualifier())
-			if p.tok != tokn.COMMA {
+			if p.tok != COMMA {
 				break
 			}
 			p.consume()
 		}
-		x.RParen = p.expect(tokn.RPAREN)
+		x.RParen = p.expect(RPAREN)
 	}
 
-	var v Expr = &ValueLiteral{Tok: p.expect(tokn.STRING)}
-	if p.tok == tokn.DOT {
+	var v Expr = &ValueLiteral{Tok: p.expect(STRING)}
+	if p.tok == DOT {
 		v = &SelectorExpr{
 			X:   v,
 			Dot: p.consume(),
-			Sel: &ValueLiteral{Tok: p.expect(tokn.STRING)},
+			Sel: &ValueLiteral{Tok: p.expect(STRING)},
 		}
 	}
 	x.Value = v
@@ -1500,21 +1499,21 @@ func (p *parser) parseWithStmt() *WithStmt {
 func (p *parser) parseWithQualifier() Expr {
 	etok := p.peek(1)
 	switch p.tok {
-	case tokn.IDENT:
+	case IDENT:
 		return p.parseTypeRef()
-	case tokn.LBRACK:
+	case LBRACK:
 		return p.parseIndexExpr(nil)
-	case tokn.TYPE, tokn.TEMPLATE, tokn.CONST, tokn.ALTSTEP, tokn.TESTCASE, tokn.FUNCTION, tokn.SIGNATURE, tokn.MODULEPAR, tokn.GROUP:
+	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
 		x := new(DefKindExpr)
 		x.Kind = p.consume()
-		var y Expr = p.make_use(p.expect(tokn.ALL))
-		if p.tok == tokn.EXCEPT {
+		var y Expr = p.make_use(p.expect(ALL))
+		if p.tok == EXCEPT {
 			y = &ExceptExpr{
 				X:         y,
 				ExceptTok: p.consume(),
-				LBrace:    p.expect(tokn.LBRACE),
+				LBrace:    p.expect(LBRACE),
 				List:      p.parseRefList(),
-				RBrace:    p.expect(tokn.RBRACE),
+				RBrace:    p.expect(RBRACE),
 			}
 		}
 		x.List = []Expr{y}
@@ -1533,23 +1532,23 @@ func (p *parser) parseWithQualifier() Expr {
 func (p *parser) parseTypeDecl() Decl {
 	etok := p.peek(1)
 	switch p.peek(2).Kind() {
-	case tokn.IDENT, tokn.ADDRESS, tokn.CHARSTRING, tokn.NULL, tokn.UNIVERSAL:
+	case IDENT, ADDRESS, CHARSTRING, NULL, UNIVERSAL:
 		return p.parseSubTypeDecl()
-	case tokn.PORT:
+	case PORT:
 		return p.parsePortTypeDecl()
-	case tokn.COMPONENT:
+	case COMPONENT:
 		return p.parseComponentTypeDecl()
-	case tokn.UNION:
+	case UNION:
 		return p.parseStructTypeDecl()
-	case tokn.SET, tokn.RECORD:
-		if p.peek(3).Kind() == tokn.IDENT || p.peek(3).Kind() == tokn.ADDRESS {
+	case SET, RECORD:
+		if p.peek(3).Kind() == IDENT || p.peek(3).Kind() == ADDRESS {
 			return p.parseStructTypeDecl()
 		}
 		// lists are also parsed by parseSubTypeDecl
 		return p.parseSubTypeDecl()
-	case tokn.ENUMERATED:
+	case ENUMERATED:
 		return p.parseEnumTypeDecl()
-	case tokn.FUNCTION, tokn.ALTSTEP, tokn.TESTCASE:
+	case FUNCTION, ALTSTEP, TESTCASE:
 		return p.parseBehaviourTypeDecl()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
@@ -1570,27 +1569,27 @@ func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 	x.TypeTok = p.consume()
 	x.PortTok = p.consume()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	switch p.tok {
-	case tokn.MIXED, tokn.MESSAGE, tokn.PROCEDURE:
+	case MIXED, MESSAGE, PROCEDURE:
 		x.Kind = p.consume()
 	default:
 		p.errorExpected(p.pos(1), "'message' or 'procedure'")
 	}
 
-	if p.tok == tokn.REALTIME {
+	if p.tok == REALTIME {
 		x.Realtime = p.consume()
 	}
 
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Attrs = append(x.Attrs, p.parsePortAttribute())
 		p.expectSemi(x.Attrs[len(x.Attrs)-1].LastTok())
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
 	return x
 }
@@ -1601,15 +1600,15 @@ func (p *parser) parsePortAttribute() Node {
 	}
 	etok := p.peek(1)
 	switch p.tok {
-	case tokn.IN, tokn.OUT, tokn.INOUT, tokn.ADDRESS:
+	case IN, OUT, INOUT, ADDRESS:
 		return &PortAttribute{
 			Kind:  p.consume(),
 			Types: p.parseRefList(),
 		}
-	case tokn.MAP, tokn.UNMAP:
+	case MAP, UNMAP:
 		return &PortMapAttribute{
 			MapTok:   p.consume(),
-			ParamTok: p.expect(tokn.PARAM),
+			ParamTok: p.expect(PARAM),
 			Params:   p.parseFormalPars(),
 		}
 	default:
@@ -1631,10 +1630,10 @@ func (p *parser) parseComponentTypeDecl() *ComponentTypeDecl {
 	x.TypeTok = p.consume()
 	x.CompTok = p.consume()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	if p.tok == tokn.EXTENDS {
+	if p.tok == EXTENDS {
 		x.ExtendsTok = p.consume()
 		x.Extends = p.parseRefList()
 	}
@@ -1655,18 +1654,18 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Fields = append(x.Fields, p.parseField())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
 	return x
 }
@@ -1684,18 +1683,18 @@ func (p *parser) parseEnumTypeDecl() *EnumTypeDecl {
 	x.TypeTok = p.consume()
 	x.EnumTok = p.consume()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Enums = append(x.Enums, p.parseEnum())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
 	return x
 }
@@ -1734,20 +1733,20 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
-	if p.tok == tokn.RUNS {
+	if p.tok == RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == tokn.SYSTEM {
+	if p.tok == SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == tokn.RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 	x.With = p.parseWith()
@@ -1775,7 +1774,7 @@ func (p *parser) parseField() *Field {
 	}
 	x := new(Field)
 
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		if p.lit(1) != "@default" {
 			p.errorExpected(p.pos(1), "@default")
 		}
@@ -1783,22 +1782,22 @@ func (p *parser) parseField() *Field {
 	}
 	x.Type = p.parseTypeSpec()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
-	if p.tok == tokn.LBRACK {
+	if p.tok == LBRACK {
 		x.ArrayDef = p.parseArrayDefs()
 	}
 
-	if p.tok == tokn.LPAREN {
+	if p.tok == LPAREN {
 		x.ValueConstraint = p.parseParenExpr()
 	}
-	if p.tok == tokn.LENGTH {
+	if p.tok == LENGTH {
 		x.LengthConstraint = p.parseLength(nil)
 	}
 
-	if p.tok == tokn.OPTIONAL {
+	if p.tok == OPTIONAL {
 		x.Optional = p.consume()
 	}
 	return x
@@ -1810,18 +1809,18 @@ func (p *parser) parseTypeSpec() TypeSpec {
 	}
 	etok := p.peek(1)
 	switch p.tok {
-	case tokn.ADDRESS, tokn.CHARSTRING, tokn.IDENT, tokn.NULL, tokn.UNIVERSAL:
+	case ADDRESS, CHARSTRING, IDENT, NULL, UNIVERSAL:
 		return &RefSpec{X: p.parseTypeRef()}
-	case tokn.UNION:
+	case UNION:
 		return p.parseStructSpec()
-	case tokn.SET, tokn.RECORD:
-		if p.peek(2).Kind() == tokn.LBRACE {
+	case SET, RECORD:
+		if p.peek(2).Kind() == LBRACE {
 			return p.parseStructSpec()
 		}
 		return p.parseListSpec()
-	case tokn.ENUMERATED:
+	case ENUMERATED:
 		return p.parseEnumSpec()
-	case tokn.FUNCTION, tokn.ALTSTEP, tokn.TESTCASE:
+	case FUNCTION, ALTSTEP, TESTCASE:
 		return p.parseBehaviourSpec()
 	default:
 		p.errorExpected(p.pos(1), "type definition")
@@ -1835,15 +1834,15 @@ func (p *parser) parseStructSpec() *StructSpec {
 	}
 	x := new(StructSpec)
 	x.Kind = p.consume()
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Fields = append(x.Fields, p.parseField())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	return x
 }
 
@@ -1853,15 +1852,15 @@ func (p *parser) parseEnumSpec() *EnumSpec {
 	}
 	x := new(EnumSpec)
 	x.Tok = p.consume()
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Enums = append(x.Enums, p.parseEnum())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	return x
 }
 
@@ -1871,10 +1870,10 @@ func (p *parser) parseListSpec() *ListSpec {
 	}
 	x := new(ListSpec)
 	x.Kind = p.consume()
-	if p.tok == tokn.LENGTH {
+	if p.tok == LENGTH {
 		x.Length = p.parseLength(nil)
 	}
-	x.OfTok = p.expect(tokn.OF)
+	x.OfTok = p.expect(OF)
 	x.ElemType = p.parseTypeSpec()
 	return x
 }
@@ -1888,15 +1887,15 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
 	x.Kind = p.consume()
 	x.Params = p.parseFormalPars()
 
-	if p.tok == tokn.RUNS {
+	if p.tok == RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == tokn.SYSTEM {
+	if p.tok == SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == tokn.RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 	return x
@@ -1914,13 +1913,13 @@ func (p *parser) parseTemplateDecl() *TemplateDecl {
 	x := &TemplateDecl{RestrictionSpec: &RestrictionSpec{}}
 	x.TemplateTok = p.consume()
 
-	if p.tok == tokn.LPAREN {
+	if p.tok == LPAREN {
 		x.LParen = p.consume() // consume '('
 		x.Tok = p.consume()    // consume omit/value/...
-		x.RParen = p.expect(tokn.RPAREN)
+		x.RParen = p.expect(RPAREN)
 	}
 
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
 
@@ -1929,17 +1928,17 @@ func (p *parser) parseTemplateDecl() *TemplateDecl {
 		return x
 	}
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
-	if p.tok == tokn.LPAREN {
+	if p.tok == LPAREN {
 		x.Params = p.parseFormalPars()
 	}
-	if p.tok == tokn.MODIFIES {
+	if p.tok == MODIFIES {
 		x.ModifiesTok = p.consume()
 		x.Base = p.parsePrimaryExpr()
 	}
-	x.AssignTok = p.expect(tokn.ASSIGN)
+	x.AssignTok = p.expect(ASSIGN)
 	x.Value = p.parseExpr()
 	x.With = p.parseWith()
 
@@ -1958,10 +1957,10 @@ func (p *parser) parseModulePar() Decl {
 	tok := p.consume()
 
 	// parse deprecated module parameter group
-	if p.tok == tokn.LBRACE {
+	if p.tok == LBRACE {
 		x := &ModuleParameterGroup{Tok: tok}
 		x.LBrace = p.consume()
-		for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+		for p.tok != RBRACE && p.tok != EOF {
 			d := new(ValueDecl)
 			d.TemplateRestriction = p.parseRestrictionSpec()
 			d.Type = p.parseTypeRef()
@@ -1969,7 +1968,7 @@ func (p *parser) parseModulePar() Decl {
 			p.expectSemi(d.Decls[len(d.Decls)-1].LastTok())
 			x.Decls = append(x.Decls, d)
 		}
-		x.RBrace = p.expect(tokn.RBRACE)
+		x.RBrace = p.expect(RBRACE)
 		x.With = p.parseWith()
 		return x
 	}
@@ -1993,11 +1992,11 @@ func (p *parser) parseValueDecl() *ValueDecl {
 	x := &ValueDecl{Kind: p.consume()}
 	x.TemplateRestriction = p.parseRestrictionSpec()
 
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
 
-	if x.Kind.Kind() != tokn.TIMER {
+	if x.Kind.Kind() != TIMER {
 		x.Type = p.parseTypeRef()
 	}
 	x.Decls = p.parseDeclList()
@@ -2007,17 +2006,17 @@ func (p *parser) parseValueDecl() *ValueDecl {
 
 func (p *parser) parseRestrictionSpec() *RestrictionSpec {
 	switch p.tok {
-	case tokn.TEMPLATE:
+	case TEMPLATE:
 		x := new(RestrictionSpec)
 		x.TemplateTok = p.consume()
-		if p.tok == tokn.LPAREN {
+		if p.tok == LPAREN {
 			x.LParen = p.consume()
 			x.Tok = p.consume()
-			x.RParen = p.expect(tokn.RPAREN)
+			x.RParen = p.expect(RPAREN)
 		}
 		return x
 
-	case tokn.OMIT, tokn.VALUE, tokn.PRESENT:
+	case OMIT, VALUE, PRESENT:
 		x := new(RestrictionSpec)
 		x.Tok = p.consume()
 		return x
@@ -2032,7 +2031,7 @@ func (p *parser) parseDeclList() (list []*Declarator) {
 	}
 
 	list = append(list, p.parseDeclarator())
-	for p.tok == tokn.COMMA {
+	for p.tok == COMMA {
 		p.consume()
 		list = append(list, p.parseDeclarator())
 	}
@@ -2042,10 +2041,10 @@ func (p *parser) parseDeclList() (list []*Declarator) {
 func (p *parser) parseDeclarator() *Declarator {
 	x := &Declarator{}
 	x.Name = p.parseName()
-	if p.tok == tokn.LBRACK {
+	if p.tok == LBRACK {
 		x.ArrayDef = p.parseArrayDefs()
 	}
-	if p.tok == tokn.ASSIGN {
+	if p.tok == ASSIGN {
 		x.AssignTok = p.consume()
 		x.Value = p.parseExpr()
 	}
@@ -2063,34 +2062,34 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 
 	x := new(FuncDecl)
 	x.Kind = p.consume()
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
 
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok == tokn.RUNS {
+	if p.tok == RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == tokn.MTC {
+	if p.tok == MTC {
 		x.Mtc = p.parseMtc()
 	}
 
-	if p.tok == tokn.SYSTEM {
+	if p.tok == SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == tokn.RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 
-	if p.tok == tokn.LBRACE {
+	if p.tok == LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
 
@@ -2110,7 +2109,7 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 	x := new(FuncDecl)
 	x.External = p.consume()
 	x.Kind = p.consume()
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
 
@@ -2118,19 +2117,19 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok == tokn.RUNS {
+	if p.tok == RUNS {
 		x.RunsOn = p.parseRunsOn()
 	}
 
-	if p.tok == tokn.MTC {
+	if p.tok == MTC {
 		x.Mtc = p.parseMtc()
 	}
 
-	if p.tok == tokn.SYSTEM {
+	if p.tok == SYSTEM {
 		x.System = p.parseSystem()
 	}
 
-	if p.tok == tokn.RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 	x.With = p.parseWith()
@@ -2149,21 +2148,21 @@ func (p *parser) parseSignatureDecl() *SignatureDecl {
 	x := new(SignatureDecl)
 	x.Tok = p.consume()
 	x.Name = p.parseName()
-	if p.tok == tokn.LT {
+	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
 	}
 
 	x.Params = p.parseFormalPars()
 
-	if p.tok == tokn.NOBLOCK {
+	if p.tok == NOBLOCK {
 		x.NoBlock = p.consume()
 	}
 
-	if p.tok == tokn.RETURN {
+	if p.tok == RETURN {
 		x.Return = p.parseReturn()
 	}
 
-	if p.tok == tokn.EXCEPTION {
+	if p.tok == EXCEPTION {
 		x.ExceptionTok = p.consume()
 		x.Exception = p.parseParenExpr()
 	}
@@ -2173,22 +2172,22 @@ func (p *parser) parseSignatureDecl() *SignatureDecl {
 
 func (p *parser) parseRunsOn() *RunsOnSpec {
 	return &RunsOnSpec{
-		RunsTok: p.expect(tokn.RUNS),
-		OnTok:   p.expect(tokn.ON),
+		RunsTok: p.expect(RUNS),
+		OnTok:   p.expect(ON),
 		Comp:    p.parseTypeRef(),
 	}
 }
 
 func (p *parser) parseSystem() *SystemSpec {
 	return &SystemSpec{
-		Tok:  p.expect(tokn.SYSTEM),
+		Tok:  p.expect(SYSTEM),
 		Comp: p.parseTypeRef(),
 	}
 }
 
 func (p *parser) parseMtc() *MtcSpec {
 	return &MtcSpec{
-		Tok:  p.expect(tokn.MTC),
+		Tok:  p.expect(MTC),
 		Comp: p.parseTypeRef(),
 	}
 }
@@ -2197,7 +2196,7 @@ func (p *parser) parseReturn() *ReturnSpec {
 	x := new(ReturnSpec)
 	x.Tok = p.consume()
 	x.Restriction = p.parseRestrictionSpec()
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
@@ -2209,15 +2208,15 @@ func (p *parser) parseFormalPars() *FormalPars {
 		defer un(trace(p, "FormalPars"))
 	}
 	x := new(FormalPars)
-	x.LParen = p.expect(tokn.LPAREN)
-	for p.tok != tokn.RPAREN {
+	x.LParen = p.expect(LPAREN)
+	for p.tok != RPAREN {
 		x.List = append(x.List, p.parseFormalPar())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	x.RParen = p.expect(tokn.RPAREN)
+	x.RParen = p.expect(RPAREN)
 	return x
 }
 
@@ -2228,25 +2227,25 @@ func (p *parser) parseFormalPar() *FormalPar {
 	x := new(FormalPar)
 
 	switch p.tok {
-	case tokn.IN:
+	case IN:
 		x.Direction = p.consume()
-	case tokn.OUT:
+	case OUT:
 		x.Direction = p.consume()
-	case tokn.INOUT:
+	case INOUT:
 		x.Direction = p.consume()
 	}
 
 	x.TemplateRestriction = p.parseRestrictionSpec()
-	if p.tok == tokn.MODIF {
+	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
 	x.Type = p.parseTypeRef()
 	x.Name = p.parseName()
 
-	if p.tok == tokn.LBRACK {
+	if p.tok == LBRACK {
 		x.ArrayDef = p.parseArrayDefs()
 	}
-	if p.tok == tokn.ASSIGN {
+	if p.tok == ASSIGN {
 		x.AssignTok = p.consume()
 		x.Value = p.parseExpr()
 	}
@@ -2258,15 +2257,15 @@ func (p *parser) parseTypeFormalPars() *FormalPars {
 		defer un(trace(p, "TypeFormalPars"))
 	}
 	x := new(FormalPars)
-	x.LParen = p.expect(tokn.LT)
-	for p.tok != tokn.GT {
+	x.LParen = p.expect(LT)
+	for p.tok != GT {
 		x.List = append(x.List, p.parseTypeFormalPar())
-		if p.tok != tokn.COMMA {
+		if p.tok != COMMA {
 			break
 		}
 		p.consume()
 	}
-	x.RParen = p.expect(tokn.GT)
+	x.RParen = p.expect(GT)
 	return x
 }
 
@@ -2277,21 +2276,21 @@ func (p *parser) parseTypeFormalPar() *FormalPar {
 
 	x := new(FormalPar)
 
-	if p.tok == tokn.IN {
+	if p.tok == IN {
 		x.Direction = p.consume()
 	}
 
 	switch p.tok {
-	case tokn.TYPE:
+	case TYPE:
 		x.Type = p.make_use(p.consume())
-	case tokn.SIGNATURE:
+	case SIGNATURE:
 		x.Type = p.make_use(p.consume())
 	default:
 		x.Type = p.parseTypeRef()
 	}
-	x.Name = p.make_use(p.expect(tokn.IDENT))
+	x.Name = p.make_use(p.expect(IDENT))
 	x.Name.IsName = true
-	if p.tok == tokn.ASSIGN {
+	if p.tok == ASSIGN {
 		x.AssignTok = p.consume()
 		x.Value = p.parseTypeRef()
 	}
@@ -2308,12 +2307,12 @@ func (p *parser) parseBlockStmt() *BlockStmt {
 		defer un(trace(p, "BlockStmt"))
 	}
 
-	x := &BlockStmt{LBrace: p.expect(tokn.LBRACE)}
-	for p.tok != tokn.RBRACE && p.tok != tokn.EOF {
+	x := &BlockStmt{LBrace: p.expect(LBRACE)}
+	for p.tok != RBRACE && p.tok != EOF {
 		x.Stmts = append(x.Stmts, p.parseStmt())
 		p.expectSemi(x.Stmts[len(x.Stmts)-1].LastTok())
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	return x
 }
 
@@ -2324,48 +2323,48 @@ func (p *parser) parseStmt() Stmt {
 
 	etok := p.peek(1)
 	switch p.tok {
-	case tokn.TEMPLATE:
+	case TEMPLATE:
 		return &DeclStmt{Decl: p.parseTemplateDecl()}
-	case tokn.VAR, tokn.CONST, tokn.TIMER, tokn.PORT:
+	case VAR, CONST, TIMER, PORT:
 		return &DeclStmt{Decl: p.parseValueDecl()}
-	case tokn.REPEAT, tokn.BREAK, tokn.CONTINUE:
+	case REPEAT, BREAK, CONTINUE:
 		return &BranchStmt{Tok: p.consume()}
-	case tokn.LABEL:
-		return &BranchStmt{Tok: p.consume(), Label: p.make_use(p.expect(tokn.IDENT))}
-	case tokn.GOTO:
-		return &BranchStmt{Tok: p.consume(), Label: p.make_use(p.expect(tokn.IDENT))}
-	case tokn.RETURN:
+	case LABEL:
+		return &BranchStmt{Tok: p.consume(), Label: p.make_use(p.expect(IDENT))}
+	case GOTO:
+		return &BranchStmt{Tok: p.consume(), Label: p.make_use(p.expect(IDENT))}
+	case RETURN:
 		x := &ReturnStmt{Tok: p.consume()}
-		if !stmtStart[p.tok] && p.tok != tokn.SEMICOLON && p.tok != tokn.RBRACE {
+		if !stmtStart[p.tok] && p.tok != SEMICOLON && p.tok != RBRACE {
 			x.Result = p.parseExpr()
 		}
 		return x
-	case tokn.SELECT:
+	case SELECT:
 		return p.parseSelect()
-	case tokn.ALT, tokn.INTERLEAVE:
+	case ALT, INTERLEAVE:
 		alt := &AltStmt{Tok: p.consume()}
-		if p.tok == tokn.MODIF {
+		if p.tok == MODIF {
 			alt.NoDefault = p.consume()
 		}
 		alt.Body = p.parseBlockStmt()
 		return alt
-	case tokn.LBRACK:
+	case LBRACK:
 		return p.parseAltGuard()
-	case tokn.FOR:
+	case FOR:
 		return p.parseForLoop()
-	case tokn.WHILE:
+	case WHILE:
 		return p.parseWhileLoop()
-	case tokn.DO:
+	case DO:
 		return p.parseDoWhileLoop()
-	case tokn.IF:
+	case IF:
 		return p.parseIfStmt()
-	case tokn.LBRACE:
+	case LBRACE:
 		return p.parseBlockStmt()
-	case tokn.IDENT, tokn.TESTCASE, tokn.ANYKW, tokn.ALL, tokn.MAP, tokn.UNMAP, tokn.MTC:
+	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
 		x := p.parseSimpleStmt()
 
 		// try call-statement block
-		if p.tok == tokn.LBRACE {
+		if p.tok == LBRACE {
 			c, ok := x.Expr.(*CallExpr)
 			if !ok {
 				return x
@@ -2393,7 +2392,7 @@ func (p *parser) parseStmt() Stmt {
 	//
 	//       if (1 > 2) { 10 } else { 20 }
 	//
-	case tokn.INT, tokn.FLOAT, tokn.STRING, tokn.BSTRING, tokn.TRUE, tokn.FALSE, tokn.PASS, tokn.FAIL, tokn.NONE, tokn.INCONC, tokn.ERROR:
+	case INT, FLOAT, STRING, BSTRING, TRUE, FALSE, PASS, FAIL, NONE, INCONC, ERROR:
 		return p.parseSimpleStmt()
 	default:
 		p.errorExpected(p.pos(1), "statement")
@@ -2405,17 +2404,17 @@ func (p *parser) parseStmt() Stmt {
 func (p *parser) parseForLoop() *ForStmt {
 	x := new(ForStmt)
 	x.Tok = p.consume()
-	x.LParen = p.expect(tokn.LPAREN)
-	if p.tok == tokn.VAR {
+	x.LParen = p.expect(LPAREN)
+	if p.tok == VAR {
 		x.Init = &DeclStmt{Decl: p.parseValueDecl()}
 	} else {
 		x.Init = &ExprStmt{Expr: p.parseExpr()}
 	}
-	x.InitSemi = p.expect(tokn.SEMICOLON)
+	x.InitSemi = p.expect(SEMICOLON)
 	x.Cond = p.parseExpr()
-	x.CondSemi = p.expect(tokn.SEMICOLON)
+	x.CondSemi = p.expect(SEMICOLON)
 	x.Post = p.parseSimpleStmt()
-	x.LParen = p.expect(tokn.RPAREN)
+	x.LParen = p.expect(RPAREN)
 	x.Body = p.parseBlockStmt()
 	return x
 }
@@ -2432,7 +2431,7 @@ func (p *parser) parseDoWhileLoop() *DoWhileStmt {
 	return &DoWhileStmt{
 		DoTok:    p.consume(),
 		Body:     p.parseBlockStmt(),
-		WhileTok: p.expect(tokn.WHILE),
+		WhileTok: p.expect(WHILE),
 		Cond:     p.parseParenExpr(),
 	}
 }
@@ -2443,9 +2442,9 @@ func (p *parser) parseIfStmt() *IfStmt {
 		Cond: p.parseParenExpr(),
 		Then: p.parseBlockStmt(),
 	}
-	if p.tok == tokn.ELSE {
+	if p.tok == ELSE {
 		x.ElseTok = p.consume()
-		if p.tok == tokn.IF {
+		if p.tok == IF {
 			x.Else = p.parseIfStmt()
 		} else {
 			x.Else = p.parseBlockStmt()
@@ -2456,23 +2455,23 @@ func (p *parser) parseIfStmt() *IfStmt {
 
 func (p *parser) parseSelect() *SelectStmt {
 	x := new(SelectStmt)
-	x.Tok = p.expect(tokn.SELECT)
-	if p.tok == tokn.UNION {
+	x.Tok = p.expect(SELECT)
+	if p.tok == UNION {
 		x.Union = p.consume()
 	}
 	x.Tag = p.parseParenExpr()
-	x.LBrace = p.expect(tokn.LBRACE)
-	for p.tok == tokn.CASE {
+	x.LBrace = p.expect(LBRACE)
+	for p.tok == CASE {
 		x.Body = append(x.Body, p.parseCaseStmt())
 	}
-	x.RBrace = p.expect(tokn.RBRACE)
+	x.RBrace = p.expect(RBRACE)
 	return x
 }
 
 func (p *parser) parseCaseStmt() *CaseClause {
 	x := new(CaseClause)
-	x.Tok = p.expect(tokn.CASE)
-	if p.tok == tokn.ELSE {
+	x.Tok = p.expect(CASE)
+	if p.tok == ELSE {
 		p.consume() // TODO(5nord) move token into AST
 	} else {
 		x.Case = p.parseParenExpr()
@@ -2483,20 +2482,20 @@ func (p *parser) parseCaseStmt() *CaseClause {
 
 func (p *parser) parseAltGuard() *CommClause {
 	x := new(CommClause)
-	x.LBrack = p.expect(tokn.LBRACK)
-	if p.tok == tokn.ELSE {
+	x.LBrack = p.expect(LBRACK)
+	if p.tok == ELSE {
 		x.Else = p.consume()
-		x.RBrack = p.expect(tokn.RBRACK)
+		x.RBrack = p.expect(RBRACK)
 		x.Body = p.parseBlockStmt()
 		return x
 	}
 
-	if p.tok != tokn.RBRACK {
+	if p.tok != RBRACK {
 		x.X = p.parseExpr()
 	}
-	x.RBrack = p.expect(tokn.RBRACK)
+	x.RBrack = p.expect(RBRACK)
 	x.Comm = p.parseSimpleStmt()
-	if p.tok == tokn.LBRACE {
+	if p.tok == LBRACE {
 		x.Body = p.parseBlockStmt()
 	}
 	return x
