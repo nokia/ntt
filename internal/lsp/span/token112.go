@@ -7,10 +7,10 @@
 package span
 
 import (
-	"github.com/nokia/ntt/internal/loc"
+	"go/token"
 )
 
 // TODO(rstambler): Delete this file when we no longer support Go 1.11.
-func lineStart(f *loc.File, line int) loc.Pos {
+func lineStart(f *token.File, line int) token.Pos {
 	return f.LineStart(line)
 }
