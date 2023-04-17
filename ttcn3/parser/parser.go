@@ -9,7 +9,6 @@ import (
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/ast"
-	"github.com/nokia/ntt/ttcn3/scanner"
 	tokn "github.com/nokia/ntt/ttcn3/token"
 )
 
@@ -77,7 +76,7 @@ func (tok token) String() string {
 type parser struct {
 	file    *loc.File
 	errors  errors.ErrorList
-	scanner scanner.Scanner
+	scanner Scanner
 
 	// Tracing/debugging
 	mode   Mode // parsing mode
