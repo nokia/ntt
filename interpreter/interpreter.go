@@ -303,13 +303,13 @@ func evalListSpec(t *ast.ListSpec, env runtime.Scope) runtime.Object {
 	if listElement == nil || runtime.IsError(listElement) {
 		return listElement
 	}
-	switch t.Kind.Lit {
+	switch t.Kind.String() {
 	case "set":
 		return runtime.NewSetOf(listElement)
 	case "record":
 		return runtime.NewRecordOf(listElement)
 	default:
-		return runtime.Errorf("unknown list spec type %s", t.Kind.Lit)
+		return runtime.Errorf("unknown list spec type %s", t.Kind.String())
 	}
 }
 
