@@ -20,7 +20,7 @@ func (md *MarkdownHover) Print(sign string, comment string, posRef string) proto
 }
 
 func (md *MarkdownHover) LinkForNode(def *ttcn3.Node) string {
-	p := def.Position(def.Node.Pos())
+	p := syntax.Begin(def.Node)
 	return fmt.Sprintf("[module %s](%s#L%dC%d)", def.ModuleOf(def.Node).Name.String(), def.Filename(), p.Line, p.Column)
 }
 
@@ -104,7 +104,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	for _, def := range tree.LookupWithDB(x, &s.db) {
 		defFound = true
 
-		comment = syntax.Doc(def.Tree.FileSet, def.Node)
+		comment = syntax.Doc(def.Node)
 		signature = getSignature(def)
 		if tree.Root != def.Root {
 			posRef = s.clientCapability.HoverContent.LinkForNode(def)

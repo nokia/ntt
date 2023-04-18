@@ -10,8 +10,8 @@ import (
 	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -171,25 +171,25 @@ func list(cmd *cobra.Command, args []string) error {
 				case *syntax.Module:
 					module = syntax.Name(n.Name)
 					if cmd.Use == "modules" {
-						Print(basket, tree, n.Pos(), module, syntax.Doc(tree.FileSet, n))
+						Print(basket, n, module)
 						return false
 					}
 					return true
 				case *syntax.FuncDecl:
 					if n.IsTest() && (cmd.Use == "list" || cmd.Use == "tests") {
-						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), syntax.Doc(tree.FileSet, n))
+						Print(basket, n, module+"."+n.Name.String())
 					}
 				case *syntax.ImportDecl:
 					if cmd.Use == "imports" {
-						Print(basket, tree, n.Pos(), fmt.Sprintf("%s\t%s", module, n.Module.String()), syntax.Doc(tree.FileSet, n))
+						Print(basket, n, fmt.Sprintf("%s\t%s", module, n.Module.String()))
 					}
 				case *syntax.ControlPart:
 					if cmd.Use == "controls" {
-						Print(basket, tree, n.Pos(), module+".control", syntax.Doc(tree.FileSet, n))
+						Print(basket, n, module+".control")
 					}
 				case *syntax.Declarator:
 					if cmd.Use == "modulepars" {
-						Print(basket, tree, n.Pos(), module+"."+n.Name.String(), syntax.Doc(tree.FileSet, n))
+						Print(basket, n, module+"."+n.Name.String())
 					}
 				case *syntax.ValueDecl:
 					if n.Kind == nil && n.Kind.Kind() == syntax.MODULEPAR {
@@ -234,13 +234,13 @@ func (t Tag) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.String())
 }
 
-func Print(basket Basket, tree *ttcn3.Tree, pos loc.Pos, id string, comments string) {
-	tags := doc.FindAllTags(comments)
+func Print(basket Basket, n syntax.Node, id string) {
+	tags := doc.FindAllTags(syntax.Doc(n))
 	if !basket.Match(id, tags) {
 		return
 	}
 
-	p := tree.Position(pos)
+	p := syntax.Begin(n)
 
 	var prettyTags []Tag
 	for _, tag := range tags {

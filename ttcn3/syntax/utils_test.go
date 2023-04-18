@@ -17,7 +17,7 @@ func TestDoc(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return syntax.Doc(fset, root)
+		return syntax.Doc(root)
 	}
 
 	t.Run("empty", func(t *testing.T) {

@@ -12,8 +12,8 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 type FunctionDetails struct {
@@ -90,29 +90,29 @@ func getAllBehavioursFromModule(suite *Suite, kind syntax.Kind, mname string) []
 					textFormat := protocol.PlainTextTextFormat
 					sig.WriteString(node.Kind.String() + " " + mname + "." + node.Name.String())
 					len1 := len(sig.String())
-					printer.Print(&sig, tree.FileSet, node.Params)
+					printer.Print(&sig, node.Params)
 					hasParams := (len(sig.String()) - len1) > 2
 					if hasParams {
 						textFormat = protocol.SnippetTextFormat
 					}
 					if node.RunsOn != nil {
 						sig.WriteString("\n  ")
-						printer.Print(&sig, tree.FileSet, node.RunsOn)
+						printer.Print(&sig, node.RunsOn)
 					}
 					if node.System != nil {
 						sig.WriteString("\n  ")
-						printer.Print(&sig, tree.FileSet, node.System)
+						printer.Print(&sig, node.System)
 					}
 					if node.Return != nil {
 						sig.WriteString("\n  ")
-						printer.Print(&sig, tree.FileSet, node.Return)
+						printer.Print(&sig, node.Return)
 					}
 					list = append(list, &FunctionDetails{
 						Label:         node.Name.String(),
 						HasRunsOn:     (node.RunsOn != nil),
 						HasReturn:     (node.Return != nil),
 						Signature:     sig.String(),
-						Documentation: syntax.Doc(tree.FileSet, node),
+						Documentation: syntax.Doc(node),
 						HasParameters: hasParams,
 						TextFormat:    textFormat})
 				}
@@ -873,10 +873,10 @@ func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
 	// TODO(5nord): Replace this function with n.LastTok() and n.PrevTok()
 
 	var (
-		completed bool       = false
+		completed bool          = false
 		nodeStack []syntax.Node = make([]syntax.Node, 0, 10)
 		lastStack []syntax.Node = nil
-		isError   bool       = false
+		isError   bool          = false
 	)
 
 	n.Inspect(func(n syntax.Node) bool {

@@ -44,7 +44,7 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 				title = "test running..."
 				params.Stop = true
 			}
-			if cmd, err := NewCommand(tree.Position(n.Pos()), title, "ntt.test", params); err == nil {
+			if cmd, err := NewCommand(syntax.Begin(n), title, "ntt.test", params); err == nil {
 				result = append(result, cmd)
 			}
 		}

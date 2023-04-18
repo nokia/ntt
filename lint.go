@@ -9,13 +9,12 @@ import (
 
 	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -179,7 +178,6 @@ For information on writing new checks, see <TBD>.
 )
 
 type Import struct {
-	Fset     *loc.FileSet
 	Node     *syntax.ImportDecl
 	Path     string
 	From     string
@@ -254,15 +252,14 @@ func lint(cmd *cobra.Command, args []string) error {
 					}
 
 					stack = append(stack, n)
-					fset := tree.FileSet
 
 					switch n := n.(type) {
 					case *syntax.Ident:
-						checkUsage(fset, n)
+						checkUsage(n)
 
 					case *syntax.Module:
-						checkNaming(fset, n, style.Naming.Modules)
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkNaming(n, style.Naming.Modules)
+						checkBraces(n.LBrace, n.RBrace)
 
 					case *syntax.FuncDecl:
 						ccID = n
@@ -270,18 +267,18 @@ func lint(cmd *cobra.Command, args []string) error {
 
 						switch n.Kind.Kind() {
 						case syntax.TESTCASE:
-							checkNaming(fset, n, style.Naming.Tests)
-							checkTags(fset, n, style.Tags.Tests)
+							checkNaming(n, style.Naming.Tests)
+							checkTags(n, style.Tags.Tests)
 						case syntax.FUNCTION:
-							checkNaming(fset, n, style.Naming.Functions)
+							checkNaming(n, style.Naming.Functions)
 						case syntax.ALTSTEP:
-							checkNaming(fset, n, style.Naming.Altsteps)
+							checkNaming(n, style.Naming.Altsteps)
 						}
 
-						checkLines(fset, n)
+						checkLines(n)
 
 					case *syntax.FormalPar:
-						checkNaming(fset, n, style.Naming.Parameters)
+						checkNaming(n, style.Naming.Parameters)
 
 						// We do not descent any further,
 						// because we do not want to count
@@ -290,8 +287,8 @@ func lint(cmd *cobra.Command, args []string) error {
 						return false
 
 					case *syntax.PortTypeDecl:
-						checkNaming(fset, n, style.Naming.PortTypes)
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkNaming(n, style.Naming.PortTypes)
+						checkBraces(n.LBrace, n.RBrace)
 
 					case *syntax.Declarator:
 						if len(stack) <= 2 {
@@ -307,59 +304,59 @@ func lint(cmd *cobra.Command, args []string) error {
 
 						switch {
 						case isPort(parent):
-							checkNaming(fset, n, style.Naming.Ports)
+							checkNaming(n, style.Naming.Ports)
 						case isConst(parent):
 							switch {
 							case inGlobalScope(scope):
-								checkNaming(fset, n, style.Naming.GlobalConsts)
+								checkNaming(n, style.Naming.GlobalConsts)
 							case inComponentScope(scope):
-								checkNaming(fset, n, style.Naming.ComponentConsts)
+								checkNaming(n, style.Naming.ComponentConsts)
 							}
 						case isVarTemplate(parent):
-							checkNaming(fset, n, style.Naming.VarTemplates)
+							checkNaming(n, style.Naming.VarTemplates)
 						case isVar(parent):
 							switch {
 							case inComponentScope(scope):
-								checkNaming(fset, n, style.Naming.ComponentVars)
+								checkNaming(n, style.Naming.ComponentVars)
 							default:
-								checkNaming(fset, n, style.Naming.Locals)
+								checkNaming(n, style.Naming.Locals)
 							}
 						}
 
 						return true
 
 					case *syntax.TemplateDecl:
-						checkNaming(fset, n, style.Naming.Templates)
+						checkNaming(n, style.Naming.Templates)
 
 					case *syntax.BlockStmt:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.CompositeLiteral:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.ExceptExpr:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.SelectStmt:
 						caseElse[n] = 0
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.StructSpec:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.EnumSpec:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.ModuleParameterGroup:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.StructTypeDecl:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.EnumTypeDecl:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.ImportDecl:
-						checkBraces(fset, n.LBrace, n.RBrace)
-						checkImport(fset, n, mod)
+						checkBraces(n.LBrace, n.RBrace)
+						checkImport(n, mod)
 					case *syntax.GroupDecl:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.WithSpec:
-						checkBraces(fset, n.LBrace, n.RBrace)
+						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.ParenExpr:
 						if n.LParen.Kind() == syntax.LBRACE {
-							checkBraces(fset, n.LParen, n.RParen)
+							checkBraces(n.LParen, n.RParen)
 						}
 
 					case *syntax.ModuleDef:
@@ -403,8 +400,8 @@ func lint(cmd *cobra.Command, args []string) error {
 					return true
 				})
 
-				checkComplexity(tree.FileSet, cc)
-				checkCaseElse(tree.FileSet, caseElse)
+				checkComplexity(cc)
+				checkCaseElse(caseElse)
 			}
 		}(i)
 	}
@@ -424,24 +421,24 @@ func lint(cmd *cobra.Command, args []string) error {
 
 }
 
-func checkNaming(fset *loc.FileSet, n syntax.Node, patterns map[string]string) {
-	checkPatterns(fset, n, patterns, syntax.Name(n))
+func checkNaming(n syntax.Node, patterns map[string]string) {
+	checkPatterns(n, patterns, syntax.Name(n))
 }
 
-func checkTags(fset *loc.FileSet, n syntax.Node, patterns map[string]string) {
+func checkTags(n syntax.Node, patterns map[string]string) {
 	if len(patterns) == 0 {
 		return
 	}
 
 	var tags []string
-	for _, t := range doc.FindAllTags(syntax.Doc(fset, n)) {
+	for _, t := range doc.FindAllTags(syntax.Doc(n)) {
 		tags = append(tags, strings.Join(t, ":"))
 	}
 
-	checkPatterns(fset, n, patterns, tags...)
+	checkPatterns(n, patterns, tags...)
 }
 
-func checkPatterns(fset *loc.FileSet, n syntax.Node, patterns map[string]string, ss ...string) {
+func checkPatterns(n syntax.Node, patterns map[string]string, ss ...string) {
 next:
 	for p, msg := range patterns {
 		expect := true
@@ -458,61 +455,61 @@ next:
 		}
 
 		// If we could not match any, we report an error
-		reportError(&errPattern{fset: fset, node: n, msg: msg})
+		reportError(&errPattern{node: n, msg: msg})
 	}
 }
 
-func checkLines(fset *loc.FileSet, n syntax.Node) {
+func checkLines(n syntax.Node) {
 	if style.MaxLines == 0 {
 		return
 	}
 
-	begin := fset.Position(n.Pos())
-	end := fset.Position(n.End())
+	begin := syntax.Begin(n)
+	end := syntax.End(n)
 	lines := end.Line - begin.Line
 	if lines > style.MaxLines {
-		reportError(&errLines{fset: fset, node: n, lines: lines})
+		reportError(&errLines{node: n, lines: lines})
 	}
 
 }
 
-func checkBraces(fset *loc.FileSet, left syntax.Node, right syntax.Node) {
+func checkBraces(left syntax.Node, right syntax.Node) {
 	if !style.AlignedBraces {
 		return
 	}
 
-	p1 := fset.Position(left.Pos())
-	p2 := fset.Position(right.Pos())
+	p1 := syntax.Begin(left)
+	p2 := syntax.Begin(right)
 	if p1.Line != p2.Line && p1.Column != p2.Column {
-		reportError(&errBraces{fset: fset, left: left, right: right})
+		reportError(&errBraces{left: left, right: right})
 	}
 }
 
-func checkComplexity(fset *loc.FileSet, cc map[syntax.Node]int) {
+func checkComplexity(cc map[syntax.Node]int) {
 	if style.Complexity.Max == 0 {
 		return
 	}
 
 	for n, v := range cc {
 		if v > style.Complexity.Max {
-			reportError(&errComplexity{fset: fset, node: n, complexity: v})
+			reportError(&errComplexity{node: n, complexity: v})
 		}
 
 	}
 }
 
-func checkCaseElse(fset *loc.FileSet, caseElse map[syntax.Node]int) {
+func checkCaseElse(caseElse map[syntax.Node]int) {
 	if !style.RequireCaseElse {
 		return
 	}
 	for n, v := range caseElse {
 		if v == 0 {
-			reportError(&errMissingCaseElse{fset: fset, node: n})
+			reportError(&errMissingCaseElse{node: n})
 		}
 	}
 }
 
-func checkUsage(fset *loc.FileSet, n *syntax.Ident) {
+func checkUsage(n *syntax.Ident) {
 
 	if style.Usage == nil {
 		return
@@ -525,7 +522,6 @@ func checkUsage(fset *loc.FileSet, n *syntax.Ident) {
 	u.count++
 	if u.count >= u.Limit {
 		reportError(&errUsageExceedsLimit{
-			fset:  fset,
 			node:  n,
 			usage: u.count,
 			limit: u.Limit,
@@ -533,7 +529,7 @@ func checkUsage(fset *loc.FileSet, n *syntax.Ident) {
 	}
 }
 
-func checkImport(fset *loc.FileSet, n *syntax.ImportDecl, mod *syntax.Module) {
+func checkImport(n *syntax.ImportDecl, mod *syntax.Module) {
 	if !style.Unused.Modules {
 		return
 	}
@@ -544,8 +540,7 @@ func checkImport(fset *loc.FileSet, n *syntax.ImportDecl, mod *syntax.Module) {
 	usedModuleMu.Lock()
 	usedModules[imported] = Import{
 		Node:     n,
-		Fset:     fset,
-		Path:     fset.Position(n.Pos()).Filename,
+		Path:     syntax.Begin(n).Filename,
 		From:     importing,
 		Imported: imported,
 	}

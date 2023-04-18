@@ -25,10 +25,10 @@ func newAllIdsWithSameNameFromFile(file string, idName string) []protocol.Locati
 		switch node := n.(type) {
 		case *syntax.Ident:
 			if idName == node.Tok.String() {
-				list = append(list, location(tree.FileSet.Position(node.Tok.Pos())))
+				list = append(list, location(syntax.Begin(node.Tok)))
 			}
 			if node.Tok2 != nil && idName == node.Tok2.String() {
-				list = append(list, location(tree.FileSet.Position(node.Tok2.Pos())))
+				list = append(list, location(syntax.Begin(node.Tok2)))
 			}
 			return false
 		default:

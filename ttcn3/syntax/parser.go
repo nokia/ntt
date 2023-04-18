@@ -54,6 +54,8 @@ func (n *tokenNode) Inspect(fn func(Node) bool) {
 }
 
 type tree struct {
+	fset   *loc.FileSet
+	file   *loc.File
 	tokens []token
 }
 
@@ -72,7 +74,6 @@ func (tok token) String() string {
 
 // The parser structure holds the parser's internal state.
 type parser struct {
-	file    *loc.File
 	errors  errors.ErrorList
 	scanner Scanner
 
@@ -115,7 +116,10 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 		mode |= Trace
 	}
 
-	p.file = fset.AddFile(filename, -1, len(src))
+	p.tree = &tree{
+		fset: fset,
+		file: fset.AddFile(filename, -1, len(src)),
+	}
 
 	eh := func(pos loc.Position, msg string) {
 		p.errors.Add(pos, msg)
@@ -134,7 +138,6 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 	p.uses = make(map[string]bool)
 
 	// fetch first token
-	p.tree = &tree{}
 	tok := p.peek(1)
 	p.tok = tok.Kind()
 }

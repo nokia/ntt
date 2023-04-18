@@ -117,7 +117,7 @@ func newSpan(fset *loc.FileSet, n Node) span {
 }
 
 // Doc returns the documentation string for the given node.
-func Doc(fset *loc.FileSet, n Node) string {
+func Doc(n Node) string {
 	if n == nil {
 		return ""
 	}
@@ -127,6 +127,7 @@ func Doc(fset *loc.FileSet, n Node) string {
 		return ""
 	}
 
+	fset := tok.(*tokenNode).tree.fset
 	var ret string
 	prev := newSpan(fset, tok)
 L:

@@ -37,7 +37,7 @@ func TestPrinter(t *testing.T) {
 	for _, test := range tests("testdata/") {
 		t.Run(test.Name(), func(t *testing.T) {
 			var buf bytes.Buffer
-			if err := printer.Print(&buf, test.fset, test.node); err != nil {
+			if err := printer.Print(&buf, test.node); err != nil {
 				t.Error(err.Error())
 			}
 

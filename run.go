@@ -21,8 +21,8 @@ import (
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/doc"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -270,7 +270,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 			var tags [][]string
 			if def, ok := m.Load(name); ok {
 				def := def.(*ttcn3.Node)
-				tags = doc.FindAllTags(syntax.Doc(def.FileSet, def.Node))
+				tags = doc.FindAllTags(syntax.Doc(def.Node))
 			}
 			if b.Match(name, tags) {
 				id := fmt.Sprintf("%s-%d", name, names[name])
@@ -317,7 +317,7 @@ func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet
 		for _, src := range srcs {
 			for _, def := range EntryPoints(src, allTests) {
 				name := def.QualifiedName(def.Node)
-				tags := doc.FindAllTags(syntax.Doc(def.FileSet, def.Node))
+				tags := doc.FindAllTags(syntax.Doc(def.Node))
 				if b.Match(name, tags) {
 					id := fmt.Sprintf("%s-%d", name, names[name])
 					names[name]++

@@ -9,8 +9,8 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/printer"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +27,7 @@ var (
 			for _, file := range files {
 				tree := ttcn3.ParseFile(file)
 				if useTTCN3 {
-					printer.Print(os.Stdout, tree.FileSet, tree.Root)
+					printer.Print(os.Stdout, tree.Root)
 				} else if useDot {
 					dot(tree.Root)
 				} else {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
@@ -20,15 +19,14 @@ const (
 	unindent = whiteSpace('<')
 )
 
-func Print(w io.Writer, fset *loc.FileSet, n syntax.Node) error {
-	p := printer{w: w, fset: fset, lineStart: true}
+func Print(w io.Writer, n syntax.Node) error {
+	p := printer{w: w, lineStart: true}
 	p.print(n)
 	return p.err
 }
 
 type printer struct {
 	w                io.Writer
-	fset             *loc.FileSet
 	indent           int
 	lineStart        bool
 	ignoreNextSpace  bool

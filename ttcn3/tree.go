@@ -12,11 +12,11 @@ import (
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
-	FileSet *loc.FileSet
-	Root    syntax.Node
-	Names   map[string]bool
-	Uses    map[string]bool
-	Err     error
+	fset *loc.FileSet
+	Root      syntax.Node
+	Names     map[string]bool
+	Uses      map[string]bool
+	Err       error
 
 	filename  string
 	parents   map[syntax.Node]syntax.Node
@@ -217,20 +217,20 @@ func (t *Tree) ModulePars() []*Node {
 // Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
 // not been parsed yet, Pos will return loc.NoPos.
 func (t *Tree) Pos(line int, column int) loc.Pos {
-	if t.FileSet == nil {
+	if t.fset == nil {
 		return loc.NoPos
 	}
 
 	// We assume every FileSet has only one file, to make this work.
-	return loc.Pos(int(t.FileSet.File(loc.Pos(1)).LineStart(line)) + column - 1)
+	return loc.Pos(int(t.fset.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
-// Position return a human readable position of the node.
+// Position return a human readable Position of the node.
 func (t *Tree) Position(pos loc.Pos) loc.Position {
-	if t.FileSet == nil {
+	if t.fset == nil {
 		return loc.Position{}
 	}
-	return t.FileSet.Position(pos)
+	return t.fset.Position(pos)
 }
 
 // ExprAt returns the primary expression at the given position.
@@ -333,7 +333,7 @@ func (f *finder) lookup(n syntax.Expr, tree *Tree) []*Node {
 		results = f.call(n, tree)
 
 	default:
-		log.Debugf("%s: unsupported node type: %T\n", tree.Position(n.Pos()), n)
+		log.Debugf("%s: unsupported node type: %T\n", syntax.Begin(n), n)
 	}
 
 	f.cache[n] = results

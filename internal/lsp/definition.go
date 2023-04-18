@@ -8,6 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 func (s *Server) definition(ctx context.Context, params *protocol.DefinitionParams) (protocol.Definition, error) {
@@ -30,7 +31,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	}
 
 	for _, def := range tree.LookupWithDB(x, &s.db) {
-		pos := def.Tree.Position(def.Ident.Pos())
+		pos := syntax.Begin(def.Ident)
 		log.Debugf("Definition found at %s\n", pos)
 		locs = append(locs, location(pos))
 	}

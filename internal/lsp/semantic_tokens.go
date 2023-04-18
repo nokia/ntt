@@ -236,7 +236,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 }
 
 func appendToken(tokens []uint32, tok syntax.Token, tree *ttcn3.Tree, typ SemanticTokenType, mod SemanticTokenModifiers, line int, col int) ([]uint32, int, int) {
-	pos := tree.Position(tok.Pos())
+	pos := syntax.Begin(tok)
 	pos.Line -= 1
 	pos.Column -= 1
 

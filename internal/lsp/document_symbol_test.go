@@ -26,9 +26,9 @@ func generateSymbols(t *testing.T, suite *lsp.Suite) (*ttcn3.Tree, []protocol.Do
 	return tree, ret
 }
 
-func setRange(syntax *ttcn3.Tree, begin loc.Pos, end loc.Pos) protocol.Range {
-	b := syntax.Position(begin)
-	e := syntax.Position(end)
+func setRange(tree *ttcn3.Tree, begin loc.Pos, end loc.Pos) protocol.Range {
+	b := tree.Position(begin)
+	e := tree.Position(end)
 	ret := protocol.Range{
 		Start: protocol.Position{Line: uint32(b.Line - 1), Character: uint32(b.Column)},
 		End:   protocol.Position{Line: uint32(e.Line - 1), Character: uint32(e.Column)}}
