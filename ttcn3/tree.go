@@ -12,11 +12,11 @@ import (
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
-	fset *loc.FileSet
-	Root      syntax.Node
-	Names     map[string]bool
-	Uses      map[string]bool
-	Err       error
+	fset  *loc.FileSet
+	Root  syntax.Node
+	Names map[string]bool
+	Uses  map[string]bool
+	Err   error
 
 	filename  string
 	parents   map[syntax.Node]syntax.Node
@@ -225,8 +225,8 @@ func (t *Tree) Pos(line int, column int) loc.Pos {
 	return loc.Pos(int(t.fset.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
-// Position return a human readable Position of the node.
-func (t *Tree) Position(pos loc.Pos) loc.Position {
+// position return a human readable position of the node.
+func (t *Tree) position(pos loc.Pos) loc.Position {
 	if t.fset == nil {
 		return loc.Position{}
 	}
@@ -237,13 +237,13 @@ func (t *Tree) Position(pos loc.Pos) loc.Position {
 func (t *Tree) ExprAt(pos loc.Pos) syntax.Expr {
 	s := t.SliceAt(pos)
 	if len(s) == 0 {
-		log.Debugf("%s: no expression at cursor position.\n", t.Position(pos))
+		log.Debugf("%s: no expression at cursor position.\n", t.position(pos))
 		return nil
 	}
 
 	id, ok := s[0].(*syntax.Ident)
 	if !ok {
-		log.Debugf("%s: no identifier at cursor position.\n", t.Position(pos))
+		log.Debugf("%s: no identifier at cursor position.\n", t.position(pos))
 		return nil
 	}
 
