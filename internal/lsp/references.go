@@ -66,7 +66,7 @@ func (s *Server) references(ctx context.Context, params *protocol.ReferenceParam
 	}()
 
 	tree := ttcn3.ParseFile(file)
-	id, ok := tree.ExprAt(tree.Pos(line, col)).(*syntax.Ident)
+	id, ok := tree.ExprAt(line, col).(*syntax.Ident)
 	if !ok || id == nil {
 		return nil, errors.New("no identifier at cursor")
 	}

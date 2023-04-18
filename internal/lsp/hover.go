@@ -96,7 +96,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 	)
 
 	tree := ttcn3.ParseFile(file)
-	x := tree.ExprAt(tree.Pos(line, col))
+	x := tree.ExprAt(line, col)
 	if x == nil {
 		return nil, nil
 	}

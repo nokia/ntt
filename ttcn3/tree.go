@@ -217,7 +217,7 @@ func (t *Tree) ModulePars() []*Node {
 // Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
 // not been parsed yet, Pos will return loc.NoPos.
 func (t *Tree) Pos(line int, column int) loc.Pos {
-	if t.fset == nil {
+	if t.fset == nil || line < 1 {
 		return loc.NoPos
 	}
 
@@ -225,25 +225,18 @@ func (t *Tree) Pos(line int, column int) loc.Pos {
 	return loc.Pos(int(t.fset.File(loc.Pos(1)).LineStart(line)) + column - 1)
 }
 
-// position return a human readable position of the node.
-func (t *Tree) position(pos loc.Pos) loc.Position {
-	if t.fset == nil {
-		return loc.Position{}
-	}
-	return t.fset.Position(pos)
-}
-
 // ExprAt returns the primary expression at the given position.
-func (t *Tree) ExprAt(pos loc.Pos) syntax.Expr {
-	s := t.SliceAt(pos)
+func (t *Tree) ExprAt(line, col int) syntax.Expr {
+	pos := t.Pos(line, col)
+	s := t.sliceAt(pos)
 	if len(s) == 0 {
-		log.Debugf("%s: no expression at cursor position.\n", t.position(pos))
+		log.Debugf("%d:%d: no expression at cursor position.\n", line, col)
 		return nil
 	}
 
 	id, ok := s[0].(*syntax.Ident)
 	if !ok {
-		log.Debugf("%s: no identifier at cursor position.\n", t.position(pos))
+		log.Debugf("%d:%d: no identifier at cursor position.\n", line, col)
 		return nil
 	}
 
@@ -255,8 +248,8 @@ func (t *Tree) ExprAt(pos loc.Pos) syntax.Expr {
 	return id
 }
 
-// SliceAt returns the slice of nodes at the given position.
-func (t *Tree) SliceAt(pos loc.Pos) []syntax.Node {
+// sliceAt returns the slice of nodes at the given position.
+func (t *Tree) sliceAt(pos loc.Pos) []syntax.Node {
 	var (
 		path  []syntax.Node
 		visit func(n syntax.Node)
