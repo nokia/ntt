@@ -75,21 +75,23 @@ func (n *{{ $name }}) Children() []Node {
 
 {{ if $type.NotImplemented "Inspect" }}
 func (n *{{ $name }}) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 	{{ range $i, $field := $type.Fields }}
 	{{ if $field.IsArray }}
 	for _, c := range n.{{ $field.Name }} {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 	{{ else if eq $field.IsToken false }}
-	if n.{{ $field.Name }} != nil {
-		n.{{ $field.Name }}.Inspect(f)
+	if c := n.{{ $field.Name }}; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 	{{ end }}
 	{{ end }}
-	f(nil)
 }
 {{ end }}
 

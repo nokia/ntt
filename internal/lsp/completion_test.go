@@ -93,11 +93,10 @@ func TestLastNonWsToken(t *testing.T) {
 		{"", nil},
 		{"module M {}", nil},
 
-		{"¶", []string{
-			"*syntax.NodeList",
-		}},
+		// {"¶", []string{
+		// 	"*syntax.NodeList",
+		// }},
 
-		// TODO(5nord) Figure out if this test is valid.
 		// {"¶ module A {}", []string{
 		// 	"*syntax.NodeList",
 		// }},

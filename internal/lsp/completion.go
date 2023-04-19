@@ -883,6 +883,7 @@ func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
 		nodeStack, lastStack []syntax.Node
 	)
 
+	nodeStack = append(nodeStack, n)
 	n.Inspect(func(n syntax.Node) bool {
 		if isError {
 			return false

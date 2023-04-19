@@ -57,15 +57,14 @@ func (n *AltStmt) Children() []Node {
 }
 
 func (n *AltStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *AltStmt) Pos() loc.Pos {
@@ -155,27 +154,35 @@ func (n *BehaviourSpec) Children() []Node {
 }
 
 func (n *BehaviourSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.RunsOn; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.RunsOn != nil {
-		n.RunsOn.Inspect(f)
+	if c := n.System; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.System != nil {
-		n.System.Inspect(f)
+	if c := n.Return; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Return != nil {
-		n.Return.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *BehaviourSpec) Pos() loc.Pos {
@@ -305,39 +312,56 @@ func (n *BehaviourTypeDecl) Children() []Node {
 }
 
 func (n *BehaviourTypeDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.RunsOn; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.RunsOn != nil {
-		n.RunsOn.Inspect(f)
+	if c := n.System; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.System != nil {
-		n.System.Inspect(f)
+	if c := n.Return; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Return != nil {
-		n.Return.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *BehaviourTypeDecl) Pos() loc.Pos {
@@ -407,19 +431,21 @@ func (n *BinaryExpr) Children() []Node {
 }
 
 func (n *BinaryExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Y; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Y != nil {
-		n.Y.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *BinaryExpr) Pos() loc.Pos {
@@ -489,15 +515,14 @@ func (n *BlockStmt) Children() []Node {
 }
 
 func (n *BlockStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.Stmts {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *BlockStmt) Pos() loc.Pos {
@@ -557,15 +582,14 @@ func (n *BranchStmt) Children() []Node {
 }
 
 func (n *BranchStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Label; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Label != nil {
-		n.Label.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *BranchStmt) Pos() loc.Pos {
@@ -625,19 +649,21 @@ func (n *CallExpr) Children() []Node {
 }
 
 func (n *CallExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Fun; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Fun != nil {
-		n.Fun.Inspect(f)
+	if c := n.Args; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Args != nil {
-		n.Args.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *CallExpr) Pos() loc.Pos {
@@ -697,19 +723,21 @@ func (n *CallStmt) Children() []Node {
 }
 
 func (n *CallStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Stmt; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Stmt != nil {
-		n.Stmt.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *CallStmt) Pos() loc.Pos {
@@ -779,19 +807,21 @@ func (n *CaseClause) Children() []Node {
 }
 
 func (n *CaseClause) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Case; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Case != nil {
-		n.Case.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *CaseClause) Pos() loc.Pos {
@@ -891,23 +921,28 @@ func (n *CommClause) Children() []Node {
 }
 
 func (n *CommClause) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Comm; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Comm != nil {
-		n.Comm.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *CommClause) Pos() loc.Pos {
@@ -1027,31 +1062,42 @@ func (n *ComponentTypeDecl) Children() []Node {
 }
 
 func (n *ComponentTypeDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
-	}
-
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Extends {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *ComponentTypeDecl) Pos() loc.Pos {
@@ -1121,15 +1167,14 @@ func (n *CompositeLiteral) Children() []Node {
 }
 
 func (n *CompositeLiteral) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *CompositeLiteral) Pos() loc.Pos {
@@ -1199,23 +1244,28 @@ func (n *ControlPart) Children() []Node {
 }
 
 func (n *ControlPart) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ControlPart) Pos() loc.Pos {
@@ -1265,15 +1315,14 @@ func (n *DeclStmt) Children() []Node {
 }
 
 func (n *DeclStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Decl; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Decl != nil {
-		n.Decl.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *DeclStmt) Pos() loc.Pos {
@@ -1353,23 +1402,28 @@ func (n *Declarator) Children() []Node {
 }
 
 func (n *Declarator) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.ArrayDef {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Value != nil {
-		n.Value.Inspect(f)
+	if c := n.Value; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *Declarator) Pos() loc.Pos {
@@ -1439,19 +1493,21 @@ func (n *DecmatchExpr) Children() []Node {
 }
 
 func (n *DecmatchExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *DecmatchExpr) Pos() loc.Pos {
@@ -1521,19 +1577,21 @@ func (n *DecodedExpr) Children() []Node {
 }
 
 func (n *DecodedExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *DecodedExpr) Pos() loc.Pos {
@@ -1593,15 +1651,14 @@ func (n *DefKindExpr) Children() []Node {
 }
 
 func (n *DefKindExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *DefKindExpr) Pos() loc.Pos {
@@ -1681,19 +1738,21 @@ func (n *DoWhileStmt) Children() []Node {
 }
 
 func (n *DoWhileStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
+	if c := n.Cond; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Cond != nil {
-		n.Cond.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *DoWhileStmt) Pos() loc.Pos {
@@ -1773,15 +1832,14 @@ func (n *EnumSpec) Children() []Node {
 }
 
 func (n *EnumSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.Enums {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *EnumSpec) Pos() loc.Pos {
@@ -1901,27 +1959,35 @@ func (n *EnumTypeDecl) Children() []Node {
 }
 
 func (n *EnumTypeDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
-	}
-
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Enums {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *EnumTypeDecl) Pos() loc.Pos {
@@ -1981,11 +2047,7 @@ func (n *ErrorNode) Children() []Node {
 }
 
 func (n *ErrorNode) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	f(nil)
 }
 
 func (n *ErrorNode) Pos() loc.Pos {
@@ -2075,19 +2137,21 @@ func (n *ExceptExpr) Children() []Node {
 }
 
 func (n *ExceptExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *ExceptExpr) Pos() loc.Pos {
@@ -2137,15 +2201,14 @@ func (n *ExprStmt) Children() []Node {
 }
 
 func (n *ExprStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Expr; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Expr != nil {
-		n.Expr.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ExprStmt) Pos() loc.Pos {
@@ -2265,35 +2328,49 @@ func (n *Field) Children() []Node {
 }
 
 func (n *Field) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Type; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Type != nil {
-		n.Type.Inspect(f)
-	}
-
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.ArrayDef {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.ValueConstraint != nil {
-		n.ValueConstraint.Inspect(f)
+	if c := n.ValueConstraint; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.LengthConstraint != nil {
-		n.LengthConstraint.Inspect(f)
+	if c := n.LengthConstraint; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *Field) Pos() loc.Pos {
@@ -2423,27 +2500,35 @@ func (n *ForStmt) Children() []Node {
 }
 
 func (n *ForStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Init; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Init != nil {
-		n.Init.Inspect(f)
+	if c := n.Cond; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Cond != nil {
-		n.Cond.Inspect(f)
+	if c := n.Post; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Post != nil {
-		n.Post.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ForStmt) Pos() loc.Pos {
@@ -2563,31 +2648,42 @@ func (n *FormalPar) Children() []Node {
 }
 
 func (n *FormalPar) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.TemplateRestriction; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TemplateRestriction != nil {
-		n.TemplateRestriction.Inspect(f)
+	if c := n.Type; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Type != nil {
-		n.Type.Inspect(f)
-	}
-
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.ArrayDef {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Value != nil {
-		n.Value.Inspect(f)
+	if c := n.Value; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *FormalPar) Pos() loc.Pos {
@@ -2657,15 +2753,14 @@ func (n *FormalPars) Children() []Node {
 }
 
 func (n *FormalPars) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *FormalPars) Pos() loc.Pos {
@@ -2745,19 +2840,21 @@ func (n *FriendDecl) Children() []Node {
 }
 
 func (n *FriendDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Module; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Module != nil {
-		n.Module.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *FriendDecl) Pos() loc.Pos {
@@ -2827,15 +2924,14 @@ func (n *FromExpr) Children() []Node {
 }
 
 func (n *FromExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *FromExpr) Pos() loc.Pos {
@@ -2995,47 +3091,70 @@ func (n *FuncDecl) Children() []Node {
 }
 
 func (n *FuncDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.RunsOn; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.RunsOn != nil {
-		n.RunsOn.Inspect(f)
+	if c := n.Mtc; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Mtc != nil {
-		n.Mtc.Inspect(f)
+	if c := n.System; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.System != nil {
-		n.System.Inspect(f)
+	if c := n.Return; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Return != nil {
-		n.Return.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *FuncDecl) Pos() loc.Pos {
@@ -3135,23 +3254,28 @@ func (n *GroupDecl) Children() []Node {
 }
 
 func (n *GroupDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Defs {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *GroupDecl) Pos() loc.Pos {
@@ -3211,11 +3335,7 @@ func (n *Ident) Children() []Node {
 }
 
 func (n *Ident) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	f(nil)
 }
 
 func (n *Ident) Pos() loc.Pos {
@@ -3305,23 +3425,28 @@ func (n *IfStmt) Children() []Node {
 }
 
 func (n *IfStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Cond; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Cond != nil {
-		n.Cond.Inspect(f)
+	if c := n.Then; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Then != nil {
-		n.Then.Inspect(f)
+	if c := n.Else; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Else != nil {
-		n.Else.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *IfStmt) Pos() loc.Pos {
@@ -3441,27 +3566,35 @@ func (n *ImportDecl) Children() []Node {
 }
 
 func (n *ImportDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Module; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Module != nil {
-		n.Module.Inspect(f)
-	}
-
-	if n.Language != nil {
-		n.Language.Inspect(f)
+	if c := n.Language; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *ImportDecl) Pos() loc.Pos {
@@ -3541,19 +3674,21 @@ func (n *IndexExpr) Children() []Node {
 }
 
 func (n *IndexExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Index; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Index != nil {
-		n.Index.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *IndexExpr) Pos() loc.Pos {
@@ -3613,15 +3748,14 @@ func (n *LanguageSpec) Children() []Node {
 }
 
 func (n *LanguageSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *LanguageSpec) Pos() loc.Pos {
@@ -3691,19 +3825,21 @@ func (n *LengthExpr) Children() []Node {
 }
 
 func (n *LengthExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Size; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Size != nil {
-		n.Size.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *LengthExpr) Pos() loc.Pos {
@@ -3783,19 +3919,21 @@ func (n *ListSpec) Children() []Node {
 }
 
 func (n *ListSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Length; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Length != nil {
-		n.Length.Inspect(f)
+	if c := n.ElemType; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.ElemType != nil {
-		n.ElemType.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ListSpec) Pos() loc.Pos {
@@ -3875,19 +4013,21 @@ func (n *ModifiesExpr) Children() []Node {
 }
 
 func (n *ModifiesExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Y; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Y != nil {
-		n.Y.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ModifiesExpr) Pos() loc.Pos {
@@ -3997,27 +4137,35 @@ func (n *Module) Children() []Node {
 }
 
 func (n *Module) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
-	}
-
-	if n.Language != nil {
-		n.Language.Inspect(f)
+	if c := n.Language; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Defs {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *Module) Pos() loc.Pos {
@@ -4077,15 +4225,14 @@ func (n *ModuleDef) Children() []Node {
 }
 
 func (n *ModuleDef) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Def; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Def != nil {
-		n.Def.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ModuleDef) Pos() loc.Pos {
@@ -4175,19 +4322,21 @@ func (n *ModuleParameterGroup) Children() []Node {
 }
 
 func (n *ModuleParameterGroup) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.Decls {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *ModuleParameterGroup) Pos() loc.Pos {
@@ -4247,15 +4396,14 @@ func (n *MtcSpec) Children() []Node {
 }
 
 func (n *MtcSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Comp; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Comp != nil {
-		n.Comp.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *MtcSpec) Pos() loc.Pos {
@@ -4305,15 +4453,14 @@ func (n *NodeList) Children() []Node {
 }
 
 func (n *NodeList) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.Nodes {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *NodeList) Pos() loc.Pos {
@@ -4383,19 +4530,21 @@ func (n *ParamExpr) Children() []Node {
 }
 
 func (n *ParamExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Y; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Y != nil {
-		n.Y.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ParamExpr) Pos() loc.Pos {
@@ -4455,19 +4604,21 @@ func (n *ParametrizedIdent) Children() []Node {
 }
 
 func (n *ParametrizedIdent) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Ident; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Ident != nil {
-		n.Ident.Inspect(f)
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ParametrizedIdent) Pos() loc.Pos {
@@ -4537,15 +4688,14 @@ func (n *ParenExpr) Children() []Node {
 }
 
 func (n *ParenExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *ParenExpr) Pos() loc.Pos {
@@ -4615,15 +4765,14 @@ func (n *PatternExpr) Children() []Node {
 }
 
 func (n *PatternExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *PatternExpr) Pos() loc.Pos {
@@ -4683,15 +4832,14 @@ func (n *PortAttribute) Children() []Node {
 }
 
 func (n *PortAttribute) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.Types {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *PortAttribute) Pos() loc.Pos {
@@ -4761,15 +4909,14 @@ func (n *PortMapAttribute) Children() []Node {
 }
 
 func (n *PortMapAttribute) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *PortMapAttribute) Pos() loc.Pos {
@@ -4909,27 +5056,35 @@ func (n *PortTypeDecl) Children() []Node {
 }
 
 func (n *PortTypeDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
-	}
-
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Attrs {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *PortTypeDecl) Pos() loc.Pos {
@@ -5099,35 +5254,49 @@ func (n *RedirectExpr) Children() []Node {
 }
 
 func (n *RedirectExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Value {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Param {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Sender != nil {
-		n.Sender.Inspect(f)
+	if c := n.Sender; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Index != nil {
-		n.Index.Inspect(f)
+	if c := n.Index; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Timestamp != nil {
-		n.Timestamp.Inspect(f)
+	if c := n.Timestamp; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *RedirectExpr) Pos() loc.Pos {
@@ -5177,15 +5346,14 @@ func (n *RefSpec) Children() []Node {
 }
 
 func (n *RefSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *RefSpec) Pos() loc.Pos {
@@ -5255,15 +5423,14 @@ func (n *RegexpExpr) Children() []Node {
 }
 
 func (n *RegexpExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *RegexpExpr) Pos() loc.Pos {
@@ -5343,11 +5510,7 @@ func (n *RestrictionSpec) Children() []Node {
 }
 
 func (n *RestrictionSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	f(nil)
 }
 
 func (n *RestrictionSpec) Pos() loc.Pos {
@@ -5427,19 +5590,21 @@ func (n *ReturnSpec) Children() []Node {
 }
 
 func (n *ReturnSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Restriction; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Restriction != nil {
-		n.Restriction.Inspect(f)
+	if c := n.Type; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Type != nil {
-		n.Type.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ReturnSpec) Pos() loc.Pos {
@@ -5499,15 +5664,14 @@ func (n *ReturnStmt) Children() []Node {
 }
 
 func (n *ReturnStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Result; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Result != nil {
-		n.Result.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ReturnStmt) Pos() loc.Pos {
@@ -5577,15 +5741,14 @@ func (n *RunsOnSpec) Children() []Node {
 }
 
 func (n *RunsOnSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Comp; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Comp != nil {
-		n.Comp.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *RunsOnSpec) Pos() loc.Pos {
@@ -5685,19 +5848,21 @@ func (n *SelectStmt) Children() []Node {
 }
 
 func (n *SelectStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	if n.Tag != nil {
-		n.Tag.Inspect(f)
+	if c := n.Tag; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Body {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *SelectStmt) Pos() loc.Pos {
@@ -5767,19 +5932,21 @@ func (n *SelectorExpr) Children() []Node {
 }
 
 func (n *SelectorExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Sel; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Sel != nil {
-		n.Sel.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *SelectorExpr) Pos() loc.Pos {
@@ -5909,35 +6076,49 @@ func (n *SignatureDecl) Children() []Node {
 }
 
 func (n *SignatureDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.Return; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Return != nil {
-		n.Return.Inspect(f)
+	if c := n.Exception; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Exception != nil {
-		n.Exception.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *SignatureDecl) Pos() loc.Pos {
@@ -6017,15 +6198,14 @@ func (n *StructSpec) Children() []Node {
 }
 
 func (n *StructSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.Fields {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *StructSpec) Pos() loc.Pos {
@@ -6145,27 +6325,35 @@ func (n *StructTypeDecl) Children() []Node {
 }
 
 func (n *StructTypeDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
-	}
-
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Fields {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *StructTypeDecl) Pos() loc.Pos {
@@ -6235,19 +6423,21 @@ func (n *SubTypeDecl) Children() []Node {
 }
 
 func (n *SubTypeDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Field; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Field != nil {
-		n.Field.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *SubTypeDecl) Pos() loc.Pos {
@@ -6307,15 +6497,14 @@ func (n *SystemSpec) Children() []Node {
 }
 
 func (n *SystemSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Comp; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Comp != nil {
-		n.Comp.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *SystemSpec) Pos() loc.Pos {
@@ -6465,43 +6654,63 @@ func (n *TemplateDecl) Children() []Node {
 }
 
 func (n *TemplateDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.RestrictionSpec; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.RestrictionSpec != nil {
-		n.RestrictionSpec.Inspect(f)
+	if c := n.Type; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Type != nil {
-		n.Type.Inspect(f)
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Name != nil {
-		n.Name.Inspect(f)
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TypePars != nil {
-		n.TypePars.Inspect(f)
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Params != nil {
-		n.Params.Inspect(f)
+	if c := n.Base; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Base != nil {
-		n.Base.Inspect(f)
+	if c := n.Value; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Value != nil {
-		n.Value.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *TemplateDecl) Pos() loc.Pos {
@@ -6561,15 +6770,14 @@ func (n *UnaryExpr) Children() []Node {
 }
 
 func (n *UnaryExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *UnaryExpr) Pos() loc.Pos {
@@ -6669,27 +6877,35 @@ func (n *ValueDecl) Children() []Node {
 }
 
 func (n *ValueDecl) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.TemplateRestriction; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.TemplateRestriction != nil {
-		n.TemplateRestriction.Inspect(f)
-	}
-
-	if n.Type != nil {
-		n.Type.Inspect(f)
+	if c := n.Type; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
 	for _, c := range n.Decls {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.With != nil {
-		n.With.Inspect(f)
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *ValueDecl) Pos() loc.Pos {
@@ -6759,19 +6975,21 @@ func (n *ValueExpr) Children() []Node {
 }
 
 func (n *ValueExpr) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.X != nil {
-		n.X.Inspect(f)
+	if c := n.Y; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Y != nil {
-		n.Y.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *ValueExpr) Pos() loc.Pos {
@@ -6821,11 +7039,7 @@ func (n *ValueLiteral) Children() []Node {
 }
 
 func (n *ValueLiteral) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
-	f(nil)
 }
 
 func (n *ValueLiteral) Pos() loc.Pos {
@@ -6895,19 +7109,21 @@ func (n *WhileStmt) Children() []Node {
 }
 
 func (n *WhileStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
+
+	if c := n.Cond; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Cond != nil {
-		n.Cond.Inspect(f)
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Body != nil {
-		n.Body.Inspect(f)
-	}
-
-	f(nil)
 }
 
 func (n *WhileStmt) Pos() loc.Pos {
@@ -6987,15 +7203,14 @@ func (n *WithSpec) Children() []Node {
 }
 
 func (n *WithSpec) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *WithSpec) Pos() loc.Pos {
@@ -7095,19 +7310,21 @@ func (n *WithStmt) Children() []Node {
 }
 
 func (n *WithStmt) Inspect(f func(Node) bool) {
-	if !f(n) {
-		return
-	}
 
 	for _, c := range n.List {
-		c.Inspect(f)
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	if n.Value != nil {
-		n.Value.Inspect(f)
+	if c := n.Value; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
 	}
 
-	f(nil)
 }
 
 func (n *WithStmt) Pos() loc.Pos {
