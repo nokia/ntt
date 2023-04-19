@@ -11,6 +11,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/internal/ntttest"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
@@ -28,11 +29,19 @@ func init() {
 	}
 
 }
-func buildSuite(t *testing.T, strs ...string) *lsp.Suite {
+func buildSuite(t *testing.T, strs ...string) (*lsp.Suite, loc.Pos) {
 	suite := &lsp.Suite{
 		Config: &project.Config{},
 		DB:     &ttcn3.DB{},
 	}
+
+	pos := loc.NoPos
+
+	if len(strs) > 0 {
+		str, cursor := ntttest.CutCursor(strs[0])
+		strs[0], pos = str, loc.Pos(cursor+1)
+	}
+
 	for i, s := range strs {
 		name := fmt.Sprintf("%s_Module_%d.ttcn3", t.Name(), i)
 		suite.Config.Sources = append(suite.Config.Sources, name)
@@ -40,7 +49,7 @@ func buildSuite(t *testing.T, strs ...string) *lsp.Suite {
 		fh.SetBytes([]byte(s))
 		suite.DB.Index(suite.Config.Sources[len(suite.Config.Sources)-1])
 	}
-	return suite
+	return suite, pos
 }
 
 type Pos struct {
@@ -79,16 +88,16 @@ func ModuleName(s string) string {
 // TODO: func TestImportTypesCtrlSpc(t *testing.T) {}
 
 func TestImportModulenamesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
 	{
-		import from
+		import from ¶
 		import from A all;
 	  }`, `module A
 	  {}`, `module B
 	  {}`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 30)
+	list := completionAt(t, suite, pos)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "TestImportModulenamesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " TestImportModulenamesCtrlSpc_Module_1"},
@@ -96,16 +105,16 @@ func TestImportModulenamesCtrlSpc(t *testing.T) {
 }
 
 func TestImportModulenames(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
 	{
-		import from Tes
+		import from Tes¶
 		import from A all;
 	  }`, `module A
 	  {}`, `module B
 	  {}`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 33)
+	list := completionAt(t, suite, pos)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "TestImportModulenames_Module_1", Kind: protocol.ModuleCompletion, SortText: " TestImportModulenames_Module_1"},
@@ -114,10 +123,10 @@ func TestImportModulenames(t *testing.T) {
 }
 
 func TestImportBehavioursCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportBehavioursCtrlSpc_Module_1 {
-            altstep   }
+            altstep ¶  }
 		import from A all;
 	  }`, `module TestImportBehavioursCtrlSpc_Module_1
       {
@@ -127,7 +136,7 @@ func TestImportBehavioursCtrlSpc(t *testing.T) {
 	  {}`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 99)
+	list := completionAt(t, suite, pos)
 	log.Debug(fmt.Sprintf("Node not considered yet: %#v)", list))
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "a1", Kind: protocol.FunctionCompletion},
@@ -136,7 +145,7 @@ func TestImportBehavioursCtrlSpc(t *testing.T) {
 }
 
 func TestImportBehaviours(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportBehaviours_Module_1 {
             testcase t}
@@ -149,7 +158,8 @@ func TestImportBehaviours(t *testing.T) {
 	  {}`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 92)
+	pos = 92
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "tc1", Kind: protocol.FunctionCompletion},
 		{Label: "tc2", Kind: protocol.FunctionCompletion},
@@ -157,7 +167,7 @@ func TestImportBehaviours(t *testing.T) {
 }
 
 func TestImportTemplates(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportTemplates_Module_1 {
             template a_}
@@ -172,7 +182,8 @@ func TestImportTemplates(t *testing.T) {
 	  {}`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 92)
+	pos = 92
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "a_name", Kind: protocol.ConstantCompletion},
 		{Label: "a_r1", Kind: protocol.ConstantCompletion},
@@ -180,7 +191,7 @@ func TestImportTemplates(t *testing.T) {
 }
 
 func TestImportTemplatesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportTemplatesCtrlSpc_Module_1 {
             template }
@@ -193,7 +204,8 @@ func TestImportTemplatesCtrlSpc(t *testing.T) {
 	  }`, `module B
 	  {}`)
 
-	list := completionAt(t, suite, 97)
+	pos = 97
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "a_name", Kind: protocol.ConstantCompletion},
 		{Label: "a_r1", Kind: protocol.ConstantCompletion},
@@ -201,7 +213,7 @@ func TestImportTemplatesCtrlSpc(t *testing.T) {
 }
 
 func TestImportConstantsCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportConstantsCtrlSpc_Module_1 {
             const }
@@ -214,7 +226,8 @@ func TestImportConstantsCtrlSpc(t *testing.T) {
 		  function f1() { const integer c_localInt := 0;}
 	  }`)
 
-	list := completionAt(t, suite, 94)
+	pos = 94
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "c_name", Kind: protocol.ConstantCompletion},
 		{Label: "c_r1", Kind: protocol.ConstantCompletion},
@@ -222,7 +235,7 @@ func TestImportConstantsCtrlSpc(t *testing.T) {
 }
 
 func TestImportExceptConstantsCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportExceptConstantsCtrlSpc_Module_1 all except {
             const }
@@ -234,7 +247,8 @@ func TestImportExceptConstantsCtrlSpc(t *testing.T) {
 		  const R1 c_r1 := {f1 := 10, f2 := false}
 	  }`)
 
-	list := completionAt(t, suite, 111)
+	pos = 111
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "c_name", Kind: protocol.ConstantCompletion},
 		{Label: "c_r1", Kind: protocol.ConstantCompletion},
@@ -242,7 +256,7 @@ func TestImportExceptConstantsCtrlSpc(t *testing.T) {
 }
 
 func TestImportExceptConstants(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportExceptConstants_Module_1 all except {
             const c_}
@@ -254,7 +268,8 @@ func TestImportExceptConstants(t *testing.T) {
 		  const R1 c_r1 := {f1 := 10, f2 := false}
 	  }`)
 
-	list := completionAt(t, suite, 106)
+	pos = 106
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "c_name", Kind: protocol.ConstantCompletion},
 		{Label: "c_r1", Kind: protocol.ConstantCompletion},
@@ -262,7 +277,7 @@ func TestImportExceptConstants(t *testing.T) {
 }
 
 func TestImportModuleparsCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportModuleparsCtrlSpc_Module_1 {
             modulepar }
@@ -275,7 +290,8 @@ func TestImportModuleparsCtrlSpc(t *testing.T) {
 		  const integer c_int := 2;
 	  }`)
 
-	list := completionAt(t, suite, 101)
+	pos = 101
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "m_name", Kind: protocol.ConstantCompletion},
 		{Label: "m_r1", Kind: protocol.ConstantCompletion},
@@ -283,7 +299,7 @@ func TestImportModuleparsCtrlSpc(t *testing.T) {
 }
 
 func TestImportExceptModuleparsCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportExceptModuleparsCtrlSpc_Module_1 all except {
             modulepar }
@@ -295,7 +311,8 @@ func TestImportExceptModuleparsCtrlSpc(t *testing.T) {
 		  modulepar R1 m_r1 := {f1 := 10, f2 := false}
 	  }`)
 
-	list := completionAt(t, suite, 116)
+	pos = 116
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "m_name", Kind: protocol.ConstantCompletion},
 		{Label: "m_r1", Kind: protocol.ConstantCompletion},
@@ -303,7 +320,7 @@ func TestImportExceptModuleparsCtrlSpc(t *testing.T) {
 }
 
 func TestImportExceptModulepars(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportExceptModulepars_Module_1 all except {
             modulepar m_}
@@ -315,7 +332,8 @@ func TestImportExceptModulepars(t *testing.T) {
 		  modulepar R1 m_r1 := {f1 := 10, f2 := false}
 	  }`)
 
-	list := completionAt(t, suite, 111)
+	pos = 111
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "m_name", Kind: protocol.ConstantCompletion},
 		{Label: "m_r1", Kind: protocol.ConstantCompletion},
@@ -323,7 +341,7 @@ func TestImportExceptModulepars(t *testing.T) {
 }
 
 func TestImportTypesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportTypesCtrlSpc_Module_1 {
             type }
@@ -344,7 +362,8 @@ func TestImportTypesCtrlSpc(t *testing.T) {
 		  type component C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 89)
+	pos = 89
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "String", Kind: protocol.StructCompletion},
 		{Label: "R1", Kind: protocol.StructCompletion},
@@ -362,7 +381,7 @@ func TestImportTypesCtrlSpc(t *testing.T) {
 }
 
 func TestImportTypes(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         import from TestImportTypes_Module_1 {
             type E}
@@ -383,7 +402,8 @@ func TestImportTypes(t *testing.T) {
 		  type component C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 83)
+	pos = 83
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "String", Kind: protocol.StructCompletion},
 		{Label: "R1", Kind: protocol.StructCompletion},
@@ -401,7 +421,7 @@ func TestImportTypes(t *testing.T) {
 }
 
 func TestRunsOnTypesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -414,7 +434,8 @@ func TestRunsOnTypesCtrlSpc(t *testing.T) {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 93)
+	pos = 93
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestRunsOnTypesCtrlSpc_Module_0.B0"},
 		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestRunsOnTypesCtrlSpc_Module_0.B1"},
@@ -425,7 +446,7 @@ func TestRunsOnTypesCtrlSpc(t *testing.T) {
 }
 
 func TestRunsOnTypes(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -438,7 +459,8 @@ func TestRunsOnTypes(t *testing.T) {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 94)
+	pos = 94
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestRunsOnTypes_Module_0.B0"},
 		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestRunsOnTypes_Module_0.B1"},
@@ -449,7 +471,7 @@ func TestRunsOnTypes(t *testing.T) {
 }
 
 func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -462,13 +484,14 @@ func TestRunsOnModuleDotTypesCtrlSpc(t *testing.T) {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 135)
+	pos = 135
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnModuleDotTypesCtrlSpc_Module_1.C0"}}, list)
 }
 
 func TestRunsOnModuleDotTypes(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -481,13 +504,14 @@ func TestRunsOnModuleDotTypes(t *testing.T) {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 128)
+	pos = 128
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnModuleDotTypes_Module_1.C0"}}, list)
 }
 
 func TestSystemTypesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -500,7 +524,8 @@ func TestSystemTypesCtrlSpc(t *testing.T) {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 103)
+	pos = 103
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestSystemTypesCtrlSpc_Module_0.B0"},
 		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestSystemTypesCtrlSpc_Module_0.B1"},
@@ -511,7 +536,7 @@ func TestSystemTypesCtrlSpc(t *testing.T) {
 }
 
 func TestSystemModuleDotTypes(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -524,13 +549,14 @@ func TestSystemModuleDotTypes(t *testing.T) {
 		  type component A0 {}
 	  }`)
 
-	list := completionAt(t, suite, 172)
+	pos = 172
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestSystemModuleDotTypes_Module_1.C0"}}, list)
 }
 
 func TestExtendsTypesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -540,7 +566,8 @@ func TestExtendsTypesCtrlSpc(t *testing.T) {
 		  type component C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 98)
+	pos = 98
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestExtendsTypesCtrlSpc_Module_0.B0"},
 		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestExtendsTypesCtrlSpc_Module_0.B1"},
@@ -550,7 +577,7 @@ func TestExtendsTypesCtrlSpc(t *testing.T) {
 }
 
 func TestExtendsTypes(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -560,7 +587,8 @@ func TestExtendsTypes(t *testing.T) {
 		  type component C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 99)
+	pos = 99
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestExtendsTypes_Module_0.B0"},
 		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestExtendsTypes_Module_0.B1"},
@@ -570,7 +598,7 @@ func TestExtendsTypes(t *testing.T) {
 }
 
 func TestExtendsModuleDotTypes(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type component B0 {}
 		type component B1 {}
@@ -580,13 +608,14 @@ func TestExtendsModuleDotTypes(t *testing.T) {
 		  type component C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 133)
+	pos = 133
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestExtendsModuleDotTypes_Module_1.C0"}}, list)
 }
 
 func TestModifiesCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		import from TestModifiesCtrlSpc_Module_1 all;
 		template R t_r := *;
@@ -598,7 +627,8 @@ func TestModifiesCtrlSpc(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 155)
+	pos = 155
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "t_r", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_r"},
 		{Label: "t_i", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_i"},       // TODO: implement filter on Compatible Type
@@ -608,7 +638,7 @@ func TestModifiesCtrlSpc(t *testing.T) {
 }
 
 func TestModifiesParseErrorCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test {
+	suite, pos := buildSuite(t, `module Test {
 		   template integer t_base := ?
 		   template in//
 
@@ -627,7 +657,8 @@ func TestModifiesParseErrorCtrlSpc(t *testing.T) {
 		}
 	}`)
 
-	list := completionAt(t, suite, 65)
+	pos = 65
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "anytype ", Kind: protocol.KeywordCompletion},
 		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
@@ -643,7 +674,7 @@ func TestModifiesParseErrorCtrlSpc(t *testing.T) {
 }
 
 func TestTemplateTypeCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		type integer Byte(0..255);
 		template //
@@ -654,7 +685,8 @@ func TestTemplateTypeCtrlSpc(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 59)
+	pos = 59
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "TestTemplateTypeCtrlSpc_Module_0.Byte"},
 		{Label: "R ", Kind: protocol.StructCompletion, SortText: " 2R", Detail: "TestTemplateTypeCtrlSpc_Module_1.R"},
@@ -673,7 +705,7 @@ func TestTemplateTypeCtrlSpc(t *testing.T) {
 }
 
 func TestTemplateType(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		type integer Byte(0..255);
 		template h//
@@ -684,7 +716,8 @@ func TestTemplateType(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 60)
+	pos = 60
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "TestTemplateType_Module_0.Byte"},
 		{Label: "R ", Kind: protocol.StructCompletion, SortText: " 2R", Detail: "TestTemplateType_Module_1.R"},
@@ -703,7 +736,7 @@ func TestTemplateType(t *testing.T) {
 }
 
 func TestTemplateModuleDotType(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		type integer Byte(0..255);
 		template TestTemplateModuleDotType_Module_1.//
@@ -714,13 +747,14 @@ func TestTemplateModuleDotType(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 93)
+	pos = 93
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "R ", Kind: protocol.StructCompletion, Detail: "TestTemplateModuleDotType_Module_1.R"}}, list)
 }
 
 func TestModifiesModuleDot(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		import from TestModifiesModuleDot_Module_1 all;
 		template R t_r := *;
@@ -732,30 +766,33 @@ func TestModifiesModuleDot(t *testing.T) {
 		  template (value) R t_r2 := {10, omit}
 	  }`)
 
-	list := completionAt(t, suite, 188)
+	pos = 188
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "t_r2", Kind: protocol.ConstantCompletion}}, list)
 }
 
 func TestSubTypeDefSegv(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         type r
 	  }`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 32)
+	pos = 32
+	list := completionAt(t, suite, pos)
 	assert.Empty(t, list)
 }
 
 func TestNewModuleDef(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
         t
 	  }`)
 
 	// Lookup `Msg`
-	list := completionAt(t, suite, 27)
+	pos = 27
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "import from ", Kind: protocol.KeywordCompletion},
 		{Label: "type ", Kind: protocol.KeywordCompletion},
@@ -771,7 +808,7 @@ func TestNewModuleDef(t *testing.T) {
 }
 
 func TestPortTypeInsideComponent(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		type port P1 message {
 			inout charstring
@@ -787,7 +824,8 @@ func TestPortTypeInsideComponent(t *testing.T) {
 		  }
 	  }`)
 
-	list := completionAt(t, suite, 104)
+	pos = 104
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "P1", Kind: protocol.InterfaceCompletion, SortText: " 1P1", Detail: "TestPortTypeInsideComponent_Module_0.P1"},
 		{Label: "P2", Kind: protocol.InterfaceCompletion, SortText: " 2P2", Detail: "TestPortTypeInsideComponent_Module_1.P2"},
@@ -795,7 +833,7 @@ func TestPortTypeInsideComponent(t *testing.T) {
 }
 
 func TestInsideBehavBody(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2() {
@@ -807,7 +845,8 @@ func TestInsideBehavBody(t *testing.T) {
 		  altstep a1() runs on C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 63)
+	pos = 63
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideBehavBody_Module_0.f1()", Documentation: ""},
@@ -822,7 +861,7 @@ func TestInsideBehavBody(t *testing.T) {
 }
 
 func TestInsideTcBody(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		testcase tc1() {
@@ -834,7 +873,8 @@ func TestInsideTcBody(t *testing.T) {
 		  altstep a1() runs on C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 64)
+	pos = 64
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBody_Module_0.f1()", Documentation: ""},
@@ -847,7 +887,7 @@ func TestInsideTcBody(t *testing.T) {
 }
 
 func TestInsideTcBodyCtrlSpc(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		testcase tc1() {
@@ -859,7 +899,8 @@ func TestInsideTcBodyCtrlSpc(t *testing.T) {
 		  altstep a1() runs on C0 {}
 	  }`)
 
-	list := completionAt(t, suite, 63)
+	pos = 63
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyCtrlSpc_Module_0.f1()", Documentation: ""},
@@ -872,7 +913,7 @@ func TestInsideTcBodyCtrlSpc(t *testing.T) {
 }
 
 func TestInsideTcBodyInsideIf(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2() return boolean {}
@@ -881,7 +922,8 @@ func TestInsideTcBodyInsideIf(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 97)
+	pos = 97
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyInsideIf_Module_0.f2()\n  return boolean", Documentation: ""}},
@@ -889,7 +931,7 @@ func TestInsideTcBodyInsideIf(t *testing.T) {
 }
 
 func TestInsideTcBodyModuleDotInsideIf(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		testcase tc1() {
 			if(TestInsideTcBodyModuleDotInsideIf_Module_1.f/**/)
@@ -903,7 +945,8 @@ func TestInsideTcBodyModuleDotInsideIf(t *testing.T) {
 		altstep a1() runs on C0 {}
 	}`)
 
-	list := completionAt(t, suite, 87)
+	pos = 87
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyModuleDotInsideIf_Module_1.f2()\n  return boolean", Documentation: ""},
@@ -913,7 +956,7 @@ func TestInsideTcBodyModuleDotInsideIf(t *testing.T) {
 }
 
 func TestInsideTcBodyInsideExpr(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		// f1:
 		// function without return value
@@ -924,7 +967,8 @@ func TestInsideTcBodyInsideExpr(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 159)
+	pos = 159
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyInsideExpr_Module_0.f2()\n  return boolean", Documentation: ""}},
@@ -932,7 +976,7 @@ func TestInsideTcBodyInsideExpr(t *testing.T) {
 }
 
 func TestInsideTcBodyInsideSend(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2(integer pi:=314) return boolean {}
@@ -941,7 +985,8 @@ func TestInsideTcBodyInsideSend(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 116)
+	pos = 116
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
 			Detail: "function TestInsideTcBodyInsideSend_Module_0.f2( integer pi := 314)\n  return boolean", Documentation: ""}},
@@ -949,7 +994,7 @@ func TestInsideTcBodyInsideSend(t *testing.T) {
 }
 
 func TestInsideTcBodyAsFuncParam(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2(integer pi) return boolean {}
@@ -958,7 +1003,8 @@ func TestInsideTcBodyAsFuncParam(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 107)
+	pos = 107
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
 			Detail: "function TestInsideTcBodyAsFuncParam_Module_0.f2( integer pi)\n  return boolean", Documentation: ""}},
@@ -966,7 +1012,7 @@ func TestInsideTcBodyAsFuncParam(t *testing.T) {
 }
 
 func TestInsideTcBodyModuleDotInsideStart(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		testcase tc1() {
 			// allow only funcs with runs on(behaviour)
@@ -982,7 +1028,8 @@ func TestInsideTcBodyModuleDotInsideStart(t *testing.T) {
 		altstep a1() runs on C0 {}
 	}`)
 
-	list := completionAt(t, suite, 199)
+	pos = 199
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyModuleDotInsideStart_Module_1.f2()\n  return boolean", Documentation: ""},
@@ -994,7 +1041,7 @@ func TestInsideTcBodyModuleDotInsideStart(t *testing.T) {
 }
 
 func TestInsideTcBodyInsideStart(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2() runs on C1 {}
@@ -1007,7 +1054,8 @@ func TestInsideTcBodyInsideStart(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 268)
+	pos = 268
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyInsideStart_Module_0.f2()\n  runs on C1", Documentation: ""},
@@ -1019,7 +1067,7 @@ func TestInsideTcBodyInsideStart(t *testing.T) {
 }
 
 func TestInsideTcBodyNestedInsideStart(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2() runs on C1 {}
@@ -1031,7 +1079,8 @@ func TestInsideTcBodyNestedInsideStart(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 262)
+	pos = 262
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyNestedInsideStart_Module_0.f3()\n  return boolean", Documentation: ""},
@@ -1041,7 +1090,7 @@ func TestInsideTcBodyNestedInsideStart(t *testing.T) {
 }
 
 func TestFuncComplInsideConstDecl(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2() runs on C1 {}
@@ -1052,7 +1101,8 @@ func TestFuncComplInsideConstDecl(t *testing.T) {
 		};
 	}`)
 
-	list := completionAt(t, suite, 168)
+	pos = 168
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestFuncComplInsideConstDecl_Module_0.f3()\n  return boolean", Documentation: ""},
@@ -1062,7 +1112,7 @@ func TestFuncComplInsideConstDecl(t *testing.T) {
 }
 
 func TestFuncComplInsideConstDeclBody(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, pos := buildSuite(t, `module Test
     {
 		function f1() {}
 		function f2() runs on C1 {}
@@ -1071,7 +1121,8 @@ func TestFuncComplInsideConstDeclBody(t *testing.T) {
 		const R ci := {f1 := /**/}
 	}`)
 
-	list := completionAt(t, suite, 169)
+	pos = 169
+	list := completionAt(t, suite, pos)
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestFuncComplInsideConstDeclBody_Module_0.f3()\n  return boolean", Documentation: ""},

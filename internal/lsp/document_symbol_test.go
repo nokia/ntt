@@ -49,7 +49,7 @@ func setRange(fset *loc.FileSet, begin loc.Pos, end loc.Pos) protocol.Range {
 }
 
 func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, _ := buildSuite(t, `module Test
     {
         type component B0 extends C0, C1 {
 			var integer i := 1;
@@ -105,7 +105,7 @@ func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
 }
 
 func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, _ := buildSuite(t, `module Test
     {
         type integer Byte(0..255)
 		type record of Byte Octets
@@ -128,7 +128,7 @@ func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
 }
 
 func TestConstTemplModulePar(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, _ := buildSuite(t, `module Test
     {
         const R c_r := {10, true}
 		modulepar R m_r := {10, true}
@@ -172,7 +172,7 @@ func TestConstTemplModulePar(t *testing.T) {
 }
 
 func TestPortTypeDecl(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, _ := buildSuite(t, `module Test
     {
 		type port Pmessage message{
 			address AddressType;
@@ -232,7 +232,7 @@ func TestPortTypeDecl(t *testing.T) {
 }
 
 func TestSignatureDecl(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, _ := buildSuite(t, `module Test
     {
 		signature MyRemoteProcOne ();
 		signature MyRemoteProcTwo () noblock;

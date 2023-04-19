@@ -20,7 +20,7 @@ func StripPathFromURI(list []protocol.Location) []protocol.Location {
 }
 
 func TestFindAllTypeDefs(t *testing.T) {
-	suite := buildSuite(t, `module Test
+	suite, _ := buildSuite(t, `module Test
 	{
 		type integer Byte(0..255);
 		function f() return Byte {
