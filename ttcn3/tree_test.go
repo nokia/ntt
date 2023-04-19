@@ -20,7 +20,7 @@ func TestSliceAt(t *testing.T) {
 				"*syntax.ImportDecl",
 				"*syntax.ModuleDef",
 				"*syntax.Module(M1)",
-				"*syntax.NodeList",
+				"*syntax.Root",
 			}},
 		{
 
@@ -39,7 +39,7 @@ func TestSliceAt(t *testing.T) {
 				"*syntax.FuncDecl(func)",
 				"*syntax.ModuleDef(func)",
 				"*syntax.Module(M)",
-				"*syntax.NodeList",
+				"*syntax.Root",
 			}},
 	}
 

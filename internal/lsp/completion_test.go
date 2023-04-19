@@ -94,69 +94,69 @@ func TestLastNonWsToken(t *testing.T) {
 		{"module M {}", nil},
 
 		// {"¶", []string{
-		// 	"*syntax.NodeList",
+		// 	"*syntax.Root",
 		// }},
 
 		// {"¶ module A {}", []string{
-		// 	"*syntax.NodeList",
+		// 	"*syntax.Root",
 		// }},
 
 		{"module ¶ module A {}", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.Module",
 		}},
 
 		{"import from ¶", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from ¶ all", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from ¶all", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from ¶ const", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from ¶const", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from  ¶ foo", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from  ¶foo", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 			"*syntax.Ident(foo)",
 		}},
 
 		{"import ¶ from", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 		}},
 
 		{"import from A { modulepar ¶}", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 			"*syntax.DefKindExpr",
@@ -164,7 +164,7 @@ func TestLastNonWsToken(t *testing.T) {
 		}},
 
 		{"import from A { modulepar ¶", []string{
-			"*syntax.NodeList",
+			"*syntax.Root",
 			"*syntax.ModuleDef",
 			"*syntax.ImportDecl",
 			"*syntax.DefKindExpr",

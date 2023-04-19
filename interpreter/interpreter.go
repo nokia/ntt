@@ -20,6 +20,8 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 	}
 
 	switch n := n.(type) {
+	case *syntax.Root:
+		return eval(&n.NodeList, env)
 	case *syntax.Module:
 		for _, d := range n.Defs {
 			if ret := eval(d, env); runtime.IsError(ret) {

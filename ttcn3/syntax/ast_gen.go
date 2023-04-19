@@ -5688,6 +5688,20 @@ func (n *ReturnStmt) End() loc.Pos {
 	return loc.NoPos
 }
 
+func (n *Root) Pos() loc.Pos {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return loc.NoPos
+}
+
+func (n *Root) End() loc.Pos {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return loc.NoPos
+}
+
 func (n *RunsOnSpec) FirstTok() Token {
 	switch {
 

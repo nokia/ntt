@@ -49,7 +49,7 @@ const (
 // were found, the result is a partial AST (with Bad* nodes representing the
 // fragments of erroneous source code). Multiple errors are returned via a
 // ErrorList which is sorted by file position.
-func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList, names map[string]bool, uses map[string]bool, err error) {
+func Parse(fset *loc.FileSet, filename string, src interface{}) (root *Root, names map[string]bool, uses map[string]bool, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
 	}
@@ -73,12 +73,12 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList
 		err = p.errors.Err()
 	}()
 
-	nodes = &NodeList{}
+	root = &Root{}
 
 	// parse source
 	p.init(fset, filename, text, AllErrors)
 	for p.tok != EOF {
-		nodes.Nodes = append(nodes.Nodes, p.parse())
+		root.Nodes = append(root.Nodes, p.parse())
 
 		if p.tok != EOF && !topLevelTokens[p.tok] {
 			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))
@@ -90,36 +90,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList
 		}
 
 	}
-	return nodes, p.names, p.uses, nil
-}
-
-func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (Expr, error) {
-	if fset == nil {
-		panic("ParseExpr: no FileSet provided (fset == nil)")
-	}
-
-	// get source
-	text, err := readSource(filename, src)
-	if err != nil {
-		return nil, err
-	}
-
-	var p parser
-	defer func() {
-		if e := recover(); e != nil {
-			// resume same panic if it's not a bailout
-			if _, ok := e.(bailout); !ok {
-				panic(e)
-			}
-		}
-
-		p.errors.Sort()
-		err = p.errors.Err()
-	}()
-
-	// parse source
-	p.init(fset, filename, text, 0)
-	return p.parseExpr(), nil
+	return root, p.names, p.uses, nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;

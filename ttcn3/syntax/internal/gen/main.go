@@ -214,7 +214,8 @@ func main() {
 			if n.Recv == nil || len(n.Recv.List) != 1 {
 				return false
 			}
-			recv := typeString(fset, n.Recv.List[0].Type)
+			recv := strings.Trim(typeString(fset, n.Recv.List[0].Type), "*[]")
+
 			typ, ok := typesMap[recv]
 			if !ok {
 				return false

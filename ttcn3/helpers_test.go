@@ -117,6 +117,9 @@ func makeSliceMap(m map[string]map[string]bool) SliceMap {
 // Unwrap first node from NodeLists
 func unwrapFirst(n syntax.Node) syntax.Node {
 	switch n := n.(type) {
+	case *syntax.Root:
+		return unwrapFirst(&n.NodeList)
+
 	case *syntax.NodeList:
 		if len(n.Nodes) == 0 {
 			return nil

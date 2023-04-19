@@ -44,6 +44,16 @@ type Decl interface {
 	declNode()
 }
 
+type Root struct {
+	NodeList
+	Filename string
+}
+
+func (n *Root) FirstTok() Token           { return n.NodeList.FirstTok() }
+func (n *Root) LastTok() Token            { return n.NodeList.LastTok() }
+func (n *Root) Inspect(f func(Node) bool) { n.NodeList.Inspect(f) }
+func (n *Root) Children() []Node          { return n.NodeList.Children() }
+
 type ErrorNode struct {
 	From, To Token
 }
