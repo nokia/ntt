@@ -869,28 +869,33 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 	return list
 }
 
+// LastNonWsToken returns the last node slice before the given position.
 func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
-	// TODO(5nord): Replace this function with n.LastTok() and n.PrevTok()
+
+	if pos == loc.NoPos {
+		return nil
+	}
 
 	var (
-		completed bool          = false
-		nodeStack []syntax.Node = make([]syntax.Node, 0, 10)
-		lastStack []syntax.Node = nil
-		isError   bool          = false
+		completed bool
+		isError   bool
+
+		nodeStack, lastStack []syntax.Node
 	)
 
 	n.Inspect(func(n syntax.Node) bool {
 		if isError {
 			return false
 		}
+
+		// called on node exit
 		if n == nil {
-			// called on node exit
-			if !isError {
+			if len(nodeStack) > 0 {
 				nodeStack = nodeStack[:len(nodeStack)-1]
 			}
 			return false
 		}
-		log.Debugln(fmt.Sprintf("looking for %d In node[%d .. %d] (node: %#v)", pos, n.Pos(), n.End(), n))
+
 		if errNode, ok := n.(*syntax.ErrorNode); ok {
 			if errNode.LastTok().End() == pos {
 				isError = true
@@ -900,18 +905,20 @@ func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
 				return false
 			}
 		}
+
 		// We don't need to descend any deeper if we're passt the
 		// position.
 		if pos < n.Pos() {
 			completed = true
 			return false
 		}
+
 		nodeStack = append(nodeStack, n)
 		lastStack = make([]syntax.Node, len(nodeStack))
 		copy(lastStack, nodeStack)
 		return !completed
 	})
-	log.Debugln(fmt.Sprintf("Completion at lastNode :%#v NodeStack: %#v", lastStack[len(lastStack)-1], lastStack))
+
 	return lastStack
 }
 

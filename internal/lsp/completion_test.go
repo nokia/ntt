@@ -83,6 +83,107 @@ func ModuleName(s string) string {
 	return ""
 }
 
+func TestLastNonWsToken(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input string
+		want  []string
+	}{
+		{"", nil},
+		{"module M {}", nil},
+
+		{"¶", []string{
+			"*syntax.NodeList",
+		}},
+
+		// TODO(5nord) Figure out if this test is valid.
+		// {"¶ module A {}", []string{
+		// 	"*syntax.NodeList",
+		// }},
+
+		{"module ¶ module A {}", []string{
+			"*syntax.NodeList",
+			"*syntax.Module",
+		}},
+
+		{"import from ¶", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from ¶ all", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from ¶all", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from ¶ const", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from ¶const", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from  ¶ foo", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from  ¶foo", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+			"*syntax.Ident(foo)",
+		}},
+
+		{"import ¶ from", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+		}},
+
+		{"import from A { modulepar ¶}", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+			"*syntax.DefKindExpr",
+			"*syntax.ErrorNode",
+		}},
+
+		{"import from A { modulepar ¶", []string{
+			"*syntax.NodeList",
+			"*syntax.ModuleDef",
+			"*syntax.ImportDecl",
+			"*syntax.DefKindExpr",
+			"*syntax.ErrorNode",
+		}},
+	}
+
+	for _, tt := range tests {
+		input, cursor := ntttest.CutCursor(tt.input)
+		tree := ttcn3.Parse(input)
+		var got []string
+		for _, n := range lsp.LastNonWsToken(tree.Root, loc.Pos(cursor+1)) {
+			got = append(got, ntttest.NodeString(n))
+		}
+		assert.Equal(t, tt.want, got, fmt.Sprintf("%q", tt.input))
+	}
+}
+
 // Completion within Import statement.
 // TODO: func TestImportTypes(t *testing.T) {}
 // TODO: func TestImportTypesCtrlSpc(t *testing.T) {}
