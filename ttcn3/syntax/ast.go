@@ -47,6 +47,9 @@ type Decl interface {
 type Root struct {
 	NodeList
 	Filename string
+	fset     *loc.FileSet
+	file     *loc.File
+	tokens   []token
 }
 
 func (n *Root) FirstTok() Token           { return n.NodeList.FirstTok() }

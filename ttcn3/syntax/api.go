@@ -73,12 +73,10 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (root *Root, nam
 		err = p.errors.Err()
 	}()
 
-	root = &Root{}
-
 	// parse source
 	p.init(fset, filename, text, AllErrors)
 	for p.tok != EOF {
-		root.Nodes = append(root.Nodes, p.parse())
+		p.Root.Nodes = append(p.Root.Nodes, p.parse())
 
 		if p.tok != EOF && !topLevelTokens[p.tok] {
 			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))
@@ -90,7 +88,7 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (root *Root, nam
 		}
 
 	}
-	return root, p.names, p.uses, nil
+	return p.Root, p.names, p.uses, nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;

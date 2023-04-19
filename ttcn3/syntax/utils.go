@@ -127,7 +127,7 @@ func Doc(n Node) string {
 		return ""
 	}
 
-	fset := tok.(*tokenNode).tree.fset
+	fset := tok.(*tokenNode).Root.fset
 	var ret string
 	prev := newSpan(fset, tok)
 L:

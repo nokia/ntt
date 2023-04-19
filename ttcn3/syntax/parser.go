@@ -11,7 +11,7 @@ import (
 )
 
 type tokenNode struct {
-	*tree
+	*Root
 	idx int
 }
 
@@ -35,14 +35,14 @@ func (n *tokenNode) PrevTok() Token {
 	if n.idx <= 0 {
 		return nil
 	}
-	return &tokenNode{idx: n.idx - 1, tree: n.tree}
+	return &tokenNode{idx: n.idx - 1, Root: n.Root}
 }
 
 func (n *tokenNode) NextTok() Token {
-	if n.idx >= len(n.tree.tokens)-1 {
+	if n.idx >= len(n.Root.tokens)-1 {
 		return nil
 	}
-	return &tokenNode{idx: n.idx + 1, tree: n.tree}
+	return &tokenNode{idx: n.idx + 1, Root: n.Root}
 }
 
 func (n *tokenNode) String() string {
@@ -51,12 +51,6 @@ func (n *tokenNode) String() string {
 
 func (n *tokenNode) Inspect(fn func(Node) bool) {
 	fn(n)
-}
-
-type tree struct {
-	fset   *loc.FileSet
-	file   *loc.File
-	tokens []token
 }
 
 type token struct {
@@ -83,7 +77,7 @@ type parser struct {
 	semi   bool // == (mode & PedanticSemicolon != 0)
 	indent int  // indentation used for tracing output
 
-	*tree
+	*Root
 
 	// Tokens/Backtracking
 	cursor  int
@@ -116,7 +110,7 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 		mode |= Trace
 	}
 
-	p.tree = &tree{
+	p.Root = &Root{
 		fset: fset,
 		file: fset.AddFile(filename, -1, len(src)),
 	}
@@ -240,7 +234,7 @@ func (p *parser) grow(n int) {
 		if !p.ignoreToken(kind) {
 			p.queue = append(p.queue, &tokenNode{
 				idx:  len(p.tokens) - 1,
-				tree: p.tree,
+				Root: p.Root,
 			})
 			n--
 		}
