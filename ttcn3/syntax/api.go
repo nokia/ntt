@@ -15,6 +15,7 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
 )
 
@@ -170,5 +171,5 @@ func readSource(filename string, src interface{}) ([]byte, error) {
 		}
 		return nil, errors.New("invalid source")
 	}
-	return ioutil.ReadFile(filename)
+	return fs.Content(filename)
 }
