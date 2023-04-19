@@ -1,9 +1,0 @@
-module M
-{
-
-	import from A {
-	    <syntax  
-		    error>
-	}
-
-} // end of module M

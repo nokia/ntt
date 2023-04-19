@@ -1,6 +1,0 @@
-module M
-{
-
-import from A { group all }
-
-} // end of module M

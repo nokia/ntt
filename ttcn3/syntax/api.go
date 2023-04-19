@@ -31,82 +31,24 @@ const (
 	AllErrors                     // report all errors (not just the first 10 on different lines)
 )
 
-// ParseModules parses the source code of a single source file and returns
-// the corresponding nodes. The source code may be provided via
-// the filename of the source file, or via the src parameter.
+// Parse the source code of a single file and return the corresponding syntax
+// tree. The source code may be provided via the filename of the source file,
+// or via the src parameter.
 //
-// If src != nil, ParseModules parses the source from src and the filename is
-// only used when recording position information. The type of the argument
-// for the src parameter must be string, []byte, or io.Reader.
-// If src == nil, ParseModules parses the file specified by filename.
+// If src != nil, Parse parses the source from src and the filename is only
+// used when recording position information. The type of the argument for the
+// src parameter must be string, []byte, or io.Reader. If src == nil, Parse
+// parses the file specified by filename.
 //
 // The mode parameter controls the amount of source text parsed and other
-// optional parser functionality. Position information is recorded in the
-// file set fset, which must not be nil.
+// optional parser functionality. Position information is recorded in the file
+// set fset, which must not be nil.
 //
 // If the source couldn't be read, the returned AST is nil and the error
-// indicates the specific failure. If the source was read but syntax
-// errors were found, the result is a partial AST (with Bad* nodes
-// representing the fragments of erroneous source code). Multiple errors
-// are returned via a ErrorList which is sorted by file position.
-func ParseModules(fset *loc.FileSet, filename string, src interface{}, mode Mode) (root []*Module, err error) {
-	if fset == nil {
-		panic("ParseModules: no FileSet provided (fset == nil)")
-	}
-
-	// get source
-	text, err := readSource(filename, src)
-	if err != nil {
-		return nil, err
-	}
-
-	var p parser
-	defer func() {
-		if e := recover(); e != nil {
-			// resume same panic if it's not a bailout
-			if _, ok := e.(bailout); !ok {
-				panic(e)
-			}
-		}
-
-		p.errors.Sort()
-		err = p.errors.Err()
-	}()
-
-	// parse source
-	p.init(fset, filename, text, mode)
-	return p.parseModuleList(), nil
-}
-
-func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (Expr, error) {
-	if fset == nil {
-		panic("ParseExpr: no FileSet provided (fset == nil)")
-	}
-
-	// get source
-	text, err := readSource(filename, src)
-	if err != nil {
-		return nil, err
-	}
-
-	var p parser
-	defer func() {
-		if e := recover(); e != nil {
-			// resume same panic if it's not a bailout
-			if _, ok := e.(bailout); !ok {
-				panic(e)
-			}
-		}
-
-		p.errors.Sort()
-		err = p.errors.Err()
-	}()
-
-	// parse source
-	p.init(fset, filename, text, 0)
-	return p.parseExpr(), nil
-}
-
+// indicates the specific failure. If the source was read but syntax errors
+// were found, the result is a partial AST (with Bad* nodes representing the
+// fragments of erroneous source code). Multiple errors are returned via a
+// ErrorList which is sorted by file position.
 func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList, names map[string]bool, uses map[string]bool, err error) {
 	if fset == nil {
 		panic("Parse: no FileSet provided (fset == nil)")
@@ -149,6 +91,35 @@ func Parse(fset *loc.FileSet, filename string, src interface{}) (nodes *NodeList
 
 	}
 	return nodes, p.names, p.uses, nil
+}
+
+func ParseExpr(fset *loc.FileSet, filename string, src interface{}) (Expr, error) {
+	if fset == nil {
+		panic("ParseExpr: no FileSet provided (fset == nil)")
+	}
+
+	// get source
+	text, err := readSource(filename, src)
+	if err != nil {
+		return nil, err
+	}
+
+	var p parser
+	defer func() {
+		if e := recover(); e != nil {
+			// resume same panic if it's not a bailout
+			if _, ok := e.(bailout); !ok {
+				panic(e)
+			}
+		}
+
+		p.errors.Sort()
+		err = p.errors.Err()
+	}()
+
+	// parse source
+	p.init(fset, filename, text, 0)
+	return p.parseExpr(), nil
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
