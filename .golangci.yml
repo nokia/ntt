@@ -14,10 +14,10 @@ run:
     - internal/memoize
     - internal/session/flock
     - ttcn3/v2/syntax/internal/gen
-    - ttcn3/parser
-    - ttcn3/token
-    - ttcn3/scanner
+    - ttcn3/syntax/internal/gen
     - ttcn3/printer
+  skip-files:
+    - ".*_gen.go$"
 
 output:
   sort-results: true
