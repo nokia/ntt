@@ -52,6 +52,13 @@ type Root struct {
 	tokens   []token
 }
 
+func (n *Root) PosFor(line, col int) loc.Pos {
+	if line < 1 {
+		return loc.NoPos
+	}
+	return n.file.LineStart(line) + loc.Pos(col-1)
+}
+
 func (n *Root) FirstTok() Token           { return n.NodeList.FirstTok() }
 func (n *Root) LastTok() Token            { return n.NodeList.LastTok() }
 func (n *Root) Inspect(f func(Node) bool) { n.NodeList.Inspect(f) }
