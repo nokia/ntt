@@ -478,6 +478,10 @@ func checkBraces(left syntax.Node, right syntax.Node) {
 		return
 	}
 
+	if left == nil || right == nil {
+		return
+	}
+
 	p1 := syntax.Begin(left)
 	p2 := syntax.Begin(right)
 	if p1.Line != p2.Line && p1.Column != p2.Column {
