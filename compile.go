@@ -74,7 +74,7 @@ func compile(cmd *cobra.Command, args []string) error {
 func writeSource(w io.Writer, files ...string) {
 	for _, file := range files {
 		src := buildSource(file)
-		b, err := json.Marshal(src)
+		b, err := json.MarshalIndent(src, "", "  ")
 		if err != nil {
 			fatal(err)
 		}
