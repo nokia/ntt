@@ -39,7 +39,7 @@ func (n *tokenNode) PrevTok() Token {
 }
 
 func (n *tokenNode) NextTok() Token {
-	if n.idx >= len(n.Root.tokens)-1 {
+	if n.idx >= len(n.tokens)-1 {
 		return nil
 	}
 	return &tokenNode{idx: n.idx + 1, Root: n.Root}

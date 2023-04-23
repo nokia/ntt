@@ -545,7 +545,7 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 
 	for _, file := range files {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			case *syntax.FuncDecl:
 				if n.IsTest() {

@@ -77,7 +77,7 @@ func getAllBehavioursFromModule(suite *Suite, kind syntax.Kind, mname string) []
 	list := make([]*FunctionDetails, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -131,7 +131,7 @@ func getAllValueDeclsFromModule(suite *Suite, mname string, kind syntax.Kind) []
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -167,7 +167,7 @@ func getAllTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -205,7 +205,7 @@ func getAllComponentTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -227,7 +227,7 @@ func getAllPortTypesFromModule(suite *Suite, mname string) []string {
 	list := make([]string, 0, 10)
 	if file, err := suite.FindModule(mname); err == nil {
 		tree := ttcn3.ParseFile(file)
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			if n == nil {
 				// called on node exit
 				return false
@@ -961,7 +961,7 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 
 		return &protocol.CompletionList{IsIncomplete: false, Items: complList}, nil
 	}
-	pos := tree.Pos(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
+	pos := tree.PosFor(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
 	nodeStack := LastNonWsToken(tree.Root, pos)
 
 	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack, defaultModuleId)}, nil

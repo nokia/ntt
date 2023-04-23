@@ -227,7 +227,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		go func(src string) {
 			defer wg.Done()
 			tree := ttcn3.ParseFile(src)
-			tree.Root.Inspect(func(n syntax.Node) bool {
+			tree.Inspect(func(n syntax.Node) bool {
 				switch n := n.(type) {
 				case *syntax.FuncDecl:
 					name := tree.QualifiedName(n)

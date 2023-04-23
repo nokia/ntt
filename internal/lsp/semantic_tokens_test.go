@@ -511,11 +511,11 @@ func testTokens(t *testing.T, rng *protocol.Range, text string) []Token {
 	db := &ttcn3.DB{}
 	db.Index(file)
 
-	begin := tree.Root.Pos()
-	end := tree.Root.End()
+	begin := tree.Pos()
+	end := tree.End()
 	if rng != nil {
-		begin = tree.Pos(int(rng.Start.Line), int(rng.Start.Character))
-		end = tree.Pos(int(rng.End.Line), int(rng.End.Character))
+		begin = tree.PosFor(int(rng.Start.Line), int(rng.Start.Character))
+		end = tree.PosFor(int(rng.End.Line), int(rng.End.Character))
 	}
 
 	var (
@@ -530,7 +530,7 @@ func testTokens(t *testing.T, rng *protocol.Range, text string) []Token {
 			col = 1
 		}
 		col += int(list[i+1])
-		pos := int(tree.Pos(line, col)) - 1 // -1 to account for the Pos offset.
+		pos := int(tree.PosFor(line, col)) - 1 // -1 to account for the Pos offset.
 		toks = append(toks, Token{
 			Line: line,
 			Text: Substr(text, pos, pos+int(list[i+2])),

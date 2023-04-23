@@ -73,7 +73,7 @@ func Parse(filename string, src interface{}) (root *Root, names map[string]bool,
 	// parse source
 	p.init(fset, filename, text, AllErrors)
 	for p.tok != EOF {
-		p.Root.Nodes = append(p.Root.Nodes, p.parse())
+		p.Nodes = append(p.Nodes, p.parse())
 
 		if p.tok != EOF && !topLevelTokens[p.tok] {
 			p.error(p.pos(1), fmt.Sprintf("unexpected token %s", p.tok))

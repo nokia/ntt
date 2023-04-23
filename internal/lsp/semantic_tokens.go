@@ -174,16 +174,16 @@ var builtins = map[string]SemanticTokenType{
 func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
-	begin := tree.Root.Pos()
-	end := tree.Root.End()
+	begin := tree.Pos()
+	end := tree.End()
 	return s.semanticTokensRecover(tree, &s.db, begin, end)
 }
 
 func (s *Server) semanticTokensRange(ctx context.Context, params *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
-	begin := tree.Pos(int(params.Range.Start.Line)+1, int(params.Range.Start.Character+1))
-	end := tree.Pos(int(params.Range.End.Line+1), int(params.Range.End.Character+1))
+	begin := tree.PosFor(int(params.Range.Start.Line)+1, int(params.Range.Start.Character+1))
+	end := tree.PosFor(int(params.Range.End.Line+1), int(params.Range.End.Character+1))
 	return s.semanticTokensRecover(tree, &s.db, begin, end)
 }
 
@@ -204,7 +204,7 @@ func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) 
 	var tokens []uint32
 	line := 0
 	col := 0
-	tree.Root.Inspect(func(n syntax.Node) bool {
+	tree.Inspect(func(n syntax.Node) bool {
 		if n == nil || n.End() < begin || end < n.Pos() {
 			return false
 		}

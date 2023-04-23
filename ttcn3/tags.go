@@ -6,7 +6,7 @@ import (
 
 func (tree *Tree) Tags() []syntax.Node {
 	var t []syntax.Node
-	tree.Root.Inspect(func(n syntax.Node) bool {
+	tree.Inspect(func(n syntax.Node) bool {
 		if n == nil {
 			return false
 		}

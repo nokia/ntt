@@ -165,7 +165,7 @@ func list(cmd *cobra.Command, args []string) error {
 		}
 
 		var module string
-		tree.Root.Inspect(func(n syntax.Node) bool {
+		tree.Inspect(func(n syntax.Node) bool {
 			if n != nil {
 				switch n := n.(type) {
 				case *syntax.Module:

@@ -83,7 +83,7 @@ func TestExprAt(t *testing.T) {
 		t.Run(tt.input, func(t *testing.T) {
 			cursor, source := extractCursor(tt.input)
 			tree := parseFile(t, t.Name(), source)
-			pos := tree.Root.Position(cursor)
+			pos := tree.Position(cursor)
 			actual := nodeDesc(tree.ExprAt(pos.Line, pos.Column))
 			assert.Equal(t, tt.want, actual)
 		})
@@ -308,7 +308,7 @@ func TestLookup(t *testing.T) {
 			cursor, tt.input = extractCursor(tt.input)
 
 			tree := parseFile(t, t.Name(), tt.input)
-			pos := tree.Root.Position(cursor)
+			pos := tree.Position(cursor)
 			ids := enumerateIDs(tree.Root)
 
 			db := &ttcn3.DB{}

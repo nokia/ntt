@@ -110,7 +110,7 @@ func (t *Tree) ModuleOf(n syntax.Node) *syntax.Module {
 
 func (t *Tree) Modules() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.Module); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -122,7 +122,7 @@ func (t *Tree) Modules() []*Node {
 
 func (t *Tree) Funcs() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.FuncDecl); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -134,7 +134,7 @@ func (t *Tree) Funcs() []*Node {
 
 func (t *Tree) Tests() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.FuncDecl); ok && n.IsTest() {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -146,7 +146,7 @@ func (t *Tree) Tests() []*Node {
 
 func (t *Tree) Imports() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.ImportDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
@@ -158,7 +158,7 @@ func (t *Tree) Imports() []*Node {
 
 func (t *Tree) Ports() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.PortTypeDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
@@ -170,7 +170,7 @@ func (t *Tree) Ports() []*Node {
 
 func (t *Tree) Components() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.ComponentTypeDecl); ok {
 			defs = append(defs, &Node{Node: n, Tree: t})
 			return false
@@ -182,7 +182,7 @@ func (t *Tree) Components() []*Node {
 
 func (t *Tree) Controls() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		if n, ok := n.(*syntax.ControlPart); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
@@ -194,7 +194,7 @@ func (t *Tree) Controls() []*Node {
 
 func (t *Tree) ModulePars() []*Node {
 	var defs []*Node
-	t.Root.Inspect(func(n syntax.Node) bool {
+	t.Inspect(func(n syntax.Node) bool {
 		switch n := n.(type) {
 		case *syntax.Module, *syntax.ModuleDef, *syntax.GroupDecl, *syntax.ModuleParameterGroup:
 			return true
@@ -213,15 +213,9 @@ func (t *Tree) ModulePars() []*Node {
 	return defs
 }
 
-// Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
-// not been parsed yet, Pos will return loc.NoPos.
-func (t *Tree) Pos(line int, column int) loc.Pos {
-	return t.Root.PosFor(line, column)
-}
-
 // ExprAt returns the primary expression at the given position.
 func (t *Tree) ExprAt(line, col int) syntax.Expr {
-	pos := t.Pos(line, col)
+	pos := t.PosFor(line, col)
 	s := t.sliceAt(pos)
 	if len(s) == 0 {
 		log.Debugf("%d:%d: no expression at cursor position.\n", line, col)
