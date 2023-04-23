@@ -8,7 +8,6 @@ import (
 	"runtime"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/memoize"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
@@ -49,9 +48,8 @@ func parse(path string, input []byte) *Tree {
 		input = b
 	}
 
-	fset := loc.NewFileSet()
-	root, names, uses, err := syntax.Parse(fset, path, input)
-	return &Tree{fset: fset, Root: root, Names: names, Uses: uses, Err: err, filename: path}
+	root, names, uses, err := syntax.Parse(path, input)
+	return &Tree{Root: root, Names: names, Uses: uses, Err: err, filename: path}
 }
 
 var builtins = `

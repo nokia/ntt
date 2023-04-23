@@ -41,18 +41,15 @@ const (
 // parses the file specified by filename.
 //
 // The mode parameter controls the amount of source text parsed and other
-// optional parser functionality. Position information is recorded in the file
-// set fset, which must not be nil.
+// optional parser functionality.
 //
 // If the source couldn't be read, the returned AST is nil and the error
 // indicates the specific failure. If the source was read but syntax errors
 // were found, the result is a partial AST (with Bad* nodes representing the
 // fragments of erroneous source code). Multiple errors are returned via a
 // ErrorList which is sorted by file position.
-func Parse(fset *loc.FileSet, filename string, src interface{}) (root *Root, names map[string]bool, uses map[string]bool, err error) {
-	if fset == nil {
-		panic("Parse: no FileSet provided (fset == nil)")
-	}
+func Parse(filename string, src interface{}) (root *Root, names map[string]bool, uses map[string]bool, err error) {
+	fset := loc.NewFileSet()
 
 	// get source
 	text, err := readSource(filename, src)

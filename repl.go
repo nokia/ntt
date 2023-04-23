@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3/syntax"
@@ -22,8 +21,7 @@ func repl() error {
 			break
 		}
 
-		fset := loc.NewFileSet()
-		root, _, _, err := syntax.Parse(fset, "<stdin>", s.Text())
+		root, _, _, err := syntax.Parse("<stdin>", s.Text())
 		if err != nil {
 			fmt.Println(err.Error())
 			continue

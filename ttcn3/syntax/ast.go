@@ -52,6 +52,10 @@ type Root struct {
 	tokens   []token
 }
 
+func (n *Root) Position(pos loc.Pos) loc.Position {
+	return n.file.Position(pos)
+}
+
 func (n *Root) PosFor(line, col int) loc.Pos {
 	if line < 1 {
 		return loc.NoPos

@@ -12,7 +12,8 @@ import (
 )
 
 func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
-	b, err := fs.Content(params.TextDocument.URI.SpanURI().Filename())
+	uri := string(params.TextDocument.URI)
+	b, err := fs.Content(uri)
 	if err != nil {
 		log.Debug("formatting: ", err.Error())
 		return nil, nil

@@ -3,7 +3,6 @@ package syntax_test
 import (
 	"testing"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,8 +11,7 @@ func TestDoc(t *testing.T) {
 	t.Parallel()
 
 	testDoc := func(t *testing.T, input string) string {
-		fset := loc.NewFileSet()
-		root, _, _, err := syntax.Parse(fset, t.Name(), input)
+		root, _, _, err := syntax.Parse(t.Name(), input)
 		if err != nil {
 			t.Fatal(err)
 		}

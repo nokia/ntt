@@ -9,7 +9,3 @@ import (
 func (t *Tree) SliceAt(pos loc.Pos) []syntax.Node {
 	return t.sliceAt(pos)
 }
-
-func (t *Tree) FileSet() *loc.FileSet {
-	return t.fset
-}

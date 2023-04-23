@@ -12,8 +12,7 @@ import (
 
 // Tree represents the TTCN-3 syntax tree, usually of a file.
 type Tree struct {
-	fset  *loc.FileSet
-	Root  syntax.Node
+	*syntax.Root
 	Names map[string]bool
 	Uses  map[string]bool
 	Err   error
@@ -217,12 +216,7 @@ func (t *Tree) ModulePars() []*Node {
 // Pos encodes a line and column tuple into a offset-based Pos tag. If file nas
 // not been parsed yet, Pos will return loc.NoPos.
 func (t *Tree) Pos(line int, column int) loc.Pos {
-	if t.fset == nil || line < 1 {
-		return loc.NoPos
-	}
-
-	// We assume every FileSet has only one file, to make this work.
-	return loc.Pos(int(t.fset.File(loc.Pos(1)).LineStart(line)) + column - 1)
+	return t.Root.PosFor(line, column)
 }
 
 // ExprAt returns the primary expression at the given position.
