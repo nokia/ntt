@@ -314,7 +314,8 @@ func (f *finder) lookup(n syntax.Expr, tree *Tree) []*Node {
 		results = f.call(n, tree)
 
 	default:
-		log.Debugf("%s: unsupported node type: %T\n", syntax.Begin(n), n)
+		spn := syntax.SpanOf(n)
+		log.Debugf("%s: unsupported node type: %T\n", spn.String(), n)
 	}
 
 	f.cache[n] = results

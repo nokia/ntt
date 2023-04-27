@@ -3,12 +3,12 @@ package lsp
 import (
 	"context"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 // NewCommand returns a CodeLens command.
-func NewCommand(pos loc.Position, title string, command string, args ...interface{}) (protocol.CodeLens, error) {
+func NewCommand(pos syntax.Position, title string, command string, args ...interface{}) (protocol.CodeLens, error) {
 	b, err := marshalRaw(args...)
 	if err != nil {
 		return protocol.CodeLens{}, err

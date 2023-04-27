@@ -68,7 +68,7 @@ func importedDefs(db *ttcn3.DB, id string, module string) []string {
 	mod := moduleFrom("file1.ttcn3", module)
 	for _, d := range db.VisibleModules(id, mod) {
 		name := syntax.Name(d.Node)
-		file := syntax.Begin(d.Node).Filename
+		file := syntax.SpanOf(d.Node).Filename
 		s = append(s, fmt.Sprintf("%s:%s", name, file))
 	}
 	return s

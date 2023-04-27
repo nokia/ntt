@@ -179,7 +179,7 @@ For information on writing new checks, see <TBD>.
 
 type Import struct {
 	Node     *syntax.ImportDecl
-	Path     string
+	Tree     *ttcn3.Tree
 	From     string
 	Imported string
 }
@@ -349,7 +349,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.ImportDecl:
 						checkBraces(n.LBrace, n.RBrace)
-						checkImport(n, mod)
+						checkImport(n, mod, tree)
 					case *syntax.GroupDecl:
 						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.WithSpec:
@@ -533,7 +533,7 @@ func checkUsage(n *syntax.Ident) {
 	}
 }
 
-func checkImport(n *syntax.ImportDecl, mod *syntax.Module) {
+func checkImport(n *syntax.ImportDecl, mod *syntax.Module, tree *ttcn3.Tree) {
 	if !style.Unused.Modules {
 		return
 	}
@@ -544,7 +544,7 @@ func checkImport(n *syntax.ImportDecl, mod *syntax.Module) {
 	usedModuleMu.Lock()
 	usedModules[imported] = Import{
 		Node:     n,
-		Path:     syntax.Begin(n).Filename,
+		Tree:     tree,
 		From:     importing,
 		Imported: imported,
 	}
@@ -565,15 +565,16 @@ func checkConf(conf *project.Config) {
 				continue
 			}
 
-			mod := filepath.Base(file)
-			mod = strings.TrimSuffix(mod, filepath.Ext(mod))
+			for _, def := range ttcn3.ParseFile(file).Modules() {
+				mod := syntax.Name(def.Node.(*syntax.Module))
 
-			if isWhiteListed(style.Ignore.Modules, mod) {
-				return
-			}
+				if isWhiteListed(style.Ignore.Modules, mod) {
+					return
+				}
 
-			if _, found := usedModules[mod]; !found {
-				reportError(&errUnusedModule{file: file})
+				if _, found := usedModules[mod]; !found {
+					reportError(&errUnusedModule{file: file, name: mod})
+				}
 			}
 		}
 	}

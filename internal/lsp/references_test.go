@@ -43,15 +43,15 @@ func TestFindAllTypeDefs(t *testing.T) {
 
 	assert.Equal(t, []protocol.Location{
 		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 15}, End: protocol.Position{Line: 2, Character: 15}}},
+			Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 15}, End: protocol.Position{Line: 2, Character: 19}}},
 		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 22}, End: protocol.Position{Line: 3, Character: 22}}},
+			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 22}, End: protocol.Position{Line: 3, Character: 26}}},
 		{URI: "TestFindAllTypeDefs_Module_0.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 4, Character: 7}, End: protocol.Position{Line: 4, Character: 7}}},
+			Range: protocol.Range{Start: protocol.Position{Line: 4, Character: 7}, End: protocol.Position{Line: 4, Character: 11}}},
 		{URI: "TestFindAllTypeDefs_Module_1.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 12}, End: protocol.Position{Line: 3, Character: 12}}},
+			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 12}, End: protocol.Position{Line: 3, Character: 16}}},
 		{URI: "TestFindAllTypeDefs_Module_2.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 50}, End: protocol.Position{Line: 2, Character: 50}}},
+			Range: protocol.Range{Start: protocol.Position{Line: 2, Character: 50}, End: protocol.Position{Line: 2, Character: 54}}},
 		{URI: "TestFindAllTypeDefs_Module_2.ttcn3",
-			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 8}, End: protocol.Position{Line: 3, Character: 8}}}}, StripPathFromURI(list))
+			Range: protocol.Range{Start: protocol.Position{Line: 3, Character: 8}, End: protocol.Position{Line: 3, Character: 12}}}}, StripPathFromURI(list))
 }

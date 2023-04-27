@@ -31,23 +31,10 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	}
 
 	for _, def := range tree.LookupWithDB(x, &s.db) {
-		pos := syntax.Begin(def.Ident)
-		log.Debugf("Definition found at %s\n", pos)
-		locs = append(locs, location(pos))
+		span := syntax.SpanOf(def.Ident)
+		log.Debugf("Definition found at %s\n", &span)
+		locs = append(locs, location(span))
 	}
 
 	return unifyLocs(locs), nil
-}
-
-func unifyLocs(locs []protocol.Location) []protocol.Location {
-	m := make(map[protocol.Location]bool)
-	for _, loc := range locs {
-		m[loc] = true
-	}
-
-	ret := make([]protocol.Location, 0, len(m))
-	for loc := range m {
-		ret = append(ret, loc)
-	}
-	return ret
 }

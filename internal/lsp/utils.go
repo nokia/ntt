@@ -5,17 +5,33 @@ import (
 	"fmt"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
-func location(pos loc.Position) protocol.Location {
+func unifyLocs(locs []protocol.Location) []protocol.Location {
+	m := make(map[protocol.Location]bool)
+	for _, loc := range locs {
+		m[loc] = true
+	}
+	ret := make([]protocol.Location, 0, len(m))
+	for loc := range m {
+		ret = append(ret, loc)
+	}
+	return ret
+}
+
+func location(span syntax.Span) protocol.Location {
 	return protocol.Location{
-		URI: protocol.URIFromSpanURI(fs.URI(pos.Filename)),
-		Range: protocol.Range{
-			Start: position(pos.Line, pos.Column),
-			End:   position(pos.Line, pos.Column),
-		},
+		URI:   protocol.URIFromSpanURI(fs.URI(span.Filename)),
+		Range: setProtocolRange(span.Begin, span.End),
+	}
+}
+
+func setProtocolRange(begin, end syntax.Position) protocol.Range {
+	return protocol.Range{
+		Start: position(begin.Line, begin.Column),
+		End:   position(end.Line, end.Column),
 	}
 }
 

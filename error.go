@@ -79,10 +79,11 @@ func (e errUsageExceedsLimit) Error() string {
 
 type errUnusedModule struct {
 	file string
+	name string
 }
 
 func (e errUnusedModule) Error() string {
-	return fmt.Sprintf("%s: error: unused module", e.file)
+	return fmt.Sprintf("%s: error: unused module %q", e.file, e.name)
 }
 
 func isSilent(n syntax.Node, checks ...string) bool {

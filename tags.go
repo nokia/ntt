@@ -46,7 +46,7 @@ func tags(cmd *cobra.Command, args []string) error {
 			tree := ttcn3.ParseFile(files[i])
 			for _, n := range tree.Tags() {
 				pos := syntax.Begin(n)
-				tags[i] = append(tags[i], NewTag(syntax.Name(n), pos.Filename, pos.Line, Kind(n)))
+				tags[i] = append(tags[i], NewTag(syntax.Name(n), syntax.Filename(n), pos.Line, Kind(n)))
 			}
 		}(i)
 	}

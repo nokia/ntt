@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/doc"
@@ -241,6 +240,7 @@ func Print(basket Basket, n syntax.Node, id string) {
 	}
 
 	p := syntax.Begin(n)
+	filename := syntax.Filename(n)
 
 	var prettyTags []Tag
 	for _, tag := range tags {
@@ -257,7 +257,7 @@ func Print(basket Basket, n syntax.Node, id string) {
 		}
 		first = false
 		b, err := json.Marshal(Match{
-			Filename: p.Filename,
+			Filename: filename,
 			Line:     p.Line,
 			Column:   p.Column,
 			ID:       id,
@@ -271,18 +271,18 @@ func Print(basket Basket, n syntax.Node, id string) {
 	default:
 		if showTags && len(tags) != 0 {
 			for _, tag := range prettyTags {
-				PrintMatch(p, id, tag.String())
+				PrintMatch(filename, p, id, tag.String())
 			}
 			return
 		}
 
-		PrintMatch(p, id)
+		PrintMatch(filename, p, id)
 	}
 }
 
-func PrintMatch(pos loc.Position, id string, tags ...string) {
+func PrintMatch(filename string, pos syntax.Position, id string, tags ...string) {
 	if showFiles {
-		fmt.Fprintf(w, "%s:%d\t", pos.Filename, pos.Line)
+		fmt.Fprintf(w, "%s:%d\t", filename, pos.Line)
 	}
 	fmt.Fprintf(w, id)
 	for _, t := range tags {

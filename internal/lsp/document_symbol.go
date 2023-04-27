@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
@@ -15,16 +14,8 @@ var kindToStringMap = map[syntax.Kind]string{
 	syntax.ALTSTEP: "altstep", syntax.FUNCTION: "function", syntax.TESTCASE: "testcase",
 	syntax.UNION: "union", syntax.RECORD: "record", syntax.SET: "set"}
 
-func setProtocolRange(begin loc.Position, end loc.Position) protocol.Range {
-	return protocol.Range{
-		Start: protocol.Position{Line: uint32(begin.Line - 1), Character: uint32(begin.Column - 1)},
-		End:   protocol.Position{Line: uint32(end.Line - 1), Character: uint32(end.Column - 1)}}
-}
-
 func getComponentTypeDecl(tree *ttcn3.Tree, node *syntax.ComponentTypeDecl) protocol.DocumentSymbol {
 	var children []protocol.DocumentSymbol = nil
-	begin := syntax.Begin(node)
-	end := syntax.End(node)
 
 	if len(node.Extends) > 0 {
 		children = getExtendsComponents(tree, node.Extends)
@@ -36,9 +27,11 @@ func getComponentTypeDecl(tree *ttcn3.Tree, node *syntax.ComponentTypeDecl) prot
 		children = append(children, getComponentVars(tree, node.Body.Stmts)...)
 
 	}
+	spn := syntax.SpanOf(node)
+	rng := setProtocolRange(spn.Begin, spn.End)
 	return protocol.DocumentSymbol{Name: node.Name.String(), Detail: "component type", Kind: protocol.Class,
-		Range:          setProtocolRange(begin, end),
-		SelectionRange: setProtocolRange(begin, end),
+		Range:          rng,
+		SelectionRange: rng,
 		Children:       children}
 }
 func getExtendsComponents(tree *ttcn3.Tree, expr []syntax.Expr) []protocol.DocumentSymbol {
@@ -46,11 +39,12 @@ func getExtendsComponents(tree *ttcn3.Tree, expr []syntax.Expr) []protocol.Docum
 	list := make([]protocol.DocumentSymbol, 0, l)
 
 	for _, v := range expr {
-		begin := syntax.Begin(v)
-		end := syntax.End(v)
+		spn := syntax.SpanOf(v)
+		rng := setProtocolRange(spn.Begin, spn.End)
 		list = append(list, protocol.DocumentSymbol{Name: syntax.Name(v), Kind: protocol.Class,
-			Range:          setProtocolRange(begin, end),
-			SelectionRange: setProtocolRange(begin, end)})
+			Range:          rng,
+			SelectionRange: rng,
+		})
 	}
 	begin := syntax.Begin(expr[0])
 	end := syntax.End(expr[l-1])
