@@ -1,164 +1,155 @@
 package lsp_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
 
-func generateSymbols(t *testing.T, suite *lsp.Suite) (*ttcn3.Tree, []protocol.DocumentSymbol) {
-	name := fmt.Sprintf("%s_Module_0.ttcn3", t.Name())
-	tree := ttcn3.ParseFile(name)
-	list := lsp.NewAllDefinitionSymbolsFromCurrentModule(tree)
-	ret := make([]protocol.DocumentSymbol, 0, len(list))
-	for _, l := range list {
-		ret = append(ret, l.(protocol.DocumentSymbol))
+func testDocumentSymbol(t *testing.T, text string) []Symbol {
+	tree := ttcn3.Parse(text)
+	var (
+		ret        []Symbol
+		makeSymbol func(sym protocol.DocumentSymbol) Symbol
+	)
+
+	makeSymbol = func(sym protocol.DocumentSymbol) Symbol {
+		begin := tree.PosFor(int(sym.Range.Start.Line)+1, int(sym.Range.Start.Character)+1)
+		end := tree.PosFor(int(sym.Range.End.Line)+1, int(sym.Range.End.Character)+1)
+		s := Symbol{
+			Kind:   sym.Kind,
+			Name:   sym.Name,
+			Detail: sym.Detail,
+			Text:   string(text[begin-1 : end-1]),
+		}
+		for _, c := range sym.Children {
+			s.Children = append(s.Children, makeSymbol(c))
+		}
+		return s
 	}
-	return tree, ret
-}
 
-func setRange(tree *ttcn3.Tree, begin loc.Pos, end loc.Pos) protocol.Range {
-	b := tree.Position(begin)
-	e := tree.Position(end)
-	ret := protocol.Range{
-		Start: protocol.Position{Line: uint32(b.Line - 1), Character: uint32(b.Column)},
-		End:   protocol.Position{Line: uint32(e.Line - 1), Character: uint32(e.Column)}}
+	for _, l := range lsp.NewAllDefinitionSymbolsFromCurrentModule(tree) {
+		ds, ok := l.(protocol.DocumentSymbol)
+		if !ok {
+			t.Fatalf("unexpected type %T", l)
+		}
+		ret = append(ret, makeSymbol(ds))
 
+	}
 	return ret
 }
 
+type Symbol struct {
+	Kind     protocol.SymbolKind
+	Name     string
+	Detail   string
+	Text     string
+	Children []Symbol
+}
+
 func TestFunctionDefWithModuleDotRunsOn(t *testing.T) {
-	suite, _ := buildSuite(t, `module Test
-    {
-        type component B0 extends C0, C1 {
+	input := `
+	module Test
+	{
+		type component B0 extends C0, C1 {
 			var integer i := 1;
 			timer t1 := 2.0;
 			port P p;
 		}
 		function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_1.C0 system B0 return integer {}
-	  }`, `module TestFunctionDefWithModuleDotRunsOn_Module_1
-      {
-		  type component C0 {}
-		  type component C1 {}
-	  }`)
+	}
+	module TestFunctionDefWithModuleDotRunsOn_Module_1
+	{
+		type component C0 {}
+		type component C1 {}
+	}`
 
-	tree, list := generateSymbols(t, suite)
+	want := []Symbol{
+		{Kind: protocol.Class, Name: "B0", Detail: "component type",
+			Text: "type component B0 extends C0, C1 {\n\t\t\tvar integer i := 1;\n\t\t\ttimer t1 := 2.0;\n\t\t\tport P p;\n\t\t}",
+			Children: []Symbol{
+				{Kind: protocol.Array, Name: "extends", Detail: "",
+					Text: "C0, C1",
+					Children: []Symbol{
+						{Kind: protocol.Class, Name: "C0", Detail: "", Text: "C0"},
+						{Kind: protocol.Class, Name: "C1", Detail: "", Text: "C1"}}},
+				{Kind: protocol.Variable, Name: "i", Detail: "var integer", Text: "var integer i := 1"},
+				{Kind: protocol.Event, Name: "t1", Detail: "timer", Text: "timer t1 := 2.0"},
+				{Kind: protocol.Interface, Name: "p", Detail: "port P", Text: "port P p"}}},
+		{Kind: protocol.Method, Name: "f", Detail: "function definition",
+			Text: "function f() runs on TestFunctionDefWithModuleDotRunsOn_Module_1.C0 system B0 return integer {}",
+			Children: []Symbol{
+				{Kind: protocol.Class, Name: "runs on", Detail: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0", Text: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0"},
+				{Kind: protocol.Class, Name: "system", Detail: "B0", Text: "B0"},
+				{Kind: protocol.Struct, Name: "return", Detail: "integer", Text: "integer"}}},
 
-	assert.Equal(t, []protocol.DocumentSymbol{
-		{Name: "B0", Kind: protocol.Class, Detail: "component type",
-			Range:          setRange(tree, 26, 120),
-			SelectionRange: setRange(tree, 26, 120),
-			Children: []protocol.DocumentSymbol{
-				{Name: "extends", Kind: protocol.Array,
-					Range:          setRange(tree, 52, 58),
-					SelectionRange: setRange(tree, 52, 58),
-					Children: []protocol.DocumentSymbol{
-						{Name: "C0", Kind: protocol.Class,
-							Range:          setRange(tree, 52, 54),
-							SelectionRange: setRange(tree, 52, 54)},
-						{Name: "C1", Kind: protocol.Class,
-							Range:          setRange(tree, 56, 58),
-							SelectionRange: setRange(tree, 56, 58)}}},
-				{Name: "i", Detail: "var integer", Kind: protocol.Variable,
-					Range:          setRange(tree, 64, 82),
-					SelectionRange: setRange(tree, 64, 82)},
-				{Name: "t1", Detail: "timer", Kind: protocol.Event,
-					Range:          setRange(tree, 87, 102),
-					SelectionRange: setRange(tree, 87, 102)},
-				{Name: "p", Detail: "port P", Kind: protocol.Interface,
-					Range:          setRange(tree, 107, 115),
-					SelectionRange: setRange(tree, 107, 115)}}},
-		{Name: "f", Kind: protocol.Method, Detail: "function definition",
-			Range:          setRange(tree, 123, 218),
-			SelectionRange: setRange(tree, 123, 218),
-			Children: []protocol.DocumentSymbol{
-				{Name: "runs on", Detail: "TestFunctionDefWithModuleDotRunsOn_Module_1.C0", Kind: protocol.Class,
-					Range:          setRange(tree, 144, 190),
-					SelectionRange: setRange(tree, 144, 190)},
-				{Name: "system", Detail: "B0", Kind: protocol.Class,
-					Range:          setRange(tree, 198, 200),
-					SelectionRange: setRange(tree, 198, 200)},
-				{Name: "return", Detail: "integer", Kind: protocol.Struct,
-					Range:          setRange(tree, 208, 215),
-					SelectionRange: setRange(tree, 208, 215)}}}}, list)
+		{Kind: protocol.Class, Name: "C0", Detail: "component type", Text: "type component C0 {}"},
+		{Kind: protocol.Class, Name: "C1", Detail: "component type", Text: "type component C1 {}"}}
+	assert.Equal(t, want, testDocumentSymbol(t, input))
 }
 
 func TestRecordOfTypeDefWithTypeRef(t *testing.T) {
-	suite, _ := buildSuite(t, `module Test
-    {
-        type integer Byte(0..255)
+	input := `
+	module Test
+	{
+		type integer Byte(0..255)
 		type record of Byte Octets
-	  }`)
+	}`
 
-	tree, list := generateSymbols(t, suite)
-
-	assert.Equal(t, []protocol.DocumentSymbol{
-		{Name: "Byte", Kind: protocol.Struct, Detail: "subtype",
-			Range:          setRange(tree, 26, 51),
-			SelectionRange: setRange(tree, 26, 51),
-			Children:       nil},
-		{Name: "Octets", Kind: protocol.Array, Detail: "record of type",
-			Range:          setRange(tree, 54, 80),
-			SelectionRange: setRange(tree, 54, 80),
-			Children: []protocol.DocumentSymbol{
-				{Name: "Byte", Detail: "element type", Kind: protocol.Struct,
-					Range:          setRange(tree, 69, 73),
-					SelectionRange: setRange(tree, 69, 73)}}}}, list)
+	want := []Symbol{
+		{Kind: protocol.Struct, Name: "Byte", Detail: "subtype",
+			Text: "type integer Byte(0..255)",
+		},
+		{Kind: protocol.Array, Name: "Octets", Detail: "record of type",
+			Text: "type record of Byte Octets",
+			Children: []Symbol{
+				{Kind: protocol.Struct, Name: "Byte", Detail: "element type", Text: "Byte"}}}}
+	assert.Equal(t, want, testDocumentSymbol(t, input))
 }
 
 func TestConstTemplModulePar(t *testing.T) {
-	suite, _ := buildSuite(t, `module Test
-    {
-        const R c_r := {10, true}
+	input := `
+	module Test
+	{
+		const R c_r := {10, true}
 		modulepar R m_r := {10, true}
 		template R t_r1 := ?;
 		template R t_r2 := {10, true}
 		template R t_r3(integer pi:=10) := {pi, true}
 		template R t_r4 modifies t_r1 := {f2:= true}
-	  }`)
+	}`
 
-	tree, list := generateSymbols(t, suite)
-
-	assert.Equal(t, []protocol.DocumentSymbol{
-		{Name: "c_r", Kind: protocol.Constant, Detail: "const R",
-			Range:          setRange(tree, 26, 51),
-			SelectionRange: setRange(tree, 26, 51),
-			Children:       nil},
-		{Name: "m_r", Kind: protocol.Constant, Detail: "modulepar R",
-			Range:          setRange(tree, 54, 83),
-			SelectionRange: setRange(tree, 54, 83),
-			Children:       nil},
-		{Name: "t_r1", Kind: protocol.Constant, Detail: "template R",
-			Range:          setRange(tree, 86, 106),
-			SelectionRange: setRange(tree, 86, 106),
-			Children:       nil},
-		{Name: "t_r2", Kind: protocol.Constant, Detail: "template R",
-			Range:          setRange(tree, 110, 139),
-			SelectionRange: setRange(tree, 110, 139),
-			Children:       nil},
-		{Name: "t_r3", Kind: protocol.Constant, Detail: "template R",
-			Range:          setRange(tree, 142, 187),
-			SelectionRange: setRange(tree, 142, 187),
-			Children:       nil},
-		{Name: "t_r4", Kind: protocol.Constant, Detail: "template R",
-			Range:          setRange(tree, 190, 234),
-			SelectionRange: setRange(tree, 190, 234),
-			Children: []protocol.DocumentSymbol{
-				{Name: "t_r1", Kind: protocol.Constant, Detail: "template",
-					Range:          setRange(tree, 215, 219),
-					SelectionRange: setRange(tree, 215, 219),
-					Children:       nil}}}}, list)
+	want := []Symbol{
+		{Kind: protocol.Constant, Name: "c_r", Detail: "const R",
+			Text: "const R c_r := {10, true}",
+		},
+		{Kind: protocol.Constant, Name: "m_r", Detail: "modulepar R",
+			Text: "modulepar R m_r := {10, true}",
+		},
+		{Kind: protocol.Constant, Name: "t_r1", Detail: "template R",
+			Text: "template R t_r1 := ?",
+		},
+		{Kind: protocol.Constant, Name: "t_r2", Detail: "template R",
+			Text: "template R t_r2 := {10, true}",
+		},
+		{Kind: protocol.Constant, Name: "t_r3", Detail: "template R",
+			Text: "template R t_r3(integer pi:=10) := {pi, true}",
+		},
+		{Kind: protocol.Constant, Name: "t_r4", Detail: "template R",
+			Text: "template R t_r4 modifies t_r1 := {f2:= true}",
+			Children: []Symbol{
+				{Kind: protocol.Constant, Name: "t_r1", Detail: "template", Text: "t_r1"}}}}
+	assert.Equal(t, want, testDocumentSymbol(t, input))
 }
 
 func TestPortTypeDecl(t *testing.T) {
-	suite, _ := buildSuite(t, `module Test
-    {
-		type port Pmessage message{
+	input := `
+	module Test
+	{
+		type port Pmessage message {
 			address AddressType;
 			in aModule.Msg1, integer, Msg2;
 			out Msg3, Msg4;
@@ -166,58 +157,35 @@ func TestPortTypeDecl(t *testing.T) {
 			map param(PmessageMapType1 p1, PmessageMapType2 p2[]);
 			unmap(PmessageUnmapType1 p1);
 		}
-	  }`)
+	}`
 
-	tree, list := generateSymbols(t, suite)
-	assert.Equal(t, []protocol.DocumentSymbol{
-		{Name: "Pmessage", Kind: protocol.Interface, Detail: "message port type",
-			Range:          setRange(tree, 20, 235),
-			SelectionRange: setRange(tree, 20, 235),
-			Children: []protocol.DocumentSymbol{
-				{Name: "address", Kind: protocol.Struct, Detail: "AddressType type",
-					Range:          setRange(tree, 51, 70),
-					SelectionRange: setRange(tree, 51, 70),
-					Children:       nil},
-				{Name: "in", Kind: protocol.Array,
-					Range:          setRange(tree, 75, 105),
-					SelectionRange: setRange(tree, 75, 105),
-					Children: []protocol.DocumentSymbol{
-						{Name: "aModule.Msg1", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 78, 90),
-							SelectionRange: setRange(tree, 78, 90),
-							Children:       nil},
-						{Name: "integer", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 92, 99),
-							SelectionRange: setRange(tree, 92, 99),
-							Children:       nil},
-						{Name: "Msg2", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 101, 105),
-							SelectionRange: setRange(tree, 101, 105),
-							Children:       nil}}},
-				{Name: "out", Kind: protocol.Array,
-					Range:          setRange(tree, 110, 124),
-					SelectionRange: setRange(tree, 110, 124),
-					Children: []protocol.DocumentSymbol{
-						{Name: "Msg3", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 114, 118),
-							SelectionRange: setRange(tree, 114, 118),
-							Children:       nil},
-						{Name: "Msg4", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 120, 124),
-							SelectionRange: setRange(tree, 120, 124),
-							Children:       nil}}},
-				{Name: "inout", Kind: protocol.Array,
-					Range:          setRange(tree, 129, 139),
-					SelectionRange: setRange(tree, 129, 139),
-					Children: []protocol.DocumentSymbol{{Name: "Msg5", Kind: protocol.Struct, Detail: "type",
-						Range:          setRange(tree, 135, 139),
-						SelectionRange: setRange(tree, 135, 139),
-						Children:       nil}}}}}}, list)
+	want := []Symbol{
+		{Kind: protocol.Interface, Name: "Pmessage", Detail: "message port type",
+			Text: "type port Pmessage message {\n\t\t\taddress AddressType;\n\t\t\tin aModule.Msg1, integer, Msg2;\n\t\t\tout Msg3, Msg4;\n\t\t\tinout Msg5;\n\t\t\tmap param(PmessageMapType1 p1, PmessageMapType2 p2[]);\n\t\t\tunmap(PmessageUnmapType1 p1);\n\t\t}",
+			Children: []Symbol{
+				{Kind: protocol.Struct, Name: "address", Detail: "AddressType type", Text: "address AddressType"},
+				{Kind: protocol.Array, Name: "in", Detail: "",
+					Text: "in aModule.Msg1, integer, Msg2",
+					Children: []Symbol{
+						{Kind: protocol.Struct, Name: "aModule.Msg1", Detail: "type", Text: "aModule.Msg1"},
+						{Kind: protocol.Struct, Name: "integer", Detail: "type", Text: "integer"},
+						{Kind: protocol.Struct, Name: "Msg2", Detail: "type", Text: "Msg2"}}},
+				{Kind: protocol.Array, Name: "out", Detail: "",
+					Text: "out Msg3, Msg4",
+					Children: []Symbol{
+						{Kind: protocol.Struct, Name: "Msg3", Detail: "type", Text: "Msg3"},
+						{Kind: protocol.Struct, Name: "Msg4", Detail: "type", Text: "Msg4"}}},
+				{Kind: protocol.Array, Name: "inout", Detail: "",
+					Text: "inout Msg5",
+					Children: []Symbol{
+						{Kind: protocol.Struct, Name: "Msg5", Detail: "type", Text: "Msg5"}}}}}}
+	assert.Equal(t, want, testDocumentSymbol(t, input))
 }
 
 func TestSignatureDecl(t *testing.T) {
-	suite, _ := buildSuite(t, `module Test
-    {
+	input := `
+	module Test
+	{
 		signature MyRemoteProcOne ();
 		signature MyRemoteProcTwo () noblock;
 		signature MyRemoteProcThree (in integer Par1, out float Par2, inout integer Par3);
@@ -226,65 +194,38 @@ func TestSignatureDecl(t *testing.T) {
 			exception (ExceptionType1, ExceptionType2);
 		signature MyRemoteProcSix (in integer Par1) noblock
 			exception (integer, float);
-	}`)
+	}`
 
-	tree, list := generateSymbols(t, suite)
-
-	assert.Equal(t, []protocol.DocumentSymbol{
-		{Name: "MyRemoteProcOne", Kind: protocol.Function, Detail: "blocking signature",
-			Range:          setRange(tree, 20, 48),
-			SelectionRange: setRange(tree, 20, 48),
-			Children:       nil},
-		{Name: "MyRemoteProcTwo", Kind: protocol.Function, Detail: "non-blocking signature",
-			Range:          setRange(tree, 52, 88),
-			SelectionRange: setRange(tree, 52, 88),
-			Children:       nil},
-		{Name: "MyRemoteProcThree", Kind: protocol.Function, Detail: "blocking signature",
-			Range:          setRange(tree, 92, 173),
-			SelectionRange: setRange(tree, 92, 173),
-			Children:       nil},
-		{Name: "MyRemoteProcFour", Kind: protocol.Function, Detail: "blocking signature",
-			Range:          setRange(tree, 177, 236),
-			SelectionRange: setRange(tree, 177, 236),
-			Children: []protocol.DocumentSymbol{
-				{Name: "integer", Kind: protocol.Struct, Detail: "return type",
-					Range:          setRange(tree, 229, 236),
-					SelectionRange: setRange(tree, 229, 236),
-					Children:       nil}}},
-		{Name: "MyRemoteProcFive", Kind: protocol.Function, Detail: "blocking signature",
-			Range:          setRange(tree, 240, 346),
-			SelectionRange: setRange(tree, 240, 346),
-			Children: []protocol.DocumentSymbol{
-				{Name: "integer", Kind: protocol.Struct, Detail: "return type",
-					Range:          setRange(tree, 293, 300),
-					SelectionRange: setRange(tree, 293, 300),
-					Children:       nil},
-				{Name: "Exceptions", Kind: protocol.Array,
-					Range:          setRange(tree, 304, 346),
-					SelectionRange: setRange(tree, 304, 346),
-					Children: []protocol.DocumentSymbol{
-						{Name: "ExceptionType1", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 315, 329),
-							SelectionRange: setRange(tree, 315, 329),
-							Children:       nil},
-						{Name: "ExceptionType2", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 331, 345),
-							SelectionRange: setRange(tree, 331, 345),
-							Children:       nil}}}}},
-		{Name: "MyRemoteProcSix", Kind: protocol.Function, Detail: "non-blocking signature",
-			Range:          setRange(tree, 350, 431),
-			SelectionRange: setRange(tree, 350, 431),
-			Children: []protocol.DocumentSymbol{
-				{Name: "Exceptions", Kind: protocol.Array,
-					Range:          setRange(tree, 405, 431),
-					SelectionRange: setRange(tree, 405, 431),
-					Children: []protocol.DocumentSymbol{
-						{Name: "integer", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 416, 423),
-							SelectionRange: setRange(tree, 416, 423),
-							Children:       nil},
-						{Name: "float", Kind: protocol.Struct, Detail: "type",
-							Range:          setRange(tree, 425, 430),
-							SelectionRange: setRange(tree, 425, 430),
-							Children:       nil}}}}}}, list)
+	want := []Symbol{
+		{Kind: protocol.Function, Name: "MyRemoteProcOne", Detail: "blocking signature",
+			Text: "signature MyRemoteProcOne ()",
+		},
+		{Kind: protocol.Function, Name: "MyRemoteProcTwo", Detail: "non-blocking signature",
+			Text: "signature MyRemoteProcTwo () noblock",
+		},
+		{Kind: protocol.Function, Name: "MyRemoteProcThree", Detail: "blocking signature",
+			Text: "signature MyRemoteProcThree (in integer Par1, out float Par2, inout integer Par3)",
+		},
+		{Kind: protocol.Function, Name: "MyRemoteProcFour", Detail: "blocking signature",
+			Text: "signature MyRemoteProcFour (in integer Par1) return integer",
+			Children: []Symbol{
+				{Kind: protocol.Struct, Name: "integer", Detail: "return type", Text: "integer"}}},
+		{Kind: protocol.Function, Name: "MyRemoteProcFive", Detail: "blocking signature",
+			Text: "signature MyRemoteProcFive (inout float Par1) return integer\n\t\t\texception (ExceptionType1, ExceptionType2)",
+			Children: []Symbol{
+				{Kind: protocol.Struct, Name: "integer", Detail: "return type", Text: "integer"},
+				{Kind: protocol.Array, Name: "Exceptions", Detail: "",
+					Text: "exception (ExceptionType1, ExceptionType2)",
+					Children: []Symbol{
+						{Kind: protocol.Struct, Name: "ExceptionType1", Detail: "type", Text: "ExceptionType1"},
+						{Kind: protocol.Struct, Name: "ExceptionType2", Detail: "type", Text: "ExceptionType2"}}}}},
+		{Kind: protocol.Function, Name: "MyRemoteProcSix", Detail: "non-blocking signature",
+			Text: "signature MyRemoteProcSix (in integer Par1) noblock\n\t\t\texception (integer, float)",
+			Children: []Symbol{
+				{Kind: protocol.Array, Name: "Exceptions", Detail: "",
+					Text: "exception (integer, float)",
+					Children: []Symbol{
+						{Kind: protocol.Struct, Name: "integer", Detail: "type", Text: "integer"},
+						{Kind: protocol.Struct, Name: "float", Detail: "type", Text: "float"}}}}}}
+	assert.Equal(t, want, testDocumentSymbol(t, input))
 }
