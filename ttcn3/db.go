@@ -44,22 +44,23 @@ func (db *DB) Index(files ...string) {
 		go func(path string) {
 			defer wg.Done()
 			tree := ParseFile(path)
-			db.mu.Lock()
-			for _, n := range tree.Modules() {
-				syms++
-				db.addModule(path, syntax.Name(n.Node))
-			}
+			if tree.Root != nil {
+				db.mu.Lock()
+				for _, n := range tree.Modules() {
+					syms++
+					db.addModule(path, syntax.Name(n.Node))
+				}
 
-			for k := range tree.Names {
-				syms++
-				db.addDefinition(path, k)
+				for k := range tree.Names {
+					syms++
+					db.addDefinition(path, k)
+				}
+				for k := range tree.Uses {
+					syms++
+					db.addRef(path, k)
+				}
+				db.mu.Unlock()
 			}
-			for k := range tree.Uses {
-				syms++
-				db.addRef(path, k)
-			}
-			db.mu.Unlock()
-
 		}(path)
 	}
 	wg.Wait()
