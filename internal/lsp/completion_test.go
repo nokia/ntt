@@ -54,7 +54,7 @@ func testCompletion(t *testing.T, input string, imports ...string) []protocol.Co
 	basename = basename[:len(basename)-len(filepath.Ext(basename))]
 
 	var items []protocol.CompletionItem
-	for _, item := range lsp.NewCompListItems(suite, pos, nodeStack, basename) {
+	for _, item := range lsp.Complete(suite, pos, nodeStack, basename) {
 		if predefMap[item.Label] {
 			continue
 		}
