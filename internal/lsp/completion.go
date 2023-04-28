@@ -627,207 +627,205 @@ func isStartOpArgument(nodes []syntax.Node) bool {
 	return false
 }
 func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName string) []protocol.CompletionItem {
-	var list []protocol.CompletionItem = nil
+	var list []protocol.CompletionItem
 	l := len(nodes)
-	if nodes == nil || l == 0 {
-		return make([]protocol.CompletionItem, 0)
-	}
 	switch {
 	case isBehaviourBodyScope(nodes):
-		switch n := nodes[l-2].(type) {
-		case *syntax.SelectorExpr:
-			if n.X != nil {
-				switch {
-				case isStartOpArgument(nodes):
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
-				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN}, n.X.LastTok().String(), " 1")
-				default:
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION, syntax.ALTSTEP},
-						[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, n.X.LastTok().String(), " 1")
-				}
+		modName := ""
+		if n, ok := nodes[l-2].(*syntax.SelectorExpr); ok {
+			if n.X == nil {
+				break
 			}
-		default:
-			switch {
-			case isStartOpArgument(nodes):
-				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
-					[]BehavAttrib{WITH_RETURN, WITH_RUNSON}, ownModName)
-				list = append(list, newPredefinedFunctions()...)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			case isInsideExpression(nodes, false): // less restrictive than isStartOpArgument
-				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
-					[]BehavAttrib{WITH_RETURN}, ownModName)
-				list = append(list, newPredefinedFunctions()...)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			default:
-				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION, syntax.ALTSTEP},
-					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
-				list = append(list, newPredefinedFunctions()...)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			}
+			modName = n.X.LastTok().String()
 		}
+
+		kinds := []syntax.Kind{syntax.FUNCTION}
+		attrs := []BehavAttrib{WITH_RETURN}
+
+		switch {
+		case isStartOpArgument(nodes):
+			attrs = append(attrs, WITH_RUNSON)
+		case !isInsideExpression(nodes, modName != ""): // less restrictive than isStartOpArgument
+			kinds = append(kinds, syntax.ALTSTEP)
+			attrs = append(attrs, NONE, WITH_RUNSON)
+		}
+
+		if modName != "" {
+			list = newAllBehavioursFromModule(suite, kinds, attrs, modName, " 1")
+		} else {
+			list = newAllBehaviours(suite, kinds, attrs, ownModName)
+			list = append(list, newPredefinedFunctions()...)
+			list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+		}
+
 	case isControlBodyScope(nodes):
+
+		kinds := []syntax.Kind{syntax.FUNCTION}
+		attrs := []BehavAttrib{WITH_RETURN}
+
 		switch n := nodes[l-2].(type) {
 		case *syntax.SelectorExpr:
-			if n.X != nil {
-				switch {
-				case isInsideExpression(nodes, true): // less restrictive than isStartOpArgument
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN}, n.X.LastTok().String(), " 1")
-				default:
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{NONE, WITH_RETURN}, n.X.LastTok().String(), " 1")
-				}
+			if n.X == nil {
+				break
 			}
+			modName := n.X.LastTok().String()
+
+			if !isInsideExpression(nodes, true) { // less restrictive than isStartOpArgument
+				attrs = append(attrs, NONE)
+			}
+			list = newAllBehavioursFromModule(suite, kinds, attrs, modName, " 1")
 		default:
-			switch {
-			case isInsideExpression(nodes, false): // less restrictive than isStartOpArgument
-				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
-					[]BehavAttrib{WITH_RETURN}, ownModName)
-				list = append(list, newPredefinedFunctions()...)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-			default:
-				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
-					[]BehavAttrib{NONE, WITH_RETURN, WITH_RUNSON}, ownModName)
-				list = append(list, newPredefinedFunctions()...)
-				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			if !isInsideExpression(nodes, false) { // less restrictive than isStartOpArgument
+				attrs = append(attrs, NONE, WITH_RUNSON)
 			}
+
+			list = newAllBehaviours(suite, kinds, attrs, ownModName)
+			list = append(list, newPredefinedFunctions()...)
+			list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 		}
 	case isConstDeclScope(nodes):
-		if nodec := getConstDeclNode(nodes); nodec != nil {
-			scndNode, _ := nodes[l-2].(*syntax.SelectorExpr)
+		n := getConstDeclNode(nodes)
+		if n == nil {
+			break
+		}
 
-			if nodec.Type == nil || (nodec.Type != nil && (nodec.Type.Pos() > pos)) {
-				if scndNode != nil && scndNode.X != nil {
-					// NOTE: the parser produces a wrong ast under certain circumstances
-					// see: func TestTemplateModuleDotType(t *testing.T)
-					list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
-				} else {
-					list = newAllTypes(suite, ownModName)
-					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-				}
+		scndNode, _ := nodes[l-2].(*syntax.SelectorExpr)
+
+		if n.Type == nil || (n.Type != nil && (n.Type.Pos() > pos)) {
+			if scndNode != nil && scndNode.X != nil {
+				// NOTE: the parser produces a wrong ast under certain circumstances
+				// see: func TestTemplateModuleDotType(t *testing.T)
+				list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
 			} else {
-				switch {
-				case scndNode != nil && scndNode.X != nil:
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
-				default:
-					list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN}, ownModName)
-					list = append(list, newPredefinedFunctions()...)
-					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-				}
+				list = newAllTypes(suite, ownModName)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			}
+		} else {
+			switch {
+			case scndNode != nil && scndNode.X != nil:
+				list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
+			default:
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			}
 		}
 	case isTemplateDeclScope(nodes):
-		if nodet := getTemplateDeclNode(nodes); nodet != nil {
-			scndNode, _ := nodes[l-2].(*syntax.SelectorExpr)
+		n := getTemplateDeclNode(nodes)
+		if n == nil {
+			break
+		}
 
-			if nodet.ModifiesTok != nil && nodet.AssignTok.Pos() > pos {
-				if scndNode != nil && scndNode.X != nil {
-					list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), nodet.TemplateTok.Kind(), false)
-				} else {
-					list = newAllValueDecls(suite, syntax.TEMPLATE)
-					list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
-				}
-			} else if nodet.Type == nil || nodet.Name == nil || (nodet.Name != nil && (nodet.Name.Pos() > pos)) {
-				if scndNode != nil && scndNode.X != nil {
-					// NOTE: the parser produces a wrong ast under certain circumstances
-					// see: func TestTemplateModuleDotType(t *testing.T)
-					list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
-				} else {
-					list = newAllTypes(suite, ownModName)
-					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-				}
+		scndNode, _ := nodes[l-2].(*syntax.SelectorExpr)
+
+		switch {
+		case n.ModifiesTok != nil && n.AssignTok.Pos() > pos:
+			if scndNode != nil && scndNode.X != nil {
+				list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), n.TemplateTok.Kind(), false)
 			} else {
-				switch {
-				case scndNode != nil && scndNode.X != nil:
-					list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
-				default:
-					list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
-						[]BehavAttrib{WITH_RETURN}, ownModName)
-					list = append(list, newPredefinedFunctions()...)
-					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-				}
+				list = newAllValueDecls(suite, syntax.TEMPLATE)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
+			}
+		case n.Type == nil || n.Name == nil || (n.Name != nil && (n.Name.Pos() > pos)):
+			if scndNode != nil && scndNode.X != nil {
+				// NOTE: the parser produces a wrong ast under certain circumstances
+				// see: func TestTemplateModuleDotType(t *testing.T)
+				list = newAllTypesFromModule(suite, scndNode.X.LastTok().String(), "")
+			} else {
+				list = newAllTypes(suite, ownModName)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
+			}
+		default:
+			switch {
+			case scndNode != nil && scndNode.X != nil:
+				list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
+			default:
+				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, ownModName)
+				list = append(list, newPredefinedFunctions()...)
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 			}
 		}
 	default:
-		switch nodet := nodes[l-1].(type) {
+		switch n := nodes[l-1].(type) {
 		case *syntax.Ident:
 			if _, ok := nodes[0].(*syntax.Module); l == 2 && ok {
 				list = newModuleDefKw()
 			}
-			if l > 2 {
-				switch scndNode := nodes[l-2].(type) {
-				case *syntax.ModuleDef:
-					list = newModuleDefKw()
-				case *syntax.ImportDecl:
-					if scndNode.LBrace != nil {
-						list = newImportkinds()
-					} else if nodet.End() >= pos {
-						// look for available modules for import
-						list = moduleNameListFromSuite(suite, ownModName, " ")
-					} else {
-						list = newImportAfterModName()
-					}
-				case *syntax.DefKindExpr:
-					// happens after
-					// * the altstep/function/testcase kw while typing the identifier
-					// * inside the exception list after { while typing the kind
-					if l == 8 {
-						if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
-							if scndNode.Kind != nil {
-								if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
-									list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
-								}
-							} else {
-								list = newImportkinds()
-							}
-						}
-					} else {
-						if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
-							list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
-						}
-					}
+			if l <= 2 {
+				break
+			}
 
-				case *syntax.ExceptExpr:
+			switch scndNode := nodes[l-2].(type) {
+			case *syntax.ModuleDef:
+				list = newModuleDefKw()
+			case *syntax.ImportDecl:
+				switch {
+				case scndNode.LBrace != nil:
 					list = newImportkinds()
-				case *syntax.RunsOnSpec, *syntax.SystemSpec:
+				case n.End() >= pos:
+					// look for available modules for import
+					list = moduleNameListFromSuite(suite, ownModName, " ")
+				default:
+					list = newImportAfterModName()
+				}
+			case *syntax.DefKindExpr:
+				// happens after
+				// * the altstep/function/testcase kw while typing the identifier
+				// * inside the exception list after { while typing the kind
+				if l == 8 {
+					if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
+						if scndNode.Kind != nil {
+							if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
+								list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+							}
+						} else {
+							list = newImportkinds()
+						}
+					}
+					break
+				}
+				if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
+					list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+				}
+
+			case *syntax.ExceptExpr:
+				list = newImportkinds()
+			case *syntax.RunsOnSpec, *syntax.SystemSpec:
+				list = newAllComponentTypes(suite, " 1")
+				list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
+			case *syntax.SelectorExpr:
+				if scndNode.X != nil {
+					switch nodes[l-3].(type) {
+					case *syntax.RunsOnSpec, *syntax.SystemSpec, *syntax.ComponentTypeDecl:
+						list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String(), " 1")
+					}
+				}
+			case *syntax.ComponentTypeDecl:
+				// for ctrl+spc, after beginning to type an id after extends Token
+				if scndNode.ExtendsTok.LastTok() != nil && scndNode.Body.LBrace.Pos() > pos {
 					list = newAllComponentTypes(suite, " 1")
 					list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
-				case *syntax.SelectorExpr:
-					if scndNode.X != nil {
-						switch nodes[l-3].(type) {
-						case *syntax.RunsOnSpec, *syntax.SystemSpec, *syntax.ComponentTypeDecl:
-							list = newAllComponentTypesFromModule(suite, scndNode.X.LastTok().String(), " 1")
-						}
-					}
-				case *syntax.ComponentTypeDecl:
-					// for ctrl+spc, after beginning to type an id after extends Token
-					if scndNode.ExtendsTok.LastTok() != nil && scndNode.Body.LBrace.Pos() > pos {
-						list = newAllComponentTypes(suite, " 1")
-						list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
-					}
 				}
 			}
 
 		case *syntax.ImportDecl:
-			if nodet.Module == nil {
+			if n.Module == nil {
 				// look for available modules for import
 				list = moduleNameListFromSuite(suite, ownModName, " ")
 			}
 		case *syntax.DefKindExpr:
-			if nodet.Kind == nil {
+			if n.Kind == nil {
 				list = newImportkinds()
 			} else {
 				if impDecl, ok := nodes[l-2].(*syntax.ImportDecl); ok {
-					list = newImportCompletions(suite, nodet.Kind.Kind(), impDecl.Module.Tok.String())
+					list = newImportCompletions(suite, n.Kind.Kind(), impDecl.Module.Tok.String())
 				} else if _, ok := nodes[l-2].(*syntax.ExceptExpr); ok {
 					if impDecl, ok := nodes[l-4].(*syntax.ImportDecl); ok {
-						list = newImportCompletions(suite, nodet.Kind.Kind(), impDecl.Module.Tok.String())
+						list = newImportCompletions(suite, n.Kind.Kind(), impDecl.Module.Tok.String())
 					}
 				}
 			}
@@ -836,34 +834,36 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 			list = append(list, moduleNameListFromSuite(suite, ownModName, " 2")...)
 		case *syntax.ErrorNode:
 			// i.e. user started typing => syntax.Ident might be detected instead of a kw
-			if l > 1 {
-				switch scndNode := nodes[l-2].(type) {
-				case *syntax.ModuleDef:
-					// start a new module def
-					list = newModuleDefKw()
-				case *syntax.DefKindExpr:
-					// NOTE: not able to reproduce this situation. Maybe it is safe to remove this code.
-					// happens streight after the altstep kw if ctrl+space is pressed
-					if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
+			if l <= 1 {
+				break
+			}
+			switch scndNode := nodes[l-2].(type) {
+			case *syntax.ModuleDef:
+				// start a new module def
+				list = newModuleDefKw()
+			case *syntax.DefKindExpr:
+				// NOTE: not able to reproduce this situation. Maybe it is safe to remove this code.
+				// happens streight after the altstep kw if ctrl+space is pressed
+				if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
+					list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+				} else if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
+					if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
 						list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
-					} else if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
-						if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
-							list = newImportCompletions(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
-						}
 					}
 				}
 			}
 		case *syntax.Declarator:
-			if l > 2 {
-				if valueDecl, ok := nodes[l-2].(*syntax.ValueDecl); ok {
-					if valueDecl.Kind.Kind() == syntax.PORT {
-						list = newAllPortTypes(suite, ownModName)
-						list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
-					}
+			if l <= 2 {
+				break
+			}
+			if valueDecl, ok := nodes[l-2].(*syntax.ValueDecl); ok {
+				if valueDecl.Kind.Kind() == syntax.PORT {
+					list = newAllPortTypes(suite, ownModName)
+					list = append(list, moduleNameListFromSuite(suite, ownModName, " 3")...)
 				}
 			}
 		default:
-			log.Debugln(fmt.Sprintf("Node not considered yet: %#v)", nodet))
+			log.Debugf("Node not considered yet: %#v\n", n)
 		}
 	}
 	return list
@@ -949,6 +949,7 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	// in most ways end up with cyclic imports.
 	// Thus 'completion' shall collect items only from one suite.
 	// Decision: first suite
+
 	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
 	log.Debugln(fmt.Sprintf("Completion after Parse :%p", &tree.Root))
 	if tree.Root == nil || len(tree.Modules()) == 0 {
@@ -963,6 +964,9 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	}
 	pos := tree.PosFor(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
 	nodeStack := LastNonWsToken(tree.Root, pos)
+	if len(nodeStack) == 0 {
+		return nil, nil
+	}
 
 	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack, defaultModuleId)}, nil
 }
