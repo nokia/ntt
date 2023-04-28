@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/nokia/ntt/internal/loc"
@@ -44,224 +43,184 @@ var (
 )
 
 func newPredefinedFunctions() []protocol.CompletionItem {
-	complList := make([]protocol.CompletionItem, 0, len(PredefinedFunctions))
+	var ret []protocol.CompletionItem
 	for _, v := range PredefinedFunctions {
 		markup := protocol.MarkupContent{Kind: "markdown", Value: v.Documentation}
-		complList = append(complList, protocol.CompletionItem{
+		ret = append(ret, protocol.CompletionItem{
 			Label: v.Label, Kind: protocol.FunctionCompletion,
 			Detail:           v.Signature,
 			InsertTextFormat: v.TextFormat,
 			InsertText:       v.InsertText,
 			Documentation:    markup})
 	}
-	return complList
+	return ret
 }
 
 func newImportkinds() []protocol.CompletionItem {
-	complList := make([]protocol.CompletionItem, 0, len(importKinds))
+	var ret []protocol.CompletionItem
 	for _, v := range importKinds {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+		ret = append(ret, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
 	}
-	return complList
+	return ret
 }
 
 func newPredefinedTypes() []protocol.CompletionItem {
-	complList := make([]protocol.CompletionItem, 0, len(predefinedTypes))
+	var ret []protocol.CompletionItem
 	for _, v := range predefinedTypes {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+		ret = append(ret, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
 	}
-	return complList
+	return ret
 }
 
-func getAllBehavioursFromModule(suite *Suite, kind syntax.Kind, mname string) []*FunctionDetails {
-	list := make([]*FunctionDetails, 0, 10)
-	if file, err := suite.FindModule(mname); err == nil {
-		tree := ttcn3.ParseFile(file)
-		tree.Inspect(func(n syntax.Node) bool {
-			if n == nil {
-				// called on node exit
-				return false
-			}
+func getAllBehavioursFromModule(tree *ttcn3.Tree, kind syntax.Kind, mname string) []*FunctionDetails {
+	var ret []*FunctionDetails
+	tree.Inspect(func(n syntax.Node) bool {
+		node, ok := n.(*syntax.FuncDecl)
+		if !ok {
+			return true
+		}
 
-			switch node := n.(type) {
-			case *syntax.FuncDecl:
-				if node.Kind.Kind() == kind {
-					var sig bytes.Buffer
-					textFormat := protocol.PlainTextTextFormat
-					sig.WriteString(node.Kind.String() + " " + mname + "." + node.Name.String())
-					len1 := len(sig.String())
-					printer.Print(&sig, node.Params)
-					hasParams := (len(sig.String()) - len1) > 2
-					if hasParams {
-						textFormat = protocol.SnippetTextFormat
-					}
-					if node.RunsOn != nil {
-						sig.WriteString("\n  ")
-						printer.Print(&sig, node.RunsOn)
-					}
-					if node.System != nil {
-						sig.WriteString("\n  ")
-						printer.Print(&sig, node.System)
-					}
-					if node.Return != nil {
-						sig.WriteString("\n  ")
-						printer.Print(&sig, node.Return)
-					}
-					list = append(list, &FunctionDetails{
-						Label:         node.Name.String(),
-						HasRunsOn:     (node.RunsOn != nil),
-						HasReturn:     (node.Return != nil),
-						Signature:     sig.String(),
-						Documentation: syntax.Doc(node),
-						HasParameters: hasParams,
-						TextFormat:    textFormat})
-				}
-				return false
-			default:
-				return true
-			}
+		if node.Kind.Kind() != kind {
+			return false
+		}
 
-		})
-	}
-	log.Debugln(fmt.Sprintf("AltstepCompletion List :%#v", list))
-	return list
+		var sig bytes.Buffer
+		textFormat := protocol.PlainTextTextFormat
+		sig.WriteString(node.Kind.String() + " " + mname + "." + node.Name.String())
+		len1 := len(sig.String())
+		printer.Print(&sig, node.Params)
+		hasParams := (len(sig.String()) - len1) > 2
+		if hasParams {
+			textFormat = protocol.SnippetTextFormat
+		}
+		if node.RunsOn != nil {
+			sig.WriteString("\n  ")
+			printer.Print(&sig, node.RunsOn)
+		}
+		if node.System != nil {
+			sig.WriteString("\n  ")
+			printer.Print(&sig, node.System)
+		}
+		if node.Return != nil {
+			sig.WriteString("\n  ")
+			printer.Print(&sig, node.Return)
+		}
+		ret = append(ret, &FunctionDetails{
+			Label:         node.Name.String(),
+			HasRunsOn:     (node.RunsOn != nil),
+			HasReturn:     (node.Return != nil),
+			Signature:     sig.String(),
+			Documentation: syntax.Doc(node),
+			HasParameters: hasParams,
+			TextFormat:    textFormat})
+		return false
+
+	})
+	return ret
 }
 
-func getAllValueDeclsFromModule(suite *Suite, mname string, kind syntax.Kind) []string {
-	list := make([]string, 0, 10)
-	if file, err := suite.FindModule(mname); err == nil {
-		tree := ttcn3.ParseFile(file)
-		tree.Inspect(func(n syntax.Node) bool {
-			if n == nil {
-				// called on node exit
-				return false
-			}
+func getAllValueDeclsFromModule(tree *ttcn3.Tree, mname string, kind syntax.Kind) []string {
+	var ret []string
+	tree.Inspect(func(n syntax.Node) bool {
+		if n == nil {
+			// called on node exit
+			return false
+		}
 
-			switch node := n.(type) {
-			case *syntax.FuncDecl, *syntax.ComponentTypeDecl:
-				// do not descent into TESTCASE, FUNCTION, ALTSTEP,
-				// component type
+		switch node := n.(type) {
+		case *syntax.FuncDecl, *syntax.ComponentTypeDecl:
+			// do not descent into TESTCASE, FUNCTION, ALTSTEP,
+			// component type
+			return false
+		case *syntax.ValueDecl:
+			if node.Kind.Kind() != kind {
 				return false
-			case *syntax.ValueDecl:
-				if node.Kind.Kind() != kind {
-					return false
-				}
-				return true
-			case *syntax.Declarator:
-				list = append(list, node.Name.String())
-				return false
-			case *syntax.TemplateDecl:
-				if kind == syntax.TEMPLATE {
-					list = append(list, node.Name.String())
-				}
-				return false
-			default:
-				return true
 			}
-		})
-	}
-	return list
+			return true
+		case *syntax.Declarator:
+			ret = append(ret, syntax.Name(n))
+			return false
+		case *syntax.TemplateDecl:
+			if kind == syntax.TEMPLATE {
+				ret = append(ret, syntax.Name(n))
+			}
+			return false
+		default:
+			return true
+		}
+	})
+	return ret
 }
 
-func getAllTypesFromModule(suite *Suite, mname string) []string {
-	list := make([]string, 0, 10)
-	if file, err := suite.FindModule(mname); err == nil {
-		tree := ttcn3.ParseFile(file)
-		tree.Inspect(func(n syntax.Node) bool {
-			if n == nil {
-				// called on node exit
-				return false
-			}
-
-			switch node := n.(type) {
-			case *syntax.BehaviourTypeDecl:
-				list = append(list, node.Name.String())
-				return false
-			case *syntax.ComponentTypeDecl:
-				list = append(list, node.Name.String())
-				return false
-			case *syntax.EnumTypeDecl:
-				list = append(list, node.Name.String())
-				return false
-			case *syntax.PortTypeDecl:
-				list = append(list, node.Name.String())
-				return false
-			case *syntax.StructTypeDecl:
-				list = append(list, node.Name.String())
-				return true
-			case *syntax.SubTypeDecl:
-				// for typpe defs as well as for record of/set of types
-				list = append(list, node.Field.Name.String())
-				return false
-			default:
-				return true
-			}
-		})
+func isType(n syntax.Node) bool {
+	switch n.(type) {
+	case *syntax.BehaviourTypeDecl,
+		*syntax.ComponentTypeDecl,
+		*syntax.EnumTypeDecl,
+		*syntax.PortTypeDecl,
+		*syntax.StructTypeDecl,
+		*syntax.SubTypeDecl:
+		return true
+	default:
+		return false
 	}
-	return list
 }
 
-func getAllComponentTypesFromModule(suite *Suite, mname string) []string {
-	list := make([]string, 0, 10)
-	if file, err := suite.FindModule(mname); err == nil {
-		tree := ttcn3.ParseFile(file)
-		tree.Inspect(func(n syntax.Node) bool {
-			if n == nil {
-				// called on node exit
-				return false
-			}
-
-			switch node := n.(type) {
-			case *syntax.ComponentTypeDecl:
-				list = append(list, node.Name.String())
-				return false
-			default:
-				return true
-			}
-		})
-	}
-	return list
+func getAllTypesFromModule(tree *ttcn3.Tree, mname string) []string {
+	var ret []string
+	tree.Inspect(func(n syntax.Node) bool {
+		if !isType(n) {
+			return true
+		}
+		ret = append(ret, syntax.Name(n))
+		return false
+	})
+	return ret
 }
 
-func getAllPortTypesFromModule(suite *Suite, mname string) []string {
-	list := make([]string, 0, 10)
-	if file, err := suite.FindModule(mname); err == nil {
-		tree := ttcn3.ParseFile(file)
-		tree.Inspect(func(n syntax.Node) bool {
-			if n == nil {
-				// called on node exit
-				return false
-			}
-
-			switch node := n.(type) {
-			case *syntax.PortTypeDecl:
-				list = append(list, node.Name.String())
-				return false
-			default:
-				return true
-			}
-		})
-	}
-	return list
+func getAllComponentTypesFromModule(tree *ttcn3.Tree, mname string) []string {
+	var ret []string
+	tree.Inspect(func(n syntax.Node) bool {
+		if _, ok := n.(*syntax.ComponentTypeDecl); !ok {
+			return true
+		}
+		ret = append(ret, syntax.Name(n))
+		return false
+	})
+	return ret
 }
 
-func newImportBehaviours(suite *Suite, kind syntax.Kind, mname string) []protocol.CompletionItem {
-	items := getAllBehavioursFromModule(suite, kind, mname)
-	complList := make([]protocol.CompletionItem, 0, len(items)+1)
-	for _, v := range items {
-		complList = append(complList, protocol.CompletionItem{Label: v.Label, Kind: protocol.FunctionCompletion})
-	}
-	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
-	return complList
+func getAllPortTypesFromModule(tree *ttcn3.Tree, mname string) []string {
+	var ret []string
+	tree.Inspect(func(n syntax.Node) bool {
+		if _, ok := n.(*syntax.PortTypeDecl); !ok {
+			return true
+		}
+		ret = append(ret, syntax.Name(n))
+		return false
+	})
+	return ret
 }
-func newAllBehavioursFromModule(suite *Suite, kinds []syntax.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
 
-	complList := make([]protocol.CompletionItem, 0, 10)
-	var items []*FunctionDetails
+func newImportBehaviours(tree *ttcn3.Tree, kind syntax.Kind, mname string) []protocol.CompletionItem {
+	var ret []protocol.CompletionItem
+	for _, v := range getAllBehavioursFromModule(tree, kind, mname) {
+		ret = append(ret, protocol.CompletionItem{Label: v.Label, Kind: protocol.FunctionCompletion})
+	}
+	ret = append(ret, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
+	return ret
+}
+
+func newAllBehavioursFromModule(tree *ttcn3.Tree, kinds []syntax.Kind, attribs []BehavAttrib, mname string, sortPref string) []protocol.CompletionItem {
+	var (
+		items []*FunctionDetails
+		ret   []protocol.CompletionItem
+	)
 
 	for _, kind := range kinds {
-		items = append(items, getAllBehavioursFromModule(suite, kind, mname)...)
+		items = append(items, getAllBehavioursFromModule(tree, kind, mname)...)
 	}
+
 	for _, v := range items {
 		insertText := v.Label + "()"
 		if v.HasParameters {
@@ -279,232 +238,242 @@ func newAllBehavioursFromModule(suite *Suite, kinds []syntax.Kind, attribs []Beh
 			}
 		}
 		if isSelected {
-			complList = append(complList, protocol.CompletionItem{Label: v.Label + "()",
+			ret = append(ret, protocol.CompletionItem{Label: v.Label + "()",
 				InsertText: insertText,
 				Kind:       protocol.FunctionCompletion, SortText: sortPref + v.Label,
 				Detail: v.Signature, Documentation: v.Documentation, InsertTextFormat: v.TextFormat})
 		}
 	}
-	return complList
+	return ret
 }
+
 func newAllBehaviours(suite *Suite, kinds []syntax.Kind, attribs []BehavAttrib, mname string) []protocol.CompletionItem {
-	var sortPref string
-
-	if files := suite.Files(); len(files) > 0 {
-		complList := make([]protocol.CompletionItem, 0, len(files)*2)
-
-		for _, f := range files {
-			fileName := filepath.Base(f)
-			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
-			if fileName != mname {
-				sortPref = " 2"
-			} else {
-				sortPref = " 1"
-			}
-			complList = append(complList, newAllBehavioursFromModule(suite, kinds, attribs, fileName, sortPref)...)
+	var ret []protocol.CompletionItem
+	for _, f := range suite.Files() {
+		fileName := baseName(f)
+		file, err := suite.FindModule(fileName)
+		if err != nil {
+			log.Debugf("module %s not found\n", mname)
+			return nil
 		}
-		return complList
+		tree := ttcn3.ParseFile(file)
+
+		sortPref := " 2"
+		if fileName == mname {
+			sortPref = " 1"
+		}
+		ret = append(ret, newAllBehavioursFromModule(tree, kinds, attribs, fileName, sortPref)...)
 	}
-	return nil
+	return ret
 }
 
-func newValueDeclsFromModule(suite *Suite, mname string, kind syntax.Kind, withDetail bool) []protocol.CompletionItem {
-	items := getAllValueDeclsFromModule(suite, mname, kind)
-	complList := make([]protocol.CompletionItem, 0, len(items)+1)
-	for _, v := range items {
+func newValueDeclsFromModule(tree *ttcn3.Tree, mname string, kind syntax.Kind, withDetail bool) []protocol.CompletionItem {
+	var ret []protocol.CompletionItem
+	for _, v := range getAllValueDeclsFromModule(tree, mname, kind) {
+		item := protocol.CompletionItem{
+			Label: v,
+			Kind:  protocol.ConstantCompletion,
+		}
 		if withDetail {
-			complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion, Detail: mname + "." + v})
-		} else {
-			complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.ConstantCompletion})
+			item.Detail = mname + "." + v
 		}
+		ret = append(ret, item)
 	}
-	return complList
-}
-
-func newImportValueDecls(suite *Suite, mname string, kind syntax.Kind) []protocol.CompletionItem {
-	complList := newValueDeclsFromModule(suite, mname, kind, false)
-	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
-	return complList
-}
-
-func newImportTypes(suite *Suite, mname string) []protocol.CompletionItem {
-	items := getAllTypesFromModule(suite, mname)
-	complList := make([]protocol.CompletionItem, 0, len(items)+1)
-	// NOTE: instead of 'StructCompletion' a better matching kind could be used
-	for _, v := range items {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
-	}
-	complList = append(complList, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
-	return complList
+	return ret
 }
 
 func newModuleDefKw() []protocol.CompletionItem {
-	complList := make([]protocol.CompletionItem, 0, len(moduleDefKw))
+	var ret []protocol.CompletionItem
 	for _, v := range moduleDefKw {
-		complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
+		ret = append(ret, protocol.CompletionItem{Label: v, Kind: protocol.KeywordCompletion})
 	}
-	return complList
+	return ret
 }
 
 func newImportAfterModName() []protocol.CompletionItem {
-	complList := make([]protocol.CompletionItem, 0, len(importAfterModName))
+	var ret []protocol.CompletionItem
 	for i, v := range importAfterModName {
-		complList = append(complList, protocol.CompletionItem{Label: v,
+		ret = append(ret, protocol.CompletionItem{Label: v,
 			InsertText:       importAfterModNameSnippet[i],
 			InsertTextFormat: protocol.SnippetTextFormat, Kind: protocol.KeywordCompletion})
 	}
-	return complList
+	return ret
 }
 
 func newImportCompletions(suite *Suite, kind syntax.Kind, mname string) []protocol.CompletionItem {
-	var list []protocol.CompletionItem = nil
+	file, err := suite.FindModule(mname)
+	if err != nil {
+		log.Debugf("module %s not found\n", mname)
+		return nil
+	}
+	tree := ttcn3.ParseFile(file)
+
 	switch kind {
 	case syntax.ALTSTEP, syntax.FUNCTION, syntax.TESTCASE:
-		list = newImportBehaviours(suite, kind, mname)
+		return newImportBehaviours(tree, kind, mname)
 	case syntax.TEMPLATE, syntax.CONST, syntax.MODULEPAR:
-		list = newImportValueDecls(suite, mname, kind)
+		ret := newValueDeclsFromModule(tree, mname, kind, false)
+		ret = append(ret, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
+		return ret
 	case syntax.TYPE:
-		list = newImportTypes(suite, mname)
+		var ret []protocol.CompletionItem
+		// NOTE: instead of 'StructCompletion' a better matching kind could be used
+		for _, v := range getAllTypesFromModule(tree, mname) {
+			ret = append(ret, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion})
+		}
+		ret = append(ret, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
+		return ret
 	default:
 		log.Debugln(fmt.Sprintf("Kind not considered yet: %#v)", kind))
+		return nil
 	}
-	return list
-}
-
-func getModuleNameSetFromSuite(suite *Suite) *map[string]struct{} {
-	var set map[string]struct{}
-	if files := suite.Files(); len(files) > 0 {
-		set = make(map[string]struct{}, len(files))
-		for _, f := range files {
-			fileName := filepath.Base(f)
-			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
-			set[fileName] = struct{}{}
-		}
-	}
-	return &set
 }
 
 func moduleNameListFromSuite(suite *Suite, ownModName string, sortPref string) []protocol.CompletionItem {
-	var list []protocol.CompletionItem = nil
-	if files := suite.Files(); len(files) > 0 {
-		list = make([]protocol.CompletionItem, 0, len(files))
-		for _, f := range files {
-			fileName := filepath.Base(f)
-			fileName = fileName[:len(fileName)-len(filepath.Ext(fileName))]
-			if fileName != ownModName {
-				if len(sortPref) > 0 {
-					list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion, SortText: sortPref + fileName})
-				} else {
-					list = append(list, protocol.CompletionItem{Label: fileName, Kind: protocol.ModuleCompletion})
-				}
-			}
+	var ret []protocol.CompletionItem
+	for _, f := range suite.Files() {
+		fileName := baseName(f)
+		if fileName == ownModName {
+			continue
 		}
+		item := protocol.CompletionItem{
+			Label: fileName,
+			Kind:  protocol.ModuleCompletion,
+		}
+		if sortPref != "" {
+			item.SortText = sortPref + fileName
+		}
+		ret = append(ret, item)
 	}
-	return list
+	return ret
 }
 
-func newAllTypesFromModule(suite *Suite, modName string, sortPref string) []protocol.CompletionItem {
-	items := getAllTypesFromModule(suite, modName)
-	complList := make([]protocol.CompletionItem, 0, len(items))
-	for _, v := range items {
-		if len(sortPref) > 0 {
-			complList = append(complList, protocol.CompletionItem{Label: v + " ", Kind: protocol.StructCompletion, SortText: sortPref + v, Detail: modName + "." + v})
-		} else {
-			complList = append(complList, protocol.CompletionItem{Label: v + " ", Kind: protocol.StructCompletion, Detail: modName + "." + v})
-		}
+func newAllTypesFromModule(suite *Suite, mname string, sortPref string) []protocol.CompletionItem {
+	file, err := suite.FindModule(mname)
+	if err != nil {
+		log.Debugf("module %s not found\n", mname)
+		return nil
 	}
-	return complList
+	tree := ttcn3.ParseFile(file)
+
+	var ret []protocol.CompletionItem
+	for _, v := range getAllTypesFromModule(tree, mname) {
+		item := protocol.CompletionItem{
+			Label:  v + " ",
+			Kind:   protocol.StructCompletion,
+			Detail: mname + "." + v,
+		}
+		if sortPref != "" {
+			item.SortText = sortPref + v
+		}
+		ret = append(ret, item)
+	}
+	return ret
 }
 
-func newAllComponentTypesFromModule(suite *Suite, modName string, sortPref string) []protocol.CompletionItem {
-	items := getAllComponentTypesFromModule(suite, modName)
-	complList := make([]protocol.CompletionItem, 0, len(items))
-	for _, v := range items {
-		if len(sortPref) > 0 {
-			complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, SortText: sortPref + v, Detail: modName + "." + v})
-		} else {
-			complList = append(complList, protocol.CompletionItem{Label: v, Kind: protocol.StructCompletion, Detail: modName + "." + v})
-		}
+func newAllComponentTypesFromModule(suite *Suite, mname string, sortPref string) []protocol.CompletionItem {
+	file, err := suite.FindModule(mname)
+	if err != nil {
+		log.Debugf("module %s not found\n", mname)
+		return nil
 	}
-	return complList
+	tree := ttcn3.ParseFile(file)
+	var ret []protocol.CompletionItem
+	for _, v := range getAllComponentTypesFromModule(tree, mname) {
+		item := protocol.CompletionItem{
+			Label:  v,
+			Kind:   protocol.StructCompletion,
+			Detail: mname + "." + v,
+		}
+		if sortPref != "" {
+			item.SortText = sortPref + v
+		}
+		ret = append(ret, item)
+	}
+	return ret
 }
 
-func newAllPortTypesFromModule(suite *Suite, modName string, sortPref string) []protocol.CompletionItem {
-	items := getAllPortTypesFromModule(suite, modName)
-	portList := make([]protocol.CompletionItem, 0, len(items))
-	for _, v := range items {
-		if len(sortPref) > 0 {
-			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.InterfaceCompletion, SortText: sortPref + v, Detail: modName + "." + v})
-		} else {
-			portList = append(portList, protocol.CompletionItem{Label: v, Kind: protocol.InterfaceCompletion, Detail: modName + "." + v})
-		}
+func newAllPortTypesFromModule(suite *Suite, mname string, sortPref string) []protocol.CompletionItem {
+	file, err := suite.FindModule(mname)
+	if err != nil {
+		log.Debugf("module %s not found\n", mname)
+		return nil
 	}
-	return portList
+	tree := ttcn3.ParseFile(file)
+
+	var ret []protocol.CompletionItem
+	for _, v := range getAllPortTypesFromModule(tree, mname) {
+		item := protocol.CompletionItem{
+			Label:  v,
+			Kind:   protocol.InterfaceCompletion,
+			Detail: mname + "." + v,
+		}
+		if sortPref != "" {
+			item.SortText = sortPref + v
+		}
+		ret = append(ret, item)
+	}
+	return ret
 }
 
 func newAllComponentTypes(suite *Suite, sortPref string) []protocol.CompletionItem {
-	var complList []protocol.CompletionItem = nil
-	if files := suite.Files(); len(files) > 0 {
-		complList = make([]protocol.CompletionItem, 0, len(files))
-		for _, f := range files {
-			mName := filepath.Base(f)
-			mName = mName[:len(mName)-len(filepath.Ext(mName))]
-			items := newAllComponentTypesFromModule(suite, mName, sortPref)
-			complList = append(complList, items...)
-		}
+	var ret []protocol.CompletionItem
+	for _, f := range suite.Files() {
+		items := newAllComponentTypesFromModule(suite, baseName(f), sortPref)
+		ret = append(ret, items...)
 	}
-	return complList
+	return ret
 }
 
 func newAllPortTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
-	var portList []protocol.CompletionItem = nil
-	if files := suite.Files(); len(files) > 0 {
-		portList = make([]protocol.CompletionItem, 0, len(files))
-		for _, f := range files {
-			mName := filepath.Base(f)
-			mName = mName[:len(mName)-len(filepath.Ext(mName))]
-			prefix := int(2)
-			if mName == ownModName {
-				prefix = 1
-			}
-			items := newAllPortTypesFromModule(suite, mName, " "+strconv.Itoa(prefix))
-			portList = append(portList, items...)
+	var ret []protocol.CompletionItem
+	for _, f := range suite.Files() {
+		mName := baseName(f)
+		prefix := " 2"
+		if mName == ownModName {
+			prefix = " 1"
 		}
+		items := newAllPortTypesFromModule(suite, mName, prefix)
+		ret = append(ret, items...)
 	}
-	return portList
+	return ret
 }
 
 func newAllTypes(suite *Suite, ownModName string) []protocol.CompletionItem {
-	var complList []protocol.CompletionItem = nil
-	if files := suite.Files(); len(files) > 0 {
-		complList = make([]protocol.CompletionItem, 0, len(files))
-		for _, f := range files {
-			mName := filepath.Base(f)
-			mName = mName[:len(mName)-len(filepath.Ext(mName))]
-			prefix := int(2)
-			if mName == ownModName {
-				prefix = 1
-			}
-			items := newAllTypesFromModule(suite, mName, " "+strconv.Itoa(prefix))
-			complList = append(complList, items...)
+	var ret []protocol.CompletionItem
+	for _, f := range suite.Files() {
+		mName := baseName(f)
+		prefix := " 2"
+		if mName == ownModName {
+			prefix = " 1"
 		}
+		items := newAllTypesFromModule(suite, mName, prefix)
+		ret = append(ret, items...)
 	}
-	complList = append(complList, newPredefinedTypes()...)
-	return complList
+	ret = append(ret, newPredefinedTypes()...)
+	return ret
 }
 
 func newAllValueDecls(suite *Suite, kind syntax.Kind) []protocol.CompletionItem {
-	var complList []protocol.CompletionItem = nil
-	if files := suite.Files(); len(files) > 0 {
-		complList = make([]protocol.CompletionItem, 0, len(files))
-		for _, f := range files {
-			mName := filepath.Base(f)
-			mName = mName[:len(mName)-len(filepath.Ext(mName))]
-			items := newValueDeclsFromModule(suite, mName, kind, true)
-			complList = append(complList, items...)
+	var ret []protocol.CompletionItem
+	for _, f := range suite.Files() {
+		mname := baseName(f)
+		file, err := suite.FindModule(mname)
+		if err != nil {
+			log.Debugf("module %s not found\n", mname)
+			return nil
 		}
+		tree := ttcn3.ParseFile(file)
+		items := newValueDeclsFromModule(tree, baseName(f), kind, true)
+		ret = append(ret, items...)
 	}
-	return complList
+	return ret
+}
+
+func baseName(name string) string {
+	name = filepath.Base(name)
+	name = name[:len(name)-len(filepath.Ext(name))]
+	return name
 }
 
 func isBehaviourBodyScope(nodes []syntax.Node) bool {
@@ -651,7 +620,13 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 		}
 
 		if modName != "" {
-			list = newAllBehavioursFromModule(suite, kinds, attrs, modName, " 1")
+			file, err := suite.FindModule(modName)
+			if err != nil {
+				log.Debugf("module %s not found\n", modName)
+				return nil
+			}
+			tree := ttcn3.ParseFile(file)
+			list = newAllBehavioursFromModule(tree, kinds, attrs, modName, " 1")
 		} else {
 			list = newAllBehaviours(suite, kinds, attrs, ownModName)
 			list = append(list, newPredefinedFunctions()...)
@@ -673,7 +648,13 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 			if !isInsideExpression(nodes, true) { // less restrictive than isStartOpArgument
 				attrs = append(attrs, NONE)
 			}
-			list = newAllBehavioursFromModule(suite, kinds, attrs, modName, " 1")
+			file, err := suite.FindModule(modName)
+			if err != nil {
+				log.Debugf("module %s not found\n", modName)
+				return nil
+			}
+			tree := ttcn3.ParseFile(file)
+			list = newAllBehavioursFromModule(tree, kinds, attrs, modName, " 1")
 		default:
 			if !isInsideExpression(nodes, false) { // less restrictive than isStartOpArgument
 				attrs = append(attrs, NONE, WITH_RUNSON)
@@ -703,8 +684,15 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 		} else {
 			switch {
 			case scndNode != nil && scndNode.X != nil:
-				list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-					[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
+				modName := scndNode.X.LastTok().String()
+				file, err := suite.FindModule(modName)
+				if err != nil {
+					log.Debugf("module %s not found\n", modName)
+					return nil
+				}
+				tree := ttcn3.ParseFile(file)
+				list = newAllBehavioursFromModule(tree, []syntax.Kind{syntax.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, modName, " 1")
 			default:
 				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 					[]BehavAttrib{WITH_RETURN}, ownModName)
@@ -723,7 +711,14 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 		switch {
 		case n.ModifiesTok != nil && n.AssignTok.Pos() > pos:
 			if scndNode != nil && scndNode.X != nil {
-				list = newValueDeclsFromModule(suite, scndNode.X.LastTok().String(), n.TemplateTok.Kind(), false)
+				mname := scndNode.X.LastTok().String()
+				file, err := suite.FindModule(mname)
+				if err != nil {
+					log.Debugf("module %s not found\n", mname)
+					return nil
+				}
+				tree := ttcn3.ParseFile(file)
+				list = newValueDeclsFromModule(tree, mname, n.TemplateTok.Kind(), false)
 			} else {
 				list = newAllValueDecls(suite, syntax.TEMPLATE)
 				list = append(list, moduleNameListFromSuite(suite, ownModName, "")...)
@@ -740,8 +735,15 @@ func NewCompListItems(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName
 		default:
 			switch {
 			case scndNode != nil && scndNode.X != nil:
-				list = newAllBehavioursFromModule(suite, []syntax.Kind{syntax.FUNCTION},
-					[]BehavAttrib{WITH_RETURN}, scndNode.X.LastTok().String(), " 1")
+				modName := scndNode.X.LastTok().String()
+				file, err := suite.FindModule(modName)
+				if err != nil {
+					log.Debugf("module %s not found\n", modName)
+					return nil
+				}
+				tree := ttcn3.ParseFile(file)
+				list = newAllBehavioursFromModule(tree, []syntax.Kind{syntax.FUNCTION},
+					[]BehavAttrib{WITH_RETURN}, modName, " 1")
 			default:
 				list = newAllBehaviours(suite, []syntax.Kind{syntax.FUNCTION},
 					[]BehavAttrib{WITH_RETURN}, ownModName)
@@ -940,33 +942,33 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 		return &protocol.CompletionList{}, nil
 	}
 
-	fileName := filepath.Base(params.TextDocument.URI.SpanURI().Filename())
-	defaultModuleId := fileName[:len(fileName)-len(filepath.Ext(fileName))]
-
-	suites := s.Owners(params.TextDocument.URI)
-	// NOTE: having the current file owned by more then one suite should not
-	// import from modules originating from both suites. This would
-	// in most ways end up with cyclic imports.
-	// Thus 'completion' shall collect items only from one suite.
-	// Decision: first suite
+	defaultModuleId := baseName(params.TextDocument.URI.SpanURI().Filename())
 
 	tree := ttcn3.ParseFile(params.TextDocument.URI.SpanURI().Filename())
-	log.Debugln(fmt.Sprintf("Completion after Parse :%p", &tree.Root))
 	if tree.Root == nil || len(tree.Modules()) == 0 {
-		complList := make([]protocol.CompletionItem, 1)
-		complList = append(complList, protocol.CompletionItem{Label: "module",
+		ret := []protocol.CompletionItem{{
+			Label:            "module",
 			InsertText:       "module ${1:" + defaultModuleId + "} {\n\t${0}\n}",
-			InsertTextFormat: protocol.SnippetTextFormat, Kind: protocol.KeywordCompletion})
-		elapsed := time.Since(start)
-		log.Debugln(fmt.Sprintf("Completion took %s.", elapsed))
-
-		return &protocol.CompletionList{IsIncomplete: false, Items: complList}, nil
+			InsertTextFormat: protocol.SnippetTextFormat,
+			Kind:             protocol.KeywordCompletion,
+		}}
+		return &protocol.CompletionList{IsIncomplete: false, Items: ret}, nil
 	}
+
 	pos := tree.PosFor(int(params.TextDocumentPositionParams.Position.Line+1), int(params.TextDocumentPositionParams.Position.Character+1))
 	nodeStack := LastNonWsToken(tree.Root, pos)
 	if len(nodeStack) == 0 {
 		return nil, nil
 	}
 
+	// NOTE: having the current file owned by more then one suite should not
+	// import from modules originating from both suites. This would
+	// in most ways end up with cyclic imports.
+	// Thus 'completion' shall collect items only from one suite.
+	// Decision: first suite
+	suites := s.Owners(params.TextDocument.URI)
+	if len(suites) == 0 {
+		return nil, fmt.Errorf("no suite found for file %q", string(params.TextDocument.URI))
+	}
 	return &protocol.CompletionList{IsIncomplete: false, Items: NewCompListItems(suites[0], pos, nodeStack, defaultModuleId)}, nil
 }
