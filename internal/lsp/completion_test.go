@@ -481,8 +481,8 @@ func TestRunsOnTypesCtrlSpc(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestRunsOnTypesCtrlSpc_Module_0.B0"},
-		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestRunsOnTypesCtrlSpc_Module_0.B1"},
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "Test.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "Test.B1"},
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnTypesCtrlSpc_Module_1.C0"},
 		{Label: "A0", Kind: protocol.StructCompletion, SortText: " 1A0", Detail: "TestRunsOnTypesCtrlSpc_Module_2.A0"},
 		{Label: "TestRunsOnTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestRunsOnTypesCtrlSpc_Module_1"},
@@ -504,8 +504,8 @@ func TestRunsOnTypes(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestRunsOnTypes_Module_0.B0"},
-		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestRunsOnTypes_Module_0.B1"},
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "Test.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "Test.B1"},
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestRunsOnTypes_Module_1.C0"},
 		{Label: "A0", Kind: protocol.StructCompletion, SortText: " 1A0", Detail: "TestRunsOnTypes_Module_2.A0"},
 		{Label: "TestRunsOnTypes_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestRunsOnTypes_Module_1"},
@@ -563,8 +563,8 @@ func TestSystemTypesCtrlSpc(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestSystemTypesCtrlSpc_Module_0.B0"},
-		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestSystemTypesCtrlSpc_Module_0.B1"},
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "Test.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "Test.B1"},
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestSystemTypesCtrlSpc_Module_1.C0"},
 		{Label: "A0", Kind: protocol.StructCompletion, SortText: " 1A0", Detail: "TestSystemTypesCtrlSpc_Module_2.A0"},
 		{Label: "TestSystemTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestSystemTypesCtrlSpc_Module_1"},
@@ -601,9 +601,9 @@ func TestExtendsTypesCtrlSpc(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestExtendsTypesCtrlSpc_Module_0.B0"},
-		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestExtendsTypesCtrlSpc_Module_0.B1"},
-		{Label: "B2", Kind: protocol.StructCompletion, SortText: " 1B2", Detail: "TestExtendsTypesCtrlSpc_Module_0.B2"}, // TODO: filter 'self' out
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "Test.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "Test.B1"},
+		{Label: "B2", Kind: protocol.StructCompletion, SortText: " 1B2", Detail: "Test.B2"}, // TODO: filter 'self' out
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestExtendsTypesCtrlSpc_Module_1.C0"},
 		{Label: "TestExtendsTypesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestExtendsTypesCtrlSpc_Module_1"}}, list)
 }
@@ -620,9 +620,9 @@ func TestExtendsTypes(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "TestExtendsTypes_Module_0.B0"},
-		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "TestExtendsTypes_Module_0.B1"},
-		{Label: "B2", Kind: protocol.StructCompletion, SortText: " 1B2", Detail: "TestExtendsTypes_Module_0.B2"},
+		{Label: "B0", Kind: protocol.StructCompletion, SortText: " 1B0", Detail: "Test.B0"},
+		{Label: "B1", Kind: protocol.StructCompletion, SortText: " 1B1", Detail: "Test.B1"},
+		{Label: "B2", Kind: protocol.StructCompletion, SortText: " 1B2", Detail: "Test.B2"},
 		{Label: "C0", Kind: protocol.StructCompletion, SortText: " 1C0", Detail: "TestExtendsTypes_Module_1.C0"},
 		{Label: "TestExtendsTypes_Module_1", Kind: protocol.ModuleCompletion, SortText: " 2TestExtendsTypes_Module_1"}}, list)
 }
@@ -656,9 +656,9 @@ func TestModifiesCtrlSpc(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "t_r", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_r"},
-		{Label: "t_i", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_i"},       // TODO: implement filter on Compatible Type
-		{Label: "t_rmod", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_0.t_rmod"}, // TODO: implement filter for self
+		{Label: "t_r", Kind: protocol.ConstantCompletion, Detail: "Test.t_r"},
+		{Label: "t_i", Kind: protocol.ConstantCompletion, Detail: "Test.t_i"},       // TODO: implement filter on Compatible Type
+		{Label: "t_rmod", Kind: protocol.ConstantCompletion, Detail: "Test.t_rmod"}, // TODO: implement filter for self
 		{Label: "t_r2", Kind: protocol.ConstantCompletion, Detail: "TestModifiesCtrlSpc_Module_1.t_r2"},
 		{Label: "TestModifiesCtrlSpc_Module_1", Kind: protocol.ModuleCompletion}}, list)
 }
@@ -710,7 +710,7 @@ func TestTemplateTypeCtrlSpc(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "TestTemplateTypeCtrlSpc_Module_0.Byte"},
+		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "Test.Byte"},
 		{Label: "R ", Kind: protocol.StructCompletion, SortText: " 2R", Detail: "TestTemplateTypeCtrlSpc_Module_1.R"},
 		{Label: "anytype ", Kind: protocol.KeywordCompletion},
 		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
@@ -739,7 +739,7 @@ func TestTemplateType(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "TestTemplateType_Module_0.Byte"},
+		{Label: "Byte ", Kind: protocol.StructCompletion, SortText: " 1Byte", Detail: "Test.Byte"},
 		{Label: "R ", Kind: protocol.StructCompletion, SortText: " 2R", Detail: "TestTemplateType_Module_1.R"},
 		{Label: "anytype ", Kind: protocol.KeywordCompletion},
 		{Label: "bitstring ", Kind: protocol.KeywordCompletion},
@@ -835,7 +835,7 @@ func TestPortTypeInsideComponent(t *testing.T) {
 	  }`)
 
 	assert.Equal(t, []protocol.CompletionItem{
-		{Label: "P1", Kind: protocol.InterfaceCompletion, SortText: " 1P1", Detail: "TestPortTypeInsideComponent_Module_0.P1"},
+		{Label: "P1", Kind: protocol.InterfaceCompletion, SortText: " 1P1", Detail: "Test.P1"},
 		{Label: "P2", Kind: protocol.InterfaceCompletion, SortText: " 2P2", Detail: "TestPortTypeInsideComponent_Module_1.P2"},
 		{Label: "TestPortTypeInsideComponent_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestPortTypeInsideComponent_Module_1"}}, list)
 }
@@ -855,9 +855,9 @@ func TestInsideBehavBody(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideBehavBody_Module_0.f1()", Documentation: ""},
+			Detail: "function Test.f1()", Documentation: ""},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideBehavBody_Module_0.f2()", Documentation: ""},
+			Detail: "function Test.f2()", Documentation: ""},
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideBehavBody_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
@@ -881,7 +881,7 @@ func TestInsideTcBody(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBody_Module_0.f1()", Documentation: ""},
+			Detail: "function Test.f1()", Documentation: ""},
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBody_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
@@ -905,7 +905,7 @@ func TestInsideTcBodyCtrlSpc(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f1()", Kind: protocol.FunctionCompletion, SortText: " 1f1", InsertText: "f1()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyCtrlSpc_Module_0.f1()", Documentation: ""},
+			Detail: "function Test.f1()", Documentation: ""},
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 2f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function TestInsideTcBodyCtrlSpc_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
@@ -926,7 +926,7 @@ func TestInsideTcBodyInsideIf(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideIf_Module_0.f2()\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f2()\n  return boolean", Documentation: ""}},
 		list)
 }
 
@@ -967,7 +967,7 @@ func TestInsideTcBodyInsideExpr(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideExpr_Module_0.f2()\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f2()\n  return boolean", Documentation: ""}},
 		list)
 }
 
@@ -983,7 +983,7 @@ func TestInsideTcBodyInsideSend(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
-			Detail: "function TestInsideTcBodyInsideSend_Module_0.f2( integer pi := 314)\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f2( integer pi := 314)\n  return boolean", Documentation: ""}},
 		list)
 }
 
@@ -999,7 +999,7 @@ func TestInsideTcBodyAsFuncParam(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2($1)$0", InsertTextFormat: protocol.SnippetTextFormat,
-			Detail: "function TestInsideTcBodyAsFuncParam_Module_0.f2( integer pi)\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f2( integer pi)\n  return boolean", Documentation: ""}},
 		list)
 }
 
@@ -1046,11 +1046,11 @@ func TestInsideTcBodyInsideStart(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideStart_Module_0.f2()\n  runs on C1", Documentation: ""},
+			Detail: "function Test.f2()\n  runs on C1", Documentation: ""},
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideStart_Module_0.f3()\n  return boolean", Documentation: ""},
+			Detail: "function Test.f3()\n  return boolean", Documentation: ""},
 		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyInsideStart_Module_0.f4()\n  return float", Documentation: ""}},
+			Detail: "function Test.f4()\n  return float", Documentation: ""}},
 		list)
 }
 
@@ -1069,9 +1069,9 @@ func TestInsideTcBodyNestedInsideStart(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyNestedInsideStart_Module_0.f3()\n  return boolean", Documentation: ""},
+			Detail: "function Test.f3()\n  return boolean", Documentation: ""},
 		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestInsideTcBodyNestedInsideStart_Module_0.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
 		list)
 }
 
@@ -1089,9 +1089,9 @@ func TestFuncComplInsideConstDecl(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestFuncComplInsideConstDecl_Module_0.f3()\n  return boolean", Documentation: ""},
+			Detail: "function Test.f3()\n  return boolean", Documentation: ""},
 		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestFuncComplInsideConstDecl_Module_0.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
 		list)
 }
 
@@ -1107,9 +1107,9 @@ func TestFuncComplInsideConstDeclBody(t *testing.T) {
 
 	assert.Equal(t, []protocol.CompletionItem{
 		{Label: "f3()", Kind: protocol.FunctionCompletion, SortText: " 1f3", InsertText: "f3()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestFuncComplInsideConstDeclBody_Module_0.f3()\n  return boolean", Documentation: ""},
+			Detail: "function Test.f3()\n  return boolean", Documentation: ""},
 		{Label: "f4()", Kind: protocol.FunctionCompletion, SortText: " 1f4", InsertText: "f4()", InsertTextFormat: protocol.PlainTextTextFormat,
-			Detail: "function TestFuncComplInsideConstDeclBody_Module_0.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
+			Detail: "function Test.f4()\n  runs on C1\n  return boolean", Documentation: ""}},
 		list)
 }
 
