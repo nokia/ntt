@@ -1,14 +1,98 @@
 package syntax
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/nokia/ntt/internal/errors"
-	"github.com/nokia/ntt/internal/loc"
+	"github.com/hashicorp/go-multierror"
+	"github.com/nokia/ntt/internal/fs"
 )
+
+// A Mode value is a set of flags (or 0).
+// They control the amount of source code parsed and other optional
+// parser functionality.
+type Mode uint
+
+const (
+	PedanticSemicolon = 1 << iota // expect semicolons pedantically
+	IgnoreComments                // ignore comments
+	Trace                         // print a trace of parsed productions
+)
+
+// Parse the source code of a single file and return the corresponding syntax
+// tree. The source code may be provided via the filename of the source file,
+// or via the src parameter.
+//
+// If src != nil, Parse parses the source from src and the filename is only
+// used when recording position information. The type of the argument for the
+// src parameter must be string, []byte, or io.Reader. If src == nil, Parse
+// parses the file specified by filename.
+//
+// The mode parameter controls the amount of source text parsed and other
+// optional parser functionality.
+//
+// If the source couldn't be read, the returned AST is nil and the error
+// indicates the specific failure. If the source was read but syntax errors
+// were found, the result is a partial AST (with Bad* nodes representing the
+// fragments of erroneous source code). Multiple errors are returned via a
+// ErrorList which is sorted by file position.
+func Parse(filename string, src interface{}) (root *Root, names map[string]bool, uses map[string]bool, err error) {
+	// get source
+	text, err := readSource(filename, src)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	var p parser
+	p.init(filename, text, 0)
+	for p.tok != EOF {
+		p.Nodes = append(p.Nodes, p.parse())
+
+		if p.tok != EOF && !topLevelTokens[p.tok] {
+			p.error(p.peek(1), "unexpected token %s", p.tok)
+			break
+		}
+
+		if p.tok == COMMA || p.tok == SEMICOLON {
+			p.consume()
+		}
+
+	}
+	return p.Root, p.names, p.uses, p.err()
+}
+
+func (p *parser) err() error {
+	return multierror.Append(nil, p.errs...).ErrorOrNil()
+}
+
+// If src != nil, readSource converts src to a []byte if possible;
+// otherwise it returns an error. If src == nil, readSource returns
+// the result of reading the file specified by filename.
+func readSource(filename string, src interface{}) ([]byte, error) {
+	if src != nil {
+		switch s := src.(type) {
+		case string:
+			return []byte(s), nil
+		case []byte:
+			return s, nil
+		case *bytes.Buffer:
+			// is io.Reader, but src is already available in []byte form
+			if s != nil {
+				return s.Bytes(), nil
+			}
+		case io.Reader:
+			return ioutil.ReadAll(s)
+		}
+		return nil, errors.New("invalid source")
+	}
+	return fs.Content(filename)
+}
 
 type tokenNode struct {
 	*Root
@@ -19,13 +103,14 @@ func (n *tokenNode) Kind() Kind {
 	return n.tokens[n.idx].Kind
 }
 
-func (n *tokenNode) Pos() loc.Pos {
-	return n.tokens[n.idx].Pos
+func (n *tokenNode) Pos() int {
+	tok := n.tokens[n.idx]
+	return tok.Begin
 }
 
-func (n *tokenNode) End() loc.Pos {
+func (n *tokenNode) End() int {
 	tok := n.tokens[n.idx]
-	return loc.Pos(int(tok.Pos) + len(tok.String()))
+	return tok.End
 }
 
 func (n *tokenNode) LastTok() Token   { return n }
@@ -46,7 +131,11 @@ func (n *tokenNode) NextTok() Token {
 }
 
 func (n *tokenNode) String() string {
-	return n.tokens[n.idx].String()
+	tok := n.tokens[n.idx]
+	if tok.IsLiteral() {
+		return string(n.Root.src[tok.Begin:tok.End])
+	}
+	return tok.String()
 }
 
 func (n *tokenNode) Inspect(fn func(Node) bool) {
@@ -54,22 +143,13 @@ func (n *tokenNode) Inspect(fn func(Node) bool) {
 }
 
 type token struct {
-	Kind Kind
-	Lit  string
-	Pos  loc.Pos
-}
-
-func (tok token) String() string {
-	if tok.Kind.IsLiteral() {
-		return tok.Lit
-	}
-	return tok.Kind.String()
+	Kind
+	Begin, End int
 }
 
 // The parser structure holds the parser's internal state.
 type parser struct {
-	errors  errors.ErrorList
-	scanner Scanner
+	errs []error
 
 	// Tracing/debugging
 	mode   Mode // parsing mode
@@ -101,24 +181,21 @@ type parser struct {
 	// (used to limit the number of calls to advance
 	// w/o making scanning progress - avoids potential endless
 	// loops across multiple parser functions during error recovery)
-	syncPos loc.Pos // last synchronization position
-	syncCnt int     // number of advance calls without progress
+	syncPos int // last synchronization position
+	syncCnt int // number of advance calls without progress
 }
 
-func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode) {
+func newRoot(filename string, src []byte) *Root {
+	return &Root{
+		Filename: filename,
+		Scanner:  NewScanner(src),
+	}
+}
+
+func (p *parser) init(filename string, src []byte, mode Mode) {
 	if s := os.Getenv("NTT_DEBUG"); s == "trace" {
 		mode |= Trace
 	}
-
-	p.Root = &Root{
-		fset: fset,
-		file: fset.AddFile(filename, -1, len(src)),
-	}
-
-	eh := func(pos loc.Position, msg string) {
-		p.errors.Add(pos, msg)
-	}
-	p.scanner.Init(p.file, src, eh)
 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
@@ -132,6 +209,7 @@ func (p *parser) init(fset *loc.FileSet, filename string, src []byte, mode Mode)
 	p.uses = make(map[string]bool)
 
 	// fetch first token
+	p.Root = newRoot(filename, src)
 	tok := p.peek(1)
 	p.tok = tok.Kind()
 }
@@ -150,7 +228,7 @@ func (p *parser) handlePreproc(s string) {
 		fallthrough
 	case "#ifdef", "#if":
 		if len(f) < 2 {
-			p.error(p.pos(1), "missing condition in preprocessor directive")
+			p.error(p.peek(1), "missing condition in preprocessor directive")
 			break
 		}
 		if p.ppSkip == false && p.ppLvl == p.ppCnt {
@@ -178,13 +256,13 @@ func (p *parser) handlePreproc(s string) {
 				p.ppDefs[f[1]] = v
 				break
 			}
-			p.error(p.pos(1), "not a boolean expression")
+			p.error(p.peek(1), "not a boolean expression")
 		default:
-			p.error(p.pos(1), "malformed 'define' directive")
+			p.error(p.peek(1), "malformed 'define' directive")
 		}
 	default:
 		if !strings.HasPrefix(s, "#!") {
-			p.error(p.pos(1), "unknown preprocessor directive")
+			p.error(p.peek(1), "unknown preprocessor directive")
 		}
 	}
 }
@@ -228,14 +306,21 @@ func (p *parser) ignoreToken(tok Kind) bool {
 
 func (p *parser) grow(n int) {
 	for n > 0 {
-		pos, kind, lit := p.scanner.Scan()
-		tok := token{Pos: pos, Kind: kind, Lit: lit}
+		kind, begin, end := p.Scan()
+		if kind == IDENT && end-begin > 1 {
+			kind = Lookup(p.src[begin:end])
+		}
+		tok := token{Kind: kind, Begin: begin, End: end}
 		p.tokens = append(p.tokens, tok)
 		if !p.ignoreToken(kind) {
-			p.queue = append(p.queue, &tokenNode{
+			tn := &tokenNode{
 				idx:  len(p.tokens) - 1,
 				Root: p.Root,
-			})
+			}
+			if kind == MALFORMED || kind == UNTERMINATED {
+				p.error(tn, "malformed or unterminated token")
+			}
+			p.queue = append(p.queue, tn)
 			n--
 		}
 	}
@@ -250,7 +335,7 @@ func (p *parser) peek(i int) Token {
 	return p.queue[idx]
 }
 
-func (p *parser) pos(i int) loc.Pos {
+func (p *parser) pos(i int) int {
 	tok := p.peek(i)
 	return tok.Pos()
 }
@@ -286,7 +371,7 @@ func (p *parser) speculating() bool {
 func (p *parser) printTrace(a ...interface{}) {
 	const dots = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . "
 	const n = len(dots)
-	pos := p.file.Position(p.pos(1))
+	pos := Begin(p.peek(1))
 	fmt.Printf("%5d:%3d: ", pos.Line, pos.Column)
 	i := 2 * p.indent
 	for i > n {
@@ -307,40 +392,19 @@ func trace(p *parser, msg string) *parser {
 // A bailout panic is raised to indicate early termination.
 type bailout struct{}
 
-func (p *parser) error(pos loc.Pos, msg string) {
-	epos := p.file.Position(pos)
-
-	// If AllErrors is not set, discard errors reported on the same line
-	// as the last recorded error and stop parsing if there are more than
-	// 10 errors.
-	if p.mode&AllErrors == 0 {
-		n := len(p.errors)
-		if n > 0 && p.errors[n-1].Pos.Line == epos.Line {
-			return // discard - likely a spurious error
-		}
-		if n > 10 {
-			panic(bailout{})
-		}
-	}
-
-	p.errors.Add(epos, msg)
+func (p *parser) error(n Node, msg string, args ...interface{}) {
+	err := Error{Node: n, Msg: fmt.Sprintf(msg, args...)}
+	p.errs = append(p.errs, err)
 }
 
-func (p *parser) errorExpected(pos loc.Pos, msg string) {
-	msg = "expected " + msg
+func (p *parser) errorExpected(what string) {
 	tok := p.peek(1)
-	if pos == tok.Pos() {
-		// the error happened at the current position;
-		// make the error message more specific
-		msg += ", found " + tok.String()
-	}
-	p.error(pos, msg)
+	p.error(tok, "expected "+what+", found "+tok.String())
 }
 
 func (p *parser) expect(k Kind) Token {
 	if p.tok != k {
-		tok := p.peek(1)
-		p.errorExpected(tok.Pos(), "'"+k.String()+"'")
+		p.errorExpected("'" + k.String() + "'")
 	}
 	return p.consume() // make progress
 }
@@ -355,7 +419,7 @@ func (p *parser) expectSemi(tok Token) {
 	if p.semi {
 		// semicolon is optional before a closing '}'
 		if !p.seenBrace && p.tok == RBRACE && p.tok != EOF {
-			p.errorExpected(p.pos(1), "';'")
+			p.errorExpected("';'")
 			p.advance(stmtStart)
 		}
 	}
@@ -795,7 +859,7 @@ func (p *parser) parseOperand() Expr {
 		return p.parseDecodedModifier()
 
 	default:
-		p.errorExpected(p.pos(1), "operand")
+		p.errorExpected("operand")
 	}
 
 	return &ErrorNode{From: etok, To: p.peek(1)}
@@ -875,8 +939,8 @@ func (p *parser) parseCallDecmatch() *DecmatchExpr {
 func (p *parser) parseDecodedModifier() *DecodedExpr {
 	d := new(DecodedExpr)
 	d.Tok = p.expect(MODIF)
-	if d.Tok.String() != "@decoded" {
-		p.errorExpected(d.Tok.Pos(), "@decoded")
+	if s := d.Tok.String(); s != "@decoded" {
+		p.error(d.Tok, "expected '@decoded', found %s", s)
 	}
 
 	if p.tok == LPAREN {
@@ -955,8 +1019,8 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 	}
 
 	if p.tok == MODIF {
-		if p.lit(1) != "@index" {
-			p.errorExpected(p.pos(1), "@index")
+		if s := p.lit(1); s != "@index" {
+			p.error(p.peek(1), "expected '@index', found %s", s)
 		}
 
 		r.IndexTok = p.consume()
@@ -1218,16 +1282,16 @@ func (p *parser) parseModuleDef() *ModuleDef {
 		case FUNCTION:
 			m.Def = p.parseExtFuncDecl()
 		case CONST:
-			p.error(p.pos(1), "external constants not suppored")
+			p.error(p.peek(1), "external constants are not supported anymore")
 			p.consume()
 			m.Def = p.parseValueDecl()
 		default:
-			p.errorExpected(p.pos(1), "'function'")
+			p.errorExpected("'function'") // TODO: fix the found-token! (peek(1) vs. peek(2))
 			p.advance(stmtStart)
 			m.Def = &ErrorNode{From: etok, To: p.peek(1)}
 		}
 	default:
-		p.errorExpected(p.pos(1), "module definition")
+		p.errorExpected("module definition")
 		p.advance(stmtStart)
 		m.Def = &ErrorNode{From: etok, To: p.peek(1)}
 	}
@@ -1305,7 +1369,7 @@ func (p *parser) parseImport() *ImportDecl {
 		}
 		x.RBrace = p.expect(RBRACE)
 	default:
-		p.errorExpected(p.pos(1), "'all' or import spec")
+		p.errorExpected("'all' or import spec")
 	}
 
 	x.With = p.parseWith()
@@ -1355,7 +1419,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 		x.Kind = p.consume()
 		x.List = []Expr{p.make_use(p.expect(ALL))}
 	default:
-		p.errorExpected(p.pos(1), "import definition qualifier")
+		p.errorExpected("import definition qualifier")
 		p.advance(stmtStart)
 	}
 	return x
@@ -1379,7 +1443,7 @@ func (p *parser) parseExceptStmt() *DefKindExpr {
 		TESTCASE, TYPE:
 		x.Kind = p.consume()
 	default:
-		p.errorExpected(p.pos(1), "definition qualifier")
+		p.errorExpected("definition qualifier")
 	}
 
 	if p.tok == ALL {
@@ -1454,7 +1518,7 @@ func (p *parser) parseWithStmt() *WithStmt {
 		OVERRIDE:
 		x.Kind = p.consume()
 	default:
-		p.errorExpected(p.pos(1), "with-attribute")
+		p.errorExpected("with-attribute")
 		p.advance(stmtStart)
 	}
 
@@ -1463,7 +1527,7 @@ func (p *parser) parseWithStmt() *WithStmt {
 		x.Override = p.consume()
 	case MODIF:
 		if p.lit(1) != "@local" {
-			p.errorExpected(p.pos(1), "@local")
+			p.errorExpected("@local")
 		}
 		x.Override = p.consume()
 	}
@@ -1516,7 +1580,7 @@ func (p *parser) parseWithQualifier() Expr {
 		x.List = []Expr{y}
 		return x
 	default:
-		p.errorExpected(p.pos(1), "with-qualifier")
+		p.errorExpected("with-qualifier")
 		p.advance(stmtStart)
 		return &ErrorNode{From: etok, To: p.peek(1)}
 	}
@@ -1548,7 +1612,7 @@ func (p *parser) parseTypeDecl() Decl {
 	case FUNCTION, ALTSTEP, TESTCASE:
 		return p.parseBehaviourTypeDecl()
 	default:
-		p.errorExpected(p.pos(1), "type definition")
+		p.errorExpected("type definition")
 		p.advance(stmtStart)
 		return &ErrorNode{From: etok, To: p.peek(1)}
 	}
@@ -1574,7 +1638,7 @@ func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 	case MIXED, MESSAGE, PROCEDURE:
 		x.Kind = p.consume()
 	default:
-		p.errorExpected(p.pos(1), "'message' or 'procedure'")
+		p.errorExpected("'message' or 'procedure'")
 	}
 
 	if p.tok == REALTIME {
@@ -1609,7 +1673,7 @@ func (p *parser) parsePortAttribute() Node {
 			Params:   p.parseFormalPars(),
 		}
 	default:
-		p.errorExpected(p.pos(1), "port attribute")
+		p.errorExpected("port attribute")
 		p.advance(stmtStart)
 		return &ErrorNode{From: etok, To: p.peek(1)}
 	}
@@ -1773,7 +1837,7 @@ func (p *parser) parseField() *Field {
 
 	if p.tok == MODIF {
 		if p.lit(1) != "@default" {
-			p.errorExpected(p.pos(1), "@default")
+			p.errorExpected("@default")
 		}
 		x.DefaultTok = p.consume()
 	}
@@ -1820,7 +1884,7 @@ func (p *parser) parseTypeSpec() TypeSpec {
 	case FUNCTION, ALTSTEP, TESTCASE:
 		return p.parseBehaviourSpec()
 	default:
-		p.errorExpected(p.pos(1), "type definition")
+		p.errorExpected("type definition")
 		return &ErrorNode{From: etok, To: p.peek(1)}
 	}
 }
@@ -2392,7 +2456,7 @@ func (p *parser) parseStmt() Stmt {
 	case INT, FLOAT, STRING, BSTRING, TRUE, FALSE, PASS, FAIL, NONE, INCONC, ERROR:
 		return p.parseSimpleStmt()
 	default:
-		p.errorExpected(p.pos(1), "statement")
+		p.errorExpected("statement")
 		p.advance(stmtStart)
 		return &ErrorNode{From: etok, To: p.peek(1)}
 	}

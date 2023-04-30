@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/lsp"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/internal/ntttest"
@@ -38,7 +37,6 @@ func testCompletion(t *testing.T, input string, imports ...string) []protocol.Co
 	}
 
 	str, cursor := ntttest.CutCursor(input)
-	pos := loc.Pos(cursor + 1)
 
 	fs.SetContent(name(0), []byte(str))
 	suite.Config.Sources = append(suite.Config.Sources, name(0))
@@ -49,12 +47,12 @@ func testCompletion(t *testing.T, input string, imports ...string) []protocol.Co
 	suite.DB.Index(suite.Config.Sources...)
 
 	syntax := ttcn3.ParseFile(name(0))
-	nodeStack := lsp.LastNonWsToken(syntax.Root, pos)
+	nodeStack := lsp.LastNonWsToken(syntax.Root, cursor)
 	basename := name(0)
 	basename = basename[:len(basename)-len(filepath.Ext(basename))]
 
 	var items []protocol.CompletionItem
-	for _, item := range lsp.Complete(suite, pos, nodeStack, basename) {
+	for _, item := range lsp.Complete(suite, cursor, nodeStack, basename) {
 		if predefMap[item.Label] {
 			continue
 		}
@@ -157,7 +155,7 @@ func TestLastNonWsToken(t *testing.T) {
 		input, cursor := ntttest.CutCursor(tt.input)
 		tree := ttcn3.Parse(input)
 		var got []string
-		for _, n := range lsp.LastNonWsToken(tree.Root, loc.Pos(cursor+1)) {
+		for _, n := range lsp.LastNonWsToken(tree.Root, cursor) {
 			got = append(got, ntttest.NodeString(n))
 		}
 		assert.Equal(t, tt.want, got, fmt.Sprintf("%q", tt.input))

@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
@@ -237,7 +236,7 @@ func (t *Tree) ExprAt(line, col int) syntax.Expr {
 }
 
 // sliceAt returns the slice of nodes at the given position.
-func (t *Tree) sliceAt(pos loc.Pos) []syntax.Node {
+func (t *Tree) sliceAt(pos int) []syntax.Node {
 	var (
 		path  []syntax.Node
 		visit func(n syntax.Node)

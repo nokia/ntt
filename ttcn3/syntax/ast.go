@@ -4,14 +4,10 @@ package syntax
 
 //go:generate go run ./internal/gen
 
-import (
-	"github.com/nokia/ntt/internal/loc"
-)
-
 // All node types implement the Node interface.
 type Node interface {
-	Pos() loc.Pos
-	End() loc.Pos
+	Pos() int
+	End() int
 	FirstTok() Token
 	LastTok() Token
 	Children() []Node
@@ -46,21 +42,48 @@ type Decl interface {
 
 type Root struct {
 	NodeList
+	*Scanner
 	Filename string
-	fset     *loc.FileSet
-	file     *loc.File
 	tokens   []token
 }
 
-func (n *Root) Position(p loc.Pos) loc.Position {
-	return n.fset.Position(p)
+func (n *Root) Position(offset int) Position {
+	if offset < 0 {
+		return Position{}
+	}
+	if l := n.searchLines(offset); l >= 0 {
+		return Position{
+			Line:   l + 1,
+			Column: offset - n.lines[l] + 1,
+		}
+	}
+	return Position{}
 }
 
-func (n *Root) PosFor(line, col int) loc.Pos {
-	if line < 1 {
-		return loc.NoPos
+func (n *Root) searchLines(pos int) int {
+	// TODO(5nord) add line cache
+	i, j := 0, len(n.lines)
+	for i < j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+		// i ≤ h < j
+		if n.lines[h] <= pos {
+			i = h + 1
+		} else {
+			j = h
+		}
 	}
-	return n.file.LineStart(line) + loc.Pos(col-1)
+	return int(i) - 1
+}
+
+func (n *Root) PosFor(line, col int) int {
+	line--
+	if line < 0 {
+		return -1
+	}
+	if line >= len(n.lines) {
+		line = len(n.lines) - 1
+	}
+	return n.lines[line] + col - 1
 }
 
 func (n *Root) FirstTok() Token           { return n.NodeList.FirstTok() }

@@ -62,23 +62,21 @@ func SpanOf(n Node) Span {
 
 func Filename(n Node) string {
 	if tok := n.FirstTok(); tok != nil {
-		return tok.(*tokenNode).file.Name()
+		return tok.(*tokenNode).Root.Filename
 	}
 	return ""
 }
 
 func Begin(n Node) Position {
 	if tok := n.FirstTok(); tok != nil {
-		pos := tok.(*tokenNode).file.Position(tok.Pos())
-		return Position{Line: pos.Line, Column: pos.Column}
+		return tok.(*tokenNode).Root.Position(tok.Pos())
 	}
 	return Position{}
 }
 
 func End(n Node) Position {
 	if tok := n.LastTok(); tok != nil {
-		pos := tok.(*tokenNode).file.Position(tok.End())
-		return Position{Line: pos.Line, Column: pos.Column}
+		return tok.(*tokenNode).Root.Position(tok.End())
 	}
 	return Position{}
 }

@@ -3,7 +3,7 @@ package ttcn3_test
 import (
 	"testing"
 
-	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ntttest"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,7 +44,7 @@ func TestSliceAt(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		cursor, source := extractCursor(tt.input)
+		source, cursor := ntttest.CutCursor(tt.input)
 		tree := parseFile(t, t.Name(), source)
 
 		var actual []string
@@ -81,7 +81,7 @@ func TestExprAt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			cursor, source := extractCursor(tt.input)
+			source, cursor := ntttest.CutCursor(tt.input)
 			tree := parseFile(t, t.Name(), source)
 			pos := tree.Position(cursor)
 			actual := nodeDesc(tree.ExprAt(pos.Line, pos.Column))
@@ -304,8 +304,8 @@ func TestLookup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var cursor loc.Pos
-			cursor, tt.input = extractCursor(tt.input)
+			var cursor int
+			tt.input, cursor = ntttest.CutCursor(tt.input)
 
 			tree := parseFile(t, t.Name(), tt.input)
 			pos := tree.Position(cursor)

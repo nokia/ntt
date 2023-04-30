@@ -6,11 +6,10 @@ import (
 	"io"
 	"sync"
 
-	"github.com/nokia/ntt/internal/loc"
-	"github.com/nokia/ntt/internal/log"
-	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/control"
 	"github.com/nokia/ntt/control/k3s"
+	"github.com/nokia/ntt/internal/log"
+	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
 type TestController struct {
@@ -31,7 +30,7 @@ type TestController struct {
 type TestID struct {
 	URI  string
 	Name string
-	Pos  loc.Pos
+	Pos  int
 }
 
 // Start starts the test controller.

@@ -2,8 +2,6 @@ package syntax
 
 import (
 	"testing"
-
-	"github.com/nokia/ntt/internal/loc"
 )
 
 type Expect int
@@ -58,6 +56,7 @@ func TestWithStmts(t *testing.T) {
 func TestExprs(t *testing.T) {
 	exprs := []Test{
 		{pass, `-`},
+		{pass, `1..23`},
 		{pass, `a[-]`},
 		{pass, `-1 * x`},
 		{pass, `-x * y`},
@@ -365,8 +364,8 @@ func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 
 func anyParse(input string, f func(p *parser)) error {
 	var p parser
-	p.init(loc.NewFileSet(), "", []byte(input), Mode(0))
+	p.init("", []byte(input), Mode(0))
 	f(&p)
-	p.errors.Sort()
-	return p.errors.Err()
+	// TODO(5nord) temporary hack until we have proper error handling
+	return p.err()
 }

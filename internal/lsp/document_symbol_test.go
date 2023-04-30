@@ -23,7 +23,7 @@ func testDocumentSymbol(t *testing.T, text string) []Symbol {
 			Kind:   sym.Kind,
 			Name:   sym.Name,
 			Detail: sym.Detail,
-			Text:   string(text[begin-1 : end-1]),
+			Text:   string(text[begin:end]),
 		}
 		for _, c := range sym.Children {
 			s.Children = append(s.Children, makeSymbol(c))

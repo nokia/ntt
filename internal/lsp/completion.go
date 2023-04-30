@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
@@ -91,9 +90,9 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 }
 
 // LastNonWsToken returns the last node slice before the given position.
-func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
+func LastNonWsToken(n syntax.Node, pos int) []syntax.Node {
 
-	if pos == loc.NoPos {
+	if pos < 0 {
 		return nil
 	}
 
@@ -144,7 +143,7 @@ func LastNonWsToken(n syntax.Node, pos loc.Pos) []syntax.Node {
 	return lastStack
 }
 
-func Complete(suite *Suite, pos loc.Pos, nodes []syntax.Node, ownModName string) []protocol.CompletionItem {
+func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []protocol.CompletionItem {
 	var list []protocol.CompletionItem
 	l := len(nodes)
 	switch {

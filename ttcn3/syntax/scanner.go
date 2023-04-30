@@ -1,531 +1,351 @@
 package syntax
 
-import (
-	"fmt"
-	"path/filepath"
-	"unicode/utf8"
+// Tokenize given source code and return a root node with all the tokens.
+func Tokenize(src []byte) *Root {
+	root := newRoot("", src)
+	for {
+		kind, begin, end := root.Scan()
+		root.tokens = append(root.tokens, token{kind, begin, end})
+		if kind == EOF {
+			break
+		}
+	}
+	return root
+}
 
-	"github.com/nokia/ntt/internal/loc"
-)
+// NewScanner returns a new TTCN-3 scanner for src.
+func NewScanner(src []byte) *Scanner {
+	return &Scanner{
+		src:   src,
+		lines: []int{0},
+	}
+}
 
-// An ErrorHandler may be provided to Scanner.Init. If a syntax error is
-// encountered and a handler was installed, the handler is called with a
-// position and an error message. The position points to the beginning of
-// the offending
-type ErrorHandler func(pos loc.Position, msg string)
-
-// A Scanner holds the scanner's internal state while processing
-// a given text. It can be allocated as part of another data
-// structure but must be initialized via Init before use.
+// Scanner scans a TTCN-3 source.
 type Scanner struct {
-	// immutable state
-	file *loc.File    // source file handle
-	dir  string       // directory portion of file.Name()
-	src  []byte       // source
-	Err  ErrorHandler // error reporting; or nil
-
-	// scanning state
-	ch         rune // current character
-	offset     int  // character offset
-	rdOffset   int  // reading offset (position after current character)
-	lineOffset int  // current line offset
-
-	// public state - ok to modify
-	ErrorCount int // number of errors encountered
+	lines []int
+	src   []byte
+	pos   int
 }
 
-const bom = 0xFEFF // byte order mark, only permitted as very first character
-
-// Read the next Unicode char into s.ch.
-// s.ch < 0 means end-of-file.
-func (s *Scanner) next() {
-	if s.rdOffset < len(s.src) {
-		s.offset = s.rdOffset
-		if s.ch == '\n' {
-			s.lineOffset = s.offset
-			s.file.AddLine(s.offset)
-		}
-		r, w := rune(s.src[s.rdOffset]), 1
-		switch {
-		case r == 0:
-			s.error(s.offset, "illegal character NUL")
-		case r >= utf8.RuneSelf:
-			// not ASCII
-			r, w = utf8.DecodeRune(s.src[s.rdOffset:])
-			if r == utf8.RuneError && w == 1 {
-				s.error(s.offset, "illegal UTF-8 encoding")
-			} else if r == bom && s.offset > 0 {
-				s.error(s.offset, "illegal byte order mark")
-			}
-		}
-		s.rdOffset += w
-		s.ch = r
-	} else {
-		s.offset = len(s.src)
-		if s.ch == '\n' {
-			s.lineOffset = s.offset
-			s.file.AddLine(s.offset)
-		}
-		s.ch = -1 // eof
-	}
+// Lines returns the line offsets of the source.
+func (s *Scanner) Lines() []int {
+	return s.lines
 }
 
-// A SMode value is a set of flags (or 0).
-// They control scanner behavior.
-type SMode uint
+// Scan returns the next token and its range.
+func (s *Scanner) Scan() (Kind, int, int) {
+	s.scanWhitespace()
 
-const (
-	ScanComments SMode = 1 << iota // return comments as COMMENT tokens
-)
-
-// Init prepares the scanner s to tokenize the text src by setting the
-// scanner at the beginning of src. The scanner uses the file set file
-// for position information and it adds line information for each line.
-// It is ok to re-use the same file when re-scanning the same file as
-// line information which is already present is ignored. Init causes a
-// panic if the file size does not match the src size.
-//
-// Calls to Scan will invoke the error handler Err if they encounter a
-// syntax error and Err is not nil. Also, for each error encountered,
-// the Scanner field ErrorCount is incremented by one.
-//
-// Note that Init may call Err if there is an error in the first character
-// of the file.
-func (s *Scanner) Init(file *loc.File, src []byte, err ErrorHandler) {
-	// Explicitly initialize all fields since a scanner may be reused.
-	if file.Size() != len(src) {
-		panic(fmt.Sprintf("file size (%d) does not match src len (%d)", file.Size(), len(src)))
-	}
-	s.file = file
-	s.dir, _ = filepath.Split(file.Name())
-	s.src = src
-	s.Err = err
-
-	s.ch = ' '
-	s.offset = 0
-	s.rdOffset = 0
-	s.lineOffset = 0
-	s.ErrorCount = 0
-
-	s.next()
-	if s.ch == bom {
-		s.next() // ignore BOM at file beginning
-	}
-}
-
-func (s *Scanner) error(offs int, msg string) {
-	if s.Err != nil {
-		s.Err(s.file.Position(s.file.Pos(offs)), msg)
-	}
-	s.ErrorCount++
-}
-
-func (s *Scanner) scanComment() string {
-	// initial '/' already consumed; s.ch == '/' || s.ch == '*'
-	offs := s.offset - 1 // position of initial '/'
-	hasCR := false
-
-	if s.ch == '/' {
-		//-style comment
-		s.next()
-		for s.ch != '\n' && s.ch >= 0 {
-			if s.ch == '\r' {
-				hasCR = true
-			}
-			s.next()
-		}
-		goto exit
+	if s.pos >= len(s.src) {
+		return EOF, s.pos, s.pos + 1
 	}
 
-	/*-style comment */
-	s.next()
-	for s.ch >= 0 {
-		ch := s.ch
-		if ch == '\r' {
-			hasCR = true
-		}
-		s.next()
-		if ch == '*' && s.ch == '/' {
-			s.next()
-			goto exit
-		}
+	pos := s.pos
+	s.pos++
+	ch := s.src[pos]
+
+	var (
+		typ  Kind
+		next byte
+	)
+
+	if s.pos < len(s.src) {
+		next = s.src[s.pos]
 	}
 
-	s.error(offs, "comment not terminated")
-
-exit:
-	lit := s.src[offs:s.offset]
-	if hasCR {
-		lit = stripCR(lit)
-	}
-
-	return string(lit)
-}
-
-func (s *Scanner) scanPreproc() string {
-	offs := s.offset - 1
-	hasCR := false
-	for s.ch != '\n' && s.ch >= 0 {
-		if s.ch == '\r' {
-			hasCR = true
-		}
-		s.next()
-	}
-
-	//if offs != s.lineOffset {
-	//	s.error(s.offset, "preprocessor statement must start at line")
-	//}
-
-	lit := s.src[offs:s.offset]
-	if hasCR {
-		lit = stripCR(lit)
-	}
-
-	return string(lit)
-}
-
-func isAlpha(ch rune) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
-}
-
-func isDigit(ch rune) bool {
-	return '0' <= ch && ch <= '9'
-}
-
-func (s *Scanner) scanIdentifier() string {
-	offs := s.offset
-	for isAlpha(s.ch) || isDigit(s.ch) {
-		s.next()
-	}
-	return string(s.src[offs:s.offset])
-}
-
-func (s *Scanner) scanModifier() string {
-	offs := s.offset - 1
-	for isAlpha(s.ch) || isDigit(s.ch) {
-		s.next()
-	}
-	return string(s.src[offs:s.offset])
-}
-
-func (s *Scanner) scanTitanMacro() string {
-	offs := s.offset - 1
-	for isAlpha(s.ch) || isDigit(s.ch) {
-		s.next()
-	}
-	return string(s.src[offs:s.offset])
-}
-
-func digitVal(ch rune) int {
 	switch {
-	case '0' <= ch && ch <= '9':
-		return int(ch - '0')
-	case 'a' <= ch && ch <= 'f':
-		return int(ch - 'a' + 10)
-	case 'A' <= ch && ch <= 'F':
-		return int(ch - 'A' + 10)
+	case isAlpha(ch):
+		typ = IDENT
+		s.scanAlnum()
+	case isDigit(ch):
+		typ = s.scanNumber()
+	case ch == ',':
+		typ = COMMA
+	case ch == '+':
+		typ = ADD
+		if next == '+' {
+			typ = INC
+			s.pos++
+		}
+	case ch == '*':
+		typ = MUL
+	case ch == '&':
+		typ = CONCAT
+	case ch == '?':
+		typ = ANY
+	case ch == '(':
+		typ = LPAREN
+	case ch == '[':
+		typ = LBRACK
+	case ch == '{':
+		typ = LBRACE
+	case ch == ')':
+		typ = RPAREN
+	case ch == ']':
+		typ = RBRACK
+	case ch == '}':
+		typ = RBRACE
+	case ch == ';':
+		typ = SEMICOLON
+	case ch == '/':
+		switch next {
+		case '/':
+			s.scanLine()
+			typ = COMMENT
+		case '*':
+			typ = s.scanMultiLineComment()
+		default:
+			typ = DIV
+		}
+	case ch == '@':
+		switch {
+		case isAlpha(next):
+			s.scanAlnum()
+			typ = MODIF
+		case next == '>':
+			s.pos++
+			typ = ROR
+		default:
+			typ = ILLEGAL
+		}
+	case ch == '%':
+		if isAlpha(next) {
+			s.scanAlnum()
+			typ = IDENT
+		}
+	case ch == '!':
+		typ = EXCL
+		if next == '=' {
+			s.pos++
+			typ = NE
+		}
+	case ch == '-':
+		switch next {
+		case '>':
+			s.pos++
+			typ = REDIR
+		case '-':
+			s.pos++
+			typ = DEC
+		default:
+			typ = SUB
+		}
+	case ch == '.':
+		typ = DOT
+		if next == '.' {
+			s.pos++
+			typ = RANGE
+
+			if s.pos < len(s.src) && s.src[s.pos] == '.' {
+				s.pos++
+				typ = ELIPSIS
+			}
+		}
+	case ch == ':':
+		switch next {
+		case ':':
+			s.pos++
+			typ = COLONCOLON
+		case '=':
+			s.pos++
+			typ = ASSIGN
+		default:
+			typ = COLON
+		}
+	case ch == '<':
+		switch next {
+		case '<':
+			s.pos++
+			typ = SHL
+		case '=':
+			s.pos++
+			typ = LE
+		case '@':
+			s.pos++
+			typ = ROL
+		default:
+			typ = LT
+		}
+	case ch == '=':
+		switch next {
+		case '=':
+			s.pos++
+			typ = EQ
+		case '>':
+			s.pos++
+			typ = DECODE
+		}
+	case ch == '>':
+		switch next {
+		case '>':
+			s.pos++
+			typ = SHR
+		case '=':
+			s.pos++
+			typ = GE
+		default:
+			typ = GT
+		}
+	case ch == '\'':
+		typ = s.scanBitstring()
+	case ch == '#':
+		s.scanLine()
+		typ = PREPROC
+	case ch == '"':
+		typ = s.scanString()
+	default:
+		typ = ILLEGAL
 	}
-	return 16 // larger than any legal digit val
+
+	return typ, pos, s.pos
+}
+
+func (s *Scanner) scanWhitespace() {
+	for s.pos < len(s.src) {
+		switch ch := s.src[s.pos]; ch {
+		case ' ', '\t', '\r':
+		case '\n', '\v', '\f':
+			s.lines = append(s.lines, s.pos+1)
+		default:
+			return
+		}
+		s.pos++
+	}
+}
+
+func (s *Scanner) scanLine() {
+	for s.pos < len(s.src) && s.src[s.pos] != '\n' {
+		s.pos++
+	}
+}
+
+func (s *Scanner) scanAlnum() {
+	for s.pos < len(s.src) && isAlnum(s.src[s.pos]) {
+		s.pos++
+	}
+}
+
+func (s *Scanner) scanMultiLineComment() Kind {
+	s.pos++ // skip the first '*'
+	for s.pos < len(s.src) {
+		ch := s.src[s.pos]
+		if ch == '\n' || ch == '\v' || ch == '\f' {
+			s.lines = append(s.lines, s.pos+1)
+		}
+		s.pos++
+		if ch == '*' && s.pos < len(s.src) && s.src[s.pos] == '/' {
+			s.pos++
+			return COMMENT
+		}
+	}
+
+	return UNTERMINATED
+}
+
+func (s *Scanner) scanString() Kind {
+	s.pos-- // backup for proper quoting ("")
+	for {
+		s.pos++
+		if s.pos >= len(s.src) {
+			return UNTERMINATED
+		}
+
+		switch ch := s.src[s.pos]; ch {
+		case '\n', '\v', '\f':
+			s.lines = append(s.lines, s.pos+1)
+			s.pos++
+		case '\\':
+			s.pos++
+		case '"':
+			s.pos++
+			if s.pos >= len(s.src) || s.src[s.pos] != '"' {
+				return STRING
+			}
+		}
+	}
+}
+
+func (s *Scanner) scanBitstring() Kind {
+L:
+	for {
+		if s.pos >= len(s.src) {
+			return UNTERMINATED
+		}
+		switch ch := s.src[s.pos]; ch {
+		case '\n', '\v', '\f':
+			s.lines = append(s.lines, s.pos+1)
+		case '\'':
+			s.pos++
+			break L
+		}
+		s.pos++
+	}
+
+	typ := BSTRING
+	if s.pos >= len(s.src) || !isAlpha(s.src[s.pos]) {
+		typ = MALFORMED
+	}
+
+	s.scanAlnum()
+	return typ
+}
+
+func (s *Scanner) scanNumber() Kind {
+	tok := INT
+
+	if s.src[s.pos-1] != '0' {
+		s.scanDigits()
+	}
+
+	// scan fractional part
+	if s.pos < len(s.src) && s.src[s.pos] == '.' {
+		// check '..' token
+		if s.pos+1 < len(s.src) && s.src[s.pos+1] == '.' {
+			return tok
+		}
+		tok = FLOAT
+		s.pos++
+		s.scanDigits()
+	}
+
+	// scan exponent
+	if s.pos < len(s.src) && (s.src[s.pos] == 'e' || s.src[s.pos] == 'E') {
+		tok = FLOAT
+		s.pos++
+		if s.pos < len(s.src) && (s.src[s.pos] == '+' || s.src[s.pos] == '-') {
+			s.pos++
+		}
+		if s.pos >= len(s.src) || !isDigit(s.src[s.pos]) {
+			tok = MALFORMED
+		} else {
+			s.scanDigits()
+		}
+	}
+
+	// handle trailing carbage
+	if s.pos < len(s.src) && isAlnum(s.src[s.pos]) {
+		tok = MALFORMED
+		s.scanAlnum()
+	}
+
+	return tok
 }
 
 func (s *Scanner) scanDigits() {
-	for isDigit(s.ch) {
-		s.next()
+	for s.pos < len(s.src) && isDigit(s.src[s.pos]) {
+		s.pos++
 	}
 }
 
-func (s *Scanner) scanNumber() (tok Kind, lit string) {
-	offs := s.offset
-	tok = INT
-
-	if s.ch == '0' {
-		s.next()
-	} else {
-		s.scanDigits()
-	}
-
-	// fraction
-	if s.ch == '.' {
-		// check for RANGE token (example: 0..23)
-		if s.rdOffset < len(s.src) && s.src[s.rdOffset] == '.' {
-			goto out
-		}
-		tok = FLOAT
-		s.next()
-		s.scanDigits()
-	}
-
-	// exponent
-	if s.ch == 'e' || s.ch == 'E' {
-		tok = FLOAT
-		s.next()
-		if s.ch == '-' || s.ch == '+' {
-			s.next()
-		}
-		s.scanDigits()
-	}
-
-	// FIXME: In standard TTCN-3:2014 some identifiers start with a number.
-	//        For instance predefined function 291oolea.
-	if isAlpha(s.ch) {
-		tok = ILLEGAL
-		for isAlpha(s.ch) || isDigit(s.ch) {
-			s.next()
-		}
-		s.error(offs, "malformed number")
-	}
-
-out:
-	return tok, string(s.src[offs:s.offset])
+func isAlnum(ch byte) bool {
+	return isAlpha(ch) || isDigit(ch)
 }
 
-func (s *Scanner) scanBString() string {
-	// opening ' already consumed
-	offs := s.offset - 1
-
-	for {
-		ch := s.ch
-		if ch < 0 {
-			s.error(offs, "string literal not terminated")
-			break
-		}
-		s.next()
-		if ch == '\'' {
-			if isAlpha(s.ch) {
-				s.next()
-				break
-			}
-			s.error(s.offset-1, "missing string specifier (O, H or B)")
-			break
-		}
-		if ch == '\\' {
-			s.next()
-		}
-	}
-
-	return string(s.src[offs:s.offset])
+func isAlpha(ch byte) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
 }
 
-func (s *Scanner) scanString() string {
-	// '"' opening already consumed
-	offs := s.offset - 1
-
-	for {
-		ch := s.ch
-		if ch < 0 {
-			s.error(offs, "string literal not terminated")
-			break
-		}
-		s.next()
-		if ch == '"' {
-			if s.ch == '"' {
-				s.next()
-			} else {
-				break
-			}
-		}
-		if ch == '\\' {
-			s.next()
-		}
-	}
-
-	return string(s.src[offs:s.offset])
-}
-
-func stripCR(b []byte) []byte {
-	c := make([]byte, len(b))
-	i := 0
-	for _, ch := range b {
-		if ch != '\r' {
-			c[i] = ch
-			i++
-		}
-	}
-	return c[:i]
-}
-
-func (s *Scanner) skipWhitespace() {
-	for s.ch == ' ' || s.ch == '\t' || s.ch == '\n' || s.ch == '\r' {
-		s.next()
-	}
-}
-
-func (s *Scanner) switch2(ch rune, tok1, tok2 Kind) Kind {
-	if s.ch == ch {
-		s.next()
-		return tok1
-	}
-	return tok2
-}
-
-// Scan scans the next token and returns the token position, the token,
-// and its literal string if applicable. The source end is indicated by
-// EOF.
-//
-// If the returned token is a literal (IDENT, INT, FLOAT,
-// IMAG, CHAR, STRING) or COMMENT, the literal string
-// has the corresponding value.
-//
-// If the returned token is a keyword, the literal string is the keyword.
-//
-// If the returned token is ILLEGAL, the literal string is the
-// offending character.
-//
-// In all other cases, Scan returns an empty literal string.
-//
-// For more tolerant parsing, Scan will return a valid token if
-// possible even if a syntax error was encountered. Thus, even
-// if the resulting token sequence contains no illegal tokens,
-// a client may not assume that no error occurred. Instead it
-// must check the scanner's ErrorCount or the number of calls
-// of the error handler, if there was one installed.
-//
-// Scan adds line information to the file added to the file
-// set with Init. Kind positions are relative to that file
-// and thus relative to the file set.
-func (s *Scanner) Scan() (pos loc.Pos, tok Kind, lit string) {
-	s.skipWhitespace()
-
-	// current token start
-	pos = s.file.Pos(s.offset)
-
-	// determine token value
-	switch ch := s.ch; {
-	case isAlpha(ch):
-		lit = s.scanIdentifier()
-		if len(lit) > 1 {
-			// keywords are longer than one letter - avoid lookup otherwise
-			tok = Lookup(lit)
-		} else {
-			tok = IDENT
-		}
-	case isDigit(ch):
-		tok, lit = s.scanNumber()
-	default:
-		s.next() // always make progress
-		switch ch {
-		case -1:
-			tok = EOF
-		case '"':
-			tok = STRING
-			lit = s.scanString()
-		case '\'':
-			tok = BSTRING
-			lit = s.scanBString()
-		case '@':
-			if s.ch == '>' {
-				tok = ROR
-				s.next()
-			} else {
-				tok = MODIF
-				lit = s.scanModifier()
-			}
-		case '#':
-			tok = PREPROC
-			lit = s.scanPreproc()
-		case '%':
-			tok = IDENT
-			lit = s.scanTitanMacro()
-		case '.':
-			tok = s.switch2('.', RANGE, DOT)
-		case ',':
-			tok = COMMA
-		case ';':
-			tok = SEMICOLON
-		case '(':
-			tok = LPAREN
-		case ')':
-			tok = RPAREN
-		case '[':
-			tok = LBRACK
-		case ']':
-			tok = RBRACK
-		case '{':
-			tok = LBRACE
-		case '}':
-			tok = RBRACE
-		case '+':
-			tok = ADD
-		case '-':
-			tok = s.switch2('>', REDIR, SUB)
-		case '*':
-			tok = MUL
-		case '/':
-			if s.ch == '/' || s.ch == '*' {
-				comment := s.scanComment()
-				tok = COMMENT
-				lit = comment
-			} else {
-				tok = DIV
-			}
-		case ':':
-			switch s.ch {
-			case '=':
-				tok = ASSIGN
-				s.next()
-			case ':':
-				tok = COLONCOLON
-				s.next()
-			default:
-				tok = COLON
-			}
-		case '>':
-			switch s.ch {
-			case '>':
-				tok = SHR
-				s.next()
-			case '=':
-				tok = GE
-				s.next()
-			default:
-				tok = GT
-			}
-
-		case '<':
-			switch s.ch {
-			case '<':
-				tok = SHL
-				s.next()
-			case '@':
-				tok = ROL
-				s.next()
-			case '=':
-				tok = LE
-				s.next()
-			default:
-				tok = LT
-			}
-
-		case '=':
-			switch s.ch {
-			case '=':
-				tok = EQ
-				s.next()
-			case '>':
-				tok = DECODE
-				s.next()
-			default:
-				tok = ILLEGAL
-				lit = "="
-				s.error(s.offset, fmt.Sprintf("stray %q", "="))
-
-			}
-		case '!':
-			tok = s.switch2('=', NE, EXCL)
-		case '&':
-			tok = CONCAT
-		case '?':
-			tok = ANY
-
-		default:
-			// next reports unexpected BOMs - don't repeat
-			if ch != bom {
-				s.error(s.file.Offset(pos), fmt.Sprintf("illegal character %#U", ch))
-			}
-			tok = ILLEGAL
-			lit = string(ch)
-		}
-	}
-
-	return
+func isDigit(ch byte) bool {
+	return '0' <= ch && ch <= '9'
 }

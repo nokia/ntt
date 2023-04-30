@@ -530,7 +530,7 @@ func testTokens(t *testing.T, rng *protocol.Range, text string) []Token {
 			col = 1
 		}
 		col += int(list[i+1])
-		pos := int(tree.PosFor(line, col)) - 1 // -1 to account for the Pos offset.
+		pos := tree.PosFor(line, col)
 		toks = append(toks, Token{
 			Line: line,
 			Text: Substr(text, pos, pos+int(list[i+2])),

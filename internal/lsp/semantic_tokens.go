@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
@@ -187,7 +186,7 @@ func (s *Server) semanticTokensRange(ctx context.Context, params *protocol.Seman
 	return s.semanticTokensRecover(tree, &s.db, begin, end)
 }
 
-func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) (*protocol.SemanticTokens, error) {
+func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin int, end int) (*protocol.SemanticTokens, error) {
 	start := time.Now()
 	defer func() {
 		// In case of a panic, just continue as this might be a common situation during typing
@@ -200,7 +199,7 @@ func (s *Server) semanticTokensRecover(tree *ttcn3.Tree, db *ttcn3.DB, begin loc
 	return &protocol.SemanticTokens{Data: SemanticTokens(tree, db, begin, end)}, nil
 }
 
-func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin loc.Pos, end loc.Pos) []uint32 {
+func SemanticTokens(tree *ttcn3.Tree, db *ttcn3.DB, begin int, end int) []uint32 {
 	var tokens []uint32
 	line := 0
 	col := 0

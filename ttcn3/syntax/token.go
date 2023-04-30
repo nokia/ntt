@@ -13,6 +13,8 @@ const (
 	// Special tokens
 	ILLEGAL Kind = iota
 	EOF
+	UNTERMINATED
+	MALFORMED
 
 	literal_beg
 	COMMENT
@@ -30,8 +32,10 @@ const (
 
 	operator_beg
 	// Operators and delimiters
+	INC // ++
 	ADD // +
 	SUB // -
+	DEC // --
 	MUL // *
 	DIV // /
 
@@ -46,6 +50,7 @@ const (
 	ANY        // ?
 	EXCL       // !
 	RANGE      // ..
+	ELIPSIS    // ...
 	ASSIGN     // :=
 	COLONCOLON // ::
 
@@ -197,7 +202,9 @@ var tokens = [...]string{
 	MODIF:   "MODIF",
 
 	ADD: "+",
+	INC: "++",
 	SUB: "-",
+	DEC: "--",
 	MUL: "*",
 	DIV: "/",
 
@@ -207,11 +214,12 @@ var tokens = [...]string{
 	ROR:    "@>",
 	CONCAT: "&",
 
-	REDIR:  "->",
-	DECODE: "=>",
-	ANY:    "?",
-	EXCL:   "!",
-	RANGE:  "..",
+	REDIR:   "->",
+	DECODE:  "=>",
+	ANY:     "?",
+	EXCL:    "!",
+	RANGE:   "..",
+	ELIPSIS: "...",
 
 	ASSIGN:     ":=",
 	COLONCOLON: "::",
@@ -427,8 +435,8 @@ func init() {
 }
 
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
-func Lookup(ident string) Kind {
-	if tok, isKeyword := keywords[ident]; isKeyword {
+func Lookup(ident []byte) Kind {
+	if tok, isKeyword := keywords[string(ident)]; isKeyword {
 		return tok
 	}
 	return IDENT

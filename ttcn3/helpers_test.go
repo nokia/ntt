@@ -2,22 +2,14 @@ package ttcn3_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/internal/loc"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
-const CURSOR = "¶"
-
 type SliceMap map[string][]string
-
-func extractCursor(input string) (loc.Pos, string) {
-	return loc.Pos(strings.Index(input, CURSOR) + 1), strings.Replace(input, CURSOR, "", 1)
-}
 
 func parseFile(t *testing.T, name string, input string) *ttcn3.Tree {
 	t.Helper()
@@ -46,7 +38,7 @@ func enumerateIDs(root syntax.Node) map[*syntax.Ident]string {
 	return ids
 }
 
-func parentNodes(tree *ttcn3.Tree, cursor loc.Pos) (n syntax.Expr, s []syntax.Node) {
+func parentNodes(tree *ttcn3.Tree, cursor int) (n syntax.Expr, s []syntax.Node) {
 	s = tree.SliceAt(cursor)
 	if len(s) < 2 {
 		return nil, nil

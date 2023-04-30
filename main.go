@@ -1,15 +1,15 @@
 package main
 
 import (
-	stderrors "errors"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime/pprof"
 	"syscall"
 
 	"github.com/nokia/ntt/internal/env"
-	"github.com/nokia/ntt/internal/errors"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/proc"
 	"github.com/nokia/ntt/project"
@@ -178,19 +178,24 @@ func main() {
 	}
 }
 
+// PrintError is a utility function that prints a list of errors to w,
+// one error per line, if the err parameter is an ErrorList. Otherwise
+// it prints the err string.
+func PrintError(w io.Writer, err error) {
+	fmt.Fprintf(w, "%s\n", err)
+}
+
 func fatal(err error) {
 	switch err := err.(type) {
 	case *exec.ExitError:
 		waitStatus := err.Sys().(syscall.WaitStatus)
 		if waitStatus.ExitStatus() == -1 {
-			errors.PrintError(os.Stderr, err)
+			PrintError(os.Stderr, err)
 		}
 		os.Exit(waitStatus.ExitStatus())
-	case errors.ErrorList:
-		errors.PrintError(os.Stderr, err)
 	default:
 		// Run command has its own error logging.
-		if !stderrors.Is(err, ErrCommandFailed) {
+		if !errors.Is(err, ErrCommandFailed) {
 			fmt.Fprintln(os.Stderr, err.Error())
 		}
 	}

@@ -2,8 +2,6 @@
 
 package syntax
 
-import "github.com/nokia/ntt/internal/loc"
-
 func (n *AltStmt) FirstTok() Token {
 	switch {
 
@@ -67,18 +65,18 @@ func (n *AltStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *AltStmt) Pos() loc.Pos {
+func (n *AltStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *AltStmt) End() loc.Pos {
+func (n *AltStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *BehaviourSpec) FirstTok() Token {
@@ -185,18 +183,18 @@ func (n *BehaviourSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *BehaviourSpec) Pos() loc.Pos {
+func (n *BehaviourSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *BehaviourSpec) End() loc.Pos {
+func (n *BehaviourSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *BehaviourTypeDecl) FirstTok() Token {
@@ -364,18 +362,18 @@ func (n *BehaviourTypeDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *BehaviourTypeDecl) Pos() loc.Pos {
+func (n *BehaviourTypeDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *BehaviourTypeDecl) End() loc.Pos {
+func (n *BehaviourTypeDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *BinaryExpr) FirstTok() Token {
@@ -448,18 +446,18 @@ func (n *BinaryExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *BinaryExpr) Pos() loc.Pos {
+func (n *BinaryExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *BinaryExpr) End() loc.Pos {
+func (n *BinaryExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *BlockStmt) FirstTok() Token {
@@ -525,18 +523,18 @@ func (n *BlockStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *BlockStmt) Pos() loc.Pos {
+func (n *BlockStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *BlockStmt) End() loc.Pos {
+func (n *BlockStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *BranchStmt) FirstTok() Token {
@@ -592,18 +590,18 @@ func (n *BranchStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *BranchStmt) Pos() loc.Pos {
+func (n *BranchStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *BranchStmt) End() loc.Pos {
+func (n *BranchStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *CallExpr) FirstTok() Token {
@@ -666,18 +664,18 @@ func (n *CallExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *CallExpr) Pos() loc.Pos {
+func (n *CallExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *CallExpr) End() loc.Pos {
+func (n *CallExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *CallStmt) FirstTok() Token {
@@ -740,18 +738,18 @@ func (n *CallStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *CallStmt) Pos() loc.Pos {
+func (n *CallStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *CallStmt) End() loc.Pos {
+func (n *CallStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *CaseClause) FirstTok() Token {
@@ -824,18 +822,18 @@ func (n *CaseClause) Inspect(f func(Node) bool) {
 
 }
 
-func (n *CaseClause) Pos() loc.Pos {
+func (n *CaseClause) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *CaseClause) End() loc.Pos {
+func (n *CaseClause) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *CommClause) FirstTok() Token {
@@ -945,18 +943,18 @@ func (n *CommClause) Inspect(f func(Node) bool) {
 
 }
 
-func (n *CommClause) Pos() loc.Pos {
+func (n *CommClause) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *CommClause) End() loc.Pos {
+func (n *CommClause) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ComponentTypeDecl) FirstTok() Token {
@@ -1100,18 +1098,18 @@ func (n *ComponentTypeDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ComponentTypeDecl) Pos() loc.Pos {
+func (n *ComponentTypeDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ComponentTypeDecl) End() loc.Pos {
+func (n *ComponentTypeDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *CompositeLiteral) FirstTok() Token {
@@ -1177,18 +1175,18 @@ func (n *CompositeLiteral) Inspect(f func(Node) bool) {
 
 }
 
-func (n *CompositeLiteral) Pos() loc.Pos {
+func (n *CompositeLiteral) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *CompositeLiteral) End() loc.Pos {
+func (n *CompositeLiteral) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ControlPart) FirstTok() Token {
@@ -1268,18 +1266,18 @@ func (n *ControlPart) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ControlPart) Pos() loc.Pos {
+func (n *ControlPart) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ControlPart) End() loc.Pos {
+func (n *ControlPart) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *DeclStmt) FirstTok() Token {
@@ -1325,18 +1323,18 @@ func (n *DeclStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *DeclStmt) Pos() loc.Pos {
+func (n *DeclStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *DeclStmt) End() loc.Pos {
+func (n *DeclStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *Declarator) FirstTok() Token {
@@ -1426,18 +1424,18 @@ func (n *Declarator) Inspect(f func(Node) bool) {
 
 }
 
-func (n *Declarator) Pos() loc.Pos {
+func (n *Declarator) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *Declarator) End() loc.Pos {
+func (n *Declarator) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *DecmatchExpr) FirstTok() Token {
@@ -1510,18 +1508,18 @@ func (n *DecmatchExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *DecmatchExpr) Pos() loc.Pos {
+func (n *DecmatchExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *DecmatchExpr) End() loc.Pos {
+func (n *DecmatchExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *DecodedExpr) FirstTok() Token {
@@ -1594,18 +1592,18 @@ func (n *DecodedExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *DecodedExpr) Pos() loc.Pos {
+func (n *DecodedExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *DecodedExpr) End() loc.Pos {
+func (n *DecodedExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *DefKindExpr) FirstTok() Token {
@@ -1661,18 +1659,18 @@ func (n *DefKindExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *DefKindExpr) Pos() loc.Pos {
+func (n *DefKindExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *DefKindExpr) End() loc.Pos {
+func (n *DefKindExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *DoWhileStmt) FirstTok() Token {
@@ -1755,18 +1753,18 @@ func (n *DoWhileStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *DoWhileStmt) Pos() loc.Pos {
+func (n *DoWhileStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *DoWhileStmt) End() loc.Pos {
+func (n *DoWhileStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *EnumSpec) FirstTok() Token {
@@ -1842,18 +1840,18 @@ func (n *EnumSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *EnumSpec) Pos() loc.Pos {
+func (n *EnumSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *EnumSpec) End() loc.Pos {
+func (n *EnumSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *EnumTypeDecl) FirstTok() Token {
@@ -1990,18 +1988,18 @@ func (n *EnumTypeDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *EnumTypeDecl) Pos() loc.Pos {
+func (n *EnumTypeDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *EnumTypeDecl) End() loc.Pos {
+func (n *EnumTypeDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ErrorNode) FirstTok() Token {
@@ -2050,18 +2048,18 @@ func (n *ErrorNode) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ErrorNode) Pos() loc.Pos {
+func (n *ErrorNode) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ErrorNode) End() loc.Pos {
+func (n *ErrorNode) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ExceptExpr) FirstTok() Token {
@@ -2154,18 +2152,18 @@ func (n *ExceptExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ExceptExpr) Pos() loc.Pos {
+func (n *ExceptExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ExceptExpr) End() loc.Pos {
+func (n *ExceptExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ExprStmt) FirstTok() Token {
@@ -2211,18 +2209,18 @@ func (n *ExprStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ExprStmt) Pos() loc.Pos {
+func (n *ExprStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ExprStmt) End() loc.Pos {
+func (n *ExprStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *Field) FirstTok() Token {
@@ -2373,18 +2371,18 @@ func (n *Field) Inspect(f func(Node) bool) {
 
 }
 
-func (n *Field) Pos() loc.Pos {
+func (n *Field) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *Field) End() loc.Pos {
+func (n *Field) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ForStmt) FirstTok() Token {
@@ -2531,18 +2529,18 @@ func (n *ForStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ForStmt) Pos() loc.Pos {
+func (n *ForStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ForStmt) End() loc.Pos {
+func (n *ForStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *FormalPar) FirstTok() Token {
@@ -2686,18 +2684,18 @@ func (n *FormalPar) Inspect(f func(Node) bool) {
 
 }
 
-func (n *FormalPar) Pos() loc.Pos {
+func (n *FormalPar) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *FormalPar) End() loc.Pos {
+func (n *FormalPar) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *FormalPars) FirstTok() Token {
@@ -2763,18 +2761,18 @@ func (n *FormalPars) Inspect(f func(Node) bool) {
 
 }
 
-func (n *FormalPars) Pos() loc.Pos {
+func (n *FormalPars) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *FormalPars) End() loc.Pos {
+func (n *FormalPars) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *FriendDecl) FirstTok() Token {
@@ -2857,18 +2855,18 @@ func (n *FriendDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *FriendDecl) Pos() loc.Pos {
+func (n *FriendDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *FriendDecl) End() loc.Pos {
+func (n *FriendDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *FromExpr) FirstTok() Token {
@@ -2934,18 +2932,18 @@ func (n *FromExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *FromExpr) Pos() loc.Pos {
+func (n *FromExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *FromExpr) End() loc.Pos {
+func (n *FromExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *FuncDecl) FirstTok() Token {
@@ -3157,18 +3155,18 @@ func (n *FuncDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *FuncDecl) Pos() loc.Pos {
+func (n *FuncDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *FuncDecl) End() loc.Pos {
+func (n *FuncDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *GroupDecl) FirstTok() Token {
@@ -3278,18 +3276,18 @@ func (n *GroupDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *GroupDecl) Pos() loc.Pos {
+func (n *GroupDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *GroupDecl) End() loc.Pos {
+func (n *GroupDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *Ident) FirstTok() Token {
@@ -3338,18 +3336,18 @@ func (n *Ident) Inspect(f func(Node) bool) {
 
 }
 
-func (n *Ident) Pos() loc.Pos {
+func (n *Ident) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *Ident) End() loc.Pos {
+func (n *Ident) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *IfStmt) FirstTok() Token {
@@ -3449,18 +3447,18 @@ func (n *IfStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *IfStmt) Pos() loc.Pos {
+func (n *IfStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *IfStmt) End() loc.Pos {
+func (n *IfStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ImportDecl) FirstTok() Token {
@@ -3597,18 +3595,18 @@ func (n *ImportDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ImportDecl) Pos() loc.Pos {
+func (n *ImportDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ImportDecl) End() loc.Pos {
+func (n *ImportDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *IndexExpr) FirstTok() Token {
@@ -3691,18 +3689,18 @@ func (n *IndexExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *IndexExpr) Pos() loc.Pos {
+func (n *IndexExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *IndexExpr) End() loc.Pos {
+func (n *IndexExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *LanguageSpec) FirstTok() Token {
@@ -3758,18 +3756,18 @@ func (n *LanguageSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *LanguageSpec) Pos() loc.Pos {
+func (n *LanguageSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *LanguageSpec) End() loc.Pos {
+func (n *LanguageSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *LengthExpr) FirstTok() Token {
@@ -3842,18 +3840,18 @@ func (n *LengthExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *LengthExpr) Pos() loc.Pos {
+func (n *LengthExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *LengthExpr) End() loc.Pos {
+func (n *LengthExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ListSpec) FirstTok() Token {
@@ -3936,18 +3934,18 @@ func (n *ListSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ListSpec) Pos() loc.Pos {
+func (n *ListSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ListSpec) End() loc.Pos {
+func (n *ListSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ModifiesExpr) FirstTok() Token {
@@ -4030,18 +4028,18 @@ func (n *ModifiesExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ModifiesExpr) Pos() loc.Pos {
+func (n *ModifiesExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ModifiesExpr) End() loc.Pos {
+func (n *ModifiesExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *Module) FirstTok() Token {
@@ -4168,18 +4166,18 @@ func (n *Module) Inspect(f func(Node) bool) {
 
 }
 
-func (n *Module) Pos() loc.Pos {
+func (n *Module) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *Module) End() loc.Pos {
+func (n *Module) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ModuleDef) FirstTok() Token {
@@ -4235,18 +4233,18 @@ func (n *ModuleDef) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ModuleDef) Pos() loc.Pos {
+func (n *ModuleDef) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ModuleDef) End() loc.Pos {
+func (n *ModuleDef) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ModuleParameterGroup) FirstTok() Token {
@@ -4339,18 +4337,18 @@ func (n *ModuleParameterGroup) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ModuleParameterGroup) Pos() loc.Pos {
+func (n *ModuleParameterGroup) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ModuleParameterGroup) End() loc.Pos {
+func (n *ModuleParameterGroup) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *MtcSpec) FirstTok() Token {
@@ -4406,18 +4404,18 @@ func (n *MtcSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *MtcSpec) Pos() loc.Pos {
+func (n *MtcSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *MtcSpec) End() loc.Pos {
+func (n *MtcSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *NodeList) FirstTok() Token {
@@ -4463,18 +4461,18 @@ func (n *NodeList) Inspect(f func(Node) bool) {
 
 }
 
-func (n *NodeList) Pos() loc.Pos {
+func (n *NodeList) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *NodeList) End() loc.Pos {
+func (n *NodeList) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ParamExpr) FirstTok() Token {
@@ -4547,18 +4545,18 @@ func (n *ParamExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ParamExpr) Pos() loc.Pos {
+func (n *ParamExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ParamExpr) End() loc.Pos {
+func (n *ParamExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ParametrizedIdent) FirstTok() Token {
@@ -4621,18 +4619,18 @@ func (n *ParametrizedIdent) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ParametrizedIdent) Pos() loc.Pos {
+func (n *ParametrizedIdent) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ParametrizedIdent) End() loc.Pos {
+func (n *ParametrizedIdent) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ParenExpr) FirstTok() Token {
@@ -4698,18 +4696,18 @@ func (n *ParenExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ParenExpr) Pos() loc.Pos {
+func (n *ParenExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ParenExpr) End() loc.Pos {
+func (n *ParenExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *PatternExpr) FirstTok() Token {
@@ -4775,18 +4773,18 @@ func (n *PatternExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *PatternExpr) Pos() loc.Pos {
+func (n *PatternExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *PatternExpr) End() loc.Pos {
+func (n *PatternExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *PortAttribute) FirstTok() Token {
@@ -4842,18 +4840,18 @@ func (n *PortAttribute) Inspect(f func(Node) bool) {
 
 }
 
-func (n *PortAttribute) Pos() loc.Pos {
+func (n *PortAttribute) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *PortAttribute) End() loc.Pos {
+func (n *PortAttribute) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *PortMapAttribute) FirstTok() Token {
@@ -4919,18 +4917,18 @@ func (n *PortMapAttribute) Inspect(f func(Node) bool) {
 
 }
 
-func (n *PortMapAttribute) Pos() loc.Pos {
+func (n *PortMapAttribute) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *PortMapAttribute) End() loc.Pos {
+func (n *PortMapAttribute) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *PortTypeDecl) FirstTok() Token {
@@ -5087,18 +5085,18 @@ func (n *PortTypeDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *PortTypeDecl) Pos() loc.Pos {
+func (n *PortTypeDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *PortTypeDecl) End() loc.Pos {
+func (n *PortTypeDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *RedirectExpr) FirstTok() Token {
@@ -5299,18 +5297,18 @@ func (n *RedirectExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *RedirectExpr) Pos() loc.Pos {
+func (n *RedirectExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *RedirectExpr) End() loc.Pos {
+func (n *RedirectExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *RefSpec) FirstTok() Token {
@@ -5356,18 +5354,18 @@ func (n *RefSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *RefSpec) Pos() loc.Pos {
+func (n *RefSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *RefSpec) End() loc.Pos {
+func (n *RefSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *RegexpExpr) FirstTok() Token {
@@ -5433,18 +5431,18 @@ func (n *RegexpExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *RegexpExpr) Pos() loc.Pos {
+func (n *RegexpExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *RegexpExpr) End() loc.Pos {
+func (n *RegexpExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *RestrictionSpec) FirstTok() Token {
@@ -5513,18 +5511,18 @@ func (n *RestrictionSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *RestrictionSpec) Pos() loc.Pos {
+func (n *RestrictionSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *RestrictionSpec) End() loc.Pos {
+func (n *RestrictionSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ReturnSpec) FirstTok() Token {
@@ -5607,18 +5605,18 @@ func (n *ReturnSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ReturnSpec) Pos() loc.Pos {
+func (n *ReturnSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ReturnSpec) End() loc.Pos {
+func (n *ReturnSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ReturnStmt) FirstTok() Token {
@@ -5674,32 +5672,32 @@ func (n *ReturnStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ReturnStmt) Pos() loc.Pos {
+func (n *ReturnStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ReturnStmt) End() loc.Pos {
+func (n *ReturnStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *Root) Pos() loc.Pos {
+func (n *Root) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *Root) End() loc.Pos {
+func (n *Root) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *RunsOnSpec) FirstTok() Token {
@@ -5765,18 +5763,18 @@ func (n *RunsOnSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *RunsOnSpec) Pos() loc.Pos {
+func (n *RunsOnSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *RunsOnSpec) End() loc.Pos {
+func (n *RunsOnSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *SelectStmt) FirstTok() Token {
@@ -5879,18 +5877,18 @@ func (n *SelectStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *SelectStmt) Pos() loc.Pos {
+func (n *SelectStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *SelectStmt) End() loc.Pos {
+func (n *SelectStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *SelectorExpr) FirstTok() Token {
@@ -5963,18 +5961,18 @@ func (n *SelectorExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *SelectorExpr) Pos() loc.Pos {
+func (n *SelectorExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *SelectorExpr) End() loc.Pos {
+func (n *SelectorExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *SignatureDecl) FirstTok() Token {
@@ -6135,18 +6133,18 @@ func (n *SignatureDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *SignatureDecl) Pos() loc.Pos {
+func (n *SignatureDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *SignatureDecl) End() loc.Pos {
+func (n *SignatureDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *StructSpec) FirstTok() Token {
@@ -6222,18 +6220,18 @@ func (n *StructSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *StructSpec) Pos() loc.Pos {
+func (n *StructSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *StructSpec) End() loc.Pos {
+func (n *StructSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *StructTypeDecl) FirstTok() Token {
@@ -6370,18 +6368,18 @@ func (n *StructTypeDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *StructTypeDecl) Pos() loc.Pos {
+func (n *StructTypeDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *StructTypeDecl) End() loc.Pos {
+func (n *StructTypeDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *SubTypeDecl) FirstTok() Token {
@@ -6454,18 +6452,18 @@ func (n *SubTypeDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *SubTypeDecl) Pos() loc.Pos {
+func (n *SubTypeDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *SubTypeDecl) End() loc.Pos {
+func (n *SubTypeDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *SystemSpec) FirstTok() Token {
@@ -6521,18 +6519,18 @@ func (n *SystemSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *SystemSpec) Pos() loc.Pos {
+func (n *SystemSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *SystemSpec) End() loc.Pos {
+func (n *SystemSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *TemplateDecl) FirstTok() Token {
@@ -6727,18 +6725,18 @@ func (n *TemplateDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *TemplateDecl) Pos() loc.Pos {
+func (n *TemplateDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *TemplateDecl) End() loc.Pos {
+func (n *TemplateDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *UnaryExpr) FirstTok() Token {
@@ -6794,18 +6792,18 @@ func (n *UnaryExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *UnaryExpr) Pos() loc.Pos {
+func (n *UnaryExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *UnaryExpr) End() loc.Pos {
+func (n *UnaryExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ValueDecl) FirstTok() Token {
@@ -6922,18 +6920,18 @@ func (n *ValueDecl) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ValueDecl) Pos() loc.Pos {
+func (n *ValueDecl) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ValueDecl) End() loc.Pos {
+func (n *ValueDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ValueExpr) FirstTok() Token {
@@ -7006,18 +7004,18 @@ func (n *ValueExpr) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ValueExpr) Pos() loc.Pos {
+func (n *ValueExpr) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ValueExpr) End() loc.Pos {
+func (n *ValueExpr) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *ValueLiteral) FirstTok() Token {
@@ -7056,18 +7054,18 @@ func (n *ValueLiteral) Inspect(f func(Node) bool) {
 
 }
 
-func (n *ValueLiteral) Pos() loc.Pos {
+func (n *ValueLiteral) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *ValueLiteral) End() loc.Pos {
+func (n *ValueLiteral) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *WhileStmt) FirstTok() Token {
@@ -7140,18 +7138,18 @@ func (n *WhileStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *WhileStmt) Pos() loc.Pos {
+func (n *WhileStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *WhileStmt) End() loc.Pos {
+func (n *WhileStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *WithSpec) FirstTok() Token {
@@ -7227,18 +7225,18 @@ func (n *WithSpec) Inspect(f func(Node) bool) {
 
 }
 
-func (n *WithSpec) Pos() loc.Pos {
+func (n *WithSpec) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *WithSpec) End() loc.Pos {
+func (n *WithSpec) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }
 
 func (n *WithStmt) FirstTok() Token {
@@ -7341,16 +7339,16 @@ func (n *WithStmt) Inspect(f func(Node) bool) {
 
 }
 
-func (n *WithStmt) Pos() loc.Pos {
+func (n *WithStmt) Pos() int {
 	if tok := n.FirstTok(); tok != nil {
 		return tok.Pos()
 	}
-	return loc.NoPos
+	return -1
 }
 
-func (n *WithStmt) End() loc.Pos {
+func (n *WithStmt) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}
-	return loc.NoPos
+	return -1
 }

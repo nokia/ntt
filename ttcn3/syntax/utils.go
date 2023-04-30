@@ -3,8 +3,6 @@ package syntax
 import (
 	"reflect"
 	"strings"
-
-	"github.com/nokia/ntt/internal/loc"
 )
 
 // IsNil returns true if the node is nil.
@@ -20,8 +18,8 @@ func IsNil(n Node) bool {
 
 // FindChildOfType returns the first direct child of the give node, enclosing
 // given position.
-func FindChildOf(n Node, pos loc.Pos) Node {
-	if IsNil(n) || !pos.IsValid() {
+func FindChildOf(n Node, pos int) Node {
+	if IsNil(n) || pos < 0 {
 		return nil
 	}
 	for _, c := range n.Children() {
@@ -105,17 +103,6 @@ func Name(n Node) string {
 	return ""
 }
 
-type span struct {
-	Begin, End loc.Position
-}
-
-func newSpan(fset *loc.FileSet, n Node) span {
-	return span{
-		Begin: fset.Position(n.Pos()),
-		End:   fset.Position(n.End()),
-	}
-}
-
 // Doc returns the documentation string for the given node.
 func Doc(n Node) string {
 	if n == nil {
@@ -127,9 +114,8 @@ func Doc(n Node) string {
 		return ""
 	}
 
-	fset := tok.(*tokenNode).fset
 	var ret string
-	prev := newSpan(fset, tok)
+	prev := SpanOf(tok)
 L:
 	for {
 		tok = tok.PrevTok()
@@ -139,7 +125,7 @@ L:
 
 		switch tok.Kind() {
 		case COMMENT:
-			curr := newSpan(fset, tok)
+			curr := SpanOf(tok)
 			dist := prev.Begin.Line - curr.End.Line
 			if dist > 1 {
 				break L

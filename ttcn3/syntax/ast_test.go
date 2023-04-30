@@ -7,6 +7,7 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/loc"
+	"github.com/nokia/ntt/internal/ntttest"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
@@ -30,7 +31,7 @@ func TestFindChildOf(t *testing.T) {
 		{input: "¶x,y,z", want: "x"},
 	}
 	for _, tt := range tests {
-		cursor, input := extractCursor(tt.input)
+		input, cursor := ntttest.CutCursor(tt.input)
 		tree := parseFile(t, "test", input)
 		actual := printNode(syntax.FindChildOf(tree.Root, cursor))
 		if actual != tt.want {
