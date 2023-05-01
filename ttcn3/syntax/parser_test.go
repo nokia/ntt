@@ -363,9 +363,8 @@ func testParse(t *testing.T, tests []Test, f func(p *parser)) {
 }
 
 func anyParse(input string, f func(p *parser)) error {
-	var p parser
-	p.init("", []byte(input), Mode(0))
-	f(&p)
+	p := NewParser([]byte(input))
+	f(p)
 	// TODO(5nord) temporary hack until we have proper error handling
 	return p.Err()
 }

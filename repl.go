@@ -21,8 +21,8 @@ func repl() error {
 			break
 		}
 
-		root, _, _, err := syntax.Parse("<stdin>", s.Text())
-		if err != nil {
+		root, _, _ := syntax.Parse([]byte(s.Text()))
+		if err := root.Err(); err != nil {
 			fmt.Println(err.Error())
 			continue
 		}

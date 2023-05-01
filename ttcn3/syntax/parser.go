@@ -18,11 +18,45 @@ import (
 // parser functionality.
 type Mode uint
 
+type ParserOption func(*parser) error
+
+func WithFilename(filename string) ParserOption {
+	return func(p *parser) error {
+		p.Filename = filename
+		return nil
+	}
+}
+
 const (
 	PedanticSemicolon = 1 << iota // expect semicolons pedantically
 	IgnoreComments                // ignore comments
 	Trace                         // print a trace of parsed productions
 )
+
+func NewParser(src []byte) *parser {
+	var p parser
+	if s := os.Getenv("NTT_DEBUG"); s == "trace" {
+		p.mode |= Trace
+	}
+
+	p.trace = p.mode&Trace != 0 // for convenience (p.trace is used frequently)
+	p.semi = p.mode&PedanticSemicolon != 0
+
+	p.ppDefs = make(map[string]bool)
+	p.ppDefs["0"] = false
+	p.ppDefs["1"] = true
+
+	p.names = make(map[string]bool)
+	p.uses = make(map[string]bool)
+
+	p.Root = newRoot(src)
+
+	// fetch first token
+	tok := p.peek(1)
+	p.tok = tok.Kind()
+
+	return &p
+}
 
 // Parse the source code of a single file and return the corresponding syntax
 // tree. The source code may be provided via the filename of the source file,
@@ -41,15 +75,15 @@ const (
 // were found, the result is a partial AST (with Bad* nodes representing the
 // fragments of erroneous source code). Multiple errors are returned via a
 // ErrorList which is sorted by file position.
-func Parse(filename string, src interface{}) (root *Root, names map[string]bool, uses map[string]bool, err error) {
-	// get source
-	text, err := readSource(filename, src)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+func Parse(src []byte, opts ...ParserOption) (root *Root, names map[string]bool, uses map[string]bool) {
 
-	var p parser
-	p.init(filename, text, 0)
+	p := NewParser(src)
+	for _, opt := range opts {
+		if err := opt(p); err != nil {
+			p.Root.errs = append(p.Root.errs, err)
+			return p.Root, p.names, p.uses
+		}
+	}
 	for p.tok != EOF {
 		p.Nodes = append(p.Nodes, p.parse())
 
@@ -63,7 +97,7 @@ func Parse(filename string, src interface{}) (root *Root, names map[string]bool,
 		}
 
 	}
-	return p.Root, p.names, p.uses, p.Err()
+	return p.Root, p.names, p.uses
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
@@ -178,33 +212,10 @@ type parser struct {
 	syncCnt int // number of advance calls without progress
 }
 
-func newRoot(filename string, src []byte) *Root {
+func newRoot(src []byte) *Root {
 	return &Root{
-		Filename: filename,
-		Scanner:  NewScanner(src),
+		Scanner: NewScanner(src),
 	}
-}
-
-func (p *parser) init(filename string, src []byte, mode Mode) {
-	if s := os.Getenv("NTT_DEBUG"); s == "trace" {
-		mode |= Trace
-	}
-
-	p.mode = mode
-	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
-	p.semi = mode&PedanticSemicolon != 0
-
-	p.ppDefs = make(map[string]bool)
-	p.ppDefs["0"] = false
-	p.ppDefs["1"] = true
-
-	p.names = make(map[string]bool)
-	p.uses = make(map[string]bool)
-
-	// fetch first token
-	p.Root = newRoot(filename, src)
-	tok := p.peek(1)
-	p.tok = tok.Kind()
 }
 
 // Usage pattern: defer un(trace(p, "..."))

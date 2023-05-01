@@ -2,7 +2,7 @@ package syntax
 
 // Tokenize given source code and return a root node with all the tokens.
 func Tokenize(src []byte) *Root {
-	root := newRoot("", src)
+	root := newRoot(src)
 	for {
 		kind, begin, end := root.Scan()
 		root.tokens = append(root.tokens, token{kind, begin, end})

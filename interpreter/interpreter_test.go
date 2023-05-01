@@ -437,8 +437,8 @@ func TestMapExpr(t *testing.T) {
 }
 
 func testEval(t *testing.T, input string) runtime.Object {
-	nodes, _, _, err := syntax.Parse("<stdin>", input)
-	if err != nil {
+	nodes, _, _ := syntax.Parse([]byte(input))
+	if err := nodes.Err(); err != nil {
 		t.Fatalf("%s\n %s", input, err.Error())
 	}
 	return interpreter.Eval(nodes, runtime.NewEnv(nil))
