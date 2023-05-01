@@ -367,5 +367,5 @@ func anyParse(input string, f func(p *parser)) error {
 	p.init("", []byte(input), Mode(0))
 	f(&p)
 	// TODO(5nord) temporary hack until we have proper error handling
-	return p.err()
+	return p.Err()
 }

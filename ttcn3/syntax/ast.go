@@ -2,6 +2,8 @@
 // traversal.
 package syntax
 
+import "github.com/hashicorp/go-multierror"
+
 //go:generate go run ./internal/gen
 
 // All node types implement the Node interface.
@@ -45,6 +47,11 @@ type Root struct {
 	*Scanner
 	Filename string
 	tokens   []token
+	errs     []error
+}
+
+func (n *Root) Err() error {
+	return multierror.Append(nil, n.errs...).ErrorOrNil()
 }
 
 func (n *Root) Position(offset int) Position {

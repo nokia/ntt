@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/fs"
 )
 
@@ -64,11 +63,7 @@ func Parse(filename string, src interface{}) (root *Root, names map[string]bool,
 		}
 
 	}
-	return p.Root, p.names, p.uses, p.err()
-}
-
-func (p *parser) err() error {
-	return multierror.Append(nil, p.errs...).ErrorOrNil()
+	return p.Root, p.names, p.uses, p.Err()
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
@@ -149,8 +144,6 @@ type token struct {
 
 // The parser structure holds the parser's internal state.
 type parser struct {
-	errs []error
-
 	// Tracing/debugging
 	mode   Mode // parsing mode
 	trace  bool // == (mode & Trace != 0)
