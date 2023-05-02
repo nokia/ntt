@@ -98,6 +98,54 @@ func (n *Root) LastTok() Token            { return n.NodeList.LastTok() }
 func (n *Root) Inspect(f func(Node) bool) { n.NodeList.Inspect(f) }
 func (n *Root) Children() []Node          { return n.NodeList.Children() }
 
+type tokenNode struct {
+	*Root
+	idx int
+}
+
+func (n *tokenNode) Kind() Kind {
+	return n.tokens[n.idx].Kind
+}
+
+func (n *tokenNode) Pos() int {
+	tok := n.tokens[n.idx]
+	return tok.Begin
+}
+
+func (n *tokenNode) End() int {
+	tok := n.tokens[n.idx]
+	return tok.End
+}
+
+func (n *tokenNode) LastTok() Token   { return n }
+func (n *tokenNode) FirstTok() Token  { return n }
+func (n *tokenNode) Children() []Node { return nil }
+func (n *tokenNode) PrevTok() Token {
+	if n.idx <= 0 {
+		return nil
+	}
+	return &tokenNode{idx: n.idx - 1, Root: n.Root}
+}
+
+func (n *tokenNode) NextTok() Token {
+	if n.idx >= len(n.tokens)-1 {
+		return nil
+	}
+	return &tokenNode{idx: n.idx + 1, Root: n.Root}
+}
+
+func (n *tokenNode) String() string {
+	tok := n.tokens[n.idx]
+	if tok.IsLiteral() {
+		return string(n.Root.src[tok.Begin:tok.End])
+	}
+	return tok.String()
+}
+
+func (n *tokenNode) Inspect(fn func(Node) bool) {
+	fn(n)
+}
+
 type ErrorNode struct {
 	From, To Token
 }

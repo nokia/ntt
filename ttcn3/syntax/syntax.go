@@ -1,82 +1,177 @@
+/*
+Package parser implements a tolerant TTCN-3 parser library.
+
+It implements most of TTCN-3 core language specification 4.10 (2018), Advanced
+Parametrisation, Behaviour Types, Performance and Realtime Testing, simplistic
+preprocessor support, multi-line string literals for Titan TestPorts, and
+optional semicolon for backward compatibility.
+*/
 package syntax
 
 import (
-	"fmt"
+	"reflect"
+	"strings"
 )
 
-// Span is the text span in the source code.
-type Span struct {
-	Filename   string
-	Begin, End Position
-}
-
-// String returns the string representation of the text span.
-func (s *Span) String() string {
-	ret := fmt.Sprint(s.Begin.String())
-	if name := s.Filename; name != "" {
-		ret = fmt.Sprintf("%s:", s.Filename) + ret
+// IsNil returns true if the node is nil.
+func IsNil(n Node) bool {
+	if n == nil {
+		return true
 	}
-	if s.Begin != s.End && s.End.IsValid() {
-		ret += fmt.Sprintf("-%s", s.End.String())
+	if v := reflect.ValueOf(n); v.Kind() == reflect.Ptr && v.IsNil() {
+		return true
 	}
-	return ret
+	return false
 }
 
-// Position is a cursor position in a source file. Lines and columns are 1-based.
-type Position struct {
-	Line, Column int
-}
-
-// IsValid returns true if the position is valid.
-func (pos *Position) IsValid() bool { return pos.Line > 0 }
-
-// After returns true if the position is after other given position.
-func (pos *Position) After(other Position) bool {
-	return pos.Line > other.Line || pos.Line == other.Line && pos.Column > other.Column
-}
-
-// Before returns true if the position is before the other given position.
-func (pos *Position) Before(other Position) bool {
-	return pos.Line < other.Line || pos.Line == other.Line && pos.Column < other.Column
-}
-
-// String returns the position's string representation.
-func (pos Position) String() string {
-	if !pos.IsValid() {
-		return "-"
+// FindChildOfType returns the first direct child of the give node, enclosing
+// given position.
+func FindChildOf(n Node, pos int) Node {
+	if IsNil(n) || pos < 0 {
+		return nil
 	}
-	s := fmt.Sprintf("%d", pos.Line)
-	if pos.Column != 0 {
-		s += fmt.Sprintf(":%d", pos.Column)
+	for _, c := range n.Children() {
+		if IsNil(c) {
+			continue
+		}
+
+		// ErrorNodes may overlap with other nodes and mess up the search.
+		if _, ok := c.(*ErrorNode); ok {
+			continue
+		}
+
+		if c.Pos() <= pos && pos < c.End() {
+			return c
+		}
 	}
-	return s
+	return nil
 }
 
-func SpanOf(n Node) Span {
-	return Span{
-		Filename: Filename(n),
-		Begin:    Begin(n),
-		End:      End(n),
-	}
-}
+// Name returns the name of a Node. If the node has no name (like statements)
+// Name will return an empty string.
+func Name(n Node) string {
+	switch n := n.(type) {
+	case *Ident:
+		if n == nil {
+			return ""
+		}
+		return n.String()
+	case *SelectorExpr:
+		name := Name(n.X)
+		if n.Sel != nil {
+			name += "." + Name(n.Sel)
+		}
+		return name
+	case *BranchStmt:
+		if n.Tok.Kind() == LABEL {
+			return Name(n.Label)
+		}
+	case *ControlPart:
+		return Name(n.Name)
+	case *CallExpr:
+		return Name(n.Fun)
+	case *LengthExpr:
+		return Name(n.X)
+	case *ParametrizedIdent:
+		return Name(n.Ident)
+	case *Module:
+		return Name(n.Name)
+	case *Field:
+		return Name(n.Name)
+	case *PortTypeDecl:
+		return Name(n.Name)
+	case *ComponentTypeDecl:
+		return Name(n.Name)
+	case *SubTypeDecl:
+		if n.Field != nil {
+			return Name(n.Field)
+		}
+	case *StructTypeDecl:
+		return Name(n.Name)
+	case *EnumTypeDecl:
+		return Name(n.Name)
+	case *BehaviourTypeDecl:
+		return Name(n.Name)
+	case *Declarator:
+		return Name(n.Name)
+	case *FormalPar:
+		return Name(n.Name)
+	case *TemplateDecl:
+		return Name(n.Name)
+	case *FuncDecl:
+		return Name(n.Name)
+	case *RefSpec:
+		return Name(n.X)
+	case *SignatureDecl:
+		return Name(n.Name)
+	case *ModuleDef:
+		return Name(n.Def)
 
-func Filename(n Node) string {
-	if tok := n.FirstTok(); tok != nil {
-		return tok.(*tokenNode).Root.Filename
 	}
 	return ""
 }
 
-func Begin(n Node) Position {
-	if tok := n.FirstTok(); tok != nil {
-		return tok.(*tokenNode).Root.Position(tok.Pos())
+// Doc returns the documentation string for the given node.
+func Doc(n Node) string {
+	if n == nil {
+		return ""
 	}
-	return Position{}
-}
 
-func End(n Node) Position {
-	if tok := n.LastTok(); tok != nil {
-		return tok.(*tokenNode).Root.Position(tok.End())
+	tok := n.FirstTok()
+	if tok == nil {
+		return ""
 	}
-	return Position{}
+
+	var ret string
+	prev := SpanOf(tok)
+L:
+	for {
+		tok = tok.PrevTok()
+		if tok == nil {
+			break
+		}
+
+		switch tok.Kind() {
+		case COMMENT:
+			curr := SpanOf(tok)
+			dist := prev.Begin.Line - curr.End.Line
+			if dist > 1 {
+				break L
+			}
+			prev = curr
+			text := tok.String()
+			switch text[1] {
+			case '/':
+				text = text[2:]
+				if len(text) > 0 && text[0] == ' ' {
+					text = text[1:]
+				}
+				ret = text + "\n" + ret
+			case '*':
+				text = text[2 : len(text)-2]
+				lines := strings.Split(text, "\n")
+				for i, line := range lines {
+					if len(line) > 0 && line[0] == ' ' {
+						line = line[1:]
+					}
+					line := strings.TrimRight(line, " ")
+					lines[i] = line
+				}
+				text = strings.Join(lines, "\n")
+				if dist > 0 {
+					text = text + "\n"
+				} else {
+					text = text + " "
+				}
+				ret = text + ret
+			}
+
+		case EXTERNAL, PRIVATE, PUBLIC, FRIEND:
+			// Modifiers might not necessarily be part
+			// of the Node and are just skipped over.
+		default:
+			break L
+		}
+	}
+	return ret
 }

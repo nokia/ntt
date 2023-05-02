@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+type token struct {
+	Kind
+	Begin, End int
+}
+
 // Kind is the set of lexical tokens of the Go programming language.
 type Kind int
 
