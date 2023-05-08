@@ -6,6 +6,7 @@ package ttcn3
 import (
 	"context"
 	"runtime"
+	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/memoize"
@@ -19,6 +20,27 @@ var (
 	// Limits the number of parallel parser calls per process.
 	parseLimit = make(chan struct{}, runtime.NumCPU())
 )
+
+// JoinNames joins a list of non-empty names with a dot.
+func JoinNames(names ...string) string {
+	var s []string
+	for _, n := range names {
+		if n != "" {
+			s = append(s, n)
+		}
+	}
+	return strings.Join(s, ".")
+}
+
+// ModuleName returns the module name part of a name string or an empty string
+// if there is no module name.
+func ModuleName(s string) string {
+	names := strings.Split(s, ".")
+	if len(names) > 1 {
+		return names[0]
+	}
+	return ""
+}
 
 // Parse parses a string and returns a syntax tree.
 func Parse(src string) *Tree {

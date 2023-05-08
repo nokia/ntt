@@ -230,17 +230,55 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 		}
 		tsts = append(tsts, t...)
 	}
-	// tests from files are prepended to tests from command line
-	tests = append(tsts, tests...)
-
 	if len(tests) == 0 && len(testsFiles) == 0 {
 		for _, src := range srcs {
-			for _, def := range EntryPoints(src, allTests) {
-				name := def.QualifiedName(def.Node)
-				tests = append(tests, name)
-			}
+			var (
+				mod         string
+				modLvl, lvl int
+			)
+			root := ttcn3.ParseFile(src)
+			root.Inspect(func(n syntax.Node) bool {
+				if n == nil {
+					if lvl == modLvl {
+						mod = ""
+						modLvl = 0
+					}
+					lvl--
+				} else {
+					lvl++
+				}
+
+				switch n := n.(type) {
+				case *syntax.Module:
+					mod = n.Name.String()
+					modLvl = lvl
+					return true
+				case *syntax.FuncDecl:
+					name := ttcn3.JoinNames(mod, n.Name.String())
+					if allTests {
+						if n.IsTest() {
+							tests = append(tests, name)
+						}
+					} else {
+						if tok := n.Modif; tok != nil && tok.String() == "@control" {
+							tests = append(tests, name)
+						}
+					}
+
+					return false
+				case *syntax.ControlPart:
+					if !allTests {
+						tests = append(tests, ttcn3.JoinNames(mod, n.Name.String()))
+					}
+					return false
+				default:
+					return true
+				}
+			})
 		}
 	}
+
+	testPlan := append(tsts, tests...)
 
 	// We need the syntax-trees for all available tests, because the user
 	// can filter ids by testcase tags.
@@ -276,7 +314,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 	go func() {
 		defer close(out)
 		names := make(map[string]int)
-		for _, name := range tests {
+		for _, name := range testPlan {
 			var tags [][]string
 			if def, ok := m.Load(name); ok {
 				def := def.(*ttcn3.Node)
