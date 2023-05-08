@@ -103,7 +103,6 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	_, ids := splitArgs(args, cmd.ArgsLenAtDash())
-
 	jobs, err := JobQueue(ctx, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
 	if err != nil {
 		return err
@@ -208,9 +207,58 @@ func runTests(cmd *cobra.Command, args []string) error {
 
 }
 
-func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, files []string, ids []string, allTests bool) (<-chan *control.Job, error) {
-	if len(files) == 0 && len(ids) == 0 {
-		return ProjectJobs(ctx, conf, flags, allTests)
+func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, testsFiles []string, tests []string, allTests bool) (<-chan *control.Job, error) {
+
+	var tsts []string
+	for _, f := range testsFiles {
+		t, err := readTestsFromFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("reading tests from file %s failed: %w", f, err)
+		}
+		tsts = append(tsts, t...)
+	}
+	// tests from files are prepended to tests from command line
+	tests = append(tsts, tests...)
+
+	if len(testsFiles) == 0 && len(tests) == 0 {
+		srcs, err := fs.TTCN3Files(conf.Sources...)
+		if err != nil {
+			return nil, err
+		}
+
+		b, err := NewBasketWithFlags("run", flags)
+		if err != nil {
+			return nil, err
+		}
+		b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
+
+		out := make(chan *control.Job)
+		go func() {
+			defer close(out)
+			names := make(map[string]int)
+			for _, src := range srcs {
+				for _, def := range EntryPoints(src, allTests) {
+					name := def.QualifiedName(def.Node)
+					tags := doc.FindAllTags(syntax.Doc(def.Node))
+					if b.Match(name, tags) {
+						id := fmt.Sprintf("%s-%d", name, names[name])
+						names[name]++
+						job := &control.Job{
+							ID:     id,
+							Name:   name,
+							Config: conf,
+							Dir:    OutputDir,
+						}
+						select {
+						case out <- job:
+						case <-ctx.Done():
+							return
+						}
+					}
+				}
+			}
+		}()
+		return out, err
 	}
 
 	// We need the syntax-trees for all available tests, because the user
@@ -253,20 +301,11 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 	}
 	b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
 
-	var fileIDs []string
-	for _, f := range files {
-		tests, err := readTestsFromFile(f)
-		if err != nil {
-			return nil, err
-		}
-		fileIDs = append(fileIDs, tests...)
-	}
-
 	out := make(chan *control.Job)
 	go func() {
 		defer close(out)
 		names := make(map[string]int)
-		for _, name := range append(fileIDs, ids...) {
+		for _, name := range tests {
 			var tags [][]string
 			if def, ok := m.Load(name); ok {
 				def := def.(*ttcn3.Node)
@@ -292,51 +331,6 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, f
 		}
 	}()
 	return out, nil
-}
-
-// ProjectJobs returns a channel of jobs provided by the given project
-// configuration. The jobs are filtered by the given flags and environment
-// variable NTT_LIST_BASKETS. ProjectJobs will emit all control parts. Unless
-// allTests is true, in which case it will emit all testcases.
-func ProjectJobs(ctx context.Context, conf *project.Config, flags *pflag.FlagSet, allTests bool) (<-chan *control.Job, error) {
-	srcs, err := fs.TTCN3Files(conf.Sources...)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := NewBasketWithFlags("run", flags)
-	if err != nil {
-		return nil, err
-	}
-	b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
-
-	out := make(chan *control.Job)
-	go func() {
-		defer close(out)
-		names := make(map[string]int)
-		for _, src := range srcs {
-			for _, def := range EntryPoints(src, allTests) {
-				name := def.QualifiedName(def.Node)
-				tags := doc.FindAllTags(syntax.Doc(def.Node))
-				if b.Match(name, tags) {
-					id := fmt.Sprintf("%s-%d", name, names[name])
-					names[name]++
-					job := &control.Job{
-						ID:     id,
-						Name:   name,
-						Config: conf,
-						Dir:    OutputDir,
-					}
-					select {
-					case out <- job:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}
-	}()
-	return out, err
 }
 
 // EntryPoints returns controls parts of the given TTCN-3 source file. When tests is true, it returns all testcases instead.
@@ -412,9 +406,10 @@ func readTestsFromFile(path string) ([]string, error) {
 	var tests []string
 	for _, line := range strings.Split(string(lines), "\n") {
 		line = strings.TrimSpace(line)
-		if line != "" {
-			tests = append(tests, line)
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+			continue
 		}
+		tests = append(tests, line)
 	}
 	return tests, err
 }
