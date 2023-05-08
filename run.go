@@ -209,6 +209,19 @@ func runTests(cmd *cobra.Command, args []string) error {
 
 func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, testsFiles []string, tests []string, allTests bool) (<-chan *control.Job, error) {
 
+	basket, err := NewBasketWithFlags("run", flags)
+	if err != nil {
+		return nil, fmt.Errorf("creating basket failed: %w", err)
+	}
+	if err := basket.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS"); err != nil {
+		return nil, fmt.Errorf("loading baskets failed: %w", err)
+	}
+
+	srcs, err := fs.TTCN3Files(conf.Sources...)
+	if err != nil {
+		return nil, err
+	}
+
 	var tsts []string
 	for _, f := range testsFiles {
 		t, err := readTestsFromFile(f)
@@ -220,53 +233,17 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 	// tests from files are prepended to tests from command line
 	tests = append(tsts, tests...)
 
-	if len(testsFiles) == 0 && len(tests) == 0 {
-		srcs, err := fs.TTCN3Files(conf.Sources...)
-		if err != nil {
-			return nil, err
-		}
-
-		b, err := NewBasketWithFlags("run", flags)
-		if err != nil {
-			return nil, err
-		}
-		b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
-
-		out := make(chan *control.Job)
-		go func() {
-			defer close(out)
-			names := make(map[string]int)
-			for _, src := range srcs {
-				for _, def := range EntryPoints(src, allTests) {
-					name := def.QualifiedName(def.Node)
-					tags := doc.FindAllTags(syntax.Doc(def.Node))
-					if b.Match(name, tags) {
-						id := fmt.Sprintf("%s-%d", name, names[name])
-						names[name]++
-						job := &control.Job{
-							ID:     id,
-							Name:   name,
-							Config: conf,
-							Dir:    OutputDir,
-						}
-						select {
-						case out <- job:
-						case <-ctx.Done():
-							return
-						}
-					}
-				}
+	if len(tests) == 0 && len(testsFiles) == 0 {
+		for _, src := range srcs {
+			for _, def := range EntryPoints(src, allTests) {
+				name := def.QualifiedName(def.Node)
+				tests = append(tests, name)
 			}
-		}()
-		return out, err
+		}
 	}
 
 	// We need the syntax-trees for all available tests, because the user
 	// can filter ids by testcase tags.
-	srcs, err := fs.TTCN3Files(conf.Sources...)
-	if err != nil {
-		return nil, err
-	}
 	wg := sync.WaitGroup{}
 	m := sync.Map{}
 	wg.Add(len(srcs))
@@ -295,12 +272,6 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 	wg.Wait()
 	log.Debugf("Scanned all tests in %s.\n", time.Since(start))
 
-	b, err := NewBasketWithFlags("run", flags)
-	if err != nil {
-		return nil, err
-	}
-	b.LoadFromEnvOrConfig(conf, "NTT_LIST_BASKETS")
-
 	out := make(chan *control.Job)
 	go func() {
 		defer close(out)
@@ -311,7 +282,7 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 				def := def.(*ttcn3.Node)
 				tags = doc.FindAllTags(syntax.Doc(def.Node))
 			}
-			if b.Match(name, tags) {
+			if basket.Match(name, tags) {
 				id := fmt.Sprintf("%s-%d", name, names[name])
 				names[name]++
 
