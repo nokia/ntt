@@ -14,7 +14,7 @@ func addHelp(topics []string, short string, long string) {
 	if err != nil {
 		return
 	}
-	if filepath.Base(path) != "k3" {
+	if filepath.Base(path) != "ntt" {
 		return
 	}
 
