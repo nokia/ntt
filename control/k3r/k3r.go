@@ -234,6 +234,20 @@ func buildEnv(t *Test) ([]string, error) {
 	if t.Config != nil {
 		// K3_NAME is required by test hooks (aka. sut-control.sh)
 		ret = append(ret, "K3_NAME="+t.Config.Name)
+		if file := t.Config.HooksFile; file != "" {
+			ret = append(ret, "K3_HOOKS_FILE="+file)
+		}
+		if t := t.Config.Timeout.Duration; t > 0 {
+			ret = append(ret, "K3_TIMEOUT="+t.String())
+		}
+
+		if file := t.Config.ManifestFile; file != "" {
+			ret = append(ret, "K3_SOURCE_DIR="+file)
+		}
+
+		if t.Name != "" {
+			ret = append(ret, "K3_TEST_NAME="+t.Name)
+		}
 
 		// All declared (environment) variables are passed to k3r.
 		for k, v := range t.Config.Variables {
