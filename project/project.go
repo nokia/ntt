@@ -181,6 +181,11 @@ type TestConfig struct {
 	// Module parameters
 	Parameters map[string]string `json:",omitempty"`
 
+	// Rules describe when a configuration should be used.
+	Rules `json:",inline"`
+}
+
+type Rules struct {
 	// Only execute testcase if the given conditions are met.
 	Only *ExecuteCondition `json:",omitempty"`
 
@@ -503,31 +508,6 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 	return &gc, nil
 }
 
-// Glob matches a test case name against the list of test case configurations
-// and presets and returns a list of matching test case configurations.
-func (p *Parameters) Glob(name string, presets ...string) []TestConfig {
-	var list []TestConfig
-	for _, tc := range p.Execute {
-		pattern, params := ttcn3.SplitFuncCall(tc.Test)
-		ok, err := filepath.Match(pattern, name)
-		if err != nil {
-			log.Verbosef("%s: %s\n", name, err.Error())
-		}
-		if !ok {
-			continue
-		}
-		tc = MergeTestConfig(p.TestConfig, tc)
-		tc.Test = name
-		if params != "" {
-			tc.Test += "(" + params + ")"
-		}
-		if doesTestConfigMatchPresets(tc, presets...) {
-			list = append(list, tc)
-		}
-	}
-	return list
-}
-
 // acquireExecutables depending on the provided presets and on the availability
 // inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
 // control parts) is returned
@@ -552,51 +532,49 @@ func acquireExecutables(gc *Parameters, files []string, presets []string) []Test
 	return list
 }
 
-// doesTestcaseMatchPreset: check whether testcase instance shall
-// be executed dependent on the specified presets
-func doesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
-	if (tc.Except == nil || len(tc.Except.Presets) == 0) &&
-		(tc.Only == nil || len(tc.Only.Presets) == 0) {
-		return true
-	}
-	// in case there are no presets supplied but something is present within
-	// tc.Except branch
-	if len(presets) == 0 && tc.Except != nil && len(tc.Except.Presets) > 0 {
-		return true
-	}
-
-	for _, p := range presets {
-		var res bool = true
-		if except := tc.Except; except != nil {
-			res = NORMatchPreset(except.Presets, p)
+// Glob matches a test case name against the list of test case configurations
+// and presets and returns a list of matching test case configurations.
+func (p *Parameters) Glob(name string, presets ...string) []TestConfig {
+	var list []TestConfig
+	for _, tc := range p.Execute {
+		pattern, params := ttcn3.SplitFuncCall(tc.Test)
+		ok, err := filepath.Match(pattern, name)
+		if err != nil {
+			log.Verbosef("%s: %s\n", name, err.Error())
 		}
-		if only := tc.Only; only != nil {
-			res = res && ORMatchPreset(only.Presets, p)
+		if !ok {
+			continue
 		}
-		if res {
-			return true
+		tc = MergeTestConfig(p.TestConfig, tc)
+		tc.Test = name
+		if params != "" {
+			tc.Test += "(" + params + ")"
+		}
+		if matchRules(tc.Rules, presets...) {
+			list = append(list, tc)
 		}
 	}
-	return false
+	return list
 }
 
-// NORMatchPreset: each entry of strs is compared with the preset
-// string. The result of each operation is NOR'ed
-func NORMatchPreset(strs []string, preset string) bool {
-	for _, q := range strs {
-		if preset == q {
-			return false
-		}
+// matchRules returns true if presets match given rules
+func matchRules(r Rules, presets ...string) bool {
+	if r.Except != nil && matchPresets(r.Except, presets...) {
+		return false
+	}
+	if r.Only != nil && len(r.Only.Presets) > 0 && !matchPresets(r.Only, presets...) {
+		return false
 	}
 	return true
 }
 
-// ORMatchPreset: each entry of strs is compared with the preset
-// string. The result of each operation is OR'ed
-func ORMatchPreset(strs []string, preset string) bool {
-	for _, q := range strs {
-		if preset == q {
-			return true
+// matchPresets returns true the given execute condition matches any of the given presets.
+func matchPresets(c *ExecuteCondition, presets ...string) bool {
+	for _, p := range presets {
+		for _, q := range c.Presets {
+			if p == q {
+				return true
+			}
 		}
 	}
 	return false

@@ -1,7 +1,8 @@
-package project_test
+package project
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/yaml"
-	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +32,7 @@ func TestNameFromURI(t *testing.T) {
 		//{uri: "file://.", want: "project"},
 	}
 	for _, tt := range tests {
-		got, err := project.NameFromURI(tt.uri)
+		got, err := NameFromURI(tt.uri)
 		if !errors.Is(err, tt.err) {
 			t.Errorf("NameFromURI(%q) error = %v, want %v", tt.uri, err, tt.err)
 		}
@@ -54,7 +54,7 @@ func TestEncodingFromURI(t *testing.T) {
 		{uri: "EUTRA_RRC", want: "uper"},
 	}
 	for _, tt := range tests {
-		got, err := project.EncodingFromURI(tt.uri)
+		got, err := EncodingFromURI(tt.uri)
 		if !errors.Is(err, tt.err) {
 			t.Errorf("EncodingFromURI(%q) error = %v, want %v", tt.uri, err, tt.err)
 		}
@@ -68,26 +68,26 @@ func TestEncodingFromURI(t *testing.T) {
 func TestAutomaticEnv(t *testing.T) {
 	t.Run("NTT_NAME", func(t *testing.T) {
 		os.Unsetenv("NTT_NAME")
-		c := &project.Config{}
+		c := &Config{}
 		c.Name = "test"
-		assert.Nil(t, project.AutomaticEnv()(c))
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, "test", c.Name)
 	})
 
 	t.Run("NTT_NAME", func(t *testing.T) {
 		os.Setenv("NTT_NAME", "ntt")
 		defer os.Unsetenv("NTT_NAME")
-		c := &project.Config{}
+		c := &Config{}
 		c.Name = "test"
-		assert.Nil(t, project.AutomaticEnv()(c))
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, "ntt", c.Name)
 	})
 
 	t.Run("K3_NAME", func(t *testing.T) {
 		os.Setenv("K3_NAME", "k3")
 		defer os.Unsetenv("K3_NAME")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, "k3", c.Name)
 	})
 
@@ -96,24 +96,24 @@ func TestAutomaticEnv(t *testing.T) {
 		os.Setenv("NTT_NAME", "ntt")
 		defer os.Unsetenv("K3_NAME")
 		defer os.Unsetenv("NTT_NAME")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, "ntt", c.Name)
 	})
 
 	t.Run("NTT_TIMEOUT", func(t *testing.T) {
 		os.Setenv("NTT_TIMEOUT", "2.3")
 		defer os.Unsetenv("NTT_TIMEOUT")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, time.Duration(2.3*float64(time.Second)), c.Timeout.Duration)
 	})
 
 	t.Run("NTT_TIMEOUT", func(t *testing.T) {
 		os.Setenv("NTT_TIMEOUT", "2.3s")
 		defer os.Unsetenv("NTT_TIMEOUT")
-		c := &project.Config{}
-		assert.NotNil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.NotNil(t, AutomaticEnv()(c))
 		assert.Equal(t, time.Duration(0), c.Timeout.Duration)
 	})
 
@@ -121,8 +121,8 @@ func TestAutomaticEnv(t *testing.T) {
 		srcs := []string{"a", "b", "c"}
 		os.Setenv("NTT_SOURCES", strings.Join(srcs, string(os.PathListSeparator)))
 		defer os.Unsetenv("NTT_SOURCES")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, srcs, c.Sources)
 	})
 
@@ -130,8 +130,8 @@ func TestAutomaticEnv(t *testing.T) {
 		s := "a b c"
 		os.Setenv("NTT_IMPORTS", s)
 		defer os.Unsetenv("NTT_IMPORTS")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, []string{s}, c.Imports)
 	})
 
@@ -139,8 +139,8 @@ func TestAutomaticEnv(t *testing.T) {
 		path := "test://foobar/test.yaml"
 		os.Setenv("NTT_PARAMETERS_FILE", path)
 		defer os.Unsetenv("NTT_PARAMETERS_FILE")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, path, c.ParametersFile)
 	})
 
@@ -148,57 +148,57 @@ func TestAutomaticEnv(t *testing.T) {
 		path := "project_test.go"
 		os.Setenv("NTT_HOOKS_FILE", path)
 		defer os.Unsetenv("NTT_HOOKS_FILE")
-		c := &project.Config{}
-		assert.Nil(t, project.AutomaticEnv()(c))
+		c := &Config{}
+		assert.Nil(t, AutomaticEnv()(c))
 		assert.Equal(t, path, c.HooksFile)
 	})
 }
 
 func TestWithDefaults(t *testing.T) {
 	t.Run("cwd", func(t *testing.T) {
-		c := &project.Config{}
-		assert.Nil(t, project.WithDefaults()(c))
+		c := &Config{}
+		assert.Nil(t, WithDefaults()(c))
 		assert.Equal(t, "project", filepath.Base(c.Root))
 		assert.Equal(t, "project", filepath.Base(c.SourceDir))
 	})
 
 	t.Run("source_dir", func(t *testing.T) {
-		c := &project.Config{}
+		c := &Config{}
 		c.SourceDir = "source_dir"
-		assert.Nil(t, project.WithDefaults()(c))
+		assert.Nil(t, WithDefaults()(c))
 		assert.Equal(t, "source_dir", c.Root)
 		assert.Equal(t, "source_dir", c.SourceDir)
 	})
 
 	t.Run("root", func(t *testing.T) {
-		c := &project.Config{}
+		c := &Config{}
 		c.Root = "root"
-		assert.Nil(t, project.WithDefaults()(c))
+		assert.Nil(t, WithDefaults()(c))
 		assert.Equal(t, "root", c.Root)
 		assert.Equal(t, "root", c.SourceDir)
 	})
 
 	t.Run("root", func(t *testing.T) {
-		c := &project.Config{}
+		c := &Config{}
 		c.Root = "root"
 		c.SourceDir = "source_dir"
-		assert.Nil(t, project.WithDefaults()(c))
+		assert.Nil(t, WithDefaults()(c))
 		assert.Equal(t, "root", c.Root)
 		assert.Equal(t, "source_dir", c.SourceDir)
 	})
 
 	t.Run("sources", func(t *testing.T) {
-		c := &project.Config{}
+		c := &Config{}
 		c.Sources = []string{"a/a", "b/b", "c/c"}
-		assert.Nil(t, project.WithDefaults()(c))
+		assert.Nil(t, WithDefaults()(c))
 		assert.Equal(t, "a", c.Root)
 		assert.Equal(t, "a", c.SourceDir)
 	})
 
 	t.Run("sources", func(t *testing.T) {
-		c := &project.Config{}
+		c := &Config{}
 		c.Sources = []string{".", "b/b", "c/c"}
-		assert.Nil(t, project.WithDefaults()(c))
+		assert.Nil(t, WithDefaults()(c))
 		assert.Equal(t, ".", c.Root)
 		assert.Equal(t, ".", c.SourceDir)
 
@@ -212,10 +212,10 @@ func TestWithDefaults(t *testing.T) {
 }
 
 func TestWithManifest(t *testing.T) {
-	manifest := func(path string, s string) (*project.Config, error) {
+	manifest := func(path string, s string) (*Config, error) {
 		fs.SetContent(path, []byte(strings.ReplaceAll(s, "\t", "        ")))
-		c := &project.Config{}
-		return c, project.WithManifest(path)(c)
+		c := &Config{}
+		return c, WithManifest(path)(c)
 	}
 	t.Run("empty", func(t *testing.T) {
 		c, err := manifest("package.yml", "")
@@ -258,8 +258,8 @@ func TestWithManifest(t *testing.T) {
 }
 
 func TestParametersMergeRules(t *testing.T) {
-	unmarshal := func(s string) project.Parameters {
-		var p project.Parameters
+	unmarshal := func(s string) Parameters {
+		var p Parameters
 		if err := yaml.Unmarshal([]byte(s), &p); err != nil {
 			t.Fatal(err)
 		}
@@ -290,7 +290,7 @@ func TestParametersMergeRules(t *testing.T) {
                   - test: "TC1"
                     timeout: 7`)
 
-	actual := project.MergeParameters(a, b)
+	actual := MergeParameters(a, b)
 	expected := unmarshal(`
                 timeout: 4
                 presets:
@@ -322,13 +322,13 @@ func TestImportTasks(t *testing.T) {
 	}{
 		{path: "./testdata/ImportTasks/invalid/notexist", err: os.ErrNotExist},
 		{path: "./testdata/ImportTasks/invalid/file.ttcn3", err: syscall.ENOTDIR},
-		{path: "./testdata/ImportTasks/invalid/dirs", err: project.ErrNoSources},
-		{path: "./testdata/ImportTasks/other", err: project.ErrNoSources},
+		{path: "./testdata/ImportTasks/invalid/dirs", err: ErrNoSources},
+		{path: "./testdata/ImportTasks/other", err: ErrNoSources},
 		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3"}},
 	}
 
 	for _, tt := range tests {
-		result, err := project.ImportTasks(&project.Config{}, tt.path)
+		result, err := ImportTasks(&Config{}, tt.path)
 		if !errors.Is(err, tt.err) {
 			t.Errorf("%v: %v, want %v", tt.path, err, tt.err)
 		}
@@ -348,199 +348,42 @@ func TestImportTasks(t *testing.T) {
 
 }
 
-func TestPresets(t *testing.T) {
-	unmarshal := func(s string) project.Parameters {
-		var p project.Parameters
-		if err := yaml.Unmarshal([]byte(s), &p); err != nil {
-			t.Fatal(err)
-		}
-		return p
+func TestRules(t *testing.T) {
+	tests := []struct {
+		Presets, Except, Only []string
+		Want                  bool
+	}{
+		{Presets: nil, Except: nil, Only: nil, Want: true},
+		{Presets: []string{"A"}, Except: nil, Only: nil, Want: true},
+		{Presets: []string{"A", "B"}, Except: nil, Only: nil, Want: true},
+
+		{Presets: nil, Except: []string{"A"}, Only: nil, Want: true},
+		{Presets: []string{"A"}, Except: []string{"A"}, Only: nil, Want: false},
+		{Presets: []string{"A"}, Except: []string{"B"}, Only: nil, Want: true},
+		{Presets: []string{"A"}, Except: []string{"A", "B"}, Only: nil, Want: false},
+		{Presets: []string{"A", "B"}, Except: []string{"A"}, Only: nil, Want: false},
+
+		{Presets: nil, Except: nil, Only: []string{"A"}, Want: false},
+		{Presets: []string{"A"}, Except: nil, Only: []string{"A"}, Want: true},
+		{Presets: []string{"A"}, Except: nil, Only: []string{"A", "B"}, Want: true},
+		{Presets: []string{"A"}, Except: nil, Only: []string{"B"}, Want: false},
+		{Presets: []string{"A", "B"}, Except: nil, Only: []string{"B"}, Want: true},
+
+		{Presets: nil, Except: []string{"A"}, Only: []string{"A"}, Want: false},
+		{Presets: []string{"A"}, Except: []string{"A"}, Only: []string{"A"}, Want: false},
+		{Presets: []string{"A"}, Except: []string{"B"}, Only: []string{"A"}, Want: true},
+		{Presets: []string{"A", "B"}, Except: []string{"B"}, Only: []string{"A"}, Want: false},
 	}
-	fs.SetContent("bar://foo.ttcn3", []byte(`module foo {
-    type component C0 {}
-    testcase TC1() runs on C0 system C0 {}
-}`))
-	a := unmarshal(`
-                timeout: 0
-                presets:
-                   "A":
-                      timeout: 1
-                      parameters:
-                          "mod1.p1": 1
-                   "B":
-                      timeout: 2
-                execute:
-                  - test: "foo.TC1"
-                    timeout: 3
-                    except:
-                        presets:
-                        - A
-                  - test: "foo.TC1"
-                    timeout: 4
-                    only:
-                         presets:
-                         - A`)
-
-	multiPresets := unmarshal(`
-        timeout: 0
-        presets:
-           "A":
-              timeout: 1
-              parameters:
-                  "mod1.p1": 1
-           "B":
-              timeout: 2
-        execute:
-          - test: "foo.TC1"
-            timeout: 4
-            only:
-                presets: [A, B]`)
-
-	multiPresets_except := unmarshal(`
-                timeout: 0
-                presets:
-                   "A":
-                      timeout: 1
-                      parameters:
-                          "mod1.p1": 1
-                   "B":
-                      timeout: 2
-                execute:
-                  - test: "foo.TC1"
-                    timeout: 4
-                    except:
-                        presets: [A, B]`)
-
-	missing_presets := unmarshal(`
-                        timeout: 0
-                        presets:
-                           "A":
-                              timeout: 1
-                              parameters:
-                                  "mod1.p1": 1
-                           "B":
-                              timeout: 2
-                        execute:
-                          - test: "foo.TC1"
-                            timeout: 4
-                            only:
-                                presets:
-                          - test: "foo.TC1"
-                            timeout: 5
-                            only:
-                                presets: []`)
-
-	t.Run("Preset_A", func(t *testing.T) {
-		expected := unmarshal(`
-        execute:
-          - test: "foo.TC1"
-            timeout: 4
-            only:
-                 presets:
-                 - A`)
-		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"A"})
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("Preset_B", func(t *testing.T) {
-		expected := unmarshal(`
-        execute:
-          - test: "foo.TC1"
-            timeout: 3
-            except:
-                 presets:
-                 - A`)
-		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"B"})
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("No_Preset", func(t *testing.T) {
-		expected := unmarshal(`
-        execute:
-          - test: "foo.TC1"
-            timeout: 3
-            except:
-                 presets:
-                 - A`)
-		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{})
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("Preset_AB", func(t *testing.T) {
-		expected := unmarshal(`
-        execute:
-        - test: "foo.TC1"
-          timeout: 3
-          except:
-            presets:
-            - A
-        - test: "foo.TC1"
-          timeout: 4
-          only:
-            presets:
-            - A`)
-		p := project.AcquireExecutables(&a, []string{"bar://foo.ttcn3"}, []string{"B", "A"})
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("multiPresets_Preset_A", func(t *testing.T) {
-		expected := unmarshal(`
-                execute:
-                  - test: "foo.TC1"
-                    timeout: 4
-                    only:
-                      presets: [A, B]`)
-		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, []string{"A"})
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("multiPresets_No_Preset", func(t *testing.T) {
-		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, nil)
-		assert.Nil(t, p)
-	})
-
-	t.Run("multiPresets_Preset_B", func(t *testing.T) {
-		expected := unmarshal(`
-                execute:
-                  - test: "foo.TC1"
-                    timeout: 4
-                    only:
-                      presets: [A, B]`)
-		p := project.AcquireExecutables(&multiPresets, []string{"bar://foo.ttcn3"}, []string{"B"})
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("multiPresets_except_Preset_B", func(t *testing.T) {
-		p := project.AcquireExecutables(&multiPresets_except, []string{"bar://foo.ttcn3"}, []string{"B"})
-		assert.Nil(t, p)
-	})
-
-	t.Run("multiPresets_except_No_Preset", func(t *testing.T) {
-		expected := unmarshal(`
-                execute:
-                  - test: "foo.TC1"
-                    timeout: 4
-                    except:
-                      presets: [A, B]`)
-		p := project.AcquireExecutables(&multiPresets_except, []string{"bar://foo.ttcn3"}, nil)
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
-	t.Run("missingPresets_only_No_Preset", func(t *testing.T) {
-		expected := unmarshal(`
-            execute:
-              - test: "foo.TC1"
-                timeout: 4
-                only:
-                    presets:
-              - test: "foo.TC1"
-                timeout: 5
-                only:
-                    presets: []`)
-		p := project.AcquireExecutables(&missing_presets, []string{"bar://foo.ttcn3"}, nil)
-		assert.Equal(t, &expected, &project.Parameters{Execute: p})
-	})
-
+	for _, tt := range tests {
+		t.Run(t.Name(), func(t *testing.T) {
+			rules := Rules{
+				Except: &ExecuteCondition{tt.Except},
+				Only:   &ExecuteCondition{tt.Only},
+			}
+			got := matchRules(rules, tt.Presets...)
+			assert.Equal(t, tt.Want, got, fmt.Sprintf("Presets: %v, Except: %v, Only: %v", tt.Presets, tt.Except, tt.Only))
+		})
+	}
 }
 
 // equal returns true if a and b are equal string slices, order is ignored.
