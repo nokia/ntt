@@ -217,11 +217,6 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 		return nil, fmt.Errorf("loading baskets failed: %w", err)
 	}
 
-	srcs, err := fs.TTCN3Files(conf.Sources...)
-	if err != nil {
-		return nil, err
-	}
-
 	var tsts []string
 	for _, f := range testsFiles {
 		t, err := readTestsFromFile(f)
@@ -230,8 +225,19 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 		}
 		tsts = append(tsts, t...)
 	}
-	if len(tests) == 0 && len(testsFiles) == 0 {
-		for _, src := range srcs {
+	srcs, err := fs.TTCN3Files(conf.Sources...)
+	if err != nil {
+		return nil, err
+	}
+	needTests := len(tests) == 0 && len(testsFiles) == 0
+	m := sync.Map{}
+	t := make([][]string, len(srcs))
+	wg := sync.WaitGroup{}
+	wg.Add(len(srcs))
+	start := time.Now()
+	for i, src := range srcs {
+		go func(src string, i int) {
+			defer wg.Done()
 			var (
 				mod         string
 				modLvl, lvl int
@@ -247,68 +253,46 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 				} else {
 					lvl++
 				}
-
 				switch n := n.(type) {
 				case *syntax.Module:
 					mod = n.Name.String()
 					modLvl = lvl
 					return true
 				case *syntax.FuncDecl:
+					if !n.IsTest() && !n.IsControl() {
+						return false
+					}
 					name := ttcn3.JoinNames(mod, n.Name.String())
-					if allTests {
-						if n.IsTest() {
-							tests = append(tests, name)
-						}
-					} else {
-						if tok := n.Modif; tok != nil && tok.String() == "@control" {
-							tests = append(tests, name)
+					m.Store(name, n)
+					if needTests {
+						if n.IsTest() && allTests || n.IsControl() && !allTests {
+							t[i] = append(t[i], name)
 						}
 					}
-
 					return false
 				case *syntax.ControlPart:
-					if !allTests {
-						tests = append(tests, ttcn3.JoinNames(mod, n.Name.String()))
+					name := ttcn3.JoinNames(mod, n.Name.String())
+					m.Store(name, n)
+					if needTests && !allTests {
+						t[i] = append(t[i], name)
 					}
 					return false
+
 				default:
 					return true
 				}
 			})
-		}
-	}
-
-	testPlan := append(tsts, tests...)
-
-	// We need the syntax-trees for all available tests, because the user
-	// can filter ids by testcase tags.
-	wg := sync.WaitGroup{}
-	m := sync.Map{}
-	wg.Add(len(srcs))
-	start := time.Now()
-	for _, src := range srcs {
-		go func(src string) {
-			defer wg.Done()
-			tree := ttcn3.ParseFile(src)
-			tree.Inspect(func(n syntax.Node) bool {
-				switch n := n.(type) {
-				case *syntax.FuncDecl:
-					name := tree.QualifiedName(n)
-					m.Store(name, &ttcn3.Node{Ident: n.Name, Node: n, Tree: tree})
-					return false
-				case *syntax.ControlPart:
-					name := tree.QualifiedName(n)
-					m.Store(name, &ttcn3.Node{Ident: n.Name, Node: n, Tree: tree})
-					return false
-				default:
-					return true
-				}
-			})
-
-		}(src)
+		}(src, i)
 	}
 	wg.Wait()
 	log.Debugf("Scanned all tests in %s.\n", time.Since(start))
+
+	testPlan := append(tsts, tests...)
+	if needTests {
+		for _, tests := range t {
+			testPlan = append(testPlan, tests...)
+		}
+	}
 
 	out := make(chan *control.Job)
 	go func() {
@@ -317,25 +301,25 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 		for _, name := range testPlan {
 			var tags [][]string
 			if def, ok := m.Load(name); ok {
-				def := def.(*ttcn3.Node)
-				tags = doc.FindAllTags(syntax.Doc(def.Node))
+				tags = doc.FindAllTags(syntax.Doc(def.(syntax.Node)))
 			}
-			if basket.Match(name, tags) {
-				id := fmt.Sprintf("%s-%d", name, names[name])
-				names[name]++
+			if !basket.Match(name, tags) {
+				continue
+			}
+			id := fmt.Sprintf("%s-%d", name, names[name])
+			names[name]++
 
-				job := &control.Job{
-					ID:     id,
-					Name:   name,
-					Config: conf,
-					Dir:    OutputDir,
-				}
+			job := &control.Job{
+				ID:     id,
+				Name:   name,
+				Config: conf,
+				Dir:    OutputDir,
+			}
 
-				select {
-				case out <- job:
-				case <-ctx.Done():
-					return
-				}
+			select {
+			case out <- job:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()

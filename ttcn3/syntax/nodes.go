@@ -697,6 +697,10 @@ type (
 	}
 )
 
+func (x *FuncDecl) IsControl() bool {
+	return x.Modif != nil && x.Modif.String() == "@control"
+}
+
 func (x *FuncDecl) IsTest() bool {
 	return x.Kind.Kind() == TESTCASE
 }
