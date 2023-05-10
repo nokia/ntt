@@ -2,6 +2,8 @@
 github.com/acarl005/stripansi
 # github.com/bmatcuk/doublestar v1.3.4
 github.com/bmatcuk/doublestar
+# github.com/cpuguy83/go-md2man/v2 v2.0.1
+github.com/cpuguy83/go-md2man/v2/md2man
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
 # github.com/dustin/go-humanize v1.0.0
@@ -37,8 +39,11 @@ github.com/mattn/go-colorable
 github.com/mattn/go-isatty
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/russross/blackfriday/v2 v2.1.0
+github.com/russross/blackfriday/v2
 # github.com/spf13/cobra v1.4.0
 github.com/spf13/cobra
+github.com/spf13/cobra/doc
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.7.1
@@ -55,5 +60,7 @@ golang.org/x/xerrors
 golang.org/x/xerrors/internal
 # gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 gopkg.in/check.v1
+# gopkg.in/yaml.v2 v2.4.0
+gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 gopkg.in/yaml.v3

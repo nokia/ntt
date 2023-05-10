@@ -51,7 +51,7 @@ var (
 			}
 
 			// Skip opening the project if we're running a custom command or version.
-			if cmd.Use == "ntt" || cmd.Use == "version" || cmd.Use == "stdout" || strings.HasPrefix(cmd.Use, "help") {
+			if cmd.Use == "ntt" || cmd.Use == "version" || cmd.Use == "stdout" || strings.HasPrefix(cmd.Use, "help") || cmd.Use == "docs" {
 				// first arg is either an external subkommand of the form
 				// k3-Arg[0] or ntt-Arg[0] or unknown
 				return nil
