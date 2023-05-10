@@ -480,22 +480,8 @@ func Files(c *Config) ([]string, error) {
 // ApplyPresets reads test case configuration from environment variables, the
 // parameters file, package.yml and from the TTCN-3 documentation tags.
 func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
-
 	// Global configuration
 	gc := c.Parameters
-
-	// Parameters file overrides/extends global test configuration
-	if c.ParametersFile != "" {
-		var pf Parameters
-		b, err := fs.Content(c.ParametersFile)
-		if err != nil {
-			return nil, err
-		}
-		if err := yaml.Unmarshal(b, &pf); err != nil {
-			return nil, err
-		}
-		gc = MergeParameters(gc, pf)
-	}
 
 	// Presets override/extend parameters files
 	for _, preset := range presets {
@@ -679,7 +665,7 @@ func MergeTestConfig(a, b TestConfig) TestConfig {
 // build.sh, testcases-folder, ...). Open will also recursively load TTCN-3
 // source files from typical import-directories (i.e ../common).
 func Open(args ...string) (*Config, error) {
-	defaults := ConfigOptions(
+	defaults := configOptions(
 		AutomaticEnv(),
 		WithIndex(cache.Lookup(IndexFile)),
 		WithDefaults(),
@@ -718,13 +704,29 @@ func Open(args ...string) (*Config, error) {
 
 func NewConfig(opts ...ConfigOption) (*Config, error) {
 	c := &Config{}
-	return c, ConfigOptions(opts...)(c)
+	if err := configOptions(opts...)(c); err != nil {
+		return nil, err
+	}
+
+	if c.ParametersFile != "" {
+		var pf Parameters
+		b, err := fs.Content(c.ParametersFile)
+		if err != nil {
+			return nil, err
+		}
+		if err := yaml.Unmarshal(b, &pf); err != nil {
+			return nil, err
+		}
+		c.Parameters = MergeParameters(c.Parameters, pf)
+	}
+
+	return c, nil
 }
 
 type ConfigOption func(*Config) error
 
-// ConfigOptions returns an options, which applies the given configuration options.
-func ConfigOptions(opts ...ConfigOption) ConfigOption {
+// configOptions returns an options, which applies the given configuration options.
+func configOptions(opts ...ConfigOption) ConfigOption {
 	return func(c *Config) error {
 		var gerr *multierror.Error
 		for _, opt := range opts {
