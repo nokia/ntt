@@ -9,8 +9,11 @@ import (
 	"text/template"
 
 	"github.com/nokia/ntt/internal/env"
+	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
+	"github.com/nokia/ntt/ttcn3"
+	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +64,7 @@ func printJSON(report *ConfigReport, keys []string) error {
 		presets = strings.Split(s, string(os.PathListSeparator))
 	}
 
-	params, err := project.ApplyPresets(report.Config, presets...)
+	params, err := ApplyPresets(report.Config, presets...)
 	if err != nil {
 		return err
 	}
@@ -73,6 +76,60 @@ func printJSON(report *ConfigReport, keys []string) error {
 	}
 	fmt.Println(string(b))
 	return report.err
+}
+
+// ApplyPresets returns a list of test case configurations with optional
+// presets applied. The presets are applied in the order they are specified in
+// the list.
+//
+// ApplyPresets reads test case configuration from environment variables, the
+// parameters file, package.yml and from the TTCN-3 documentation tags.
+func ApplyPresets(c *project.Config, presets ...string) (*project.Parameters, error) {
+	// Global configuration
+	gc := c.Parameters
+
+	// Presets override/extend parameters files
+	for _, preset := range presets {
+		tc, ok := gc.Presets[preset]
+		if !ok {
+			return nil, fmt.Errorf("preset %q not found", preset)
+		}
+		gc.TestConfig = project.MergeTestConfig(gc.TestConfig, tc)
+	}
+
+	files, err := fs.TTCN3Files(c.Sources...)
+	if err != nil {
+		return nil, err
+	}
+
+	list := acquireExecutables(&gc, files, presets)
+
+	gc.Execute = list
+	return &gc, nil
+}
+
+// acquireExecutables depending on the provided presets and on the availability
+// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
+// control parts) is returned
+func acquireExecutables(gc *project.Parameters, files []string, presets []string) []project.TestConfig {
+	var list []project.TestConfig
+	for _, file := range files {
+		tree := ttcn3.ParseFile(file)
+		tree.Inspect(func(n syntax.Node) bool {
+			switch n := n.(type) {
+			case *syntax.FuncDecl:
+				if n.IsTest() || n.Modif != nil && n.Modif.String() == "@control" {
+					list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
+				}
+				return false
+			case *syntax.ControlPart:
+				list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
+				return false
+			}
+			return true
+		})
+	}
+	return list
 }
 
 func printShellScript(report *ConfigReport, keys []string) error {

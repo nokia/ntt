@@ -29,7 +29,6 @@ import (
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project/internal/k3"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 var (
@@ -476,60 +475,6 @@ func Files(c *Config) ([]string, error) {
 	files = append(files, c.Imports...)
 	files = append(files, c.K3.Includes...)
 	return fs.TTCN3Files(files...)
-}
-
-// ApplyPresets returns a list of test case configurations with optional
-// presets applied. The presets are applied in the order they are specified in
-// the list.
-//
-// ApplyPresets reads test case configuration from environment variables, the
-// parameters file, package.yml and from the TTCN-3 documentation tags.
-func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
-	// Global configuration
-	gc := c.Parameters
-
-	// Presets override/extend parameters files
-	for _, preset := range presets {
-		tc, ok := gc.Presets[preset]
-		if !ok {
-			return nil, fmt.Errorf("preset %q not found", preset)
-		}
-		gc.TestConfig = MergeTestConfig(gc.TestConfig, tc)
-	}
-
-	files, err := fs.TTCN3Files(c.Sources...)
-	if err != nil {
-		return nil, err
-	}
-
-	list := acquireExecutables(&gc, files, presets)
-
-	gc.Execute = list
-	return &gc, nil
-}
-
-// acquireExecutables depending on the provided presets and on the availability
-// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
-// control parts) is returned
-func acquireExecutables(gc *Parameters, files []string, presets []string) []TestConfig {
-	var list []TestConfig
-	for _, file := range files {
-		tree := ttcn3.ParseFile(file)
-		tree.Inspect(func(n syntax.Node) bool {
-			switch n := n.(type) {
-			case *syntax.FuncDecl:
-				if n.IsTest() || n.Modif != nil && n.Modif.String() == "@control" {
-					list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
-				}
-				return false
-			case *syntax.ControlPart:
-				list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
-				return false
-			}
-			return true
-		})
-	}
-	return list
 }
 
 // Glob matches a test case name against the list of test case configurations
