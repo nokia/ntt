@@ -28,7 +28,6 @@ import (
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project/internal/k3"
-	"github.com/nokia/ntt/ttcn3"
 )
 
 var (
@@ -482,7 +481,7 @@ func Files(c *Config) ([]string, error) {
 func (p *Parameters) Glob(name string, presets ...string) []TestConfig {
 	var list []TestConfig
 	for _, tc := range p.Execute {
-		pattern, params := ttcn3.SplitFuncCall(tc.Test)
+		pattern, params := split(tc.Test)
 		ok, err := filepath.Match(pattern, name)
 		if err != nil {
 			log.Verbosef("%s: %s\n", name, err.Error())
@@ -500,6 +499,14 @@ func (p *Parameters) Glob(name string, presets ...string) []TestConfig {
 		}
 	}
 	return list
+}
+
+// split splits a function call into its name and parameters.
+func split(name string) (string, string) {
+	if i := strings.Index(name, "("); i > 0 {
+		return name[:i], name[i+1 : len(name)-1]
+	}
+	return name, ""
 }
 
 // matchRules returns true if presets match given rules
