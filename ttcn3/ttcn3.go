@@ -21,6 +21,14 @@ var (
 	parseLimit = make(chan struct{}, runtime.NumCPU())
 )
 
+// SplitFuncCall splits a function call into its name and parameters.
+func SplitFuncCall(name string) (string, string) {
+	if i := strings.Index(name, "("); i > 0 {
+		return name[:i], name[i+1 : len(name)-1]
+	}
+	return name, ""
+}
+
 // JoinNames joins a list of non-empty names with a dot.
 func JoinNames(names ...string) string {
 	var s []string

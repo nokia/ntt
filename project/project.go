@@ -511,49 +511,53 @@ func ApplyPresets(c *Config, presets ...string) (*Parameters, error) {
 		return nil, err
 	}
 
-	list := AcquireExecutables(&gc, files, presets)
+	list := acquireExecutables(&gc, files, presets)
 
 	gc.Execute = list
 	return &gc, nil
 }
 
-// AcquireExecutables depending on the provided presets and on the availability
-// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
-// control parts) is returned
-func AcquireExecutables(gc *Parameters, files []string, presets []string) []TestConfig {
+// Glob matches a test case name against the list of test case configurations
+// and presets and returns a list of matching test case configurations.
+func (p *Parameters) Glob(name string, presets ...string) []TestConfig {
 	var list []TestConfig
-	add := func(name string, comments string) {
-		// TODO(5nord) make this less quadratic.
-		for _, tc := range gc.Execute {
-			pattern, params := SplitTest(tc.Test)
-			ok, err := filepath.Match(pattern, name)
-			if err != nil {
-				log.Verbosef("%s: %s\n", name, err.Error())
-			}
-			if ok {
-				tc = MergeTestConfig(gc.TestConfig, tc)
-				tc.Test = name
-				if params != "" {
-					tc.Test += "(" + params + ")"
-				}
-				if DoesTestConfigMatchPresets(tc, presets...) {
-					list = append(list, tc)
-				}
-			}
+	for _, tc := range p.Execute {
+		pattern, params := ttcn3.SplitFuncCall(tc.Test)
+		ok, err := filepath.Match(pattern, name)
+		if err != nil {
+			log.Verbosef("%s: %s\n", name, err.Error())
+		}
+		if !ok {
+			continue
+		}
+		tc = MergeTestConfig(p.TestConfig, tc)
+		tc.Test = name
+		if params != "" {
+			tc.Test += "(" + params + ")"
+		}
+		if doesTestConfigMatchPresets(tc, presets...) {
+			list = append(list, tc)
 		}
 	}
+	return list
+}
 
+// acquireExecutables depending on the provided presets and on the availability
+// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
+// control parts) is returned
+func acquireExecutables(gc *Parameters, files []string, presets []string) []TestConfig {
+	var list []TestConfig
 	for _, file := range files {
 		tree := ttcn3.ParseFile(file)
 		tree.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			case *syntax.FuncDecl:
-				if n.IsTest() {
-					add(tree.QualifiedName(n), syntax.Doc(n))
+				if n.IsTest() || n.Modif != nil && n.Modif.String() == "@control" {
+					list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
 				}
 				return false
 			case *syntax.ControlPart:
-				add(tree.QualifiedName(n), syntax.Doc(n))
+				list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
 				return false
 			}
 			return true
@@ -562,17 +566,9 @@ func AcquireExecutables(gc *Parameters, files []string, presets []string) []Test
 	return list
 }
 
-// SplitTest splits a test into its testcase name and parameters.
-func SplitTest(name string) (string, string) {
-	if i := strings.Index(name, "("); i > 0 {
-		return name[:i], name[i+1 : len(name)-1]
-	}
-	return name, ""
-}
-
-// DoesTestcaseMatchPreset: check whether testcase instance shall
+// doesTestcaseMatchPreset: check whether testcase instance shall
 // be executed dependent on the specified presets
-func DoesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
+func doesTestConfigMatchPresets(tc TestConfig, presets ...string) bool {
 	if (tc.Except == nil || len(tc.Except.Presets) == 0) &&
 		(tc.Only == nil || len(tc.Only.Presets) == 0) {
 		return true
