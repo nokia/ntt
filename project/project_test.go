@@ -65,6 +65,40 @@ func TestEncodingFromURI(t *testing.T) {
 
 }
 
+func TestImportTasks(t *testing.T) {
+	tests := []struct {
+		path   string
+		result []string
+		err    error
+	}{
+		{path: "./testdata/ImportTasks/invalid/notexist", err: os.ErrNotExist},
+		{path: "./testdata/ImportTasks/invalid/file.ttcn3", err: syscall.ENOTDIR},
+		{path: "./testdata/ImportTasks/invalid/dirs", err: ErrNoSources},
+		{path: "./testdata/ImportTasks/other", err: ErrNoSources},
+		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3"}},
+	}
+
+	for _, tt := range tests {
+		result, err := ImportTasks(&Config{}, tt.path)
+		if !errors.Is(err, tt.err) {
+			t.Errorf("%v: %v, want %v", tt.path, err, tt.err)
+		}
+		if len(tt.result) == 0 {
+			continue
+		}
+		if len(result) != 1 {
+			t.Errorf("Unexpected result: %v", result)
+			continue
+		}
+
+		actual := result[0].Inputs()
+		if !equal(actual, tt.result) {
+			t.Errorf("%v: %v, want %v", tt.path, actual, tt.result)
+		}
+	}
+
+}
+
 func TestAutomaticEnv(t *testing.T) {
 	t.Run("NTT_NAME", func(t *testing.T) {
 		os.Unsetenv("NTT_NAME")
@@ -312,40 +346,6 @@ func TestParametersMergeRules(t *testing.T) {
 	assert.Equal(t, expected.Presets["B"], actual.Presets["B"])
 	assert.Equal(t, expected.Presets["C"], actual.Presets["C"])
 	assert.Equal(t, expected.Execute, actual.Execute)
-}
-
-func TestImportTasks(t *testing.T) {
-	tests := []struct {
-		path   string
-		result []string
-		err    error
-	}{
-		{path: "./testdata/ImportTasks/invalid/notexist", err: os.ErrNotExist},
-		{path: "./testdata/ImportTasks/invalid/file.ttcn3", err: syscall.ENOTDIR},
-		{path: "./testdata/ImportTasks/invalid/dirs", err: ErrNoSources},
-		{path: "./testdata/ImportTasks/other", err: ErrNoSources},
-		{path: "./testdata/ImportTasks/lib", result: []string{"testdata/ImportTasks/lib/a.ttcn3", "testdata/ImportTasks/lib/b.ttcn3"}},
-	}
-
-	for _, tt := range tests {
-		result, err := ImportTasks(&Config{}, tt.path)
-		if !errors.Is(err, tt.err) {
-			t.Errorf("%v: %v, want %v", tt.path, err, tt.err)
-		}
-		if len(tt.result) == 0 {
-			continue
-		}
-		if len(result) != 1 {
-			t.Errorf("Unexpected result: %v", result)
-			continue
-		}
-
-		actual := result[0].Inputs()
-		if !equal(actual, tt.result) {
-			t.Errorf("%v: %v, want %v", tt.path, actual, tt.result)
-		}
-	}
-
 }
 
 func TestRules(t *testing.T) {
