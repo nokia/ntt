@@ -32,6 +32,7 @@ import (
 
 var (
 	ErrNoSources = errors.New("no sources")
+	ErrNotFound  = errors.New("not found")
 )
 
 // Config describes a single project configuration. It aggregates various
@@ -476,37 +477,61 @@ func Files(c *Config) ([]string, error) {
 	return fs.TTCN3Files(files...)
 }
 
-// Glob matches a test case name against the list of test case configurations
-// and presets and returns a list of matching test case configurations.
-func (p *Parameters) Glob(name string, presets ...string) []TestConfig {
+// GlobalCOnfig returns the global test configuration with applied presets
+func (p *Parameters) GlobalConfig(presets ...string) (TestConfig, error) {
+	gc := p.TestConfig
+	for _, preset := range presets {
+		tc, ok := p.Presets[preset]
+		if !ok {
+			return TestConfig{}, fmt.Errorf("preset %q: %w", preset, ErrNotFound)
+		}
+		gc = MergeTestConfig(gc, tc)
+	}
+	return gc, nil
+}
+
+// TestConfigs returns the test configurations matching the given name and
+// applied presets.
+func (p *Parameters) TestConfigs(name string, presets ...string) ([]TestConfig, error) {
+	gc, err := p.GlobalConfig(presets...)
+	if err != nil {
+		return nil, err
+	}
+
 	var list []TestConfig
 	for _, tc := range p.Execute {
+		tc = MergeTestConfig(gc, tc)
+		if tc, ok := matchTestConfig(name, tc, presets...); ok {
+			list = append(list, tc)
+		}
+	}
+
+	// Our job is done if we have at least one match.
+	if len(list) == 0 {
+		if tc, ok := matchTestConfig(name, p.TestConfig, presets...); ok {
+			list = append(list, tc)
+		}
+	}
+
+	return list, nil
+}
+
+func matchTestConfig(name string, tc TestConfig, presets ...string) (TestConfig, bool) {
+	if tc.Test != "" {
 		pattern, params := split(tc.Test)
 		ok, err := filepath.Match(pattern, name)
 		if err != nil {
 			log.Verbosef("%s: %s\n", name, err.Error())
 		}
 		if !ok {
-			continue
+			return tc, false
 		}
-		tc = MergeTestConfig(p.TestConfig, tc)
 		tc.Test = name
 		if params != "" {
 			tc.Test += "(" + params + ")"
 		}
-		if matchRules(tc.Rules, presets...) {
-			list = append(list, tc)
-		}
 	}
-	return list
-}
-
-// split splits a function call into its name and parameters.
-func split(name string) (string, string) {
-	if i := strings.Index(name, "("); i > 0 {
-		return name[:i], name[i+1 : len(name)-1]
-	}
-	return name, ""
+	return tc, matchRules(tc.Rules, presets...)
 }
 
 // matchRules returns true if presets match given rules
@@ -532,9 +557,9 @@ func matchPresets(c *ExecuteCondition, presets ...string) bool {
 	return false
 }
 
-// MergeParameters merges the given parameters. Scalar values from b override
+// mergeParameters merges the given parameters. Scalar values from b override
 // values from a. Maps are merged and arrays are appended.
-func MergeParameters(a, b Parameters) Parameters {
+func mergeParameters(a, b Parameters) Parameters {
 	result := Parameters{}
 	result.TestConfig = MergeTestConfig(a.TestConfig, b.TestConfig)
 	result.Presets = make(map[string]TestConfig)
@@ -578,6 +603,14 @@ func MergeTestConfig(a, b TestConfig) TestConfig {
 	result.Only = b.Only
 	result.Except = b.Except
 	return result
+}
+
+// split splits a function call into its name and parameters.
+func split(name string) (string, string) {
+	if i := strings.Index(name, "("); i > 0 {
+		return name[:i], name[i+1 : len(name)-1]
+	}
+	return name, ""
 }
 
 // Open returns the best possible configuration using the given arguments.
@@ -647,7 +680,7 @@ func NewConfig(opts ...ConfigOption) (*Config, error) {
 		if err := yaml.Unmarshal(b, &pf); err != nil {
 			return nil, err
 		}
-		c.Parameters = MergeParameters(c.Parameters, pf)
+		c.Parameters = mergeParameters(c.Parameters, pf)
 	}
 
 	return c, nil

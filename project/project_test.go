@@ -324,7 +324,7 @@ func TestParametersMergeRules(t *testing.T) {
                   - test: "TC1"
                     timeout: 7`)
 
-	actual := MergeParameters(a, b)
+	actual := mergeParameters(a, b)
 	expected := unmarshal(`
                 timeout: 4
                 presets:
@@ -384,6 +384,67 @@ func TestRules(t *testing.T) {
 			assert.Equal(t, tt.Want, got, fmt.Sprintf("Presets: %v, Except: %v, Only: %v", tt.Presets, tt.Except, tt.Only))
 		})
 	}
+}
+
+func TestTestConfigs(t *testing.T) {
+	tests := []struct {
+		Parameters string
+		Input      string
+		Presets    []string
+		Want       string
+	}{
+		// Verify unknown tests use global configuration
+		{Parameters: ``, Input: "", Want: `[{}]`},
+		{Parameters: ``, Input: "TC1", Want: `[{}]`},
+		{Parameters: ``, Input: "*", Want: `[{}]`},
+		{Parameters: `timeout: 1.0`, Input: "", Want: `[{"timeout": 1}]`},
+		{Parameters: `timeout: 1.0`, Input: "TC1", Want: `[{"timeout": 1}]`},
+		{Parameters: `timeout: 1.0`, Input: "*", Want: `[{"timeout": 1}]`},
+		{Parameters: `{"test": "TC?", "timeout": 1.0}`, Input: "", Want: `[]`},
+		{Parameters: `{"test": "TC?", "timeout": 1.0}`, Input: "TC1", Want: `[{"test": "TC1", "timeout": 1}]`},
+		{Parameters: `{"test": "TC?", "timeout": 1.0}`, Input: "*", Want: `[]`},
+
+		// Verify test-specific configuration overwrites global configuration.
+		{Parameters: `{"execute": [{"test": "TC*", "timeout": 2}]}`,
+			Input: "", Want: `[{}]`},
+		{Parameters: `{"execute": [{"test": "TC*", "timeout": 2}]}`,
+			Input: "TC", Want: `[{"test": "TC", "timeout": 2}]`},
+		{Parameters: `{"test": "TC*", "timeout": 1, "execute": [{"test": "TC?", "timeout": 2}]}`,
+			Input: "TC1", Want: `[{"test": "TC1", "timeout": 2}]`},
+		{Parameters: `{"test": "TC*", "timeout": 1, "execute": [{"test": "TC?", "timeout": 2}]}`,
+			Input: "TC12", Want: `[{"test": "TC12", "timeout": 1}]`},
+
+		// Verify multiple test-specific configuratoins are supported.
+		{Parameters: `{"execute": [{"test": "TC(1)"}]}`, Input: "TC", Want: `[{"test": "TC(1)"}]`},
+		{Parameters: `{"execute": [{"test": "TC(1)"}, {"test": "TC(2)"}]}`,
+			Input: "TC", Want: `[{"test": "TC(1)"}, {"test": "TC(2)"}]`},
+		{Parameters: `{"execute": [{"test": "TC(1)"}, {"test": "TC"}]}`,
+			Input: "TC", Want: `[{"test": "TC(1)"}, {"test": "TC"}]`},
+		{Parameters: `{"execute": [{"test": "TC"}, {"test": "TC", "timeout": 2}]}`,
+			Input: "TC", Want: `[{"test": "TC"}, {"test": "TC", "timeout": 2}]`},
+	}
+
+	for _, tt := range tests {
+		t.Run(t.Name(), func(t *testing.T) {
+			got, err := NewParameters(t, tt.Parameters).TestConfigs(tt.Input, tt.Presets...)
+			if err != nil {
+				t.Fatal(err)
+			}
+			b, err := yaml.MarshalJSON(got)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.Want, strings.TrimSpace(string(b)))
+		})
+	}
+}
+
+func NewParameters(t *testing.T, s string) *Parameters {
+	var p Parameters
+	if err := yaml.Unmarshal([]byte(s), &p); err != nil {
+		t.Fatal(err)
+	}
+	return &p
 }
 
 // equal returns true if a and b are equal string slices, order is ignored.

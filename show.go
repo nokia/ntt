@@ -62,44 +62,16 @@ func printJSON(report *ConfigReport, keys []string) error {
 	var presets []string
 	if s := env.Getenv("NTT_PRESETS"); s != "" {
 		presets = strings.Split(s, string(os.PathListSeparator))
+		gc, err := report.GlobalConfig(presets...)
+		if err != nil {
+			return err
+		}
+		report.Config.Parameters.TestConfig = gc
 	}
 
-	params, err := ApplyPresets(report.Config, presets...)
+	files, err := fs.TTCN3Files(report.Config.Sources...)
 	if err != nil {
 		return err
-	}
-	report.Config.Parameters = *params
-
-	b, err := yaml.MarshalJSON(report)
-	if err != nil {
-		return fmt.Errorf("failed to marshal report: %w", err)
-	}
-	fmt.Println(string(b))
-	return report.err
-}
-
-// ApplyPresets returns a list of test case configurations with optional
-// presets applied. The presets are applied in the order they are specified in
-// the list.
-//
-// ApplyPresets reads test case configuration from environment variables, the
-// parameters file, package.yml and from the TTCN-3 documentation tags.
-func ApplyPresets(c *project.Config, presets ...string) (*project.Parameters, error) {
-	// Global configuration
-	gc := c.Parameters
-
-	// Presets override/extend parameters files
-	for _, preset := range presets {
-		tc, ok := gc.Presets[preset]
-		if !ok {
-			return nil, fmt.Errorf("preset %q not found", preset)
-		}
-		gc.TestConfig = project.MergeTestConfig(gc.TestConfig, tc)
-	}
-
-	files, err := fs.TTCN3Files(c.Sources...)
-	if err != nil {
-		return nil, err
 	}
 
 	var list []project.TestConfig
@@ -108,19 +80,30 @@ func ApplyPresets(c *project.Config, presets ...string) (*project.Parameters, er
 		tree.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			case *syntax.FuncDecl:
-				if n.IsTest() || n.IsControl() {
-					list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
+				if !n.IsTest() && !n.IsControl() {
+					return false
 				}
-				return false
 			case *syntax.ControlPart:
-				list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
-				return false
+			default:
+				return true
 			}
-			return true
+			tc, err := report.TestConfigs(tree.QualifiedName(n), presets...)
+			if err != nil {
+			}
+			if len(tc) > 0 {
+				list = append(list, tc...)
+			}
+			return false
 		})
 	}
-	gc.Execute = list
-	return &gc, nil
+	report.Execute = list
+
+	b, err := yaml.MarshalJSON(report)
+	if err != nil {
+		return fmt.Errorf("failed to marshal report: %w", err)
+	}
+	fmt.Println(string(b))
+	return report.err
 }
 
 func printShellScript(report *ConfigReport, keys []string) error {
