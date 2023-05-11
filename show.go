@@ -102,23 +102,13 @@ func ApplyPresets(c *project.Config, presets ...string) (*project.Parameters, er
 		return nil, err
 	}
 
-	list := acquireExecutables(&gc, files, presets)
-
-	gc.Execute = list
-	return &gc, nil
-}
-
-// acquireExecutables depending on the provided presets and on the availability
-// inside the ttcn-3 code, a list of executable ttcn-3 entities (i.e. testcases,
-// control parts) is returned
-func acquireExecutables(gc *project.Parameters, files []string, presets []string) []project.TestConfig {
 	var list []project.TestConfig
 	for _, file := range files {
 		tree := ttcn3.ParseFile(file)
 		tree.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			case *syntax.FuncDecl:
-				if n.IsTest() || n.Modif != nil && n.Modif.String() == "@control" {
+				if n.IsTest() || n.IsControl() {
 					list = append(list, gc.Glob(tree.QualifiedName(n), presets...)...)
 				}
 				return false
@@ -129,7 +119,8 @@ func acquireExecutables(gc *project.Parameters, files []string, presets []string
 			return true
 		})
 	}
-	return list
+	gc.Execute = list
+	return &gc, nil
 }
 
 func printShellScript(report *ConfigReport, keys []string) error {
