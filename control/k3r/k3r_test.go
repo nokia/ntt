@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nokia/ntt/project"
 	tsts "github.com/nokia/ntt/control"
+	"github.com/nokia/ntt/project"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +21,7 @@ func TestEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if k3r := conf.K3.Runtime; k3r == "k3r" || k3r != "" {
+	if k3r := conf.K3.Runtime; k3r == "k3r" || k3r == "" {
 		t.Skip("no k3 runtime found")
 	}
 
