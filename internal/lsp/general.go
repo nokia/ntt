@@ -73,7 +73,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			DefinitionProvider:              true,
 			TypeDefinitionProvider:          false,
 			ImplementationProvider:          false,
-			DocumentFormattingProvider:      false, // depends on configuration. Needs to be set in 'initialized()'
+			DocumentFormattingProvider:      true,
 			DocumentRangeFormattingProvider: false,
 			DocumentSymbolProvider:          true,
 			WorkspaceSymbolProvider:         false,
@@ -115,8 +115,6 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 			s.AddSuite(root)
 		}
 	}
-	// inside initialize() it is not possible to look for the configuration
-	s.didChangeConfiguration(ctx, &protocol.DidChangeConfigurationParams{})
 	s.testCtrl = &TestController{}
 	s.testCtrl.Start(s.client, s, &s.Suites)
 	return nil

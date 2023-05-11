@@ -13,6 +13,11 @@ import (
 )
 
 func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
+	if !s.serverConfig.FormatEnabled {
+		log.Verbose("formatting: disabled")
+		return nil, nil
+	}
+
 	uri := string(params.TextDocument.URI)
 	b, err := fs.Content(uri)
 	if err != nil {
