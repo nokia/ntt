@@ -517,8 +517,8 @@ func (p *Parameters) TestConfigs(name string, presets ...string) ([]TestConfig, 
 }
 
 func matchTestConfig(name string, tc TestConfig, presets ...string) (TestConfig, bool) {
-	if tc.Test != "" {
-		pattern, params := split(tc.Test)
+	pattern, params := split(tc.Test)
+	if pattern != "" {
 		ok, err := filepath.Match(pattern, name)
 		if err != nil {
 			log.Verbosef("%s: %s\n", name, err.Error())
@@ -526,11 +526,13 @@ func matchTestConfig(name string, tc TestConfig, presets ...string) (TestConfig,
 		if !ok {
 			return tc, false
 		}
-		tc.Test = name
-		if params != "" {
-			tc.Test += "(" + params + ")"
-		}
 	}
+
+	tc.Test = name
+	if params != "" {
+		tc.Test += "(" + params + ")"
+	}
+
 	return tc, matchRules(tc.Rules, presets...)
 }
 

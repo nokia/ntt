@@ -395,11 +395,11 @@ func TestTestConfigs(t *testing.T) {
 	}{
 		// Verify unknown tests use global configuration
 		{Parameters: ``, Input: "", Want: `[{}]`},
-		{Parameters: ``, Input: "TC1", Want: `[{}]`},
-		{Parameters: ``, Input: "*", Want: `[{}]`},
+		{Parameters: ``, Input: "TC1", Want: `[{"test": "TC1"}]`},
+		{Parameters: ``, Input: "*", Want: `[{"test": "*"}]`},
 		{Parameters: `timeout: 1.0`, Input: "", Want: `[{"timeout": 1}]`},
-		{Parameters: `timeout: 1.0`, Input: "TC1", Want: `[{"timeout": 1}]`},
-		{Parameters: `timeout: 1.0`, Input: "*", Want: `[{"timeout": 1}]`},
+		{Parameters: `timeout: 1.0`, Input: "TC1", Want: `[{"test": "TC1", "timeout": 1}]`},
+		{Parameters: `timeout: 1.0`, Input: "*", Want: `[{"test": "*", "timeout": 1}]`},
 		{Parameters: `{"test": "TC?", "timeout": 1.0}`, Input: "", Want: `[]`},
 		{Parameters: `{"test": "TC?", "timeout": 1.0}`, Input: "TC1", Want: `[{"test": "TC1", "timeout": 1}]`},
 		{Parameters: `{"test": "TC?", "timeout": 1.0}`, Input: "*", Want: `[]`},

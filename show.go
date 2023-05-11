@@ -10,6 +10,7 @@ import (
 
 	"github.com/nokia/ntt/internal/env"
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
@@ -80,15 +81,19 @@ func printJSON(report *ConfigReport, keys []string) error {
 		tree.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			case *syntax.FuncDecl:
-				if !n.IsTest() && !n.IsControl() {
-					return false
+				if n.IsTest() || n.IsControl() {
+					break
 				}
+				return false
 			case *syntax.ControlPart:
+				break
 			default:
 				return true
 			}
-			tc, err := report.TestConfigs(tree.QualifiedName(n), presets...)
+			name := tree.QualifiedName(n)
+			tc, err := report.TestConfigs(name, presets...)
 			if err != nil {
+				log.Debugf("implementation error: %s\n", err)
 			}
 			if len(tc) > 0 {
 				list = append(list, tc...)
