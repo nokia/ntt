@@ -306,20 +306,34 @@ func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, t
 			if !basket.Match(name, tags) {
 				continue
 			}
-			id := fmt.Sprintf("%s-%d", name, names[name])
-			names[name]++
-
-			job := &control.Job{
-				ID:     id,
-				Name:   name,
-				Config: conf,
-				Dir:    OutputDir,
+			configs, err := conf.TestConfigs(name)
+			if err != nil {
+				log.Verbose(err.Error())
+				continue
+			}
+			if len(configs) == 0 {
+				log.Verbosef("no config for %s", name)
+				continue
 			}
 
-			select {
-			case out <- job:
-			case <-ctx.Done():
-				return
+			for _, tc := range configs {
+				id := fmt.Sprintf("%s-%d", name, names[name])
+				names[name]++
+
+				job := &control.Job{
+					ID:         id,
+					Name:       name,
+					Config:     conf,
+					Dir:        OutputDir,
+					Timeout:    tc.Timeout.Duration,
+					ModulePars: tc.Parameters,
+				}
+
+				select {
+				case out <- job:
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()
