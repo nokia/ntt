@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/control"
+	"github.com/nokia/ntt/internal/fs"
 )
 
 type Runner struct {
@@ -32,7 +32,7 @@ Compiling test %s in %q`, job.Name, job.Config.Root)
 			if err := Build(r.w, job.Config); err != nil {
 				fmt.Fprintln(r.w, err.Error())
 				results <- control.NewErrorEvent(&control.JobError{Job: job, Err: err})
-				return
+				continue
 			}
 
 			fmt.Fprintf(r.w, `
