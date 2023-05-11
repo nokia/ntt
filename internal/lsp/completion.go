@@ -45,16 +45,16 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
-		log.Debugln(fmt.Sprintf("Completion took %s.", elapsed))
+		log.Debugf("Completion took %s.\n", elapsed)
 	}()
 	defer func() {
 		if err := recover(); err != nil {
 			// in case of a panic, just continue as this might be a common situation during typing
-			log.Debugln(fmt.Sprintf("Info: %s.", err))
+			log.Debugf("Info: %s.\n", err)
 		}
 	}()
 	if !params.TextDocument.URI.SpanURI().IsFile() {
-		log.Printf(fmt.Sprintf("for 'code completion' the new file %q needs to be saved at least once", string(params.TextDocument.URI)))
+		log.Printf("for 'code completion' the new file %q needs to be saved at least once", string(params.TextDocument.URI))
 		return &protocol.CompletionList{}, nil
 	}
 
@@ -616,7 +616,7 @@ func CompleteImportSpecs(suite *Suite, kind syntax.Kind, mname string) []protoco
 		return ret
 
 	default:
-		log.Debugln(fmt.Sprintf("Kind not considered yet: %#v)", kind))
+		log.Debugf("Kind not considered yet: %#v\n", kind)
 		return nil
 	}
 }

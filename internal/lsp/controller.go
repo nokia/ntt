@@ -88,7 +88,7 @@ func (c *TestController) RunTest(id TestID) error {
 		log.Printf("multiple configurations found for %s: %v\n", id.URI, candidates)
 	}
 	config := candidates[0].Config
-	log.Printf("using configuration from %s", config.Root)
+	log.Printf("using configuration from %s\n", config.Root)
 
 	// TODO(5nord): Use project.ApplyPreset to retrieve the configuration,
 	// like expected verdict for the job.
