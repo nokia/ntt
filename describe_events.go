@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/nokia/ntt/internal/lnav"
 	"github.com/nokia/ntt/k3/log"
 	"github.com/spf13/cobra"
 )
@@ -18,9 +19,11 @@ var (
 		Hidden: true,
 		RunE:   describe,
 	}
+	formatLnav bool
 )
 
 func init() {
+	DescribeEventsCommand.Flags().BoolVar(&formatLnav, "lnav", false, "Output in lnav format")
 	RootCommand.AddCommand(DescribeEventsCommand)
 }
 
@@ -47,8 +50,10 @@ func describe(cmd *cobra.Command, args []string) error {
 		return strings.ToLower(events[i].Name) < strings.ToLower(events[j].Name)
 	})
 
-	switch Format() {
-	case "json":
+	switch {
+	case formatLnav:
+		return OutputLnavSpec(events)
+	case Format() == "json":
 		return OutputJSON(events)
 	default:
 		return OutputText(events)
@@ -56,13 +61,71 @@ func describe(cmd *cobra.Command, args []string) error {
 	}
 }
 
+func OutputLnavSpec(events []Event) error {
+
+	regexes := make(map[string]lnav.Regex)
+	for _, e := range events {
+		pattern := fmt.Sprintf(`^(?<timestamp>\d{8}T\d{6}\.\d{6})\|(?<eventtype>%s)\|(?<component>(\?|\w+))(=(?<location>[^\|]*))?`, e.Name)
+		for range e.Fields {
+			pattern += fmt.Sprintf(`\|.*`)
+		}
+		pattern += "$"
+		regexes[e.Name] = lnav.Regex{
+			Pattern: pattern,
+		}
+	}
+
+	formats := map[string]lnav.Format{
+		"ttcn3_log": {
+			Title:           "TTCN3 Log Format",
+			Description:     "Format describing TTCN3 log files.",
+			URL:             []string{"https://pkg.go.dev/github.com/nokia/ntt/k3/log#Category"},
+			TimestampFormat: []string{"%Y%m%dT%H%M%S.%f"},
+			OrderedByTime:   true,
+			Regex:           regexes,
+			OPidField:       "eventtype",
+			LevelField:      "verdict",
+			Level: map[string]string{
+				"error":   "error|[A-Z]{4}|DIV0|UTF8|inconc",
+				"trace":   "none",
+				"notice":  "pass",
+				"warning": "fail",
+			},
+			Value: map[string]lnav.Value{
+				"eventtype": {
+					Kind:        "string",
+					Identifier:  true,
+					Hidden:      false,
+					Description: "The k3r event type",
+				},
+				"component": {Kind: "string", Identifier: true},
+				"location":  {Kind: "string", Identifier: false},
+				"timestamp": {Kind: "string", Identifier: false},
+			},
+		},
+	}
+
+	spec := lnav.Spec{
+		Schema:  "https://lnav.org/schemas/format-v1.schema.json",
+		Formats: formats,
+	}
+
+	b, err := json.MarshalIndent(spec, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(b))
+	return nil
+}
+
 func OutputJSON(events []Event) error {
 	b, err := json.MarshalIndent(events, "", "  ")
 	if err != nil {
 		return err
 	}
+
 	fmt.Println(string(b))
-	return err
+	return nil
 }
 
 func OutputText(events []Event) error {
