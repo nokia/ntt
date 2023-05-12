@@ -178,7 +178,8 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s: mtc: %w", prefix, err)
 		}
-		k.Compiler = k3c[0]
+		// glob unfortunately sorts the results, so we need to take the last one.
+		k.Compiler = k3c[len(k3c)-1]
 	}
 
 	if k3r := env.Getenv("K3R"); k3r != "" {
@@ -188,7 +189,8 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 		if err != nil {
 			return nil, fmt.Errorf("k3r: %w", err)
 		}
-		k.Runtime = k3r[0]
+		// glob unfortunately sorts the results, so we need to take the last one.
+		k.Runtime = k3r[len(k3r)-1]
 	}
 
 	pluginLib, err := glob(ctx, prefix+"/{lib64,lib}/libk3-plugin.so")
