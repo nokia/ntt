@@ -157,11 +157,6 @@ func (t *Test) Run(ctx context.Context) <-chan control.Event {
 			}
 		}()
 
-		// k3r does not have a ControlStarted event, so we'll fake it.
-		if strings.HasSuffix(t.Name, ".control") {
-			events <- control.NewStartEvent(t.Job, t.Name)
-		}
-
 		scanner := bufio.NewScanner(stdout)
 		scanner.Split(bufio.ScanLines)
 		var name string
@@ -172,15 +167,14 @@ func (t *Test) Run(ctx context.Context) <-chan control.Event {
 			}
 			log.Traceln(context.TODO(), ">", line)
 			switch v := strings.Fields(line); v[0] {
-			case "tciTestCaseStarted":
+			case "tciTestCaseStarted", "tciControlStarted":
 				name = v[1][1 : len(v[1])-1]
 				events <- control.NewStartEvent(t.Job, name)
 			case "tciTestCaseTerminated":
 				verdict := v[1]
 				events <- control.NewStopEvent(t.Job, name, verdict)
 			case "tciControlTerminated":
-				// k3r does not send a verdict. I just assume it's pass.
-				events <- control.NewStopEvent(t.Job, t.Name, "pass")
+				events <- control.NewStopEvent(t.Job, t.Name, "done")
 			case "tciError":
 				switch v[1] {
 				case "E101:":

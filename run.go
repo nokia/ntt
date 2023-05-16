@@ -73,6 +73,8 @@ all tests with @stable-tag:
 			return ColorWarning
 		case "none":
 			return ColorWarning
+		case "done":
+			return color.New()
 		default:
 			return ColorFailure
 		}
@@ -159,7 +161,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 			}
 
 		case control.StopEvent:
-			if e.Verdict != "pass" {
+			if e.Verdict != "pass" && e.Verdict != "done" {
 				errorCount++
 			}
 			run := results.Run{

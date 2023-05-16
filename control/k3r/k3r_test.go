@@ -48,7 +48,7 @@ func TestEvents(t *testing.T) {
 				`StopEvent test.B fail`,
 				`StartEvent test.A`,
 				`StopEvent test.A pass`,
-				`StopEvent test.control pass`,
+				`StopEvent test.control done`,
 			}},
 		{
 			input: "test2.control",
@@ -56,14 +56,12 @@ func TestEvents(t *testing.T) {
 				`StartEvent test2.control`,
 				`StartEvent test2.A`,
 				`StopEvent test2.A pass`,
-				`StopEvent test2.control pass`,
+				`StopEvent test2.control done`,
 			}},
 		{
-			input: "test3.control",
-			events: []string{
-				`StartEvent test3.control`,
-				`StopEvent test3.control pass`, // no error message when control does not exist
-			}},
+			input:  "test3.control",
+			events: nil, // no error message when control does not exist
+		},
 		{
 			input: "test3.X",
 			events: []string{
