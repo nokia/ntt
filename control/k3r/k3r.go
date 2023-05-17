@@ -112,7 +112,7 @@ func (t *Test) Run(ctx context.Context) <-chan control.Event {
 			return
 		}
 		defer session.Release(sid)
-		cmd.Env = append(cmd.Env, fmt.Sprintf("NTT_SESSION_ID=%d", sid))
+		cmd.Env = append(cmd.Env, fmt.Sprintf("K3_SESSION_ID=%d", sid))
 
 		abs, err := filepath.Abs(t.LogFile)
 		if err != nil {
