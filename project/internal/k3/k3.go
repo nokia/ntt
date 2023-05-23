@@ -122,7 +122,7 @@ func searchRepo() searchFunc {
 			return nil, err
 		}
 		mtcBinaryDir, err := cache.Get("mtc_BINARY_DIR")
-		if err != nil {
+		if err != nil && !errors.Is(err, cmake.ErrNotFound) {
 			return nil, err
 		}
 		return getRepo(ctx, k3SourceDir, k3BinaryDir, mtcBinaryDir)
@@ -238,12 +238,14 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.Compiler = k3c
-	} else {
+	} else if mtcBinaryDir != "" {
 		k3c, err := glob(ctx, mtcBinaryDir+"/source/mtc/mtc")
 		if err != nil {
 			return nil, fmt.Errorf("mtc: %w", err)
 		}
 		k.Compiler = k3c[0]
+	} else {
+		k.Compiler = "mtc"
 	}
 
 	if k3r := env.Getenv("K3R"); k3r != "" {
