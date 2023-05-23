@@ -44,7 +44,7 @@ func TestNewPlugin(t *testing.T) {
 	}
 	expected := fmt.Sprintf("|%s|k3r-extfunc-plugin|extfunc", abs)
 	if actual := strings.Split(string(stdout), "\n"); !sliceContains(actual, expected) {
-		t.Errorf("Plugin did not load correctly:\n%s\n", string(stdout))
+		t.Errorf("Plugin did not load correctly. want=%s\ngot:\n%s\n", expected, string(stdout))
 	}
 }
 
