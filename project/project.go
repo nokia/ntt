@@ -65,9 +65,6 @@ type Config struct {
 	ResultsFile string `json:"results_file"`
 
 	K3 struct {
-		// K3 root folder
-		Root string `json:",omitempty"`
-
 		k3.Instance `json:",inline"`
 
 		// T3XF is the path to the T3XF file.

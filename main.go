@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime/pprof"
 	"strings"
 	"syscall"
@@ -72,6 +73,13 @@ var (
 					return proc.Exec(path, args[1:]...)
 				}
 				if path, err := exec.LookPath("k3-" + args[0]); err == nil {
+					return proc.Exec(path, args[1:]...)
+				}
+				conf, err := project.NewConfig(project.WithK3())
+				if err != nil {
+					return fmt.Errorf("unknown command: %w", err)
+				}
+				if path, err := exec.LookPath(filepath.Join(conf.K3.Root, "libexec", "ntt-"+args[0])); err == nil {
 					return proc.Exec(path, args[1:]...)
 				}
 				return fmt.Errorf("unknown command: %s", args[0])

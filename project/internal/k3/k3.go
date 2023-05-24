@@ -28,7 +28,7 @@ import (
 var ErrNotFound = errors.New("not found")
 
 type Instance struct {
-	root string
+	Root string
 
 	Compiler  string
 	Runtime   string
@@ -169,7 +169,7 @@ func getInstall(ctx context.Context, prefix string) (*Instance, error) {
 	defer region.End()
 	log.Tracef(ctx, "k3", "get install: %s\n", prefix)
 
-	k := Instance{root: prefix}
+	k := Instance{Root: prefix}
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.Compiler = k3c
@@ -234,7 +234,7 @@ func getRepo(ctx context.Context, k3SourceDir, k3BinaryDir, mtcBinaryDir string)
 	defer region.End()
 	log.Tracef(ctx, "k3", "get repo: %s %s %s\n", k3SourceDir, k3BinaryDir, mtcBinaryDir)
 
-	k := Instance{root: k3BinaryDir}
+	k := Instance{Root: k3BinaryDir}
 
 	if k3c := env.Getenv("K3C"); k3c != "" {
 		k.Compiler = k3c
