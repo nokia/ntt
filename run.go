@@ -16,6 +16,7 @@ import (
 	"github.com/nokia/ntt/control"
 	"github.com/nokia/ntt/control/k3r"
 	"github.com/nokia/ntt/control/pool"
+	"github.com/nokia/ntt/control/printer"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/results"
@@ -139,23 +140,21 @@ func runTests(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	var p printer.Printer
+	switch Format() {
+	case "plain":
+		p = printer.NewPlainPrinter()
+	case "json":
+		p = printer.NewJSONPrinter()
+	default:
+		p = printer.NewConsolePrinter()
+	}
+
 	for e := range runner.Run(ctx) {
-		log.Debugf("result: event=%#v\n", e)
-
+		p.Print(e)
 		switch e := e.(type) {
-		case control.LogEvent:
-			log.Debugln(e.Text)
-
-		case control.StartEvent:
-			if Format() == "text" {
-				ColorStart.Printf("=== RUN %s\n", e.Name)
-			}
-
-		case control.TickerEvent:
-			if Format() == "text" {
-				ColorRunning.Printf("... active %s\n", e.Job.Name)
-			}
-
+		case control.ErrorEvent:
+			errorCount++
 		case control.StopEvent:
 			if e.Verdict != "pass" && e.Verdict != "done" {
 				errorCount++
@@ -168,36 +167,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 				WorkingDir: e.Job.Dir,
 			}
 			runs = append(runs, r)
-			switch Format() {
-			case "plain":
-				c := Colors(r.Verdict)
-				c.Printf("%s\t%s\t%.4f\n", r.Verdict, r.Name, float64(r.Duration().Seconds()))
-			case "text":
-				switch {
-				case r.Verdict == "fatal":
-					ColorFatal.Printf("+++ fatal %s\t(%s)\n", r.Name, r.Reason)
-				default:
-					c := Colors(r.Verdict)
-					c.Printf("--- %s %s\t(duration=%.2fs)\n", r.Verdict, r.Name, float64(r.Duration().Seconds()))
-				}
-			case "json":
-				b, err := json.Marshal(r)
-				if err != nil {
-					panic(fmt.Sprintf("cannot marshal run: %v", r))
-				}
-				fmt.Println(string(b))
-			}
 
-		case control.ErrorEvent:
-			errorCount++
-			if job := control.UnwrapJob(e); job != nil {
-				ColorFatal.Printf("+++ fatal error: %s: %s\n", job.Name, e.Err.Error())
-				break
-			}
-			ColorFatal.Printf("+++ fatal error: %s\n", e.Err.Error())
-
-		default:
-			panic(fmt.Sprintf("event type %T not implemented", e))
 		}
 
 		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
