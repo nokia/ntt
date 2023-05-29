@@ -103,6 +103,7 @@ var (
 	outputJSON     bool
 	outputPlain    bool
 	outputProgress bool
+	outputTAP      bool
 	testsFiles     []string
 	chdir          string
 
@@ -122,6 +123,7 @@ func init() {
 	flags.BoolVarP(&outputQuiet, "quiet", "q", false, "quiet output")
 	flags.BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
 	flags.BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
+	RunCommand.PersistentFlags().BoolVarP(&outputTAP, "tap", "", false, "output in test anything (TAP) format")
 	flags.StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	flags.StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
 
@@ -153,6 +155,8 @@ func Format() string {
 		return "json"
 	case outputProgress:
 		return "progress"
+	case outputTAP:
+		return "tap"
 	default:
 		return "text"
 	}

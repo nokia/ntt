@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -146,6 +147,8 @@ func runTests(cmd *cobra.Command, args []string) error {
 		p = printer.NewPlainPrinter()
 	case "json":
 		p = printer.NewJSONPrinter()
+	case "tap":
+		p = printer.NewTAPPrinter()
 	default:
 		p = printer.NewConsolePrinter()
 	}
@@ -171,10 +174,14 @@ func runTests(cmd *cobra.Command, args []string) error {
 		}
 
 		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
-			ColorFatal.Println("+++ fatal too many errors. Exiting.")
+			p.Print(control.NewErrorEvent(fmt.Errorf("too many errors. Exiting.")))
 			cancel()
 			break
 		}
+	}
+
+	if c, ok := p.(io.Closer); ok {
+		c.Close()
 	}
 
 	if errorCount > 0 {
