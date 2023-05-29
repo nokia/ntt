@@ -15,12 +15,14 @@ var ErrNoFactory = errors.New("factory is not set")
 type Runner struct {
 	sync.Mutex
 	maxWorkers int
+	running    map[*control.Job]time.Time
 	factory    control.RunnerFactory
 }
 
 func NewRunner(opts ...Option) (*Runner, error) {
 	r := &Runner{
 		maxWorkers: 1,
+		running:    make(map[*control.Job]time.Time),
 	}
 	for _, opt := range opts {
 		if err := opt(r); err != nil {
@@ -64,9 +66,17 @@ func (r *Runner) Run(ctx context.Context) <-chan control.Event {
 					return
 				}
 				ticker.Reset(secs * time.Second)
+				switch ev := res.(type) {
+				case control.StartEvent:
+					r.running[ev.Job] = ev.Time()
+				case control.StopEvent:
+					ev.Begin = r.running[ev.Job]
+				}
 				out <- res
 			case <-ticker.C:
-				out <- control.NewTickerEvent()
+				for job := range r.running {
+					out <- control.NewTickerEvent(job)
+				}
 			}
 		}
 	}()

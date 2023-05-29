@@ -111,6 +111,7 @@ func NewStartEvent(job *Job, name string) StartEvent {
 type StopEvent struct {
 	Name    string
 	Verdict string
+	Begin   time.Time
 	event
 	*Job
 }
@@ -123,11 +124,12 @@ func NewStopEvent(job *Job, name string, verdict string) StopEvent {
 // TickerEvent is an event that is emitted periodically during the test execution.
 type TickerEvent struct {
 	event
+	*Job
 }
 
 // NewTickerEvent creates a new TickerEvent.
-func NewTickerEvent() TickerEvent {
-	return TickerEvent{event{t: time.Now()}}
+func NewTickerEvent(job *Job) TickerEvent {
+	return TickerEvent{event{t: time.Now()}, job}
 }
 
 // event is the base type for all events.
