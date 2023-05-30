@@ -106,7 +106,12 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	_, ids := splitArgs(args, cmd.ArgsLenAtDash())
-	jobs, err := JobQueue(ctx, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
+
+	plan, err := control.NewTestPlan(Project)
+	if err != nil {
+		return err
+	}
+	jobs, err := JobQueue(ctx, plan, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
 	if err != nil {
 		return err
 	}
@@ -191,7 +196,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 
 }
 
-func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, testsFiles []string, tests []string, allTests bool) (<-chan *control.Job, error) {
+func JobQueue(ctx context.Context, plan *control.TestPlan, flags *pflag.FlagSet, conf *project.Config, testsFiles []string, tests []string, allTests bool) (<-chan *control.Job, error) {
 
 	basket, err := NewBasketWithFlags("run", flags)
 	if err != nil {
