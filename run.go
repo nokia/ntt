@@ -16,7 +16,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/nokia/ntt/control"
 	"github.com/nokia/ntt/control/k3r"
-	"github.com/nokia/ntt/control/pool"
 	"github.com/nokia/ntt/control/printer"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -133,9 +132,9 @@ func runTests(cmd *cobra.Command, args []string) error {
 		err = ioutil.WriteFile(Project.ResultsFile, b, 0644)
 	}()
 
-	runner, err := pool.NewRunner(
-		pool.MaxWorkers(MaxWorkers),
-		pool.WithFactory(k3r.Factory(jobs)),
+	runner, err := control.New(
+		control.MaxWorkers(MaxWorkers),
+		control.WithFactory(k3r.Factory(jobs)),
 	)
 	if err != nil {
 		return err

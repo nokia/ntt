@@ -148,8 +148,7 @@ ntt                 main binary with sub-commands (list, build, run, lint, ...)
 ├── project         test suite configuration package
 ├── control         test management and control
 │   ├── k3r         runner implementation for k3r
-│   ├── k3s         runner implementation for k3s
-│   └── pool        runner with support for worker pools
+│   └── k3s         runner implementation for k3s
 │
 ├── runtime         runtime system
 ├── builtins        predefined and builtin functions
