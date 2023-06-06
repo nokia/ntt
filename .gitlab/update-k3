@@ -10,6 +10,11 @@ trap "rm -rf -- $TEMP" EXIT
 
 source <(curl https://gitlabe1.ext.net.nokia.com/k3/k3ci/-/raw/master/k3ci-configure-ssh)
 
+function escapeJSON() {
+    python -c 'import json; import sys; print(json.dumps(sys.stdin.read().strip()))' <<<"${@}"
+}
+
+
 cat >${HEADER} <<EOF
 Private-Token: ${GITLAB_TOKEN}
 Content-Type: application/json
@@ -33,12 +38,13 @@ git push --set-upstream origin ${K3_SOURCE_BRANCH}
 curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" --header @$HEADER --data @- <<EOB
 {
     "id": ${K3_PROJECT_ID},
+    "assignee_id":"${GITLAB_USER_ID}",
     "source_branch": "${K3_SOURCE_BRANCH}",
     "target_branch": "${K3_TARGET_BRANCH}",
-    "title": "${CI_COMMIT_TITLE}",
-    "description": "${CI_COMMIT_DESCRIPTION}",
+    "title": $(escapeJSON "${CI_COMMIT_TITLE}"),
+    "description": $(escapeJSON "${CI_COMMIT_DESCRIPTION}"),
     "remove_source_branch": true,
-    "assignee_id":"${GITLAB_USER_ID}"
+    "squash_on_merge": true,
 }
 EOB
 cat mr.json
