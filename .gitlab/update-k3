@@ -44,7 +44,7 @@ curl >mr.json -X POST "${CI_API_V4_URL}/projects/$K3_PROJECT_ID/merge_requests" 
     "title": $(escapeJSON "${CI_COMMIT_TITLE}"),
     "description": $(escapeJSON "${CI_COMMIT_DESCRIPTION}"),
     "remove_source_branch": true,
-    "squash_on_merge": true,
+    "squash_on_merge": true
 }
 EOB
 cat mr.json
