@@ -51,6 +51,12 @@ var (
 				}
 			}
 
+			// If we have a k3 installtion, we'll prepend libexec before PATH
+			conf, err := project.NewConfig(project.WithK3())
+			if conf != nil && conf.K3.Root != "" {
+				os.Setenv("PATH", fmt.Sprintf("%s%c%s", filepath.Join(conf.K3.Root, "libexec"), os.PathListSeparator, os.Getenv("PATH")))
+			}
+
 			// Skip opening the project if we're running a custom command or version.
 			if cmd.Use == "ntt" || cmd.Use == "version" || cmd.Use == "stdout" || strings.HasPrefix(cmd.Use, "help") || cmd.Use == "docs" {
 				// first arg is either an external subkommand of the form
@@ -64,6 +70,7 @@ var (
 				return err
 			}
 			Project = p
+
 			return nil
 		},
 
@@ -73,13 +80,6 @@ var (
 					return proc.Exec(path, args[1:]...)
 				}
 				if path, err := exec.LookPath("k3-" + args[0]); err == nil {
-					return proc.Exec(path, args[1:]...)
-				}
-				conf, err := project.NewConfig(project.WithK3())
-				if err != nil {
-					return fmt.Errorf("unknown command: %w", err)
-				}
-				if path, err := exec.LookPath(filepath.Join(conf.K3.Root, "libexec", "ntt-"+args[0])); err == nil {
 					return proc.Exec(path, args[1:]...)
 				}
 				return fmt.Errorf("unknown command: %s", args[0])
@@ -103,6 +103,7 @@ var (
 	outputJSON     bool
 	outputPlain    bool
 	outputProgress bool
+	outputTAP      bool
 	testsFiles     []string
 	chdir          string
 
@@ -122,6 +123,7 @@ func init() {
 	flags.BoolVarP(&outputQuiet, "quiet", "q", false, "quiet output")
 	flags.BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
 	flags.BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
+	RunCommand.PersistentFlags().BoolVarP(&outputTAP, "tap", "", false, "output in test anything (TAP) format")
 	flags.StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	flags.StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
 
@@ -153,6 +155,8 @@ func Format() string {
 		return "json"
 	case outputProgress:
 		return "progress"
+	case outputTAP:
+		return "tap"
 	default:
 		return "text"
 	}

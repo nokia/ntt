@@ -1,13 +1,13 @@
-// Package control provides the test control and management interface.
 package control
 
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
-
-	"github.com/nokia/ntt/project"
 )
+
+var ErrNoFactory = errors.New("factory is not set")
 
 // A Runner runs one or multiple jobs and emits Events
 type Runner interface {
@@ -17,140 +17,98 @@ type Runner interface {
 // RunnerFactory creates a new Runner.
 type RunnerFactory func() (Runner, error)
 
-// Job describes the test or control function to be executed.
-type Job struct {
-	// ID is the unique identifier of the job.
-	ID string
-
-	// Name is the fully qualified name of the test or control function.
-	Name string
-
-	// Args is the list of arguments to pass to the test.
-	Args []string
-
-	// Timeout is the duration after which the job will be stopped.
-	Timeout time.Duration
-
-	// Module Parameters
-	ModulePars map[string]string
-
-	// Dir specifies the working directory for the job.
-	Dir string
-
-	// Env specifies the environment variables to pass to the job.
-	Env []string
-
-	// Config provides the project configuration
-	*project.Config
+// A Controller executes jobs in parallel.
+type Controller struct {
+	sync.Mutex
+	maxWorkers int
+	running    map[*Job]time.Time
+	factory    RunnerFactory
 }
 
-func NewJob(name string, conf *project.Config) *Job {
-	return &Job{
-		Name:   name,
-		Config: conf,
+// New creates a new Controller.
+func New(opts ...Option) (*Controller, error) {
+	c := &Controller{
+		maxWorkers: 1,
+		running:    make(map[*Job]time.Time),
 	}
-}
-
-// JobError describes an error that occurred during the execution of a test or control function.
-type JobError struct {
-	*Job
-	Err error
-}
-
-func (e *JobError) Error() string {
-	return e.Err.Error()
-}
-
-func (e *JobError) Unwrap() error {
-	return e.Err
-}
-
-// Event provides information regarding test execution.
-type Event interface {
-	Time() time.Time // Time when the event happened.
-}
-
-// ErrorEvent is an error event.
-type ErrorEvent struct {
-	event
-	Err error
-}
-
-func (e ErrorEvent) Error() string { return e.Err.Error() }
-func (e ErrorEvent) Unwrap() error { return e.Err }
-
-// NewError wraps an error into an ErrorEvent. It uses time.Now() as the time when the event happened.
-func NewErrorEvent(err error) ErrorEvent {
-	return ErrorEvent{event{t: time.Now()}, err}
-}
-
-// LogEvent is an event that provided additional information about the test execution.
-type LogEvent struct {
-	Text string
-	event
-	*Job
-}
-
-func NewLogEvent(job *Job, text string) LogEvent {
-	return LogEvent{event: event{t: time.Now()}, Job: job, Text: text}
-}
-
-// StartEvent is an event that is emitted when the test is started.
-type StartEvent struct {
-	Name string
-	event
-	*Job
-}
-
-// NewStartEvent creates a new StartEvent.
-func NewStartEvent(job *Job, name string) StartEvent {
-	return StartEvent{event: event{t: time.Now()}, Job: job, Name: name}
-}
-
-// StopEvent is an event that is emitted when the test is stopped.
-type StopEvent struct {
-	Name    string
-	Verdict string
-	event
-	*Job
-}
-
-// NewStopEvent creates a new StopEvent.
-func NewStopEvent(job *Job, name string, verdict string) StopEvent {
-	return StopEvent{event: event{t: time.Now()}, Job: job, Name: name, Verdict: verdict}
-}
-
-// TickerEvent is an event that is emitted periodically during the test execution.
-type TickerEvent struct {
-	event
-}
-
-// NewTickerEvent creates a new TickerEvent.
-func NewTickerEvent() TickerEvent {
-	return TickerEvent{event{t: time.Now()}}
-}
-
-// event is the base type for all events.
-type event struct {
-	t time.Time
-}
-
-func (e event) Time() time.Time { return e.t }
-
-// UnwrapJob returns the job that caused the event or nil if no such job is available.
-func UnwrapJob(e Event) *Job {
-	switch e := e.(type) {
-	case StartEvent:
-		return e.Job
-	case StopEvent:
-		return e.Job
-	case LogEvent:
-		return e.Job
-	case ErrorEvent:
-		var err *JobError
-		if errors.As(e.Err, &err) {
-			return err.Job
+	for _, opt := range opts {
+		if err := opt(c); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	if c.factory == nil {
+		return nil, ErrNoFactory
+	}
+	return c, nil
+}
+
+func (c *Controller) Run(ctx context.Context) <-chan Event {
+	wg := sync.WaitGroup{}
+	results := make(chan Event, c.maxWorkers)
+	for i := 0; i < c.maxWorkers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			worker, err := c.factory()
+			if err != nil {
+				results <- NewErrorEvent(err)
+				return
+			}
+
+			for event := range worker.Run(ctx) {
+				results <- event
+			}
+		}(i)
+	}
+
+	out := make(chan Event, c.maxWorkers)
+	go func() {
+		const secs = time.Duration(30.0)
+		ticker := time.NewTicker(secs * time.Second)
+		for {
+			select {
+			case res, ok := <-results:
+				if !ok {
+					close(out)
+					return
+				}
+				ticker.Reset(secs * time.Second)
+				switch ev := res.(type) {
+				case StartEvent:
+					c.running[ev.Job] = ev.Time()
+				case StopEvent:
+					ev.Begin = c.running[ev.Job]
+				}
+				out <- res
+			case <-ticker.C:
+				for job := range c.running {
+					out <- NewTickerEvent(job)
+				}
+			}
+		}
+	}()
+
+	// Wait for all workers to finish.
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	return out
+}
+
+type Option func(*Controller) error
+
+func MaxWorkers(n int) Option {
+	return func(c *Controller) error {
+		c.maxWorkers = n
+		return nil
+	}
+}
+
+func WithFactory(f RunnerFactory) Option {
+	return func(c *Controller) error {
+		c.factory = f
+		return nil
+	}
 }

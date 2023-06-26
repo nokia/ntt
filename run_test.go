@@ -184,7 +184,7 @@ func testJobQueue(t *testing.T, conf *project.Config, args ...string) ([]string,
 	if err := flags.Parse(args); err != nil {
 		t.Fatal(err)
 	}
-	jobs, err := JobQueue(context.Background(), flags, conf, files, flags.Args(), allTests)
+	jobs, err := JobQueue(context.Background(), nil, flags, conf, files, flags.Args(), allTests)
 	var ret []string
 	if err == nil {
 		for job := range jobs {

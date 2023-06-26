@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -15,7 +16,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/nokia/ntt/control"
 	"github.com/nokia/ntt/control/k3r"
-	"github.com/nokia/ntt/control/pool"
+	"github.com/nokia/ntt/control/printer"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/results"
@@ -105,7 +106,12 @@ func runTests(cmd *cobra.Command, args []string) error {
 	}
 
 	_, ids := splitArgs(args, cmd.ArgsLenAtDash())
-	jobs, err := JobQueue(ctx, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
+
+	plan, err := control.NewTestPlan(Project)
+	if err != nil {
+		return err
+	}
+	jobs, err := JobQueue(ctx, plan, cmd.Flags(), Project, testsFiles, ids, RunAllTests)
 	if err != nil {
 		return err
 	}
@@ -131,74 +137,55 @@ func runTests(cmd *cobra.Command, args []string) error {
 		err = ioutil.WriteFile(Project.ResultsFile, b, 0644)
 	}()
 
-	running := make(map[*control.Job]time.Time)
-	runner, err := pool.NewRunner(
-		pool.MaxWorkers(MaxWorkers),
-		pool.WithFactory(k3r.Factory(jobs)),
+	runner, err := control.New(
+		control.MaxWorkers(MaxWorkers),
+		control.WithFactory(k3r.Factory(jobs)),
 	)
 	if err != nil {
 		return err
 	}
 
+	var p printer.Printer
+	switch Format() {
+	case "plain":
+		p = printer.NewPlainPrinter()
+	case "json":
+		p = printer.NewJSONPrinter()
+	case "tap":
+		p = printer.NewTAPPrinter()
+	default:
+		p = printer.NewConsolePrinter()
+	}
+
 	for e := range runner.Run(ctx) {
-		log.Debugf("result: event=%#v\n", e)
-
+		p.Print(e)
 		switch e := e.(type) {
-		case control.LogEvent:
-			log.Debugln(e.Text)
-
-		case control.StartEvent:
-			running[e.Job] = e.Time()
-			if Format() == "text" {
-				ColorStart.Printf("=== RUN %s\n", e.Name)
-			}
-
-		case control.TickerEvent:
-			if Format() == "text" {
-				for job := range running {
-					ColorRunning.Printf("... active %s\n", job.Name)
-				}
-			}
-
+		case control.ErrorEvent:
+			errorCount++
 		case control.StopEvent:
 			if e.Verdict != "pass" && e.Verdict != "done" {
 				errorCount++
 			}
-			run := results.Run{
+			r := results.Run{
 				Name:       e.Name,
 				Verdict:    e.Verdict,
-				Begin:      results.Timestamp{Time: running[e.Job]},
+				Begin:      results.Timestamp{Time: e.Begin},
 				End:        results.Timestamp{Time: e.Time()},
 				WorkingDir: e.Job.Dir,
 			}
-			runs = append(runs, run)
-			printRun(run)
+			runs = append(runs, r)
 
-		case control.ErrorEvent:
-			errorCount++
-			job := control.UnwrapJob(e)
-			if job == nil {
-				ColorFatal.Println("+++ fatal error: " + e.Err.Error())
-				break
-			}
-			run := results.Run{
-				Name:       job.Name,
-				Verdict:    "fatal",
-				Begin:      results.Timestamp{Time: running[job]},
-				End:        results.Timestamp{Time: e.Time()},
-				WorkingDir: job.Dir,
-			}
-			printRun(run)
-
-		default:
-			panic(fmt.Sprintf("event type %T not implemented", e))
 		}
 
 		if MaxFail > 0 && errorCount >= uint64(MaxFail) {
-			ColorFatal.Println("+++ fatal too many errors. Exiting.")
+			p.Print(control.NewErrorEvent(fmt.Errorf("too many errors. Exiting.")))
 			cancel()
 			break
 		}
+	}
+
+	if c, ok := p.(io.Closer); ok {
+		c.Close()
 	}
 
 	if errorCount > 0 {
@@ -209,7 +196,7 @@ func runTests(cmd *cobra.Command, args []string) error {
 
 }
 
-func JobQueue(ctx context.Context, flags *pflag.FlagSet, conf *project.Config, testsFiles []string, tests []string, allTests bool) (<-chan *control.Job, error) {
+func JobQueue(ctx context.Context, plan *control.TestPlan, flags *pflag.FlagSet, conf *project.Config, testsFiles []string, tests []string, allTests bool) (<-chan *control.Job, error) {
 
 	basket, err := NewBasketWithFlags("run", flags)
 	if err != nil {
@@ -349,28 +336,6 @@ func EntryPoints(file string, tests bool) []*ttcn3.Node {
 		return tree.Tests()
 	}
 	return tree.Controls()
-}
-
-func printRun(r results.Run) {
-	switch Format() {
-	case "plain":
-		c := Colors(r.Verdict)
-		c.Printf("%s\t%s\t%.4f\n", r.Verdict, r.Name, float64(r.Duration().Seconds()))
-	case "text":
-		switch {
-		case r.Verdict == "fatal":
-			ColorFatal.Printf("+++ fatal %s\t(%s)\n", r.Name, r.Reason)
-		default:
-			c := Colors(r.Verdict)
-			c.Printf("--- %s %s\t(duration=%.2fs)\n", r.Verdict, r.Name, float64(r.Duration().Seconds()))
-		}
-	case "json":
-		b, err := json.Marshal(r)
-		if err != nil {
-			panic(fmt.Sprintf("cannot marshal run: %v", r))
-		}
-		fmt.Println(string(b))
-	}
 }
 
 // WithSignalHandler adds a signal handler for ^C to the context.
