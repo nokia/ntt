@@ -152,7 +152,6 @@ const (
 	ErrSNAP Category = "SNAP|Invalid operation during snapshot"
 	ErrSRUN Category = "SRUN|Start already running|Identity of already running thread"
 	ErrSYSE Category = "SYSE|Report a std::system_error exception during operation: indicates a bug to be reported|error code|error description"
-	ErrTCIM Category = "TCIM|Detail"
 	ErrTIME Category = "TIME|Testcase execution time limit exceeded"
 	ErrTSTP Category = "TSTP|Test stopped by the testcase.stop operation|Detail"
 	ErrTYPE Category = "TYPE|Type mismatch (bug)|Expected type|Given type"
@@ -299,7 +298,6 @@ var (
 		"SNAP": "SNAP|Invalid operation during snapshot",
 		"SRUN": "SRUN|Start already running|Identity of already running thread",
 		"SYSE": "SYSE|Report a std::system_error exception during operation: indicates a bug to be reported|error code|error description",
-		"TCIM": "TCIM|Detail",
 		"TIME": "TIME|Testcase execution time limit exceeded",
 		"TSTP": "TSTP|Test stopped by the testcase.stop operation|Detail",
 		"TYPE": "TYPE|Type mismatch (bug)|Expected type|Given type",

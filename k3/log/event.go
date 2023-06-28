@@ -118,7 +118,6 @@ var (
 		"SNAP": ErrSNAP,
 		"SRUN": ErrSRUN,
 		"SYSE": ErrSYSE,
-		"TCIM": ErrTCIM,
 		"TIME": ErrTIME,
 		"TSTP": ErrTSTP,
 		"TYPE": ErrTYPE,
