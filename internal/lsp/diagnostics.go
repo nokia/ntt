@@ -31,17 +31,15 @@ func (s *Server) Diagnose(uris ...protocol.DocumentURI) {
 	s.diagsMu.Lock()
 	defer s.diagsMu.Unlock()
 
-	for uri := range s.diags {
-		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
-			Diagnostics: make([]protocol.Diagnostic, 0),
-			URI:         protocol.DocumentURI(uri),
-		})
-	}
 	s.diags = make(map[string][]protocol.Diagnostic)
 	defer s.syncDiagnostics()
 
 	// TODO(5nord): Run linter against uris
 	for _, uri := range uris {
+		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+			Diagnostics: make([]protocol.Diagnostic, 0),
+			URI:         uri,
+		})
 		tree := ttcn3.ParseFile(string(uri))
 		if err := tree.Err; err != nil {
 			s.reportError(err)
