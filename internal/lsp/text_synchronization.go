@@ -49,6 +49,7 @@ func (s *Server) didChange(ctx context.Context, params *protocol.DidChangeTextDo
 	}
 
 	s.db.Index(uri)
+	s.Diagnose(params.TextDocument.URI)
 	return nil
 }
 

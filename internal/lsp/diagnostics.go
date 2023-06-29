@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/lsp/protocol"
+	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
@@ -34,11 +35,21 @@ func (s *Server) Diagnose(uris ...protocol.DocumentURI) {
 	defer s.syncDiagnostics()
 
 	// TODO(5nord): Run linter against uris
+	for _, uri := range uris {
+		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+			Diagnostics: make([]protocol.Diagnostic, 0),
+			URI:         uri,
+		})
+		tree := ttcn3.ParseFile(string(uri))
+		if err := tree.Err; err != nil {
+			s.reportError(err)
+		}
+	}
 }
 
 func (s *Server) reportError(err error) {
 	var (
-		serr *syntax.Error
+		serr syntax.Error
 		merr *multierror.Error
 	)
 
@@ -73,7 +84,7 @@ func (s *Server) syncDiagnostics() {
 	for k, v := range s.diags {
 		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 			Diagnostics: v,
-			URI:         protocol.URIFromPath(k),
+			URI:         protocol.DocumentURI(k),
 		})
 	}
 }
