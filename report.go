@@ -67,6 +67,7 @@ Available Objects
   .RunSlice.Deviation: Standard deviation
   .RunSlice.Duration:  Timespan of first and last test run
   .RunSlice.Failed:    A slice of failed test runs (inconc, none, error, fail, ...)
+  .RunSlice.Skipped:   A slice of skipped test
   .RunSlice.First:     First test run
   .RunSlice.Last:      Last test run
   .RunSlice.Longest:   Longest test run
@@ -160,9 +161,10 @@ const (
 	JUnitTemplate = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>{{range .Modules}}
 
-<testsuite name="{{.Name}}" tests="{{len .FixedTests}}" failures="{{len .FixedTests.Failed}}" errors="" time="{{.FixedTests.Total.Seconds}}">
+<testsuite name="{{.Name}}" tests="{{len .FixedTests}}" failures="{{len .FixedTests.Failed}}" skipped="{{len .FixedTests.Skipped}}" errors="" time="{{.FixedTests.Total.Seconds}}">
 {{range .FixedTests}}<testcase name="{{.Testcase}}" time="{{.Duration.Seconds}}">
-  {{if and (ne .Verdict "unstable") (ne .Verdict "pass")}}<failure>Verdict: {{.Verdict}} {{with .Reason}}({{. | html }}){{end}}
+{{if eq .Verdict "skipped"}}  <skipped type="skipped" message="Verdict: skipped">{{with .Reason}}{{. | html }}{{end}}</skipped>
+{{else if and (ne .Verdict "unstable") (ne .Verdict "pass")}}  <failure>Verdict: {{.Verdict}} {{with .Reason}}({{. | html }}){{end}}
 {{range .ReasonFiles}}{{.Name}}: {{.Content}}{{end}}
   </failure>
 {{end}}</testcase>
@@ -557,6 +559,10 @@ func (rs RunSlice) Deviation() time.Duration {
 
 func (rs RunSlice) NotPassed() []Run {
 	return rs.filter(func(s string) bool { return s != "pass" })
+}
+
+func (rs RunSlice) Skipped() []Run {
+	return rs.filter(func(s string) bool { return s == "skipped" })
 }
 
 func (rs RunSlice) Failed() []Run {
