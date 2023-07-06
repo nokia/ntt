@@ -245,6 +245,8 @@ func FinalVerdicts(runs []Run) []Run {
 
 	severity := func(verdict string) int {
 		switch strings.TrimSpace(strings.ToLower(verdict)) {
+		case "skipped":
+			return -1
 		case "pass":
 			return 0
 		case "none", "":

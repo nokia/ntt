@@ -59,6 +59,14 @@ func TestFinalVerdict(t *testing.T) {
 		run("none", "Test.K-1"),
 		run("none", "Test.L-1"),
 		run("inconc", "Test.L-0"),
+		run("skipped", "Test.M-1"),
+		run("skipped", "Test.M-0"),
+		run("skipped", "Test.N-1"),
+		run("pass", "Test.N-0"),
+		run("none", "Test.O-0"),
+		run("skipped", "Test.O-1"),
+		run("skipped", "Test.P-0"),
+		run("error", "Test.P-1"),
 	}))
 
 	expected := stringSlice([]Run{
@@ -74,6 +82,10 @@ func TestFinalVerdict(t *testing.T) {
 		run("inconc", "Test.J-1"),
 		run("inconc", "Test.K-0"),
 		run("inconc", "Test.L-0"),
+		run("skipped", "Test.M-0"),
+		run("unstable", "Test.N-0"), // N-0 because there are no logs skipped runs (N-1)
+		run("none", "Test.O-0"),
+		run("error", "Test.P-1"),
 	})
 
 	assert.Equal(t, expected, actual)

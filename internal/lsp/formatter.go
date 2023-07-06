@@ -8,7 +8,6 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/v2/printer"
 )
 
@@ -24,6 +23,11 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 		log.Debug("formatting: ", err.Error())
 		return nil, nil
 	}
+	if len(b) < 1 {
+		log.Debugln("formatting: zero length file")
+		return nil, nil
+	}
+
 	var out bytes.Buffer
 	p := printer.NewCanonicalPrinter(&out)
 	p.TabWidth = int(params.Options.TabSize)
@@ -41,11 +45,9 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	}
 
 	tree := ttcn3.ParseFile(uri)
-	begin := syntax.Begin(tree.Root)
-	end := syntax.End(tree.Root)
+	begin := tree.Position(0)
+	end := tree.Position(len(b)) // The end position is exclusive.
 
-	// TODO(5nord) Test this workaround with other language protocol
-	// clients (e.g. emacs, vim, ...)
 	if b[len(b)-1] == '\n' {
 		end.Line++
 		end.Column = 1
