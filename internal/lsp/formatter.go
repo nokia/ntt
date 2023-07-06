@@ -45,6 +45,10 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	}
 
 	tree := ttcn3.ParseFile(uri)
+	if tree.Err != nil {
+		log.Debug("skip formatting: ", tree.Err.Error())
+		return nil, nil
+	}
 	begin := tree.Position(0)
 	end := tree.Position(len(b)) // The end position is exclusive.
 
