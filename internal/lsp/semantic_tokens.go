@@ -171,6 +171,10 @@ var builtins = map[string]SemanticTokenType{
 }
 
 func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTokensParams) (*protocol.SemanticTokens, error) {
+	if !s.serverConfig.SemantikTokensEnabled {
+		return nil, nil
+	}
+
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
 	begin := tree.Pos()
@@ -179,6 +183,10 @@ func (s *Server) semanticTokens(ctx context.Context, params *protocol.SemanticTo
 }
 
 func (s *Server) semanticTokensRange(ctx context.Context, params *protocol.SemanticTokensRangeParams) (*protocol.SemanticTokens, error) {
+	if !s.serverConfig.SemantikTokensEnabled {
+		return nil, nil
+	}
+
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
 	begin := tree.PosFor(int(params.Range.Start.Line)+1, int(params.Range.Start.Character+1))
