@@ -1,198 +1,255 @@
-// Package types implements the type system for TTCN-3.
-//
-// # TTCN-3 Types
-//
-// A type is the set of values an expression can have. For example, the
-// `integer` type is the set of all whole numbers, the type `integer
-// (0..infinity)` is the set of all non-negative whole numbers.
-//
-// Two types are equal if their sets of possible values are equal. For example:
-//
-//	integer == integer
-//	integer == integer (-infinity..infinity)
-//	integer != integer (0..255)
-//	record { integer a } != record { integer b }
-//	record { integer a, integer b } != record { integer b, integer a }
-//
-// A type is called a *subtype* of another type if its set of possible values
-// is a subset of the other type's set of possible values. For example:
-//
-//	integer (0..255) < integer
-//	boolean (false)  < boolean
-//
-// Subtypes with an equal set of possible values are also called *synonym* or
-// *alias*:
-//
-//	type integer int // `int` is an alias for `integer`
-//
-// In TTCN-3 subtypes are created by restricting the set of possible values
-// using *constraints*. Examples:
-//
-//	type integer holeyInt (0..10, 20, 30, 40, 100..200);
-//      type charstring ("a".."z", "0..9", pattern "A.*") length(2..10);
-//
-// A type that has a name is called a *named type*. Types without a name are
-// called *anonymous types* or *nested types*. For example:
-//
-//	var record of record { integer a, integer b } MyVar;
-//			       ^~~~~~~
-//				named type
-//		      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//		       nested type
-//	    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//	     anonymous type
-//
-// The basic types supported by TTCN-3 are:
-//   - numerical types `integer` and `float`
-//   - `boolean` type with possible values `false`, `true`
-//   - `verdicttype` with possible values `none`, `pass`, `inconc`, `fail` and
-//     `error`
-//   - strings types `charstring`, `universal charstring`, `hexstring`,
-//     `octetstring` and `bitstring`
-//
-// A *list type* is a collection of elements of the same type. TTCN-3
-// distinguishes five kinds of list types:
-//   - `record of`: an ordered list
-//   - `set of`: an unordered list
-//   - *array*: an ordered list with a fixed number of elements
-//   - `map`: an unordered list of key-value pairs
-//   - *string types*: an ordered list of string type elements. For example, the
-//     type of a bitstring elements is itself a bitstring.
-//
-// A *structured type* is a finite collection of named elements of possibly
-// different types:
-//   - `record`: a structured type with ordered fields.
-//   - `set`: a structured type with unordered fields.
-//
-// A *union type* is the union of two or more types. For example `union {
-// integer, boolean }` is the set of all possible integer and boolean values.
-// The individual types of a union are called *union alternatives*.
-// Union types are also known as `variant types`, `sum types` or `algebraic
-// types`.
-//
-// TTCN-3 differentiates between *data types* and *reference types*. Data type
-// values are fully self-describing and are indistinguishable from each other. In
-// contrast to values of reference types, which have an identity.
-// For example:
-//
-//	timer a := 1;
-//	timer b := 1;
-//	a == b; // false, because each timer has its own identity
-//
-//	integer a := 1;
-//	integer b := 1;
-//	a == b; // true, because integers are indistinguishable from each other.
-//
-// Available reference types in TTCN-3 are:
-//   - `timer`
-//   - `port`
-//   - `default`
-//   - `trait`
-//   - `configuration`
-//   - objects
-//   - components
-//   - behavior types
-//
-// The value of a *behavior type* refers to a function, testcase, altstep or an anonymous behavior:
-//
-//	type function Logger(any args...);
-//	var Handler h;
-//
-//	h := log; // h refers to the log function
-//	h := function(any args...) { log(args...); }; // anonymous function
-//
-// Anonymous behaviors are also known as *lambda expressions*, *closures* or *behaviour literals*.
-//
-// # Type Compatibility
-//
-// Type compatibility is required for assignment, parameter passing and comparison.
-//
-// Type A is compatible with type B, if A equals B:
-//
-//      type integer A;
-//      type integer B;
-//      var B b := 1; // OK, because integer == integer
-
-// Type A is compatible with type B, if A is a subtype of B:
-//
-//	type integer A (0..255);
-//	type integer B (0..512);
-//	var A a := 1;
-//	var B b := a; // OK, because integer(0..255) < integer(0..512)
-//
-// Types with different base type are not compatible:
-//
-//	// NOT OK
-//	type integer A;
-//	type float B;
-//
-// List types are compatible if their element types are also compatible.
-//
-// Structured types are compatible if their fields are also compatible. The
-// name of the individual fields is not relevant, but the order is:
-//
-//	// OK
-//	type record A { integer(0..255) fa1, float fa2 };
-//	type record B { integer(0..512) fb1, float fa2 };
-//
-//	// NOT OK
-//	type record A { integer i, float f };
-//	type record B { float f, integer i };
-//
-// `inout` parameters and receive operations require nominal equality:
-//
-// Type A is compatible with type B if and only if A has the same type name as
-// B.
-//
-// TODO(5nord) Describe compatibility rules for remaining types (enums, unions, ...)
-//
-// # Type Operations
-//
-// Each type has a set of operations that can be applied to its values. For example:
-//   - list types have an index operation, concatenation, `lengthof`
-//   - numerical types have arithmetic operations like `+`, `-`, `*`
-//   - behavior types must callable and support the `apply` operation
-//   - testcases must be executable and support the `stop` operation
-//   - and many more..
-//
-// # Type Parameterization
-//
-// TTCN-3 supports *type parameterization*, also known as *type-polymorphism*,
-// *generics* or *(C++) templates*.
-//
-// TODO: Describe type parameterization
-//
-// # Type Inference
-//
-// TODO(5nord) Describe type inference
-// TODO(5nord) Describe templates
+// Package types implements a type system for TTCN-3.
 package types
 
-import "github.com/nokia/ntt/ttcn3/syntax"
+import (
+	"fmt"
+	"strings"
 
-// Type represents a TTCN-3 type.
-type Type interface {
+	"github.com/nokia/ntt/ttcn3/syntax"
+)
 
-	// String returns the type name. If no name is available, an string
-	// representation of the type is returned.
-	String()
-
-	// Underlying returns the underlying type or nil if the type is a root type.
-	Underlying() Type
-
-	// Compatible return true if the type is compatible with the given
-	// type.
-	//
-	// For example to check if a value of type A can be assigned to a
-	// variable of type B, you would write:
-	//
-	//      if A.Compatible(B) { ... }
-	//
-	Compatible(Type) bool
+var Predefined = map[string]Type{
+	"any":                  &PrimitiveType{Kind: Any, Name: "any"},
+	"integer":              &PrimitiveType{Kind: Integer, Name: "integer"},
+	"float":                &PrimitiveType{Kind: Float, Name: "float"},
+	"boolean":              &PrimitiveType{Kind: Boolean, Name: "boolean"},
+	"verdicttype":          &PrimitiveType{Kind: Verdict, Name: "verdicttype"},
+	"bitstring":            &ListType{Kind: Bitstring, Name: "bitstring"},
+	"charstring":           &ListType{Kind: Charstring, Name: "charstring"},
+	"hexstring":            &ListType{Kind: Hexstring, Name: "hexstring"},
+	"octetstring":          &ListType{Kind: Octetstring, Name: "octetstring"},
+	"universal charstring": &ListType{Kind: UniversalCharstring, Name: "universal charstring"},
+	"default":              &BehaviourType{Kind: Altstep, Name: "default"},
+	"timer":                &StructuredType{Kind: Object, Name: "timer"},
+	"anytype":              &StructuredType{Kind: Union, Name: "anytype"},
 }
 
-// TypeOf infers the type of the given expression. If the type cannot be
-// inferred, nil is returned.
-func TypeOf(expr syntax.Expr) Type {
-	return nil
+func init() {
+	// The element type of string types is the string type itself.
+	Predefined["bitstring"].(*ListType).ElementType = Predefined["bitstring"]
+	Predefined["hexstring"].(*ListType).ElementType = Predefined["hexstring"]
+	Predefined["octetstring"].(*ListType).ElementType = Predefined["octetstring"]
+	Predefined["charstring"].(*ListType).ElementType = Predefined["charstring"]
+	Predefined["universal charstring"].(*ListType).ElementType = Predefined["universal charstring"]
+}
+
+// Kind is a bitmask describing the kinds of values a type can have, such as
+// "integer" or "record".
+type Kind uint64
+
+const (
+	Any   Kind = 0
+	Error Kind = 1 << iota
+	Incomplete
+
+	// Primitive types
+	Boolean
+	Enumerated
+	Float
+	Integer
+	Verdict
+
+	// List types
+	Array
+	Bitstring
+	Charstring
+	Hexstring
+	Map
+	Octetstring
+	RecordOf
+	SetOf
+	UniversalCharstring
+
+	// Structured types
+	Anytype
+	Component
+	Object
+	Port
+	Record
+	Set
+	Timer
+	Trait
+	Union
+
+	// Behaviour types
+	Altstep
+	Configuration
+	Default
+	Function
+	Testcase
+)
+
+var kindNames = map[Kind]string{
+	Error:               "error",
+	Incomplete:          "incomplete",
+	Boolean:             "boolean",
+	Enumerated:          "enumerated",
+	Float:               "float",
+	Integer:             "integer",
+	Verdict:             "verdict",
+	Array:               "array",
+	Bitstring:           "bitstring",
+	Charstring:          "charstring",
+	Hexstring:           "hexstring",
+	Map:                 "map",
+	Octetstring:         "octetstring",
+	RecordOf:            "record of",
+	SetOf:               "set of",
+	UniversalCharstring: "universal charstring",
+	Anytype:             "anytype",
+	Component:           "component",
+	Object:              "object",
+	Port:                "port",
+	Record:              "record",
+	Set:                 "set",
+	Timer:               "timer",
+	Trait:               "trait",
+	Union:               "union",
+	Altstep:             "altstep",
+	Configuration:       "configuration",
+	Default:             "default",
+	Function:            "function",
+	Testcase:            "testcase",
+}
+
+// String returns a string describing the kind, such as "error or integer or float".
+func (k Kind) String() string {
+	if k == 0 {
+		return "any"
+	}
+	var ret []string
+	for i := uint(0); i < 64; i++ {
+		if k&(1<<i) != 0 {
+			if name, ok := kindNames[1<<i]; ok {
+				ret = append(ret, name)
+			}
+		}
+	}
+	if len(ret) == 0 {
+		return "unknown"
+	}
+	return strings.Join(ret, " or ")
+}
+
+// A Type represents a TTCN-3 type.
+type Type interface {
+	String() string
+}
+
+// A PrimitiveType represents a non-composite type, such as integer, boolean,
+// verdicttype, ...
+type PrimitiveType struct {
+	Kind
+	Name             string
+	ValueConstraints []Value
+	Methods          map[string]Type
+}
+
+func (t *PrimitiveType) String() string {
+	return ""
+}
+
+// A ListType represents a collection of values of the same type, such as a
+// record, set, map, hexstring, ...
+//
+// The behaviour of a list type is determined by its kind:
+//   - a RecordOf is a ordered collection, while Map is an unordered
+//     collection or pairs.
+//   - an Array has a different string representation than a RecordOf:
+//     `integer[5]` vs. `record length(5) of integer`
+//
+// The behaviour for other kinds than Array, RecordOf, Map, Hexstring,
+// Bitstring, Octetstring, Charstring, UniversalCharstring is undefined and may
+// or may not cause a runtime error.
+type ListType struct {
+	Kind
+	Name             string
+	ElementType      Type
+	ValueConstraints []Value
+	LengthConstraint Value
+	Methods          map[string]Type
+}
+
+func (t *ListType) String() string {
+	return ""
+}
+
+// A StructuredType represents structured types, such as record, set, union,
+// class, ...
+type StructuredType struct {
+	Kind
+	Name             string
+	External         bool
+	Fields           []Field
+	Extends          []Type
+	ValueConstraints []Value
+	Methods          map[string]Type
+}
+
+func (t *StructuredType) String() string {
+	return ""
+}
+
+// A Field represents a fields in structures types.
+type Field struct {
+	Type
+	Name     string
+	Optional bool
+	Default  bool
+	Abstract bool
+}
+
+// A BehaviourType represents behaviour (testcases, functions, behaviour types, ...)
+type BehaviourType struct {
+	Kind
+	Name       string
+	External   bool
+	Parameters []Type
+	Receiver   Type
+	RunsOn     Type
+	System     Type
+	MTC        Type
+	Port       Type
+	ExecuteOn  Type
+	Return     Type
+}
+
+func (t *BehaviourType) String() string {
+	return ""
+}
+
+// A PairType represents a pair. Pairs are not specified by TTCN-3 standard explicitly. It is for modeling map types as
+// a set of key-value-pairs.
+type PairType struct {
+	First, Second Type
+}
+
+func (t *PairType) String() string {
+	return ""
+}
+
+// A Value represents a single value constraint, such as '1' or '10..20'.
+type Value struct {
+	syntax.Expr
+}
+
+func (v Value) String() string {
+	return printExpr(v.Expr)
+}
+
+func printExpr(e syntax.Expr) string {
+	switch n := e.(type) {
+	case *syntax.ValueLiteral:
+		return n.Tok.String()
+	case *syntax.Ident:
+		return n.String()
+	case *syntax.BinaryExpr:
+		switch n.Op.Kind() {
+		case syntax.RANGE:
+			return fmt.Sprintf("%s..%s", printExpr(n.X), printExpr(n.Y))
+		case syntax.ASSIGN:
+			return fmt.Sprintf("%s := %s", printExpr(n.X), printExpr(n.Y))
+		}
+	}
+	panic(fmt.Sprintf("not implemented: %T", e))
 }
