@@ -146,7 +146,14 @@ type PrimitiveType struct {
 }
 
 func (t *PrimitiveType) String() string {
-	return ""
+	var constraints string
+	if t.ValueConstraints != nil {
+		for _, v := range t.ValueConstraints {
+			constraints = constraints + v.String() + ", "
+		}
+		constraints = " (" + strings.Trim(constraints, ", ") + ")"
+	}
+	return t.Kind.String() + constraints
 }
 
 // A ListType represents a collection of values of the same type, such as a
