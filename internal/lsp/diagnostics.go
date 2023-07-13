@@ -81,10 +81,12 @@ func (s *Server) reportError(err error) {
 }
 
 func (s *Server) syncDiagnostics() {
-	for k, v := range s.diags {
-		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
-			Diagnostics: v,
-			URI:         protocol.DocumentURI(k),
-		})
+	if s.serverConfig.DiagnosticsEnabled {
+		for k, v := range s.diags {
+			s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+				Diagnostics: v,
+				URI:         protocol.DocumentURI(k),
+			})
+		}
 	}
 }
