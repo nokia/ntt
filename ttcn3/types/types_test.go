@@ -37,30 +37,30 @@ func TestTypeStrings(t *testing.T) {
 
 		// Predefined types
 
-		{skip: true, Output: "any", Type: types.Predefined["any"]},
+		{Output: "any", Type: types.Predefined["any"]},
 		{skip: true, Output: "anytype", Type: types.Predefined["anytype"]},
 		{skip: true, Output: "bitstring", Type: types.Predefined["bitstring"]},
-		{skip: true, Output: "boolean", Type: types.Predefined["boolean"]},
+		{Output: "boolean", Type: types.Predefined["boolean"]},
 		{skip: true, Output: "charstring", Type: types.Predefined["charstring"]},
 		{skip: true, Output: "default", Type: types.Predefined["default"]},
-		{skip: true, Output: "float", Type: types.Predefined["float"]},
+		{Output: "float", Type: types.Predefined["float"]},
 		{skip: true, Output: "hexstring", Type: types.Predefined["hexstring"]},
-		{skip: true, Output: "integer", Type: types.Predefined["integer"]},
+		{Output: "integer", Type: types.Predefined["integer"]},
 		{skip: true, Output: "octetstring", Type: types.Predefined["octetstring"]},
 		{skip: true, Output: "timer", Type: types.Predefined["timer"]},
 		{skip: true, Output: "universal charstring", Type: types.Predefined["universal charstring"]},
 
 		// Primitive types
 
-		{skip: true, Output: "any",
+		{Output: "any",
 			Type: &types.PrimitiveType{}},
 
-		{skip: true, Output: "any ()",
+		{Output: "any ()",
 			Type: &types.PrimitiveType{
 				ValueConstraints: []types.Value{},
 			}},
 
-		{skip: true, Output: "any (5, 1..10)",
+		{Output: "any (5, 1..10)",
 			Type: &types.PrimitiveType{
 				ValueConstraints: []types.Value{
 					{Expr: intVal},
@@ -68,12 +68,12 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "integer",
+		{Output: "integer",
 			Type: &types.PrimitiveType{
 				Kind: types.Integer,
 			}},
 
-		{skip: true, Output: "integer (1)",
+		{Output: "integer (5)",
 			Type: &types.PrimitiveType{
 				Kind:             types.Integer,
 				ValueConstraints: []types.Value{{Expr: intVal}},
