@@ -192,7 +192,7 @@ func (t *ListType) String() string {
 			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
 		}
 		return "set" + lengthConstraint + "of " + t.ElementType.String()
-	case Charstring, Octetstring, Hexstring, Bitstring:
+	case Charstring, Octetstring, Hexstring, Bitstring, UniversalCharstring:
 		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
 			lengthConstraint = " length(" + t.LengthConstraint.String() + ")"

@@ -48,7 +48,7 @@ func TestTypeStrings(t *testing.T) {
 		{Output: "integer", Type: types.Predefined["integer"]},
 		{Output: "octetstring", Type: types.Predefined["octetstring"]},
 		{skip: true, Output: "timer", Type: types.Predefined["timer"]},
-		{skip: true, Output: "universal charstring", Type: types.Predefined["universal charstring"]},
+		{Output: "universal charstring", Type: types.Predefined["universal charstring"]},
 
 		// Primitive types
 
