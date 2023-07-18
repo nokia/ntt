@@ -39,16 +39,16 @@ func TestTypeStrings(t *testing.T) {
 
 		{Output: "any", Type: types.Predefined["any"]},
 		{skip: true, Output: "anytype", Type: types.Predefined["anytype"]},
-		{skip: true, Output: "bitstring", Type: types.Predefined["bitstring"]},
+		{Output: "bitstring", Type: types.Predefined["bitstring"]},
 		{Output: "boolean", Type: types.Predefined["boolean"]},
-		{skip: true, Output: "charstring", Type: types.Predefined["charstring"]},
+		{Output: "charstring", Type: types.Predefined["charstring"]},
 		{skip: true, Output: "default", Type: types.Predefined["default"]},
 		{Output: "float", Type: types.Predefined["float"]},
-		{skip: true, Output: "hexstring", Type: types.Predefined["hexstring"]},
+		{Output: "hexstring", Type: types.Predefined["hexstring"]},
 		{Output: "integer", Type: types.Predefined["integer"]},
-		{skip: true, Output: "octetstring", Type: types.Predefined["octetstring"]},
+		{Output: "octetstring", Type: types.Predefined["octetstring"]},
 		{skip: true, Output: "timer", Type: types.Predefined["timer"]},
-		{skip: true, Output: "universal charstring", Type: types.Predefined["universal charstring"]},
+		{Output: "universal charstring", Type: types.Predefined["universal charstring"]},
 
 		// Primitive types
 
@@ -87,16 +87,16 @@ func TestTypeStrings(t *testing.T) {
 		{skip: true, Output: "record of any",
 			Type: &types.ListType{Kind: types.RecordOf}},
 
-		{skip: true, Output: "hexstring",
+		{Output: "hexstring",
 			Type: &types.ListType{Kind: types.Hexstring}},
 
-		{skip: true, Output: "set of integer",
+		{Output: "set of integer",
 			Type: &types.ListType{
 				Kind:        types.SetOf,
 				ElementType: types.Predefined["integer"],
 			}},
 
-		{skip: true, Output: "set of record of integer",
+		{Output: "set of record of integer",
 			Type: &types.ListType{
 				Kind: types.SetOf,
 				ElementType: &types.ListType{
@@ -105,7 +105,7 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "record of charstring length(5)",
+		{Output: "record of charstring length(5)",
 			Type: &types.ListType{
 				Kind: types.RecordOf,
 				ElementType: &types.ListType{
@@ -114,7 +114,7 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "record length(1..10) of charstring",
+		{Output: "record length(1..10) of charstring",
 			Type: &types.ListType{
 				Kind:             types.RecordOf,
 				LengthConstraint: types.Value{Expr: rangeVal},
@@ -123,7 +123,7 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "record length(1..10) of charstring length(5)",
+		{Output: "record length(1..10) of charstring length(5)",
 			Type: &types.ListType{
 				Kind:             types.RecordOf,
 				LengthConstraint: types.Value{Expr: rangeVal},
@@ -146,7 +146,7 @@ func TestTypeStrings(t *testing.T) {
 				LengthConstraint: types.Value{Expr: rangeVal},
 			}},
 
-		{skip: true, Output: "integer[5][1..10]",
+		{Output: "integer[5][1..10]",
 			Type: &types.ListType{
 				Kind:             types.Array,
 				LengthConstraint: types.Value{Expr: rangeVal},
@@ -157,13 +157,13 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "integer[]",
+		{Output: "integer[]",
 			Type: &types.ListType{
 				Kind:        types.Array,
 				ElementType: types.Predefined["integer"],
 			}},
 
-		{skip: true, Output: "record of integer[]", // record of integer-arrays
+		{Output: "record of integer[]", // record of integer-arrays
 			Type: &types.ListType{
 				Kind: types.RecordOf,
 				ElementType: &types.ListType{
@@ -173,7 +173,7 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "(record of integer)[]", // array of integer-record-ofs
+		{Output: "(record of integer)[]", // array of integer-record-ofs
 			Type: &types.ListType{
 				Kind: types.Array,
 				ElementType: &types.ListType{
