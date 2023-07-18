@@ -179,6 +179,35 @@ type ListType struct {
 }
 
 func (t *ListType) String() string {
+	switch t.Kind {
+	case RecordOf:
+		var lengthConstraint string = " "
+		if t.LengthConstraint.Expr != nil {
+			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
+		}
+		return "record" + lengthConstraint + "of " + t.ElementType.String()
+	case SetOf:
+		var lengthConstraint string = " "
+		if t.LengthConstraint.Expr != nil {
+			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
+		}
+		return "set" + lengthConstraint + "of " + t.ElementType.String()
+	case Charstring, Octetstring, Hexstring, Bitstring:
+		var lengthConstraint string = ""
+		if t.LengthConstraint.Expr != nil {
+			lengthConstraint = " length(" + t.LengthConstraint.String() + ")"
+		}
+		return t.Kind.String() + lengthConstraint
+	case Array:
+		var arrayType string = t.ElementType.String()
+		if eleType, ok := t.ElementType.(*ListType); ok && (eleType.Kind == RecordOf || eleType.Kind == SetOf || eleType.Kind == Map) {
+			arrayType = "(" + arrayType + ")"
+		}
+		if t.LengthConstraint.Expr == nil {
+			return arrayType + "[]"
+		}
+		return arrayType + "[" + t.LengthConstraint.String() + "]"
+	}
 	return ""
 }
 
