@@ -179,24 +179,28 @@ type ListType struct {
 }
 
 func (t *ListType) String() string {
+	elem := "any"
+	if t.ElementType != nil && !strings.Contains(t.Kind.String(), "string") {
+		elem = t.ElementType.String()
+	}
 	switch t.Kind {
-	case RecordOf:
+	case RecordOf, 0:
 		var lengthConstraint string = " "
 		if t.LengthConstraint.Expr != nil {
 			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
 		}
-		return "record" + lengthConstraint + "of " + t.ElementType.String()
+		return "record" + lengthConstraint + "of " + elem
 	case SetOf:
 		var lengthConstraint string = " "
 		if t.LengthConstraint.Expr != nil {
 			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
 		}
-		return "set" + lengthConstraint + "of " + t.ElementType.String()
+		return "set" + lengthConstraint + "of " + elem
 	case Map:
 		if _, ok := t.ElementType.(*PairType); !ok {
-			return "map from " + t.ElementType.String() + " to any"
+			return "map from " + elem + " to any"
 		}
-		return "map from " + t.ElementType.String()
+		return "map from " + elem
 	case Charstring, Octetstring, Hexstring, Bitstring, UniversalCharstring:
 		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
@@ -204,14 +208,13 @@ func (t *ListType) String() string {
 		}
 		return t.Kind.String() + lengthConstraint
 	case Array:
-		var arrayType string = t.ElementType.String()
 		if eleType, ok := t.ElementType.(*ListType); ok && (eleType.Kind == RecordOf || eleType.Kind == SetOf || eleType.Kind == Map) {
-			arrayType = "(" + arrayType + ")"
+			elem = "(" + elem + ")"
 		}
 		if t.LengthConstraint.Expr == nil {
-			return arrayType + "[]"
+			return elem + "[]"
 		}
-		return arrayType + "[" + t.LengthConstraint.String() + "]"
+		return elem + "[" + t.LengthConstraint.String() + "]"
 	}
 	return ""
 }
@@ -267,7 +270,15 @@ type PairType struct {
 }
 
 func (t *PairType) String() string {
-	return t.First.String() + " to " + t.Second.String()
+	res := []string{"any", "any"}
+	if t.First != nil {
+		res[0] = t.First.String()
+	}
+	if t.Second != nil {
+		res[1] = t.Second.String()
+	}
+
+	return strings.Join(res, " to ")
 }
 
 // A Value represents a single value constraint, such as '1' or '10..20'.
