@@ -192,6 +192,11 @@ func (t *ListType) String() string {
 			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
 		}
 		return "set" + lengthConstraint + "of " + t.ElementType.String()
+	case Map:
+		if _, ok := t.ElementType.(*PairType); !ok {
+			return "map from " + t.ElementType.String() + " to any"
+		}
+		return "map from " + t.ElementType.String()
 	case Charstring, Octetstring, Hexstring, Bitstring, UniversalCharstring:
 		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
@@ -262,7 +267,7 @@ type PairType struct {
 }
 
 func (t *PairType) String() string {
-	return ""
+	return t.First.String() + " to " + t.Second.String()
 }
 
 // A Value represents a single value constraint, such as '1' or '10..20'.

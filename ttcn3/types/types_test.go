@@ -186,7 +186,7 @@ func TestTypeStrings(t *testing.T) {
 		{skip: true, Output: "map from any to any",
 			Type: &types.ListType{Kind: types.Map}},
 
-		{skip: true, Output: "map from hexstring to any",
+		{Output: "map from integer to any",
 			Type: &types.ListType{
 				Kind:        types.Map,
 				ElementType: types.Predefined["integer"],
@@ -198,12 +198,50 @@ func TestTypeStrings(t *testing.T) {
 				ElementType: &types.PairType{},
 			}},
 
-		{skip: true, Output: "map from integer to charstring",
+		{Output: "map from integer to charstring",
 			Type: &types.ListType{
 				Kind: types.Map,
 				ElementType: &types.PairType{
 					First:  types.Predefined["integer"],
 					Second: types.Predefined["charstring"],
+				},
+			}},
+
+		{Output: "(map from integer to charstring)[]",
+			Type: &types.ListType{
+				Kind: types.Array,
+				ElementType: &types.ListType{
+					Kind: types.Map,
+					ElementType: &types.PairType{
+						First:  types.Predefined["integer"],
+						Second: types.Predefined["charstring"],
+					},
+				},
+			}},
+
+		{Output: "map from record of integer[] to map from charstring to (set of float)[]",
+			Type: &types.ListType{
+				Kind: types.Map,
+				ElementType: &types.PairType{
+					First: &types.ListType{
+						Kind: types.RecordOf,
+						ElementType: &types.ListType{
+							Kind:        types.Array,
+							ElementType: types.Predefined["integer"],
+						},
+					},
+					Second: &types.ListType{
+						Kind: types.Map,
+						ElementType: &types.PairType{
+							First: types.Predefined["charstring"],
+							Second: &types.ListType{
+								Kind: types.Array,
+								ElementType: &types.ListType{
+									Kind:        types.SetOf,
+									ElementType: types.Float,
+								}},
+						},
+					},
 				},
 			}},
 
