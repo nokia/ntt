@@ -180,7 +180,7 @@ type ListType struct {
 
 func (t *ListType) String() string {
 	elem := "any"
-	if t.ElementType != nil && !isString(t) {
+	if t.ElementType != nil && !isString(t.Kind) {
 		elem = t.ElementType.String()
 	}
 	switch t.Kind {
@@ -219,8 +219,8 @@ func (t *ListType) String() string {
 	return ""
 }
 
-func isString(t *ListType) bool {
-	if t.Kind == Bitstring || t.Kind == Charstring || t.Kind == Octetstring || t.Kind == Hexstring || t.Kind == UniversalCharstring {
+func isString(t Kind) bool {
+	if t == Bitstring || t == Charstring || t == Octetstring || t == Hexstring || t == UniversalCharstring {
 		return true
 	}
 	return false
