@@ -180,11 +180,11 @@ type ListType struct {
 
 func (t *ListType) String() string {
 	elem := "any"
-	if t.ElementType != nil && !strings.Contains(t.Kind.String(), "string") {
+	if t.ElementType != nil && !isString(t) {
 		elem = t.ElementType.String()
 	}
 	switch t.Kind {
-	case RecordOf, 0:
+	case RecordOf, Any:
 		var lengthConstraint string = " "
 		if t.LengthConstraint.Expr != nil {
 			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
@@ -217,6 +217,13 @@ func (t *ListType) String() string {
 		return elem + "[" + t.LengthConstraint.String() + "]"
 	}
 	return ""
+}
+
+func isString(t *ListType) bool {
+	if t.Kind == Bitstring || t.Kind == Charstring || t.Kind == Octetstring || t.Kind == Hexstring || t.Kind == UniversalCharstring {
+		return true
+	}
+	return false
 }
 
 // A StructuredType represents structured types, such as record, set, union,
