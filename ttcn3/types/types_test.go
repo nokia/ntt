@@ -81,10 +81,10 @@ func TestTypeStrings(t *testing.T) {
 
 		// List types
 
-		{skip: true, Output: "record of any",
+		{Output: "record of any",
 			Type: &types.ListType{}},
 
-		{skip: true, Output: "record of any",
+		{Output: "record of any",
 			Type: &types.ListType{Kind: types.RecordOf}},
 
 		{Output: "hexstring",
@@ -135,12 +135,12 @@ func TestTypeStrings(t *testing.T) {
 
 		// Arrays
 
-		{skip: true, Output: "any[]",
+		{Output: "any[]",
 			Type: &types.ListType{
 				Kind: types.Array,
 			}},
 
-		{skip: true, Output: "any[1..10]",
+		{Output: "any[1..10]",
 			Type: &types.ListType{
 				Kind:             types.Array,
 				LengthConstraint: types.Value{Expr: rangeVal},
@@ -183,27 +183,65 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "map from any to any",
+		{Output: "map from any to any",
 			Type: &types.ListType{Kind: types.Map}},
 
-		{skip: true, Output: "map from hexstring to any",
+		{Output: "map from integer to any",
 			Type: &types.ListType{
 				Kind:        types.Map,
 				ElementType: types.Predefined["integer"],
 			}},
 
-		{skip: true, Output: "map from any to any",
+		{Output: "map from any to any",
 			Type: &types.ListType{
 				Kind:        types.Map,
 				ElementType: &types.PairType{},
 			}},
 
-		{skip: true, Output: "map from integer to charstring",
+		{Output: "map from integer to charstring",
 			Type: &types.ListType{
 				Kind: types.Map,
 				ElementType: &types.PairType{
 					First:  types.Predefined["integer"],
 					Second: types.Predefined["charstring"],
+				},
+			}},
+
+		{Output: "(map from integer to charstring)[]",
+			Type: &types.ListType{
+				Kind: types.Array,
+				ElementType: &types.ListType{
+					Kind: types.Map,
+					ElementType: &types.PairType{
+						First:  types.Predefined["integer"],
+						Second: types.Predefined["charstring"],
+					},
+				},
+			}},
+
+		{Output: "map from record of integer[] to map from charstring to (set of float)[]",
+			Type: &types.ListType{
+				Kind: types.Map,
+				ElementType: &types.PairType{
+					First: &types.ListType{
+						Kind: types.RecordOf,
+						ElementType: &types.ListType{
+							Kind:        types.Array,
+							ElementType: types.Predefined["integer"],
+						},
+					},
+					Second: &types.ListType{
+						Kind: types.Map,
+						ElementType: &types.PairType{
+							First: types.Predefined["charstring"],
+							Second: &types.ListType{
+								Kind: types.Array,
+								ElementType: &types.ListType{
+									Kind:        types.SetOf,
+									ElementType: types.Float,
+								}},
+						},
+					},
 				},
 			}},
 
