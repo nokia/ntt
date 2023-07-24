@@ -134,6 +134,7 @@ func (k Kind) String() string {
 // A Type represents a TTCN-3 type.
 type Type interface {
 	String() string
+	string() string
 }
 
 // A PrimitiveType represents a non-composite type, such as integer, boolean,
@@ -146,6 +147,13 @@ type PrimitiveType struct {
 }
 
 func (t *PrimitiveType) String() string {
+	if t.Name != "" && t.Name != t.Kind.String() {
+		return t.Name + " [" + t.string() + "]"
+	}
+	return t.string()
+}
+
+func (t *PrimitiveType) string() string {
 	if t.ValueConstraints == nil {
 		return t.Kind.String()
 	}
@@ -179,9 +187,16 @@ type ListType struct {
 }
 
 func (t *ListType) String() string {
+	if t.Name != "" && t.Name != t.Kind.String() {
+		return t.Name + " [" + t.string() + "]"
+	}
+	return t.string()
+}
+
+func (t *ListType) string() string {
 	elem := "any"
 	if t.ElementType != nil && !isString(t.Kind) {
-		elem = t.ElementType.String()
+		elem = t.ElementType.string()
 	}
 	switch t.Kind {
 	case RecordOf, Any:
@@ -242,6 +257,10 @@ func (t *StructuredType) String() string {
 	return ""
 }
 
+func (t *StructuredType) string() string {
+	return t.String()
+}
+
 // A Field represents a fields in structures types.
 type Field struct {
 	Type
@@ -270,6 +289,10 @@ func (t *BehaviourType) String() string {
 	return ""
 }
 
+func (t *BehaviourType) string() string {
+	return t.String()
+}
+
 // A PairType represents a pair. Pairs are not specified by TTCN-3 standard explicitly. It is for modeling map types as
 // a set of key-value-pairs.
 type PairType struct {
@@ -286,6 +309,10 @@ func (t *PairType) String() string {
 	}
 
 	return strings.Join(res, " to ")
+}
+
+func (t *PairType) string() string {
+	return t.String()
 }
 
 // A Value represents a single value constraint, such as '1' or '10..20'.
