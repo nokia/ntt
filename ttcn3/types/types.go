@@ -134,6 +134,7 @@ func (k Kind) String() string {
 // A Type represents a TTCN-3 type.
 type Type interface {
 	String() string
+	descriptionString() string
 }
 
 // A PrimitiveType represents a non-composite type, such as integer, boolean,
@@ -146,6 +147,19 @@ type PrimitiveType struct {
 }
 
 func (t *PrimitiveType) String() string {
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
+	if t.Name == "" {
+		return t.descriptionString()
+	}
+	return t.Name + " [" + t.descriptionString() + "]"
+}
+
+func (t *PrimitiveType) descriptionString() string {
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
 	if t.ValueConstraints == nil {
 		return t.Kind.String()
 	}
@@ -179,23 +193,36 @@ type ListType struct {
 }
 
 func (t *ListType) String() string {
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
+	if t.Name == "" {
+		return t.descriptionString()
+	}
+	return t.Name + " [" + t.descriptionString() + "]"
+}
+
+func (t *ListType) descriptionString() string {
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
 	elem := "any"
 	if t.ElementType != nil && !isString(t.Kind) {
-		elem = t.ElementType.String()
+		elem = t.ElementType.descriptionString()
 	}
 	switch t.Kind {
 	case RecordOf, Any:
-		var lengthConstraint string = " "
+		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
-			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
+			lengthConstraint = "length(" + t.LengthConstraint.String() + ") "
 		}
-		return "record" + lengthConstraint + "of " + elem
+		return "record " + lengthConstraint + "of " + elem
 	case SetOf:
-		var lengthConstraint string = " "
+		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
-			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
+			lengthConstraint = "length(" + t.LengthConstraint.String() + ") "
 		}
-		return "set" + lengthConstraint + "of " + elem
+		return "set " + lengthConstraint + "of " + elem
 	case Map:
 		if _, ok := t.ElementType.(*PairType); !ok {
 			return "map from " + elem + " to any"
@@ -242,6 +269,10 @@ func (t *StructuredType) String() string {
 	return ""
 }
 
+func (t *StructuredType) descriptionString() string {
+	return t.String()
+}
+
 // A Field represents a fields in structures types.
 type Field struct {
 	Type
@@ -270,6 +301,10 @@ func (t *BehaviourType) String() string {
 	return ""
 }
 
+func (t *BehaviourType) descriptionString() string {
+	return t.String()
+}
+
 // A PairType represents a pair. Pairs are not specified by TTCN-3 standard explicitly. It is for modeling map types as
 // a set of key-value-pairs.
 type PairType struct {
@@ -277,12 +312,16 @@ type PairType struct {
 }
 
 func (t *PairType) String() string {
+	return t.descriptionString()
+}
+
+func (t *PairType) descriptionString() string {
 	res := []string{"any", "any"}
 	if t.First != nil {
-		res[0] = t.First.String()
+		res[0] = t.First.descriptionString()
 	}
 	if t.Second != nil {
-		res[1] = t.Second.String()
+		res[1] = t.Second.descriptionString()
 	}
 
 	return strings.Join(res, " to ")

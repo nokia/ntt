@@ -238,7 +238,7 @@ func TestTypeStrings(t *testing.T) {
 								Kind: types.Array,
 								ElementType: &types.ListType{
 									Kind:        types.SetOf,
-									ElementType: types.Float,
+									ElementType: types.Predefined["float"],
 								}},
 						},
 					},
@@ -247,13 +247,13 @@ func TestTypeStrings(t *testing.T) {
 
 		// Named types
 
-		{skip: true, Output: "foo [any]",
+		{Output: "foo [any]",
 			Type: &types.PrimitiveType{Name: "foo"}},
 
-		{skip: true, Output: "foo [record of any]",
+		{Output: "foo [record of any]",
 			Type: &types.ListType{Name: "foo"}},
 
-		{skip: true, Output: "foo [record of integer]",
+		{Output: "foo [record of integer]",
 			Type: &types.ListType{
 				Name: "foo",
 				ElementType: &types.PrimitiveType{
@@ -262,7 +262,7 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "record of integer",
+		{Output: "record of integer",
 			Type: &types.ListType{
 				ElementType: &types.PrimitiveType{
 					Name: "foo",
