@@ -134,7 +134,7 @@ func (k Kind) String() string {
 // A Type represents a TTCN-3 type.
 type Type interface {
 	String() string
-	string() string
+	descriptionString() string
 }
 
 // A PrimitiveType represents a non-composite type, such as integer, boolean,
@@ -147,13 +147,19 @@ type PrimitiveType struct {
 }
 
 func (t *PrimitiveType) String() string {
-	if t.Name != "" && t.Name != t.Kind.String() {
-		return t.Name + " [" + t.string() + "]"
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
 	}
-	return t.string()
+	if t.Name == "" {
+		return t.descriptionString()
+	}
+	return t.Name + " [" + t.descriptionString() + "]"
 }
 
-func (t *PrimitiveType) string() string {
+func (t *PrimitiveType) descriptionString() string {
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
 	if t.ValueConstraints == nil {
 		return t.Kind.String()
 	}
@@ -187,30 +193,36 @@ type ListType struct {
 }
 
 func (t *ListType) String() string {
-	if t.Name != "" && t.Name != t.Kind.String() {
-		return t.Name + " [" + t.string() + "]"
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
 	}
-	return t.string()
+	if t.Name == "" {
+		return t.descriptionString()
+	}
+	return t.Name + " [" + t.descriptionString() + "]"
 }
 
-func (t *ListType) string() string {
+func (t *ListType) descriptionString() string {
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
 	elem := "any"
 	if t.ElementType != nil && !isString(t.Kind) {
-		elem = t.ElementType.string()
+		elem = t.ElementType.descriptionString()
 	}
 	switch t.Kind {
 	case RecordOf, Any:
-		var lengthConstraint string = " "
+		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
-			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
+			lengthConstraint = "length(" + t.LengthConstraint.String() + ") "
 		}
-		return "record" + lengthConstraint + "of " + elem
+		return "record " + lengthConstraint + "of " + elem
 	case SetOf:
-		var lengthConstraint string = " "
+		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
-			lengthConstraint = " length(" + t.LengthConstraint.String() + ") "
+			lengthConstraint = "length(" + t.LengthConstraint.String() + ") "
 		}
-		return "set" + lengthConstraint + "of " + elem
+		return "set " + lengthConstraint + "of " + elem
 	case Map:
 		if _, ok := t.ElementType.(*PairType); !ok {
 			return "map from " + elem + " to any"
@@ -257,7 +269,7 @@ func (t *StructuredType) String() string {
 	return ""
 }
 
-func (t *StructuredType) string() string {
+func (t *StructuredType) descriptionString() string {
 	return t.String()
 }
 
@@ -289,7 +301,7 @@ func (t *BehaviourType) String() string {
 	return ""
 }
 
-func (t *BehaviourType) string() string {
+func (t *BehaviourType) descriptionString() string {
 	return t.String()
 }
 
@@ -300,19 +312,19 @@ type PairType struct {
 }
 
 func (t *PairType) String() string {
+	return t.descriptionString()
+}
+
+func (t *PairType) descriptionString() string {
 	res := []string{"any", "any"}
 	if t.First != nil {
-		res[0] = t.First.String()
+		res[0] = t.First.descriptionString()
 	}
 	if t.Second != nil {
-		res[1] = t.Second.String()
+		res[1] = t.Second.descriptionString()
 	}
 
 	return strings.Join(res, " to ")
-}
-
-func (t *PairType) string() string {
-	return t.String()
 }
 
 // A Value represents a single value constraint, such as '1' or '10..20'.
