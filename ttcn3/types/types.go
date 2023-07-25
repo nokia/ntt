@@ -54,7 +54,6 @@ const (
 	Bitstring
 	Charstring
 	Hexstring
-	Map
 	Octetstring
 	RecordOf
 	SetOf
@@ -91,7 +90,6 @@ var kindNames = map[Kind]string{
 	Bitstring:           "bitstring",
 	Charstring:          "charstring",
 	Hexstring:           "hexstring",
-	Map:                 "map",
 	Octetstring:         "octetstring",
 	RecordOf:            "record of",
 	SetOf:               "set of",
@@ -175,12 +173,12 @@ func (t *PrimitiveType) descriptionString() string {
 // record, set, map, hexstring, ...
 //
 // The behaviour of a list type is determined by its kind:
-//   - a RecordOf is a ordered collection, while Map is an unordered
+//   - a RecordOf is a ordered collection, while SetOf is an unordered
 //     collection or pairs.
 //   - an Array has a different string representation than a RecordOf:
 //     `integer[5]` vs. `record length(5) of integer`
 //
-// The behaviour for other kinds than Array, RecordOf, Map, Hexstring,
+// The behaviour for other kinds than Array, RecordOf, Hexstring,
 // Bitstring, Octetstring, Charstring, UniversalCharstring is undefined and may
 // or may not cause a runtime error.
 type ListType struct {
@@ -223,11 +221,6 @@ func (t *ListType) descriptionString() string {
 			lengthConstraint = "length(" + t.LengthConstraint.String() + ") "
 		}
 		return "set " + lengthConstraint + "of " + elem
-	case Map:
-		if _, ok := t.ElementType.(*PairType); !ok {
-			return "map from " + elem + " to any"
-		}
-		return "map from " + elem
 	case Charstring, Octetstring, Hexstring, Bitstring, UniversalCharstring:
 		var lengthConstraint string = ""
 		if t.LengthConstraint.Expr != nil {
@@ -235,7 +228,9 @@ func (t *ListType) descriptionString() string {
 		}
 		return t.Kind.String() + lengthConstraint
 	case Array:
-		if eleType, ok := t.ElementType.(*ListType); ok && (eleType.Kind == RecordOf || eleType.Kind == SetOf || eleType.Kind == Map) {
+		if eleType, ok := t.ElementType.(*ListType); ok && (eleType.Kind == RecordOf || eleType.Kind == SetOf) {
+			elem = "(" + elem + ")"
+		} else if _, ok := t.ElementType.(*MapType); ok {
 			elem = "(" + elem + ")"
 		}
 		if t.LengthConstraint.Expr == nil {
@@ -305,26 +300,25 @@ func (t *BehaviourType) descriptionString() string {
 	return t.String()
 }
 
-// A PairType represents a pair. Pairs are not specified by TTCN-3 standard explicitly. It is for modeling map types as
-// a set of key-value-pairs.
-type PairType struct {
-	First, Second Type
+// A MapType represents a map type.
+type MapType struct {
+	From, To *ListType
 }
 
-func (t *PairType) String() string {
+func (t *MapType) String() string {
 	return t.descriptionString()
 }
 
-func (t *PairType) descriptionString() string {
+func (t *MapType) descriptionString() string {
 	res := []string{"any", "any"}
-	if t.First != nil {
-		res[0] = t.First.descriptionString()
+	if t.From != nil && t.From.ElementType != nil {
+		res[0] = t.From.ElementType.descriptionString()
 	}
-	if t.Second != nil {
-		res[1] = t.Second.descriptionString()
+	if t.To != nil && t.To.ElementType != nil {
+		res[1] = t.To.ElementType.descriptionString()
 	}
 
-	return strings.Join(res, " to ")
+	return fmt.Sprintf("map from %s to %s", res[0], res[1])
 }
 
 // A Value represents a single value constraint, such as '1' or '10..20'.
