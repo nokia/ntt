@@ -302,7 +302,7 @@ func (t *BehaviourType) descriptionString() string {
 
 // A MapType represents a map type.
 type MapType struct {
-	From, To *ListType
+	From, To Type
 }
 
 func (t *MapType) String() string {
@@ -311,11 +311,11 @@ func (t *MapType) String() string {
 
 func (t *MapType) descriptionString() string {
 	res := []string{"any", "any"}
-	if t.From != nil && t.From.ElementType != nil {
-		res[0] = t.From.ElementType.descriptionString()
+	if t.From != nil {
+		res[0] = t.From.descriptionString()
 	}
-	if t.To != nil && t.To.ElementType != nil {
-		res[1] = t.To.ElementType.descriptionString()
+	if t.To != nil {
+		res[1] = t.To.descriptionString()
 	}
 
 	return fmt.Sprintf("map from %s to %s", res[0], res[1])

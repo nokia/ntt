@@ -188,50 +188,40 @@ func TestTypeStrings(t *testing.T) {
 
 		{Output: "map from integer to any",
 			Type: &types.MapType{
-				From: &types.ListType{Kind: types.SetOf, ElementType: types.Predefined["integer"]},
-			}},
-
-		{Output: "map from any to any",
-			Type: &types.MapType{
-				From: &types.ListType{},
+				From: types.Predefined["integer"],
 			}},
 
 		{Output: "map from integer to charstring",
 			Type: &types.MapType{
-				From: &types.ListType{Kind: types.SetOf, ElementType: types.Predefined["integer"]},
-				To:   &types.ListType{Kind: types.SetOf, ElementType: types.Predefined["charstring"]},
+				From: types.Predefined["integer"],
+				To:   types.Predefined["charstring"],
 			}},
 
 		{Output: "(map from integer to charstring)[]",
 			Type: &types.ListType{
 				Kind: types.Array,
 				ElementType: &types.MapType{
-					From: &types.ListType{Kind: types.SetOf, ElementType: types.Predefined["integer"]},
-					To:   &types.ListType{Kind: types.SetOf, ElementType: types.Predefined["charstring"]},
+					From: types.Predefined["integer"],
+					To:   types.Predefined["charstring"],
 				},
 			}},
 
 		{Output: "map from record of integer[] to map from charstring to (set of float)[]",
 			Type: &types.MapType{
 				From: &types.ListType{
-					Kind: types.SetOf,
+					Kind: types.RecordOf,
 					ElementType: &types.ListType{
-						Kind: types.RecordOf,
+						Kind:        types.Array,
+						ElementType: types.Predefined["integer"],
+					},
+				},
+				To: &types.MapType{
+					From: types.Predefined["charstring"],
+					To: &types.ListType{
+						Kind: types.Array,
 						ElementType: &types.ListType{
-							Kind:        types.Array,
-							ElementType: types.Predefined["integer"],
-						},
-					}},
-				To: &types.ListType{
-					Kind: types.SetOf,
-					ElementType: &types.MapType{
-						From: &types.ListType{Kind: types.SetOf, ElementType: types.Predefined["charstring"]},
-						To: &types.ListType{Kind: types.SetOf, ElementType: &types.ListType{
-							Kind: types.Array,
-							ElementType: &types.ListType{
-								Kind:        types.SetOf,
-								ElementType: types.Predefined["float"],
-							}},
+							Kind:        types.SetOf,
+							ElementType: types.Predefined["float"],
 						},
 					},
 				},
