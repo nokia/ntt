@@ -261,11 +261,51 @@ type StructuredType struct {
 }
 
 func (t *StructuredType) String() string {
-	return ""
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
+	if t.Name == "" {
+		return t.descriptionString()
+	}
+	if t.Kind == Component || t.Kind == Port || t.Kind == Trait || t.Kind == Object {
+		return t.Name
+	}
+	return t.Name + " [" + t.descriptionString() + "]"
 }
 
 func (t *StructuredType) descriptionString() string {
-	return t.String()
+	if _, ok := Predefined[t.Name]; ok {
+		return t.Name
+	}
+	var typeKind string
+	switch t.Kind {
+	case Record, Set, Any:
+		if t.Kind == Set {
+			typeKind = "set"
+		} else {
+			typeKind = "record"
+		}
+		var fields []string
+		for _, f := range t.Fields {
+			fields = append(fields, f.String())
+		}
+		if t.ValueConstraints == nil {
+			return typeKind + " {" + strings.Join(fields, ", ") + "}"
+		}
+		var constraints []string
+		for _, v := range t.ValueConstraints {
+			constraints = append(constraints, v.String())
+		}
+		return typeKind + " {" + strings.Join(fields, ", ") + "} (" + strings.Join(constraints, ", ") + ")"
+	case Component, Trait, Port:
+		typeKind = t.Kind.String()
+	case Object:
+		typeKind = "class"
+	}
+	if t.Name != "" {
+		return t.Name
+	}
+	return typeKind
 }
 
 // A Field represents a fields in structures types.
@@ -275,6 +315,13 @@ type Field struct {
 	Optional bool
 	Default  bool
 	Abstract bool
+}
+
+func (f *Field) String() string {
+	if f.Optional {
+		return f.Type.descriptionString() + " optional"
+	}
+	return f.Type.descriptionString()
 }
 
 // A BehaviourType represents behaviour (testcases, functions, behaviour types, ...)
@@ -302,11 +349,15 @@ func (t *BehaviourType) descriptionString() string {
 
 // A MapType represents a map type.
 type MapType struct {
+	Name     string
 	From, To Type
 }
 
 func (t *MapType) String() string {
-	return t.descriptionString()
+	if t.Name == "" {
+		return t.descriptionString()
+	}
+	return t.Name + " [" + t.descriptionString() + "]"
 }
 
 func (t *MapType) descriptionString() string {
