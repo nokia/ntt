@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path"
-	"strings"
 
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
@@ -16,26 +15,37 @@ import (
 type PlainTextHover struct{}
 type MarkdownHover struct{}
 
-func registerSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
-	semTok := os.Getenv("NTT_SEMANTIC_TOKENS")
-	if strings.ToLower(semTok) == "on" {
-		return &protocol.SemanticTokensRegistrationOptions{
-
-			TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
-				DocumentSelector: protocol.DocumentSelector{
-					protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
-				},
-			},
-			SemanticTokensOptions: protocol.SemanticTokensOptions{
-				Legend: protocol.SemanticTokensLegend{
-					TokenTypes:     TokenTypes,
-					TokenModifiers: TokenModifiers,
-				},
-				Range: true,
-				Full:  true,
-			}}
+func (s *Server) registerSemanticTokensIfNoDynReg() *protocol.SemanticTokensRegistrationOptions {
+	if s.clientCapability.HasDynRegForSemTok {
+		// NOTE:
+		// if client has the capability, postpone registration and
+		// make it dependent on the provided configuration which is
+		// available earlyest during `ìnitialized` notification handling
+		return nil
 	}
-	return nil
+	return newSemanticTokens()
+}
+
+func (s *Server) registerFormatterIfNoDynReg() bool {
+	return !s.clientCapability.HasDynRegForFormatter
+}
+
+func newSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
+	return &protocol.SemanticTokensRegistrationOptions{
+
+		TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
+			DocumentSelector: protocol.DocumentSelector{
+				protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
+			},
+		},
+		SemanticTokensOptions: protocol.SemanticTokensOptions{
+			Legend: protocol.SemanticTokensLegend{
+				TokenTypes:     TokenTypes,
+				TokenModifiers: TokenModifiers,
+			},
+			Range: true,
+			Full:  true,
+		}}
 }
 func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitialize) (*protocol.InitializeResult, error) {
 	s.stateMu.Lock()
@@ -47,15 +57,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	s.stateMu.Lock()
 	s.state = serverInitializing
 	s.stateMu.Unlock()
-	for _, format := range params.Capabilities.TextDocument.Hover.ContentFormat {
-		if format == "markdown" {
-			s.clientCapability.HoverContent = new(MarkdownHover)
-			break
-		}
-	}
-	if s.clientCapability.HoverContent == nil {
-		s.clientCapability.HoverContent = new(PlainTextHover)
-	}
+	s.evaluateClientCapabilities(params)
 	s.pendingFolders = params.WorkspaceFolders
 	if len(s.pendingFolders) == 0 && params.RootURI != "" {
 		s.pendingFolders = []protocol.WorkspaceFolder{{
@@ -73,7 +75,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 			DefinitionProvider:              true,
 			TypeDefinitionProvider:          false,
 			ImplementationProvider:          false,
-			DocumentFormattingProvider:      true,
+			DocumentFormattingProvider:      s.registerFormatterIfNoDynReg(),
 			DocumentRangeFormattingProvider: false,
 			DocumentSymbolProvider:          true,
 			WorkspaceSymbolProvider:         false,
@@ -89,7 +91,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 					IncludeText: false,
 				},
 			},
-			SemanticTokensProvider: registerSemanticTokens(),
+			SemanticTokensProvider: s.registerSemanticTokensIfNoDynReg(),
 			Workspace: protocol.Workspace5Gn{
 				WorkspaceFolders: protocol.WorkspaceFolders4Gn{
 					Supported:           true,
@@ -104,11 +106,27 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	}, nil
 }
 
+func (s *Server) evaluateClientCapabilities(params *protocol.ParamInitialize) {
+	for _, format := range params.Capabilities.TextDocument.Hover.ContentFormat {
+		if format == "markdown" {
+			s.clientCapability.HoverContent = new(MarkdownHover)
+			break
+		}
+	}
+	if s.clientCapability.HoverContent == nil {
+		s.clientCapability.HoverContent = new(PlainTextHover)
+	}
+	s.clientCapability.HasDynRegForDiagnostics = false // NOTE: available only from LSP 3.17 on
+	s.clientCapability.HasDynRegForFormatter = params.Capabilities.TextDocument.Formatting.DynamicRegistration
+	s.clientCapability.HasDynRegForSemTok = params.Capabilities.TextDocument.SemanticTokens.DynamicRegistration
+}
+
 func (s *Server) initialized(ctx context.Context, params *protocol.InitializedParams) error {
 	s.stateMu.Lock()
 	s.state = serverInitialized
 	s.stateMu.Unlock()
 
+	s.didChangeConfiguration(ctx, &protocol.DidChangeConfigurationParams{})
 	for _, folder := range s.pendingFolders {
 		log.Printf("Scanning %q for possible TTCN-3 suites\n", folder.URI)
 		for _, root := range project.Discover(folder.URI) {

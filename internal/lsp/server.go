@@ -70,10 +70,15 @@ type HoverContentProvider interface {
 	LinkForNode(def *ttcn3.Node) string
 }
 type ClientCapability struct {
-	HoverContent HoverContentProvider
+	HoverContent            HoverContentProvider
+	HasDynRegForDiagnostics bool
+	HasDynRegForFormatter   bool
+	HasDynRegForSemTok      bool
 }
 type Config struct {
-	FormatEnabled bool
+	DiagnosticsEnabled    bool
+	FormatEnabled         bool
+	SemantikTokensEnabled bool
 }
 
 // Server implements the protocol.Server interface.
