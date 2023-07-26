@@ -38,7 +38,7 @@ func TestTypeStrings(t *testing.T) {
 		// Predefined types
 
 		{Output: "any", Type: types.Predefined["any"]},
-		{skip: true, Output: "anytype", Type: types.Predefined["anytype"]},
+		{Output: "anytype", Type: types.Predefined["anytype"]},
 		{Output: "bitstring", Type: types.Predefined["bitstring"]},
 		{Output: "boolean", Type: types.Predefined["boolean"]},
 		{Output: "charstring", Type: types.Predefined["charstring"]},
@@ -47,7 +47,7 @@ func TestTypeStrings(t *testing.T) {
 		{Output: "hexstring", Type: types.Predefined["hexstring"]},
 		{Output: "integer", Type: types.Predefined["integer"]},
 		{Output: "octetstring", Type: types.Predefined["octetstring"]},
-		{skip: true, Output: "timer", Type: types.Predefined["timer"]},
+		{Output: "timer", Type: types.Predefined["timer"]},
 		{Output: "universal charstring", Type: types.Predefined["universal charstring"]},
 
 		// Primitive types
@@ -254,10 +254,10 @@ func TestTypeStrings(t *testing.T) {
 
 		// Structured types
 
-		{skip: true, Output: "record {}", Type: &types.StructuredType{}},
-		{skip: true, Output: "record {}", Type: &types.StructuredType{Kind: types.Record}},
+		{Output: "record {}", Type: &types.StructuredType{}},
+		{Output: "record {}", Type: &types.StructuredType{Kind: types.Record}},
 
-		{skip: true, Output: "record {integer, float optional}",
+		{Output: "record {integer, float optional}",
 			Type: &types.StructuredType{
 				Kind: types.Record,
 				Fields: []types.Field{
@@ -266,7 +266,7 @@ func TestTypeStrings(t *testing.T) {
 				},
 			}},
 
-		{skip: true, Output: "set {integer (5) optional} (1..10)",
+		{Output: "set {integer (5) optional} (1..10)",
 			Type: &types.StructuredType{
 				Kind: types.Set,
 				Fields: []types.Field{{
@@ -279,14 +279,14 @@ func TestTypeStrings(t *testing.T) {
 				ValueConstraints: []types.Value{{Expr: rangeVal}},
 			}},
 
-		{skip: true, Output: "T", Type: &types.StructuredType{Kind: types.Component, Name: "T"}},
-		{skip: true, Output: "trait", Type: &types.StructuredType{Kind: types.Trait}},
-		{skip: true, Output: "C", Type: &types.StructuredType{Kind: types.Component, Name: "C"}},
-		{skip: true, Output: "component", Type: &types.StructuredType{Kind: types.Component}},
-		{skip: true, Output: "C", Type: &types.StructuredType{Kind: types.Object, Name: "C"}},
-		{skip: true, Output: "class", Type: &types.StructuredType{Kind: types.Object}},
-		{skip: true, Output: "P", Type: &types.StructuredType{Kind: types.Port, Name: "P"}},
-		{skip: true, Output: "port", Type: &types.StructuredType{Kind: types.Port}},
+		{Output: "T", Type: &types.StructuredType{Kind: types.Trait, Name: "T"}},
+		{Output: "trait", Type: &types.StructuredType{Kind: types.Trait}},
+		{Output: "C", Type: &types.StructuredType{Kind: types.Component, Name: "C"}},
+		{Output: "component", Type: &types.StructuredType{Kind: types.Component}},
+		{Output: "C", Type: &types.StructuredType{Kind: types.Object, Name: "C"}},
+		{Output: "class", Type: &types.StructuredType{Kind: types.Object}},
+		{Output: "P", Type: &types.StructuredType{Kind: types.Port, Name: "P"}},
+		{Output: "port", Type: &types.StructuredType{Kind: types.Port}},
 
 		// TODO(5nord) add tests for enumerated types, unions and subtypes
 	}
