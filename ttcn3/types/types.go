@@ -397,3 +397,7 @@ func printExpr(e syntax.Expr) string {
 	}
 	panic(fmt.Sprintf("not implemented: %T", e))
 }
+
+func TypeOf(n syntax.Expr) Type {
+	return nil
+}

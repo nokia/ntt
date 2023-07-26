@@ -3,6 +3,7 @@ package types_test
 import (
 	"testing"
 
+	"github.com/nokia/ntt/internal/ntttest"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/nokia/ntt/ttcn3/types"
@@ -302,4 +303,95 @@ func TestTypeStrings(t *testing.T) {
 			assert.Equal(t, tt.Output, tt.Type.String())
 		})
 	}
+}
+
+func TestTypeInference(t *testing.T) {
+	tests := []struct {
+		input  string
+		expect string
+		skip   bool
+	}{
+		{skip: true, input: `integer`, expect: `integer`},
+		{skip: true, input: `float`, expect: `float`},
+		{skip: true, input: `boolean`, expect: `boolean`},
+
+		{skip: true, input: `0`, expect: `integer`},
+		{skip: true, input: `0.0`, expect: `float`},
+		{skip: true, input: `infinity`, expect: `float`},
+		{skip: true, input: `not_a_number`, expect: `float`},
+		{skip: true, input: `true`, expect: `boolean`},
+		{skip: true, input: `false`, expect: `boolean`},
+		{skip: true, input: `"hello"`, expect: `charstring`},
+		{skip: true, input: `"wörld"`, expect: `universal charstring`},
+		{skip: true, input: `'111'H`, expect: `hexstring`},
+		{skip: true, input: `'111'B`, expect: `bitstring`},
+		{skip: true, input: `'111'O`, expect: `octettstring`},
+		{skip: true, input: `pass`, expect: `verdicttype`},
+
+		{skip: true, input: `+0`, expect: `integer`},
+		{skip: true, input: `-0`, expect: `integer`},
+		{skip: true, input: `not4b '111'B`, expect: `bitstring`},
+
+		{skip: true, input: `1+2`, expect: `integer`},
+		{skip: true, input: `1+2-3`, expect: `integer`},
+		{skip: true, input: `1.0+2.0`, expect: `float`},
+		{skip: true, input: `not true or false`, expect: `boolean`},
+		{skip: true, input: `1+2 <= 3`, expect: `boolean`},
+
+		{skip: true, input: `{1}`, expect: `record of integer`},
+		{skip: true, input: `{1,2,3}`, expect: `record of integer`},
+		{skip: true, input: `{1+2,2,3}`, expect: `record of integer`},
+		{skip: true, input: `{(1+2),2,(3)}`, expect: `record of integer`},
+		{skip: true, input: `{{1},{2},{}}`, expect: `record of record of integer`},
+		{skip: true, input: `{"A",""}`, expect: `record of charstring`},
+		{skip: true, input: `{"A","Ä"}`, expect: `record of universal charstring`},
+		{skip: true, input: `{x := 2, y := true}`, expect: `record { integer, boolean }`},
+		{skip: true, input: `{x := 2, y := omit}`, expect: `record { integer, boolean optional}`},
+		{skip: true, input: `{[1] := 1, [3] := 2, [2] := 3}`, expect: `record of integer`},
+		{skip: true, input: `{[1.0] := 1, [3.0] := 2, [2.0] := 3}`, expect: `map from float to integer`},
+
+		//{skip: true, input: `x := 2`, expect: `void`},
+		//{skip: true, input: `mtc == null`, expect: `boolean`},
+		//{skip: true, input: `null == null`, expect: `boolean`},
+		//{skip: true, input: `all component`, expect: `component`},
+		//{skip: true, input: `__MODULE__`, expect: `charstring`},
+	}
+
+	for _, tt := range tests {
+		t.Run(t.Name(), func(t *testing.T) {
+			if tt.skip {
+				t.Skip()
+			}
+			input, cursor := ntttest.CutCursor(tt.input)
+			tree := ttcn3.Parse(input)
+			if err := tree.Err; err != nil {
+				t.Fatal(err)
+			}
+			if len(tree.Nodes) < 1 {
+				t.Fatal("no nodes")
+			}
+			var expr syntax.Expr
+			if cursor >= 0 {
+				pos := tree.Position(cursor)
+				expr = tree.ExprAt(pos.Line, pos.Column)
+			} else {
+				switch n := tree.Nodes[len(tree.Nodes)-1].(type) {
+				case syntax.Expr:
+					expr = n
+				case *syntax.ExprStmt:
+					expr = n.Expr
+				default:
+					t.Fatalf("last statement is not an expression: %T", n)
+				}
+			}
+
+			typ := types.TypeOf(expr)
+			if typ == nil {
+				t.Fatal("type is nil")
+			}
+			assert.Equal(t, tt.expect, typ.String())
+
+		})
+	}
+
 }
