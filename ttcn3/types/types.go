@@ -113,6 +113,7 @@ var kindNames = map[Kind]string{
 var kindConvert = map[syntax.Kind]Kind{
 	syntax.INT:        Integer,
 	syntax.FLOAT:      Float,
+	syntax.NAN:        Float,
 	syntax.FALSE:      Boolean,
 	syntax.TRUE:       Boolean,
 	syntax.FAIL:       Verdict,
@@ -121,7 +122,6 @@ var kindConvert = map[syntax.Kind]Kind{
 	syntax.NONE:       Verdict,
 	syntax.ERROR:      Verdict,
 	syntax.ENUMERATED: Enumerated,
-	syntax.CHARSTRING: Charstring,
 	syntax.STRING:     UniversalCharstring,
 	syntax.COMPONENT:  Component,
 	syntax.PORT:       Port,
@@ -421,5 +421,15 @@ func printExpr(e syntax.Expr) string {
 func TypeOf(n syntax.Expr) Type {
 	//types to check:
 	//ValueLiteral, CompositeLiteral, BinaryExpr, UnaryExpr, Ident
+	switch n := n.(type) {
+	case *syntax.ValueLiteral:
+		kind := kindConvert[n.Tok.Kind()]
+		switch kind {
+		case Integer, Float, Boolean:
+			return Predefined[kind.String()]
+		case Verdict:
+			return Predefined["verdicttype"]
+		}
+	}
 	return nil
 }
