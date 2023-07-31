@@ -123,6 +123,7 @@ var kindConvert = map[syntax.Kind]Kind{
 	syntax.ERROR:      Verdict,
 	syntax.ENUMERATED: Enumerated,
 	syntax.STRING:     UniversalCharstring,
+	syntax.BSTRING:    Bitstring,
 	syntax.COMPONENT:  Component,
 	syntax.PORT:       Port,
 	syntax.TIMER:      Timer,
@@ -437,6 +438,13 @@ func TypeOf(n syntax.Expr) Type {
 			} else {
 				return Predefined["charstring"]
 			}
+		case Bitstring:
+			if strings.Contains(n.Tok.String(), "H") {
+				return Predefined["hexstring"]
+			} else if strings.Contains(n.Tok.String(), "O") {
+				return Predefined["octetstring"]
+			}
+			return Predefined["bitstring"]
 		}
 	}
 	return nil

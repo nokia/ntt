@@ -325,9 +325,9 @@ func TestTypeInference(t *testing.T) {
 		{input: `false`, expect: `boolean`},
 		{input: `"hello"`, expect: `charstring`},
 		{input: `"wörld"`, expect: `universal charstring`},
-		{skip: true, input: `'111'H`, expect: `hexstring`},
-		{skip: true, input: `'111'B`, expect: `bitstring`},
-		{skip: true, input: `'111'O`, expect: `octettstring`},
+		{input: `'111'H`, expect: `hexstring`},
+		{input: `'111'B`, expect: `bitstring`},
+		{input: `'111'O`, expect: `octetstring`},
 		{input: `pass`, expect: `verdicttype`},
 
 		// Unary Expressions
