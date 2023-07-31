@@ -429,6 +429,14 @@ func TypeOf(n syntax.Expr) Type {
 			return Predefined[kind.String()]
 		case Verdict:
 			return Predefined["verdicttype"]
+		case UniversalCharstring:
+			if strings.IndexFunc(n.Tok.String(), func(r rune) bool {
+				return r <= 32 || r >= 126
+			}) > -1 {
+				return Predefined["universal charstring"]
+			} else {
+				return Predefined["charstring"]
+			}
 		}
 	}
 	return nil
