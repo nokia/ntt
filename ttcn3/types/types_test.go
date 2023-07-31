@@ -311,10 +311,12 @@ func TestTypeInference(t *testing.T) {
 		expect string
 		skip   bool
 	}{
+		// Identifiers
 		{skip: true, input: `integer`, expect: `integer`},
 		{skip: true, input: `float`, expect: `float`},
 		{skip: true, input: `boolean`, expect: `boolean`},
 
+		// ValueLiterals
 		{skip: true, input: `0`, expect: `integer`},
 		{skip: true, input: `0.0`, expect: `float`},
 		{skip: true, input: `infinity`, expect: `float`},
@@ -328,10 +330,12 @@ func TestTypeInference(t *testing.T) {
 		{skip: true, input: `'111'O`, expect: `octettstring`},
 		{skip: true, input: `pass`, expect: `verdicttype`},
 
+		// Unary Expressions
 		{skip: true, input: `+0`, expect: `integer`},
 		{skip: true, input: `-0`, expect: `integer`},
 		{skip: true, input: `not4b '111'B`, expect: `bitstring`},
 
+		// Binary Expressions
 		{skip: true, input: `1+2`, expect: `integer`},
 		{skip: true, input: `1+2-3`, expect: `integer`},
 		{skip: true, input: `1.0+2.0`, expect: `float`},

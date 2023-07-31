@@ -110,6 +110,26 @@ var kindNames = map[Kind]string{
 	Testcase:            "testcase",
 }
 
+var kindConvert = map[syntax.Kind]Kind{
+	syntax.INT:        Integer,
+	syntax.FLOAT:      Float,
+	syntax.FALSE:      Boolean,
+	syntax.TRUE:       Boolean,
+	syntax.FAIL:       Verdict,
+	syntax.PASS:       Verdict,
+	syntax.INCONC:     Verdict,
+	syntax.NONE:       Verdict,
+	syntax.ERROR:      Verdict,
+	syntax.ENUMERATED: Enumerated,
+	syntax.CHARSTRING: Charstring,
+	syntax.STRING:     UniversalCharstring,
+	syntax.COMPONENT:  Component,
+	syntax.PORT:       Port,
+	syntax.TIMER:      Timer,
+	syntax.RECORD:     Record,
+	syntax.SET:        Set,
+}
+
 // String returns a string describing the kind, such as "error or integer or float".
 func (k Kind) String() string {
 	if k == 0 {
@@ -399,5 +419,7 @@ func printExpr(e syntax.Expr) string {
 }
 
 func TypeOf(n syntax.Expr) Type {
+	//types to check:
+	//ValueLiteral, CompositeLiteral, BinaryExpr, UnaryExpr, Ident
 	return nil
 }
