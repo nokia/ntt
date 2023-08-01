@@ -110,27 +110,6 @@ var kindNames = map[Kind]string{
 	Testcase:            "testcase",
 }
 
-var kindConvert = map[syntax.Kind]Kind{
-	syntax.INT:        Integer,
-	syntax.FLOAT:      Float,
-	syntax.NAN:        Float,
-	syntax.FALSE:      Boolean,
-	syntax.TRUE:       Boolean,
-	syntax.FAIL:       Verdict,
-	syntax.PASS:       Verdict,
-	syntax.INCONC:     Verdict,
-	syntax.NONE:       Verdict,
-	syntax.ERROR:      Verdict,
-	syntax.ENUMERATED: Enumerated,
-	syntax.STRING:     UniversalCharstring,
-	syntax.BSTRING:    Bitstring,
-	syntax.COMPONENT:  Component,
-	syntax.PORT:       Port,
-	syntax.TIMER:      Timer,
-	syntax.RECORD:     Record,
-	syntax.SET:        Set,
-}
-
 // String returns a string describing the kind, such as "error or integer or float".
 func (k Kind) String() string {
 	if k == 0 {
@@ -424,13 +403,16 @@ func TypeOf(n syntax.Expr) Type {
 	//ValueLiteral, CompositeLiteral, BinaryExpr, UnaryExpr, Ident
 	switch n := n.(type) {
 	case *syntax.ValueLiteral:
-		kind := kindConvert[n.Tok.Kind()]
-		switch kind {
-		case Integer, Float, Boolean:
-			return Predefined[kind.String()]
-		case Verdict:
+		switch n.Tok.Kind() {
+		case syntax.INT:
+			return Predefined["integer"]
+		case syntax.FLOAT, syntax.NAN:
+			return Predefined["float"]
+		case syntax.TRUE, syntax.FALSE:
+			return Predefined["boolean"]
+		case syntax.PASS, syntax.FAIL, syntax.INCONC, syntax.NONE, syntax.ERROR:
 			return Predefined["verdicttype"]
-		case UniversalCharstring:
+		case syntax.STRING:
 			if strings.IndexFunc(n.Tok.String(), func(r rune) bool {
 				return r <= 32 || r >= 126
 			}) > -1 {
@@ -438,7 +420,7 @@ func TypeOf(n syntax.Expr) Type {
 			} else {
 				return Predefined["charstring"]
 			}
-		case Bitstring:
+		case syntax.BSTRING:
 			if strings.Contains(n.Tok.String(), "H") {
 				return Predefined["hexstring"]
 			} else if strings.Contains(n.Tok.String(), "O") {
