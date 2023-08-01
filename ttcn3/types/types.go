@@ -413,20 +413,27 @@ func TypeOf(n syntax.Expr) Type {
 		case syntax.PASS, syntax.FAIL, syntax.INCONC, syntax.NONE, syntax.ERROR:
 			return Predefined["verdicttype"]
 		case syntax.STRING:
-			if strings.IndexFunc(n.Tok.String(), func(r rune) bool {
-				return r <= 32 || r >= 126
-			}) > -1 {
-				return Predefined["universal charstring"]
-			} else {
-				return Predefined["charstring"]
+			for _, r := range n.Tok.String() {
+				if r < 32 || 126 < r {
+					return Predefined["universal charstring"]
+				}
 			}
+			return Predefined["charstring"]
+
 		case syntax.BSTRING:
-			if strings.Contains(n.Tok.String(), "H") {
-				return Predefined["hexstring"]
-			} else if strings.Contains(n.Tok.String(), "O") {
-				return Predefined["octetstring"]
+			s := n.Tok.String()
+			if len(s) == 0 {
+				return nil
 			}
-			return Predefined["bitstring"]
+			switch s[len(s)-1] {
+			case 'H', 'h':
+				return Predefined["hexstring"]
+			case 'O', 'o':
+				return Predefined["octetstring"]
+			case 'B', 'b':
+				return Predefined["bitstring"]
+			}
+			return nil
 		}
 	}
 	return nil
