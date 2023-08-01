@@ -311,27 +311,31 @@ func TestTypeInference(t *testing.T) {
 		expect string
 		skip   bool
 	}{
+		// Identifiers
 		{skip: true, input: `integer`, expect: `integer`},
 		{skip: true, input: `float`, expect: `float`},
 		{skip: true, input: `boolean`, expect: `boolean`},
 
-		{skip: true, input: `0`, expect: `integer`},
-		{skip: true, input: `0.0`, expect: `float`},
+		// ValueLiterals
+		{input: `0`, expect: `integer`},
+		{input: `0.0`, expect: `float`},
 		{skip: true, input: `infinity`, expect: `float`},
-		{skip: true, input: `not_a_number`, expect: `float`},
-		{skip: true, input: `true`, expect: `boolean`},
-		{skip: true, input: `false`, expect: `boolean`},
-		{skip: true, input: `"hello"`, expect: `charstring`},
-		{skip: true, input: `"wörld"`, expect: `universal charstring`},
-		{skip: true, input: `'111'H`, expect: `hexstring`},
-		{skip: true, input: `'111'B`, expect: `bitstring`},
-		{skip: true, input: `'111'O`, expect: `octettstring`},
-		{skip: true, input: `pass`, expect: `verdicttype`},
+		{input: `not_a_number`, expect: `float`},
+		{input: `true`, expect: `boolean`},
+		{input: `false`, expect: `boolean`},
+		{input: `"hello"`, expect: `charstring`},
+		{input: `"wörld"`, expect: `universal charstring`},
+		{input: `'111'H`, expect: `hexstring`},
+		{input: `'111'B`, expect: `bitstring`},
+		{input: `'111'O`, expect: `octetstring`},
+		{input: `pass`, expect: `verdicttype`},
 
+		// Unary Expressions
 		{skip: true, input: `+0`, expect: `integer`},
 		{skip: true, input: `-0`, expect: `integer`},
 		{skip: true, input: `not4b '111'B`, expect: `bitstring`},
 
+		// Binary Expressions
 		{skip: true, input: `1+2`, expect: `integer`},
 		{skip: true, input: `1+2-3`, expect: `integer`},
 		{skip: true, input: `1.0+2.0`, expect: `float`},

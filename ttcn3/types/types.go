@@ -399,5 +399,42 @@ func printExpr(e syntax.Expr) string {
 }
 
 func TypeOf(n syntax.Expr) Type {
+	//types to check:
+	//ValueLiteral, CompositeLiteral, BinaryExpr, UnaryExpr, Ident
+	switch n := n.(type) {
+	case *syntax.ValueLiteral:
+		switch n.Tok.Kind() {
+		case syntax.INT:
+			return Predefined["integer"]
+		case syntax.FLOAT, syntax.NAN:
+			return Predefined["float"]
+		case syntax.TRUE, syntax.FALSE:
+			return Predefined["boolean"]
+		case syntax.PASS, syntax.FAIL, syntax.INCONC, syntax.NONE, syntax.ERROR:
+			return Predefined["verdicttype"]
+		case syntax.STRING:
+			for _, r := range n.Tok.String() {
+				if r < 32 || 126 < r {
+					return Predefined["universal charstring"]
+				}
+			}
+			return Predefined["charstring"]
+
+		case syntax.BSTRING:
+			s := n.Tok.String()
+			if len(s) == 0 {
+				return nil
+			}
+			switch s[len(s)-1] {
+			case 'H', 'h':
+				return Predefined["hexstring"]
+			case 'O', 'o':
+				return Predefined["octetstring"]
+			case 'B', 'b':
+				return Predefined["bitstring"]
+			}
+			return nil
+		}
+	}
 	return nil
 }
