@@ -435,6 +435,20 @@ func TypeOf(n syntax.Expr) Type {
 			}
 			return nil
 		}
+	case *syntax.BinaryExpr:
+		switch n.Op.Kind() {
+		case syntax.LT, syntax.GT, syntax.LE, syntax.GE, syntax.EQ, syntax.NE, syntax.AND, syntax.OR, syntax.XOR:
+			return Predefined["boolean"]
+		case syntax.ADD, syntax.SUB, syntax.MUL, syntax.DIV, syntax.AND4B, syntax.OR4B, syntax.XOR4B, syntax.CONCAT:
+			if operandType := TypeOf(n.X); operandType == TypeOf(n.Y) {
+				return operandType
+			}
+			return nil
+		case syntax.MOD, syntax.REM:
+			return Predefined["integer"]
+		case syntax.SHL, syntax.SHR, syntax.ROL, syntax.ROR:
+			return TypeOf(n.X)
+		}
 	}
 	return nil
 }
