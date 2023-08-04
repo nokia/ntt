@@ -342,17 +342,18 @@ func TestTypeInference(t *testing.T) {
 		{input: `not true or false`, expect: `boolean`},
 		{input: `1+2 <= 3`, expect: `boolean`},
 
-		{skip: true, input: `{1}`, expect: `record of integer`},
-		{skip: true, input: `{1,2,3}`, expect: `record of integer`},
-		{skip: true, input: `{1+2,2,3}`, expect: `record of integer`},
-		{skip: true, input: `{(1+2),2,(3)}`, expect: `record of integer`},
-		{skip: true, input: `{{1},{2},{}}`, expect: `record of record of integer`},
-		{skip: true, input: `{"A",""}`, expect: `record of charstring`},
-		{skip: true, input: `{"A","Ä"}`, expect: `record of universal charstring`},
-		{skip: true, input: `{x := 2, y := true}`, expect: `record { integer, boolean }`},
-		{skip: true, input: `{x := 2, y := omit}`, expect: `record { integer, boolean optional}`},
-		{skip: true, input: `{[1] := 1, [3] := 2, [2] := 3}`, expect: `record of integer`},
-		{skip: true, input: `{[1.0] := 1, [3.0] := 2, [2.0] := 3}`, expect: `map from float to integer`},
+		{skip: true, input: `x := ¶{1}`, expect: `record of integer`},
+		{skip: true, input: `x := ¶{1,2,3}`, expect: `record of integer`},
+		{skip: true, input: `x := ¶{1+2,2,3}`, expect: `record of integer`},
+		{skip: true, input: `x := ¶{(1+2),2,(3)}`, expect: `record of integer`},
+		{skip: true, input: `x := ¶{{1},{2},{}}`, expect: `record of record of integer`},
+		{skip: true, input: `x := ¶{"A",""}`, expect: `record of charstring`},
+		{skip: true, input: `x := ¶{"A","Ä"}`, expect: `record of universal charstring`},
+		{skip: true, input: `x := ¶{x := 2, y := true}`, expect: `record { integer, boolean }`},
+		{skip: true, input: `x := ¶{x := 2, y := omit}`, expect: `record { integer, boolean optional}`},
+		{skip: true, input: `x := ¶{integer := 2, float := omit}`, expect: `record { integer, float optional}`},
+		{skip: true, input: `x := ¶{[1] := 1, [3] := 2, [2] := 3}`, expect: `record of integer`},
+		{skip: true, input: `x := ¶{[1.0] := 1, [3.0] := 2, [2.0] := 3}`, expect: `map from float to integer`},
 
 		//{skip: true, input: `x := 2`, expect: `void`},
 		//{skip: true, input: `mtc == null`, expect: `boolean`},
@@ -376,8 +377,7 @@ func TestTypeInference(t *testing.T) {
 			}
 			var expr syntax.Expr
 			if cursor >= 0 {
-				pos := tree.Position(cursor)
-				expr = tree.IdentifierAt(pos.Line, pos.Column)
+				expr = tree.ExprAt(cursor)
 			} else {
 				switch n := tree.Nodes[len(tree.Nodes)-1].(type) {
 				case syntax.Expr:
