@@ -331,16 +331,16 @@ func TestTypeInference(t *testing.T) {
 		{input: `pass`, expect: `verdicttype`},
 
 		// Unary Expressions
-		{skip: true, input: `+0`, expect: `integer`},
-		{skip: true, input: `-0`, expect: `integer`},
-		{skip: true, input: `not4b '111'B`, expect: `bitstring`},
+		{input: `+0`, expect: `integer`},
+		{input: `-0`, expect: `integer`},
+		{input: `not4b '111'B`, expect: `bitstring`},
 
 		// Binary Expressions
-		{skip: true, input: `1+2`, expect: `integer`},
-		{skip: true, input: `1+2-3`, expect: `integer`},
-		{skip: true, input: `1.0+2.0`, expect: `float`},
-		{skip: true, input: `not true or false`, expect: `boolean`},
-		{skip: true, input: `1+2 <= 3`, expect: `boolean`},
+		{input: `1+2`, expect: `integer`},
+		{input: `1+2-3`, expect: `integer`},
+		{input: `1.0+2.0`, expect: `float`},
+		{input: `not true or false`, expect: `boolean`},
+		{input: `1+2 <= 3`, expect: `boolean`},
 
 		{skip: true, input: `{1}`, expect: `record of integer`},
 		{skip: true, input: `{1,2,3}`, expect: `record of integer`},
