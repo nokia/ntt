@@ -449,6 +449,15 @@ func TypeOf(n syntax.Expr) Type {
 		case syntax.SHL, syntax.SHR, syntax.ROL, syntax.ROR:
 			return TypeOf(n.X)
 		}
+	case *syntax.UnaryExpr:
+		switch n.Op.Kind() {
+		case syntax.NOT:
+			return Predefined["boolean"]
+		case syntax.NOT4B, syntax.ADD, syntax.SUB:
+			return TypeOf(n.X)
+		case syntax.INC, syntax.DEC:
+			return Predefined["integer"]
+		}
 	}
 	return nil
 }
