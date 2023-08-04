@@ -212,8 +212,9 @@ func (t *Tree) ModulePars() []*Node {
 	return defs
 }
 
-// ExprAt returns the primary expression at the given position.
-func (t *Tree) ExprAt(line, col int) syntax.Expr {
+// IdentifierAt returns the primary expression enclosing the identifer at the
+// given position.
+func (t *Tree) IdentifierAt(line, col int) syntax.Expr {
 	pos := t.PosFor(line, col)
 	s := t.sliceAt(pos)
 	if len(s) == 0 {
@@ -233,6 +234,14 @@ func (t *Tree) ExprAt(line, col int) syntax.Expr {
 	}
 
 	return id
+}
+
+// ExprAt returns the expression at given position.
+func (t *Tree) ExprAt(pos int) syntax.Expr {
+	if s := t.sliceAt(pos); len(s) > 0 {
+		return s[0].(syntax.Expr)
+	}
+	return nil
 }
 
 // sliceAt returns the slice of nodes at the given position.

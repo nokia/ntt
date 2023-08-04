@@ -84,7 +84,7 @@ func TestExprAt(t *testing.T) {
 			source, cursor := ntttest.CutCursor(tt.input)
 			tree := parseFile(t, t.Name(), source)
 			pos := tree.Position(cursor)
-			actual := nodeDesc(tree.ExprAt(pos.Line, pos.Column))
+			actual := nodeDesc(tree.IdentifierAt(pos.Line, pos.Column))
 			assert.Equal(t, tt.want, actual)
 		})
 	}
@@ -315,7 +315,7 @@ func TestLookup(t *testing.T) {
 			db.Index(tree.Filename())
 
 			actual := []string{}
-			n := tree.ExprAt(pos.Line, pos.Column)
+			n := tree.IdentifierAt(pos.Line, pos.Column)
 			for _, d := range tree.LookupWithDB(n, db) {
 				actual = append(actual, ids[d.Ident])
 			}

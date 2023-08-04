@@ -377,7 +377,7 @@ func TestTypeInference(t *testing.T) {
 			var expr syntax.Expr
 			if cursor >= 0 {
 				pos := tree.Position(cursor)
-				expr = tree.ExprAt(pos.Line, pos.Column)
+				expr = tree.IdentifierAt(pos.Line, pos.Column)
 			} else {
 				switch n := tree.Nodes[len(tree.Nodes)-1].(type) {
 				case syntax.Expr:

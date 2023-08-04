@@ -25,7 +25,7 @@ func (s *Server) definition(ctx context.Context, params *protocol.DefinitionPara
 	}()
 
 	tree := ttcn3.ParseFile(file)
-	x := tree.ExprAt(line, col)
+	x := tree.IdentifierAt(line, col)
 	if x == nil {
 		log.Debug(fmt.Sprintf("No expression at %s:%d:%d\n", file, line, col))
 	}
