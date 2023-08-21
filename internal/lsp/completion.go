@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nokia/ntt/internal/log"
@@ -265,7 +266,7 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 					return nil
 				}
 				tree := ttcn3.ParseFile(file)
-				list = CompleteValueDecls(tree, mname, n.TemplateTok.Kind(), false)
+				list = CompleteValueDecls(tree, n.TemplateTok.Kind(), false)
 				return list
 			}
 			list = CompleteAllValueDecls(suite, syntax.TEMPLATE)
@@ -462,7 +463,7 @@ func CompleteBehaviours(tree *ttcn3.Tree, kinds []syntax.Kind, attribs []BehavAt
 	)
 
 	for _, kind := range kinds {
-		items = append(items, behaviourInfos(tree, kind, mname)...)
+		items = append(items, behaviourInfos(tree, kind)...)
 	}
 
 	for _, v := range items {
@@ -511,8 +512,11 @@ func CompleteAllBehaviours(suite *Suite, kinds []syntax.Kind, attribs []BehavAtt
 	return ret
 }
 
-func CompleteValueDecls(tree *ttcn3.Tree, mname string, kind syntax.Kind, withDetail bool) []protocol.CompletionItem {
-	var ret []protocol.CompletionItem
+func CompleteValueDecls(tree *ttcn3.Tree, kind syntax.Kind, withDetail bool) []protocol.CompletionItem {
+	var (
+		ret   []protocol.CompletionItem
+		mname string
+	)
 	tree.Inspect(func(n syntax.Node) bool {
 		if n == nil {
 			// called on node exit
@@ -520,6 +524,9 @@ func CompleteValueDecls(tree *ttcn3.Tree, mname string, kind syntax.Kind, withDe
 		}
 
 		switch node := n.(type) {
+		case *syntax.Module:
+			mname = node.Name.String()
+			return true
 		case *syntax.FuncDecl, *syntax.ComponentTypeDecl:
 			// do not descent into TESTCASE, FUNCTION, ALTSTEP,
 			// component type
@@ -546,7 +553,7 @@ func CompleteValueDecls(tree *ttcn3.Tree, mname string, kind syntax.Kind, withDe
 			Kind:  protocol.ConstantCompletion,
 		}
 		if withDetail {
-			item.Detail = mname + "." + v
+			item.Detail = joinNames(mname, v)
 		}
 		ret = append(ret, item)
 		return false
@@ -598,7 +605,7 @@ func CompleteImportSpecs(suite *Suite, kind syntax.Kind, mname string) []protoco
 		return ret
 
 	case syntax.TEMPLATE, syntax.CONST, syntax.MODULEPAR:
-		ret := CompleteValueDecls(tree, mname, kind, false)
+		ret := CompleteValueDecls(tree, kind, false)
 		ret = append(ret, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
 		return ret
 
@@ -650,6 +657,9 @@ func CompleteTypes(suite *Suite, mname string, sortPref string) []protocol.Compl
 	var ret []protocol.CompletionItem
 	tree := ttcn3.ParseFile(file)
 	tree.Inspect(func(n syntax.Node) bool {
+		if mod, ok := n.(*syntax.Module); ok {
+			mname = mod.Name.String()
+		}
 		if !isType(n) {
 			return true
 		}
@@ -657,7 +667,7 @@ func CompleteTypes(suite *Suite, mname string, sortPref string) []protocol.Compl
 		item := protocol.CompletionItem{
 			Label:  v + " ",
 			Kind:   protocol.StructCompletion, // NOTE: instead of 'StructCompletion' a better matching kind could be used
-			Detail: mname + "." + v,
+			Detail: joinNames(mname, v),
 		}
 		if sortPref != "" {
 			item.SortText = sortPref + v
@@ -678,6 +688,9 @@ func CompleteComponentTypes(suite *Suite, mname string, sortPref string) []proto
 	var ret []protocol.CompletionItem
 	tree := ttcn3.ParseFile(file)
 	tree.Inspect(func(n syntax.Node) bool {
+		if mod, ok := n.(*syntax.Module); ok {
+			mname = mod.Name.String()
+		}
 		if _, ok := n.(*syntax.ComponentTypeDecl); !ok {
 			return true
 		}
@@ -685,7 +698,7 @@ func CompleteComponentTypes(suite *Suite, mname string, sortPref string) []proto
 		item := protocol.CompletionItem{
 			Label:  v,
 			Kind:   protocol.StructCompletion,
-			Detail: mname + "." + v,
+			Detail: joinNames(mname, v),
 		}
 		if sortPref != "" {
 			item.SortText = sortPref + v
@@ -706,6 +719,9 @@ func CompletePortTypes(suite *Suite, mname string, sortPref string) []protocol.C
 	var ret []protocol.CompletionItem
 	tree := ttcn3.ParseFile(file)
 	tree.Inspect(func(n syntax.Node) bool {
+		if mod, ok := n.(*syntax.Module); ok {
+			mname = mod.Name.String()
+		}
 		if _, ok := n.(*syntax.PortTypeDecl); !ok {
 			return true
 		}
@@ -713,7 +729,7 @@ func CompletePortTypes(suite *Suite, mname string, sortPref string) []protocol.C
 		item := protocol.CompletionItem{
 			Label:  v,
 			Kind:   protocol.InterfaceCompletion,
-			Detail: mname + "." + v,
+			Detail: joinNames(mname, v),
 		}
 		if sortPref != "" {
 			item.SortText = sortPref + v
@@ -772,15 +788,19 @@ func CompleteAllValueDecls(suite *Suite, kind syntax.Kind) []protocol.Completion
 			return nil
 		}
 		tree := ttcn3.ParseFile(file)
-		items := CompleteValueDecls(tree, baseName(f), kind, true)
+		items := CompleteValueDecls(tree, kind, true)
 		ret = append(ret, items...)
 	}
 	return ret
 }
 
-func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind, mname string) []*BehaviourInfo {
+func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind) []*BehaviourInfo {
 	var ret []*BehaviourInfo
+	mname := ""
 	tree.Inspect(func(n syntax.Node) bool {
+		if mod, ok := n.(*syntax.Module); ok {
+			mname = mod.Name.String()
+		}
 		node, ok := n.(*syntax.FuncDecl)
 		if !ok {
 			return true
@@ -792,7 +812,7 @@ func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind, mname string) []*Behavio
 
 		var sig bytes.Buffer
 		textFormat := protocol.PlainTextTextFormat
-		sig.WriteString(node.Kind.String() + " " + mname + "." + node.Name.String())
+		sig.WriteString(node.Kind.String() + " " + joinNames(mname, node.Name.String()))
 		len1 := len(sig.String())
 		printer.Print(&sig, node.Params)
 		hasParams := (len(sig.String()) - len1) > 2
@@ -823,6 +843,13 @@ func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind, mname string) []*Behavio
 
 	})
 	return ret
+}
+
+func joinNames(s string, ss ...string) string {
+	if len(ss) == 0 {
+		return s
+	}
+	return s + "." + strings.Join(ss, ".")
 }
 
 func isType(n syntax.Node) bool {
