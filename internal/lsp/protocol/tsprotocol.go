@@ -12,6 +12,151 @@ package protocol
 
 import "encoding/json"
 
+// Inlay hint information.
+//
+// @since 3.17.0
+type InlayHint struct {
+	// The position of this hint.
+	Position Position `json:"position"`
+	// The label of this hint. A human readable string or an array of
+	// InlayHintLabelPart label parts.
+	//
+	// *Note* that neither the string nor the label part can be empty.
+	Label []InlayHintLabelPart `json:"label"`
+	// The kind of this hint. Can be omitted in which case the client
+	// should fall back to a reasonable default.
+	Kind InlayHintKind `json:"kind,omitempty"`
+	// Optional text edits that are performed when accepting this inlay hint.
+	//
+	// *Note* that edits are expected to change the document so that the inlay
+	// hint (or its nearest variant) is now part of the document and the inlay
+	// hint itself is now obsolete.
+	TextEdits []TextEdit `json:"textEdits,omitempty"`
+	// The tooltip text when you hover over this item.
+	Tooltip *OrPTooltip_textDocument_inlayHint `json:"tooltip,omitempty"`
+	// Render padding before the hint.
+	//
+	// Note: Padding should use the editor's background color, not the
+	// background color of the hint itself. That means padding can be used
+	// to visually align/separate an inlay hint.
+	PaddingLeft bool `json:"paddingLeft,omitempty"`
+	// Render padding after the hint.
+	//
+	// Note: Padding should use the editor's background color, not the
+	// background color of the hint itself. That means padding can be used
+	// to visually align/separate an inlay hint.
+	PaddingRight bool `json:"paddingRight,omitempty"`
+	// A data entry field that is preserved on an inlay hint between
+	// a `textDocument/inlayHint` and a `inlayHint/resolve` request.
+	Data interface{} `json:"data,omitempty"`
+}
+
+// Inlay hint client capabilities.
+//
+// @since 3.17.0
+type InlayHintClientCapabilities struct {
+	// Whether inlay hints support dynamic registration.
+	DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+	// Indicates which properties a client can resolve lazily on an inlay
+	// hint.
+	ResolveSupport *PResolveSupportPInlayHint `json:"resolveSupport,omitempty"`
+}
+
+// Inlay hint kinds.
+//
+// @since 3.17.0
+type InlayHintKind uint32
+
+// An inlay hint label part allows for interactive and composite labels
+// of inlay hints.
+//
+// @since 3.17.0
+type InlayHintLabelPart struct {
+	// The value of this label part.
+	Value string `json:"value"`
+	// The tooltip text when you hover over this label part. Depending on
+	// the client capability `inlayHint.resolveSupport` clients might resolve
+	// this property late using the resolve request.
+	Tooltip *OrPTooltipPLabel `json:"tooltip,omitempty"`
+	// An optional source code location that represents this
+	// label part.
+	//
+	// The editor will use this location for the hover and for code navigation
+	// features: This part will become a clickable link that resolves to the
+	// definition of the symbol at the given location (not necessarily the
+	// location itself), it shows the hover that shows at the given location,
+	// and it shows a context menu with further code navigation commands.
+	//
+	// Depending on the client capability `inlayHint.resolveSupport` clients
+	// might resolve this property late using the resolve request.
+	Location *Location `json:"location,omitempty"`
+	// An optional command for this label part.
+	//
+	// Depending on the client capability `inlayHint.resolveSupport` clients
+	// might resolve this property late using the resolve request.
+	Command *Command `json:"command,omitempty"`
+}
+
+// Inlay hint options used during static registration.
+//
+// @since 3.17.0
+type InlayHintOptions struct {
+	// The server provides support to resolve additional
+	// information for an inlay hint item.
+	ResolveProvider bool `json:"resolveProvider,omitempty"`
+	WorkDoneProgressOptions
+}
+
+// A parameter literal used in inlay hint requests.
+//
+// @since 3.17.0
+type InlayHintParams struct {
+	// The text document.
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	// The document range for which inlay hints should be computed.
+	Range Range `json:"range"`
+	WorkDoneProgressParams
+}
+
+// Inlay hint options used during static or dynamic registration.
+//
+// @since 3.17.0
+type InlayHintRegistrationOptions struct {
+	InlayHintOptions
+	TextDocumentRegistrationOptions
+	StaticRegistrationOptions
+}
+
+// Client workspace capabilities specific to inlay hints.
+//
+// @since 3.17.0
+type InlayHintWorkspaceClientCapabilities struct {
+	// Whether the client implementation supports a refresh request sent from
+	// the server to the client.
+	//
+	// Note that this event is global and will force the client to refresh all
+	// inlay hints currently shown. It should be used with absolute care and
+	// is useful for situation where a server for example detects a project wide
+	// change that requires such a calculation.
+	RefreshSupport bool `json:"refreshSupport,omitempty"`
+}
+
+// created for Or [MarkupContent string]
+type OrPTooltip_textDocument_inlayHint struct {
+	Value interface{} `json:"value"`
+}
+
+// created for Literal (Lit_InlayHintClientCapabilities_resolveSupport)
+type PResolveSupportPInlayHint struct {
+	// The properties that a client can resolve lazily.
+	Properties []string `json:"properties"`
+}
+
+// created for Or [MarkupContent string]
+type OrPTooltipPLabel struct {
+	Value interface{} `json:"value"`
+}
+
 /**
  * A special text edit with an additional change annotation.
  *
@@ -3403,6 +3548,10 @@ type SemanticTokensWorkspaceClientCapabilities struct {
 }
 
 type ServerCapabilities struct {
+	// The server provides inlay hints.
+	//
+	// @since 3.17.0
+	InlayHintProvider interface{} `json:"inlayHintProvider,omitempty"`
 	/**
 	 * Defines how text documents are synced. Is either a detailed structure defining each notification or
 	 * for backwards compatibility the TextDocumentSyncKind number.
@@ -3889,6 +4038,10 @@ type SymbolTag float64
  * Text document specific client capabilities.
  */
 type TextDocumentClientCapabilities struct {
+	// Capabilities specific to the `textDocument/inlayHint` request.
+	//
+	// @since 3.17.0
+	InlayHint InlayHintClientCapabilities `json:"inlayHint,omitempty"`
 	/**
 	 * Defines which synchronization capabilities the client supports.
 	 */
@@ -4648,6 +4801,14 @@ type WorkspaceSymbolParams struct {
 }
 
 const (
+	// Inlay hint kinds.
+	//
+	// @since 3.17.0
+	// An inlay hint that for a type annotation.
+	Type InlayHintKind = 1
+	// An inlay hint that is for a parameter.
+	Parameter InlayHintKind = 2
+
 	/**
 	 * Empty kind.
 	 */

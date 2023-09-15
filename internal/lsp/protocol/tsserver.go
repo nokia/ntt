@@ -20,6 +20,8 @@ import (
 )
 
 type Server interface {
+	Resolve(context.Context, *InlayHint) (*InlayHint, error)                                                     // inlayHint/resolve
+	InlayHint(context.Context, *InlayHintParams) ([]InlayHint, error)                                            // textDocument/inlayHint
 	DidChangeWorkspaceFolders(context.Context, *DidChangeWorkspaceFoldersParams) error
 	WorkDoneProgressCancel(context.Context, *WorkDoneProgressCancelParams) error
 	DidCreateFiles(context.Context, *CreateFilesParams) error
@@ -60,7 +62,7 @@ type Server interface {
 	Shutdown(context.Context) error
 	WillSaveWaitUntil(context.Context, *WillSaveTextDocumentParams) ([]TextEdit /*TextEdit[] | null*/, error)
 	Completion(context.Context, *CompletionParams) (interface{} /* []CompletionItem | CompletionList | float64*/, error)
-	Resolve(context.Context, *CompletionItem) (*CompletionItem, error)
+	ResolveCompletionItem(context.Context, *CompletionItem) (*CompletionItem, error)
 	Hover(context.Context, *HoverParams) (*Hover /*Hover | null*/, error)
 	SignatureHelp(context.Context, *SignatureHelpParams) (*SignatureHelp /*SignatureHelp | null*/, error)
 	Definition(context.Context, *DefinitionParams) (interface{} /* Definition | []DefinitionLink | float64*/, error)
@@ -85,6 +87,26 @@ type Server interface {
 
 func serverDispatch(ctx context.Context, server Server, reply jsonrpc2.Replier, r jsonrpc2.Request) (bool, error) {
 	switch r.Method() {
+	case "inlayHint/resolve":
+		var params InlayHint
+		if err := json.Unmarshal(r.Params(), &params); err != nil {
+			return true, sendParseError(ctx, reply, err)
+		}
+		resp, err := server.Resolve(ctx, &params)
+		if err != nil {
+			return true, reply(ctx, nil, err)
+		}
+		return true, reply(ctx, resp, nil)
+	case "textDocument/inlayHint":
+		var params InlayHintParams
+		if err := json.Unmarshal(r.Params(), &params); err != nil {
+			return true, sendParseError(ctx, reply, err)
+		}
+		resp, err := server.InlayHint(ctx, &params)
+		if err != nil {
+			return true, reply(ctx, nil, err)
+		}
+		return true, reply(ctx, resp, nil)
 	case "workspace/didChangeWorkspaceFolders": // notif
 		var params DidChangeWorkspaceFoldersParams
 		if err := json.Unmarshal(r.Params(), &params); err != nil {
@@ -364,7 +386,7 @@ func serverDispatch(ctx context.Context, server Server, reply jsonrpc2.Replier, 
 		if err := json.Unmarshal(r.Params(), &params); err != nil {
 			return true, sendParseError(ctx, reply, err)
 		}
-		resp, err := server.Resolve(ctx, &params)
+		resp, err := server.ResolveCompletionItem(ctx, &params)
 		return true, reply(ctx, resp, err)
 	case "textDocument/hover": // req
 		var params HoverParams
@@ -503,6 +525,22 @@ func serverDispatch(ctx context.Context, server Server, reply jsonrpc2.Replier, 
 	default:
 		return false, nil
 	}
+}
+
+func (s *serverDispatcher) Resolve(ctx context.Context, params *InlayHint) (*InlayHint, error) {
+	var result *InlayHint
+	if err := Call(ctx, s.Conn, "inlayHint/resolve", params, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *serverDispatcher) InlayHint(ctx context.Context, params *InlayHintParams) ([]InlayHint, error) {
+	var result []InlayHint
+	if err := Call(ctx, s.Conn, "textDocument/inlayHint", params, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *serverDispatcher) DidChangeWorkspaceFolders(ctx context.Context, params *DidChangeWorkspaceFoldersParams) error {
@@ -752,7 +790,7 @@ func (s *serverDispatcher) Completion(ctx context.Context, params *CompletionPar
 	return result, nil
 }
 
-func (s *serverDispatcher) Resolve(ctx context.Context, params *CompletionItem) (*CompletionItem, error) {
+func (s *serverDispatcher) ResolveCompletionItem(ctx context.Context, params *CompletionItem) (*CompletionItem, error) {
 	var result *CompletionItem
 	if err := Call(ctx, s.Conn, "completionItem/resolve", params, &result); err != nil {
 		return nil, err
