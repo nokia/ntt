@@ -70,6 +70,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
+			InlayHintProvider:               true,
 			CodeActionProvider:              false,
 			CompletionProvider:              protocol.CompletionOptions{TriggerCharacters: []string{"."}},
 			DefinitionProvider:              true,

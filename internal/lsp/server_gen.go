@@ -13,7 +13,7 @@ func (s *Server) Resolve(ctx context.Context, params *protocol.InlayHint) (*prot
 }
 
 func (s *Server) InlayHint(ctx context.Context, params *protocol.InlayHintParams) ([]protocol.InlayHint, error) {
-	return nil, notImplemented("InlayHint")
+	return s.inlayHint(ctx, params)
 }
 
 func (s *Server) CodeAction(context.Context, *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
