@@ -226,7 +226,6 @@ func lint(cmd *cobra.Command, args []string) error {
 
 			for _, def := range tree.Modules() {
 				mod := def.Node.(*syntax.Module)
-
 				if isWhiteListed(style.Ignore.Modules, syntax.Name(mod.Name)) {
 					continue
 				}
@@ -236,6 +235,8 @@ func lint(cmd *cobra.Command, args []string) error {
 				ccID := syntax.Node(mod)
 				caseElse := make(map[syntax.Node]int)
 
+				checkNaming(mod, style.Naming.Modules)
+				checkBraces(mod.LBrace, mod.RBrace)
 				mod.Inspect(func(n syntax.Node) bool {
 					if n == nil {
 						stack = stack[:len(stack)-1]
@@ -247,10 +248,6 @@ func lint(cmd *cobra.Command, args []string) error {
 					switch n := n.(type) {
 					case *syntax.Ident:
 						checkUsage(n)
-
-					case *syntax.Module:
-						checkNaming(n, style.Naming.Modules)
-						checkBraces(n.LBrace, n.RBrace)
 
 					case *syntax.FuncDecl:
 						ccID = n
