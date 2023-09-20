@@ -82,7 +82,7 @@ var (
 				if path, err := exec.LookPath("k3-" + args[0]); err == nil {
 					return proc.Exec(path, args[1:]...)
 				}
-				return fmt.Errorf("unknown command: %s", args[0])
+				return fmt.Errorf("ntt: unknown command: %s", args[0])
 			}
 
 			if err := cmd.Flags().Parse(args); err != nil {
