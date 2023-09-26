@@ -129,6 +129,9 @@ type Manifest struct {
 	// this variables section.
 	Variables env.Env
 
+	// Diagnostics is a list of diagnostics flags used by compilator
+	Diagnostics []string `json:"diagnostics"`
+
 	// Parameters is an embedded parameters file.
 	Parameters `json:",inline"`
 
