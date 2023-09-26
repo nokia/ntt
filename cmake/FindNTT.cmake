@@ -50,6 +50,7 @@ manifest.
         [PARAMETERS_FILE file]
         [WORKING_DIRECTORY dir]
         [TARGETS target1...]
+        [DIAGNOSTICS flags]
   )
 
   ``add_ttcn3_suite`` creates a target TGT and test suite manifest
@@ -93,6 +94,9 @@ manifest.
     Add additional target-level dependencies. This is used to assure SUTs are
     built before a test is executed.
 
+  ``DIAGNOSTICS flags``
+    Specifies the compiler diagnostics flags
+
 ]====================================================================]
 
 if(TTCN3_PROTOBUF_INCLUDED)
@@ -134,7 +138,7 @@ file(REMOVE "${CMAKE_BINARY_DIR}/ttcn3_suites.json")
 function(add_ttcn3_suite TGT)
     set("ARGS_PREFIX" "")
     set("ARGS_OPTIONS" "")
-    set("ARGS_ONE_VALUE" "NAME;TIMEOUT;HOOKS_FILE;PARAMETERS_FILE;WORKING_DIRECTORY")
+    set("ARGS_ONE_VALUE" "NAME;TIMEOUT;HOOKS_FILE;PARAMETERS_FILE;WORKING_DIRECTORY;DIAGNOSTICS")
     set("ARGS_MULTI_VALUE" "VARS;SOURCES;DEPENDS;TARGETS")
     cmake_parse_arguments("${ARGS_PREFIX}" "${ARGS_OPTIONS}" "${ARGS_ONE_VALUE}" "${ARGS_MULTI_VALUE}" ${ARGN})
 
@@ -214,6 +218,14 @@ function(add_ttcn3_suite TGT)
     foreach(x ${_TARGETS})
         add_dependencies("${TGT}" "${x}")
     endforeach()
+
+    if (_DIAGNOSTICS)
+        string(REPLACE " " ";" _DIAGNOSTICS ${_DIAGNOSTICS})
+        string(APPEND MANIFEST "diagnostics:\n")
+        foreach(x ${_DIAGNOSTICS})
+            string(APPEND MANIFEST "  - ${x}\n")
+        endforeach()
+    endif()
 
     file(GENERATE OUTPUT "${MANIFEST_FILE}" CONTENT "${MANIFEST}")
 

@@ -281,6 +281,14 @@ func TestWithManifest(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, "https://file.txt", c.HooksFile)
 	})
+	t.Run("diagnostics", func(t *testing.T) {
+		c, err := manifest("foo/bar/package.yml", `
+		diagnostics:
+		  - -w1
+		  - --white-list-dir=foo/bar/path`)
+		assert.Nil(t, err)
+		assert.Equal(t, []string([]string{"-w1", "--white-list-dir=foo/bar/path"}), c.Diagnostics)
+	})
 	t.Run("variables", func(t *testing.T) {
 		c, err := manifest("foo/bar/package.yml", `
             variables:
