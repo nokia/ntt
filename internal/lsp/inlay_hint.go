@@ -9,6 +9,10 @@ import (
 )
 
 func (s *Server) inlayHint(ctx context.Context, params *protocol.InlayHintParams) ([]protocol.InlayHint, error) {
+	if !s.serverConfig.InlayHintEnabled {
+		return nil, nil
+	}
+
 	file := string(params.TextDocument.URI)
 	tree := ttcn3.ParseFile(file)
 	begin := tree.PosFor(int(params.Range.Start.Line)+1, int(params.Range.Start.Character+1))

@@ -74,11 +74,13 @@ type ClientCapability struct {
 	HasDynRegForDiagnostics bool
 	HasDynRegForFormatter   bool
 	HasDynRegForSemTok      bool
+	HasDynRegForInlayHint   bool
 }
 type Config struct {
 	DiagnosticsEnabled    bool
 	FormatEnabled         bool
 	SemantikTokensEnabled bool
+	InlayHintEnabled      bool
 }
 
 // Server implements the protocol.Server interface.

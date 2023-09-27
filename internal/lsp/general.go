@@ -30,6 +30,32 @@ func (s *Server) registerFormatterIfNoDynReg() bool {
 	return !s.clientCapability.HasDynRegForFormatter
 }
 
+func (s *Server) registerInlayHintIfNoDynReg() *protocol.InlayHintRegistrationOptions {
+	if s.clientCapability.HasDynRegForInlayHint {
+		return nil
+	}
+	return newInlayHintRegistrationOptions()
+}
+
+func newInlayHintRegistrationOptions() *protocol.InlayHintRegistrationOptions {
+	return &protocol.InlayHintRegistrationOptions{
+		InlayHintOptions: protocol.InlayHintOptions{
+			ResolveProvider: false,
+			WorkDoneProgressOptions: protocol.WorkDoneProgressOptions{
+				WorkDoneProgress: false,
+			},
+		},
+		TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
+			DocumentSelector: protocol.DocumentSelector{
+				protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
+			},
+		},
+		StaticRegistrationOptions: protocol.StaticRegistrationOptions{
+			ID: "TEXTDOCUMENT_INLAYHINT",
+		},
+	}
+}
+
 func newSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
 	return &protocol.SemanticTokensRegistrationOptions{
 
@@ -70,7 +96,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
-			InlayHintProvider:               true,
+			InlayHintProvider:               s.registerInlayHintIfNoDynReg(),
 			CodeActionProvider:              false,
 			CompletionProvider:              protocol.CompletionOptions{TriggerCharacters: []string{"."}},
 			DefinitionProvider:              true,
@@ -120,6 +146,7 @@ func (s *Server) evaluateClientCapabilities(params *protocol.ParamInitialize) {
 	s.clientCapability.HasDynRegForDiagnostics = false // NOTE: available only from LSP 3.17 on
 	s.clientCapability.HasDynRegForFormatter = params.Capabilities.TextDocument.Formatting.DynamicRegistration
 	s.clientCapability.HasDynRegForSemTok = params.Capabilities.TextDocument.SemanticTokens.DynamicRegistration
+	s.clientCapability.HasDynRegForInlayHint = params.Capabilities.TextDocument.InlayHint.DynamicRegistration
 }
 
 func (s *Server) initialized(ctx context.Context, params *protocol.InitializedParams) error {
