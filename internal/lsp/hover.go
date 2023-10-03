@@ -85,6 +85,10 @@ func getSignature(def *ttcn3.Node) string {
 }
 
 func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
+	return ProcessHover(params, &s.db, s.clientCapability.HoverContent)
+}
+
+func ProcessHover(params *protocol.HoverParams, db *ttcn3.DB, capability HoverContentProvider) (*protocol.Hover, error) {
 	var (
 		file      = string(params.TextDocument.URI.SpanURI())
 		line      = int(params.Position.Line) + 1
@@ -101,13 +105,13 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, nil
 	}
 
-	for _, def := range tree.LookupWithDB(x, &s.db) {
+	for _, def := range tree.LookupWithDB(x, db) {
 		defFound = true
 
 		comment = syntax.Doc(def.Node)
 		signature = getSignature(def)
 		if tree.Root != def.Root {
-			posRef = s.clientCapability.HoverContent.LinkForNode(def)
+			posRef = capability.LinkForNode(def)
 		}
 	}
 	if !defFound {
@@ -122,7 +126,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		}
 	}
 
-	hoverContents := s.clientCapability.HoverContent.Print(signature, comment, posRef)
+	hoverContents := capability.Print(signature, comment, posRef)
 	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil
