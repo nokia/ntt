@@ -26,10 +26,10 @@ func TestPlainTextHoverForFunction(t *testing.T) {
 		&lsp.PlainTextHover{})
 
 	expected :=
-		"function myfuncc(integer x)\n" +
-			"   runs on Component\n" +
-			"   system System\n" +
-			"   return integer\n"
+		"function myfunc(integer x)\n" +
+			"  runs on Component\n" +
+			"  system System\n" +
+			"  return integer\n"
 
 	assert.Equal(t, expected, actual.Contents.Value)
 }
@@ -50,10 +50,10 @@ func TestMarkdownHoverForFunction(t *testing.T) {
 
 	expected :=
 		"```typescript\n" +
-			"function myfuncc(integer x)\n" +
-			"   runs on Component\n" +
-			"   system System\n" +
-			"   return integer\n" +
+			"function myfunc(integer x)\n" +
+			"  runs on Component\n" +
+			"  system System\n" +
+			"  return integer\n" +
 			"```\n" +
 			" - - -\n" +
 			"\n" +

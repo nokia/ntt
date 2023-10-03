@@ -54,18 +54,18 @@ func getSignature(def *ttcn3.Node) string {
 	switch node := def.Node.(type) {
 	case *syntax.FuncDecl:
 		sig.WriteString(node.Kind.String() + " " + node.Name.String())
-		sig.Write(content[node.Params.Pos()-1 : node.Params.End()])
+		sig.Write(content[node.Params.Pos() : node.Params.End()])
 		if node.RunsOn != nil {
 			sig.WriteString("\n  ")
-			sig.Write(content[node.RunsOn.Pos()-1 : node.RunsOn.End()])
+			sig.Write(content[node.RunsOn.Pos() : node.RunsOn.End()])
 		}
 		if node.System != nil {
 			sig.WriteString("\n  ")
-			sig.Write(content[node.System.Pos()-1 : node.System.End()])
+			sig.Write(content[node.System.Pos() : node.System.End()])
 		}
 		if node.Return != nil {
 			sig.WriteString("\n  ")
-			sig.Write(content[node.Return.Pos()-1 : node.Return.End()])
+			sig.Write(content[node.Return.Pos() : node.Return.End()])
 		}
 	case *syntax.ValueDecl, *syntax.TemplateDecl, *syntax.FormalPar, *syntax.StructTypeDecl, *syntax.ComponentTypeDecl, *syntax.EnumTypeDecl, *syntax.PortTypeDecl:
 		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
