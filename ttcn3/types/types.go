@@ -483,6 +483,34 @@ func TypeOf(n syntax.Expr) Type {
 	return nil
 }
 
+func mostSpecificCommonTypeOfArray(types ...Type) Type {
+	if len(types) == 0 {
+		return Predefined["any"]
+	}
+	result := types[0]
+	if len(types) == 1 || result == Predefined["any"] {
+		return result
+	}
+	for _, v := range types[1:] {
+		result = mostSpecificCommonTypeOf2(result, v)
+		if result == Predefined["any"] {
+			break
+		}
+	}
+	return result
+}
+
+func mostSpecificCommonTypeOf2(type1 Type, type2 Type) Type {
+	if type1 == type2 {
+		return type1
+	}
+	if t := isSuper(type1, type2); t != nil {
+		return t
+	}
+	// Is there another Type that the two share?
+	return Predefined["any"]
+}
+
 func isSuper(type1 Type, type2 Type) Type {
 	if type1 == Predefined["any"] || type2 == Predefined["any"] {
 		return Predefined["any"]
