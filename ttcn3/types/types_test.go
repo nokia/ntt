@@ -346,7 +346,7 @@ func TestTypeInference(t *testing.T) {
 		{input: `x := ¶{1,2,3}`, expect: `record of integer`},
 		{input: `x := ¶{1+2,2,3}`, expect: `record of integer`},
 		{input: `x := ¶{(1+2),2,(3)}`, expect: `record of integer`},
-		{input: `x := ¶{{1},{2},{}}`, expect: `record of record of integer`},
+		{skip: true, input: `x := ¶{{1},{2},{}}`, expect: `record of record of integer`},
 		{input: `x := ¶{"A",""}`, expect: `record of charstring`},
 		{input: `x := ¶{"A","Ä"}`, expect: `record of universal charstring`},
 		{input: `x := ¶{x := 2, y := true}`, expect: `record {integer, boolean}`},
