@@ -435,6 +435,14 @@ func TypeOf(n syntax.Expr) Type {
 			}
 			return nil
 		}
+	case *syntax.Ident:
+		// names?
+		if n, ok := Predefined[n.String()]; ok {
+			return n
+		}
+		if n.String() == "infinity" {
+			return Predefined["float"]
+		}
 	case *syntax.BinaryExpr:
 		switch n.Op.Kind() {
 		case syntax.LT, syntax.GT, syntax.LE, syntax.GE, syntax.EQ, syntax.NE, syntax.AND, syntax.OR, syntax.XOR:
@@ -448,6 +456,19 @@ func TypeOf(n syntax.Expr) Type {
 			return Predefined["integer"]
 		case syntax.SHL, syntax.SHR, syntax.ROL, syntax.ROR:
 			return TypeOf(n.X)
+		case syntax.ASSIGN:
+			// Investigate: Label on the left, omit on the right, Maps
+			if n.Y.FirstTok().Kind() == syntax.OMIT {
+				if t := TypeOf(n.X); t != nil {
+					return t
+				} else {
+					return Predefined["boolean"]
+				}
+			}
+			if X, ok := n.X.(*syntax.IndexExpr); ok && X.X == nil && TypeOf(X.Index) != Predefined["integer"] {
+				return &MapType{From: TypeOf(X.Index), To: TypeOf(n.Y)}
+			}
+			return TypeOf(n.Y)
 		}
 	case *syntax.UnaryExpr:
 		switch n.Op.Kind() {
@@ -457,6 +478,106 @@ func TypeOf(n syntax.Expr) Type {
 			return TypeOf(n.X)
 		case syntax.INC, syntax.DEC:
 			return Predefined["integer"]
+		}
+	}
+	return nil
+}
+
+func isSuper(type1 Type, type2 Type) Type {
+	if type1 == Predefined["any"] || type2 == Predefined["any"] {
+		return Predefined["any"]
+	}
+	switch type1 := type1.(type) {
+	case *PrimitiveType:
+		if type2, ok := type2.(*PrimitiveType); !ok {
+			return nil
+		} else {
+			if type1.Kind == type2.Kind {
+				if type1.ValueConstraints == nil {
+					return type1
+				}
+				if type2.ValueConstraints == nil {
+					return type2
+				}
+				// ToDo: Add more ConstraintChecks
+			}
+			return nil
+		}
+	case *ListType:
+		if type2, ok := type2.(*ListType); !ok {
+			return nil
+		} else {
+			if type1.Kind == type2.Kind {
+				if type1.ElementType == type2.ElementType {
+					return type1
+				}
+				if isString(type1.Kind) {
+					// Check Constraints
+					return nil
+				}
+				// check ElementType (Array RecordOf SetOf)
+				superElement := isSuper(type1.ElementType, type2.ElementType)
+				if superElement == type1.ElementType {
+					return type1
+				}
+				if superElement == type2.ElementType {
+					return type2
+				}
+				return nil
+			}
+			switch type1.Kind {
+			case Hexstring, Octetstring, Bitstring, SetOf:
+				return nil
+			case Charstring:
+				if type2.Kind == UniversalCharstring {
+					// check Constraints
+					return type2
+				}
+				return nil
+			case UniversalCharstring:
+				if type2.Kind == Charstring {
+					// check Constraints
+					return type1
+				}
+				return nil
+			case RecordOf:
+				if type2.Kind == Array {
+					// check ElementType and Constraints
+					return type1
+				}
+				return nil
+			case Array:
+				if type2.Kind == RecordOf {
+					// check ElementType and Constraints
+					return type2
+				}
+				return nil
+			}
+		}
+	case *StructuredType:
+		if type2, ok := type2.(*StructuredType); !ok {
+			return nil
+		} else {
+			if type1.Kind == type2.Kind && len(type1.Fields) == len(type2.Fields) {
+				for i, f := range type1.Fields {
+					if f.Optional == type2.Fields[i].Optional && isSuper(f.Type, type2.Fields[i].Type) == f.Type {
+						continue
+					} else {
+						return nil
+					}
+				}
+				return type1
+			}
+		}
+	case *MapType:
+		if type2, ok := type2.(*MapType); !ok || type1.From != type2.From {
+			return nil
+		} else {
+			if superTo := isSuper(type1.To, type2.To); superTo == type1.To {
+				return type1
+			} else if superTo == type2.To {
+				return type2
+			}
 		}
 	}
 	return nil
