@@ -479,6 +479,49 @@ func TypeOf(n syntax.Expr) Type {
 		case syntax.INC, syntax.DEC:
 			return Predefined["integer"]
 		}
+	case *syntax.ParenExpr:
+		// different length?
+		if len(n.List) == 1 {
+			return TypeOf(n.List[0])
+		}
+	case *syntax.IndexExpr:
+		if n.X == nil {
+			return TypeOf(n.Index)
+		} else {
+			if X, ok := TypeOf(n.X).(*ListType); ok {
+				return X.ElementType
+			} else {
+				return TypeOf(n.X).(*MapType).From
+			}
+		}
+	case *syntax.CompositeLiteral:
+		fields := make([]Field, len(n.List))
+		typeList := make([]Type, len(n.List))
+		isRecord := false
+
+		for i, v := range n.List {
+			typeList[i] = TypeOf(v)
+			fields[i].Type = typeList[i]
+			if v, ok := v.(*syntax.BinaryExpr); ok && v.Op.Kind() == syntax.ASSIGN && v.Y.FirstTok().Kind() == syntax.OMIT {
+				fields[i].Optional = true
+				isRecord = true
+			} else {
+				fields[i].Optional = false
+			}
+		}
+		if len(fields) == 0 {
+			return &ListType{Kind: RecordOf}
+		}
+		if t := mostSpecificCommonTypeOfArray(typeList...); isRecord || t == Predefined["any"] {
+			t = &StructuredType{Kind: Record, Fields: fields}
+			return t
+		} else {
+			// Map vs Record of Maps?
+			if _, ok := t.(*MapType); ok {
+				return t
+			}
+			return &ListType{Kind: RecordOf, ElementType: t}
+		}
 	}
 	return nil
 }
