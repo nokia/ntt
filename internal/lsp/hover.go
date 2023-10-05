@@ -54,18 +54,18 @@ func getSignature(def *ttcn3.Node) string {
 	switch node := def.Node.(type) {
 	case *syntax.FuncDecl:
 		sig.WriteString(node.Kind.String() + " " + node.Name.String())
-		sig.Write(content[node.Params.Pos()-1 : node.Params.End()])
+		sig.Write(content[node.Params.Pos() : node.Params.End()])
 		if node.RunsOn != nil {
 			sig.WriteString("\n  ")
-			sig.Write(content[node.RunsOn.Pos()-1 : node.RunsOn.End()])
+			sig.Write(content[node.RunsOn.Pos() : node.RunsOn.End()])
 		}
 		if node.System != nil {
 			sig.WriteString("\n  ")
-			sig.Write(content[node.System.Pos()-1 : node.System.End()])
+			sig.Write(content[node.System.Pos() : node.System.End()])
 		}
 		if node.Return != nil {
 			sig.WriteString("\n  ")
-			sig.Write(content[node.Return.Pos()-1 : node.Return.End()])
+			sig.Write(content[node.Return.Pos() : node.Return.End()])
 		}
 	case *syntax.ValueDecl, *syntax.TemplateDecl, *syntax.FormalPar, *syntax.StructTypeDecl, *syntax.ComponentTypeDecl, *syntax.EnumTypeDecl, *syntax.PortTypeDecl:
 		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
@@ -85,6 +85,10 @@ func getSignature(def *ttcn3.Node) string {
 }
 
 func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
+	return ProcessHover(params, &s.db, s.clientCapability.HoverContent)
+}
+
+func ProcessHover(params *protocol.HoverParams, db *ttcn3.DB, capability HoverContentProvider) (*protocol.Hover, error) {
 	var (
 		file      = string(params.TextDocument.URI.SpanURI())
 		line      = int(params.Position.Line) + 1
@@ -101,13 +105,13 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		return nil, nil
 	}
 
-	for _, def := range tree.LookupWithDB(x, &s.db) {
+	for _, def := range tree.LookupWithDB(x, db) {
 		defFound = true
 
 		comment = syntax.Doc(def.Node)
 		signature = getSignature(def)
 		if tree.Root != def.Root {
-			posRef = s.clientCapability.HoverContent.LinkForNode(def)
+			posRef = capability.LinkForNode(def)
 		}
 	}
 	if !defFound {
@@ -122,7 +126,7 @@ func (s *Server) hover(ctx context.Context, params *protocol.HoverParams) (*prot
 		}
 	}
 
-	hoverContents := s.clientCapability.HoverContent.Print(signature, comment, posRef)
+	hoverContents := capability.Print(signature, comment, posRef)
 	hover := &protocol.Hover{Contents: hoverContents}
 
 	return hover, nil
