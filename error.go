@@ -19,7 +19,7 @@ type errPattern struct {
 }
 
 func (e errPattern) Error() string {
-	return fmt.Sprintf("%s: error: %s", syntax.Begin(e.node), e.msg)
+	return fmt.Sprintf("%s:%s: error: %s", syntax.Filename(e.node), syntax.Begin(e.node), e.msg)
 }
 
 func (e errPattern) IsSilent() bool { return isSilent(e.node, "TemplateDef") }
@@ -30,8 +30,8 @@ type errLines struct {
 }
 
 func (e errLines) Error() string {
-	return fmt.Sprintf("%s: error: %q must not have more than %d lines (%d)",
-		syntax.Begin(e.node), syntax.Name(e.node), style.MaxLines, e.lines)
+	return fmt.Sprintf("%s:%s: error: %q must not have more than %d lines (%d)",
+		syntax.Filename(e.node), syntax.Begin(e.node), syntax.Name(e.node), style.MaxLines, e.lines)
 }
 
 func (e errLines) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooLong") }
@@ -41,8 +41,8 @@ type errBraces struct {
 }
 
 func (e errBraces) Error() string {
-	return fmt.Sprintf("%s: error: braces must be in the same line or same column",
-		syntax.Begin(e.right))
+	return fmt.Sprintf("%s:%s: error: braces must be in the same line or same column",
+		syntax.Filename(e.right), syntax.Begin(e.right))
 }
 
 type errComplexity struct {
@@ -51,8 +51,8 @@ type errComplexity struct {
 }
 
 func (e errComplexity) Error() string {
-	return fmt.Sprintf("%s: error: cyclomatic complexity of %q (%d) must not be higher than %d",
-		syntax.Begin(e.node), syntax.Name(e.node), e.complexity, style.Complexity.Max)
+	return fmt.Sprintf("%s:%s: error: cyclomatic complexity of %q (%d) must not be higher than %d",
+		syntax.Filename(e.node), syntax.Begin(e.node), syntax.Name(e.node), e.complexity, style.Complexity.Max)
 }
 
 func (e errComplexity) IsSilent() bool { return isSilent(e.node, "CodeStatistics.TooComplex") }
@@ -62,7 +62,7 @@ type errMissingCaseElse struct {
 }
 
 func (e errMissingCaseElse) Error() string {
-	return fmt.Sprintf("%s: error: missing case else in select statement", syntax.Begin(e.node))
+	return fmt.Sprintf("%s:%s: error: missing case else in select statement", syntax.Filename(e.node), syntax.Begin(e.node))
 }
 
 type errUsageExceedsLimit struct {
@@ -73,8 +73,8 @@ type errUsageExceedsLimit struct {
 }
 
 func (e errUsageExceedsLimit) Error() string {
-	return fmt.Sprintf("%s: error: %q must not be used more than %d times. %s",
-		syntax.Begin(e.node), syntax.Name(e.node), e.limit, e.text)
+	return fmt.Sprintf("%s:%s: error: %q must not be used more than %d times. %s",
+		syntax.Filename(e.node), syntax.Begin(e.node), syntax.Name(e.node), e.limit, e.text)
 }
 
 type errUnusedModule struct {
