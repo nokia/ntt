@@ -427,7 +427,7 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 	return list
 }
 func CompletePredefinedFunctions() []protocol.CompletionItem {
-	var ret []protocol.CompletionItem
+	ret := make([]protocol.CompletionItem, 0, len(PredefinedFunctions))
 	for _, v := range PredefinedFunctions {
 		markup := protocol.MarkupContent{Kind: "markdown", Value: v.Documentation}
 		ret = append(ret, protocol.CompletionItem{
