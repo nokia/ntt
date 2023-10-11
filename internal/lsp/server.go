@@ -68,6 +68,8 @@ func (s serverState) String() string {
 type HoverContentProvider interface {
 	Print(sign string, comment string, posRef string) protocol.MarkupContent
 	LinkForNode(def *ttcn3.Node) string
+	GatherMapOrConnectLinks(fileName string, line uint32, uri protocol.DocumentURI)
+	Reset()
 }
 type ClientCapability struct {
 	HoverContent            HoverContentProvider
