@@ -12,8 +12,12 @@ import (
 	errors "golang.org/x/xerrors"
 )
 
-type PlainTextHover struct{}
-type MarkdownHover struct{}
+type PlainTextHover struct {
+	mapOrConnectRefs string
+}
+type MarkdownHover struct {
+	mapOrConnectLinks string
+}
 
 func (s *Server) registerSemanticTokensIfNoDynReg() *protocol.SemanticTokensRegistrationOptions {
 	if s.clientCapability.HasDynRegForSemTok {
