@@ -263,7 +263,10 @@ func buildEnv(t *Test) ([]string, error) {
 		// Note: We use "." instead of os.Getwd() to make our tests
 		// easier to write.
 		commonPaths = append(commonPaths, ".")
-
+		if s, ok := t.Config.Variables["K3R_PATH"]; ok {
+			// merge K3R_PATH from k3.env, package.yml
+			commonPaths = append(commonPaths, s)
+		}
 		// Imports may provide additional artifacts.
 		commonPaths = append(commonPaths, t.Config.Manifest.Imports...)
 
