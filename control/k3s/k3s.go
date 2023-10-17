@@ -64,10 +64,9 @@ func (r *runner) Run(w io.Writer, testID string) error {
 	// Clear any previous artifacts.
 	r.clean(testID)
 
-	// Execute test (k3s backend)
-	cmd := nttCommand(r.p, "run", "-j1", "--", testID)
+	// Execute test (ntt run backend)
+	cmd := nttCommand(r.p, "run", "-j1", "-o", "log", "--", testID)
 	cmd.Dir = r.Dir
-	cmd.Env = append(cmd.Env, "SCT_K3_SERVER=ON")
 	out, err := cmd.CombinedOutput()
 	w.Write(out)
 	return multierror.Append(err, r.report(w, testID)).ErrorOrNil()
