@@ -36,8 +36,14 @@ jobs:
         id: download_exe
         run: |
           $env:PATH += ";C:\hub\bin"
-          hub.exe release download "${GITHUB_REF#refs/tags/}" -i ntt_Windows_x86_64.zip
-          Expand-Archive ntt_Windows_x86_64.zip
+          $pattern = ".+refs/tags/(.+)"
+          if($env:GITHUB_REF -match $pattern) {
+            Write-Host "try to download zip archive for version ntt $($matches[1])"
+            hub.exe release download $($matches[1]) -i ntt_Windows_x86_64.zip
+            Expand-Archive ntt_Windows_x86_64.zip
+          } else {
+            Write-Error "error: provided reference does not contain a tag: $env:GITHUB_REF"
+          }
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Install go-msi
