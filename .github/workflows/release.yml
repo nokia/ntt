@@ -31,12 +31,12 @@ jobs:
         run: |
           Invoke-WebRequest https://github.com/github/hub/releases/download/v2.14.2/hub-windows-amd64-2.14.2.zip -OutFile hub.zip
           Expand-Archive hub.zip -DestinationPath C:\hub
-          $env:PATH += ";C:\hub"
+          $env:PATH += ";C:\hub\bin"
       - name: Download ntt.exe
         id: download_exe
         shell: bash
         run: |
-          hub release download "${GITHUB_REF#refs/tags/}" -i ntt_Windows_x86_64.tar.gz
+          hub.exe release download "${GITHUB_REF#refs/tags/}" -i ntt_Windows_x86_64.tar.gz
           printf "::set-output name=zip::%s\n" *.tar.gz
           tar xzf ntt_Windows_x86_64.tar.gz && rm ntt_Windows_x86_64.tar.gz
         env:
