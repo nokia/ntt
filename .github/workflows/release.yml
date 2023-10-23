@@ -34,11 +34,10 @@ jobs:
           $env:PATH += ";C:\hub\bin"
       - name: Download ntt.exe
         id: download_exe
-        shell: bash
         run: |
-          hub.exe release download "${GITHUB_REF#refs/tags/}" -i ntt_Windows_x86_64.tar.gz
-          printf "::set-output name=zip::%s\n" *.tar.gz
-          tar xzf ntt_Windows_x86_64.tar.gz && rm ntt_Windows_x86_64.tar.gz
+          $env:PATH += ";C:\hub\bin"
+          hub.exe release download "${GITHUB_REF#refs/tags/}" -i ntt_Windows_x86_64.zip
+          Expand-Archive ntt_Windows_x86_64.zip
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Install go-msi
