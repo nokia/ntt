@@ -39,7 +39,7 @@ nfpms:
 
     bindir: /usr/bin
 
-archives:ntt_Darwin_x86_64.tar.gz
+archives:
   - name_template:  >-
       {{- .ProjectName }}_
       {{- tolower .Os }}_
