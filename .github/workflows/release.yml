@@ -62,7 +62,14 @@ jobs:
           go-msi make --msi "$PWD/ntt.msi" --out "$PWD/build" --version "${GITHUB_REF#refs/tags/}"
           printf "::set-output name=msi::%s\n" *.msi
       - name: Upload MSI
-        shell: bash
-        run: hub release edit "${GITHUB_REF#refs/tags/}" -m "" --draft=true -a "${{ steps.buildmsi.outputs.msi }}"
+        run: |
+          $env:PATH += ";C:\hub\bin"
+          $pattern = "refs/tags/(.+)"
+          if($env:GITHUB_REF -match $pattern) {
+            Write-Host "try to upload msi file for version ntt $($matches[1])"
+            hub.exe release edit $($matches[1]) -m "" --draft=true -a "${{ steps.buildmsi.outputs.msi }}"
+          } else {
+            Write-Error "error: provided reference does not contain a tag: $env:GITHUB_REF"
+          }
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
