@@ -40,7 +40,7 @@ jobs:
           if($env:GITHUB_REF -match $pattern) {
             Write-Host "try to download zip archive for version ntt $($matches[1])"
             hub.exe release download $($matches[1]) -i ntt_Windows_x86_64.zip
-            Expand-Archive ntt_Windows_x86_64.zip
+            Expand-Archive -v ntt_Windows_x86_64.zip
           } else {
             Write-Error "error: provided reference does not contain a tag: $env:GITHUB_REF"
           }
@@ -58,6 +58,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p build
+          echo "executing: go-msi make --msi $PWD/ntt.msi --out $PWD/build --version ${GITHUB_REF#refs/tags/}"
           go-msi make --msi "$PWD/ntt.msi" --out "$PWD/build" --version "${GITHUB_REF#refs/tags/}"
           printf "::set-output name=msi::%s\n" *.msi
       - name: Upload MSI
