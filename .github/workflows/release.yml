@@ -39,8 +39,8 @@ jobs:
           $pattern = "refs/tags/(.+)"
           if($env:GITHUB_REF -match $pattern) {
             Write-Host "try to download zip archive for version ntt $($matches[1])"
-            hub.exe release download $($matches[1]) -i ntt_Windows_x86_64.zip
-            Expand-Archive -v -Force -d . ntt_Windows_x86_64.zip
+            hub.exe release download $($matches[1]) -i ntt_windows_x86_64.zip
+            Expand-Archive -v -Force -d . ntt_windows_x86_64.zip
           } else {
             Write-Error "error: provided reference does not contain a tag: $env:GITHUB_REF"
           }
