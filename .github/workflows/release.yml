@@ -36,7 +36,7 @@ jobs:
         id: download_exe
         run: |
           $env:PATH += ";C:\hub\bin"
-          $pattern = ".+refs/tags/(.+)"
+          $pattern = "refs/tags/(.+)"
           if($env:GITHUB_REF -match $pattern) {
             Write-Host "try to download zip archive for version ntt $($matches[1])"
             hub.exe release download $($matches[1]) -i ntt_Windows_x86_64.zip
