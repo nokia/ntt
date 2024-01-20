@@ -60,7 +60,7 @@ jobs:
           mkdir -p build
           echo "executing: go-msi make --msi $PWD/ntt.msi --out $PWD/build --version ${GITHUB_REF#refs/tags/}"
           go-msi make --msi "$PWD/ntt.msi" --out "$PWD/build" --version "${GITHUB_REF#refs/tags/}"
-          printf "::set-output name=msi::%s\n" *.msi
+          printf "msi=%s\n" *.msi >> "$GITHUB_OUTPUT"
       - name: Upload MSI
         run: |
           $env:PATH += ";C:\hub\bin"
