@@ -58,7 +58,7 @@ var (
 			}
 
 			// Skip opening the project if we're running a custom command or version.
-			if cmd.Use == "ntt" || cmd.Use == "version" || cmd.Use == "stdout" || strings.HasPrefix(cmd.Use, "help") || cmd.Use == "docs" {
+			if cmd.Use == "ntt" || cmd.Use == "version" || cmd.Use == "stdout" || strings.HasPrefix(cmd.Use, "help") || cmd.Use == "docs" || cmd.Use == "objdump" || cmd.Use == "t3xfasm" {
 				// first arg is either an external subkommand of the form
 				// k3-Arg[0] or ntt-Arg[0] or unknown
 				return nil
@@ -141,6 +141,8 @@ func init() {
 	root.AddCommand(RunCommand)
 	root.AddCommand(ShowCommand)
 	root.AddCommand(TagsCommand)
+	root.AddCommand(ObjdumpCommand)
+	root.AddCommand(T3xfasmCommand)
 
 	ShowCommand.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 }
