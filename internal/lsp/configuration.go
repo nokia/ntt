@@ -9,6 +9,7 @@ import (
 const DIAGNOSTICS_CONFIG_KEY = "ttcn3.experimental.diagnostics.enabled"
 const FORMATTER_CONFIG_KEY = "ttcn3.experimental.format.enabled"
 const SEMANTIC_TOKENS_CONFIG_KEY = "ttcn3.experimental.semanticTokens.enabled"
+const INLAY_HINT_CONFIG_KEY = "ttcn3.experimental.inlayHint.enabled"
 
 func (s *Server) Config(section string) interface{} {
 	v, err := s.client.Configuration(context.TODO(), &protocol.ParamConfiguration{
@@ -77,6 +78,24 @@ func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChan
 	if s.serverConfig.SemantikTokensEnabled != confRes {
 		s.serverConfig.DiagnosticsEnabled = confRes
 		// NOTE: dynamic registration of diagnostics is only available from lsp 3.17 on
+	}
+
+	confRes, ok = s.Config(INLAY_HINT_CONFIG_KEY).(bool)
+	if !ok {
+		confRes = false
+	}
+	if s.clientCapability.HasDynRegForInlayHint && s.serverConfig.InlayHintEnabled != confRes {
+		s.serverConfig.InlayHintEnabled = confRes
+		if confRes {
+			regList = append(regList, protocol.Registration{
+				ID:              "TEXTDOCUMENT_INLAYHINT",
+				Method:          "textDocument/inlayHint",
+				RegisterOptions: newInlayHintRegistrationOptions()})
+		} else {
+			unregList = append(unregList, protocol.Unregistration{
+				ID:     "TEXTDOCUMENT_INLAYHINT",
+				Method: "textDocument/inlayHint"})
+		}
 	}
 
 	if len(regList) > 0 {

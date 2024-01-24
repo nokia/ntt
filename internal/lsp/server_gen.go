@@ -8,6 +8,14 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
+func (s *Server) Resolve(ctx context.Context, params *protocol.InlayHint) (*protocol.InlayHint, error) {
+	return nil, notImplemented("Resolve")
+}
+
+func (s *Server) InlayHint(ctx context.Context, params *protocol.InlayHintParams) ([]protocol.InlayHint, error) {
+	return s.inlayHint(ctx, params)
+}
+
 func (s *Server) CodeAction(context.Context, *protocol.CodeActionParams) ([]protocol.CodeAction, error) {
 	return nil, notImplemented("CodeAction")
 }
@@ -168,8 +176,8 @@ func (s *Server) Rename(context.Context, *protocol.RenameParams) (*protocol.Work
 	return nil, notImplemented("Rename")
 }
 
-func (s *Server) Resolve(context.Context, *protocol.CompletionItem) (*protocol.CompletionItem, error) {
-	return nil, notImplemented("Resolve")
+func (s *Server) ResolveCompletionItem(context.Context, *protocol.CompletionItem) (*protocol.CompletionItem, error) {
+	return nil, notImplemented("ResolveCompletionItem")
 }
 
 func (s *Server) ResolveCodeAction(context.Context, *protocol.CodeAction) (*protocol.CodeAction, error) {
