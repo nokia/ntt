@@ -56,6 +56,7 @@ func TestWithStmts(t *testing.T) {
 func TestExprs(t *testing.T) {
 	exprs := []Test{
 		{pass, `-`},
+		{pass, `m.to`},
 		{pass, `1..23`},
 		{pass, `a[-]`},
 		{pass, `-1 * x`},
