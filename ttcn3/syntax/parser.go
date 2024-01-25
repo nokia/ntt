@@ -1558,6 +1558,8 @@ func (p *parser) parseTypeDecl() Decl {
 		return p.parseComponentTypeDecl()
 	case UNION:
 		return p.parseStructTypeDecl()
+	case MAP:
+		return p.parseMapTypeDecl()
 	case SET, RECORD:
 		if p.peek(3).Kind() == IDENT || p.peek(3).Kind() == ADDRESS {
 			return p.parseStructTypeDecl()
@@ -1684,6 +1686,25 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 		p.consume()
 	}
 	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
+}
+
+/*************************************************************************
+ * Map Type Declaration
+ *************************************************************************/
+
+func (p *parser) parseMapTypeDecl() *MapTypeDecl {
+	if p.trace {
+		defer un(trace(p, "MapTypeDecl"))
+	}
+	x := new(MapTypeDecl)
+	x.TypeTok = p.consume()
+	x.Spec = p.parseMapSpec()
+	x.Name = p.parseName()
+	if p.tok == LT {
+		x.TypePars = p.parseTypeFormalPars()
+	}
 	x.With = p.parseWith()
 	return x
 }
@@ -1836,6 +1857,8 @@ func (p *parser) parseTypeSpec() TypeSpec {
 			return p.parseStructSpec()
 		}
 		return p.parseListSpec()
+	case MAP:
+		return p.parseMapSpec()
 	case ENUMERATED:
 		return p.parseEnumSpec()
 	case FUNCTION, ALTSTEP, TESTCASE:
@@ -1861,6 +1884,19 @@ func (p *parser) parseStructSpec() *StructSpec {
 		p.consume()
 	}
 	x.RBrace = p.expect(RBRACE)
+	return x
+}
+
+func (p *parser) parseMapSpec() *MapSpec {
+	if p.trace {
+		defer un(trace(p, "MapSpec"))
+	}
+	x := new(MapSpec)
+	x.MapTok = p.consume()
+	x.FromTok = p.expect(FROM)
+	x.FromType = p.parseTypeSpec()
+	x.ToTok = p.expect(TO)
+	x.ToType = p.parseTypeSpec()
 	return x
 }
 

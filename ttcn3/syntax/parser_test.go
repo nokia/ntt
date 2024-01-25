@@ -237,6 +237,11 @@ func TestTypes(t *testing.T) {
 		{pass, `type union s {enumerated { e(1) } foo}`},
 		{pass, `type enumerated a {e, e(1), e(1)}`},
 
+		// Map Types
+		{pass, `type map from charstring to integer m`},
+		{pass, `type map from record { int a, int y } to integer m`},
+		{pass, `type map from universal charstring to map from integer to charstring m`},
+
 		// Port Types
 		{pass, `type port p message {address a.b[-]}`},
 		{pass, `type port p message {inout all}`},
