@@ -1011,7 +1011,7 @@ func (p *parser) parseIdent() *Ident {
 	switch p.tok {
 	case UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO:
+	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM:
 		return p.make_use(p.consume())
 	default:
 		p.expect(IDENT) // use expect() error handling
