@@ -48,7 +48,7 @@ func printInstruction(offset int, b []byte, op opcode.Opcode, arg interface{}) {
 		printOffset(offset)
 		line.Fprintf(w, "block")
 	case opcode.LINE:
-		line.Fprintf(w, "      %*s=%d", indent, "", arg)
+		line.Fprintf(w, "          %*s=%d", indent, "", arg)
 	case opcode.REF, opcode.IEEE754DP, opcode.NATLONG, opcode.ISTR, opcode.FSTR:
 		printOffset(offset)
 		printArgument(arg)
