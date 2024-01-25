@@ -606,7 +606,7 @@ func (p *parser) parseExpr() Expr {
 //
 //	| BinaryExpr OP BinaryExpr
 func (p *parser) parseBinaryExpr(prec1 int) Expr {
-	x := p.parseUnaryExpr()
+	x := p.parsePostfixExpr()
 	for {
 		prec := p.tok.Precedence()
 		if prec < prec1 {
@@ -616,6 +616,40 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 		y := p.parseBinaryExpr(prec + 1)
 		x = &BinaryExpr{X: x, Op: op, Y: y}
 	}
+}
+
+func (p *parser) parsePostfixExpr() Expr {
+	x := p.parseUnaryExpr()
+
+	if p.tok == LENGTH {
+		x = p.parseLength(x)
+	}
+
+	if p.tok == IFPRESENT {
+		x = &UnaryExpr{Op: p.consume(), X: x}
+	}
+
+	if p.tok == TO || p.tok == FROM {
+		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
+	}
+
+	if p.tok == REDIR {
+		x = p.parseRedirect(x)
+	}
+
+	if p.tok == VALUE {
+		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
+	}
+
+	if p.tok == PARAM {
+		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
+	}
+
+	if p.tok == ALIVE {
+		x = &UnaryExpr{Op: p.consume(), X: x}
+	}
+
+	return x
 }
 
 // UnaryExpr ::= "-"
@@ -676,34 +710,6 @@ L:
 		default:
 			break L
 		}
-	}
-
-	if p.tok == LENGTH {
-		x = p.parseLength(x)
-	}
-
-	if p.tok == IFPRESENT {
-		x = &UnaryExpr{Op: p.consume(), X: x}
-	}
-
-	if p.tok == TO || p.tok == FROM {
-		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
-	}
-
-	if p.tok == REDIR {
-		x = p.parseRedirect(x)
-	}
-
-	if p.tok == VALUE {
-		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
-	}
-
-	if p.tok == PARAM {
-		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
-	}
-
-	if p.tok == ALIVE {
-		x = &UnaryExpr{Op: p.consume(), X: x}
 	}
 
 	return x
