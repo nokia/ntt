@@ -24,6 +24,7 @@ const (
 	Enum
 	Interface
 	Struct
+	Map
 	TypeParameter
 	Parameter
 	Variable
@@ -51,6 +52,7 @@ var TokenTypes = []string{
 	Enum:          "enum",
 	Interface:     "interface",
 	Struct:        "struct",
+	Map:           "map",
 	TypeParameter: "typeParameter",
 	Parameter:     "parameter",
 	Variable:      "variable",
@@ -274,6 +276,8 @@ func DefinitionToken(tree *ttcn3.Tree, id syntax.Node) (SemanticTokenType, Seman
 		return Parameter, Declaration
 	case *syntax.StructTypeDecl:
 		return Struct, Definition
+	case *syntax.MapTypeDecl:
+		return Map, Definition
 	case *syntax.EnumTypeDecl:
 		if id == n.Name {
 			return Enum, Definition

@@ -88,6 +88,8 @@ func Name(n Node) string {
 		}
 	case *StructTypeDecl:
 		return Name(n.Name)
+	case *MapTypeDecl:
+		return Name(n.Name)
 	case *EnumTypeDecl:
 		return Name(n.Name)
 	case *BehaviourTypeDecl:

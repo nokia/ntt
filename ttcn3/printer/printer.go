@@ -385,6 +385,16 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.Fields)
 			p.print(unindent, n.RBrace)
 
+		case *syntax.MapSpec:
+			if n == nil {
+				return
+			}
+			p.print(n.MapTok)
+			p.print(n.FromTok)
+			p.print(n.FromType)
+			p.print(n.ToTok)
+			p.print(n.ToType)
+
 		case *syntax.ListSpec:
 			if n == nil {
 				return
@@ -509,6 +519,16 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.LBrace, indent)
 			p.print(n.Fields)
 			p.print(unindent, n.RBrace)
+			p.print(n.With)
+
+		case *syntax.MapTypeDecl:
+			if n == nil {
+				return
+			}
+			p.print(n.TypeTok)
+			p.print(n.Spec)
+			p.print(n.Name)
+			p.print(n.TypePars)
 			p.print(n.With)
 
 		case *syntax.EnumTypeDecl:
