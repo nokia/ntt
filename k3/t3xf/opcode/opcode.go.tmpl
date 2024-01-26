@@ -1,0 +1,30 @@
+// Package opcode defines the opcodes used in T3XF.
+package opcode
+
+const (
+	REF              Opcode = 0
+	GOTO                    = 1
+	LINE                    = 2
+	OPERATION               = 3
+	FROZEN_REF              = 4
+	{{ range $name, $op := . }}
+	{{ uc $name }} = {{ encode $op.Opcode }}{{ end }}
+)
+
+var opcodeStrings = map[Opcode]string{
+	REF:        "ref",
+	LINE:       "line",
+	GOTO:       "goto",
+	FROZEN_REF: "frozen_ref",
+	{{ range $name, $op := . }}
+	{{ uc $name }}: "{{ $name }}",{{ end }}
+}
+
+var opcodeNames = map[string]Opcode{
+	"ref":        REF,
+	"line":       LINE,
+	"goto":       GOTO,
+	"frozen_ref": FROZEN_REF,
+	{{ range $name, $op := . }}
+	"{{ $name }}": {{ uc $name }},{{ end }}
+}
