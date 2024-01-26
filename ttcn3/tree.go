@@ -547,7 +547,9 @@ func (f *finder) typeOf(def *Node) []*Node {
 			*syntax.PortTypeDecl,
 			*syntax.ListSpec,
 			*syntax.StructSpec,
-			*syntax.StructTypeDecl:
+			*syntax.StructTypeDecl,
+			*syntax.MapSpec,
+			*syntax.MapTypeDecl:
 			result = append(result, &Node{Node: n, Tree: def.Tree})
 		}
 	}

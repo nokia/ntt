@@ -859,6 +859,7 @@ func isType(n syntax.Node) bool {
 		*syntax.EnumTypeDecl,
 		*syntax.PortTypeDecl,
 		*syntax.StructTypeDecl,
+		*syntax.MapTypeDecl,
 		*syntax.SubTypeDecl:
 		return true
 	default:

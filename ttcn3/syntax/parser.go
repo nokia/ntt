@@ -606,7 +606,7 @@ func (p *parser) parseExpr() Expr {
 //
 //	| BinaryExpr OP BinaryExpr
 func (p *parser) parseBinaryExpr(prec1 int) Expr {
-	x := p.parseUnaryExpr()
+	x := p.parsePostfixExpr()
 	for {
 		prec := p.tok.Precedence()
 		if prec < prec1 {
@@ -616,6 +616,40 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 		y := p.parseBinaryExpr(prec + 1)
 		x = &BinaryExpr{X: x, Op: op, Y: y}
 	}
+}
+
+func (p *parser) parsePostfixExpr() Expr {
+	x := p.parseUnaryExpr()
+
+	if p.tok == LENGTH {
+		x = p.parseLength(x)
+	}
+
+	if p.tok == IFPRESENT {
+		x = &UnaryExpr{Op: p.consume(), X: x}
+	}
+
+	if p.tok == TO || p.tok == FROM {
+		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
+	}
+
+	if p.tok == REDIR {
+		x = p.parseRedirect(x)
+	}
+
+	if p.tok == VALUE {
+		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
+	}
+
+	if p.tok == PARAM {
+		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
+	}
+
+	if p.tok == ALIVE {
+		x = &UnaryExpr{Op: p.consume(), X: x}
+	}
+
+	return x
 }
 
 // UnaryExpr ::= "-"
@@ -676,34 +710,6 @@ L:
 		default:
 			break L
 		}
-	}
-
-	if p.tok == LENGTH {
-		x = p.parseLength(x)
-	}
-
-	if p.tok == IFPRESENT {
-		x = &UnaryExpr{Op: p.consume(), X: x}
-	}
-
-	if p.tok == TO || p.tok == FROM {
-		x = &BinaryExpr{X: x, Op: p.consume(), Y: p.parseExpr()}
-	}
-
-	if p.tok == REDIR {
-		x = p.parseRedirect(x)
-	}
-
-	if p.tok == VALUE {
-		x = &ValueExpr{X: x, Tok: p.consume(), Y: p.parseExpr()}
-	}
-
-	if p.tok == PARAM {
-		x = &ParamExpr{X: x, Tok: p.consume(), Y: p.parseParenExpr()}
-	}
-
-	if p.tok == ALIVE {
-		x = &UnaryExpr{Op: p.consume(), X: x}
 	}
 
 	return x
@@ -1005,7 +1011,7 @@ func (p *parser) parseIdent() *Ident {
 	switch p.tok {
 	case UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL:
+	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM:
 		return p.make_use(p.consume())
 	default:
 		p.expect(IDENT) // use expect() error handling
@@ -1552,6 +1558,8 @@ func (p *parser) parseTypeDecl() Decl {
 		return p.parseComponentTypeDecl()
 	case UNION:
 		return p.parseStructTypeDecl()
+	case MAP:
+		return p.parseMapTypeDecl()
 	case SET, RECORD:
 		if p.peek(3).Kind() == IDENT || p.peek(3).Kind() == ADDRESS {
 			return p.parseStructTypeDecl()
@@ -1678,6 +1686,25 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 		p.consume()
 	}
 	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
+}
+
+/*************************************************************************
+ * Map Type Declaration
+ *************************************************************************/
+
+func (p *parser) parseMapTypeDecl() *MapTypeDecl {
+	if p.trace {
+		defer un(trace(p, "MapTypeDecl"))
+	}
+	x := new(MapTypeDecl)
+	x.TypeTok = p.consume()
+	x.Spec = p.parseMapSpec()
+	x.Name = p.parseName()
+	if p.tok == LT {
+		x.TypePars = p.parseTypeFormalPars()
+	}
 	x.With = p.parseWith()
 	return x
 }
@@ -1830,6 +1857,8 @@ func (p *parser) parseTypeSpec() TypeSpec {
 			return p.parseStructSpec()
 		}
 		return p.parseListSpec()
+	case MAP:
+		return p.parseMapSpec()
 	case ENUMERATED:
 		return p.parseEnumSpec()
 	case FUNCTION, ALTSTEP, TESTCASE:
@@ -1855,6 +1884,19 @@ func (p *parser) parseStructSpec() *StructSpec {
 		p.consume()
 	}
 	x.RBrace = p.expect(RBRACE)
+	return x
+}
+
+func (p *parser) parseMapSpec() *MapSpec {
+	if p.trace {
+		defer un(trace(p, "MapSpec"))
+	}
+	x := new(MapSpec)
+	x.MapTok = p.consume()
+	x.FromTok = p.expect(FROM)
+	x.FromType = p.parseTypeSpec()
+	x.ToTok = p.expect(TO)
+	x.ToType = p.parseTypeSpec()
 	return x
 }
 

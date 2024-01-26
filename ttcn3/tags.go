@@ -38,6 +38,10 @@ func (tree *Tree) Tags() []syntax.Node {
 			t = append(t, n)
 			return true
 
+		case *syntax.MapTypeDecl:
+			t = append(t, n)
+			return true
+
 		case *syntax.EnumTypeDecl:
 			t = append(t, n)
 			for _, e := range n.Enums {
