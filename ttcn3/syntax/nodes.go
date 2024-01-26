@@ -521,6 +521,15 @@ type (
 		ElemType TypeSpec    // Element type specification
 	}
 
+	// A MapSpec represents a map type specification.
+	MapSpec struct {
+		MapTok   Token
+		FromTok  Token
+		FromType TypeSpec
+		ToTok    Token
+		ToType   TypeSpec
+	}
+
 	// A EnumSpec represents a enumeration type specification.
 	EnumSpec struct {
 		Tok    Token  // Position of "enumerated"
@@ -543,6 +552,7 @@ func (x *Field) typeSpecNode()         {}
 func (x *RefSpec) typeSpecNode()       {}
 func (x *StructSpec) typeSpecNode()    {}
 func (x *ListSpec) typeSpecNode()      {}
+func (x *MapSpec) typeSpecNode()       {}
 func (x *EnumSpec) typeSpecNode()      {}
 func (x *BehaviourSpec) typeSpecNode() {}
 
@@ -636,6 +646,14 @@ type (
 		With     *WithSpec
 	}
 
+	MapTypeDecl struct {
+		TypeTok  Token
+		Spec     *MapSpec
+		Name     *Ident
+		TypePars *FormalPars
+		With     *WithSpec
+	}
+
 	// A EnumTypeDecl represents a named enum type.
 	EnumTypeDecl struct {
 		TypeTok  Token // Position of "type"
@@ -713,6 +731,7 @@ func (x *FuncDecl) declNode()             {}
 func (x *SignatureDecl) declNode()        {}
 func (x *SubTypeDecl) declNode()          {}
 func (x *StructTypeDecl) declNode()       {}
+func (x *MapTypeDecl) declNode()          {}
 func (x *EnumTypeDecl) declNode()         {}
 func (x *BehaviourTypeDecl) declNode()    {}
 func (x *PortTypeDecl) declNode()         {}

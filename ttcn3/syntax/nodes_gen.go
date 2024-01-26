@@ -3948,6 +3948,228 @@ func (n *ListSpec) End() int {
 	return -1
 }
 
+func (n *MapSpec) FirstTok() Token {
+	switch {
+
+	case n.MapTok != nil:
+		return n.MapTok
+
+	case n.FromTok != nil:
+		return n.FromTok
+
+	case n.FromType != nil:
+		return n.FromType.FirstTok()
+
+	case n.ToTok != nil:
+		return n.ToTok
+
+	case n.ToType != nil:
+		return n.ToType.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *MapSpec) LastTok() Token {
+	switch {
+
+	case n.ToType != nil:
+		return n.ToType.LastTok()
+
+	case n.ToTok != nil:
+		return n.ToTok
+
+	case n.FromType != nil:
+		return n.FromType.LastTok()
+
+	case n.FromTok != nil:
+		return n.FromTok
+
+	case n.MapTok != nil:
+		return n.MapTok
+
+	default:
+		return nil
+	}
+}
+
+func (n *MapSpec) Children() []Node {
+	ret := make([]Node, 0, 5)
+
+	if n.MapTok != nil {
+		ret = append(ret, n.MapTok)
+	}
+
+	if n.FromTok != nil {
+		ret = append(ret, n.FromTok)
+	}
+
+	if n.FromType != nil {
+		ret = append(ret, n.FromType)
+	}
+
+	if n.ToTok != nil {
+		ret = append(ret, n.ToTok)
+	}
+
+	if n.ToType != nil {
+		ret = append(ret, n.ToType)
+	}
+
+	return ret
+}
+
+func (n *MapSpec) Inspect(f func(Node) bool) {
+
+	if c := n.FromType; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.ToType; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *MapSpec) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *MapSpec) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
+func (n *MapTypeDecl) FirstTok() Token {
+	switch {
+
+	case n.TypeTok != nil:
+		return n.TypeTok
+
+	case n.Spec != nil:
+		return n.Spec.FirstTok()
+
+	case n.Name != nil:
+		return n.Name.FirstTok()
+
+	case n.TypePars != nil:
+		return n.TypePars.FirstTok()
+
+	case n.With != nil:
+		return n.With.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *MapTypeDecl) LastTok() Token {
+	switch {
+
+	case n.With != nil:
+		return n.With.LastTok()
+
+	case n.TypePars != nil:
+		return n.TypePars.LastTok()
+
+	case n.Name != nil:
+		return n.Name.LastTok()
+
+	case n.Spec != nil:
+		return n.Spec.LastTok()
+
+	case n.TypeTok != nil:
+		return n.TypeTok
+
+	default:
+		return nil
+	}
+}
+
+func (n *MapTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 5)
+
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+
+	if n.Spec != nil {
+		ret = append(ret, n.Spec)
+	}
+
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+
+	return ret
+}
+
+func (n *MapTypeDecl) Inspect(f func(Node) bool) {
+
+	if c := n.Spec; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *MapTypeDecl) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *MapTypeDecl) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
 func (n *ModifiesExpr) FirstTok() Token {
 	switch {
 

@@ -56,6 +56,7 @@ func TestWithStmts(t *testing.T) {
 func TestExprs(t *testing.T) {
 	exprs := []Test{
 		{pass, `-`},
+		{pass, `m.to`},
 		{pass, `1..23`},
 		{pass, `a[-]`},
 		{pass, `-1 * x`},
@@ -235,6 +236,11 @@ func TestTypes(t *testing.T) {
 		{pass, `type union s {@default set of int f1 optional}`},
 		{pass, `type union s {enumerated { e(1) } foo}`},
 		{pass, `type enumerated a {e, e(1), e(1)}`},
+
+		// Map Types
+		{pass, `type map from charstring to integer m`},
+		{pass, `type map from record { int a, int y } to integer m`},
+		{pass, `type map from universal charstring to map from integer to charstring m`},
 
 		// Port Types
 		{pass, `type port p message {address a.b[-]}`},

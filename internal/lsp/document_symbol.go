@@ -353,6 +353,15 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 				SelectionRange: setProtocolRange(begin, end),
 				Children:       nil})
 			return false
+		case *syntax.MapTypeDecl:
+			if node.Name == nil {
+				return false
+			}
+			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: "map type", Kind: protocol.Struct,
+				Range:          setProtocolRange(begin, end),
+				SelectionRange: setProtocolRange(begin, end),
+				Children:       nil})
+			return false
 		case *syntax.BehaviourTypeDecl:
 			if node.Name == nil {
 				return false

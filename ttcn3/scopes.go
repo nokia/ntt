@@ -100,6 +100,9 @@ func NewScope(n syntax.Node, tree *Tree) *Scope {
 			scp.add(n)
 		}
 
+	case *syntax.MapTypeDecl:
+		scp.add(n.TypePars)
+
 	case *syntax.EnumTypeDecl:
 		scp.add(n.TypePars)
 		for _, e := range n.Enums {
@@ -225,6 +228,9 @@ func (scp *Scope) add(n syntax.Node) error {
 		scp.add(n.Field)
 
 	case *syntax.StructTypeDecl:
+		scp.Insert(n, n.Name)
+
+	case *syntax.MapTypeDecl:
 		scp.Insert(n, n.Name)
 
 	case *syntax.EnumTypeDecl:
