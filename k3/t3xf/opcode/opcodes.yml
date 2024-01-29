@@ -1658,6 +1658,17 @@ map:
   description: |+
     Map port p1 to port p2.
 
+mapt:
+  opcode: 252
+  operations:
+  - pre: [typek, typev]
+    post: [obj]
+  context:
+  - Block
+  description: |+
+    Construct a map type object with key typek and value typev
+    and push on to the stack.
+
 mark:
   opcode: 12
   operations:

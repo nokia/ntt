@@ -161,6 +161,7 @@ const (
 	LOG              = 0x1013
 	LT               = 0x0543
 	MAP              = 0x10c3
+	MAPT             = 0x0fc3
 	MARK             = 0x00c3
 	MATCH            = 0x1023
 	MOD              = 0x0463
@@ -489,6 +490,7 @@ var opcodeStrings = map[Opcode]string{
 	LOG:              "log",
 	LT:               "lt",
 	MAP:              "map",
+	MAPT:             "mapt",
 	MARK:             "mark",
 	MATCH:            "match",
 	MOD:              "mod",
@@ -817,6 +819,7 @@ var opcodeNames = map[string]Opcode{
 	"log":              LOG,
 	"lt":               LT,
 	"map":              MAP,
+	"mapt":             MAPT,
 	"mark":             MARK,
 	"match":            MATCH,
 	"mod":              MOD,
