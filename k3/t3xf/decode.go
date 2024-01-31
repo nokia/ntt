@@ -2,6 +2,7 @@ package t3xf
 
 import (
 	"encoding/binary"
+	"math"
 
 	"github.com/nokia/ntt/k3/t3xf/opcode"
 )
@@ -28,7 +29,7 @@ func Decode(b []byte) (n int, op opcode.Opcode, arg interface{}) {
 		n = 4 + 4
 
 	case opcode.IEEE754DP:
-		arg = float64(binary.LittleEndian.Uint64(b[4:]))
+		arg = math.Float64frombits(binary.LittleEndian.Uint64(b[4:]))
 		n = 4 + 8
 
 	case opcode.NAME, opcode.UTF8, opcode.ISTR, opcode.FSTR:
