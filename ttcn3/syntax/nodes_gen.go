@@ -2385,6 +2385,147 @@ func (n *Field) End() int {
 	return -1
 }
 
+func (n *ForRangeStmt) FirstTok() Token {
+	switch {
+
+	case n.Tok != nil:
+		return n.Tok
+
+	case n.LParen != nil:
+		return n.LParen
+
+	case n.VarTok != nil:
+		return n.VarTok
+
+	case n.Iterator != nil:
+		return n.Iterator.FirstTok()
+
+	case n.InTok != nil:
+		return n.InTok
+
+	case n.Range != nil:
+		return n.Range.FirstTok()
+
+	case n.RParen != nil:
+		return n.RParen
+
+	case n.Body != nil:
+		return n.Body.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *ForRangeStmt) LastTok() Token {
+	switch {
+
+	case n.Body != nil:
+		return n.Body.LastTok()
+
+	case n.RParen != nil:
+		return n.RParen
+
+	case n.Range != nil:
+		return n.Range.LastTok()
+
+	case n.InTok != nil:
+		return n.InTok
+
+	case n.Iterator != nil:
+		return n.Iterator.LastTok()
+
+	case n.VarTok != nil:
+		return n.VarTok
+
+	case n.LParen != nil:
+		return n.LParen
+
+	case n.Tok != nil:
+		return n.Tok
+
+	default:
+		return nil
+	}
+}
+
+func (n *ForRangeStmt) Children() []Node {
+	ret := make([]Node, 0, 8)
+
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+
+	if n.VarTok != nil {
+		ret = append(ret, n.VarTok)
+	}
+
+	if n.Iterator != nil {
+		ret = append(ret, n.Iterator)
+	}
+
+	if n.InTok != nil {
+		ret = append(ret, n.InTok)
+	}
+
+	if n.Range != nil {
+		ret = append(ret, n.Range)
+	}
+
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
+	}
+
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+
+	return ret
+}
+
+func (n *ForRangeStmt) Inspect(f func(Node) bool) {
+
+	if c := n.Iterator; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Range; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *ForRangeStmt) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *ForRangeStmt) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
 func (n *ForStmt) FirstTok() Token {
 	switch {
 

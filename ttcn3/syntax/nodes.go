@@ -414,6 +414,17 @@ type (
 		Body     *BlockStmt // Loop-Body
 	}
 
+	ForRangeStmt struct {
+		Tok      Token
+		LParen   Token
+		VarTok   Token
+		Iterator *Ident
+		InTok    Token
+		Range    Expr
+		RParen   Token
+		Body     *BlockStmt
+	}
+
 	// A WhilStmt represents a "while" statement.
 	WhileStmt struct {
 		Tok  Token      // Position of "while"
