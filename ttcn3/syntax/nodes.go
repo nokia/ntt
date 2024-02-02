@@ -415,14 +415,14 @@ type (
 	}
 
 	ForRangeStmt struct {
-		Tok      Token
-		LParen   Token
-		VarTok   Token
-		Iterator *Ident
-		InTok    Token
-		Range    Expr
-		RParen   Token
-		Body     *BlockStmt
+		Tok    Token
+		LParen Token
+		VarTok Token
+		Var    *Ident
+		InTok  Token
+		Range  Expr
+		RParen Token
+		Body   *BlockStmt
 	}
 
 	// A WhilStmt represents a "while" statement.
@@ -477,20 +477,21 @@ type (
 	}
 )
 
-func (x *BlockStmt) stmtNode()   {}
-func (x *DeclStmt) stmtNode()    {}
-func (x *ExprStmt) stmtNode()    {}
-func (x *BranchStmt) stmtNode()  {}
-func (x *ReturnStmt) stmtNode()  {}
-func (x *CallStmt) stmtNode()    {}
-func (x *AltStmt) stmtNode()     {}
-func (x *ForStmt) stmtNode()     {}
-func (x *WhileStmt) stmtNode()   {}
-func (x *DoWhileStmt) stmtNode() {}
-func (x *IfStmt) stmtNode()      {}
-func (x *SelectStmt) stmtNode()  {}
-func (x *CaseClause) stmtNode()  {}
-func (x *CommClause) stmtNode()  {}
+func (x *BlockStmt) stmtNode()    {}
+func (x *DeclStmt) stmtNode()     {}
+func (x *ExprStmt) stmtNode()     {}
+func (x *BranchStmt) stmtNode()   {}
+func (x *ReturnStmt) stmtNode()   {}
+func (x *CallStmt) stmtNode()     {}
+func (x *AltStmt) stmtNode()      {}
+func (x *ForStmt) stmtNode()      {}
+func (x *ForRangeStmt) stmtNode() {}
+func (x *WhileStmt) stmtNode()    {}
+func (x *DoWhileStmt) stmtNode()  {}
+func (x *IfStmt) stmtNode()       {}
+func (x *SelectStmt) stmtNode()   {}
+func (x *CaseClause) stmtNode()   {}
+func (x *CommClause) stmtNode()   {}
 
 // All nested types implement TypeSpec interface.
 type TypeSpec interface {

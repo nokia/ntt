@@ -137,6 +137,11 @@ func NewScope(n syntax.Node, tree *Tree) *Scope {
 	case *syntax.ForStmt:
 		scp.add(n.Init)
 
+	case *syntax.ForRangeStmt:
+		if (n.VarTok != nil) && (n.Var != nil) {
+			scp.Insert(n.Var, n.Var)
+		}
+
 	case *syntax.IfStmt:
 		scp.add(n.Then)
 		scp.add(n.Else)

@@ -300,6 +300,19 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.RParen)
 			p.print(n.Body)
 
+		case *syntax.ForRangeStmt:
+			if n == nil {
+				return
+			}
+			p.print(n.Tok)
+			p.print(n.LParen)
+			p.print(n.VarTok)
+			p.print(n.Var)
+			p.print(n.InTok)
+			p.print(n.Range)
+			p.print(n.RParen)
+			p.print(n.Body)
+
 		case *syntax.WhileStmt:
 			if n == nil {
 				return

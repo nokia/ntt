@@ -2405,6 +2405,9 @@ func (p *parser) parseStmt() Stmt {
 	case LBRACK:
 		return p.parseAltGuard()
 	case FOR:
+		if p.peek(4).Kind() == IN || p.peek(5).Kind() == IN {
+			return p.parseForRangeLoop()
+		}
 		return p.parseForLoop()
 	case WHILE:
 		return p.parseWhileLoop()
@@ -2468,7 +2471,24 @@ func (p *parser) parseForLoop() *ForStmt {
 	x.Cond = p.parseExpr()
 	x.CondSemi = p.expect(SEMICOLON)
 	x.Post = p.parseSimpleStmt()
-	x.LParen = p.expect(RPAREN)
+	x.RParen = p.expect(RPAREN)
+	x.Body = p.parseBlockStmt()
+	return x
+}
+
+func (p *parser) parseForRangeLoop() *ForRangeStmt {
+	x := new(ForRangeStmt)
+	x.Tok = p.consume()
+	x.LParen = p.expect(LPAREN)
+	if p.tok == VAR {
+		x.VarTok = p.consume()
+		x.Var = p.parseName()
+	} else {
+		x.Var = p.parseIdent()
+	}
+	x.InTok = p.expect(IN)
+	x.Range = p.parseExpr()
+	x.RParen = p.expect(RPAREN)
 	x.Body = p.parseBlockStmt()
 	return x
 }

@@ -2397,8 +2397,8 @@ func (n *ForRangeStmt) FirstTok() Token {
 	case n.VarTok != nil:
 		return n.VarTok
 
-	case n.Iterator != nil:
-		return n.Iterator.FirstTok()
+	case n.Var != nil:
+		return n.Var.FirstTok()
 
 	case n.InTok != nil:
 		return n.InTok
@@ -2432,8 +2432,8 @@ func (n *ForRangeStmt) LastTok() Token {
 	case n.InTok != nil:
 		return n.InTok
 
-	case n.Iterator != nil:
-		return n.Iterator.LastTok()
+	case n.Var != nil:
+		return n.Var.LastTok()
 
 	case n.VarTok != nil:
 		return n.VarTok
@@ -2464,8 +2464,8 @@ func (n *ForRangeStmt) Children() []Node {
 		ret = append(ret, n.VarTok)
 	}
 
-	if n.Iterator != nil {
-		ret = append(ret, n.Iterator)
+	if n.Var != nil {
+		ret = append(ret, n.Var)
 	}
 
 	if n.InTok != nil {
@@ -2489,7 +2489,7 @@ func (n *ForRangeStmt) Children() []Node {
 
 func (n *ForRangeStmt) Inspect(f func(Node) bool) {
 
-	if c := n.Iterator; c != nil {
+	if c := n.Var; c != nil {
 		if f(c) {
 			c.Inspect(f)
 		}
