@@ -81,6 +81,7 @@ var (
 		"DEAD": ErrDEAD,
 		"DIRE": ErrDIRE,
 		"DIV0": ErrDIV0,
+		"DKEY": ErrDKEY,
 		"DOME": ErrDOME,
 		"DTDE": ErrDTDE,
 		"FILE": ErrFILE,
