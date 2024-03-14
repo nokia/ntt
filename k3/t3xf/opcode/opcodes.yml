@@ -1012,6 +1012,20 @@ for:
     cond, incr and body. Such variables will be destroyed when the
     operation terminates.
 
+from:
+  opcode: 108
+  operations:
+  - pre: [mapv, setofFromType]
+    post: [res]
+  context:
+  - Block
+  description: |+
+    Implements the TTCN-3 .from operation applied to mapv of 
+    type: `type map from A to B MapT`. A setofFromType is provided
+    for creation of the return value. 
+    Return value is of type `set of A` containing all keys
+    from the map.
+
 fstr:
   opcode: 23
   operations:
@@ -3012,6 +3026,20 @@ timestamp:
   opcode: 383
   operations: []
   description: ""
+
+to:
+  opcode: 109
+  operations:
+  - pre: [mapv, setofToType]
+    post: [res]
+  context:
+  - Block
+  description: |+
+    Implements the TTCN-3 .to operation applied to mapv of 
+    type: `type map from A to B MapT`. A setofToType is provided
+    for creation of the return value. 
+    Return value is of type `set of B` containing all values
+    from the map.
 
 trigger:
   opcode: 328

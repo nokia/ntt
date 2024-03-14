@@ -103,6 +103,7 @@ const (
 	FLOAT            = 0x0e43
 	FLOAT2INT        = 0x1873
 	FOR              = 0x0343
+	FROM             = 0x06c3
 	FSTR             = 0x0173
 	FUNCTION         = 0x0903
 	FUNCTIONB        = 0x0913
@@ -306,6 +307,7 @@ const (
 	TIMEOUT1         = 0x1333
 	TIMER            = 0x0ed3
 	TIMESTAMP        = 0x17f3
+	TO               = 0x06d3
 	TRIGGER          = 0x1483
 	TRIGGER1         = 0x1493
 	TRUE             = 0x0293
@@ -432,6 +434,7 @@ var opcodeStrings = map[Opcode]string{
 	FLOAT:            "float",
 	FLOAT2INT:        "float2int",
 	FOR:              "for",
+	FROM:             "from",
 	FSTR:             "fstr",
 	FUNCTION:         "function",
 	FUNCTIONB:        "functionb",
@@ -635,6 +638,7 @@ var opcodeStrings = map[Opcode]string{
 	TIMEOUT1:         "timeout1",
 	TIMER:            "timer",
 	TIMESTAMP:        "timestamp",
+	TO:               "to",
 	TRIGGER:          "trigger",
 	TRIGGER1:         "trigger1",
 	TRUE:             "true",
@@ -761,6 +765,7 @@ var opcodeNames = map[string]Opcode{
 	"float":            FLOAT,
 	"float2int":        FLOAT2INT,
 	"for":              FOR,
+	"from":             FROM,
 	"fstr":             FSTR,
 	"function":         FUNCTION,
 	"functionb":        FUNCTIONB,
@@ -964,6 +969,7 @@ var opcodeNames = map[string]Opcode{
 	"timeout1":         TIMEOUT1,
 	"timer":            TIMER,
 	"timestamp":        TIMESTAMP,
+	"to":               TO,
 	"trigger":          TRIGGER,
 	"trigger1":         TRIGGER1,
 	"true":             TRUE,
