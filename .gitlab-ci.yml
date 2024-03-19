@@ -41,8 +41,9 @@ coverage:
   coverage: '/coverage: \d+.\d+% of statements/'
   artifacts:
     reports:
-      cobertura: report-coverage.xml
-
+      coverage_report:
+        coverage_format: cobertura
+        path: report-coverage.xml
 lint:
   stage: test
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
