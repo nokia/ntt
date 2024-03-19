@@ -317,6 +317,7 @@ const (
 	UNMAP            = 0x10d3
 	UNMAPA           = 0x10e3
 	UNMAPAA          = 0x10f3
+	UNMAPFROMTO      = 0x0fd3
 	UTF8             = 0x0103
 	VAL2STR          = 0x1ae3
 	VALUE            = 0x17c3
@@ -648,6 +649,7 @@ var opcodeStrings = map[Opcode]string{
 	UNMAP:            "unmap",
 	UNMAPA:           "unmapa",
 	UNMAPAA:          "unmapaa",
+	UNMAPFROMTO:      "unmapfromto",
 	UTF8:             "utf8",
 	VAL2STR:          "val2str",
 	VALUE:            "value",
@@ -979,6 +981,7 @@ var opcodeNames = map[string]Opcode{
 	"unmap":            UNMAP,
 	"unmapa":           UNMAPA,
 	"unmapaa":          UNMAPAA,
+	"unmapfromto":      UNMAPFROMTO,
 	"utf8":             UTF8,
 	"val2str":          VAL2STR,
 	"value":            VALUE,

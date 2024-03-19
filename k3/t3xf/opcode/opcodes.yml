@@ -3127,6 +3127,15 @@ unmapaa:
   description: |+
     Break all mappings on all components.
 
+unmapfromto:
+  opcode: 253
+  operations:
+  - pre: [mapval, key]
+  context:
+  - BehavEnv
+  description: |+
+    remove key from mapval.
+
 utf8:
   opcode: 16
   operations:
