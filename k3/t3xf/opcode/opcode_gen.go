@@ -69,6 +69,7 @@ const (
 	CREATEN          = 0x11a3
 	DEACTIVATE       = 0x0d23
 	DEACTIVATEA      = 0x0d33
+	DECMATCH         = 0x1ff3
 	DECVALUE         = 0x1a83
 	DEF              = 0x05b3
 	DEFAULT          = 0x0ec3
@@ -401,6 +402,7 @@ var opcodeStrings = map[Opcode]string{
 	CREATEN:          "createn",
 	DEACTIVATE:       "deactivate",
 	DEACTIVATEA:      "deactivatea",
+	DECMATCH:         "decmatch",
 	DECVALUE:         "decvalue",
 	DEF:              "def",
 	DEFAULT:          "default",
@@ -733,6 +735,7 @@ var opcodeNames = map[string]Opcode{
 	"createn":          CREATEN,
 	"deactivate":       DEACTIVATE,
 	"deactivatea":      DEACTIVATEA,
+	"decmatch":         DECMATCH,
 	"decvalue":         DECVALUE,
 	"def":              DEF,
 	"default":          DEFAULT,
