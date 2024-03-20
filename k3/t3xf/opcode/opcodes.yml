@@ -653,6 +653,18 @@ deactivatea:
   description: |+
     Deactivate all altsteps activated on the current component.
 
+decmatch:
+  opcode: 511
+  operations:
+  - pre: [enc, decTemplate]
+    post: [res]
+  context:
+  - BehavEnv
+  description: |+
+    The encoded value enc is decoded and the decoded content
+    will be matched against the provided decTemplate returning
+    a boolean value res on the stack
+
 decvalue:
   opcode: 424
   operations:
