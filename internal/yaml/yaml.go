@@ -42,7 +42,7 @@ func Unmarshal(data []byte, v interface{}) error {
 }
 
 func Marshal(v interface{}) ([]byte, error) {
-	return yaml.Marshal(v)
+	return yaml.MarshalWithOptions(v, yaml.UseLiteralStyleIfMultiline(true))
 }
 
 func MarshalJSON(v interface{}) ([]byte, error) {

@@ -8,13 +8,15 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/nokia/ntt/internal/yaml"
 	"github.com/nokia/ntt/k3/t3xf/opcode"
 )
 
 var funcs = template.FuncMap{
-	"uc": strings.ToUpper,
+	"uc":  strings.ToUpper,
+	"now": time.Now,
 	"encode": func(op int) string {
 		return fmt.Sprintf("0x%04x", op*16+3)
 	},
