@@ -93,14 +93,18 @@ allfrom:
   context:
   - value
   - all
-  operations: []
+  operations:
+  - pre: [obj]
+    post: [res]
   description: ""
 allfromp:
   opcode: 107
   context:
   - value
   - all
-  operations: []
+  operations:
+  - pre: [obj]
+    post: [res]
   description: ""
 alt:
   opcode: 56
@@ -222,7 +226,9 @@ apply:
   opcode: 25
   context:
   - vm
-  operations: []
+  operations:
+  - pre: [closure]
+    post: []
   description: ""
 array:
   opcode: 238
@@ -265,7 +271,9 @@ at_default:
   opcode: 513
   context:
   - vm
-  operations: []
+  operations:
+  - pre: [obj]
+    post: []
   description: ""
 bit2hex:
   opcode: 396
@@ -444,28 +452,38 @@ check1:
   context:
   - port_op
   - any
-  operations: []
-  description: ""
+  operations:
+  - pre: [match assign]
+    post: []
+  description: Any port check
 checkstate:
   opcode: 376
   context:
   - port_op
-  operations: []
+  operations:
+  - pre: [port string]
+    post: [bool]
   description: ""
 checkstateal:
   opcode: 377
   context:
   - port_op
   - all
-  operations: []
-  description: ""
+  operations:
+  - pre: [string]
+    post: []
+  - pre: []
+    post: [bool]
+  description: All port checkstate
 checkstatean:
   opcode: 378
   context:
   - port_op
   - any
-  operations: []
-  description: ""
+  operations:
+  - pre: [string]
+    post: [bool]
+  description: Any port checkstate
 clear:
   opcode: 312
   context:
@@ -486,12 +504,24 @@ cleara:
     Clear all contents from the input queues of all ports on the
     current component.
 
+clone:
+  opcode: 64
+  context:
+  - func
+  operations:
+  - pre: [obj]
+    post: [res]
+  description: |+
+    Clone obj and push back clone.
+
 closure:
   opcode: 287
   context:
   - vm
-  operations: []
-  description: ""
+  operations:
+  - pre: [ref]
+    post: [closure]
+  description: Wrap obj as closure
 closuretype:
   opcode: 233
   context:
@@ -688,7 +718,9 @@ def:
   opcode: 91
   context:
   - vm
-  operations: []
+  operations:
+  - pre: [from what]
+    post: [ref]
   description: ""
 default:
   opcode: 236
@@ -696,7 +728,7 @@ default:
   - type_ref
   operations:
   - pre: []
-    post: [obj]
+    post: [ref]
   description: |+
     Push the built-in default type object.
 
@@ -925,8 +957,14 @@ execute:
 
 executed:
   opcode: 285
-  operations: []
-  description: ""
+  context:
+  - testcase_new
+  operations:
+  - pre: [blk]
+    post: [verdict]
+  description: |+
+    Same as execute, but with logging disabled.
+
 executel:
   opcode: 263
   context:
@@ -943,8 +981,12 @@ executel:
 
 executeld:
   opcode: 284
-  operations: []
-  description: ""
+  operations:
+  - pre: [limit, blk]
+    post: [verdict]
+  description: |+
+    Same as executel, but with logging disabled.
+
 extension:
   opcode: 200
   context:
@@ -1320,8 +1362,12 @@ idef:
   opcode: 92
   context:
   - vm
-  operations: []
-  description: ""
+  operations:
+  - pre: [from]
+    post: [ref]
+  description: |+
+    Same behaviour as 'def'.
+
 ieee754dp:
   opcode: 21
   context:
@@ -1368,7 +1414,9 @@ ifield:
   opcode: 93
   context:
   - type_new
-  operations: []
+  operations:
+  - pre: [type, name]
+    post: []
   description: ""
 ifpresent:
   opcode: 99
@@ -1478,7 +1526,9 @@ int2enum:
   opcode: 426
   context:
   - func
-  operations: []
+  operations:
+  - pre: [a]
+    post: [res]
   description: ""
 int2float:
   opcode: 390
@@ -1555,7 +1605,9 @@ isbound:
   context:
   - func
   operations: []
-  description: ""
+  description: |+
+    Stack operations might be dynamic.
+
 ischosen:
   opcode: 415
   context:
@@ -1800,8 +1852,12 @@ module:
 
 move:
   opcode: 94
-  operations: []
-  description: ""
+  operations:
+  - pre: [b, a]
+    post: []
+  description: |+
+    Move b to a
+
 mpar:
   opcode: 160
   context:
@@ -1970,13 +2026,17 @@ now:
   opcode: 308
   context:
   - func
-  operations: []
+  operations:
+  - pre: []
+    post: [float]
   description: ""
 "null":
   opcode: 32
   context:
   - literal
-  operations: []
+  operations:
+  - pre: []
+    post: [nullref]
   description: ""
 oct2bit:
   opcode: 404
@@ -1993,7 +2053,9 @@ oct2chr:
   opcode: 407
   context:
   - func
-  operations: []
+  operations:
+  - pre: [oct]
+    post: [charstring]
   description: ""
 oct2hex:
   opcode: 405
@@ -2191,16 +2253,11 @@ portma:
   opcode: 246
   context:
   - type_new
-  operations: []
-  description: ""
-
-clone:
-  opcode: 64
   operations:
-  - pre: [obj]
-    post: [res]
+  - pre: [in out address map_params unmap_params]
+    post: []
   description: |+
-    Clone obj and push back clone.
+    Create message port type
 
 range:
   opcode: 103
@@ -2241,8 +2298,12 @@ receive1:
   opcode: 326
   context:
   - port_op
-  operations: []
-  description: ""
+  operations:
+  - pre: [match assign]
+    post: []
+  description: |+
+    Receive from any port
+
 receivec:
   opcode: 325
   context:
@@ -2261,7 +2322,9 @@ receivec1:
   context:
   - port_op
   - any
-  operations: []
+  operations:
+  - pre: [match assign]
+    post: []
   description: ""
 record:
   opcode: 248
@@ -2287,147 +2350,219 @@ recordof:
 
 ref_bit2hex:
   opcode: 476
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_bit2int:
   opcode: 475
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_bit2oct:
   opcode: 477
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_bit2str:
   opcode: 478
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_char2int:
   opcode: 472
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_char2oct:
   opcode: 473
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_decvalue:
   opcode: 504
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_encvalue:
   opcode: 503
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_enum2int:
   opcode: 501
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_float2int:
   opcode: 471
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_hex2bit:
   opcode: 480
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_hex2int:
   opcode: 479
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_hex2oct:
   opcode: 481
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_hex2str:
   opcode: 482
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2bit:
   opcode: 466
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2char:
   opcode: 464
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2enum:
   opcode: 506
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2float:
   opcode: 470
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2hex:
   opcode: 467
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2oct:
   opcode: 468
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_int2str:
   opcode: 469
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_isbound:
   opcode: 509
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_ispresent:
   opcode: 494
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_isvalue:
   opcode: 502
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_oct2bit:
   opcode: 484
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_oct2chr:
   opcode: 487
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_oct2hex:
   opcode: 485
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_oct2int:
   opcode: 483
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_oct2str:
   opcode: 486
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_regexp:
   opcode: 496
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_str2float:
   opcode: 490
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_str2hex:
   opcode: 508
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_str2int:
   opcode: 488
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_str2oct:
   opcode: 489
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_testcasename:
   opcode: 505
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 ref_val2str:
   opcode: 493
-  operations: []
+  operations:
+  - pre: [ref]
+    post: []
   description: ""
 regexp:
   opcode: 416
@@ -2575,7 +2710,9 @@ scan:
   opcode: 13
   context:
   - vm
-  operations: []
+  operations:
+  - pre: []
+    post: [blk]
   description: |+
     Switch from instruction execution to scanning until a matching
     block is seen.
@@ -2726,8 +2863,12 @@ smatch:
   opcode: 15
   context:
   - func
-  operations: []
-  description: ""
+  operations:
+  - pre: [expr tmpl]
+    post: [bool]
+  description: |+
+    Silent match
+
 source:
   opcode: 141
   context:
@@ -2743,8 +2884,12 @@ specplc:
   opcode: 212
   context:
   - component_op
-  operations: []
-  description: ""
+  operations:
+  - pre: [blk]
+    post: []
+  description: |+
+    Special place
+
 start:
   opcode: 296
   context:
@@ -2886,7 +3031,9 @@ str2hex:
   opcode: 428
   context:
   - func
-  operations: []
+  operations:
+  - pre: [string]
+    post: [hex]
   description: ""
 str2int:
   opcode: 408
@@ -2980,8 +3127,12 @@ system:
 
 tcstop:
   opcode: 286
-  operations: []
-  description: ""
+  operations:
+  - pre: [reason]
+    post: []
+  description: |+
+    Stop testcase.
+
 template:
   opcode: 164
   context:
@@ -3038,7 +3189,7 @@ testcases:
   - beha_def
   operations:
   - pre: [scomp, rcomp, pblk, bblk, name]
-    post: [verdict]
+    post: []
   description: |+
     Define a testcase object from a system component type scomp, a
     runs-on component type rcomp, a block pblk containing its
@@ -3047,7 +3198,9 @@ testcases:
 
 testcasesw:
   opcode: 171
-  operations: []
+  operations:
+  - pre: [ablk, scomp, rcomp, pblk, bblk, name]
+    post: []
   description: |+
     Define a testcase object from a system component type scomp, a
     runs-on component type rcomp, a block pblk containing its
@@ -3059,7 +3212,7 @@ testcasew:
   opcode: 170
   operations:
   - pre: [ablk, rcomp, pblk, bblk, name]
-    post: [verdict]
+    post: []
   description: |+
     Define a testcase object from a runs-on component type rcomp,
     a block pblk containing its parameters, bblk containing its
@@ -3099,7 +3252,11 @@ timer:
 
 timestamp:
   opcode: 383
-  operations: []
+  context:
+  - port_op
+  operations:
+  - pre: []
+    post: [timestamp_id]
   description: ""
 to:
   opcode: 109
@@ -3133,7 +3290,9 @@ trigger1:
   context:
   - port_op
   - any
-  operations: []
+  operations:
+  - pre: [match, assign]
+    post: []
   description: ""
 "true":
   opcode: 41
@@ -3246,8 +3405,12 @@ val2str:
   opcode: 430
   context:
   - func
-  operations: []
-  description: ""
+  operations:
+  - pre: [val]
+    post: [string]
+  description: |+
+    Return a printable representation of val.
+
 value:
   opcode: 380
   context:
@@ -3292,8 +3455,10 @@ vardup:
   opcode: 111
   context:
   - decl
-  operations: []
-  description: ""
+  operations:
+  - pre: [type, init, name]
+    post: []
+  description: Create a variable with eager template evaluation.
 variant:
   opcode: 204
   context:
@@ -3353,8 +3518,10 @@ wait:
   opcode: 309
   context:
   - func
-  operations: []
-  description: ""
+  operations:
+  - pre: [float]
+    post: []
+  description: Wait for float seconds.
 while:
   opcode: 53
   context:
