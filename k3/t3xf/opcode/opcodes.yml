@@ -7,6 +7,8 @@
 
 action:
   opcode: 256
+  context:
+  - func
   operations:
   - pre: [str]
     post: []
@@ -15,6 +17,8 @@ action:
 
 activate:
   opcode: 208
+  context:
+  - component_op
   operations:
   - pre: [blk]
     post: [default]
@@ -25,6 +29,8 @@ activate:
 
 add:
   opcode: 65
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -33,6 +39,8 @@ add:
 
 address:
   opcode: 234
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -47,6 +55,8 @@ address:
 
 alive:
   opcode: 272
+  context:
+  - component_op
   operations:
   - pre: [comp]
     post: [res]
@@ -56,6 +66,9 @@ alive:
 
 alive1:
   opcode: 273
+  context:
+  - component_op
+  - any
   operations:
   - pre: []
     post: [res]
@@ -65,6 +78,9 @@ alive1:
 
 alivea:
   opcode: 274
+  context:
+  - component_op
+  - all
   operations:
   - pre: []
     post: [res]
@@ -74,14 +90,22 @@ alivea:
 
 allfrom:
   opcode: 106
+  context:
+  - value
+  - all
   operations: []
   description: ""
 allfromp:
   opcode: 107
+  context:
+  - value
+  - all
   operations: []
   description: ""
 alt:
   opcode: 56
+  context:
+  - eval
   operations:
   - pre: [blk]
     post: []
@@ -104,6 +128,8 @@ altnd:
     Same as `alt` with disabled defaults (`@nodefault`)
 altstep:
   opcode: 128
+  context:
+  - beha_def
   operations:
   - pre: [pblk, bblk, name]
     post: []
@@ -114,6 +140,8 @@ altstep:
 
 altstepb:
   opcode: 129
+  context:
+  - beha_def
   operations:
   - pre: [comp, pblk, bblk, name]
     post: []
@@ -125,6 +153,8 @@ altstepb:
 
 altstepbw:
   opcode: 131
+  context:
+  - beha_def
   operations:
   - pre: [comp, ablk, pblk, bblk, name]
     post: []
@@ -137,6 +167,8 @@ altstepbw:
 
 altstepw:
   opcode: 130
+  context:
+  - beha_def
   operations:
   - pre: [ablk, pblk, bblk, name]
     post: []
@@ -148,12 +180,10 @@ altstepw:
 
 and:
   opcode: 72
+  context:
+  - func
   operations:
-  - pre: [boola, boolb]
-    post: [res]
-  - pre: [bool, blk]
-    post: [res]
-  - pre: [bina, binb]
+  - pre: [obj, obj]
     post: [res]
   description: |+
     With a boolean first argument, perform the logical and
@@ -168,6 +198,8 @@ and:
 
 any:
   opcode: 96
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -177,6 +209,8 @@ any:
 
 anyn:
   opcode: 97
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -186,10 +220,14 @@ anyn:
 
 apply:
   opcode: 25
+  context:
+  - vm
   operations: []
   description: ""
 array:
   opcode: 238
+  context:
+  - type_new
   operations:
   - pre: [type, dim]
     post: [obj]
@@ -201,6 +239,8 @@ array:
 
 assign:
   opcode: 88
+  context:
+  - vm
   operations:
   - pre: [a, b]
     post: []
@@ -211,6 +251,8 @@ assign:
 
 assignd:
   opcode: 89
+  context:
+  - vm
   operations:
   - pre: [a, b]
     post: [a]
@@ -221,10 +263,14 @@ assignd:
 
 at_default:
   opcode: 513
+  context:
+  - vm
   operations: []
   description: ""
 bit2hex:
   opcode: 396
+  context:
+  - func
   operations:
   - pre: [bit]
     post: [res]
@@ -234,6 +280,8 @@ bit2hex:
 
 bit2int:
   opcode: 395
+  context:
+  - func
   operations:
   - pre: [bit]
     post: [res]
@@ -243,6 +291,8 @@ bit2int:
 
 bit2oct:
   opcode: 397
+  context:
+  - func
   operations:
   - pre: [bit]
     post: [res]
@@ -252,6 +302,8 @@ bit2oct:
 
 bit2str:
   opcode: 398
+  context:
+  - func
   operations:
   - pre: [bit]
     post: [res]
@@ -261,6 +313,9 @@ bit2str:
 
 bits:
   opcode: 17
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -283,6 +338,8 @@ bits:
 
 bitstring:
   opcode: 224
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -291,6 +348,8 @@ bitstring:
 
 block:
   opcode: 8
+  context:
+  - vm
   operations:
   - pre: []
     post: [blk]
@@ -300,6 +359,8 @@ block:
 
 boolean:
   opcode: 225
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -314,6 +375,8 @@ break:
 
 cat:
   opcode: 86
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -323,6 +386,8 @@ cat:
 
 char2int:
   opcode: 392
+  context:
+  - func
   operations:
   - pre: [char]
     post: [res]
@@ -332,6 +397,8 @@ char2int:
 
 char2oct:
   opcode: 393
+  context:
+  - func
   operations:
   - pre: [char]
     post: [res]
@@ -341,6 +408,8 @@ char2oct:
 
 charstring:
   opcode: 226
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -349,6 +418,8 @@ charstring:
 
 charstringu:
   opcode: 227
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -357,6 +428,8 @@ charstringu:
 
 check:
   opcode: 330
+  context:
+  - port_op
   operations:
   - pre: [mblk, ablk, port]
     post: []
@@ -368,22 +441,35 @@ check:
 
 check1:
   opcode: 331
+  context:
+  - port_op
+  - any
   operations: []
   description: ""
 checkstate:
   opcode: 376
+  context:
+  - port_op
   operations: []
   description: ""
 checkstateal:
   opcode: 377
+  context:
+  - port_op
+  - all
   operations: []
   description: ""
 checkstatean:
   opcode: 378
+  context:
+  - port_op
+  - any
   operations: []
   description: ""
 clear:
   opcode: 312
+  context:
+  - port_op
   operations:
   - pre: [p]
     post: []
@@ -392,6 +478,9 @@ clear:
 
 cleara:
   opcode: 313
+  context:
+  - port_op
+  - all
   operations: []
   description: |+
     Clear all contents from the input queues of all ports on the
@@ -399,14 +488,20 @@ cleara:
 
 closure:
   opcode: 287
+  context:
+  - vm
   operations: []
   description: ""
 closuretype:
   opcode: 233
+  context:
+  - type_ref
   operations: []
   description: ""
 collect:
   opcode: 9
+  context:
+  - vm
   operations:
   - pre: [mark, object1, .., objectn]
     post: [col]
@@ -417,6 +512,8 @@ collect:
 
 complement:
   opcode: 98
+  context:
+  - value
   operations:
   - pre: [vlist]
     post: [res]
@@ -426,6 +523,8 @@ complement:
 
 component:
   opcode: 242
+  context:
+  - type_new
   operations:
   - pre: [iblk]
     post: [ctype]
@@ -435,6 +534,8 @@ component:
 
 componentx:
   opcode: 243
+  context:
+  - type_new
   operations:
   - pre: [coll, iblk]
     post: [ctype]
@@ -445,6 +546,8 @@ componentx:
 
 connect:
   opcode: 264
+  context:
+  - port_op
   operations:
   - pre: [p1, p2]
     post: []
@@ -453,6 +556,8 @@ connect:
 
 const:
   opcode: 132
+  context:
+  - decl
   operations:
   - pre: [vblk, type, name]
     post: []
@@ -462,6 +567,8 @@ const:
 
 constw:
   opcode: 133
+  context:
+  - decl
   operations:
   - pre: [ablk, vblk, type, name]
     post: []
@@ -478,6 +585,8 @@ continue:
 
 control:
   opcode: 134
+  context:
+  - beha_def
   operations:
   - pre: [blk]
     post: []
@@ -487,6 +596,8 @@ control:
 
 create:
   opcode: 280
+  context:
+  - component_new
   operations:
   - pre: [ctype]
     post: [cinst]
@@ -496,6 +607,8 @@ create:
 
 createa:
   opcode: 281
+  context:
+  - component_new
   operations:
   - pre: [ctype]
     post: [cinst]
@@ -505,6 +618,8 @@ createa:
 
 createan:
   opcode: 283
+  context:
+  - component_new
   operations:
   - pre: [name, ctype]
     post: [cinst]
@@ -515,6 +630,8 @@ createan:
 
 createn:
   opcode: 282
+  context:
+  - component_new
   operations:
   - pre: [name, ctype]
     post: [cinst]
@@ -525,6 +642,8 @@ createn:
 
 deactivate:
   opcode: 210
+  context:
+  - component_op
   operations:
   - pre: [default]
     post: []
@@ -533,12 +652,17 @@ deactivate:
 
 deactivatea:
   opcode: 211
+  context:
+  - component_op
+  - all
   operations: []
   description: |+
     Deactivate all altsteps activated on the current component.
 
 decmatch:
   opcode: 511
+  context:
+  - value
   operations:
   - pre: [enc, decTemplate]
     post: [res]
@@ -549,6 +673,8 @@ decmatch:
 
 decvalue:
   opcode: 424
+  context:
+  - func
   operations:
   - pre: [enc, dec]
     post: [res]
@@ -560,10 +686,14 @@ decvalue:
 
 def:
   opcode: 91
+  context:
+  - vm
   operations: []
   description: ""
 default:
   opcode: 236
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -572,6 +702,8 @@ default:
 
 disconnect:
   opcode: 265
+  context:
+  - port_op
   operations:
   - pre: [p1, p2]
     post: []
@@ -580,6 +712,9 @@ disconnect:
 
 disconnecta:
   opcode: 266
+  context:
+  - port_op
+  - all
   operations:
   - pre: [comp]
     post: []
@@ -588,12 +723,18 @@ disconnecta:
 
 disconnectaa:
   opcode: 267
+  context:
+  - port_op
+  - component_op
+  - all
   operations: []
   description: |+
     Break all connections on all components.
 
 div:
   opcode: 69
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -605,6 +746,8 @@ div:
 
 done:
   opcode: 276
+  context:
+  - component_op
   operations:
   - pre: [comp]
     post: []
@@ -614,6 +757,9 @@ done:
 
 done1:
   opcode: 277
+  context:
+  - component_op
+  - any
   operations: []
   description: |+
     Test the state of all parallel test components for any that
@@ -622,6 +768,9 @@ done1:
 
 donea:
   opcode: 278
+  context:
+  - component_op
+  - all
   operations: []
   description: |+
     Test the state of all parallel test components checking that
@@ -630,6 +779,9 @@ donea:
 
 dowhile:
   opcode: 54
+  context:
+  - vm
+  - control_flow
   operations:
   - pre: [body, cond]
     post: []
@@ -646,6 +798,8 @@ dowhile:
 
 drop:
   opcode: 10
+  context:
+  - vm
   operations:
   - pre: [a, b]
     post: [a]
@@ -654,6 +808,8 @@ drop:
 
 else:
   opcode: 58
+  context:
+  - eval
   operations:
   - pre: [blk]
     post: []
@@ -664,6 +820,8 @@ else:
 
 encode:
   opcode: 196
+  context:
+  - type_new
   operations:
   - pre: [val]
     post: []
@@ -673,6 +831,8 @@ encode:
 
 encodeo:
   opcode: 198
+  context:
+  - type_new
   operations:
   - pre: [val]
     post: []
@@ -682,6 +842,8 @@ encodeo:
 
 encvalue:
   opcode: 423
+  context:
+  - func
   operations:
   - pre: [value]
     post: [res]
@@ -691,6 +853,8 @@ encvalue:
 
 enum2int:
   opcode: 421
+  context:
+  - func
   operations:
   - pre: [enum]
     post: [res]
@@ -700,6 +864,8 @@ enum2int:
 
 enumerated:
   opcode: 240
+  context:
+  - type_new
   operations:
   - pre: [blk]
     post: [obj]
@@ -709,6 +875,8 @@ enumerated:
 
 eq:
   opcode: 80
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -717,6 +885,8 @@ eq:
 
 error:
   opcode: 46
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -726,6 +896,8 @@ error:
 
 exec:
   opcode: 55
+  context:
+  - vm
   operations:
   - pre: [blk]
     post: []
@@ -741,6 +913,8 @@ exec:
 
 execute:
   opcode: 262
+  context:
+  - testcase_new
   operations:
   - pre: [blk]
     post: [verdict]
@@ -755,6 +929,8 @@ executed:
   description: ""
 executel:
   opcode: 263
+  context:
+  - testcase_new
   operations:
   - pre: [limit, blk]
     post: [verdict]
@@ -771,6 +947,8 @@ executeld:
   description: ""
 extension:
   opcode: 200
+  context:
+  - type_new
   operations:
   - pre: [val]
     post: []
@@ -780,6 +958,8 @@ extension:
 
 extensiono:
   opcode: 202
+  context:
+  - type_new
   operations:
   - pre: [val]
     post: []
@@ -789,6 +969,8 @@ extensiono:
 
 fail:
   opcode: 45
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -798,6 +980,8 @@ fail:
 
 "false":
   opcode: 40
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -806,6 +990,8 @@ fail:
 
 field:
   opcode: 114
+  context:
+  - type_new
   operations:
   - pre: [type, name]
     post: []
@@ -815,6 +1001,8 @@ field:
 
 fieldo:
   opcode: 115
+  context:
+  - type_new
   operations:
   - pre: [type, name]
     post: []
@@ -825,6 +1013,8 @@ fieldo:
 
 float:
   opcode: 228
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -833,6 +1023,8 @@ float:
 
 float2int:
   opcode: 391
+  context:
+  - func
   operations:
   - pre: [flt]
     post: [res]
@@ -841,6 +1033,9 @@ float2int:
 
 for:
   opcode: 52
+  context:
+  - vm
+  - control_flow
   operations:
   - pre: [init, cond, body, incr]
     post: []
@@ -864,6 +1059,8 @@ for:
 
 from:
   opcode: 108
+  context:
+  - func
   operations:
   - pre: [mapv, setofFromType]
     post: [res]
@@ -876,6 +1073,9 @@ from:
 
 fstr:
   opcode: 23
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -897,6 +1097,8 @@ fstr:
 
 function:
   opcode: 144
+  context:
+  - beha_def
   operations:
   - pre: [pblk, bblk, name]
     post: []
@@ -907,6 +1109,8 @@ function:
 
 functionb:
   opcode: 145
+  context:
+  - beha_def
   operations:
   - pre: [comp, pblk, bblk, name]
     post: []
@@ -918,6 +1122,8 @@ functionb:
 
 functionv:
   opcode: 148
+  context:
+  - beha_def
   operations:
   - pre: [type, pblk, bblk, name]
     post: []
@@ -929,6 +1135,8 @@ functionv:
 
 functionvb:
   opcode: 149
+  context:
+  - beha_def
   operations:
   - pre: [type, comp, pblk, bblk, name]
     post: []
@@ -950,6 +1158,8 @@ functionx:
 
 functionxv:
   opcode: 154
+  context:
+  - beha_def
   operations:
   - pre: [type, pblk, name]
     post: []
@@ -960,6 +1170,8 @@ functionxv:
 
 functionxvw:
   opcode: 155
+  context:
+  - beha_def
   operations:
   - pre: [type, ablk, pblk, name]
     post: []
@@ -971,6 +1183,8 @@ functionxvw:
 
 functionxw:
   opcode: 153
+  context:
+  - beha_def
   operations:
   - pre: [ablk, pblk, name]
     post: []
@@ -982,6 +1196,8 @@ functionxw:
 
 ge:
   opcode: 81
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -990,6 +1206,8 @@ ge:
 
 get:
   opcode: 87
+  context:
+  - vm
   operations:
   - pre: [obj, idx]
     post: [obj]
@@ -1005,6 +1223,8 @@ get:
 
 getverdict:
   opcode: 260
+  context:
+  - component_op
   operations:
   - pre: []
     post: [lver]
@@ -1014,6 +1234,8 @@ getverdict:
 
 gt:
   opcode: 82
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -1022,6 +1244,8 @@ gt:
 
 halt:
   opcode: 314
+  context:
+  - port_op
   operations:
   - pre: [p]
     post: []
@@ -1030,6 +1254,9 @@ halt:
 
 halta:
   opcode: 315
+  context:
+  - port_op
+  - all
   operations: []
   description: |+
     Instruct all ports on the current component to accept no
@@ -1037,6 +1264,8 @@ halta:
 
 hex2bit:
   opcode: 400
+  context:
+  - func
   operations:
   - pre: [hex]
     post: [res]
@@ -1046,6 +1275,8 @@ hex2bit:
 
 hex2int:
   opcode: 399
+  context:
+  - func
   operations:
   - pre: [hex]
     post: [res]
@@ -1055,6 +1286,8 @@ hex2int:
 
 hex2oct:
   opcode: 401
+  context:
+  - func
   operations:
   - pre: [hex]
     post: [res]
@@ -1064,6 +1297,8 @@ hex2oct:
 
 hex2str:
   opcode: 402
+  context:
+  - func
   operations:
   - pre: [hex]
     post: [res]
@@ -1073,6 +1308,8 @@ hex2str:
 
 hexstring:
   opcode: 229
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -1081,10 +1318,15 @@ hexstring:
 
 idef:
   opcode: 92
+  context:
+  - vm
   operations: []
   description: ""
 ieee754dp:
   opcode: 21
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -1102,6 +1344,9 @@ ieee754dp:
 
 if:
   opcode: 48
+  context:
+  - vm
+  - control_flow
   operations:
   - pre: [cond, blk]
     post: []
@@ -1110,6 +1355,9 @@ if:
 
 ifelse:
   opcode: 49
+  context:
+  - vm
+  - control_flow
   operations:
   - pre: [cond, tblk, fblk]
     post: []
@@ -1118,10 +1366,14 @@ ifelse:
 
 ifield:
   opcode: 93
+  context:
+  - type_new
   operations: []
   description: ""
 ifpresent:
   opcode: 99
+  context:
+  - value
   operations:
   - pre: [obj]
     post: [obj]
@@ -1131,6 +1383,8 @@ ifpresent:
 
 iget:
   opcode: 90
+  context:
+  - vm
   operations:
   - pre: [obj]
     post: [obj]
@@ -1145,6 +1399,8 @@ iget:
 
 in:
   opcode: 116
+  context:
+  - type_new
   operations:
   - pre: [type, name]
     post: []
@@ -1155,6 +1411,8 @@ in:
 
 inconc:
   opcode: 44
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -1164,6 +1422,8 @@ inconc:
 
 infinityn:
   opcode: 38
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -1172,6 +1432,8 @@ infinityn:
 
 infinityp:
   opcode: 39
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -1180,6 +1442,8 @@ infinityp:
 
 inout:
   opcode: 117
+  context:
+  - type_new
   operations:
   - pre: [type, name]
     post: []
@@ -1190,6 +1454,8 @@ inout:
 
 int2bit:
   opcode: 386
+  context:
+  - func
   operations:
   - pre: [int, len]
     post: [res]
@@ -1199,6 +1465,8 @@ int2bit:
 
 int2char:
   opcode: 384
+  context:
+  - func
   operations:
   - pre: [int]
     post: [res]
@@ -1208,10 +1476,14 @@ int2char:
 
 int2enum:
   opcode: 426
+  context:
+  - func
   operations: []
   description: ""
 int2float:
   opcode: 390
+  context:
+  - func
   operations:
   - pre: [int]
     post: [res]
@@ -1220,6 +1492,8 @@ int2float:
 
 int2hex:
   opcode: 387
+  context:
+  - func
   operations:
   - pre: [int, len]
     post: [res]
@@ -1229,6 +1503,8 @@ int2hex:
 
 int2oct:
   opcode: 388
+  context:
+  - func
   operations:
   - pre: [int, len]
     post: [res]
@@ -1238,6 +1514,8 @@ int2oct:
 
 int2str:
   opcode: 389
+  context:
+  - func
   operations:
   - pre: [int]
     post: [res]
@@ -1247,6 +1525,8 @@ int2str:
 
 integer:
   opcode: 230
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -1255,6 +1535,8 @@ integer:
 
 interleave:
   opcode: 57
+  context:
+  - eval
   operations:
   - pre: [blk]
     post: []
@@ -1270,10 +1552,14 @@ interleave:
 
 isbound:
   opcode: 429
+  context:
+  - func
   operations: []
   description: ""
 ischosen:
   opcode: 415
+  context:
+  - func
   operations:
   - pre: [obj]
     post: [res]
@@ -1284,6 +1570,8 @@ ischosen:
 
 ispresent:
   opcode: 414
+  context:
+  - func
   operations:
   - pre: [obj]
     post: [res]
@@ -1294,6 +1582,9 @@ ispresent:
 
 istr:
   opcode: 22
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -1314,6 +1605,8 @@ istr:
 
 isvalue:
   opcode: 422
+  context:
+  - func
   operations:
   - pre: [obj]
     post: [res]
@@ -1323,6 +1616,8 @@ isvalue:
 
 kill:
   opcode: 316
+  context:
+  - component_op
   operations:
   - pre: [comp]
     post: []
@@ -1332,6 +1627,9 @@ kill:
 
 killa:
   opcode: 317
+  context:
+  - component_op
+  - all
   operations: []
   description: |+
     Stop behaviour on all parallel test components, moving them to
@@ -1339,6 +1637,8 @@ killa:
 
 killed:
   opcode: 292
+  context:
+  - component_op
   operations:
   - pre: [comp]
     post: []
@@ -1348,6 +1648,9 @@ killed:
 
 killed1:
   opcode: 293
+  context:
+  - component_op
+  - any
   operations: []
   description: |+
     Test the state of all parallel test components for any that
@@ -1356,6 +1659,9 @@ killed1:
 
 killeda:
   opcode: 294
+  context:
+  - component_op
+  - all
   operations: []
   description: |+
     Test the state of all parallel test components checking that
@@ -1364,6 +1670,8 @@ killeda:
 
 le:
   opcode: 83
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -1372,6 +1680,8 @@ le:
 
 length:
   opcode: 100
+  context:
+  - value
   operations:
   - pre: [obj, len]
     post: [obj]
@@ -1382,6 +1692,8 @@ length:
 
 lengthof:
   opcode: 411
+  context:
+  - func
   operations:
   - pre: [str]
     post: [len]
@@ -1400,9 +1712,9 @@ load:
 
 log:
   opcode: 257
+  context:
+  - func
   operations:
-  - pre: [coll]
-    post: []
   - pre: [obj]
     post: []
   description: |+
@@ -1410,6 +1722,8 @@ log:
 
 lt:
   opcode: 84
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -1418,6 +1732,8 @@ lt:
 
 map:
   opcode: 268
+  context:
+  - port_op
   operations:
   - pre: [p1, p2]
     post: []
@@ -1426,6 +1742,8 @@ map:
 
 mapt:
   opcode: 252
+  context:
+  - type_new
   operations:
   - pre: [typek, typev]
     post: [obj]
@@ -1435,6 +1753,8 @@ mapt:
 
 mark:
   opcode: 12
+  context:
+  - literal
   operations:
   - pre: []
     post: [mark]
@@ -1443,6 +1763,8 @@ mark:
 
 match:
   opcode: 258
+  context:
+  - func
   operations:
   - pre: [expr, tmpl]
     post: [res]
@@ -1452,6 +1774,8 @@ match:
 
 mod:
   opcode: 70
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -1464,6 +1788,8 @@ mod:
 
 module:
   opcode: 142
+  context:
+  - vm
   operations:
   - pre: [bblk, name]
     post: []
@@ -1478,6 +1804,8 @@ move:
   description: ""
 mpar:
   opcode: 160
+  context:
+  - decl
   operations:
   - pre: [type, name]
     post: []
@@ -1486,6 +1814,8 @@ mpar:
 
 mpard:
   opcode: 161
+  context:
+  - decl
   operations:
   - pre: [vblk, type, name]
     post: []
@@ -1496,6 +1826,8 @@ mpard:
 
 mtc:
   opcode: 33
+  context:
+  - testcase_op
   operations:
   - pre: []
     post: [obj]
@@ -1504,6 +1836,8 @@ mtc:
 
 mul:
   opcode: 68
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -1515,6 +1849,9 @@ mul:
 
 name:
   opcode: 24
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -1534,6 +1871,9 @@ name:
 
 natlong:
   opcode: 20
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -1552,6 +1892,8 @@ natlong:
 
 ne:
   opcode: 85
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -1560,6 +1902,8 @@ ne:
 
 neg:
   opcode: 66
+  context:
+  - func
   operations:
   - pre: [a]
     post: [res]
@@ -1568,6 +1912,9 @@ neg:
 
 nibbles:
   opcode: 18
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -1584,6 +1931,8 @@ nibbles:
 
 none:
   opcode: 42
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -1593,6 +1942,8 @@ none:
 
 nop:
   opcode: 0
+  context:
+  - vm
   operations: []
   description: |+
     No operation.
@@ -1602,6 +1953,8 @@ nop:
 
 not:
   opcode: 73
+  context:
+  - func
   operations:
   - pre: [a]
     post: [res]
@@ -1615,14 +1968,20 @@ not:
 
 now:
   opcode: 308
+  context:
+  - func
   operations: []
   description: ""
 "null":
   opcode: 32
+  context:
+  - literal
   operations: []
   description: ""
 oct2bit:
   opcode: 404
+  context:
+  - func
   operations:
   - pre: [oct]
     post: [res]
@@ -1632,10 +1991,14 @@ oct2bit:
 
 oct2chr:
   opcode: 407
+  context:
+  - func
   operations: []
   description: ""
 oct2hex:
   opcode: 405
+  context:
+  - func
   operations:
   - pre: [oct]
     post: [res]
@@ -1645,6 +2008,8 @@ oct2hex:
 
 oct2int:
   opcode: 403
+  context:
+  - func
   operations:
   - pre: [oct]
     post: [res]
@@ -1654,6 +2019,8 @@ oct2int:
 
 oct2str:
   opcode: 406
+  context:
+  - func
   operations:
   - pre: [oct]
     post: [res]
@@ -1663,6 +2030,9 @@ oct2str:
 
 octets:
   opcode: 19
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -1685,6 +2055,8 @@ octets:
 
 octetstring:
   opcode: 231
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -1693,6 +2065,8 @@ octetstring:
 
 omit:
   opcode: 37
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -1701,12 +2075,10 @@ omit:
 
 or:
   opcode: 74
+  context:
+  - func
   operations:
-  - pre: [boola, boolb]
-    post: [res]
-  - pre: [bool, blk]
-    post: [res]
-  - pre: [bina, binb]
+  - pre: [obj, obj]
     post: [res]
   description: |+
     With a boolean first argument perform the logical or operation
@@ -1720,6 +2092,8 @@ or:
 
 out:
   opcode: 118
+  context:
+  - type_new
   operations:
   - pre: [type, name]
     post: []
@@ -1730,6 +2104,8 @@ out:
 
 pass:
   opcode: 43
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -1739,6 +2115,8 @@ pass:
 
 pattern:
   opcode: 101
+  context:
+  - vm
   operations:
   - pre: [str]
     post: [pat]
@@ -1753,6 +2131,8 @@ pattern:
 
 permito:
   opcode: 120
+  context:
+  - vm
   operations:
   - pre: [type]
     post: [type]
@@ -1762,6 +2142,8 @@ permito:
 
 permitp:
   opcode: 122
+  context:
+  - vm
   operations:
   - pre: [type]
     post: [type]
@@ -1770,6 +2152,8 @@ permitp:
 
 permitt:
   opcode: 121
+  context:
+  - vm
   operations:
   - pre: [type]
     post: [type]
@@ -1778,6 +2162,8 @@ permitt:
 
 permutation:
   opcode: 102
+  context:
+  - value
   operations:
   - pre: [vlist]
     post: [res]
@@ -1787,6 +2173,8 @@ permutation:
 
 portm:
   opcode: 244
+  context:
+  - type_new
   operations:
   - pre: [iblk, oblk]
     post: [ptype]
@@ -1801,18 +2189,23 @@ portm:
 
 portma:
   opcode: 246
+  context:
+  - type_new
   operations: []
   description: ""
-pos:
+
+clone:
   opcode: 64
   operations:
-  - pre: [a]
+  - pre: [obj]
     post: [res]
   description: |+
-    Evaluate +a (unary + operator) pushing the result.
+    Clone obj and push back clone.
 
 range:
   opcode: 103
+  context:
+  - vm
   operations:
   - pre: [lower, upper]
     post: [obj]
@@ -1822,6 +2215,8 @@ range:
 
 read:
   opcode: 304
+  context:
+  - timer_op
   operations:
   - pre: [tmr]
     post: [rem]
@@ -1831,6 +2226,8 @@ read:
 
 receive:
   opcode: 324
+  context:
+  - port_op
   operations:
   - pre: [mblk, ablk, port]
     post: []
@@ -1842,10 +2239,14 @@ receive:
 
 receive1:
   opcode: 326
+  context:
+  - port_op
   operations: []
   description: ""
 receivec:
   opcode: 325
+  context:
+  - port_op
   operations:
   - pre: [mblk, ablk, port]
     post: []
@@ -1857,10 +2258,15 @@ receivec:
 
 receivec1:
   opcode: 327
+  context:
+  - port_op
+  - any
   operations: []
   description: ""
 record:
   opcode: 248
+  context:
+  - type_new
   operations:
   - pre: [fblk]
     post: [obj]
@@ -1870,6 +2276,8 @@ record:
 
 recordof:
   opcode: 250
+  context:
+  - type_new
   operations:
   - pre: [type]
     post: [obj]
@@ -2023,6 +2431,8 @@ ref_val2str:
   description: ""
 regexp:
   opcode: 416
+  context:
+  - func
   operations:
   - pre: [str, expr, gno]
     post: [res]
@@ -2033,6 +2443,8 @@ regexp:
 
 rem:
   opcode: 71
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -2052,6 +2464,8 @@ repeat:
 
 replace:
   opcode: 418
+  context:
+  - func
   operations:
   - pre: [str, idx, len, rep]
     post: [res]
@@ -2061,6 +2475,9 @@ replace:
 
 return:
   opcode: 50
+  context:
+  - vm
+  - control_flow
   operations: []
   description: |+
     Causes immediate exit from the current function, altstep,
@@ -2068,6 +2485,8 @@ return:
 
 rnd:
   opcode: 419
+  context:
+  - func
   operations:
   - pre: []
     post: [num]
@@ -2077,6 +2496,8 @@ rnd:
 
 rol:
   opcode: 78
+  context:
+  - func
   operations:
   - pre: [str, num]
     post: [res]
@@ -2085,6 +2506,8 @@ rol:
 
 ror:
   opcode: 79
+  context:
+  - func
   operations:
   - pre: [str, num]
     post: [res]
@@ -2093,10 +2516,11 @@ ror:
 
 running:
   opcode: 288
+  context:
+  - timer_op
+  - component_op
   operations:
-  - pre: [comp]
-    post: [res]
-  - pre: [tmr]
+  - pre: [obj]
     post: [res]
   description: |+
     When called with a component reference comp, evaluate the
@@ -2108,6 +2532,10 @@ running:
 
 running1c:
   opcode: 289
+  context:
+  - component_op
+  - timer_op
+  - any
   operations:
   - pre: []
     post: [res]
@@ -2118,6 +2546,9 @@ running1c:
 
 running1t:
   opcode: 305
+  context:
+  - timer_op
+  - any
   operations:
   - pre: []
     post: [res]
@@ -2128,6 +2559,10 @@ running1t:
 
 runningac:
   opcode: 290
+  context:
+  - component_op
+  - timer_op
+  - all
   operations:
   - pre: []
     post: [res]
@@ -2138,6 +2573,8 @@ runningac:
 
 scan:
   opcode: 13
+  context:
+  - vm
   operations: []
   description: |+
     Switch from instruction execution to scanning until a matching
@@ -2145,6 +2582,8 @@ scan:
 
 self:
   opcode: 34
+  context:
+  - testcase_op
   operations:
   - pre: []
     post: [obj]
@@ -2154,6 +2593,8 @@ self:
 
 send:
   opcode: 320
+  context:
+  - port_op
   operations:
   - pre: [msg, port]
     post: []
@@ -2162,6 +2603,8 @@ send:
 
 send1:
   opcode: 321
+  context:
+  - port_op
   operations:
   - pre: [dest, msg, port]
     post: []
@@ -2171,6 +2614,8 @@ send1:
 
 senda:
   opcode: 323
+  context:
+  - port_op
   operations:
   - pre: [msg, port]
     post: []
@@ -2189,6 +2634,8 @@ sender:
 
 sendn:
   opcode: 322
+  context:
+  - port_op
   operations:
   - pre: [dblk, msg, port]
     post: []
@@ -2198,6 +2645,8 @@ sendn:
 
 set:
   opcode: 249
+  context:
+  - type_new
   operations:
   - pre: [fblk]
     post: [obj]
@@ -2207,6 +2656,8 @@ set:
 
 setof:
   opcode: 251
+  context:
+  - type_new
   operations:
   - pre: [type]
     post: [obj]
@@ -2216,6 +2667,8 @@ setof:
 
 setverdict:
   opcode: 261
+  context:
+  - component_op
   operations:
   - pre: [lver]
     post: []
@@ -2225,6 +2678,8 @@ setverdict:
 
 shl:
   opcode: 76
+  context:
+  - func
   operations:
   - pre: [str, num]
     post: [res]
@@ -2233,6 +2688,8 @@ shl:
 
 shr:
   opcode: 77
+  context:
+  - func
   operations:
   - pre: [str, num]
     post: [res]
@@ -2241,6 +2698,8 @@ shr:
 
 sizeof:
   opcode: 412
+  context:
+  - func
   operations:
   - pre: [obj]
     post: [size]
@@ -2250,6 +2709,8 @@ sizeof:
 
 skip:
   opcode: 36
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -2263,10 +2724,14 @@ skip:
 
 smatch:
   opcode: 15
+  context:
+  - func
   operations: []
   description: ""
 source:
   opcode: 141
+  context:
+  - vm
   operations:
   - pre: [mblk, name]
     post: []
@@ -2276,14 +2741,17 @@ source:
 
 specplc:
   opcode: 212
+  context:
+  - component_op
   operations: []
   description: ""
 start:
   opcode: 296
+  context:
+  - port_op
+  - timer_op
   operations:
-  - pre: [port]
-    post: []
-  - pre: [tmr]
+  - pre: [obj]
     post: []
   description: |+
     When called with a port reference port, start activity on the
@@ -2294,12 +2762,17 @@ start:
 
 startap:
   opcode: 299
+  context:
+  - port_op
+  - all
   operations: []
   description: |+
     Start activity on all ports.
 
 startc:
   opcode: 297
+  context:
+  - component_op
   operations:
   - pre: [blk, comp]
     post: []
@@ -2311,6 +2784,8 @@ startc:
 
 startd:
   opcode: 298
+  context:
+  - timer_op
   operations:
   - pre: [dur, tmr]
     post: []
@@ -2319,6 +2794,8 @@ startd:
 
 step:
   opcode: 62
+  context:
+  - eval
   operations:
   - pre: [cblk, sblk]
     post: []
@@ -2332,12 +2809,12 @@ step:
 
 stop:
   opcode: 300
+  context:
+  - timer_op
+  - component_op
+  - port_op
   operations:
-  - pre: [comp]
-    post: []
-  - pre: [port]
-    post: []
-  - pre: [tmr]
+  - pre: [obj]
     post: []
   description: |+
     When called with a component reference comp, stop behaviour on
@@ -2350,6 +2827,8 @@ stop:
 
 stopac:
   opcode: 301
+  context:
+  - component_op
   operations: []
   description: |+
     Stop all parallel test components. Permitted only from the
@@ -2357,12 +2836,18 @@ stopac:
 
 stopap:
   opcode: 302
+  context:
+  - port_op
+  - all
   operations: []
   description: |+
     Stop all ports.
 
 stopat:
   opcode: 303
+  context:
+  - timer_op
+  - all
   operations: []
   description: |+
     Stop all timers on the current component.
@@ -2388,6 +2873,8 @@ store:
 
 str2float:
   opcode: 410
+  context:
+  - func
   operations:
   - pre: [char]
     post: [res]
@@ -2397,10 +2884,14 @@ str2float:
 
 str2hex:
   opcode: 428
+  context:
+  - func
   operations: []
   description: ""
 str2int:
   opcode: 408
+  context:
+  - func
   operations:
   - pre: [char]
     post: [res]
@@ -2410,6 +2901,8 @@ str2int:
 
 str2oct:
   opcode: 409
+  context:
+  - func
   operations:
   - pre: [char]
     post: [res]
@@ -2419,6 +2912,8 @@ str2oct:
 
 sub:
   opcode: 67
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
@@ -2430,6 +2925,8 @@ sub:
 
 subset:
   opcode: 104
+  context:
+  - value
   operations:
   - pre: [vlist]
     post: [res]
@@ -2439,6 +2936,8 @@ subset:
 
 substr:
   opcode: 417
+  context:
+  - func
   operations:
   - pre: [str, idx, len]
     post: [res]
@@ -2447,6 +2946,8 @@ substr:
 
 subtype:
   opcode: 239
+  context:
+  - type_new
   operations:
   - pre: [type, cons]
     post: [res]
@@ -2457,6 +2958,8 @@ subtype:
 
 superset:
   opcode: 105
+  context:
+  - value
   operations:
   - pre: [vlist]
     post: [res]
@@ -2466,6 +2969,8 @@ superset:
 
 system:
   opcode: 35
+  context:
+  - testcase_op
   operations:
   - pre: []
     post: [obj]
@@ -2479,6 +2984,8 @@ tcstop:
   description: ""
 template:
   opcode: 164
+  context:
+  - beha_def
   operations:
   - pre: [type, pblk, bblk, name]
     post: []
@@ -2490,6 +2997,8 @@ template:
 
 term:
   opcode: 113
+  context:
+  - type_new
   operations:
   - pre: [tval, name]
     post: []
@@ -2500,6 +3009,8 @@ term:
 
 testcase:
   opcode: 168
+  context:
+  - beha_def
   operations:
   - pre: [rcomp, pblk, bblk, name]
     post: [verdict]
@@ -2511,6 +3022,8 @@ testcase:
 
 testcasename:
   opcode: 425
+  context:
+  - testcase_op
   operations:
   - pre: []
     post: [name]
@@ -2521,6 +3034,8 @@ testcasename:
 
 testcases:
   opcode: 169
+  context:
+  - beha_def
   operations:
   - pre: [scomp, rcomp, pblk, bblk, name]
     post: [verdict]
@@ -2553,20 +3068,20 @@ testcasew:
 
 timeout:
   opcode: 306
+  context:
+  - timer_op
   operations:
   - pre: [tmr]
-    post: []
-  - pre: [port]
     post: []
   description: |+
     Create a timeout alternative bound to timer tmr and attach
     this to the enclosing alt operation.
-    
-    Create a timeout alternative bound to port port and attach
-    this to the enclosing alt operation.
 
 timeout1:
   opcode: 307
+  context:
+  - timer_op
+  - any
   operations: []
   description: |+
     Create a timeout alternative bound to the expiry of any
@@ -2574,6 +3089,8 @@ timeout1:
 
 timer:
   opcode: 237
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -2586,6 +3103,8 @@ timestamp:
   description: ""
 to:
   opcode: 109
+  context:
+  - func
   operations:
   - pre: [mapv, setofToType]
     post: [res]
@@ -2598,6 +3117,8 @@ to:
 
 trigger:
   opcode: 328
+  context:
+  - port_op
   operations:
   - pre: [mblk, ablk, port]
     post: []
@@ -2609,10 +3130,15 @@ trigger:
 
 trigger1:
   opcode: 329
+  context:
+  - port_op
+  - any
   operations: []
   description: ""
 "true":
   opcode: 41
+  context:
+  - literal
   operations:
   - pre: []
     post: [lit]
@@ -2621,6 +3147,8 @@ trigger1:
 
 type:
   opcode: 166
+  context:
+  - type_def
   operations:
   - pre: [obj, name]
     post: []
@@ -2630,6 +3158,8 @@ type:
 
 typew:
   opcode: 167
+  context:
+  - type_def
   operations:
   - pre: [ablk, obj, name]
     post: []
@@ -2640,6 +3170,8 @@ typew:
 
 union:
   opcode: 255
+  context:
+  - type_new
   operations:
   - pre: [fblk]
     post: [obj]
@@ -2649,6 +3181,8 @@ union:
 
 unmap:
   opcode: 269
+  context:
+  - port_op
   operations:
   - pre: [p1, p2]
     post: []
@@ -2657,6 +3191,9 @@ unmap:
 
 unmapa:
   opcode: 270
+  context:
+  - port_op
+  - all
   operations:
   - pre: [comp]
     post: []
@@ -2665,12 +3202,18 @@ unmapa:
 
 unmapaa:
   opcode: 271
+  context:
+  - port_op
+  - component_op
+  - all
   operations: []
   description: |+
     Break all mappings on all components.
 
 unmapfromto:
   opcode: 253
+  context:
+  - value
   operations:
   - pre: [mapval, key]
     post: []
@@ -2679,6 +3222,9 @@ unmapfromto:
 
 utf8:
   opcode: 16
+  context:
+  - literal
+  - multibyte
   operations:
   - pre: []
     post: [lit]
@@ -2698,10 +3244,14 @@ utf8:
 
 val2str:
   opcode: 430
+  context:
+  - func
   operations: []
   description: ""
 value:
   opcode: 380
+  context:
+  - port_op
   operations:
   - pre: []
     post: [obj]
@@ -2718,6 +3268,8 @@ value:
 
 valueof:
   opcode: 259
+  context:
+  - value
   operations:
   - pre: [tmpl]
     post: [value]
@@ -2727,6 +3279,8 @@ valueof:
 
 var:
   opcode: 112
+  context:
+  - decl
   operations:
   - pre: [type, name]
     post: []
@@ -2736,10 +3290,14 @@ var:
 
 vardup:
   opcode: 111
+  context:
+  - decl
   operations: []
   description: ""
 variant:
   opcode: 204
+  context:
+  - type_new
   operations:
   - pre: [val]
     post: []
@@ -2749,6 +3307,8 @@ variant:
 
 varianto:
   opcode: 206
+  context:
+  - type_new
   operations:
   - pre: [val]
     post: []
@@ -2758,6 +3318,8 @@ varianto:
 
 verdicttype:
   opcode: 232
+  context:
+  - type_ref
   operations:
   - pre: []
     post: [obj]
@@ -2766,6 +3328,8 @@ verdicttype:
 
 version:
   opcode: 3
+  context:
+  - beha_def
   operations:
   - pre: [num]
     post: []
@@ -2775,6 +3339,8 @@ version:
 
 vlist:
   opcode: 7
+  context:
+  - vm
   operations:
   - pre: [mark, object1, .., objectn]
     post: [vlist]
@@ -2785,10 +3351,15 @@ vlist:
 
 wait:
   opcode: 309
+  context:
+  - func
   operations: []
   description: ""
 while:
   opcode: 53
+  context:
+  - vm
+  - control_flow
   operations:
   - pre: [cond, body]
     post: []
@@ -2805,6 +3376,8 @@ while:
 
 xor:
   opcode: 75
+  context:
+  - func
   operations:
   - pre: [a, b]
     post: [res]
