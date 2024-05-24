@@ -115,6 +115,7 @@ const (
 	ErrDEAD Category = "DEAD|Deadlock: no alternative available"
 	ErrDIRE Category = "DIRE|Discard report at port|Port name|Error detail"
 	ErrDIV0 Category = "DIV0|Divide by zero|Value name"
+	ErrDKEY Category = "DKEY|Duplicated map key value inside assignment list|Partial assignment list|Key Value"
 	ErrDOME Category = "DOME|Domain error|Value name"
 	ErrDTDE Category = "DTDE|Default deactivate error|Default state"
 	ErrFILE Category = "FILE|Failed to open a file|Named of file"
@@ -261,6 +262,7 @@ var (
 		"DEAD": "DEAD|Deadlock: no alternative available",
 		"DIRE": "DIRE|Discard report at port|Port name|Error detail",
 		"DIV0": "DIV0|Divide by zero|Value name",
+		"DKEY": "DKEY|Duplicated map key value inside assignment list|Partial assignment list|Key Value",
 		"DOME": "DOME|Domain error|Value name",
 		"DTDE": "DTDE|Default deactivate error|Default state",
 		"FILE": "FILE|Failed to open a file|Named of file",

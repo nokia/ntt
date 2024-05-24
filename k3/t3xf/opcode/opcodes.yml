@@ -653,6 +653,18 @@ deactivatea:
   description: |+
     Deactivate all altsteps activated on the current component.
 
+decmatch:
+  opcode: 511
+  operations:
+  - pre: [enc, decTemplate]
+    post: [res]
+  context:
+  - BehavEnv
+  description: |+
+    The encoded value enc is decoded and the decoded content
+    will be matched against the provided decTemplate returning
+    a boolean value res on the stack
+
 decvalue:
   opcode: 424
   operations:
@@ -1011,6 +1023,20 @@ for:
     Variables created within block init are visible within blocks
     cond, incr and body. Such variables will be destroyed when the
     operation terminates.
+
+from:
+  opcode: 108
+  operations:
+  - pre: [mapv, setofFromType]
+    post: [res]
+  context:
+  - Block
+  description: |+
+    Implements the TTCN-3 .from operation applied to mapv of 
+    type: `type map from A to B MapT`. A setofFromType is provided
+    for creation of the return value. 
+    Return value is of type `set of A` containing all keys
+    from the map.
 
 fstr:
   opcode: 23
@@ -1657,6 +1683,17 @@ map:
   - BehavEnv
   description: |+
     Map port p1 to port p2.
+
+mapt:
+  opcode: 252
+  operations:
+  - pre: [typek, typev]
+    post: [obj]
+  context:
+  - Block
+  description: |+
+    Construct a map type object with key typek and value typev
+    and push on to the stack.
 
 mark:
   opcode: 12
@@ -3002,6 +3039,20 @@ timestamp:
   operations: []
   description: ""
 
+to:
+  opcode: 109
+  operations:
+  - pre: [mapv, setofToType]
+    post: [res]
+  context:
+  - Block
+  description: |+
+    Implements the TTCN-3 .to operation applied to mapv of 
+    type: `type map from A to B MapT`. A setofToType is provided
+    for creation of the return value. 
+    Return value is of type `set of B` containing all values
+    from the map.
+
 trigger:
   opcode: 328
   operations:
@@ -3087,6 +3138,15 @@ unmapaa:
   - BehavEnv
   description: |+
     Break all mappings on all components.
+
+unmapfromto:
+  opcode: 253
+  operations:
+  - pre: [mapval, key]
+  context:
+  - BehavEnv
+  description: |+
+    remove key from mapval.
 
 utf8:
   opcode: 16

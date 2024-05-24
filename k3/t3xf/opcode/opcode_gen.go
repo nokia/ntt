@@ -69,6 +69,7 @@ const (
 	CREATEN          = 0x11a3
 	DEACTIVATE       = 0x0d23
 	DEACTIVATEA      = 0x0d33
+	DECMATCH         = 0x1ff3
 	DECVALUE         = 0x1a83
 	DEF              = 0x05b3
 	DEFAULT          = 0x0ec3
@@ -103,6 +104,7 @@ const (
 	FLOAT            = 0x0e43
 	FLOAT2INT        = 0x1873
 	FOR              = 0x0343
+	FROM             = 0x06c3
 	FSTR             = 0x0173
 	FUNCTION         = 0x0903
 	FUNCTIONB        = 0x0913
@@ -161,6 +163,7 @@ const (
 	LOG              = 0x1013
 	LT               = 0x0543
 	MAP              = 0x10c3
+	MAPT             = 0x0fc3
 	MARK             = 0x00c3
 	MATCH            = 0x1023
 	MOD              = 0x0463
@@ -305,6 +308,7 @@ const (
 	TIMEOUT1         = 0x1333
 	TIMER            = 0x0ed3
 	TIMESTAMP        = 0x17f3
+	TO               = 0x06d3
 	TRIGGER          = 0x1483
 	TRIGGER1         = 0x1493
 	TRUE             = 0x0293
@@ -314,6 +318,7 @@ const (
 	UNMAP            = 0x10d3
 	UNMAPA           = 0x10e3
 	UNMAPAA          = 0x10f3
+	UNMAPFROMTO      = 0x0fd3
 	UTF8             = 0x0103
 	VAL2STR          = 0x1ae3
 	VALUE            = 0x17c3
@@ -397,6 +402,7 @@ var opcodeStrings = map[Opcode]string{
 	CREATEN:          "createn",
 	DEACTIVATE:       "deactivate",
 	DEACTIVATEA:      "deactivatea",
+	DECMATCH:         "decmatch",
 	DECVALUE:         "decvalue",
 	DEF:              "def",
 	DEFAULT:          "default",
@@ -431,6 +437,7 @@ var opcodeStrings = map[Opcode]string{
 	FLOAT:            "float",
 	FLOAT2INT:        "float2int",
 	FOR:              "for",
+	FROM:             "from",
 	FSTR:             "fstr",
 	FUNCTION:         "function",
 	FUNCTIONB:        "functionb",
@@ -489,6 +496,7 @@ var opcodeStrings = map[Opcode]string{
 	LOG:              "log",
 	LT:               "lt",
 	MAP:              "map",
+	MAPT:             "mapt",
 	MARK:             "mark",
 	MATCH:            "match",
 	MOD:              "mod",
@@ -633,6 +641,7 @@ var opcodeStrings = map[Opcode]string{
 	TIMEOUT1:         "timeout1",
 	TIMER:            "timer",
 	TIMESTAMP:        "timestamp",
+	TO:               "to",
 	TRIGGER:          "trigger",
 	TRIGGER1:         "trigger1",
 	TRUE:             "true",
@@ -642,6 +651,7 @@ var opcodeStrings = map[Opcode]string{
 	UNMAP:            "unmap",
 	UNMAPA:           "unmapa",
 	UNMAPAA:          "unmapaa",
+	UNMAPFROMTO:      "unmapfromto",
 	UTF8:             "utf8",
 	VAL2STR:          "val2str",
 	VALUE:            "value",
@@ -725,6 +735,7 @@ var opcodeNames = map[string]Opcode{
 	"createn":          CREATEN,
 	"deactivate":       DEACTIVATE,
 	"deactivatea":      DEACTIVATEA,
+	"decmatch":         DECMATCH,
 	"decvalue":         DECVALUE,
 	"def":              DEF,
 	"default":          DEFAULT,
@@ -759,6 +770,7 @@ var opcodeNames = map[string]Opcode{
 	"float":            FLOAT,
 	"float2int":        FLOAT2INT,
 	"for":              FOR,
+	"from":             FROM,
 	"fstr":             FSTR,
 	"function":         FUNCTION,
 	"functionb":        FUNCTIONB,
@@ -817,6 +829,7 @@ var opcodeNames = map[string]Opcode{
 	"log":              LOG,
 	"lt":               LT,
 	"map":              MAP,
+	"mapt":             MAPT,
 	"mark":             MARK,
 	"match":            MATCH,
 	"mod":              MOD,
@@ -961,6 +974,7 @@ var opcodeNames = map[string]Opcode{
 	"timeout1":         TIMEOUT1,
 	"timer":            TIMER,
 	"timestamp":        TIMESTAMP,
+	"to":               TO,
 	"trigger":          TRIGGER,
 	"trigger1":         TRIGGER1,
 	"true":             TRUE,
@@ -970,6 +984,7 @@ var opcodeNames = map[string]Opcode{
 	"unmap":            UNMAP,
 	"unmapa":           UNMAPA,
 	"unmapaa":          UNMAPAA,
+	"unmapfromto":      UNMAPFROMTO,
 	"utf8":             UTF8,
 	"val2str":          VAL2STR,
 	"value":            VALUE,
