@@ -26,14 +26,17 @@ func Unpack(x uint32) (Opcode, int) {
 	switch i & 0x3 {
 	case refClass:
 		if uint32(i)&(1<<31) != 0 {
-			return FROZEN_REF, int(uint32(i) &^ (1 << 31))
+			return FROZEN_REF, int(x &^ (1 << 31))
 		}
 		return REF, i
 	case lineClass:
 		return LINE, i >> 2
 	case gotoClass:
-		if uint32(i)&(1<<31) != 0 {
-			return SCAN, int(uint32(i) & 0x7ffffffc)
+		switch (uint32(i) & (3 << 30)) >> 30 {
+		case 1:
+			return APPLY, int(uint32(i) & 0x3ffffffc)
+		case 2:
+			return SCAN, int(uint32(i) & 0x3ffffffc)
 		}
 		return GOTO, i & ^(0x3)
 	default:
@@ -51,12 +54,15 @@ func Pack(op Opcode, x int) uint32 {
 		return uint32(x<<2) | lineClass
 	case GOTO:
 		return uint32(x) | gotoClass
-	case SCAN:
-		if x != 0 {
-			return uint32(x) | gotoClass | (1 << 31)
-		}
-		fallthrough
 	default:
+		if x != 0 {
+			switch op {
+			case APPLY:
+				return uint32(x) | gotoClass | (1 << 30)
+			case SCAN:
+				return uint32(x) | gotoClass | (2 << 30)
+			}
+		}
 		return uint32(x)<<16 | (uint32(op) & 0xffff)
 	}
 }
