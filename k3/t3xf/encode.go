@@ -100,7 +100,7 @@ func (e *Encoder) Assemble() ([]byte, error) {
 //   - String arguments are expected to implement the Len() and Bytes() methods.
 //   - Integer arguments are expected to be of type int.
 //   - Float arguments are expected to be of type float64.
-func (e *Encoder) Encode(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) Encode(op opcode.Opcode, arg any) error {
 	e.i = e.c
 	e.op = op
 	e.offsets[e.i] = len(e.b)
@@ -126,7 +126,7 @@ func (e *Encoder) Encode(op opcode.Opcode, arg interface{}) error {
 	}
 }
 
-func (e *Encoder) encodeRef(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) encodeRef(op opcode.Opcode, arg any) error {
 	refI, ok := arg.(int)
 	if !ok {
 		return e.errorf("%w: integer argument expected: %v", ErrInvalidArg, arg)
@@ -146,7 +146,7 @@ func (e *Encoder) encodeRef(op opcode.Opcode, arg interface{}) error {
 	return nil
 }
 
-func (e *Encoder) encodeFloat(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) encodeFloat(op opcode.Opcode, arg any) error {
 	if floatArg, ok := arg.(float64); ok {
 		e.appendUint32(opcode.Pack(op, 0))
 		e.appendUint64(math.Float64bits(floatArg))
@@ -156,7 +156,7 @@ func (e *Encoder) encodeFloat(op opcode.Opcode, arg interface{}) error {
 	return e.errorf("%w: float64 argument expected: %v", ErrInvalidArg, arg)
 }
 
-func (e *Encoder) encodeInt(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) encodeInt(op opcode.Opcode, arg any) error {
 	intArg, ok := arg.(int)
 	if !ok {
 		return e.errorf("%w: integer argument expected: %v", ErrInvalidArg, arg)
@@ -170,7 +170,7 @@ func (e *Encoder) encodeInt(op opcode.Opcode, arg interface{}) error {
 	return nil
 }
 
-func (e *Encoder) encodeString(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) encodeString(op opcode.Opcode, arg any) error {
 	s, ok := arg.(string)
 	if !ok {
 		return e.errorf("%w: string argument expected: %v", ErrInvalidArg, arg)
@@ -190,7 +190,7 @@ func (e *Encoder) encodeString(op opcode.Opcode, arg interface{}) error {
 	e.c++
 	return nil
 }
-func (e *Encoder) encodeBinaryString(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) encodeBinaryString(op opcode.Opcode, arg any) error {
 	s, ok := arg.(*String)
 	if !ok {
 		return e.errorf("%w: *t3xf.String argument expected: %T", ErrInvalidArg, arg)
@@ -212,7 +212,7 @@ func (e *Encoder) encodeBinaryString(op opcode.Opcode, arg interface{}) error {
 	return nil
 }
 
-func (e *Encoder) encodeInstruction(op opcode.Opcode, arg interface{}) error {
+func (e *Encoder) encodeInstruction(op opcode.Opcode, arg any) error {
 	intArg, ok := arg.(int)
 	if arg != nil {
 		if !ok {
@@ -227,7 +227,7 @@ func (e *Encoder) encodeInstruction(op opcode.Opcode, arg interface{}) error {
 	return nil
 }
 
-func (e *Encoder) errorf(format string, args ...interface{}) error {
+func (e *Encoder) errorf(format string, args ...any) error {
 	return &EncoderError{
 		Err: fmt.Errorf(format, args...),
 		I:   e.i,
