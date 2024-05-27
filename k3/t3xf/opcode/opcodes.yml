@@ -526,7 +526,7 @@ closuretype:
   opcode: 233
   context:
   - type_ref
-  operations: []
+  operations: [type_ref]
   description: ""
 collect:
   opcode: 9
@@ -3164,7 +3164,7 @@ testcase:
   - beha_def
   operations:
   - pre: [rcomp, pblk, bblk, name]
-    post: [verdict]
+    post: []
   description: |+
     Define a testcase object from a runs-on component type rcomp,
     a block pblk containing its parameters, bblk containing its
