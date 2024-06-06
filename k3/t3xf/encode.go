@@ -55,6 +55,10 @@ type patch struct {
 	op     opcode.Opcode
 }
 
+func (e *Encoder) Len() int {
+	return len(e.b)
+}
+
 // Reset resets the encoder to its initial state.
 func (e *Encoder) Reset() {
 	e.c = 0

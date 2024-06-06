@@ -6,12 +6,12 @@ package opcode
 
 const (
 	REF              Opcode = 0
-	GOTO                    = 1
-	LINE                    = 2
-	OPERATION               = 3
-	FROZEN_REF              = 4
+	GOTO             Opcode = 1
+	LINE             Opcode = 2
+	OPERATION        Opcode = 3
+	FROZEN_REF       Opcode = 4
 	{{ range $name, $op := . }}
-	{{ uc $name }} = {{ encode $op.Opcode }}{{ end }}
+	{{ uc $name }} Opcode = {{ encode $op.Opcode }}{{ end }}
 )
 
 var opcodeStrings = map[Opcode]string{

@@ -442,8 +442,10 @@ type (
 
 	// A IfStmt represents a conditional statement.
 	IfStmt struct {
-		Tok     Token      // Position of "if"
-		Cond    Expr       // Conditional expression
+		Tok     Token // Position of "if"
+		LParen  Token
+		Cond    Expr // Conditional expression
+		RParen  Token
 		Then    *BlockStmt // True branch
 		ElseTok Token      // Position of "else" or nil
 		Else    Stmt       // Else branch

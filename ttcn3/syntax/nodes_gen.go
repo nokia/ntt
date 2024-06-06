@@ -3497,8 +3497,14 @@ func (n *IfStmt) FirstTok() Token {
 	case n.Tok != nil:
 		return n.Tok
 
+	case n.LParen != nil:
+		return n.LParen
+
 	case n.Cond != nil:
 		return n.Cond.FirstTok()
+
+	case n.RParen != nil:
+		return n.RParen
 
 	case n.Then != nil:
 		return n.Then.FirstTok()
@@ -3526,8 +3532,14 @@ func (n *IfStmt) LastTok() Token {
 	case n.Then != nil:
 		return n.Then.LastTok()
 
+	case n.RParen != nil:
+		return n.RParen
+
 	case n.Cond != nil:
 		return n.Cond.LastTok()
+
+	case n.LParen != nil:
+		return n.LParen
 
 	case n.Tok != nil:
 		return n.Tok
@@ -3538,14 +3550,22 @@ func (n *IfStmt) LastTok() Token {
 }
 
 func (n *IfStmt) Children() []Node {
-	ret := make([]Node, 0, 5)
+	ret := make([]Node, 0, 7)
 
 	if n.Tok != nil {
 		ret = append(ret, n.Tok)
 	}
 
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+
 	if n.Cond != nil {
 		ret = append(ret, n.Cond)
+	}
+
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
 	}
 
 	if n.Then != nil {

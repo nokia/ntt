@@ -2512,9 +2512,11 @@ func (p *parser) parseDoWhileLoop() *DoWhileStmt {
 
 func (p *parser) parseIfStmt() *IfStmt {
 	x := &IfStmt{
-		Tok:  p.consume(),
-		Cond: p.parseParenExpr(),
-		Then: p.parseBlockStmt(),
+		Tok:    p.consume(),
+		LParen: p.expect(LPAREN),
+		Cond:   p.parseExpr(),
+		RParen: p.expect(RPAREN),
+		Then:   p.parseBlockStmt(),
 	}
 	if p.tok == ELSE {
 		x.ElseTok = p.consume()

@@ -2,13 +2,19 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"math"
+	"math/big"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/k3/t3xf"
+	"github.com/nokia/ntt/k3/t3xf/opcode"
+	"github.com/nokia/ntt/project"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
@@ -31,6 +37,10 @@ func init() {
 }
 
 func compile(cmd *cobra.Command, args []string) error {
+	if format == "t3xf" {
+		return writeT3xf(Project)
+	}
+
 	srcs, err := fs.TTCN3Files(Project.Sources...)
 	if err != nil {
 		return err
@@ -128,4 +138,209 @@ func buildSource(file string) ttcn3.Source {
 	}
 	visit(ttcn3.ParseFile(file).Root)
 	return src
+}
+
+func writeT3xf(conf *project.Config) error {
+	c := NewCompiler()
+
+	srcs, err := fs.TTCN3Files(Project.Sources...)
+	if err != nil {
+		return err
+	}
+
+	for _, src := range srcs {
+		root := ttcn3.ParseFile(src).Root
+		if root.Err() != nil {
+			return root.Err()
+		}
+		c.Compile(root)
+	}
+
+	// TODO: Add support for imports
+	b, err := c.Assemble()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile("ntt.t3xf", b, 0644)
+}
+
+type Compiler struct {
+	err error
+	e   *t3xf.Encoder
+}
+
+func NewCompiler() *Compiler {
+	c := &Compiler{
+		e: t3xf.NewEncoder(),
+	}
+	c.emit(opcode.NOP, 0)
+	c.emit(opcode.NATLONG, 2)
+	c.emit(opcode.VERSION, 0)
+	return c
+}
+
+func (c *Compiler) Err() error {
+	return c.err
+}
+
+func (c *Compiler) Assemble() ([]byte, error) {
+	if c.err == nil {
+		return c.e.Assemble()
+	}
+	return nil, c.err
+}
+
+func (c *Compiler) Compile(n syntax.Node) error {
+	switch n := n.(type) {
+	case *syntax.Root:
+		c.emit(opcode.SCAN, 0)
+		for _, child := range n.Nodes {
+			c.Compile(child)
+		}
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.NAME, n.Filename)
+		c.emit(opcode.SOURCE, 0)
+
+	case *syntax.Module:
+		if attrs := n.With; attrs != nil {
+			c.errorf("module attributes not supported")
+		}
+		c.emit(opcode.SCAN, 0)
+		for _, child := range n.Defs {
+			c.Compile(child.Def)
+		}
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.NAME, syntax.Name(n))
+		c.emit(opcode.MODULE, 0)
+
+	case *syntax.ControlPart:
+		if attrs := n.With; attrs != nil {
+			c.errorf("control part attributes not supported")
+		}
+		c.Compile(n.Body)
+		c.emit(opcode.CONTROL, 0)
+
+	case *syntax.BlockStmt:
+		if len(n.Stmts) == 0 {
+			c.emit(opcode.SKIP, 0)
+			break
+		}
+		c.emit(opcode.SCAN, 0)
+		for _, child := range n.Stmts {
+			c.Compile(child)
+		}
+		c.emit(opcode.BLOCK, 0)
+
+	case *syntax.IfStmt:
+		op := opcode.IF
+		c.Compile(n.Cond)
+		c.Compile(n.Then)
+		if n.Else != nil {
+			c.Compile(n.Else)
+			op = opcode.IFELSE
+		}
+		c.emit(op, 0)
+
+	case *syntax.WhileStmt:
+
+	case *syntax.ExprStmt:
+		c.Compile(n.Expr)
+
+	case *syntax.BinaryExpr:
+		c.Compile(n.X)
+		c.Compile(n.Y)
+		switch n.Op.Kind() {
+		case syntax.ADD:
+			c.emit(opcode.ADD, 0)
+		case syntax.SUB:
+			c.emit(opcode.SUB, 0)
+		case syntax.MUL:
+			c.emit(opcode.MUL, 0)
+		case syntax.DIV:
+			c.emit(opcode.DIV, 0)
+		case syntax.MOD:
+			c.emit(opcode.MOD, 0)
+		case syntax.REM:
+			c.emit(opcode.REM, 0)
+		case syntax.EQ:
+			c.emit(opcode.EQ, 0)
+		case syntax.NE:
+			c.emit(opcode.NE, 0)
+		default:
+			c.errorf("unsupported binary operator %s", n.Op)
+		}
+
+	case *syntax.ValueLiteral:
+		switch n.Tok.Kind() {
+		case syntax.INT:
+			s := n.Tok.String()
+			bi, ok := big.NewInt(0).SetString(s, 10)
+			if !ok {
+				c.errorf("invalid integer %s", s)
+			}
+			if i := bi.Int64(); bi.IsInt64() && math.MinInt32 <= i && i <= math.MaxInt32 {
+				c.emit(opcode.NATLONG, int(i))
+			} else {
+				c.emit(opcode.ISTR, s)
+			}
+
+		case syntax.STRING:
+			s, err := syntax.Unquote(n.Tok.String())
+			if err != nil {
+				c.errorf("invalid string %s", n.Tok)
+			}
+			c.emit(opcode.UTF8, s)
+
+		case syntax.TRUE:
+			c.emit(opcode.TRUE, 0)
+		case syntax.FALSE:
+			c.emit(opcode.FALSE, 0)
+
+		case syntax.NULL:
+			c.emit(opcode.NULL, 0)
+		case syntax.ANY:
+			c.emit(opcode.ANY, 0)
+		case syntax.MUL:
+			c.emit(opcode.ANYN, 0)
+		case syntax.OMIT:
+			c.emit(opcode.OMIT, 0)
+
+		case syntax.ERROR:
+			c.emit(opcode.ERROR, 0)
+		case syntax.FAIL:
+			c.emit(opcode.FAIL, 0)
+		case syntax.INCONC:
+			c.emit(opcode.INCONC, 0)
+		case syntax.PASS:
+			c.emit(opcode.PASS, 0)
+		case syntax.NONE:
+			c.emit(opcode.NONE, 0)
+		}
+
+	case *syntax.WithSpec:
+		c.emit(opcode.SCAN, 0)
+		for _, child := range n.List {
+			c.Compile(child)
+		}
+		c.emit(opcode.BLOCK, 0)
+
+	default:
+		c.errorf("unexpected node type %T", n)
+	}
+
+	return nil
+}
+
+func (c *Compiler) emit(op opcode.Opcode, arg any) int {
+	pos := c.e.Len()
+	if err := c.e.Encode(op, arg); err != nil {
+		c.errorf("%w", err)
+	}
+	return pos
+
+}
+
+func (c *Compiler) errorf(format string, args ...interface{}) {
+	c.err = errors.Join(c.err, fmt.Errorf(format, args...))
 }
