@@ -2495,9 +2495,11 @@ func (p *parser) parseForRangeLoop() *ForRangeStmt {
 
 func (p *parser) parseWhileLoop() *WhileStmt {
 	return &WhileStmt{
-		Tok:  p.consume(),
-		Cond: p.parseParenExpr(),
-		Body: p.parseBlockStmt(),
+		Tok:    p.consume(),
+		LParen: p.expect(LPAREN),
+		Cond:   p.parseExpr(),
+		RParen: p.expect(RPAREN),
+		Body:   p.parseBlockStmt(),
 	}
 }
 
@@ -2506,7 +2508,9 @@ func (p *parser) parseDoWhileLoop() *DoWhileStmt {
 		DoTok:    p.consume(),
 		Body:     p.parseBlockStmt(),
 		WhileTok: p.expect(WHILE),
-		Cond:     p.parseParenExpr(),
+		LParen:   p.expect(LPAREN),
+		Cond:     p.parseExpr(),
+		RParen:   p.expect(RPAREN),
 	}
 }
 

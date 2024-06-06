@@ -1685,8 +1685,14 @@ func (n *DoWhileStmt) FirstTok() Token {
 	case n.WhileTok != nil:
 		return n.WhileTok
 
+	case n.LParen != nil:
+		return n.LParen
+
 	case n.Cond != nil:
 		return n.Cond.FirstTok()
+
+	case n.RParen != nil:
+		return n.RParen
 
 	default:
 		return nil
@@ -1696,8 +1702,14 @@ func (n *DoWhileStmt) FirstTok() Token {
 func (n *DoWhileStmt) LastTok() Token {
 	switch {
 
+	case n.RParen != nil:
+		return n.RParen
+
 	case n.Cond != nil:
 		return n.Cond.LastTok()
+
+	case n.LParen != nil:
+		return n.LParen
 
 	case n.WhileTok != nil:
 		return n.WhileTok
@@ -1714,7 +1726,7 @@ func (n *DoWhileStmt) LastTok() Token {
 }
 
 func (n *DoWhileStmt) Children() []Node {
-	ret := make([]Node, 0, 4)
+	ret := make([]Node, 0, 6)
 
 	if n.DoTok != nil {
 		ret = append(ret, n.DoTok)
@@ -1728,8 +1740,16 @@ func (n *DoWhileStmt) Children() []Node {
 		ret = append(ret, n.WhileTok)
 	}
 
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+
 	if n.Cond != nil {
 		ret = append(ret, n.Cond)
+	}
+
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
 	}
 
 	return ret
@@ -7457,8 +7477,14 @@ func (n *WhileStmt) FirstTok() Token {
 	case n.Tok != nil:
 		return n.Tok
 
+	case n.LParen != nil:
+		return n.LParen
+
 	case n.Cond != nil:
 		return n.Cond.FirstTok()
+
+	case n.RParen != nil:
+		return n.RParen
 
 	case n.Body != nil:
 		return n.Body.FirstTok()
@@ -7474,8 +7500,14 @@ func (n *WhileStmt) LastTok() Token {
 	case n.Body != nil:
 		return n.Body.LastTok()
 
+	case n.RParen != nil:
+		return n.RParen
+
 	case n.Cond != nil:
 		return n.Cond.LastTok()
+
+	case n.LParen != nil:
+		return n.LParen
 
 	case n.Tok != nil:
 		return n.Tok
@@ -7486,14 +7518,22 @@ func (n *WhileStmt) LastTok() Token {
 }
 
 func (n *WhileStmt) Children() []Node {
-	ret := make([]Node, 0, 3)
+	ret := make([]Node, 0, 5)
 
 	if n.Tok != nil {
 		ret = append(ret, n.Tok)
 	}
 
+	if n.LParen != nil {
+		ret = append(ret, n.LParen)
+	}
+
 	if n.Cond != nil {
 		ret = append(ret, n.Cond)
+	}
+
+	if n.RParen != nil {
+		ret = append(ret, n.RParen)
 	}
 
 	if n.Body != nil {

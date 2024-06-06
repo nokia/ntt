@@ -427,9 +427,11 @@ type (
 
 	// A WhilStmt represents a "while" statement.
 	WhileStmt struct {
-		Tok  Token      // Position of "while"
-		Cond *ParenExpr // Conditional expression
-		Body *BlockStmt // Loop-body
+		Tok    Token      // Position of "while"
+		LParen Token      // Position of "("
+		Cond   Expr       // Conditional expression
+		RParen Token      // Position of ")"
+		Body   *BlockStmt // Loop-body
 	}
 
 	// A DoWhileStmt represents a do-while statement.
@@ -437,7 +439,9 @@ type (
 		DoTok    Token      // Position of "do"
 		Body     *BlockStmt // Loop-Body
 		WhileTok Token      // Position of "while"
-		Cond     *ParenExpr // Conditional expression
+		LParen   Token      // Position of "("
+		Cond     Expr       // Conditional expression
+		RParen   Token      // Position of ")"
 	}
 
 	// A IfStmt represents a conditional statement.
