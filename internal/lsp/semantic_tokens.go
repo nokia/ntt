@@ -303,11 +303,13 @@ func DefinitionToken(tree *ttcn3.Tree, id syntax.Node) (SemanticTokenType, Seman
 		if _, ok := tree.ParentOf(tree.ParentOf(tree.ParentOf(n))).(*syntax.ComponentTypeDecl); ok {
 			typ = Property
 		}
-		switch n.Kind.Kind() {
-		case syntax.CONST, syntax.MODULEPAR:
-			mod |= Readonly
-		case syntax.PORT:
-			typ = Interface
+		if n.Kind != nil {
+			switch n.Kind.Kind() {
+			case syntax.CONST, syntax.MODULEPAR:
+				mod |= Readonly
+			case syntax.PORT:
+				typ = Interface
+			}
 		}
 		return typ, mod
 	case *syntax.Declarator:

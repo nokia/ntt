@@ -166,8 +166,9 @@ func writeT3xf(conf *project.Config) error {
 }
 
 type Compiler struct {
-	err error
-	e   *t3xf.Encoder
+	err      error
+	e        *t3xf.Encoder
+	lastLine int
 }
 
 func NewCompiler() *Compiler {
@@ -192,6 +193,11 @@ func (c *Compiler) Assemble() ([]byte, error) {
 }
 
 func (c *Compiler) Compile(n syntax.Node) error {
+	if line := syntax.Begin(n).Line; line != c.lastLine {
+		c.emit(opcode.LINE, line)
+		c.lastLine = line
+	}
+
 	switch n := n.(type) {
 	case *syntax.Root:
 		c.emit(opcode.SCAN, 0)
@@ -211,8 +217,30 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.Compile(child.Def)
 		}
 		c.emit(opcode.BLOCK, 0)
-		c.emit(opcode.NAME, syntax.Name(n))
+		c.emit(opcode.NAME, n.Name.String())
 		c.emit(opcode.MODULE, 0)
+
+	case *syntax.ValueDecl:
+		var (
+			fn func(syntax.Kind, *syntax.RestrictionSpec, syntax.Token, syntax.Expr, *syntax.Declarator, *syntax.WithSpec) error
+			//typ syntax.Expr
+		)
+
+		switch n.Kind.Kind() {
+		case syntax.TIMER:
+			fn = c.compileVar
+			//typ = syntax
+		case syntax.VAR, syntax.PORT:
+			fn = c.compileVar
+		case syntax.CONST, syntax.MODULEPAR:
+			fn = c.compileConst
+		default:
+			c.errorf("unsupported declaration kind %s", n.Kind)
+			break
+		}
+		for _, decl := range n.Decls {
+			fn(n.Kind.Kind(), n.TemplateRestriction, n.Modif, n.Type, decl, n.With)
+		}
 
 	case *syntax.ControlPart:
 		if attrs := n.With; attrs != nil {
@@ -243,9 +271,40 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(op, 0)
 
 	case *syntax.WhileStmt:
+		c.emit(opcode.SCAN, 0)
+		c.Compile(n.Cond)
+		c.emit(opcode.BLOCK, 0)
+		c.Compile(n.Body)
+		c.emit(opcode.WHILE, 0)
+
+	case *syntax.DoWhileStmt:
+		c.Compile(n.Body)
+		c.emit(opcode.SCAN, 0)
+		c.Compile(n.Cond)
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.DOWHILE, 0)
+
+	case *syntax.ForStmt:
+		c.emit(opcode.SCAN, 0)
+		c.Compile(n.Init)
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.SCAN, 0)
+		c.Compile(n.Cond)
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.SCAN, 0)
+		c.Compile(n.Post)
+		c.emit(opcode.BLOCK, 0)
+		c.Compile(n.Body)
+		c.emit(opcode.FOR, 0)
 
 	case *syntax.ExprStmt:
 		c.Compile(n.Expr)
+
+	case *syntax.CallExpr:
+		for _, arg := range n.Args.List {
+			c.Compile(arg)
+		}
+		c.Compile(n.Fun)
 
 	case *syntax.BinaryExpr:
 		c.Compile(n.X)
@@ -318,6 +377,15 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.emit(opcode.NONE, 0)
 		}
 
+	case *syntax.Ident:
+		s := n.String()
+		switch s {
+		case "log":
+			c.emit(opcode.LOG, 0)
+		default:
+			c.errorf("unknown identifier %s", s)
+		}
+
 	case *syntax.WithSpec:
 		c.emit(opcode.SCAN, 0)
 		for _, child := range n.List {
@@ -329,6 +397,34 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.errorf("unexpected node type %T", n)
 	}
 
+	return nil
+}
+
+func (c *Compiler) compileVar(kind syntax.Kind, restr *syntax.RestrictionSpec, modif syntax.Token, typ syntax.Expr, decl *syntax.Declarator, attrs *syntax.WithSpec) error {
+	if attrs != nil {
+		c.errorf("attributes not supported")
+	}
+
+	if kind == syntax.TIMER {
+		c.emit(opcode.TIMER, 0)
+	} else {
+		c.Compile(typ)
+	}
+
+	c.emit(opcode.NAME, decl.Name.String())
+
+	//Kind                Token // VAR, CONST, TIMER, PORT, TEMPLATE, MODULEPAR
+	//TemplateRestriction *RestrictionSpec
+	//Modif               Token // "@lazy", "@fuzzy" or nil
+	//Type                Expr
+	//Decls               []*Declarator
+	//With                *WithSpec
+
+	return nil
+}
+
+func (c *Compiler) compileConst(kind syntax.Kind, restr *syntax.RestrictionSpec,
+	modif syntax.Token, typ syntax.Expr, decl *syntax.Declarator, attrs *syntax.WithSpec) error {
 	return nil
 }
 

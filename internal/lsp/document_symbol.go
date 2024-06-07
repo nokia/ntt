@@ -243,20 +243,21 @@ func getValueDecls(tree *ttcn3.Tree, val *syntax.ValueDecl) []protocol.DocumentS
 	end := syntax.End(val)
 	kind := protocol.Variable
 	typeName := syntax.Name(val.Type)
-	if len(typeName) > 0 {
-		typeName = " " + typeName
-	}
-	switch val.Kind.Kind() {
-	case syntax.PORT:
-		kind = protocol.Interface
-	case syntax.TIMER:
+	if typeName == "timer" {
 		kind = protocol.Event
-	case syntax.CONST, syntax.TEMPLATE, syntax.MODULEPAR:
-		kind = protocol.Constant
+	}
+	if val.Kind != nil {
+		typeName = val.Kind.String() + " " + typeName
+		switch val.Kind.Kind() {
+		case syntax.PORT:
+			kind = protocol.Interface
+		case syntax.CONST, syntax.TEMPLATE, syntax.MODULEPAR:
+			kind = protocol.Constant
+		}
 	}
 
 	for _, name := range val.Decls {
-		vdecls = append(vdecls, protocol.DocumentSymbol{Name: syntax.Name(name), Detail: val.Kind.String() + typeName, Kind: kind,
+		vdecls = append(vdecls, protocol.DocumentSymbol{Name: syntax.Name(name), Detail: typeName, Kind: kind,
 			Range:          setProtocolRange(begin, end),
 			SelectionRange: setProtocolRange(begin, end),
 			Children:       nil})

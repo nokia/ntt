@@ -2043,16 +2043,15 @@ func (p *parser) parseValueDecl() *ValueDecl {
 	if p.trace {
 		defer un(trace(p, "ValueDecl"))
 	}
-	x := &ValueDecl{Kind: p.consume()}
-	x.TemplateRestriction = p.parseRestrictionSpec()
-
-	if p.tok == MODIF {
-		x.Modif = p.consume()
+	x := &ValueDecl{}
+	if p.tok != TIMER {
+		x.Kind = p.consume()
+		x.TemplateRestriction = p.parseRestrictionSpec()
+		if p.tok == MODIF {
+			x.Modif = p.consume()
+		}
 	}
-
-	if x.Kind.Kind() != TIMER {
-		x.Type = p.parseTypeRef()
-	}
+	x.Type = p.parseTypeRef()
 	x.Decls = p.parseDeclList()
 	x.With = p.parseWith()
 	return x
