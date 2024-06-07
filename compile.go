@@ -169,11 +169,13 @@ type Compiler struct {
 	err      error
 	e        *t3xf.Encoder
 	lastLine int
+	fields   map[string]int
 }
 
 func NewCompiler() *Compiler {
 	c := &Compiler{
-		e: t3xf.NewEncoder(),
+		e:      t3xf.NewEncoder(),
+		fields: make(map[string]int),
 	}
 	c.emit(opcode.NOP, 0)
 	c.emit(opcode.NATLONG, 2)
@@ -220,15 +222,34 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(opcode.NAME, n.Name.String())
 		c.emit(opcode.MODULE, 0)
 
+	case *syntax.FuncDecl:
+		switch k := n.Kind.Kind(); {
+		case k == syntax.FUNCTION && n.External == nil:
+			c.compileFunction(n)
+		case k == syntax.FUNCTION && n.External != nil:
+			c.compileExtFunc(n)
+		case k == syntax.TESTCASE:
+			c.compileTestcase(n)
+		case k == syntax.ALTSTEP:
+			c.compileAltstep(n)
+		default:
+			c.errorf("unsupported behaviour %s", k)
+		}
+
 	case *syntax.ValueDecl:
 		k := syntax.VAR
-		fn := c.compileVar
 		if n.Kind != nil {
 			k = n.Kind.Kind()
-			if k == syntax.CONST || k == syntax.MODULEPAR {
-				fn = c.compileConst
-			}
 		}
+
+		fn := c.compileVar
+		switch k {
+		case syntax.CONST:
+			fn = c.compileConst
+		case syntax.MODULEPAR:
+			fn = c.compileModulePar
+		}
+
 		for _, decl := range n.Decls {
 			fn(k, n.TemplateRestriction, n.Modif, n.Type, decl, n.With)
 		}
@@ -250,6 +271,12 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.Compile(child)
 		}
 		c.emit(opcode.BLOCK, 0)
+
+	case *syntax.ReturnStmt:
+		if n.Result != nil {
+			c.Compile(n.Result)
+		}
+		c.emit(opcode.RETURN, 0)
 
 	case *syntax.IfStmt:
 		op := opcode.IF
@@ -320,6 +347,8 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.emit(opcode.EQ, 0)
 		case syntax.NE:
 			c.emit(opcode.NE, 0)
+		case syntax.RANGE:
+			c.emit(opcode.RANGE, 0)
 		default:
 			c.errorf("unsupported binary operator %s", n.Op)
 		}
@@ -371,6 +400,9 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.emit(opcode.NONE, 0)
 		}
 
+	case *syntax.RefSpec:
+		c.Compile(n.X)
+
 	case *syntax.Ident:
 		s := n.String()
 		switch s {
@@ -378,6 +410,18 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.emit(opcode.LOG, 0)
 		case "integer":
 			c.emit(opcode.INTEGER, 0)
+		case "float":
+			c.emit(opcode.FLOAT, 0)
+		case "bitstring":
+			c.emit(opcode.BITSTRING, 0)
+		case "hexstring":
+			c.emit(opcode.HEXSTRING, 0)
+		case "octetstring":
+			c.emit(opcode.OCTETSTRING, 0)
+		case "boolean":
+			c.emit(opcode.BOOLEAN, 0)
+		case "charstring":
+			c.emit(opcode.CHARSTRING, 0)
 		case "timer":
 			c.emit(opcode.TIMER, 0)
 		default:
@@ -391,10 +435,283 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		}
 		c.emit(opcode.BLOCK, 0)
 
+	case *syntax.FormalPars:
+		if len(n.List) == 0 {
+			c.emit(opcode.SKIP, 0)
+			break
+		}
+		c.emit(opcode.SCAN, 0)
+		for _, child := range n.List {
+			c.Compile(child)
+		}
+		c.emit(opcode.BLOCK, 0)
+
+	case *syntax.FormalPar:
+		c.Compile(n.Type)
+		if n.TemplateRestriction != nil {
+			c.Compile(n.TemplateRestriction)
+		}
+		c.emit(opcode.NAME, n.Name.String())
+		dir := opcode.IN
+		if n.Direction != nil {
+			switch n.Direction.Kind() {
+			case syntax.OUT:
+				dir = opcode.OUT
+			case syntax.INOUT:
+				dir = opcode.INOUT
+			}
+		}
+		c.emit(dir, 0)
+
+	case *syntax.RestrictionSpec:
+		op := opcode.PERMITT
+		if n.Tok != nil {
+			switch n.Tok.Kind() {
+			case syntax.OMIT:
+				op = opcode.PERMITO
+			case syntax.PRESENT:
+				op = opcode.PERMITP
+			}
+		}
+		c.emit(op, 0)
+
+	case *syntax.ReturnSpec:
+		c.Compile(n.Type)
+		if n.Restriction != nil {
+			c.Compile(n.Restriction)
+		}
+
+	case *syntax.StructTypeDecl:
+		op := opcode.TYPE
+		if n.With != nil {
+			op = opcode.TYPEW
+			c.Compile(n.With)
+		}
+		c.emit(opcode.SCAN, 0)
+		for _, field := range n.Fields {
+			c.Compile(field)
+			c.emit(opcode.NAME, field.Name.String())
+			switch {
+			case field.Optional != nil:
+				c.emit(opcode.FIELDO, 0)
+			case n.Kind.Kind() == syntax.UNION:
+				c.emit(opcode.IFIELD, c.fieldIndex(field.Name.String()))
+			default:
+				c.emit(opcode.FIELD, 0)
+			}
+		}
+		c.emit(opcode.BLOCK, 0)
+		switch n.Kind.Kind() {
+		case syntax.RECORD:
+			c.emit(opcode.RECORD, 0)
+		case syntax.SET:
+			c.emit(opcode.SET, 0)
+		case syntax.UNION:
+			c.emit(opcode.UNION, 0)
+		default:
+			c.errorf("unsupported struct type %s", n.Kind)
+		}
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(op, 0)
+
+	case *syntax.SubTypeDecl:
+		op := opcode.TYPE
+		if n.With != nil {
+			op = opcode.TYPEW
+			c.Compile(n.With)
+		}
+		c.Compile(n.Field)
+		c.emit(opcode.NAME, n.Field.Name.String())
+		c.emit(op, 0)
+
+	case *syntax.Field:
+		c.Compile(n.Type)
+
+		// NOTE: This length constraint must move to the element type. not sure how this works mit structs (inside fields)
+		if n.ValueConstraint != nil || n.LengthConstraint != nil {
+			c.emit(opcode.SCAN, 0)
+			if n.ValueConstraint != nil {
+				c.emit(opcode.MARK, 0)
+				for _, x := range n.ValueConstraint.List {
+					c.Compile(x)
+				}
+				c.emit(opcode.COLLECT, 0)
+			} else {
+				c.emit(opcode.ANY, 0)
+			}
+			if n.LengthConstraint != nil {
+				for _, x := range n.LengthConstraint.Size.List {
+					c.Compile(x)
+				}
+				c.emit(opcode.LENGTH, 0)
+			}
+			c.emit(opcode.BLOCK, 0)
+			c.emit(opcode.SUBTYPE, 0)
+		}
+
+		for i := len(n.ArrayDef) - 1; i >= 0; i-- {
+			c.emit(opcode.SCAN, 0)
+			for _, x := range n.ArrayDef[i].List {
+				c.Compile(x)
+			}
+			c.emit(opcode.BLOCK, 0)
+			c.emit(opcode.ARRAY, 0)
+		}
+
+	case *syntax.ListSpec:
+		c.Compile(n.ElemType)
+		switch n.Kind.Kind() {
+		case syntax.RECORD:
+			c.emit(opcode.RECORDOF, 0)
+		case syntax.SET:
+			c.emit(opcode.SETOF, 0)
+		default:
+			c.errorf("unsupported list type %s", n.Kind)
+
+		}
+		if n.Length != nil {
+			c.emit(opcode.SCAN, 0)
+			c.emit(opcode.ANY, 0)
+			for _, x := range n.Length.Size.List {
+				c.Compile(x)
+			}
+			c.emit(opcode.LENGTH, 0)
+			c.emit(opcode.BLOCK, 0)
+			c.emit(opcode.SUBTYPE, 0)
+		}
+
 	default:
 		c.errorf("unexpected node type %T", n)
 	}
 
+	return nil
+}
+
+func (c *Compiler) compileFunction(n *syntax.FuncDecl) error {
+	if n.With != nil {
+		c.errorf("function attributes not supported")
+	}
+	if n.Mtc != nil {
+		c.errorf("MTC clause not supported")
+	}
+
+	switch {
+	case n.Return == nil && n.RunsOn == nil:
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTION, 0)
+
+	case n.Return == nil && n.RunsOn != nil:
+		c.Compile(n.RunsOn.Comp)
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONB, 0)
+
+	case n.Return != nil && n.RunsOn == nil:
+		c.Compile(n.Return)
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONV, 0)
+
+	case n.Return != nil && n.RunsOn != nil:
+		c.Compile(n.RunsOn.Comp)
+		c.Compile(n.Return)
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONVB, 0)
+	}
+
+	return nil
+}
+
+func (c *Compiler) compileExtFunc(n *syntax.FuncDecl) error {
+	if n.Mtc != nil {
+		c.errorf("MTC clause not supported")
+	}
+
+	if n.RunsOn != nil {
+		c.errorf("runs on clause not supported")
+	}
+
+	switch {
+	case n.Return == nil && n.With == nil:
+		c.Compile(n.Params)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONX, 0)
+
+	case n.Return == nil && n.With != nil:
+		c.Compile(n.With)
+		c.Compile(n.Params)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONXW, 0)
+
+	case n.Return != nil && n.With == nil:
+		c.Compile(n.Return)
+		c.Compile(n.Params)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONXV, 0)
+
+	case n.Return != nil && n.With != nil:
+		c.Compile(n.Return)
+		c.Compile(n.With)
+		c.Compile(n.Params)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.FUNCTIONXVW, 0)
+	}
+	return nil
+}
+
+func (c *Compiler) compileTestcase(n *syntax.FuncDecl) error {
+	op := opcode.TESTCASE
+	if n.System != nil {
+		op = opcode.TESTCASES
+		c.Compile(n.System.Comp)
+	}
+	c.Compile(n.RunsOn.Comp)
+	c.Compile(n.Params)
+	c.Compile(n.Body)
+	c.emit(opcode.NAME, n.Name.String())
+	c.emit(op, 0)
+	return nil
+}
+
+func (c *Compiler) compileAltstep(n *syntax.FuncDecl) error {
+	if n.Mtc != nil {
+		c.errorf("MTC clause not supported")
+	}
+
+	switch {
+	case n.RunsOn == nil && n.With == nil:
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.ALTSTEP, 0)
+
+	case n.RunsOn == nil && n.With != nil:
+		c.Compile(n.With)
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.ALTSTEPW, 0)
+
+	case n.RunsOn != nil && n.With == nil:
+		c.Compile(n.RunsOn.Comp)
+		c.Compile(n.Params)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.ALTSTEPB, 0)
+
+	case n.RunsOn != nil && n.With != nil:
+		c.Compile(n.RunsOn.Comp)
+		c.Compile(n.With)
+		c.Compile(n.Params)
+		c.Compile(n.Body)
+		c.emit(opcode.NAME, n.Name.String())
+		c.emit(opcode.ALTSTEPBW, 0)
+	}
 	return nil
 }
 
@@ -426,6 +743,67 @@ func (c *Compiler) compileVar(kind syntax.Kind, restr *syntax.RestrictionSpec, m
 
 func (c *Compiler) compileConst(kind syntax.Kind, restr *syntax.RestrictionSpec,
 	modif syntax.Token, typ syntax.Expr, decl *syntax.Declarator, attrs *syntax.WithSpec) error {
+	op := opcode.CONST
+	if attrs != nil {
+		op = opcode.CONSTW
+		c.Compile(attrs)
+	}
+
+	if decl.Value != nil {
+		c.emit(opcode.SCAN, 0)
+		c.Compile(decl.Value)
+		c.emit(opcode.BLOCK, 0)
+	} else {
+		c.errorf("constant declaration without value")
+	}
+
+	c.Compile(typ)
+	for i := len(decl.ArrayDef) - 1; i >= 0; i-- {
+		c.emit(opcode.SCAN, 0)
+		for _, x := range decl.ArrayDef[i].List {
+			c.Compile(x)
+		}
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.ARRAY, 0)
+	}
+	c.emit(opcode.NAME, decl.Name.String())
+	if modif != nil {
+		c.errorf("modifiers not supported")
+	}
+	c.emit(op, 0)
+	return nil
+}
+
+func (c *Compiler) compileModulePar(kind syntax.Kind, restr *syntax.RestrictionSpec,
+	modif syntax.Token, typ syntax.Expr, decl *syntax.Declarator, attrs *syntax.WithSpec) error {
+
+	op := opcode.MPAR
+	if decl.Value != nil {
+		op = opcode.MPARD
+		c.emit(opcode.SCAN, 0)
+		c.Compile(decl.Value)
+		c.emit(opcode.BLOCK, 0)
+	}
+
+	if attrs != nil {
+		c.errorf("attributes not supported")
+	}
+	if modif != nil {
+		c.errorf("modifiers not supported")
+	}
+
+	c.Compile(typ)
+	for i := len(decl.ArrayDef) - 1; i >= 0; i-- {
+		c.emit(opcode.SCAN, 0)
+		for _, x := range decl.ArrayDef[i].List {
+			c.Compile(x)
+		}
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.ARRAY, 0)
+	}
+
+	c.emit(opcode.NAME, decl.Name.String())
+	c.emit(op, 0)
 	return nil
 }
 
@@ -440,4 +818,13 @@ func (c *Compiler) emit(op opcode.Opcode, arg any) int {
 
 func (c *Compiler) errorf(format string, args ...interface{}) {
 	c.err = errors.Join(c.err, fmt.Errorf(format, args...))
+}
+
+func (c *Compiler) fieldIndex(name string) int {
+	i, ok := c.fields[name]
+	if !ok {
+		i = len(c.fields)
+		c.fields[name] = i
+	}
+	return i
 }
