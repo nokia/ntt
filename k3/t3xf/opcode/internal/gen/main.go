@@ -20,6 +20,17 @@ var funcs = template.FuncMap{
 	"encode": func(op int) string {
 		return fmt.Sprintf("0x%04x", op*16+3)
 	},
+	"comment": func(s string) string {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			return ""
+		}
+
+		return "// " + strings.ReplaceAll(s, "\n", "\n// ")
+	},
+	"join": func(a []string, sep string) string {
+		return strings.Join(a, sep)
+	},
 }
 
 func main() {

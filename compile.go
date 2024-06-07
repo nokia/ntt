@@ -221,22 +221,11 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(opcode.MODULE, 0)
 
 	case *syntax.ValueDecl:
-		var (
-			fn func(syntax.Kind, *syntax.RestrictionSpec, syntax.Token, syntax.Expr, *syntax.Declarator, *syntax.WithSpec) error
-			//typ syntax.Expr
-		)
-
-		switch n.Kind.Kind() {
-		case syntax.TIMER:
-			fn = c.compileVar
-			//typ = syntax
-		case syntax.VAR, syntax.PORT:
-			fn = c.compileVar
-		case syntax.CONST, syntax.MODULEPAR:
-			fn = c.compileConst
-		default:
-			c.errorf("unsupported declaration kind %s", n.Kind)
-			break
+		fn := c.compileVar
+		if n.Kind != nil {
+			if k := n.Kind.Kind(); k == syntax.CONST || k == syntax.MODULEPAR {
+				fn = c.compileConst
+			}
 		}
 		for _, decl := range n.Decls {
 			fn(n.Kind.Kind(), n.TemplateRestriction, n.Modif, n.Type, decl, n.With)
@@ -405,13 +394,11 @@ func (c *Compiler) compileVar(kind syntax.Kind, restr *syntax.RestrictionSpec, m
 		c.errorf("attributes not supported")
 	}
 
-	if kind == syntax.TIMER {
-		c.emit(opcode.TIMER, 0)
-	} else {
-		c.Compile(typ)
-	}
-
+	c.Compile(typ)
 	c.emit(opcode.NAME, decl.Name.String())
+	if modif != nil {
+		c.errorf("modifiers not supported")
+	}
 
 	//Kind                Token // VAR, CONST, TIMER, PORT, TEMPLATE, MODULEPAR
 	//TemplateRestriction *RestrictionSpec

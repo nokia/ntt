@@ -11,6 +11,8 @@ const (
 	OPERATION        Opcode = 3
 	FROZEN_REF       Opcode = 4
 	{{ range $name, $op := . }}
+
+	{{ comment $op.Description }}
 	{{ uc $name }} Opcode = {{ encode $op.Opcode }}{{ end }}
 )
 
