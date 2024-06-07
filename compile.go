@@ -221,14 +221,16 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(opcode.MODULE, 0)
 
 	case *syntax.ValueDecl:
+		k := syntax.VAR
 		fn := c.compileVar
 		if n.Kind != nil {
-			if k := n.Kind.Kind(); k == syntax.CONST || k == syntax.MODULEPAR {
+			k = n.Kind.Kind()
+			if k == syntax.CONST || k == syntax.MODULEPAR {
 				fn = c.compileConst
 			}
 		}
 		for _, decl := range n.Decls {
-			fn(n.Kind.Kind(), n.TemplateRestriction, n.Modif, n.Type, decl, n.With)
+			fn(k, n.TemplateRestriction, n.Modif, n.Type, decl, n.With)
 		}
 
 	case *syntax.ControlPart:
@@ -288,6 +290,9 @@ func (c *Compiler) Compile(n syntax.Node) error {
 
 	case *syntax.ExprStmt:
 		c.Compile(n.Expr)
+
+	case *syntax.DeclStmt:
+		c.Compile(n.Decl)
 
 	case *syntax.CallExpr:
 		for _, arg := range n.Args.List {
@@ -371,6 +376,10 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		switch s {
 		case "log":
 			c.emit(opcode.LOG, 0)
+		case "integer":
+			c.emit(opcode.INTEGER, 0)
+		case "timer":
+			c.emit(opcode.TIMER, 0)
 		default:
 			c.errorf("unknown identifier %s", s)
 		}
@@ -393,20 +402,25 @@ func (c *Compiler) compileVar(kind syntax.Kind, restr *syntax.RestrictionSpec, m
 	if attrs != nil {
 		c.errorf("attributes not supported")
 	}
-
 	c.Compile(typ)
+	for i := len(decl.ArrayDef) - 1; i >= 0; i-- {
+		c.emit(opcode.SCAN, 0)
+		for _, x := range decl.ArrayDef[i].List {
+			c.Compile(x)
+		}
+		c.emit(opcode.BLOCK, 0)
+		c.emit(opcode.ARRAY, 0)
+	}
 	c.emit(opcode.NAME, decl.Name.String())
 	if modif != nil {
 		c.errorf("modifiers not supported")
 	}
-
-	//Kind                Token // VAR, CONST, TIMER, PORT, TEMPLATE, MODULEPAR
-	//TemplateRestriction *RestrictionSpec
-	//Modif               Token // "@lazy", "@fuzzy" or nil
-	//Type                Expr
-	//Decls               []*Declarator
-	//With                *WithSpec
-
+	addr := c.emit(opcode.VAR, 0)
+	if decl.Value != nil {
+		c.Compile(decl.Value)
+		c.emit(opcode.REF, t3xf.Reference(addr))
+		c.emit(opcode.ASSIGN, 0)
+	}
 	return nil
 }
 

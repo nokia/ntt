@@ -131,6 +131,14 @@ func (e *Encoder) Encode(op opcode.Opcode, arg any) error {
 }
 
 func (e *Encoder) encodeRef(op opcode.Opcode, arg any) error {
+	if ref, ok := arg.(Reference); ok {
+		if ref < 0 || ref > math.MaxInt32 {
+			return e.errorf("%w: argument too large: 0x%04x", ErrInvalidArg, ref)
+		}
+		e.appendUint32(opcode.Pack(op, int(ref)))
+		return nil
+	}
+
 	refI, ok := arg.(int)
 	if !ok {
 		return e.errorf("%w: integer argument expected: %v", ErrInvalidArg, arg)
