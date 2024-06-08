@@ -1851,6 +1851,16 @@ module:
     owning the current block. Parameters are a block dblk of
     sub-definitions and the group name.
 
+modulew:
+  opcode: 143
+  context:
+  - vm
+  operations:
+  - pre: [ablk, bblk, name]
+    post: []
+  description: |+
+    Define a module object with attributes.
+
 move:
   opcode: 94
   operations:
