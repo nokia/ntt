@@ -10,6 +10,19 @@ import (
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
+var universe = &scope{
+	store: map[string]symbol{
+		"log":         {op: opcode.LOG},
+		"integer":     {op: opcode.INTEGER},
+		"float":       {op: opcode.FLOAT},
+		"bitstring":   {op: opcode.BITSTRING},
+		"hexstring":   {op: opcode.HEXSTRING},
+		"octetstring": {op: opcode.OCTETSTRING},
+		"boolean":     {op: opcode.BOOLEAN},
+		"charstring":  {op: opcode.CHARSTRING},
+		"timer":       {op: opcode.TIMER},
+	}}
+
 type scope struct {
 	parent *scope
 	store  map[string]symbol
@@ -27,7 +40,7 @@ func (s *scope) lookup(name string) (symbol, bool) {
 	return obj, ok
 }
 
-func (s *scope) insert(name string, sym symbol) {
+func (s *scope) define(name string, sym symbol) {
 	s.store[name] = sym
 }
 
@@ -49,6 +62,7 @@ func NewCompiler() *Compiler {
 	return &Compiler{
 		e:      NewEncoder(),
 		fields: make(map[string]int),
+		scope:  newScope(universe),
 	}
 }
 
@@ -84,7 +98,6 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		}
 
 	case *syntax.Module:
-		c.scope.insert(n.Name.String(), symbol{n: n})
 		c.scope = newScope(c.scope)
 
 		op := opcode.MODULE
@@ -99,8 +112,9 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(opcode.BLOCK, 0)
 
 		c.emit(opcode.NAME, n.Name.String())
-		c.emit(op, 0)
+		addr := c.emit(op, 0)
 		c.scope = c.scope.parent
+		c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 
 	case *syntax.ModuleDef:
 		c.Compile(n.Def)
@@ -140,23 +154,27 @@ func (c *Compiler) Compile(n syntax.Node) error {
 	case *syntax.ControlPart:
 		op := opcode.CONTROL
 		if attrs := n.With; attrs != nil {
-			op := opcode.CONTROLW
+			op = opcode.CONTROLW
 			c.Compile(attrs)
 		}
 		c.Compile(n.Body)
+
 		addr := c.emit(op, 0)
-		c.scope.insert("control", symbol{n: n, op: opcode.REF, arg: Reference(addr)})
+		c.scope.define("control", symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 
 	case *syntax.BlockStmt:
 		if len(n.Stmts) == 0 {
 			c.emit(opcode.SKIP, 0)
 			break
 		}
+
+		c.scope = newScope(c.scope)
 		c.emit(opcode.SCAN, 0)
 		for _, child := range n.Stmts {
 			c.Compile(child)
 		}
 		c.emit(opcode.BLOCK, 0)
+		c.scope = c.scope.parent
 
 	case *syntax.ReturnStmt:
 		if n.Result != nil {
@@ -189,6 +207,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(opcode.DOWHILE, 0)
 
 	case *syntax.ForStmt:
+		c.scope = newScope(c.scope)
 		c.emit(opcode.SCAN, 0)
 		c.Compile(n.Init)
 		c.emit(opcode.BLOCK, 0)
@@ -200,6 +219,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.emit(opcode.BLOCK, 0)
 		c.Compile(n.Body)
 		c.emit(opcode.FOR, 0)
+		c.scope = c.scope.parent
 
 	case *syntax.ExprStmt:
 		c.Compile(n.Expr)
@@ -290,29 +310,12 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.Compile(n.X)
 
 	case *syntax.Ident:
-		s := n.String()
-		switch s {
-		case "log":
-			c.emit(opcode.LOG, 0)
-		case "integer":
-			c.emit(opcode.INTEGER, 0)
-		case "float":
-			c.emit(opcode.FLOAT, 0)
-		case "bitstring":
-			c.emit(opcode.BITSTRING, 0)
-		case "hexstring":
-			c.emit(opcode.HEXSTRING, 0)
-		case "octetstring":
-			c.emit(opcode.OCTETSTRING, 0)
-		case "boolean":
-			c.emit(opcode.BOOLEAN, 0)
-		case "charstring":
-			c.emit(opcode.CHARSTRING, 0)
-		case "timer":
-			c.emit(opcode.TIMER, 0)
-		default:
-			c.errorf("unknown identifier %s", s)
+		name := n.String()
+		sym, ok := c.scope.lookup(name)
+		if !ok {
+			c.errorf("undefined identifier %s", name)
 		}
+		c.emit(sym.op, sym.arg)
 
 	case *syntax.WithSpec:
 		c.emit(opcode.SCAN, 0)
@@ -360,7 +363,8 @@ func (c *Compiler) Compile(n syntax.Node) error {
 				dir = opcode.INOUT
 			}
 		}
-		c.emit(dir, 0)
+		addr := c.emit(dir, 0)
+		c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 
 	case *syntax.RestrictionSpec:
 		op := opcode.PERMITT
@@ -381,6 +385,8 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		}
 
 	case *syntax.StructTypeDecl:
+		c.scope = newScope(c.scope)
+
 		op := opcode.TYPE
 		if n.With != nil {
 			op = opcode.TYPEW
@@ -398,6 +404,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			default:
 				c.emit(opcode.FIELD, 0)
 			}
+
 		}
 		c.emit(opcode.BLOCK, 0)
 		switch n.Kind.Kind() {
@@ -411,9 +418,13 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.errorf("unsupported struct type %s", n.Kind)
 		}
 		c.emit(opcode.NAME, n.Name.String())
-		c.emit(op, 0)
+		addr := c.emit(op, 0)
+		c.scope = c.scope.parent
+		c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 
 	case *syntax.SubTypeDecl:
+		c.scope = newScope(c.scope)
+
 		op := opcode.TYPE
 		if n.With != nil {
 			op = opcode.TYPEW
@@ -421,7 +432,9 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		}
 		c.Compile(n.Field)
 		c.emit(opcode.NAME, n.Field.Name.String())
-		c.emit(op, 0)
+		addr := c.emit(op, 0)
+		c.scope = c.scope.parent
+		c.scope.define(n.Field.Name.String(), symbol{n: n.Field, op: opcode.REF, arg: Reference(addr)})
 
 	case *syntax.Field:
 		c.Compile(n.Type)
@@ -480,7 +493,6 @@ func (c *Compiler) Compile(n syntax.Node) error {
 }
 
 func (c *Compiler) compileFunction(n *syntax.FuncDecl) error {
-	c.scope.insert(n.Name.String(), symbol{n: n})
 	c.scope = newScope(c.scope)
 
 	if n.With != nil {
@@ -509,14 +521,14 @@ func (c *Compiler) compileFunction(n *syntax.FuncDecl) error {
 	c.Compile(n.Params)
 	c.Compile(n.Body)
 	c.emit(opcode.NAME, n.Name.String())
-	c.emit(op, 0)
+	addr := c.emit(op, 0)
 
 	c.scope = c.scope.parent
+	c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 	return nil
 }
 
 func (c *Compiler) compileExtFunc(n *syntax.FuncDecl) error {
-	c.scope.insert(n.Name.String(), symbol{n: n})
 	c.scope = newScope(c.scope)
 
 	if n.Mtc != nil {
@@ -544,14 +556,14 @@ func (c *Compiler) compileExtFunc(n *syntax.FuncDecl) error {
 	}
 	c.Compile(n.Params)
 	c.emit(opcode.NAME, n.Name.String())
-	c.emit(op, 0)
+	addr := c.emit(op, 0)
 
 	c.scope = c.scope.parent
+	c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 	return nil
 }
 
 func (c *Compiler) compileTestcase(n *syntax.FuncDecl) error {
-	c.scope.insert(n.Name.String(), symbol{n: n})
 	c.scope = newScope(c.scope)
 
 	op := opcode.TESTCASE
@@ -563,14 +575,14 @@ func (c *Compiler) compileTestcase(n *syntax.FuncDecl) error {
 	c.Compile(n.Params)
 	c.Compile(n.Body)
 	c.emit(opcode.NAME, n.Name.String())
-	c.emit(op, 0)
+	addr := c.emit(op, 0)
 
 	c.scope = c.scope.parent
+	c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 	return nil
 }
 
 func (c *Compiler) compileAltstep(n *syntax.FuncDecl) error {
-	c.scope.insert(n.Name.String(), symbol{n: n})
 	c.scope = newScope(c.scope)
 
 	if n.Mtc != nil {
@@ -596,7 +608,9 @@ func (c *Compiler) compileAltstep(n *syntax.FuncDecl) error {
 	c.Compile(n.Params)
 	c.Compile(n.Body)
 	c.emit(opcode.NAME, n.Name.String())
-	c.emit(op, 0)
+	addr := c.emit(op, 0)
+	c.scope = c.scope.parent
+	c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
 
 	return nil
 }
@@ -613,12 +627,12 @@ func (c *Compiler) compileVar(kind syntax.Kind, restr *syntax.RestrictionSpec, m
 		c.errorf("modifiers not supported")
 	}
 	addr := c.emit(opcode.VAR, 0)
-	c.scope.insert(decl.Name.String(), symbol{n: decl, op: opcode.REF, arg: Reference(addr)})
 	if decl.Value != nil {
 		c.Compile(decl.Value)
 		c.emit(opcode.REF, Reference(addr))
 		c.emit(opcode.ASSIGN, 0)
 	}
+	c.scope.define(decl.Name.String(), symbol{n: decl, op: opcode.REF, arg: Reference(addr)})
 	return nil
 }
 
@@ -645,7 +659,7 @@ func (c *Compiler) compileConst(kind syntax.Kind, restr *syntax.RestrictionSpec,
 		c.errorf("modifiers not supported")
 	}
 	addr := c.emit(op, 0)
-	c.scope.insert(decl.Name.String(), symbol{n: decl, op: opcode.REF, arg: Reference(addr)})
+	c.scope.define(decl.Name.String(), symbol{n: decl, op: opcode.REF, arg: Reference(addr)})
 	return nil
 }
 
@@ -683,7 +697,7 @@ func (c *Compiler) compileModulePar(kind syntax.Kind, restr *syntax.RestrictionS
 
 	c.emit(opcode.NAME, decl.Name.String())
 	addr := c.emit(op, 0)
-	c.scope.insert(decl.Name.String(), symbol{n: decl, op: opcode.REF, arg: Reference(addr)})
+	c.scope.define(decl.Name.String(), symbol{n: decl, op: opcode.REF, arg: Reference(addr)})
 	return nil
 }
 
