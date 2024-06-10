@@ -306,6 +306,13 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			c.emit(opcode.NONE, 0)
 		}
 
+	case *syntax.CompositeLiteral:
+		c.emit(opcode.MARK, 0)
+		for _, elem := range n.List {
+			c.Compile(elem)
+		}
+		c.emit(opcode.VLIST, 0)
+
 	case *syntax.RefSpec:
 		c.Compile(n.X)
 
@@ -392,31 +399,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			op = opcode.TYPEW
 			c.Compile(n.With)
 		}
-		c.emit(opcode.SCAN, 0)
-		for _, field := range n.Fields {
-			c.Compile(field)
-			c.emit(opcode.NAME, field.Name.String())
-			switch {
-			case field.Optional != nil:
-				c.emit(opcode.FIELDO, 0)
-			case n.Kind.Kind() == syntax.UNION:
-				c.emit(opcode.IFIELD, c.fieldIndex(field.Name.String()))
-			default:
-				c.emit(opcode.FIELD, 0)
-			}
-
-		}
-		c.emit(opcode.BLOCK, 0)
-		switch n.Kind.Kind() {
-		case syntax.RECORD:
-			c.emit(opcode.RECORD, 0)
-		case syntax.SET:
-			c.emit(opcode.SET, 0)
-		case syntax.UNION:
-			c.emit(opcode.UNION, 0)
-		default:
-			c.errorf("unsupported struct type %s", n.Kind)
-		}
+		c.compileStruct(n.Kind.Kind(), n.Fields)
 		c.emit(opcode.NAME, n.Name.String())
 		addr := c.emit(op, 0)
 		c.scope = c.scope.parent
@@ -437,56 +420,102 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.scope.define(n.Field.Name.String(), symbol{n: n.Field, op: opcode.REF, arg: Reference(addr)})
 
 	case *syntax.Field:
-		c.Compile(n.Type)
-
-		// NOTE: This length constraint must move to the element type. not sure how this works mit structs (inside fields)
-		if n.ValueConstraint != nil || n.LengthConstraint != nil {
-			switch {
-			case n.ValueConstraint == nil:
-				c.emit(opcode.ANY, 0)
-			case len(n.ValueConstraint.List) == 1:
-				c.Compile(n.ValueConstraint.List[0])
-			case len(n.ValueConstraint.List) > 1:
-				c.emit(opcode.MARK, 0)
-				for _, x := range n.ValueConstraint.List {
-					c.Compile(x)
-				}
-				c.emit(opcode.COLLECT, 0)
-			}
-			if n.LengthConstraint != nil {
-				for _, x := range n.LengthConstraint.Size.List {
-					c.Compile(x)
-				}
-				c.emit(opcode.LENGTH, 0)
-			}
-			c.emit(opcode.SUBTYPE, 0)
-		}
+		c.compileNestedType(n.Type, n.ValueConstraint, n.LengthConstraint)
 		c.compileArrayDef(n.ArrayDef)
 
 	case *syntax.ListSpec:
-		c.Compile(n.ElemType)
-		switch n.Kind.Kind() {
+		c.compileNestedType(n, nil, nil)
+
+	case *syntax.StructSpec:
+		c.scope = newScope(c.scope)
+		c.compileStruct(n.Kind.Kind(), n.Fields)
+		c.scope = c.scope.parent
+
+	default:
+		c.errorf("unexpected node type %T", n)
+	}
+
+	return nil
+}
+
+func (c *Compiler) compileStruct(k syntax.Kind, fields []*syntax.Field) error {
+	if len(fields) == 0 {
+		c.emit(opcode.SKIP, 0)
+	} else {
+		c.emit(opcode.SCAN, 0)
+		for _, field := range fields {
+			c.Compile(field)
+			c.emit(opcode.NAME, field.Name.String())
+			switch {
+			case field.Optional != nil:
+				c.emit(opcode.FIELDO, 0)
+			case k == syntax.UNION:
+				c.emit(opcode.IFIELD, c.fieldIndex(field.Name.String()))
+			default:
+				c.emit(opcode.FIELD, 0)
+			}
+
+		}
+		c.emit(opcode.BLOCK, 0)
+	}
+	switch k {
+	case syntax.RECORD:
+		c.emit(opcode.RECORD, 0)
+	case syntax.SET:
+		c.emit(opcode.SET, 0)
+	case syntax.UNION:
+		c.emit(opcode.UNION, 0)
+	default:
+		c.errorf("unsupported struct type %s", k)
+	}
+	return nil
+}
+
+func (c *Compiler) compileNestedType(ty syntax.TypeSpec, vc *syntax.ParenExpr, le *syntax.LengthExpr) error {
+	if ls, ok := ty.(*syntax.ListSpec); ok {
+		c.compileNestedType(ls.ElemType, vc, le)
+		switch ls.Kind.Kind() {
 		case syntax.RECORD:
 			c.emit(opcode.RECORDOF, 0)
 		case syntax.SET:
 			c.emit(opcode.SETOF, 0)
 		default:
-			c.errorf("unsupported list type %s", n.Kind)
+			c.errorf("unsupported list type %s", ls.Kind)
 
 		}
-		if n.Length != nil {
-			c.emit(opcode.SCAN, 0)
+		if ls.Length != nil {
 			c.emit(opcode.ANY, 0)
-			for _, x := range n.Length.Size.List {
+			for _, x := range ls.Length.Size.List {
 				c.Compile(x)
 			}
 			c.emit(opcode.LENGTH, 0)
-			c.emit(opcode.BLOCK, 0)
 			c.emit(opcode.SUBTYPE, 0)
 		}
+		return nil
+	}
 
-	default:
-		c.errorf("unexpected node type %T", n)
+	c.Compile(ty)
+
+	if vc != nil || le != nil {
+		switch {
+		case vc == nil:
+			c.emit(opcode.ANY, 0)
+		case len(vc.List) == 1:
+			c.Compile(vc.List[0])
+		case len(vc.List) > 1:
+			c.emit(opcode.MARK, 0)
+			for _, x := range vc.List {
+				c.Compile(x)
+			}
+			c.emit(opcode.COLLECT, 0)
+		}
+		if le != nil {
+			for _, x := range le.Size.List {
+				c.Compile(x)
+			}
+			c.emit(opcode.LENGTH, 0)
+		}
+		c.emit(opcode.SUBTYPE, 0)
 	}
 
 	return nil

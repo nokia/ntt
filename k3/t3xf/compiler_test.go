@@ -33,7 +33,7 @@ func TestCompiler(t *testing.T) {
 			"name a",
 			"var",
 			"natlong 1",
-			"ref 40",
+			"ref 20",
 			"assign",
 		}},
 
@@ -275,7 +275,7 @@ func TestCompiler(t *testing.T) {
 			"type",
 		}},
 
-		{input: `type record T { record {} ({},{}) length(2) }`, want: []string{
+		{input: `type record T { record {} F ({},{}) length(2) }`, want: []string{
 			"scan",
 			"skip",
 			"record",
