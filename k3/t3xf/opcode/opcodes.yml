@@ -625,6 +625,16 @@ control:
     Create a control part definition from a block blk containing
     the statements of its behaviour.
 
+controlw:
+  opcode: 135
+  context:
+  - beha_def
+  operations:
+  - pre: [blk]
+    post: []
+  description: |+
+    A control part definition with attributes attached.
+
 create:
   opcode: 280
   context:
