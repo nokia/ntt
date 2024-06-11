@@ -177,3 +177,13 @@ L:
 	}
 	return ret
 }
+
+// Inspect traverse the syntax tree in depth-first order.
+func Inspect(n Node, f func(Node) bool) {
+	if n != nil {
+		if f(n) {
+			n.Inspect(f)
+		}
+		f(nil)
+	}
+}
