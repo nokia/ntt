@@ -50,6 +50,10 @@ type symbol struct {
 	arg any
 }
 
+func (s symbol) IsCompiled() bool {
+	return !(s.op == 0 && s.arg == nil)
+}
+
 type Compiler struct {
 	scope    *scope
 	err      error
@@ -71,10 +75,10 @@ func (c *Compiler) Err() error {
 }
 
 func (c *Compiler) Assemble() ([]byte, error) {
-	if c.err == nil {
-		return c.e.Assemble()
+	if c.err != nil {
+		return nil, c.err
 	}
-	return nil, c.err
+	return c.e.Assemble()
 }
 
 func (c *Compiler) Compile(n syntax.Node) error {
@@ -99,6 +103,21 @@ func (c *Compiler) Compile(n syntax.Node) error {
 
 	case *syntax.Module:
 		c.scope = newScope(c.scope)
+		n.Inspect(func(n syntax.Node) bool {
+			switch n := n.(type) {
+			case *syntax.GroupDecl:
+				return true
+			case *syntax.ModuleDef:
+				return true
+			case *syntax.ValueDecl:
+				return true
+			default:
+				if name := syntax.Name(n); name != "" {
+					c.scope.define(name, symbol{n: n})
+				}
+				return false
+			}
+		})
 
 		op := opcode.MODULE
 		if attrs := n.With; attrs != nil {
@@ -234,6 +253,13 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.Compile(n.Fun)
 
 	case *syntax.BinaryExpr:
+		if n.Op.Kind() == syntax.ASSIGN {
+			c.Compile(n.Y)
+			c.Compile(n.X)
+			c.emit(opcode.ASSIGN, 0)
+			break
+		}
+
 		c.Compile(n.X)
 		c.Compile(n.Y)
 		switch n.Op.Kind() {
@@ -322,7 +348,15 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		if !ok {
 			c.errorf("undefined identifier %s", name)
 		}
-		c.emit(sym.op, sym.arg)
+
+		if sym.IsCompiled() {
+			c.emit(sym.op, sym.arg)
+			break
+		}
+
+		// If the referenced node is not compiled yet, we write a
+		// placeholder and patch it later.
+		c.emit(opcode.REF, Reference(0))
 
 	case *syntax.WithSpec:
 		c.emit(opcode.SCAN, 0)

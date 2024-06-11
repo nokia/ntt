@@ -37,6 +37,15 @@ func TestCompiler(t *testing.T) {
 			"assign",
 		}},
 
+		{input: "var integer a; a := 1", want: []string{
+			"integer",
+			"name a",
+			"var",
+			"natlong 1",
+			"ref 20",
+			"assign",
+		}},
+
 		{input: "var integer a[1][2]", want: []string{
 			"integer",
 			"scan",
@@ -98,6 +107,20 @@ func TestCompiler(t *testing.T) {
 			"out",
 			"block",
 			"skip",
+			"name f",
+			"function",
+		}},
+
+		{input: `function f(integer x) {log(x)}`, want: []string{
+			"scan",
+			"integer",
+			"name x",
+			"in",
+			"block",
+			"scan",
+			"ref 24",
+			"log",
+			"block",
 			"name f",
 			"function",
 		}},
@@ -294,6 +317,25 @@ func TestCompiler(t *testing.T) {
 			"record",
 			"name T",
 			"type",
+		}},
+
+		{input: `module M { const integer x := y, y := x }`, want: []string{
+			"scan",
+			"scan",
+			"ref 56",
+			"block",
+			"integer",
+			"name x",
+			"const",
+			"scan",
+			"ref 32",
+			"block",
+			"integer",
+			"name y",
+			"const",
+			"block",
+			"name M",
+			"module",
 		}},
 	}
 
