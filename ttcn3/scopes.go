@@ -78,6 +78,10 @@ func NewScope(n syntax.Node, tree *Tree) *Scope {
 		scp.add(n.TypePars)
 		scp.add(n.Params)
 
+	case *syntax.Testcase:
+		scp.add(n.TypePars)
+		scp.add(n.Params)
+
 	case *syntax.FuncDecl:
 		scp.add(n.TypePars)
 		scp.add(n.Params)
@@ -222,6 +226,9 @@ func (scp *Scope) add(n syntax.Node) error {
 		for _, d := range n.Decls {
 			scp.Insert(n, d.Name)
 		}
+
+	case *syntax.Testcase:
+		scp.Insert(n, n.Name)
 
 	case *syntax.FuncDecl:
 		scp.Insert(n, n.Name)

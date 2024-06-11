@@ -1230,7 +1230,9 @@ func (p *parser) parseModuleDef() *ModuleDef {
 		m.Def = p.parseValueDecl()
 	case SIGNATURE:
 		m.Def = p.parseSignatureDecl()
-	case FUNCTION, TESTCASE, ALTSTEP:
+	case TESTCASE:
+		m.Def = p.parseTestcase()
+	case FUNCTION, ALTSTEP:
 		m.Def = p.parseFuncDecl()
 	case CONTROL:
 		m.Def = &ControlPart{Name: p.parseIdent(), Body: p.parseBlockStmt(), With: p.parseWith()}
@@ -2140,6 +2142,33 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 
 	if p.tok == RETURN {
 		x.Return = p.parseReturn()
+	}
+
+	if p.tok == LBRACE {
+		x.Body = p.parseBlockStmt()
+	}
+
+	x.With = p.parseWith()
+	return x
+}
+
+func (p *parser) parseTestcase() *Testcase {
+	if p.trace {
+		defer un(trace(p, "Testcase"))
+	}
+
+	x := new(Testcase)
+	x.Tok = p.consume()
+	x.Name = p.parseName()
+	if p.tok == LT {
+		x.TypePars = p.parseTypeFormalPars()
+	}
+	x.Params = p.parseFormalPars()
+	if p.tok == RUNS {
+		x.RunsOn = p.parseRunsOn()
+	}
+	if p.tok == SYSTEM {
+		x.System = p.parseSystem()
 	}
 
 	if p.tok == LBRACE {

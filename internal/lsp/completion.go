@@ -463,7 +463,11 @@ func CompleteBehaviours(tree *ttcn3.Tree, kinds []syntax.Kind, attribs []BehavAt
 	)
 
 	for _, kind := range kinds {
-		items = append(items, behaviourInfos(tree, kind)...)
+		if kind == syntax.TESTCASE {
+			items = append(items, testcaseInfos(tree, kind)...)
+		} else {
+			items = append(items, behaviourInfos(tree, kind)...)
+		}
 	}
 
 	for _, v := range items {
@@ -527,7 +531,7 @@ func CompleteValueDecls(tree *ttcn3.Tree, kind syntax.Kind, withDetail bool) []p
 		case *syntax.Module:
 			mname = node.Name.String()
 			return true
-		case *syntax.FuncDecl, *syntax.ComponentTypeDecl:
+		case *syntax.FuncDecl, *syntax.ComponentTypeDecl, *syntax.Testcase:
 			// do not descent into TESTCASE, FUNCTION, ALTSTEP,
 			// component type
 			return false
@@ -591,14 +595,20 @@ func CompleteImportSpecs(suite *Suite, kind syntax.Kind, mname string) []protoco
 	case syntax.ALTSTEP, syntax.FUNCTION, syntax.TESTCASE:
 		var ret []protocol.CompletionItem
 		tree.Inspect(func(n syntax.Node) bool {
-			f, ok := n.(*syntax.FuncDecl)
-			if !ok {
+			switch n := n.(type) {
+			case *syntax.Module, *syntax.GroupDecl, *syntax.ModuleDef:
 				return true
+			case *syntax.FuncDecl:
+				if kind == n.Kind.Kind() {
+					ret = append(ret, protocol.CompletionItem{Label: syntax.Name(n), Kind: protocol.FunctionCompletion})
+				}
+
+			case *syntax.Testcase:
+				if kind == syntax.TESTCASE {
+					ret = append(ret, protocol.CompletionItem{Label: syntax.Name(n), Kind: protocol.FunctionCompletion})
+				}
 			}
 
-			if f.Kind.Kind() == kind {
-				ret = append(ret, protocol.CompletionItem{Label: syntax.Name(f), Kind: protocol.FunctionCompletion})
-			}
 			return false
 		})
 		ret = append(ret, protocol.CompletionItem{Label: "all;", Kind: protocol.KeywordCompletion})
@@ -801,6 +811,7 @@ func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind) []*BehaviourInfo {
 		if mod, ok := n.(*syntax.Module); ok {
 			mname = mod.Name.String()
 		}
+
 		node, ok := n.(*syntax.FuncDecl)
 		if !ok {
 			return true
@@ -845,6 +856,49 @@ func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind) []*BehaviourInfo {
 	return ret
 }
 
+func testcaseInfos(tree *ttcn3.Tree, kind syntax.Kind) []*BehaviourInfo {
+	var ret []*BehaviourInfo
+	mname := ""
+	tree.Inspect(func(n syntax.Node) bool {
+		if mod, ok := n.(*syntax.Module); ok {
+			mname = mod.Name.String()
+		}
+
+		node, ok := n.(*syntax.Testcase)
+		if !ok {
+			return true
+		}
+
+		var sig bytes.Buffer
+		textFormat := protocol.PlainTextTextFormat
+		sig.WriteString("testcase " + joinNames(mname, node.Name.String()))
+		len1 := len(sig.String())
+		printer.Print(&sig, node.Params)
+		hasParams := (len(sig.String()) - len1) > 2
+		if hasParams {
+			textFormat = protocol.SnippetTextFormat
+		}
+		if node.RunsOn != nil {
+			sig.WriteString("\n  ")
+			printer.Print(&sig, node.RunsOn)
+		}
+		if node.System != nil {
+			sig.WriteString("\n  ")
+			printer.Print(&sig, node.System)
+		}
+		ret = append(ret, &BehaviourInfo{
+			Label:         node.Name.String(),
+			HasRunsOn:     (node.RunsOn != nil),
+			HasReturn:     false,
+			Signature:     sig.String(),
+			Documentation: syntax.Doc(node),
+			HasParameters: hasParams,
+			TextFormat:    textFormat})
+		return false
+
+	})
+	return ret
+}
 func joinNames(s string, ss ...string) string {
 	if len(ss) == 0 {
 		return s
@@ -877,7 +931,7 @@ func isBehaviourBodyScope(nodes []syntax.Node) bool {
 	insideBehav := false
 	for _, node := range nodes {
 		switch node.(type) {
-		case *syntax.FuncDecl:
+		case *syntax.FuncDecl, *syntax.Testcase:
 			insideBehav = true
 		case *syntax.BlockStmt:
 			if insideBehav {

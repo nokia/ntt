@@ -134,7 +134,7 @@ func (t *Tree) Funcs() []*Node {
 func (t *Tree) Tests() []*Node {
 	var defs []*Node
 	t.Inspect(func(n syntax.Node) bool {
-		if n, ok := n.(*syntax.FuncDecl); ok && n.IsTest() {
+		if n, ok := n.(*syntax.Testcase); ok {
 			defs = append(defs, &Node{Ident: n.Name, Node: n, Tree: t})
 			return false
 		}

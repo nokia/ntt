@@ -80,8 +80,10 @@ func printJSON(report *ConfigReport, keys []string) error {
 		tree := ttcn3.ParseFile(file)
 		tree.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
+			case *syntax.Testcase:
+				break
 			case *syntax.FuncDecl:
-				if n.IsTest() || n.IsControl() {
+				if n.IsControl() {
 					break
 				}
 				return false

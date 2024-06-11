@@ -75,6 +75,10 @@ func (tree *Tree) Tags() []syntax.Node {
 			t = append(t, n)
 			return true
 
+		case *syntax.Testcase:
+			t = append(t, n)
+			return true
+
 		case *syntax.SignatureDecl:
 			t = append(t, n)
 			return false

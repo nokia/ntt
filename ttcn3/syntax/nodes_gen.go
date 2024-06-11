@@ -7142,6 +7142,175 @@ func (n *TemplateDecl) End() int {
 	return -1
 }
 
+func (n *Testcase) FirstTok() Token {
+	switch {
+
+	case n.Tok != nil:
+		return n.Tok
+
+	case n.Name != nil:
+		return n.Name.FirstTok()
+
+	case n.TypePars != nil:
+		return n.TypePars.FirstTok()
+
+	case n.Params != nil:
+		return n.Params.FirstTok()
+
+	case n.RunsOn != nil:
+		return n.RunsOn.FirstTok()
+
+	case n.System != nil:
+		return n.System.FirstTok()
+
+	case n.Body != nil:
+		return n.Body.FirstTok()
+
+	case n.With != nil:
+		return n.With.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *Testcase) LastTok() Token {
+	switch {
+
+	case n.With != nil:
+		return n.With.LastTok()
+
+	case n.Body != nil:
+		return n.Body.LastTok()
+
+	case n.System != nil:
+		return n.System.LastTok()
+
+	case n.RunsOn != nil:
+		return n.RunsOn.LastTok()
+
+	case n.Params != nil:
+		return n.Params.LastTok()
+
+	case n.TypePars != nil:
+		return n.TypePars.LastTok()
+
+	case n.Name != nil:
+		return n.Name.LastTok()
+
+	case n.Tok != nil:
+		return n.Tok
+
+	default:
+		return nil
+	}
+}
+
+func (n *Testcase) Children() []Node {
+	ret := make([]Node, 0, 8)
+
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+
+	if n.TypePars != nil {
+		ret = append(ret, n.TypePars)
+	}
+
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+
+	if n.RunsOn != nil {
+		ret = append(ret, n.RunsOn)
+	}
+
+	if n.System != nil {
+		ret = append(ret, n.System)
+	}
+
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+
+	return ret
+}
+
+func (n *Testcase) Inspect(f func(Node) bool) {
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.TypePars; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.RunsOn; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.System; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *Testcase) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *Testcase) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
 func (n *UnaryExpr) FirstTok() Token {
 	switch {
 

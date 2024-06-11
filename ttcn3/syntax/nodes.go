@@ -632,6 +632,17 @@ type (
 		With     *WithSpec
 	}
 
+	Testcase struct {
+		Tok      Token
+		Name     *Ident
+		TypePars *FormalPars
+		Params   *FormalPars
+		RunsOn   *RunsOnSpec
+		System   *SystemSpec
+		Body     *BlockStmt
+		With     *WithSpec
+	}
+
 	// A SignatureDecl represents a signature type for procedure based communication.
 	SignatureDecl struct {
 		Tok          Token // Position of "signature"
@@ -741,6 +752,7 @@ func (x *FuncDecl) IsTest() bool {
 	return x.Kind.Kind() == TESTCASE
 }
 
+func (x *Testcase) declNode()             {}
 func (x *ValueDecl) declNode()            {}
 func (x *Declarator) declNode()           {}
 func (x *TemplateDecl) declNode()         {}

@@ -96,6 +96,36 @@ func getFunctionDecl(tree *ttcn3.Tree, node *syntax.FuncDecl) protocol.DocumentS
 		Children:       children}
 }
 
+func getTestcaseDecl(tree *ttcn3.Tree, node *syntax.Testcase) protocol.DocumentSymbol {
+	begin := syntax.Begin(node)
+	end := syntax.End(node)
+	kind := protocol.Function
+	children := make([]protocol.DocumentSymbol, 0, 5)
+	if node.RunsOn != nil && node.RunsOn.Comp != nil {
+		kind = protocol.Method
+		idBegin := syntax.Begin(node.RunsOn.Comp)
+		idEnd := syntax.End(node.RunsOn.Comp)
+		children = append(children, protocol.DocumentSymbol{Name: "runs on", Detail: syntax.Name(node.RunsOn.Comp),
+			Kind:           protocol.Class,
+			Range:          setProtocolRange(idBegin, idEnd),
+			SelectionRange: setProtocolRange(idBegin, idEnd)})
+	}
+	if node.System != nil && node.System.Comp != nil {
+		kind = protocol.Method
+		idBegin := syntax.Begin(node.System.Comp)
+		idEnd := syntax.End(node.System.Comp)
+		children = append(children, protocol.DocumentSymbol{Name: "system", Detail: syntax.Name(node.System.Comp),
+			Kind:           protocol.Class,
+			Range:          setProtocolRange(idBegin, idEnd),
+			SelectionRange: setProtocolRange(idBegin, idEnd)})
+	}
+	detail := "testcase definition"
+	return protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: kind,
+		Range:          setProtocolRange(begin, end),
+		SelectionRange: setProtocolRange(begin, end),
+		Children:       children}
+}
+
 func getTypeList(tree *ttcn3.Tree, types []syntax.Expr) []protocol.DocumentSymbol {
 	retv := make([]protocol.DocumentSymbol, 0, len(types))
 	for _, t := range types {
@@ -304,6 +334,11 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 		begin := syntax.Begin(n)
 		end := syntax.End(n)
 		switch node := n.(type) {
+		case *syntax.Testcase:
+			if node.Name == nil {
+				return false
+			}
+			list = append(list, getTestcaseDecl(tree, node))
 		case *syntax.FuncDecl:
 			if node.Name == nil {
 				// looks like a tree error

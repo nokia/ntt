@@ -174,6 +174,14 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		}
 		return &runtime.ReturnValue{Value: val}
 
+	case *syntax.Testcase:
+		f := &runtime.Function{
+			Env:    env,
+			Params: n.Params,
+			Body:   n.Body,
+		}
+		env.Set(n.Name.String(), f)
+
 	case *syntax.FuncDecl:
 		f := &runtime.Function{
 			Env:    env,
