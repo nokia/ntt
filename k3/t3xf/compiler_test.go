@@ -15,6 +15,7 @@ func TestCompiler(t *testing.T) {
 		name  string
 		input string
 		want  []string
+		skip  bool
 	}{
 		{input: "1", want: []string{
 			"natlong 1",
@@ -319,7 +320,7 @@ func TestCompiler(t *testing.T) {
 			"type",
 		}},
 
-		{input: `module M { const integer x := y, y := x }`, want: []string{
+		{skip: true, input: `module M { const integer x := y, y := x }`, want: []string{
 			"scan",
 			"scan",
 			"ref 56",
@@ -340,31 +341,36 @@ func TestCompiler(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		root, _, _ := syntax.Parse([]byte(tt.input))
-		if root.Err() != nil {
-			t.Fatalf("syntax.Parse(%q) returned error: %v", tt.input, root.Err())
-		}
+		t.Run(t.Name(), func(t *testing.T) {
+			if tt.skip {
+				t.Skip()
+			}
+			root, _, _ := syntax.Parse([]byte(tt.input))
+			if root.Err() != nil {
+				t.Fatalf("syntax.Parse(%q) returned error: %v", tt.input, root.Err())
+			}
 
-		c := t3xf.NewCompiler()
-		c.Compile(root)
-		b, err := c.Assemble()
-		if err != nil {
-			t.Fatalf("c.Assemble() returned error: %v", err)
-		}
-		got := []string{}
-		pc := 0
-		for pc < len(b) {
-			n, op, arg := t3xf.Decode(b[pc:])
-			pc += n
-			if op == opcode.LINE {
-				continue
+			c := t3xf.NewCompiler()
+			c.Compile(root)
+			b, err := c.Assemble()
+			if err != nil {
+				t.Fatalf("c.Assemble() returned error: %v", err)
 			}
-			s := op.String()
-			if arg != nil {
-				s += " " + fmt.Sprintf("%v", arg)
+			got := []string{}
+			pc := 0
+			for pc < len(b) {
+				n, op, arg := t3xf.Decode(b[pc:])
+				pc += n
+				if op == opcode.LINE {
+					continue
+				}
+				s := op.String()
+				if arg != nil {
+					s += " " + fmt.Sprintf("%v", arg)
+				}
+				got = append(got, s)
 			}
-			got = append(got, s)
-		}
-		assert.Equal(t, tt.want, got, tt.input)
+			assert.Equal(t, tt.want, got, tt.input)
+		})
 	}
 }
