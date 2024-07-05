@@ -13,6 +13,9 @@ const (
 	{{ range $name, $op := . }}
 
 	{{ comment $op.Description }}
+	//
+	// 	{{ $op.Operations.Pre }} {{ uc $name }} {{ $op.Operations.Post }}
+	//
 	{{ uc $name }} Opcode = {{ encode $op.Opcode }}{{ end }}
 )
 

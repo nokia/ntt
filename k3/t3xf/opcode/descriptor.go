@@ -8,7 +8,7 @@ type Descriptor struct {
 	Context []string `json:",omitempty"`
 
 	// Operations describe the stack operations that the instruction performs.
-	Operations  []Operation
+	Operations  Operation
 	Description string // A description of the opcode
 }
 

@@ -10,7 +10,7 @@ action:
   context:
   - func
   operations:
-  - pre: [str]
+    pre: [str]
     post: []
   description: |+
     Request the action described in str from the user.
@@ -20,7 +20,7 @@ activate:
   context:
   - component_op
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: [default]
   description: |+
     Activate an altstep and return a default object. Block blk
@@ -32,7 +32,7 @@ add:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a + b, pushing the result.
@@ -42,7 +42,7 @@ address:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     When a module defines a type named ‘address’ then this
@@ -58,7 +58,7 @@ alive:
   context:
   - component_op
   operations:
-  - pre: [comp]
+    pre: [comp]
     post: [res]
   description: |+
     Test the state of component comp for the alive condition. Push
@@ -70,7 +70,7 @@ alive1:
   - component_op
   - any
   operations:
-  - pre: []
+    pre: []
     post: [res]
   description: |+
     Test the state of all parallel test components for any that
@@ -82,7 +82,7 @@ alivea:
   - component_op
   - all
   operations:
-  - pre: []
+    pre: []
     post: [res]
   description: |+
     Test the state of all parallel test components checking that
@@ -94,7 +94,7 @@ allfrom:
   - value
   - all
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: ""
 allfromp:
@@ -103,7 +103,7 @@ allfromp:
   - value
   - all
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: ""
 alt:
@@ -111,7 +111,7 @@ alt:
   context:
   - eval
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     Evaluate the contents of blk until one of the contained
@@ -126,7 +126,7 @@ alt:
 altnd:
   opcode: 514
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |
     Same as `alt` with disabled defaults (`@nodefault`)
@@ -135,7 +135,7 @@ altstep:
   context:
   - beha_def
   operations:
-  - pre: [pblk, bblk, name]
+    pre: [pblk, bblk, name]
     post: []
   description: |+
     Define an altstep object from a block pblk containing its
@@ -147,7 +147,7 @@ altstepb:
   context:
   - beha_def
   operations:
-  - pre: [comp, pblk, bblk, name]
+    pre: [comp, pblk, bblk, name]
     post: []
   description: |+
     Define a bound altstep object from a component type comp, a
@@ -160,7 +160,7 @@ altstepbw:
   context:
   - beha_def
   operations:
-  - pre: [comp, ablk, pblk, bblk, name]
+    pre: [comp, ablk, pblk, bblk, name]
     post: []
   description: |+
     Define a bound altstep object from a component type comp, a
@@ -174,7 +174,7 @@ altstepw:
   context:
   - beha_def
   operations:
-  - pre: [ablk, pblk, bblk, name]
+    pre: [ablk, pblk, bblk, name]
     post: []
   description: |+
     Define an altstep object from a block pblk containing its
@@ -187,7 +187,7 @@ and:
   context:
   - func
   operations:
-  - pre: [obj, obj]
+    pre: [obj, obj]
     post: [res]
   description: |+
     With a boolean first argument, perform the logical and
@@ -205,7 +205,7 @@ any:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special any-value literal on the stack, corresponding
@@ -216,7 +216,7 @@ anyn:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special any-value-or-none literal on the stack,
@@ -227,7 +227,7 @@ apply:
   context:
   - vm
   operations:
-  - pre: [closure]
+    pre: [closure]
     post: []
   description: ""
 array:
@@ -235,7 +235,7 @@ array:
   context:
   - type_new
   operations:
-  - pre: [type, dim]
+    pre: [type, dim]
     post: [obj]
   description: |+
     Create an array type object from an element type type and a
@@ -248,7 +248,7 @@ assign:
   context:
   - vm
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: []
   description: |+
     Assign the value of b to a.
@@ -260,7 +260,7 @@ assignd:
   context:
   - vm
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [a]
   description: |+
     Assign the value of b to a. Leave object a on the stack.
@@ -272,7 +272,7 @@ at_default:
   context:
   - vm
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: []
   description: ""
 bit2hex:
@@ -280,7 +280,7 @@ bit2hex:
   context:
   - func
   operations:
-  - pre: [bit]
+    pre: [bit]
     post: [res]
   description: |+
     Convert bitstring bit into a hexstring and push it onto the
@@ -291,7 +291,7 @@ bit2int:
   context:
   - func
   operations:
-  - pre: [bit]
+    pre: [bit]
     post: [res]
   description: |+
     Convert bitstring bit into an integer and push it onto the
@@ -302,7 +302,7 @@ bit2oct:
   context:
   - func
   operations:
-  - pre: [bit]
+    pre: [bit]
     post: [res]
   description: |+
     Convert bitstring bit into an octetstring and push it onto the
@@ -313,7 +313,7 @@ bit2str:
   context:
   - func
   operations:
-  - pre: [bit]
+    pre: [bit]
     post: [res]
   description: |+
     Convert bitstring bit into a charstring and push it onto the
@@ -325,7 +325,7 @@ bits:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a bitstring literal onto the stack. This is a
@@ -349,7 +349,7 @@ bitstring:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in bitstring type object.
@@ -359,7 +359,7 @@ block:
   context:
   - vm
   operations:
-  - pre: []
+    pre: []
     post: [blk]
   description: |+
     Switch from scanning back to execution mode pushing a block
@@ -370,14 +370,16 @@ boolean:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in boolean type object.
 
 break:
   opcode: 60
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Leave the enclosing loop construct.
 
@@ -386,7 +388,7 @@ cat:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Concatenates strings a and b and returns the result. Objects a
@@ -397,7 +399,7 @@ char2int:
   context:
   - func
   operations:
-  - pre: [char]
+    pre: [char]
     post: [res]
   description: |+
     Convert single character string char into an integer and push
@@ -408,7 +410,7 @@ char2oct:
   context:
   - func
   operations:
-  - pre: [char]
+    pre: [char]
     post: [res]
   description: |+
     Convert charstring char into an octetstring and push it onto
@@ -419,7 +421,7 @@ charstring:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in charstring type object.
@@ -429,7 +431,7 @@ charstringu:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in universal charstring type object.
@@ -439,7 +441,7 @@ check:
   context:
   - port_op
   operations:
-  - pre: [mblk, ablk, port]
+    pre: [mblk, ablk, port]
     post: []
   description: |+
     Create a pure check condition on port port. Block mblk shall
@@ -453,7 +455,7 @@ check1:
   - port_op
   - any
   operations:
-  - pre: [match, assign]
+    pre: [match, assign]
     post: []
   description: Any port check
 checkstate:
@@ -461,7 +463,7 @@ checkstate:
   context:
   - port_op
   operations:
-  - pre: [port, string]
+    pre: [port, string]
     post: [bool]
   description: ""
 checkstateal:
@@ -470,9 +472,7 @@ checkstateal:
   - port_op
   - all
   operations:
-  - pre: [string]
-    post: []
-  - pre: []
+    pre: [string]
     post: [bool]
   description: All port checkstate
 checkstatean:
@@ -481,7 +481,7 @@ checkstatean:
   - port_op
   - any
   operations:
-  - pre: [string]
+    pre: [string]
     post: [bool]
   description: Any port checkstate
 clear:
@@ -489,7 +489,7 @@ clear:
   context:
   - port_op
   operations:
-  - pre: [p]
+    pre: [p]
     post: []
   description: |+
     Clear all contents from the input queue of port p.
@@ -499,7 +499,9 @@ cleara:
   context:
   - port_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Clear all contents from the input queues of all ports on the
     current component.
@@ -509,7 +511,7 @@ clone:
   context:
   - func
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: |+
     Clone obj and push back clone.
@@ -519,7 +521,7 @@ closure:
   context:
   - vm
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: [closure]
   description: Wrap obj as closure
 closuretype:
@@ -527,14 +529,14 @@ closuretype:
   context:
   - type_ref
   operations:
-    - pre: [type_ref]
+      pre: [type_ref]
   description: ""
 collect:
   opcode: 9
   context:
   - vm
   operations:
-  - pre: [mark, object1, .., objectn]
+    pre: [mark, object1, .., objectn]
     post: [col]
   description: |+
     Build a collection from a marked listed of objects,
@@ -546,7 +548,7 @@ complement:
   context:
   - value
   operations:
-  - pre: [vlist]
+    pre: [vlist]
     post: [res]
   description: |+
     Make a complement template literal from the input value list
@@ -557,7 +559,7 @@ component:
   context:
   - type_new
   operations:
-  - pre: [iblk]
+    pre: [iblk]
     post: [ctype]
   description: |+
     Construct a component type object with initialisation from
@@ -568,7 +570,7 @@ componentx:
   context:
   - type_new
   operations:
-  - pre: [coll, iblk]
+    pre: [coll, iblk]
     post: [ctype]
   description: |+
     Construct a component type object with initialisation from
@@ -580,7 +582,7 @@ connect:
   context:
   - port_op
   operations:
-  - pre: [p1, p2]
+    pre: [p1, p2]
     post: []
   description: |+
     Connect ports p1 and p2.
@@ -590,7 +592,7 @@ const:
   context:
   - decl
   operations:
-  - pre: [vblk, type, name]
+    pre: [vblk, type, name]
     post: []
   description: |+
     Create a constant data definition from a block vblk containing
@@ -601,7 +603,7 @@ constw:
   context:
   - decl
   operations:
-  - pre: [ablk, vblk, type, name]
+    pre: [ablk, vblk, type, name]
     post: []
   description: |+
     Create a constant data definition from a block vblk containing
@@ -610,7 +612,9 @@ constw:
 
 continue:
   opcode: 61
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Repeat the enclosing loop construct.
 
@@ -619,7 +623,7 @@ control:
   context:
   - beha_def
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     Create a control part definition from a block blk containing
@@ -630,7 +634,7 @@ controlw:
   context:
   - beha_def
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     A control part definition with attributes attached.
@@ -640,7 +644,7 @@ create:
   context:
   - component_new
   operations:
-  - pre: [ctype]
+    pre: [ctype]
     post: [cinst]
   description: |+
     Create an instance of a component of type ctype and push the
@@ -651,7 +655,7 @@ createa:
   context:
   - component_new
   operations:
-  - pre: [ctype]
+    pre: [ctype]
     post: [cinst]
   description: |+
     Create an alive-type instance of a component of type ctype and
@@ -662,7 +666,7 @@ createan:
   context:
   - component_new
   operations:
-  - pre: [name, ctype]
+    pre: [name, ctype]
     post: [cinst]
   description: |+
     Create a named alive-type instance of a component of type
@@ -674,7 +678,7 @@ createn:
   context:
   - component_new
   operations:
-  - pre: [name, ctype]
+    pre: [name, ctype]
     post: [cinst]
   description: |+
     Create a named instance of a component of type ctype and push
@@ -686,7 +690,7 @@ deactivate:
   context:
   - component_op
   operations:
-  - pre: [default]
+    pre: [default]
     post: []
   description: |+
     Deactivate default altstep default.
@@ -696,7 +700,9 @@ deactivatea:
   context:
   - component_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Deactivate all altsteps activated on the current component.
 
@@ -705,7 +711,7 @@ decmatch:
   context:
   - value
   operations:
-  - pre: [enc, decTemplate]
+    pre: [enc, decTemplate]
     post: [res]
   description: |+
     The encoded value enc is decoded and the decoded content
@@ -717,7 +723,7 @@ decvalue:
   context:
   - func
   operations:
-  - pre: [enc, dec]
+    pre: [enc, dec]
     post: [res]
   description: |+
     Decode encoded bitstring enc placing the result in dec and
@@ -730,7 +736,7 @@ def:
   context:
   - vm
   operations:
-  - pre: [from, what]
+    pre: [from, what]
     post: [ref]
   description: ""
 default:
@@ -738,7 +744,7 @@ default:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [ref]
   description: |+
     Push the built-in default type object.
@@ -748,7 +754,7 @@ disconnect:
   context:
   - port_op
   operations:
-  - pre: [p1, p2]
+    pre: [p1, p2]
     post: []
   description: |+
     Break the connection between port p1 and port p2.
@@ -759,7 +765,7 @@ disconnecta:
   - port_op
   - all
   operations:
-  - pre: [comp]
+    pre: [comp]
     post: []
   description: |+
     Break all connections from component comp.
@@ -770,7 +776,9 @@ disconnectaa:
   - port_op
   - component_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Break all connections on all components.
 
@@ -779,7 +787,7 @@ div:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a / b, pushing the result on the stack.
@@ -792,7 +800,7 @@ done:
   context:
   - component_op
   operations:
-  - pre: [comp]
+    pre: [comp]
     post: []
   description: |+
     Test the state of component comp for the done condition,
@@ -803,7 +811,9 @@ done1:
   context:
   - component_op
   - any
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Test the state of all parallel test components for any that
     are done, contributing this to an enclosing alt or interleave
@@ -814,7 +824,9 @@ donea:
   context:
   - component_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Test the state of all parallel test components checking that
     all are done, contributing this to an enclosing alt or
@@ -826,7 +838,7 @@ dowhile:
   - vm
   - control_flow
   operations:
-  - pre: [body, cond]
+    pre: [body, cond]
     post: []
   description: |+
     Implements the TTCN-3 do/while statement using two block
@@ -844,7 +856,7 @@ drop:
   context:
   - vm
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: []
   description: |+
     Remove the item at the top of the stack and discard it.
@@ -854,7 +866,7 @@ else:
   context:
   - eval
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     Create an alternative for an enclosing alt operation that is
@@ -866,7 +878,7 @@ encode:
   context:
   - type_new
   operations:
-  - pre: [val]
+    pre: [val]
     post: []
   description: |+
     Attach the encode attribute val to the object owning the
@@ -877,7 +889,7 @@ encodeo:
   context:
   - type_new
   operations:
-  - pre: [val]
+    pre: [val]
     post: []
   description: |+
     Attach the overriding encode attribute val to the object
@@ -888,7 +900,7 @@ encvalue:
   context:
   - func
   operations:
-  - pre: [value]
+    pre: [value]
     post: [res]
   description: |+
     Encode value value returning bitstring res holding the encoded
@@ -899,7 +911,7 @@ enum2int:
   context:
   - func
   operations:
-  - pre: [enum]
+    pre: [enum]
     post: [res]
   description: |+
     Convert enumerated enum into an integer and push it onto the
@@ -910,7 +922,7 @@ enumerated:
   context:
   - type_new
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: [obj]
   description: |+
     Build an enumerated object from the terms described in block
@@ -921,7 +933,7 @@ eq:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a == b, pushing the boolean result.
@@ -931,7 +943,7 @@ error:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special literal on the stack corresponding to the error
@@ -942,7 +954,7 @@ exec:
   context:
   - vm
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     Execute block blk. This is an optimisation of if(true), giving
@@ -959,7 +971,7 @@ execute:
   context:
   - testcase_new
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: [verdict]
   description: |+
     Execute testcase and return its verdict. The input parameter
@@ -971,7 +983,7 @@ executed:
   context:
   - testcase_new
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: [verdict]
   description: |+
     Same as execute, but with logging disabled.
@@ -981,7 +993,7 @@ executel:
   context:
   - testcase_new
   operations:
-  - pre: [limit, blk]
+    pre: [limit, blk]
     post: [verdict]
   description: |+
     Execute testcase and return its verdict. The input parameter
@@ -993,7 +1005,7 @@ executel:
 executeld:
   opcode: 284
   operations:
-  - pre: [limit, blk]
+    pre: [limit, blk]
     post: [verdict]
   description: |+
     Same as executel, but with logging disabled.
@@ -1003,7 +1015,7 @@ extension:
   context:
   - type_new
   operations:
-  - pre: [val]
+    pre: [val]
     post: []
   description: |+
     Attach the extension attribute val to the object owning the
@@ -1014,7 +1026,7 @@ extensiono:
   context:
   - type_new
   operations:
-  - pre: [val]
+    pre: [val]
     post: []
   description: |+
     Attach the overriding extension attribute val to the object
@@ -1025,7 +1037,7 @@ fail:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special literal on the stack corresponding to the fail
@@ -1036,7 +1048,7 @@ fail:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special false literal onto the stack.
@@ -1046,7 +1058,7 @@ field:
   context:
   - type_new
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Build a field description from type and name and attach it to
@@ -1057,7 +1069,7 @@ fieldo:
   context:
   - type_new
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Build an optional field description from type and name and
@@ -1069,7 +1081,7 @@ float:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in float type object.
@@ -1079,7 +1091,7 @@ float2int:
   context:
   - func
   operations:
-  - pre: [flt]
+    pre: [flt]
     post: [res]
   description: |+
     Convert float flt into an integer and push it onto the stack.
@@ -1090,7 +1102,7 @@ for:
   - vm
   - control_flow
   operations:
-  - pre: [init, cond, body, incr]
+    pre: [init, cond, body, incr]
     post: []
   description: |+
     Implements the TTCN-3 for statement using four block
@@ -1115,7 +1127,7 @@ from:
   context:
   - func
   operations:
-  - pre: [mapv, setofFromType]
+    pre: [mapv, setofFromType]
     post: [res]
   description: |+
     Implements the TTCN-3 .from operation applied to mapv of 
@@ -1130,7 +1142,7 @@ fstr:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a float literal onto the stack, with the value coded as
@@ -1153,7 +1165,7 @@ function:
   context:
   - beha_def
   operations:
-  - pre: [pblk, bblk, name]
+    pre: [pblk, bblk, name]
     post: []
   description: |+
     Define a function object from a block pblk containing its
@@ -1165,7 +1177,7 @@ functionb:
   context:
   - beha_def
   operations:
-  - pre: [comp, pblk, bblk, name]
+    pre: [comp, pblk, bblk, name]
     post: []
   description: |+
     Define a bound function object from a component type comp, a
@@ -1178,7 +1190,7 @@ functionv:
   context:
   - beha_def
   operations:
-  - pre: [type, pblk, bblk, name]
+    pre: [type, pblk, bblk, name]
     post: []
   description: |+
     Define a value-returning function object from return type, a
@@ -1191,7 +1203,7 @@ functionvb:
   context:
   - beha_def
   operations:
-  - pre: [type, comp, pblk, bblk, name]
+    pre: [type, comp, pblk, bblk, name]
     post: []
   description: |+
     Define a value-returning bound function object from return
@@ -1202,7 +1214,7 @@ functionvb:
 functionx:
   opcode: 152
   operations:
-  - pre: [pblk, name]
+    pre: [pblk, name]
     post: []
   description: |+
     Define an external function object from a block pblk
@@ -1214,7 +1226,7 @@ functionxv:
   context:
   - beha_def
   operations:
-  - pre: [type, pblk, name]
+    pre: [type, pblk, name]
     post: []
   description: |+
     Define a value-returning external function object from return
@@ -1226,7 +1238,7 @@ functionxvw:
   context:
   - beha_def
   operations:
-  - pre: [type, ablk, pblk, name]
+    pre: [type, ablk, pblk, name]
     post: []
   description: |+
     Define a value-returning external function object from return
@@ -1239,7 +1251,7 @@ functionxw:
   context:
   - beha_def
   operations:
-  - pre: [ablk, pblk, name]
+    pre: [ablk, pblk, name]
     post: []
   description: |+
     Define an external function object from a block pblk
@@ -1252,7 +1264,7 @@ ge:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a >= b, pushing the boolean result.
@@ -1262,9 +1274,7 @@ get:
   context:
   - vm
   operations:
-  - pre: [obj, idx]
-    post: [obj]
-  - pre: [obj, name]
+    pre: [obj, field]
     post: [obj]
   description: |+
     When object obj is of type record, record-of, set, set-of,
@@ -1279,7 +1289,7 @@ getverdict:
   context:
   - component_op
   operations:
-  - pre: []
+    pre: []
     post: [lver]
   description: |+
     Get the local verdict of the current component and push it on
@@ -1290,7 +1300,7 @@ gt:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a > b, pushing the boolean result.
@@ -1300,7 +1310,7 @@ halt:
   context:
   - port_op
   operations:
-  - pre: [p]
+    pre: [p]
     post: []
   description: |+
     Instruct port p to accept no further input.
@@ -1310,7 +1320,9 @@ halta:
   context:
   - port_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Instruct all ports on the current component to accept no
     further input.
@@ -1320,7 +1332,7 @@ hex2bit:
   context:
   - func
   operations:
-  - pre: [hex]
+    pre: [hex]
     post: [res]
   description: |+
     Convert hexstring hex into a bitstring and push it onto the
@@ -1331,7 +1343,7 @@ hex2int:
   context:
   - func
   operations:
-  - pre: [hex]
+    pre: [hex]
     post: [res]
   description: |+
     Convert hexstring hex into an integer and push it onto the
@@ -1342,7 +1354,7 @@ hex2oct:
   context:
   - func
   operations:
-  - pre: [hex]
+    pre: [hex]
     post: [res]
   description: |+
     Convert hexstring hex into an octetstring and push it onto the
@@ -1353,7 +1365,7 @@ hex2str:
   context:
   - func
   operations:
-  - pre: [hex]
+    pre: [hex]
     post: [res]
   description: |+
     Convert hexstring hex into a charstring and push it onto the
@@ -1364,7 +1376,7 @@ hexstring:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in hexstring type object.
@@ -1374,7 +1386,7 @@ idef:
   context:
   - vm
   operations:
-  - pre: [from]
+    pre: [from]
     post: [ref]
   description: |+
     Same behaviour as 'def'.
@@ -1385,7 +1397,7 @@ ieee754dp:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a float literal onto the stack. The encoding of the
@@ -1405,7 +1417,7 @@ if:
   - vm
   - control_flow
   operations:
-  - pre: [cond, blk]
+    pre: [cond, blk]
     post: []
   description: |+
     Execute block blk if cond is true.
@@ -1416,7 +1428,7 @@ ifelse:
   - vm
   - control_flow
   operations:
-  - pre: [cond, tblk, fblk]
+    pre: [cond, tblk, fblk]
     post: []
   description: |+
     Execute block tblk if cond is true else execute block fblk.
@@ -1426,7 +1438,7 @@ ifield:
   context:
   - type_new
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: ""
 ifpresent:
@@ -1434,7 +1446,7 @@ ifpresent:
   context:
   - value
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [obj]
   description: |+
     Modify obj to allow it to match optional fields in record or
@@ -1445,7 +1457,7 @@ iget:
   context:
   - vm
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [obj]
   description: |+
     When object obj is of type record, record-of, set, set-of,
@@ -1461,7 +1473,7 @@ in:
   context:
   - type_new
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Bind a type and name into an input value parameter object and
@@ -1473,7 +1485,7 @@ inconc:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special literal on the stack corresponding to the
@@ -1484,7 +1496,7 @@ infinityn:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special -infinity literal onto the stack.
@@ -1494,7 +1506,7 @@ infinityp:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special +infinity literal onto the stack.
@@ -1504,7 +1516,7 @@ inout:
   context:
   - type_new
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Bind a type and name into an input/output value parameter
@@ -1516,7 +1528,7 @@ int2bit:
   context:
   - func
   operations:
-  - pre: [int, len]
+    pre: [int, len]
     post: [res]
   description: |+
     Convert integer int into a bitstring and push it onto the
@@ -1527,7 +1539,7 @@ int2char:
   context:
   - func
   operations:
-  - pre: [int]
+    pre: [int]
     post: [res]
   description: |+
     Convert integer int into a single character string and push it
@@ -1538,7 +1550,7 @@ int2enum:
   context:
   - func
   operations:
-  - pre: [a]
+    pre: [a]
     post: [res]
   description: ""
 int2float:
@@ -1546,7 +1558,7 @@ int2float:
   context:
   - func
   operations:
-  - pre: [int]
+    pre: [int]
     post: [res]
   description: |+
     Convert integer int into a float and push it onto the stack.
@@ -1556,7 +1568,7 @@ int2hex:
   context:
   - func
   operations:
-  - pre: [int, len]
+    pre: [int, len]
     post: [res]
   description: |+
     Convert integer int into a hexstring and push it onto the
@@ -1567,7 +1579,7 @@ int2oct:
   context:
   - func
   operations:
-  - pre: [int, len]
+    pre: [int, len]
     post: [res]
   description: |+
     Convert integer int into an octetstring and push it onto the
@@ -1578,7 +1590,7 @@ int2str:
   context:
   - func
   operations:
-  - pre: [int]
+    pre: [int]
     post: [res]
   description: |+
     Convert integer int into a charstring and push it onto the
@@ -1589,7 +1601,7 @@ integer:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in integer type object.
@@ -1599,7 +1611,7 @@ interleave:
   context:
   - eval
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     Evaluate the contents of blk until all of the contained
@@ -1615,7 +1627,9 @@ isbound:
   opcode: 429
   context:
   - func
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Stack operations might be dynamic.
 
@@ -1624,7 +1638,7 @@ ischosen:
   context:
   - func
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: |+
     Tests the object obj to determine if it is the selected field
@@ -1636,7 +1650,7 @@ ispresent:
   context:
   - func
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: |+
     Tests the presence of object obj and pushes the boolean
@@ -1649,7 +1663,7 @@ istr:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push an integer literal onto the stack, with the integer coded
@@ -1671,7 +1685,7 @@ isvalue:
   context:
   - func
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: |+
     Tests the object obj to determine is it is concrete value
@@ -1682,7 +1696,7 @@ kill:
   context:
   - component_op
   operations:
-  - pre: [comp]
+    pre: [comp]
     post: []
   description: |+
     Stop behaviour on component comp and move it to the killed
@@ -1693,7 +1707,9 @@ killa:
   context:
   - component_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Stop behaviour on all parallel test components, moving them to
     the killed state.
@@ -1703,7 +1719,7 @@ killed:
   context:
   - component_op
   operations:
-  - pre: [comp]
+    pre: [comp]
     post: []
   description: |+
     Test the state of component comp for the killed condition,
@@ -1714,7 +1730,9 @@ killed1:
   context:
   - component_op
   - any
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Test the state of all parallel test components for any that
     are killed, contributing this to an enclosing alt or
@@ -1725,7 +1743,9 @@ killeda:
   context:
   - component_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Test the state of all parallel test components checking that
     all are killed, contributing this to an enclosing alt or
@@ -1736,7 +1756,7 @@ le:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a <= b, pushing the boolean result.
@@ -1746,7 +1766,7 @@ length:
   context:
   - value
   operations:
-  - pre: [obj, len]
+    pre: [obj, len]
     post: [obj]
   description: |+
     Create a length restriction with length len and apply to obj,
@@ -1758,7 +1778,7 @@ lengthof:
   context:
   - func
   operations:
-  - pre: [str]
+    pre: [str]
     post: [len]
   description: |+
     Takes the length of the string-type object str and pushes it
@@ -1767,7 +1787,7 @@ lengthof:
 load:
   opcode: 5
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Loads a local object indexed by x, where x is an unsigned
@@ -1778,7 +1798,7 @@ log:
   context:
   - func
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: []
   description: |+
     Log the items in collection coll or log the single object obj.
@@ -1788,7 +1808,7 @@ lt:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a < b, pushing the boolean result.
@@ -1798,7 +1818,7 @@ map:
   context:
   - port_op
   operations:
-  - pre: [p1, p2]
+    pre: [p1, p2]
     post: []
   description: |+
     Map port p1 to port p2.
@@ -1808,7 +1828,7 @@ mapt:
   context:
   - type_new
   operations:
-  - pre: [typek, typev]
+    pre: [typek, typev]
     post: [obj]
   description: |+
     Construct a map type object with key typek and value typev
@@ -1819,7 +1839,7 @@ mark:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [mark]
   description: |+
     Push a mark object onto the stack.
@@ -1829,7 +1849,7 @@ match:
   context:
   - func
   operations:
-  - pre: [expr, tmpl]
+    pre: [expr, tmpl]
     post: [res]
   description: |+
     Perform template matching of expression expr against template
@@ -1840,7 +1860,7 @@ mod:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a mod b, pushing the result on the stack. The TTCN-3
@@ -1854,7 +1874,7 @@ module:
   context:
   - vm
   operations:
-  - pre: [bblk, name]
+    pre: [bblk, name]
     post: []
   description: |+
     Define a module object and attach it to the source object
@@ -1866,7 +1886,7 @@ modulew:
   context:
   - vm
   operations:
-  - pre: [ablk, bblk, name]
+    pre: [ablk, bblk, name]
     post: []
   description: |+
     Define a module object with attributes.
@@ -1874,7 +1894,7 @@ modulew:
 move:
   opcode: 94
   operations:
-  - pre: [b, a]
+    pre: [b, a]
     post: []
   description: |+
     Move b to a
@@ -1884,7 +1904,7 @@ mpar:
   context:
   - decl
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Create a module parameter definition from its type and a name.
@@ -1894,7 +1914,7 @@ mpard:
   context:
   - decl
   operations:
-  - pre: [vblk, type, name]
+    pre: [vblk, type, name]
     post: []
   description: |+
     Create a module parameter definition from a block vblk
@@ -1906,7 +1926,7 @@ mtc:
   context:
   - testcase_op
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Fetch a reference to the current MTC and push it on the stack.
@@ -1916,7 +1936,7 @@ mul:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a * b, pushing the result on the stack.
@@ -1930,7 +1950,7 @@ name:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push an object name literal onto the stack, coded as an ASCII
@@ -1952,7 +1972,7 @@ natlong:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a signed integer literal onto the stack. This is a
@@ -1972,7 +1992,7 @@ ne:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a != b, pushing the boolean result.
@@ -1982,7 +2002,7 @@ neg:
   context:
   - func
   operations:
-  - pre: [a]
+    pre: [a]
     post: [res]
   description: |+
     Evaluate -a (unary - operator) pushing the result.
@@ -1993,7 +2013,7 @@ nibbles:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Encoding of 9 nibbles, showing nibble endian-ness:
@@ -2011,7 +2031,7 @@ none:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special literal on the stack corresponding to the none
@@ -2021,7 +2041,9 @@ nop:
   opcode: 0
   context:
   - vm
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     No operation.
     
@@ -2033,7 +2055,7 @@ not:
   context:
   - func
   operations:
-  - pre: [a]
+    pre: [a]
     post: [res]
   description: |+
     With boolean input, perform the logical not operation and
@@ -2048,7 +2070,7 @@ now:
   context:
   - func
   operations:
-  - pre: []
+    pre: []
     post: [float]
   description: ""
 "null":
@@ -2056,7 +2078,7 @@ now:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [nullref]
   description: ""
 oct2bit:
@@ -2064,7 +2086,7 @@ oct2bit:
   context:
   - func
   operations:
-  - pre: [oct]
+    pre: [oct]
     post: [res]
   description: |+
     Convert octetstring oct into a bitstring and push it onto the
@@ -2075,7 +2097,7 @@ oct2chr:
   context:
   - func
   operations:
-  - pre: [oct]
+    pre: [oct]
     post: [charstring]
   description: ""
 oct2hex:
@@ -2083,7 +2105,7 @@ oct2hex:
   context:
   - func
   operations:
-  - pre: [oct]
+    pre: [oct]
     post: [res]
   description: |+
     Convert octetstring oct into a hexstring and push it onto the
@@ -2094,7 +2116,7 @@ oct2int:
   context:
   - func
   operations:
-  - pre: [oct]
+    pre: [oct]
     post: [res]
   description: |+
     Convert octetstring oct into an integer and push it onto the
@@ -2105,7 +2127,7 @@ oct2str:
   context:
   - func
   operations:
-  - pre: [oct]
+    pre: [oct]
     post: [res]
   description: |+
     Convert octetstring oct into a charstring and push it onto the
@@ -2117,7 +2139,7 @@ octets:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push an octetstring literal onto the stack. This is a
@@ -2141,7 +2163,7 @@ octetstring:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in octetstring type object.
@@ -2151,7 +2173,7 @@ omit:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special omit literal onto the stack.
@@ -2161,7 +2183,7 @@ or:
   context:
   - func
   operations:
-  - pre: [obj, obj]
+    pre: [obj, obj]
     post: [res]
   description: |+
     With a boolean first argument perform the logical or operation
@@ -2178,7 +2200,7 @@ out:
   context:
   - type_new
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Bind a type and name into an output value parameter object and
@@ -2190,7 +2212,7 @@ pass:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special literal on the stack corresponding to the pass
@@ -2201,7 +2223,7 @@ pattern:
   context:
   - vm
   operations:
-  - pre: [str]
+    pre: [str]
     post: [pat]
   description: |+
     Make string str into a pattern template literal and push this
@@ -2217,7 +2239,7 @@ permito:
   context:
   - vm
   operations:
-  - pre: [type]
+    pre: [type]
     post: [type]
   description: |+
     Modifies a type object to allow it to have the special omit
@@ -2228,7 +2250,7 @@ permitp:
   context:
   - vm
   operations:
-  - pre: [type]
+    pre: [type]
     post: [type]
   description: |+
     Modifies a type object to allow it to have ifpresent values.
@@ -2238,7 +2260,7 @@ permitt:
   context:
   - vm
   operations:
-  - pre: [type]
+    pre: [type]
     post: [type]
   description: |+
     Modifies a type object to allow it to have template values.
@@ -2248,7 +2270,7 @@ permutation:
   context:
   - value
   operations:
-  - pre: [vlist]
+    pre: [vlist]
     post: [res]
   description: |+
     Make a permutation template literal from the input value list
@@ -2259,7 +2281,7 @@ portm:
   context:
   - type_new
   operations:
-  - pre: [iblk, oblk]
+    pre: [iblk, oblk]
     post: [ptype]
   description: |+
     Construct a message port type object push onto the stack.
@@ -2275,7 +2297,7 @@ portma:
   context:
   - type_new
   operations:
-  - pre: [in, out, address, map_params, unmap_params]
+    pre: [in, out, address, map_params, unmap_params]
     post: []
   description: |+
     Create message port type
@@ -2285,7 +2307,7 @@ range:
   context:
   - vm
   operations:
-  - pre: [lower, upper]
+    pre: [lower, upper]
     post: [obj]
   description: |+
     Construct a range template literal from bounds lower and
@@ -2296,7 +2318,7 @@ read:
   context:
   - timer_op
   operations:
-  - pre: [tmr]
+    pre: [tmr]
     post: [rem]
   description: |+
     Read the remaining duration of timer tmr and push the float
@@ -2307,7 +2329,7 @@ receive:
   context:
   - port_op
   operations:
-  - pre: [mblk, ablk, port]
+    pre: [mblk, ablk, port]
     post: []
   description: |+
     Create a receive condition on port port. Block mblk shall
@@ -2320,7 +2342,7 @@ receive1:
   context:
   - port_op
   operations:
-  - pre: [match, assign]
+    pre: [match, assign]
     post: []
   description: |+
     Receive from any port
@@ -2330,7 +2352,7 @@ receivec:
   context:
   - port_op
   operations:
-  - pre: [mblk, ablk, port]
+    pre: [mblk, ablk, port]
     post: []
   description: |+
     Create a checked receive condition on port port. Block mblk
@@ -2344,7 +2366,7 @@ receivec1:
   - port_op
   - any
   operations:
-  - pre: [match, assign]
+    pre: [match, assign]
     post: []
   description: ""
 record:
@@ -2352,7 +2374,7 @@ record:
   context:
   - type_new
   operations:
-  - pre: [fblk]
+    pre: [fblk]
     post: [obj]
   description: |+
     Construct a record object from field definitions in block fblk
@@ -2363,7 +2385,7 @@ recordof:
   context:
   - type_new
   operations:
-  - pre: [type]
+    pre: [type]
     post: [obj]
   description: |+
     Construct a record-of object with element of type type and
@@ -2372,217 +2394,217 @@ recordof:
 ref_bit2hex:
   opcode: 476
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_bit2int:
   opcode: 475
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_bit2oct:
   opcode: 477
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_bit2str:
   opcode: 478
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_char2int:
   opcode: 472
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_char2oct:
   opcode: 473
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_decvalue:
   opcode: 504
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_encvalue:
   opcode: 503
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_enum2int:
   opcode: 501
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_float2int:
   opcode: 471
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_hex2bit:
   opcode: 480
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_hex2int:
   opcode: 479
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_hex2oct:
   opcode: 481
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_hex2str:
   opcode: 482
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2bit:
   opcode: 466
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2char:
   opcode: 464
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2enum:
   opcode: 506
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2float:
   opcode: 470
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2hex:
   opcode: 467
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2oct:
   opcode: 468
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_int2str:
   opcode: 469
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_isbound:
   opcode: 509
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_ispresent:
   opcode: 494
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_isvalue:
   opcode: 502
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_oct2bit:
   opcode: 484
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_oct2chr:
   opcode: 487
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_oct2hex:
   opcode: 485
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_oct2int:
   opcode: 483
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_oct2str:
   opcode: 486
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_regexp:
   opcode: 496
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_str2float:
   opcode: 490
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_str2hex:
   opcode: 508
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_str2int:
   opcode: 488
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_str2oct:
   opcode: 489
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_testcasename:
   opcode: 505
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 ref_val2str:
   opcode: 493
   operations:
-  - pre: [ref]
+    pre: [ref]
     post: []
   description: ""
 regexp:
@@ -2590,7 +2612,7 @@ regexp:
   context:
   - func
   operations:
-  - pre: [str, expr, gno]
+    pre: [str, expr, gno]
     post: [res]
   description: |+
     Perform a regular expression match of str against expr.
@@ -2602,7 +2624,7 @@ rem:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a rem b, pushing the result on the stack. The TTCN-3
@@ -2613,7 +2635,9 @@ rem:
 
 repeat:
   opcode: 59
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Cause the immediate repeat of the evaluation of the current
     enclosing alt.
@@ -2623,7 +2647,7 @@ replace:
   context:
   - func
   operations:
-  - pre: [str, idx, len, rep]
+    pre: [str, idx, len, rep]
     post: [res]
   description: |+
     Replace the substring of str, from index idx, for length len,
@@ -2634,7 +2658,9 @@ return:
   context:
   - vm
   - control_flow
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Causes immediate exit from the current function, altstep,
     testcase or control.
@@ -2644,7 +2670,7 @@ rnd:
   context:
   - func
   operations:
-  - pre: []
+    pre: []
     post: [num]
   description: |+
     Compute a random float in the range 0 and 1 exclusive, and
@@ -2655,7 +2681,7 @@ rol:
   context:
   - func
   operations:
-  - pre: [str, num]
+    pre: [str, num]
     post: [res]
   description: |+
     Rotate string str left by num items, and return the result.
@@ -2665,7 +2691,7 @@ ror:
   context:
   - func
   operations:
-  - pre: [str, num]
+    pre: [str, num]
     post: [res]
   description: |+
     Rotate string str right by num items, and return the result.
@@ -2676,7 +2702,7 @@ running:
   - timer_op
   - component_op
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [res]
   description: |+
     When called with a component reference comp, evaluate the
@@ -2693,7 +2719,7 @@ running1c:
   - timer_op
   - any
   operations:
-  - pre: []
+    pre: []
     post: [res]
   description: |+
     Evaluate the state of parallel test components to determine if
@@ -2706,7 +2732,7 @@ running1t:
   - timer_op
   - any
   operations:
-  - pre: []
+    pre: []
     post: [res]
   description: |+
     Evaluate the state of timers on the current component to
@@ -2720,7 +2746,7 @@ runningac:
   - timer_op
   - all
   operations:
-  - pre: []
+    pre: []
     post: [res]
   description: |+
     Evaluate the state of parallel test components to determine if
@@ -2732,7 +2758,7 @@ scan:
   context:
   - vm
   operations:
-  - pre: []
+    pre: []
     post: [blk]
   description: |+
     Switch from instruction execution to scanning until a matching
@@ -2743,7 +2769,7 @@ self:
   context:
   - testcase_op
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Fetch a reference to the current component and push it on the
@@ -2754,7 +2780,7 @@ send:
   context:
   - port_op
   operations:
-  - pre: [msg, port]
+    pre: [msg, port]
     post: []
   description: |+
     Send message msg on port port with no explicit addressing.
@@ -2764,7 +2790,7 @@ send1:
   context:
   - port_op
   operations:
-  - pre: [dest, msg, port]
+    pre: [dest, msg, port]
     post: []
   description: |+
     Send message msg on port port to single destination dest
@@ -2775,7 +2801,7 @@ senda:
   context:
   - port_op
   operations:
-  - pre: [msg, port]
+    pre: [msg, port]
     post: []
   description: |+
     Send message msg on port port to all associated destinations
@@ -2784,7 +2810,7 @@ senda:
 sender:
   opcode: 382
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Fetch the sender (from) address of the current communication
@@ -2795,7 +2821,7 @@ sendn:
   context:
   - port_op
   operations:
-  - pre: [dblk, msg, port]
+    pre: [dblk, msg, port]
     post: []
   description: |+
     Send message msg on port port to all destinations in block
@@ -2806,7 +2832,7 @@ set:
   context:
   - type_new
   operations:
-  - pre: [fblk]
+    pre: [fblk]
     post: [obj]
   description: |+
     Construct a set object from field definitions in block fblk
@@ -2817,7 +2843,7 @@ setof:
   context:
   - type_new
   operations:
-  - pre: [type]
+    pre: [type]
     post: [obj]
   description: |+
     Construct a set-of object with element of type type and push
@@ -2828,7 +2854,7 @@ setverdict:
   context:
   - component_op
   operations:
-  - pre: [lver]
+    pre: [lver]
     post: []
   description: |+
     Set the local verdict of the current component from parameter
@@ -2839,7 +2865,7 @@ shl:
   context:
   - func
   operations:
-  - pre: [str, num]
+    pre: [str, num]
     post: [res]
   description: |+
     Shift string str left by num items, and return the result.
@@ -2849,7 +2875,7 @@ shr:
   context:
   - func
   operations:
-  - pre: [str, num]
+    pre: [str, num]
     post: [res]
   description: |+
     Shift string str right by num items, and return the result.
@@ -2859,7 +2885,7 @@ sizeof:
   context:
   - func
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: [size]
   description: |+
     Pushes the number of elements in obj onto the stack as an
@@ -2870,7 +2896,7 @@ skip:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special literal onto the stack, corresponding to the
@@ -2885,7 +2911,7 @@ smatch:
   context:
   - func
   operations:
-  - pre: [expr, tmpl]
+    pre: [expr, tmpl]
     post: [bool]
   description: |+
     Silent match
@@ -2895,7 +2921,7 @@ source:
   context:
   - vm
   operations:
-  - pre: [mblk, name]
+    pre: [mblk, name]
     post: []
   description: |+
     Define a source file object with file name name and module
@@ -2906,7 +2932,7 @@ specplc:
   context:
   - component_op
   operations:
-  - pre: [blk]
+    pre: [blk]
     post: []
   description: |+
     Special place
@@ -2917,7 +2943,7 @@ start:
   - port_op
   - timer_op
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: []
   description: |+
     When called with a port reference port, start activity on the
@@ -2931,7 +2957,9 @@ startap:
   context:
   - port_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Start activity on all ports.
 
@@ -2940,7 +2968,7 @@ startc:
   context:
   - component_op
   operations:
-  - pre: [blk, comp]
+    pre: [blk, comp]
     post: []
   description: |+
     Start behaviour on parallel test component comp. Block blk
@@ -2953,7 +2981,7 @@ startd:
   context:
   - timer_op
   operations:
-  - pre: [dur, tmr]
+    pre: [dur, tmr]
     post: []
   description: |+
     Start timer tmr, with explicit duration dur.
@@ -2963,7 +2991,7 @@ step:
   context:
   - eval
   operations:
-  - pre: [cblk, sblk]
+    pre: [cblk, sblk]
     post: []
   description: |+
     Create an alternative for an enclosing alt operation,
@@ -2980,7 +3008,7 @@ stop:
   - component_op
   - port_op
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: []
   description: |+
     When called with a component reference comp, stop behaviour on
@@ -2995,7 +3023,9 @@ stopac:
   opcode: 301
   context:
   - component_op
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Stop all parallel test components. Permitted only from the
     master test component.
@@ -3005,7 +3035,9 @@ stopap:
   context:
   - port_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Stop all ports.
 
@@ -3014,13 +3046,17 @@ stopat:
   context:
   - timer_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Stop all timers on the current component.
 
 stopi:
   opcode: 51
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     From within the behaviour of a component, causes immediate
     termination of the behaviour of that component.
@@ -3031,7 +3067,7 @@ stopi:
 store:
   opcode: 6
   operations:
-  - pre: [obj]
+    pre: [obj]
     post: []
   description: |+
     Stores a local object indexed by x, where x in an unsigned
@@ -3042,7 +3078,7 @@ str2float:
   context:
   - func
   operations:
-  - pre: [char]
+    pre: [char]
     post: [res]
   description: |+
     Convert charstring char into a float, and push it onto the
@@ -3053,7 +3089,7 @@ str2hex:
   context:
   - func
   operations:
-  - pre: [string]
+    pre: [string]
     post: [hex]
   description: ""
 str2int:
@@ -3061,7 +3097,7 @@ str2int:
   context:
   - func
   operations:
-  - pre: [char]
+    pre: [char]
     post: [res]
   description: |+
     Convert charstring char into an integer, and push it onto the
@@ -3072,7 +3108,7 @@ str2oct:
   context:
   - func
   operations:
-  - pre: [char]
+    pre: [char]
     post: [res]
   description: |+
     Convert charstring char into an octetstring, and push it onto
@@ -3083,7 +3119,7 @@ sub:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |+
     Evaluate a – b, pushing the result on the stack.
@@ -3096,7 +3132,7 @@ subset:
   context:
   - value
   operations:
-  - pre: [vlist]
+    pre: [vlist]
     post: [res]
   description: |+
     Make a subset template literal from the input value list
@@ -3107,7 +3143,7 @@ substr:
   context:
   - func
   operations:
-  - pre: [str, idx, len]
+    pre: [str, idx, len]
     post: [res]
   description: |+
     Return the substring of str, from index idx, for length len.
@@ -3117,7 +3153,7 @@ subtype:
   context:
   - type_new
   operations:
-  - pre: [type, cons]
+    pre: [type, cons]
     post: [res]
   description: |+
     Create a subtype from type applying constraint cons, pushing
@@ -3129,7 +3165,7 @@ superset:
   context:
   - value
   operations:
-  - pre: [vlist]
+    pre: [vlist]
     post: [res]
   description: |+
     Make a superset template literal from the input value list
@@ -3140,7 +3176,7 @@ system:
   context:
   - testcase_op
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Fetch a reference to the current test system interface
@@ -3149,7 +3185,7 @@ system:
 tcstop:
   opcode: 286
   operations:
-  - pre: [reason]
+    pre: [reason]
     post: []
   description: |+
     Stop testcase.
@@ -3159,7 +3195,7 @@ template:
   context:
   - beha_def
   operations:
-  - pre: [type, pblk, bblk, name]
+    pre: [type, pblk, bblk, name]
     post: []
   description: |+
     Define a template object from return type, a block pblk
@@ -3172,7 +3208,7 @@ term:
   context:
   - type_new
   operations:
-  - pre: [tval, name]
+    pre: [tval, name]
     post: []
   description: |+
     Bind an integer value and name into an enumeration term
@@ -3184,7 +3220,7 @@ testcase:
   context:
   - beha_def
   operations:
-  - pre: [rcomp, pblk, bblk, name]
+    pre: [rcomp, pblk, bblk, name]
     post: []
   description: |+
     Define a testcase object from a runs-on component type rcomp,
@@ -3197,7 +3233,7 @@ testcasename:
   context:
   - testcase_op
   operations:
-  - pre: []
+    pre: []
     post: [name]
   description: |+
     Retrieve the current testcase name and push onto the stack.
@@ -3209,7 +3245,7 @@ testcases:
   context:
   - beha_def
   operations:
-  - pre: [scomp, rcomp, pblk, bblk, name]
+    pre: [scomp, rcomp, pblk, bblk, name]
     post: []
   description: |+
     Define a testcase object from a system component type scomp, a
@@ -3220,7 +3256,7 @@ testcases:
 testcasesw:
   opcode: 171
   operations:
-  - pre: [ablk, scomp, rcomp, pblk, bblk, name]
+    pre: [ablk, scomp, rcomp, pblk, bblk, name]
     post: []
   description: |+
     Define a testcase object from a system component type scomp, a
@@ -3232,7 +3268,7 @@ testcasesw:
 testcasew:
   opcode: 170
   operations:
-  - pre: [ablk, rcomp, pblk, bblk, name]
+    pre: [ablk, rcomp, pblk, bblk, name]
     post: []
   description: |+
     Define a testcase object from a runs-on component type rcomp,
@@ -3245,7 +3281,7 @@ timeout:
   context:
   - timer_op
   operations:
-  - pre: [tmr]
+    pre: [tmr]
     post: []
   description: |+
     Create a timeout alternative bound to timer tmr and attach
@@ -3256,7 +3292,9 @@ timeout1:
   context:
   - timer_op
   - any
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Create a timeout alternative bound to the expiry of any
     current timer and attach this to the enclosing alt operation.
@@ -3266,7 +3304,7 @@ timer:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in timer type object.
@@ -3276,7 +3314,7 @@ timestamp:
   context:
   - port_op
   operations:
-  - pre: []
+    pre: []
     post: [timestamp_id]
   description: ""
 to:
@@ -3284,7 +3322,7 @@ to:
   context:
   - func
   operations:
-  - pre: [mapv, setofToType]
+    pre: [mapv, setofToType]
     post: [res]
   description: |+
     Implements the TTCN-3 .to operation applied to mapv of 
@@ -3298,7 +3336,7 @@ trigger:
   context:
   - port_op
   operations:
-  - pre: [mblk, ablk, port]
+    pre: [mblk, ablk, port]
     post: []
   description: |+
     Create a trigger condition on port port. Block mblk shall
@@ -3312,7 +3350,7 @@ trigger1:
   - port_op
   - any
   operations:
-  - pre: [match, assign]
+    pre: [match, assign]
     post: []
   description: ""
 "true":
@@ -3320,7 +3358,7 @@ trigger1:
   context:
   - literal
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a special true literal onto the stack.
@@ -3330,7 +3368,7 @@ type:
   context:
   - type_def
   operations:
-  - pre: [obj, name]
+    pre: [obj, name]
     post: []
   description: |+
     Associate a type object and name into a type definition object
@@ -3341,7 +3379,7 @@ typew:
   context:
   - type_def
   operations:
-  - pre: [ablk, obj, name]
+    pre: [ablk, obj, name]
     post: []
   description: |+
     Associate a type object and name into a type definition object
@@ -3353,7 +3391,7 @@ union:
   context:
   - type_new
   operations:
-  - pre: [fblk]
+    pre: [fblk]
     post: [obj]
   description: |+
     Construct a union object from field definitions in block fblk
@@ -3364,7 +3402,7 @@ unmap:
   context:
   - port_op
   operations:
-  - pre: [p1, p2]
+    pre: [p1, p2]
     post: []
   description: |+
     Break the mapping between port p1 and port p2.
@@ -3375,7 +3413,7 @@ unmapa:
   - port_op
   - all
   operations:
-  - pre: [comp]
+    pre: [comp]
     post: []
   description: |+
     Break all mappings from component comp.
@@ -3386,7 +3424,9 @@ unmapaa:
   - port_op
   - component_op
   - all
-  operations: []
+  operations:
+    pre: []
+    post: []
   description: |+
     Break all mappings on all components.
 
@@ -3395,7 +3435,7 @@ unmapfromto:
   context:
   - value
   operations:
-  - pre: [mapval, key]
+    pre: [mapval, key]
     post: []
   description: |+
     remove key from mapval.
@@ -3406,7 +3446,7 @@ utf8:
   - literal
   - multibyte
   operations:
-  - pre: []
+    pre: []
     post: [lit]
   description: |+
     Push a string literal onto the stack. This is a
@@ -3427,7 +3467,7 @@ val2str:
   context:
   - func
   operations:
-  - pre: [val]
+    pre: [val]
     post: [string]
   description: |+
     Return a printable representation of val.
@@ -3437,7 +3477,7 @@ value:
   context:
   - port_op
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Fetch the value of the current communication operation.
@@ -3455,7 +3495,7 @@ valueof:
   context:
   - value
   operations:
-  - pre: [tmpl]
+    pre: [tmpl]
     post: [value]
   description: |+
     Check template tmpl. If it has a single value then return this
@@ -3466,7 +3506,7 @@ var:
   context:
   - decl
   operations:
-  - pre: [type, name]
+    pre: [type, name]
     post: []
   description: |+
     Create a variable with the given type and name. Bind this
@@ -3477,7 +3517,7 @@ vardup:
   context:
   - decl
   operations:
-  - pre: [type, init, name]
+    pre: [type, init, name]
     post: []
   description: Create a variable with eager template evaluation.
 variant:
@@ -3485,7 +3525,7 @@ variant:
   context:
   - type_new
   operations:
-  - pre: [val]
+    pre: [val]
     post: []
   description: |+
     Attach the variant attribute val to the object owning the
@@ -3496,7 +3536,7 @@ varianto:
   context:
   - type_new
   operations:
-  - pre: [val]
+    pre: [val]
     post: []
   description: |+
     Attach the overriding variant attribute val to the object
@@ -3507,7 +3547,7 @@ verdicttype:
   context:
   - type_ref
   operations:
-  - pre: []
+    pre: []
     post: [obj]
   description: |+
     Push the built-in verdicttype type object.
@@ -3517,7 +3557,7 @@ version:
   context:
   - beha_def
   operations:
-  - pre: [num]
+    pre: [num]
     post: []
   description: |+
     Specify the version number of t3xf to which this file
@@ -3528,7 +3568,7 @@ vlist:
   context:
   - vm
   operations:
-  - pre: [mark, object1, .., objectn]
+    pre: [mark, object1, .., objectn]
     post: [vlist]
   description: |+
     Build a value list from a marked listed of objects,
@@ -3540,7 +3580,7 @@ wait:
   context:
   - func
   operations:
-  - pre: [float]
+    pre: [float]
     post: []
   description: Wait for float seconds.
 while:
@@ -3549,7 +3589,7 @@ while:
   - vm
   - control_flow
   operations:
-  - pre: [cond, body]
+    pre: [cond, body]
     post: []
   description: |+
     Implements the TTCN-3 while statement using two block
@@ -3567,7 +3607,7 @@ xor:
   context:
   - func
   operations:
-  - pre: [a, b]
+    pre: [a, b]
     post: [res]
   description: |
     With boolean inputs, perform the logical exclusive or
