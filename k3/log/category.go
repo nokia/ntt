@@ -68,6 +68,7 @@ const (
 	MATC    Category = "matc|Left-hand-side:value|Right-hand-side:template|List of mismatches (empty means matched)"
 	MPAR    Category = "mpar|module parameter|name|value"
 	PAON    Category = "paon|produces no log-line. To be used for switching on parameter logging for functions, altsteps, testcases"
+	PERF    Category = "perf|Performance Measurement|key|value"
 	PLLG    Category = "pllg|plugin related log message"
 	PLOD    Category = "plod|Plugin loaded|Path to plugin|Plugin name|Plugin type"
 	PTCK    Category = "ptck|Evaluate port.check()|Port name|Match template|Outcome"
@@ -215,6 +216,7 @@ var (
 		"matc": "matc|Left-hand-side:value|Right-hand-side:template|List of mismatches (empty means matched)",
 		"mpar": "mpar|module parameter|name|value",
 		"paon": "paon|produces no log-line. To be used for switching on parameter logging for functions, altsteps, testcases",
+		"perf": "perf|Performance Measurement|key|value",
 		"pllg": "pllg|plugin related log message",
 		"plod": "plod|Plugin loaded|Path to plugin|Plugin name|Plugin type",
 		"ptck": "ptck|Evaluate port.check()|Port name|Match template|Outcome",
