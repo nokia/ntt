@@ -95,7 +95,7 @@ func Kind(n syntax.Node) string {
 		return "v"
 	case *syntax.TemplateDecl:
 		return "d"
-	case *syntax.FuncDecl, *syntax.Testcase:
+	case *syntax.FuncDecl:
 		return "f"
 	case *syntax.SignatureDecl:
 		return "f"

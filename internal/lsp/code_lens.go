@@ -28,7 +28,10 @@ func (s *Server) codeLens(ctx context.Context, params *protocol.CodeLensParams) 
 		switch n := n.(type) {
 		case *syntax.NodeList, *syntax.Module, *syntax.ModuleDef:
 			return true
-		case *syntax.Testcase:
+		case *syntax.FuncDecl:
+			if !n.IsTest() {
+				return false
+			}
 			title := "run test"
 			params := nttTestParams{
 				TestID: TestID{

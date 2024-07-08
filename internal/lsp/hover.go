@@ -98,18 +98,6 @@ func getSignature(def *ttcn3.Node) string {
 	fh := fs.Open(def.Filename())
 	content, _ := fh.Bytes()
 	switch node := def.Node.(type) {
-	case *syntax.Testcase:
-		sig.WriteString("testcase " + node.Name.String())
-		sig.Write(content[node.Params.Pos():node.Params.End()])
-		if node.RunsOn != nil {
-			sig.WriteString("\n  ")
-			sig.Write(content[node.RunsOn.Pos():node.RunsOn.End()])
-		}
-		if node.System != nil {
-			sig.WriteString("\n  ")
-			sig.Write(content[node.System.Pos():node.System.End()])
-		}
-
 	case *syntax.FuncDecl:
 		sig.WriteString(node.Kind.String() + " " + node.Name.String())
 		sig.Write(content[node.Params.Pos():node.Params.End()])

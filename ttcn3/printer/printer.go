@@ -482,19 +482,6 @@ func (p *printer) print(values ...interface{}) {
 			p.print(unindent, n.RBrace)
 			p.print(n.With)
 
-		case *syntax.Testcase:
-			if n == nil {
-				return
-			}
-			p.print(n.Tok)
-			p.print(n.Name)
-			p.print(n.TypePars)
-			p.print(n.Params)
-			p.print(n.RunsOn)
-			p.print(n.System)
-			p.print(n.Body)
-			p.print(n.With)
-
 		case *syntax.FuncDecl:
 			if n == nil {
 				return

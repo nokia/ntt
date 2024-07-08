@@ -102,8 +102,6 @@ func Name(n Node) string {
 		return Name(n.Name)
 	case *FuncDecl:
 		return Name(n.Name)
-	case *Testcase:
-		return Name(n.Name)
 	case *RefSpec:
 		return Name(n.X)
 	case *SignatureDecl:

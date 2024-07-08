@@ -138,29 +138,14 @@ func (c *Compiler) Compile(n syntax.Node) error {
 	case *syntax.ModuleDef:
 		c.Compile(n.Def)
 
-	case *syntax.Testcase:
-		c.scope = newScope(c.scope)
-
-		op := opcode.TESTCASE
-		if n.System != nil {
-			op = opcode.TESTCASES
-			c.Compile(n.System.Comp)
-		}
-		c.Compile(n.RunsOn.Comp)
-		c.Compile(n.Params)
-		c.Compile(n.Body)
-		c.emit(opcode.NAME, n.Name.String())
-		addr := c.emit(op, 0)
-
-		c.scope = c.scope.parent
-		c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
-
 	case *syntax.FuncDecl:
 		switch k := n.Kind.Kind(); {
 		case k == syntax.FUNCTION && n.External == nil:
 			c.compileFunction(n)
 		case k == syntax.FUNCTION && n.External != nil:
 			c.compileExtFunc(n)
+		case k == syntax.TESTCASE:
+			c.compileTestcase(n)
 		case k == syntax.ALTSTEP:
 			c.compileAltstep(n)
 		default:
@@ -633,6 +618,25 @@ func (c *Compiler) compileExtFunc(n *syntax.FuncDecl) error {
 		c.Compile(n.With)
 	}
 	c.Compile(n.Params)
+	c.emit(opcode.NAME, n.Name.String())
+	addr := c.emit(op, 0)
+
+	c.scope = c.scope.parent
+	c.scope.define(n.Name.String(), symbol{n: n, op: opcode.REF, arg: Reference(addr)})
+	return nil
+}
+
+func (c *Compiler) compileTestcase(n *syntax.FuncDecl) error {
+	c.scope = newScope(c.scope)
+
+	op := opcode.TESTCASE
+	if n.System != nil {
+		op = opcode.TESTCASES
+		c.Compile(n.System.Comp)
+	}
+	c.Compile(n.RunsOn.Comp)
+	c.Compile(n.Params)
+	c.Compile(n.Body)
 	c.emit(opcode.NAME, n.Name.String())
 	addr := c.emit(op, 0)
 
