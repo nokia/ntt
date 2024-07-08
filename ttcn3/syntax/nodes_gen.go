@@ -5502,6 +5502,73 @@ func (n *PortTypeDecl) End() int {
 	return -1
 }
 
+func (n *PostExpr) FirstTok() Token {
+	switch {
+
+	case n.X != nil:
+		return n.X.FirstTok()
+
+	case n.Op != nil:
+		return n.Op
+
+	default:
+		return nil
+	}
+}
+
+func (n *PostExpr) LastTok() Token {
+	switch {
+
+	case n.Op != nil:
+		return n.Op
+
+	case n.X != nil:
+		return n.X.LastTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *PostExpr) Children() []Node {
+	ret := make([]Node, 0, 2)
+
+	if n.X != nil {
+		ret = append(ret, n.X)
+	}
+
+	if n.Op != nil {
+		ret = append(ret, n.Op)
+	}
+
+	return ret
+}
+
+func (n *PostExpr) Inspect(f func(Node) bool) {
+
+	if c := n.X; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *PostExpr) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *PostExpr) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
 func (n *RedirectExpr) FirstTok() Token {
 	switch {
 

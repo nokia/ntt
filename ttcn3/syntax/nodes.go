@@ -191,6 +191,12 @@ type (
 		X  Expr
 	}
 
+	// A postfix expresseion (i++, i--)
+	PostExpr struct {
+		X  Expr
+		Op Token
+	}
+
 	// A BinaryExpr represents a binary expression.
 	// Possible operands are all tokens with a precedence value, TO and FROM.
 	BinaryExpr struct {
@@ -338,6 +344,7 @@ func (x *ParametrizedIdent) exprNode() {}
 func (x *ValueLiteral) exprNode()      {}
 func (x *CompositeLiteral) exprNode()  {}
 func (x *UnaryExpr) exprNode()         {}
+func (x *PostExpr) exprNode()          {}
 func (x *BinaryExpr) exprNode()        {}
 func (x *ParenExpr) exprNode()         {}
 func (x *SelectorExpr) exprNode()      {}

@@ -621,6 +621,10 @@ func (p *parser) parseBinaryExpr(prec1 int) Expr {
 func (p *parser) parsePostfixExpr() Expr {
 	x := p.parseUnaryExpr()
 
+	if p.tok == INC || p.tok == DEC {
+		x = &PostExpr{X: x, Op: p.consume()}
+	}
+
 	if p.tok == LENGTH {
 		x = p.parseLength(x)
 	}
@@ -658,7 +662,7 @@ func (p *parser) parsePostfixExpr() Expr {
 //	| PrimaryExpr
 func (p *parser) parseUnaryExpr() Expr {
 	switch p.tok {
-	case ADD, EXCL, NOT, NOT4B, SUB:
+	case ADD, EXCL, NOT, NOT4B, SUB, INC, DEC:
 		tok := p.consume()
 		// handle unused expr '-'
 		if tok.Kind() == SUB {
