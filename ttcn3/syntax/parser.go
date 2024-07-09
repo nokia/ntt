@@ -2408,7 +2408,7 @@ func (p *parser) parseStmt() Stmt {
 	case LBRACK:
 		return p.parseAltGuard()
 	case FOR:
-		if p.peek(4).Kind() == IN || p.peek(5).Kind() == IN {
+		if p.peek(4).Kind() == IN || p.peek(5).Kind() == IN || p.peek(6).Kind() == IN {
 			return p.parseForRangeLoop()
 		}
 		return p.parseForLoop()
@@ -2485,6 +2485,9 @@ func (p *parser) parseForRangeLoop() *ForRangeStmt {
 	x.LParen = p.expect(LPAREN)
 	if p.tok == VAR {
 		x.VarTok = p.consume()
+		if p.peek(2).Kind() != IN {
+			x.Type = p.parseTypeSpec()
+		}
 		x.Var = p.parseName()
 	} else {
 		x.Var = p.parseIdent()

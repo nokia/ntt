@@ -425,6 +425,7 @@ type (
 		Tok    Token
 		LParen Token
 		VarTok Token
+		Type   TypeSpec
 		Var    *Ident
 		InTok  Token
 		Range  Expr

@@ -277,6 +277,7 @@ func TestStmts(t *testing.T) {
 		{pass, `for (i:=x; i<23; i:=i+1) {}`},
 		{pass, `for (x in {1,2,3}) {}`},
 		{pass, `for (var x in a) {}`},
+		{pass, `for (var integer x in a) {}`},
 		{pass, `while (23) {}`},
 		{pass, `do {} while (23);`},
 		{pass, `if (1) {}`},
