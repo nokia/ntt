@@ -7,6 +7,10 @@
     paths:
       - .go/pkg/mod/
 
+default:
+  tags:
+    - big
+
 stages:
   - build
   - test
