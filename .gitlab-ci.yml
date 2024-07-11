@@ -9,7 +9,7 @@
 
 default:
   tags:
-    - big
+    - k3-nks-big
 
 stages:
   - build
