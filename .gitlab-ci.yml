@@ -11,6 +11,8 @@ default:
   tags:
     - k3-nks-big
 
+image: k3-local.artifactory-espoo2.int.net.nokia.com/k3ci/default:latest
+
 stages:
   - build
   - test
