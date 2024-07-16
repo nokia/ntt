@@ -19,6 +19,21 @@ const (
 	{{ uc $name }} Opcode = {{ encode $op.Opcode }}{{ end }}
 )
 
+var Descriptions = map[string]*Descriptor{
+	{{ range $name, $op := . }}
+		"{{ $name }}": {
+			Opcode: {{ encode $op.Opcode }},
+			Description: {{ quote $op.Description }},
+			Context: []string{ {{ range $ctx := $op.Context }}{{ quote $ctx }},{{ end }} },
+			Operations: Operation{
+				Pre: []string{ {{ range $pre := $op.Operations.Pre }}{{ quote $pre }},{{ end }} },
+				Post: []string{ {{ range $post := $op.Operations.Post }}{{ quote $post }},{{ end }} },
+			},
+		},
+
+	{{ end }}
+}
+
 var opcodeStrings = map[Opcode]string{
 	REF:        "ref",
 	LINE:       "line",

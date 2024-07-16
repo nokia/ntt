@@ -28,6 +28,9 @@ var funcs = template.FuncMap{
 
 		return "// " + strings.ReplaceAll(s, "\n", "\n// ")
 	},
+	"quote": func(s string) string {
+		return fmt.Sprintf("%q", s)
+	},
 	"join": func(a []string, sep string) string {
 		return strings.Join(a, sep)
 	},
@@ -53,8 +56,9 @@ func main() {
 	if err = tmpl.Execute(&buf, opcodes); err != nil {
 		log.Fatal(err)
 	}
+	b = buf.Bytes()
 
-	b2, err := format.Source(buf.Bytes())
+	b2, err := format.Source(b)
 	if err == nil {
 		b = b2
 	}
