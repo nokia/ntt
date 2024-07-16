@@ -58,6 +58,7 @@ Naming Convention Checks
     naming.templates          Checks for constant template identifiers.
     naming.locals             Checks for local variable identifiers.
 
+    tags.tests                Checks for module tags.
     tags.tests                Checks for test-case tags.
 
 
@@ -159,7 +160,8 @@ For information on writing new checks, see <TBD>.
 			Locals          map[string]string
 		}
 		Tags struct {
-			Tests map[string]string
+			Modules map[string]string
+			Tests   map[string]string
 		}
 		Ignore struct {
 			Modules []string
@@ -237,6 +239,7 @@ func lint(cmd *cobra.Command, args []string) error {
 
 				checkNaming(mod, style.Naming.Modules)
 				checkBraces(mod.LBrace, mod.RBrace)
+				checkTags(mod, style.Tags.Modules)
 				mod.Inspect(func(n syntax.Node) bool {
 					if n == nil {
 						stack = stack[:len(stack)-1]
@@ -246,6 +249,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					stack = append(stack, n)
 
 					switch n := n.(type) {
+
 					case *syntax.Ident:
 						checkUsage(n)
 
@@ -714,6 +718,11 @@ func buildRegexCache() error {
 		}
 	}
 	for p := range style.Tags.Tests {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Tags.Modules {
 		if err := cacheRegex(p); err != nil {
 			return err
 		}
