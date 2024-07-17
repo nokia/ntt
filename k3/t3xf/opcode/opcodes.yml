@@ -861,6 +861,16 @@ drop:
   description: |+
     Remove the item at the top of the stack and discard it.
 
+dup:
+  opcode: 11
+  context:
+    - vm
+  operations:
+    pre: [obj]
+    post: [obj, obj]
+  description: |+
+    Duplicate the item at the top of the stack.
+
 else:
   opcode: 58
   context:
