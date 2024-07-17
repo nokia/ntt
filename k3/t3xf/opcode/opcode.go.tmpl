@@ -19,9 +19,9 @@ const (
 	{{ uc $name }} Opcode = {{ encode $op.Opcode }}{{ end }}
 )
 
-var Descriptions = map[string]*Descriptor{
+var Descriptions = map[Opcode]*Descriptor{
 	{{ range $name, $op := . }}
-		"{{ $name }}": {
+		{{ uc $name }}: {
 			Opcode: {{ encode $op.Opcode }},
 			Description: {{ quote $op.Description }},
 			Context: []string{ {{ range $ctx := $op.Context }}{{ quote $ctx }},{{ end }} },
