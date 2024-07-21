@@ -1,6 +1,6 @@
 run:
   tests: false
-  skip-dirs:
+  exclude-dirs:
     - internal/env
     - internal/fs
     - internal/loc
@@ -16,7 +16,7 @@ run:
     - ttcn3/v2/syntax/internal/gen
     - ttcn3/syntax/internal/gen
     - ttcn3/printer
-  skip-files:
+  exclude-files:
     - ".*_gen.go$"
 
 output:
@@ -37,7 +37,7 @@ linters:
     - goconst
     - godot
     - godox
-    - gomnd
+    - mnd
     - goprintffuncname
     - gosec
     - ireturn
