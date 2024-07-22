@@ -57,8 +57,12 @@ Naming Convention Checks
     naming.component_consts   Checks for component scoped constant identifiers.
     naming.templates          Checks for constant template identifiers.
     naming.locals             Checks for local variable identifiers.
+	naming.record             Checks for record identifiers.
+	naming.set                Checks for set identifiers.
+	naming.union              Checks for union identifiers.
+	naming.enum               Checks for enum identifiers
 
-    tags.tests                Checks for module tags.
+	tags.modules              Checks for module tags.
     tags.tests                Checks for test-case tags.
 
 
@@ -158,6 +162,10 @@ For information on writing new checks, see <TBD>.
 			ComponentConsts map[string]string `yaml:"component_consts"`
 			Templates       map[string]string
 			Locals          map[string]string
+			Record          map[string]string
+			Set             map[string]string
+			Union           map[string]string
+			Enum            map[string]string
 		}
 		Tags struct {
 			Modules map[string]string
@@ -281,7 +289,6 @@ func lint(cmd *cobra.Command, args []string) error {
 					case *syntax.PortTypeDecl:
 						checkNaming(n, style.Naming.PortTypes)
 						checkBraces(n.LBrace, n.RBrace)
-
 					case *syntax.Declarator:
 						if len(stack) <= 2 {
 							return true
@@ -337,8 +344,17 @@ func lint(cmd *cobra.Command, args []string) error {
 						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.StructTypeDecl:
 						checkBraces(n.LBrace, n.RBrace)
+						switch n.Kind.Kind() {
+						case syntax.RECORD:
+							checkNaming(n, style.Naming.Record)
+						case syntax.SET:
+							checkNaming(n, style.Naming.Set)
+						case syntax.UNION:
+							checkNaming(n, style.Naming.Union)
+						}
 					case *syntax.EnumTypeDecl:
 						checkBraces(n.LBrace, n.RBrace)
+						checkNaming(n, style.Naming.Enum)
 					case *syntax.ImportDecl:
 						checkBraces(n.LBrace, n.RBrace)
 						checkImport(n, mod, tree)
@@ -713,6 +729,26 @@ func buildRegexCache() error {
 		}
 	}
 	for p := range style.Naming.Locals {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.Record {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.Set {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.Union {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.Enum {
 		if err := cacheRegex(p); err != nil {
 			return err
 		}
