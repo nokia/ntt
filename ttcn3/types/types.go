@@ -514,11 +514,10 @@ func TypeOf(n syntax.Expr) Type {
 		if t := mostSpecificCommonTypeOfArray(typeList...); isRecord || t == Predefined["any"] {
 			t = &StructuredType{Kind: Record, Fields: fields}
 			return t
-		} else {
-			// Map vs Record of Maps?
-			if _, ok := t.(*MapType); ok {
+		// Map vs Record of Maps?
+		} else if _, ok := t.(*MapType); ok {
 				return t
-			}
+		} else {
 			return &ListType{Kind: RecordOf, ElementType: t}
 		}
 	}
