@@ -52,7 +52,7 @@ coverage:
         path: report-coverage.xml
 lint:
   stage: test
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  image: golangci/golangci-lint:v1.59.1
   needs: []
   script:
     - golangci-lint run --color=always --issues-exit-code=0 --out-format=code-climate:report-lint.json,colored-line-number:stdout
