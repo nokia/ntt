@@ -487,8 +487,7 @@ func TypeOf(n syntax.Expr) Type {
 	case *syntax.IndexExpr:
 		if n.X == nil {
 			return TypeOf(n.Index)
-		} else {
-			if X, ok := TypeOf(n.X).(*ListType); ok {
+		} else if X, ok := TypeOf(n.X).(*ListType); ok {
 				return X.ElementType
 			} else {
 				return TypeOf(n.X).(*MapType).From
