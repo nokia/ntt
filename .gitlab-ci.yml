@@ -4,14 +4,20 @@
   before_script:
     - mkdir -p .go
   cache:
-    paths:
-      - .go/pkg/mod/
+    - key: "golang"
+      paths:
+        - .go/pkg/mod/
+  after_script:
+    - find $XCACHE -type f
 
 default:
   tags:
     - k3-nks-tiny
 
 image: k3-local.artifactory-espoo2.int.net.nokia.com/k3ci/default:latest
+
+variables:
+  XCACHE: "/xcache"
 
 stages:
   - build
