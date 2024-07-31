@@ -27,6 +27,10 @@ func Decode(b []byte) (n int, op opcode.Opcode, arg interface{}) {
 		arg = int(binary.LittleEndian.Uint32(b[4:]))
 		n = 4 + 4
 
+	case opcode.LOAD:
+		arg = int(binary.LittleEndian.Uint32(b[4:]))
+		n = 4 + 4
+
 	case opcode.IEEE754DP:
 		arg = float64(binary.LittleEndian.Uint64(b[4:]))
 		n = 4 + 8
