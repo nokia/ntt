@@ -25,6 +25,9 @@ include:
     file: "/gitlab/templates/ntt/test-template-tiny.yml"
   - project: 'k3/k3ci'
     ref: "master"
+    file: "/gitlab/templates/ntt/test-template-medium.yml"
+  - project: 'k3/k3ci'
+    ref: "master"
     file: "/gitlab/templates/ntt/deploy-template-tiny.yml"
 
 variables:
@@ -39,7 +42,7 @@ golang:1.20:
   stage: test
   image: golang:1.20
   extends:
-    - .ntt:test-template-tiny
+    - .ntt:test-template-medium
   script:
     - go test ./...
 
@@ -48,7 +51,7 @@ golang:latest:
   image: golang:latest
   extends:
     - .go-cache
-    - .ntt:test-template-tiny
+    - .ntt:test-template-medium
   script:
     - go install gotest.tools/gotestsum@latest
     - $GOPATH/bin/gotestsum --junitfile report-junit.xml --format testname -- -race ./...
