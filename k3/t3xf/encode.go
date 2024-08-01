@@ -110,7 +110,7 @@ func (e *Encoder) Encode(op opcode.Opcode, arg any) error {
 	e.offsets[e.i] = len(e.b)
 
 	switch op {
-	case opcode.REF, opcode.FROZEN_REF, opcode.GOTO:
+	case opcode.REF, opcode.FROZEN_REF, opcode.GOTO, opcode.CALL, opcode.ISCAN:
 		return e.encodeRef(op, arg)
 	case opcode.IEEE754DP:
 		return e.encodeFloat(op, arg)
@@ -120,11 +120,6 @@ func (e *Encoder) Encode(op opcode.Opcode, arg any) error {
 		return e.encodeBinaryString(op, arg)
 	case opcode.UTF8, opcode.ISTR, opcode.FSTR, opcode.NAME:
 		return e.encodeString(op, arg)
-	case opcode.SCAN:
-		if arg != nil {
-			return e.encodeRef(op, arg)
-		}
-		return e.encodeInstruction(op, arg)
 	default:
 		return e.encodeInstruction(op, arg)
 	}

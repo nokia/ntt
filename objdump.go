@@ -86,7 +86,7 @@ func (asmDump *t3xfAsmDump) acquireRefs(offset int, asmLineNo int) {
 func (asmDump *t3xfAsmDump) printInstruction(offset int, b []byte, op opcode.Opcode, arg interface{}) {
 	asmDump.lineNo++
 	switch op {
-	case opcode.SCAN:
+	case opcode.SCAN, opcode.ISCAN:
 		line.Fprintf(w, "%*sscan", asmDump.indent, "")
 		asmDump.indent += INDENT_OFFSET
 	case opcode.BLOCK:
@@ -125,7 +125,7 @@ func (*t3xfObjDump) acquireRefs(int, int) {
 
 func (objDump *t3xfObjDump) printInstruction(offset int, b []byte, op opcode.Opcode, arg interface{}) {
 	switch op {
-	case opcode.SCAN:
+	case opcode.SCAN, opcode.ISCAN:
 		objDump.printOffset(offset)
 		line.Fprintf(w, "scan")
 		objDump.indent += INDENT_OFFSET

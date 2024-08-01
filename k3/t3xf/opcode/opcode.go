@@ -5,13 +5,6 @@ package opcode
 
 import "fmt"
 
-const (
-	refClass   = 0
-	gotoClass  = 1
-	lineClass  = 2
-	instrClass = 3
-)
-
 type Opcode int
 
 func (op Opcode) String() string {
@@ -22,49 +15,34 @@ func (op Opcode) String() string {
 }
 
 func Unpack(x uint32) (Opcode, int) {
-	i := int(x)
-	switch i & 0x3 {
-	case refClass:
-		if uint32(i)&(1<<31) != 0 {
-			return FROZEN_REF, int(x &^ (1 << 31))
-		}
-		return REF, i
-	case lineClass:
-		return LINE, i >> 2
-	case gotoClass:
-		switch (uint32(i) & (3 << 30)) >> 30 {
-		case 1:
-			return APPLY, int(uint32(i) & 0x3ffffffc)
-		case 2:
-			return SCAN, int(uint32(i) & 0x3ffffffc)
-		}
-		return GOTO, i & ^(0x3)
-	default:
-		return Opcode((i & 0xffff)), i >> 16
+	cls := x & 0b11
+	if cls == 0b11 {
+		return Opcode(x & 0xffff), int(x >> 16)
 	}
+
+	op := Opcode((x >> 28 & 0b1100) | cls)
+	arg := int(x & 0b00_1111111111111111111111111111_00)
+
+	if op == LINE {
+		arg >>= 2
+	}
+
+	return op, arg
 }
 
-func Pack(op Opcode, x int) uint32 {
-	switch op {
-	case REF:
-		return uint32(x)
-	case FROZEN_REF:
-		return uint32(x) | (1 << 31)
-	case LINE:
-		return uint32(x<<2) | lineClass
-	case GOTO:
-		return uint32(x) | gotoClass
-	default:
-		if x != 0 {
-			switch op {
-			case APPLY:
-				return uint32(x) | gotoClass | (1 << 30)
-			case SCAN:
-				return uint32(x) | gotoClass | (2 << 30)
-			}
-		}
-		return uint32(x)<<16 | (uint32(op) & 0xffff)
+func Pack(op Opcode, arg int) uint32 {
+	if op&instrMask == instrMask {
+		return uint32(arg)<<16 | (uint32(op) & 0xffff)
 	}
+
+	hi := uint32(op) & 0b1100
+	lo := uint32(op) & 0b0011
+
+	if op == LINE {
+		arg <<= 2
+	}
+
+	return hi<<28 | lo | uint32(arg)&0b00_1111111111111111111111111111_00
 }
 
 func Parse(s string) (Opcode, error) {

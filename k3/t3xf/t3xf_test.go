@@ -27,7 +27,7 @@ func TestEncoder(t *testing.T) {
 		assert.NoError(t, e.Encode(opcode.REF, 1))
 		b, err := e.Assemble()
 		assert.ErrorIs(t, err, t3xf.ErrUnknownReference)
-		assert.Equal(t, []byte{0xfc, 0xff, 0xff, 0xff}, b)
+		assert.Equal(t, []byte{0xfc, 0xff, 0xff, 0x3f}, b)
 
 		// Known references are resolved
 		assert.NoError(t, e.Encode(opcode.REF, 0))
@@ -52,11 +52,7 @@ func TestEncoder(t *testing.T) {
 		assert.NoError(t, e.Encode(opcode.REF, 0))
 		assert.NoError(t, e.Encode(opcode.FROZEN_REF, 0))
 		assert.NoError(t, e.Encode(opcode.GOTO, 0))
-
-		// Note: SCAN cannot use 0 for reference, because of the
-		//       opcode.Pack function. This is not a problem, because
-		//       SCAN references have to be greater than 0.
-		assert.NoError(t, e.Encode(opcode.SCAN, 1))
+		assert.NoError(t, e.Encode(opcode.ISCAN, 1))
 
 		b, err := e.Assemble()
 		assert.NoError(t, err)
@@ -227,14 +223,14 @@ func TestDecode(t *testing.T) {
 		{name: "GOTO", input: []byte{0x01, 0x00, 0x00, 0x00},
 			n: 4, op: opcode.GOTO, arg: "t3xf.Reference:0"},
 
-		{name: "SCAN", input: []byte{0x01, 0x00, 0x00, 0x80},
-			n: 4, op: opcode.SCAN, arg: "t3xf.Reference:0"},
+		{name: "ISCAN", input: []byte{0x01, 0x00, 0x00, 0x80},
+			n: 4, op: opcode.ISCAN, arg: "t3xf.Reference:0"},
 
 		{name: "SCAN", input: []byte{0xd3, 0x00, 0x00, 0x00},
 			n: 4, op: opcode.SCAN, arg: "<nil>"},
 
 		{name: "SCAN", input: []byte{0xd3, 0x00, 0x04, 0x00},
-			n: 4, op: opcode.SCAN, arg: "t3xf.Reference:4"},
+			n: 4, op: opcode.SCAN, arg: "int:4"},
 
 		{name: "IFIELD", input: []byte{0xd3, 0x05, 0x06, 0x00},
 			n: 4, op: opcode.IFIELD, arg: "int:6"},

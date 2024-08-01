@@ -57,19 +57,12 @@ func Decode(b []byte) (n int, op opcode.Opcode, arg interface{}) {
 		arg = &String{nBits, b[8 : 8+l]}
 		n = 4 + 4 + ((l+3)/4)*4
 
-	case opcode.REF, opcode.GOTO, opcode.FROZEN_REF:
+	case opcode.REF, opcode.GOTO, opcode.FROZEN_REF, opcode.ISCAN, opcode.CALL:
 		arg = Reference(i)
 		n = 4
 
 	case opcode.LINE, opcode.IFIELD, opcode.IGET, opcode.IDEF:
 		arg = int(i)
-		n = 4
-	case opcode.SCAN:
-		if b[0]&3 == 3 && i == 0 {
-			arg = nil
-		} else {
-			arg = Reference(i)
-		}
 		n = 4
 	default:
 		if i != 0 {
