@@ -19,6 +19,9 @@ image: k3-local.artifactory-espoo2.int.net.nokia.com/k3ci/default:latest
 include:
   - project: 'k3/k3ci'
     ref: "master"
+    file: "/gitlab/templates/nks/container-resources-template.yml"
+  - project: 'k3/k3ci'
+    ref: "master"
     file: "/gitlab/templates/ntt/test-template-tiny.yml"
   - project: 'k3/k3ci'
     ref: "master"
