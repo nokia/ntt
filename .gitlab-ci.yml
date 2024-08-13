@@ -14,7 +14,7 @@ default:
   tags:
     - k3-nks-tiny
 
-image: k3-local.artifactory-espoo2.int.net.nokia.com/k3ci/default:latest
+image: $NKS_DOCKER_K3_REGISTRY_LOCAL/k3ci/default:latest
 
 include:
   - project: 'k3/k3ci'
@@ -40,7 +40,7 @@ stages:
 
 golang:1.20:
   stage: test
-  image: golang:1.20
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golang:1.20
   extends:
     - .ntt:test-template-medium
   script:
@@ -48,7 +48,7 @@ golang:1.20:
 
 golang:latest:
   stage: test
-  image: golang:latest
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golang:latest
   extends:
     - .go-cache
     - .ntt:test-template-medium
@@ -61,7 +61,7 @@ golang:latest:
 
 coverage:
   stage: test
-  image: golang:latest
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golang:latest
   extends:
     - .go-cache
     - .ntt:test-template-tiny
@@ -79,7 +79,7 @@ coverage:
 
 lint:
   stage: test
-  image: golangci/golangci-lint:v1.59.1
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golangci/golangci-lint:v1.59.1
   extends:
     - .ntt:test-template-tiny
   needs: []
