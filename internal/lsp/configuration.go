@@ -75,7 +75,7 @@ func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChan
 		confRes = false
 	}
 
-	if s.serverConfig.SemantikTokensEnabled != confRes {
+	if s.serverConfig.DiagnosticsEnabled != confRes {
 		s.serverConfig.DiagnosticsEnabled = confRes
 		// NOTE: dynamic registration of diagnostics is only available from lsp 3.17 on
 	}
