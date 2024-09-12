@@ -44,7 +44,7 @@ func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChan
 				Method: "textDocument/formatting",
 				RegisterOptions: protocol.TextDocumentRegistrationOptions{
 					DocumentSelector: protocol.DocumentSelector{
-						protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
+						protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.{ttcn,ttcn3}"},
 					},
 				}})
 		} else {
