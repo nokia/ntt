@@ -33,7 +33,7 @@ func removeDuplicateNodes(nodes []*ttcn3.Node) []*ttcn3.Node {
 func (md *MarkdownHover) Print(sign string, comment string, posRef string) protocol.MarkupContent {
 	// make line breaks conform to markdown spec
 	comment = strings.ReplaceAll(comment, "\n", "  \n")
-	res := "```typescript\n" + string(sign) + "\n```\n"
+	res := "```ttcn3\n" + string(sign) + "\n```\n"
 	if len(comment) > 0 {
 		res += " - - -\n" + comment
 	}
@@ -114,14 +114,14 @@ func getSignature(def *ttcn3.Node) string {
 			sig.Write(content[node.Return.Pos():node.Return.End()])
 		}
 	case *syntax.ValueDecl, *syntax.TemplateDecl, *syntax.FormalPar, *syntax.StructTypeDecl, *syntax.MapTypeDecl, *syntax.ComponentTypeDecl, *syntax.EnumTypeDecl, *syntax.PortTypeDecl:
-		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
+		sig.Write(content[def.Node.Pos():def.Node.End()])
 	case *syntax.Field:
 		if parent := def.ParentOf(node); parent != nil {
 			if _, ok := parent.(*syntax.SubTypeDecl); ok {
 				prefix = "type "
 			}
 		}
-		sig.Write(content[def.Node.Pos()-1 : def.Node.End()])
+		sig.Write(content[def.Node.Pos():def.Node.End()])
 	case *syntax.Module:
 		fmt.Fprintf(&sig, "module %s\n", node.Name)
 	default:
