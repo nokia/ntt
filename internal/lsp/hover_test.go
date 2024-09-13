@@ -50,7 +50,7 @@ func TestMarkdownHoverForFunction(t *testing.T) {
 		&lsp.MarkdownHover{})
 
 	expected :=
-		"```typescript\n" +
+		"```ttcn3\n" +
 			"function myfunc(integer x)\n" +
 			"  runs on Component\n" +
 			"  system System\n" +
@@ -77,7 +77,7 @@ func TestPlainTextHoverForPortDefFromDecl(t *testing.T) {
 		&lsp.PlainTextHover{})
 
 	expected :=
-		" port P p1\n" +
+		"port P p1\n" +
 			"possible map / connect statements\n" +
 			"_________________________________\n" +
 			"/TestPlainTextHoverForPortDefFromDecl.ttcn3:9\n"
@@ -102,7 +102,7 @@ func TestPlainTextHoverForPortDefFromUsage(t *testing.T) {
 		&lsp.PlainTextHover{})
 
 	expected :=
-		" port P p1\n" +
+		"port P p1\n" +
 			"possible map / connect statements\n" +
 			"_________________________________\n" +
 			"/TestPlainTextHoverForPortDefFromUsage.ttcn3:9\n"
