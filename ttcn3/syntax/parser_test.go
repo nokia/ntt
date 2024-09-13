@@ -259,6 +259,11 @@ func TestTypes(t *testing.T) {
 		{pass, `type function fn() runs on self return template int`},
 		{pass, `type altstep  as() runs on self return int`},
 		{pass, `type testcase tc() runs on C system TSI`},
+
+		// Class Types
+		{pass, `type class cl {}`},
+		{pass, `type class cl runs on C { create() {} }`},
+		{pass, `type class cl runs on C { create() {}; private function fn() {}; var integer i; }`},
 	}
 	testParse(t, types, func(p *parser) { p.parseTypeDecl() })
 }
