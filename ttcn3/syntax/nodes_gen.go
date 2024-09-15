@@ -836,6 +836,225 @@ func (n *CaseClause) End() int {
 	return -1
 }
 
+func (n *ClassTypeDecl) FirstTok() Token {
+	switch {
+
+	case n.TypeTok != nil:
+		return n.TypeTok
+
+	case n.Kind != nil:
+		return n.Kind
+
+	case n.Modif != nil:
+		return n.Modif
+
+	case n.Name != nil:
+		return n.Name.FirstTok()
+
+	case n.ExtendsTok != nil:
+		return n.ExtendsTok
+
+	case len(n.Extends) > 0:
+		return n.Extends[0].FirstTok()
+
+	case n.RunsOn != nil:
+		return n.RunsOn.FirstTok()
+
+	case n.Mtc != nil:
+		return n.Mtc.FirstTok()
+
+	case n.System != nil:
+		return n.System.FirstTok()
+
+	case n.LBrace != nil:
+		return n.LBrace
+
+	case len(n.Defs) > 0:
+		return n.Defs[0].FirstTok()
+
+	case n.RBrace != nil:
+		return n.RBrace
+
+	case n.With != nil:
+		return n.With.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *ClassTypeDecl) LastTok() Token {
+	switch {
+
+	case n.With != nil:
+		return n.With.LastTok()
+
+	case n.RBrace != nil:
+		return n.RBrace
+
+	case len(n.Defs) > 0:
+		return n.Defs[len(n.Defs)-1].LastTok()
+
+	case n.LBrace != nil:
+		return n.LBrace
+
+	case n.System != nil:
+		return n.System.LastTok()
+
+	case n.Mtc != nil:
+		return n.Mtc.LastTok()
+
+	case n.RunsOn != nil:
+		return n.RunsOn.LastTok()
+
+	case len(n.Extends) > 0:
+		return n.Extends[len(n.Extends)-1].LastTok()
+
+	case n.ExtendsTok != nil:
+		return n.ExtendsTok
+
+	case n.Name != nil:
+		return n.Name.LastTok()
+
+	case n.Modif != nil:
+		return n.Modif
+
+	case n.Kind != nil:
+		return n.Kind
+
+	case n.TypeTok != nil:
+		return n.TypeTok
+
+	default:
+		return nil
+	}
+}
+
+func (n *ClassTypeDecl) Children() []Node {
+	ret := make([]Node, 0, 13)
+
+	if n.TypeTok != nil {
+		ret = append(ret, n.TypeTok)
+	}
+
+	if n.Kind != nil {
+		ret = append(ret, n.Kind)
+	}
+
+	if n.Modif != nil {
+		ret = append(ret, n.Modif)
+	}
+
+	if n.Name != nil {
+		ret = append(ret, n.Name)
+	}
+
+	if n.ExtendsTok != nil {
+		ret = append(ret, n.ExtendsTok)
+	}
+
+	for _, c := range n.Extends {
+		ret = append(ret, c)
+	}
+
+	if n.RunsOn != nil {
+		ret = append(ret, n.RunsOn)
+	}
+
+	if n.Mtc != nil {
+		ret = append(ret, n.Mtc)
+	}
+
+	if n.System != nil {
+		ret = append(ret, n.System)
+	}
+
+	if n.LBrace != nil {
+		ret = append(ret, n.LBrace)
+	}
+
+	for _, c := range n.Defs {
+		ret = append(ret, c)
+	}
+
+	if n.RBrace != nil {
+		ret = append(ret, n.RBrace)
+	}
+
+	if n.With != nil {
+		ret = append(ret, n.With)
+	}
+
+	return ret
+}
+
+func (n *ClassTypeDecl) Inspect(f func(Node) bool) {
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	for _, c := range n.Extends {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.RunsOn; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Mtc; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.System; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	for _, c := range n.Defs {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.With; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *ClassTypeDecl) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *ClassTypeDecl) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
 func (n *CommClause) FirstTok() Token {
 	switch {
 
@@ -1183,6 +1402,90 @@ func (n *CompositeLiteral) Pos() int {
 }
 
 func (n *CompositeLiteral) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
+func (n *ConstructorDecl) FirstTok() Token {
+	switch {
+
+	case n.CreateTok != nil:
+		return n.CreateTok
+
+	case n.Params != nil:
+		return n.Params.FirstTok()
+
+	case n.Body != nil:
+		return n.Body.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *ConstructorDecl) LastTok() Token {
+	switch {
+
+	case n.Body != nil:
+		return n.Body.LastTok()
+
+	case n.Params != nil:
+		return n.Params.LastTok()
+
+	case n.CreateTok != nil:
+		return n.CreateTok
+
+	default:
+		return nil
+	}
+}
+
+func (n *ConstructorDecl) Children() []Node {
+	ret := make([]Node, 0, 3)
+
+	if n.CreateTok != nil {
+		ret = append(ret, n.CreateTok)
+	}
+
+	if n.Params != nil {
+		ret = append(ret, n.Params)
+	}
+
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+
+	return ret
+}
+
+func (n *ConstructorDecl) Inspect(f func(Node) bool) {
+
+	if c := n.Params; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *ConstructorDecl) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *ConstructorDecl) End() int {
 	if tok := n.LastTok(); tok != nil {
 		return tok.End()
 	}

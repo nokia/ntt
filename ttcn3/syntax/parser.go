@@ -1015,7 +1015,7 @@ func (p *parser) parseIdent() *Ident {
 	switch p.tok {
 	case UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM:
+	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM, CREATE:
 		return p.make_use(p.consume())
 	default:
 		p.expect(IDENT) // use expect() error handling
@@ -1236,6 +1236,8 @@ func (p *parser) parseModuleDef() *ModuleDef {
 		m.Def = p.parseSignatureDecl()
 	case FUNCTION, TESTCASE, ALTSTEP:
 		m.Def = p.parseFuncDecl()
+	case CREATE:
+		m.Def = p.parseConstructorDecl()
 	case CONTROL:
 		m.Def = &ControlPart{Name: p.parseIdent(), Body: p.parseBlockStmt(), With: p.parseWith()}
 	case EXTERNAL:
@@ -1560,6 +1562,8 @@ func (p *parser) parseTypeDecl() Decl {
 		return p.parsePortTypeDecl()
 	case COMPONENT:
 		return p.parseComponentTypeDecl()
+	case CLASS:
+		return p.parseClassTypeDecl()
 	case UNION:
 		return p.parseStructTypeDecl()
 	case MAP:
@@ -1688,6 +1692,46 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 			break
 		}
 		p.consume()
+	}
+	x.RBrace = p.expect(RBRACE)
+	x.With = p.parseWith()
+	return x
+}
+
+/*************************************************************************
+ * Class Type Declaration
+ *************************************************************************/
+
+func (p *parser) parseClassTypeDecl() *ClassTypeDecl {
+	if p.trace {
+		defer un(trace(p, "ClassTypeDecl"))
+	}
+
+	x := new(ClassTypeDecl)
+
+	x.TypeTok = p.consume()
+	x.Kind = p.consume()
+	if p.tok == MODIF {
+		x.Modif = p.consume()
+	}
+	x.Name = p.parseName()
+	if p.tok == EXTENDS {
+		x.ExtendsTok = p.consume()
+		x.Extends = p.parseRefList()
+	}
+	if p.tok == RUNS {
+		x.RunsOn = p.parseRunsOn()
+	}
+	if p.tok == MTC {
+		x.Mtc = p.parseMtc()
+	}
+	if p.tok == SYSTEM {
+		x.System = p.parseSystem()
+	}
+	x.LBrace = p.expect(LBRACE)
+	for p.tok != RBRACE && p.tok != EOF {
+		x.Defs = append(x.Defs, p.parseModuleDef())
+		p.expectSemi(x.Defs[len(x.Defs)-1].LastTok())
 	}
 	x.RBrace = p.expect(RBRACE)
 	x.With = p.parseWith()
@@ -2151,6 +2195,23 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	}
 
 	x.With = p.parseWith()
+	return x
+}
+
+/*************************************************************************
+ * Class Constructor Declaration
+ *************************************************************************/
+
+func (p *parser) parseConstructorDecl() *ConstructorDecl {
+	if p.trace {
+		defer un(trace(p, "ConstructorDecl"))
+	}
+
+	x := new(ConstructorDecl)
+	x.CreateTok = p.consume()
+	x.Params = p.parseFormalPars()
+	x.Body = p.parseBlockStmt()
+
 	return x
 }
 
