@@ -862,7 +862,7 @@ func TestInsideBehavBody(t *testing.T) {
 			Detail: "function TestInsideBehavBody_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "altstep TestInsideBehavBody_Module_1.a1()\n  runs on C0", Documentation: ""},
-		{Label: "TestInsideBehavBody_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestInsideBehavBody_Module_1"}},
+		{Label: "TestInsideBehavBody_Module_1", Kind: protocol.ModuleCompletion, SortText: " 4TestInsideBehavBody_Module_1"}},
 		list)
 }
 
@@ -886,7 +886,7 @@ func TestInsideTcBody(t *testing.T) {
 			Detail: "function TestInsideTcBody_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "altstep TestInsideTcBody_Module_1.a1()\n  runs on C0", Documentation: ""},
-		{Label: "TestInsideTcBody_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestInsideTcBody_Module_1"}},
+		{Label: "TestInsideTcBody_Module_1", Kind: protocol.ModuleCompletion, SortText: " 4TestInsideTcBody_Module_1"}},
 		list)
 }
 
@@ -910,7 +910,7 @@ func TestInsideTcBodyCtrlSpc(t *testing.T) {
 			Detail: "function TestInsideTcBodyCtrlSpc_Module_1.f3()", Documentation: ""},
 		{Label: "a1()", Kind: protocol.FunctionCompletion, SortText: " 2a1", InsertText: "a1()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "altstep TestInsideTcBodyCtrlSpc_Module_1.a1()\n  runs on C0", Documentation: ""},
-		{Label: "TestInsideTcBodyCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 3TestInsideTcBodyCtrlSpc_Module_1"}},
+		{Label: "TestInsideTcBodyCtrlSpc_Module_1", Kind: protocol.ModuleCompletion, SortText: " 4TestInsideTcBodyCtrlSpc_Module_1"}},
 		list)
 }
 
@@ -966,6 +966,7 @@ func TestInsideTcBodyInsideExpr(t *testing.T) {
 	}`)
 
 	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "i", Kind: protocol.VariableCompletion, SortText: " 2i"},
 		{Label: "f2()", Kind: protocol.FunctionCompletion, SortText: " 1f2", InsertText: "f2()", InsertTextFormat: protocol.PlainTextTextFormat,
 			Detail: "function Test.f2()\n  return boolean", Documentation: ""}},
 		list)
@@ -1132,3 +1133,360 @@ func TestSyntaxErrorProvokingInvalidPos(t *testing.T) {
 	assert.Equal(t, pos, 203)
 }
 */
+
+func TestSelectorComplWithStructTypeDecl(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {};
+			st.¶
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "firstField", Kind: protocol.FieldCompletion, Detail: "integer", Documentation: ""},
+		{Label: "secondField", Kind: protocol.FieldCompletion, Detail: "AnotherStructure", Documentation: ""},
+		{Label: "thirdField", Kind: protocol.FieldCompletion, Detail: "YetAnotherOne", Documentation: ""}},
+		list)
+}
+
+func TestDeepSelectorComplWithStructTypeDecl(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record YetAnotherOne
+		{
+			integer i
+		}
+
+		type record AnotherStructure
+		{
+			YetAnotherOne singleField
+		}
+
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {};
+			st.secondField.¶
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "singleField", Kind: protocol.FieldCompletion, Detail: "YetAnotherOne", Documentation: ""}},
+		list)
+}
+
+func TestSelectorComplWithStructTypeDeclPartialInput(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {};
+			st.f¶
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "firstField", Kind: protocol.FieldCompletion, Detail: "integer", Documentation: ""},
+		{Label: "secondField", Kind: protocol.FieldCompletion, Detail: "AnotherStructure", Documentation: ""},
+		{Label: "thirdField", Kind: protocol.FieldCompletion, Detail: "YetAnotherOne", Documentation: ""}},
+		list)
+}
+
+func TestNestedSelectorComplWithStructTypeDeclPartialInput(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record YetAnotherOne
+		{
+			integer i
+		}
+
+		type record AnotherStructure
+		{
+			YetAnotherOne singleField
+		}
+
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {};
+			st.secondField.s¶
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "singleField", Kind: protocol.FieldCompletion, Detail: "YetAnotherOne", Documentation: ""}},
+		list)
+}
+
+func TestNamedParamsCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		function fn(integer intParam, Structure structParam, integer intParam2) {}
+
+		function f1() {
+			fn(i¶)
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "intParam", Kind: protocol.EnumMemberCompletion, Detail: "integer", Documentation: "", InsertText: "intParam := ${1:}",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1intParam"},
+		{Label: "structParam", Kind: protocol.EnumMemberCompletion, Detail: "Structure", Documentation: "", InsertText: "structParam := ${1:}",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1structParam"},
+		{Label: "intParam2", Kind: protocol.EnumMemberCompletion, Detail: "integer", Documentation: "", InsertText: "intParam2 := ${1:}",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1intParam2"}},
+		list)
+}
+
+func TestNamedParamsInsideAssignCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		function fn(integer intParam, Structure structParam, integer intParam2) {}
+
+		function f1() {
+			fn(i¶ := 42)
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "intParam", Kind: protocol.EnumMemberCompletion, Detail: "integer", Documentation: "", InsertText: "intParam",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1intParam"},
+		{Label: "structParam", Kind: protocol.EnumMemberCompletion, Detail: "Structure", Documentation: "", InsertText: "structParam",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1structParam"},
+		{Label: "intParam2", Kind: protocol.EnumMemberCompletion, Detail: "integer", Documentation: "", InsertText: "intParam2",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1intParam2"}},
+		list)
+}
+
+func TestNamedParamsAfterAssignCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		function fn(integer intParam, Structure structParam, integer intParam2) {}
+
+		function f1() {
+			fn(intParam := ¶)
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem(nil),
+		list)
+}
+
+func TestNamedParamsInCompositeLiteralCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {
+				s¶
+			};
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "firstField", Kind: protocol.EnumMemberCompletion, Detail: "integer", Documentation: "", InsertText: "firstField := ${1:}",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1firstField"},
+		{Label: "secondField", Kind: protocol.EnumMemberCompletion, Detail: "AnotherStructure", Documentation: "", InsertText: "secondField := ${1:}",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1secondField"},
+		{Label: "thirdField", Kind: protocol.EnumMemberCompletion, Detail: "YetAnotherOne", Documentation: "", InsertText: "thirdField := ${1:}",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1thirdField"},
+		{Label: "st", Kind: protocol.VariableCompletion, SortText: " 2st"}},
+		list)
+}
+
+func TestNamedParamsInCompositeLiteralInsideAssignCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {
+				s¶ := 42
+			};
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "firstField", Kind: protocol.EnumMemberCompletion, Detail: "integer", Documentation: "", InsertText: "firstField",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1firstField"},
+		{Label: "secondField", Kind: protocol.EnumMemberCompletion, Detail: "AnotherStructure", Documentation: "", InsertText: "secondField",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1secondField"},
+		{Label: "thirdField", Kind: protocol.EnumMemberCompletion, Detail: "YetAnotherOne", Documentation: "", InsertText: "thirdField",
+			InsertTextFormat: protocol.SnippetTextFormat, SortText: " 1thirdField"},
+		{Label: "st", Kind: protocol.VariableCompletion, SortText: " 2st"}},
+		list)
+}
+
+func TestNamedParamsInCompositeLiteralAfterAssignCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		function f1() {
+			var template Structure st := {
+				firstField := s¶
+			};
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "st", Kind: protocol.VariableCompletion, SortText: " 2st"}},
+		list)
+}
+
+func TestRecordItemSelectorCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		type record of Structure RoStructure;
+
+		function f1() {
+			var template RoStructure roSt := {};
+			roSt[i].f¶;
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "firstField", Kind: protocol.FieldCompletion, Detail: "integer", Documentation: ""},
+		{Label: "secondField", Kind: protocol.FieldCompletion, Detail: "AnotherStructure", Documentation: ""},
+		{Label: "thirdField", Kind: protocol.FieldCompletion, Detail: "YetAnotherOne", Documentation: ""}},
+		list)
+}
+
+func TestRecordItemSelectorNotDeepEnoughCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		type record of Structure RoStructure;
+
+		function f1() {
+			var template RoStructure roSt := {};
+			roSt.f¶;
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem(nil), list)
+}
+
+func TestRecordItemSelectorTooDeepCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		type record of Structure RoStructure;
+
+		function f1() {
+			var template RoStructure roSt := {};
+			roSt[i][j].f¶;
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem(nil), list)
+}
+
+func TestRecordItemSelectorMultidimensionalCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		type record of Structure RoStructure;
+		type record of RoStructure RoRoStructure;
+		type record of RoRoStructure RoRoRoStructure;
+
+		function f1() {
+			var template RoRoRoStructure roRoRoSt := {};
+			roRoRoSt[i][j][k].f¶;
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem{
+		{Label: "firstField", Kind: protocol.FieldCompletion, Detail: "integer", Documentation: ""},
+		{Label: "secondField", Kind: protocol.FieldCompletion, Detail: "AnotherStructure", Documentation: ""},
+		{Label: "thirdField", Kind: protocol.FieldCompletion, Detail: "YetAnotherOne", Documentation: ""}},
+		list)
+}
+
+func TestRecordItemSelectorMultidimensionalNotDeepEnoughCompletion(t *testing.T) {
+	list := testCompletion(t, `module Test
+    {
+		type record Structure
+		{
+			integer firstField,
+			AnotherStructure secondField,
+			YetAnotherOne thirdField
+		}
+
+		type record of Structure RoStructure;
+		type record of RoStructure RoRoStructure;
+		type record of RoRoStructure RoRoRoStructure;
+
+		function f1() {
+			var template RoRoRoStructure roRoRoSt := {};
+			roRoRoSt[i][j].f¶;
+		}
+	}`)
+
+	assert.Equal(t, []protocol.CompletionItem(nil), list)
+}

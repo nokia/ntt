@@ -29,7 +29,7 @@ type BehavAttrib int
 
 // The list of behaviours.
 const (
-	NONE        BehavAttrib = iota //neither return nor runs on spec
+	NONE        BehavAttrib = iota // neither return nor runs on spec
 	WITH_RETURN                    // only retrurn spec
 	WITH_RUNSON                    // only runs on spec
 )
@@ -87,6 +87,7 @@ func (s *Server) completion(ctx context.Context, params *protocol.CompletionPara
 	if len(suites) == 0 {
 		return nil, fmt.Errorf("no suite found for file %q", string(params.TextDocument.URI))
 	}
+
 	return &protocol.CompletionList{IsIncomplete: false, Items: Complete(suites[0], pos, nodeStack, defaultModuleId)}, nil
 }
 
@@ -149,8 +150,10 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 	l := len(nodes)
 	switch {
 	case isBehaviourBodyScope(nodes):
+		prevNode := nodes[l-2]
+
 		modName := ""
-		if n, ok := nodes[l-2].(*syntax.SelectorExpr); ok {
+		if n, ok := prevNode.(*syntax.SelectorExpr); ok {
 			if n.X == nil {
 				return nil
 			}
@@ -170,16 +173,36 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 
 		if modName != "" {
 			file, err := suite.FindModule(modName)
-			if err != nil {
-				log.Debugf("module %s not found\n", modName)
-				return nil
+			if err == nil {
+				tree := ttcn3.ParseFile(file)
+				return CompleteBehaviours(tree, kinds, attrs, modName, " 1")
 			}
-			tree := ttcn3.ParseFile(file)
-			return CompleteBehaviours(tree, kinds, attrs, modName, " 1")
+
+			expr := prevNode.(*syntax.SelectorExpr)
+			var tgt syntax.Expr
+			if expr.Sel != nil && expr.Sel.LastTok().Pos() < pos {
+				tgt = expr
+			} else {
+				tgt = expr.X
+			}
+			if n, ok := tgt.(*syntax.SelectorExpr); ok && pos == tgt.End() {
+				tgt = n.X
+			}
+			return CompleteSelectorExpr(suite, ownModName, tgt)
+		} else if n, ok := prevNode.(*syntax.IndexExpr); ok {
+			return CompleteSelectorExpr(suite, ownModName, n)
 		}
-		list = CompleteAllBehaviours(suite, kinds, attrs, ownModName)
+
+		if isArgListScope(nodes, pos) {
+			list = CompleteArgNames(suite, ownModName, nodes[l-2].(syntax.Expr), " 1")
+			if n, ok := nodes[l-2].(*syntax.BinaryExpr); ok && pos > n.Op.FirstTok().End() {
+				return list
+			}
+		}
+		list = append(list, CompleteAllLocalVariables(nodes, " 2")...)
+		list = append(list, CompleteAllBehaviours(suite, kinds, attrs, ownModName)...)
 		list = append(list, CompletePredefinedFunctions()...)
-		list = append(list, CompleteAllModules(suite, ownModName, " 3")...)
+		list = append(list, CompleteAllModules(suite, ownModName, " 4")...)
 		return list
 
 	case isControlBodyScope(nodes):
@@ -483,10 +506,15 @@ func CompleteBehaviours(tree *ttcn3.Tree, kinds []syntax.Kind, attribs []BehavAt
 			}
 		}
 		if isSelected {
-			ret = append(ret, protocol.CompletionItem{Label: v.Label + "()",
-				InsertText: insertText,
-				Kind:       protocol.FunctionCompletion, SortText: sortPref + v.Label,
-				Detail: v.Signature, Documentation: v.Documentation, InsertTextFormat: v.TextFormat})
+			ret = append(ret, protocol.CompletionItem{
+				Label:            v.Label + "()",
+				InsertText:       insertText,
+				Kind:             protocol.FunctionCompletion,
+				SortText:         sortPref + v.Label,
+				Detail:           v.Signature,
+				Documentation:    v.Documentation,
+				InsertTextFormat: v.TextFormat,
+			})
 		}
 	}
 	return ret
@@ -740,6 +768,162 @@ func CompletePortTypes(suite *Suite, mname string, sortPref string) []protocol.C
 	return ret
 }
 
+func CollectParams(n syntax.Node) []protocol.CompletionItem {
+	var list []protocol.CompletionItem
+
+	switch n := n.(type) {
+	case *syntax.FormalPars:
+		for _, par := range n.List {
+			list = append(list, protocol.CompletionItem{Label: par.Name.String(), Detail: syntax.Name(par.Type)})
+		}
+	case *syntax.StructTypeDecl:
+		for _, field := range n.Fields {
+			list = append(list, protocol.CompletionItem{Label: field.Name.String(), Detail: syntax.Name(field.Type)})
+		}
+	}
+
+	return list
+}
+
+func CompleteParams(tgt syntax.Node, cur int, sortPref string, completeAssign bool) []protocol.CompletionItem {
+	var insertText string
+	if completeAssign {
+		insertText = "%s := ${1:}"
+	} else {
+		insertText = "%s"
+	}
+
+	items := CollectParams(tgt)
+	if len(items) > cur {
+		items = items[cur:]
+	}
+	for i := range items {
+		items[i].Documentation = ""
+		items[i].Kind = protocol.EnumMemberCompletion
+		items[i].SortText = sortPref + items[i].Label
+		items[i].InsertText = fmt.Sprintf(insertText, items[i].Label)
+		items[i].InsertTextFormat = protocol.SnippetTextFormat
+	}
+
+	return items
+}
+
+func CompleteArgNames(suite *Suite, mname string, n syntax.Expr, sortPref string) []protocol.CompletionItem {
+	file, err := suite.FindModule(mname)
+	if err != nil {
+		log.Debugf("module %s not found\n", mname)
+		return nil
+	}
+	tree := ttcn3.ParseFile(file)
+
+	completeAssignOperator := true
+	if _, ok := n.(*syntax.BinaryExpr); ok {
+		n = tree.ParentOf(n).(syntax.Expr)
+		completeAssignOperator = false
+	}
+
+	if _, ok := n.(*syntax.ParenExpr); ok {
+		n = tree.ParentOf(n).(syntax.Expr)
+	}
+
+	switch n := n.(type) {
+	case *syntax.CallExpr:
+		if defs := tree.LookupWithDB(n.Fun, suite.DB); len(defs) > 0 {
+			def := defs[0]
+			if params := getDeclarationParams(def.Node); params != nil {
+				return CompleteParams(params, len(n.Args.List)-1, sortPref, completeAssignOperator)
+			}
+		}
+	case *syntax.CompositeLiteral:
+		defs := tree.TypeOf(n, suite.DB)
+		if len(defs) > 0 {
+			def := defs[0]
+			n := def.Node
+			if _, ok := n.(*syntax.ListSpec); ok {
+				n, _ = ExtractActualType(def.Tree, suite.DB, n, 0)
+			}
+			return CompleteParams(n, 0, sortPref, completeAssignOperator)
+		}
+	}
+
+	return nil
+}
+
+func CompleteFields(suite *Suite, tree *ttcn3.Tree, wtype syntax.Node, depth int) []protocol.CompletionItem {
+	var ret []protocol.CompletionItem
+
+	typ, typeDepth := ExtractActualType(tree, suite.DB, wtype, 0)
+
+	switch n := typ.(type) {
+	case *syntax.StructTypeDecl:
+		if typeDepth == depth {
+			for _, field := range n.Fields {
+				ret = append(ret, protocol.CompletionItem{
+					Label:         field.Name.String(),
+					Kind:          protocol.FieldCompletion,
+					Detail:        syntax.Name(field.Type),
+					Documentation: "",
+				})
+			}
+		}
+	}
+
+	return ret
+}
+
+func ExtractActualType(tree *ttcn3.Tree, db *ttcn3.DB, t syntax.Node, depth int) (syntax.Node, int) {
+	q := []*ttcn3.Node{{Node: t, Tree: tree}}
+
+	for len(q) > 0 {
+		c := q[0]
+		q = q[1:]
+
+		switch n := c.Node.(type) {
+		case *syntax.RefSpec:
+			if defs := tree.TypeOf(n, db); len(defs) > 0 {
+				def := defs[0]
+				if def.Node != t {
+					q = append(q, def)
+					continue
+				}
+			}
+		case *syntax.ListSpec:
+			q = append(q, &ttcn3.Node{Node: n.ElemType, Tree: tree})
+			depth++
+		default:
+			return n, depth
+		}
+	}
+
+	return nil, -1
+}
+
+func CompleteSelectorExpr(suite *Suite, mname string, expr syntax.Expr) []protocol.CompletionItem {
+	file, err := suite.FindModule(mname)
+	if err != nil {
+		log.Debugf("module %s not found\n", mname)
+		return nil
+	}
+
+	depth := 0
+	for {
+		if n, ok := expr.(*syntax.IndexExpr); ok {
+			expr = n.X
+			depth++
+			continue
+		}
+		break
+	}
+
+	tree := ttcn3.ParseFile(file)
+	defs := tree.TypeOf(expr, suite.DB)
+	if len(defs) == 0 {
+		return nil
+	}
+
+	return CompleteFields(suite, tree, defs[0].Node, depth)
+}
+
 func CompleteAllComponentTypes(suite *Suite, sortPref string) []protocol.CompletionItem {
 	var ret []protocol.CompletionItem
 	for _, f := range suite.Files() {
@@ -791,6 +975,41 @@ func CompleteAllValueDecls(suite *Suite, kind syntax.Kind) []protocol.Completion
 		items := CompleteValueDecls(tree, kind, true)
 		ret = append(ret, items...)
 	}
+	return ret
+}
+
+func CompleteAllLocalVariables(nodes []syntax.Node, sortPref string) []protocol.CompletionItem {
+	var ret []protocol.CompletionItem
+
+	var funcDecl *syntax.FuncDecl = nil
+	for _, n := range nodes {
+		if n, ok := n.(*syntax.FuncDecl); ok {
+			funcDecl = n
+			break
+		}
+	}
+	if funcDecl == nil {
+		return nil
+	}
+
+	funcDecl.Inspect(func(n syntax.Node) bool {
+		if n == nil {
+			return false
+		}
+		switch n := n.(type) {
+		case *syntax.Declarator:
+			name := n.Name.String()
+			ret = append(ret, protocol.CompletionItem{
+				Label:    name,
+				Kind:     protocol.VariableCompletion,
+				SortText: sortPref + name,
+			})
+		default:
+			return true
+		}
+		return false
+	})
+
 	return ret
 }
 
@@ -871,6 +1090,30 @@ func baseName(name string) string {
 	name = filepath.Base(name)
 	name = name[:len(name)-len(filepath.Ext(name))]
 	return name
+}
+
+func isArgListScope(nodes []syntax.Node, pos int) bool {
+	l := len(nodes)
+	off := 2
+
+	if n, ok := nodes[l-off].(*syntax.BinaryExpr); ok {
+		if n.Op.FirstTok().Pos() < pos {
+			return false
+		}
+		if n.Op.String() == ":=" {
+			off++
+		}
+	}
+
+	if _, ok := nodes[l-off].(*syntax.ParenExpr); ok {
+		if _, ok := nodes[l-off-1].(*syntax.CallExpr); ok {
+			return true
+		}
+	} else if _, ok := nodes[l-off].(*syntax.CompositeLiteral); ok {
+		return true
+	}
+
+	return false
 }
 
 func isBehaviourBodyScope(nodes []syntax.Node) bool {

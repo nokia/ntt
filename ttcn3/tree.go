@@ -288,6 +288,10 @@ func (t *Tree) LookupWithDB(n syntax.Expr, db *DB) []*Node {
 
 }
 
+func (t *Tree) TypeOf(n syntax.Node, db *DB) []*Node {
+	return newFinder(db).typeOf(&Node{Node: n, Tree: t})
+}
+
 func newFinder(db *DB) *finder {
 	return &finder{DB: db, cache: make(map[syntax.Node][]*Node)}
 }
@@ -492,6 +496,7 @@ func (f *finder) typeOf(def *Node) []*Node {
 	var result []*Node
 
 	q := []*Node{def}
+	var prev syntax.Node = nil
 
 	for len(q) > 0 {
 
@@ -504,6 +509,9 @@ func (f *finder) typeOf(def *Node) []*Node {
 
 		case *syntax.BinaryExpr:
 			q = append(q, &Node{Node: n.X, Tree: def.Tree})
+
+		case *syntax.Declarator:
+			q = append(q, &Node{Node: def.ParentOf(n), Tree: def.Tree})
 
 		case *syntax.TemplateDecl:
 			q = append(q, &Node{Node: n.Type, Tree: def.Tree})
@@ -532,11 +540,19 @@ func (f *finder) typeOf(def *Node) []*Node {
 				q = append(q, &Node{Node: n.Return.Type, Tree: def.Tree})
 			}
 
+		case *syntax.IndexExpr:
+			q = append(q, f.lookup(n, def.Tree)...)
+
 		case syntax.Expr:
 			q = append(q, f.lookup(n, def.Tree)...)
 
 		case *syntax.RefSpec:
-			q = append(q, f.lookup(n.X, def.Tree)...)
+			r := f.lookup(n.X, def.Tree)
+			for _, v := range r {
+				if v.Node != prev {
+					q = append(q, v)
+				}
+			}
 
 		case *syntax.BehaviourSpec,
 			*syntax.BehaviourTypeDecl,
@@ -553,6 +569,8 @@ func (f *finder) typeOf(def *Node) []*Node {
 			*syntax.ClassTypeDecl:
 			result = append(result, &Node{Node: n, Tree: def.Tree})
 		}
+
+		prev = def.Node
 	}
 	return result
 }
