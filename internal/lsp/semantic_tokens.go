@@ -276,6 +276,8 @@ func DefinitionToken(tree *ttcn3.Tree, id syntax.Node) (SemanticTokenType, Seman
 		return Parameter, Declaration
 	case *syntax.StructTypeDecl:
 		return Struct, Definition
+	case *syntax.ClassTypeDecl:
+		return Class, Definition
 	case *syntax.MapTypeDecl:
 		return Map, Definition
 	case *syntax.EnumTypeDecl:

@@ -84,7 +84,7 @@ lint:
     - .ntt:test-template-tiny
   needs: []
   script:
-    - golangci-lint run --color=always --issues-exit-code=0 --out-format=code-climate:report-lint.json,colored-line-number:stdout
+    - golangci-lint -v run --color=always --issues-exit-code=0 --out-format=code-climate:report-lint.json,colored-line-number:stdout
   artifacts:
     reports:
       codequality: report-lint.json

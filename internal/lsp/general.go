@@ -51,7 +51,7 @@ func newInlayHintRegistrationOptions() *protocol.InlayHintRegistrationOptions {
 		},
 		TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
 			DocumentSelector: protocol.DocumentSelector{
-				protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
+				protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.{ttcn,ttcn3}"},
 			},
 		},
 		StaticRegistrationOptions: protocol.StaticRegistrationOptions{
@@ -65,7 +65,7 @@ func newSemanticTokens() *protocol.SemanticTokensRegistrationOptions {
 
 		TextDocumentRegistrationOptions: protocol.TextDocumentRegistrationOptions{
 			DocumentSelector: protocol.DocumentSelector{
-				protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.ttcn3"},
+				protocol.DocumentFilter{Language: "ttcn3", Scheme: "file", Pattern: "**/*.{ttcn,ttcn3}"},
 			},
 		},
 		SemanticTokensOptions: protocol.SemanticTokensOptions{

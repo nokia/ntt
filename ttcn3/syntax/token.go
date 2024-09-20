@@ -103,10 +103,12 @@ const (
 	BREAK
 	CASE
 	CHARSTRING
+	CLASS
 	COMPONENT
 	CONST
 	CONTINUE
 	CONTROL
+	CREATE
 	DECMATCH
 	DISPLAY
 	DO
@@ -268,10 +270,12 @@ var tokens = [...]string{
 	BREAK:      "break",
 	CASE:       "case",
 	CHARSTRING: "charstring",
+	CLASS:      "class",
 	COMPONENT:  "component",
 	CONST:      "const",
 	CONTINUE:   "continue",
 	CONTROL:    "control",
+	CREATE:     "create",
 	DECMATCH:   "decmatch",
 	DISPLAY:    "display",
 	DO:         "do",
@@ -426,6 +430,8 @@ func (tok Kind) Precedence() int {
 		return 18
 	case COLONCOLON:
 		return 19
+	case OF:
+		return 20
 	}
 	return LowestPrec
 }
