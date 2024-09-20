@@ -1,5 +1,8 @@
 run:
   tests: false
+  concurrency: 0
+  timeout: 5m
+
   exclude-dirs:
     - internal/env
     - internal/fs

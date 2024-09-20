@@ -640,6 +640,13 @@ type (
 		With     *WithSpec
 	}
 
+	// A ConstructorDecl represents a class constructor definition.
+	ConstructorDecl struct {
+		CreateTok Token       // CREATE
+		Params    *FormalPars // Formal parameter list
+		Body      *BlockStmt  // Body
+	}
+
 	// A SignatureDecl represents a signature type for procedure based communication.
 	SignatureDecl struct {
 		Tok          Token // Position of "signature"
@@ -670,6 +677,23 @@ type (
 		Fields   []*Field // Member list
 		RBrace   Token    // Position of }"
 		With     *WithSpec
+	}
+
+	// A StructTypeDecl represents a name struct type.
+	ClassTypeDecl struct {
+		TypeTok    Token  // Position of "type"
+		Kind       Token  // CLASS
+		Modif      Token  // "@abstract" or nil
+		Name       *Ident // Name
+		ExtendsTok Token
+		Extends    []Expr
+		RunsOn     *RunsOnSpec // Optional runs-on-spec
+		Mtc        *MtcSpec    // Optional mtc-spec
+		System     *SystemSpec // Optional system-spec
+		LBrace     Token       // Position of "{"
+		Defs       []*ModuleDef
+		RBrace     Token // Position of }"
+		With       *WithSpec
 	}
 
 	MapTypeDecl struct {
@@ -757,6 +781,7 @@ func (x *FuncDecl) declNode()             {}
 func (x *SignatureDecl) declNode()        {}
 func (x *SubTypeDecl) declNode()          {}
 func (x *StructTypeDecl) declNode()       {}
+func (x *ClassTypeDecl) declNode()        {}
 func (x *MapTypeDecl) declNode()          {}
 func (x *EnumTypeDecl) declNode()         {}
 func (x *BehaviourTypeDecl) declNode()    {}

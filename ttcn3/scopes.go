@@ -159,7 +159,7 @@ func NewScope(n syntax.Node, tree *Tree) *Scope {
 	case *syntax.BehaviourSpec:
 		scp.add(n.Params)
 
-	case *syntax.Module:
+	case *syntax.Module, *syntax.ClassTypeDecl:
 		n.Inspect(func(n syntax.Node) bool {
 			switch n := n.(type) {
 			// Groups are not visible in the global scope.
@@ -233,6 +233,9 @@ func (scp *Scope) add(n syntax.Node) error {
 		scp.add(n.Field)
 
 	case *syntax.StructTypeDecl:
+		scp.Insert(n, n.Name)
+
+	case *syntax.ClassTypeDecl:
 		scp.Insert(n, n.Name)
 
 	case *syntax.MapTypeDecl:
