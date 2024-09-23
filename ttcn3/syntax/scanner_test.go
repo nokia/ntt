@@ -23,6 +23,39 @@ func TestTokenize(t *testing.T) {
 			`COMMENT "//"`,
 			`EOF`,
 		}},
+		{`"str"
+				`, []string{
+			`STRING "\"str\""`,
+			`EOF`,
+		}},
+		{`"multiline
+str"
+`, []string{
+			`STRING "\"multiline\nstr\""`,
+			`EOF`,
+		}},
+		{`"
+multiline
+str"
+`, []string{
+			`STRING "\"\nmultiline\nstr\""`,
+			`EOF`,
+		}},
+		{`"multiline
+str
+"
+`, []string{
+			`STRING "\"multiline\nstr\n\""`,
+			`EOF`,
+		}},
+		{`"
+multiline
+str
+"
+`, []string{
+			`STRING "\"\nmultiline\nstr\n\""`,
+			`EOF`,
+		}},
 	}
 	for _, test := range tests {
 		root := Tokenize([]byte(test.input))
