@@ -2090,6 +2090,73 @@ func (n *DoWhileStmt) End() int {
 	return -1
 }
 
+func (n *DynamicExpr) FirstTok() Token {
+	switch {
+
+	case n.Tok != nil:
+		return n.Tok
+
+	case n.Body != nil:
+		return n.Body.FirstTok()
+
+	default:
+		return nil
+	}
+}
+
+func (n *DynamicExpr) LastTok() Token {
+	switch {
+
+	case n.Body != nil:
+		return n.Body.LastTok()
+
+	case n.Tok != nil:
+		return n.Tok
+
+	default:
+		return nil
+	}
+}
+
+func (n *DynamicExpr) Children() []Node {
+	ret := make([]Node, 0, 2)
+
+	if n.Tok != nil {
+		ret = append(ret, n.Tok)
+	}
+
+	if n.Body != nil {
+		ret = append(ret, n.Body)
+	}
+
+	return ret
+}
+
+func (n *DynamicExpr) Inspect(f func(Node) bool) {
+
+	if c := n.Body; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
+
+}
+
+func (n *DynamicExpr) Pos() int {
+	if tok := n.FirstTok(); tok != nil {
+		return tok.Pos()
+	}
+	return -1
+}
+
+func (n *DynamicExpr) End() int {
+	if tok := n.LastTok(); tok != nil {
+		return tok.End()
+	}
+	return -1
+}
+
 func (n *EnumSpec) FirstTok() Token {
 	switch {
 

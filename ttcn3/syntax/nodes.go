@@ -314,6 +314,12 @@ type (
 		X      Expr  // Template expression
 	}
 
+	// A DynamicExpr represents a "@dynamic" expression.
+	DynamicExpr struct {
+		Tok  Token      // Position of "dynamic"
+		Body *BlockStmt // Template body
+	}
+
 	// A DefKindExpr represents a definition kind expression, used by imports
 	// and with-attributes.
 	DefKindExpr struct {
@@ -360,6 +366,7 @@ func (x *RegexpExpr) exprNode()        {}
 func (x *PatternExpr) exprNode()       {}
 func (x *DecmatchExpr) exprNode()      {}
 func (x *DecodedExpr) exprNode()       {}
+func (x *DynamicExpr) exprNode()       {}
 func (x *DefKindExpr) exprNode()       {}
 func (x *ExceptExpr) exprNode()        {}
 
