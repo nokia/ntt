@@ -254,7 +254,6 @@ func (s *Scanner) scanString() Kind {
 		switch ch := s.src[s.pos]; ch {
 		case '\n', '\v', '\f':
 			s.lines = append(s.lines, s.pos+1)
-			s.pos++
 		case '\\':
 			s.pos++
 		case '"':
