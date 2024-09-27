@@ -707,7 +707,7 @@ deactivatea:
     Deactivate all altsteps activated on the current component.
 
 decmatch:
-  opcode: 511
+  opcode: 515
   context:
   - value
   operations:
@@ -1634,7 +1634,7 @@ interleave:
     of alternatives to complete.
 
 interleavestep:
-  opcode: 515
+  opcode: 516
   context:
   - beha_def
   operations:
@@ -1646,7 +1646,7 @@ interleavestep:
     attach it to the module object owning the current block.
 
 interleavestepb:
-  opcode: 516
+  opcode: 517
   context:
   - beha_def
   operations:
@@ -1659,7 +1659,7 @@ interleavestepb:
     owning the current block.
 
 interleavestepbw:
-  opcode: 517
+  opcode: 519
   context:
   - beha_def
   operations:
