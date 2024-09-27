@@ -1633,6 +1633,58 @@ interleave:
     Actions attached to successful alternatives may extend the set
     of alternatives to complete.
 
+interleavestep:
+  opcode: 515
+  context:
+  - beha_def
+  operations:
+    pre: [pblk, bblk, name]
+    post: []
+  description: |+
+    Define an interleavestep object from a block pblk containing its
+    parameters, bblk containing its behaviour and a name, and then
+    attach it to the module object owning the current block.
+
+interleavestepb:
+  opcode: 516
+  context:
+  - beha_def
+  operations:
+    pre: [comp, pblk, bblk, name]
+    post: []
+  description: |+
+    Define a bound interleavestep object from a component type comp, a
+    block pblk containing its parameters, bblk containing its
+    behaviour and a name, then attach it to the module object
+    owning the current block.
+
+interleavestepbw:
+  opcode: 517
+  context:
+  - beha_def
+  operations:
+    pre: [comp, ablk, pblk, bblk, name]
+    post: []
+  description: |+
+    Define a bound interleavestep object from a component type comp, a
+    block pblk containing its parameters, bblk containing its
+    behaviour and a name, attach the attributes from block ablk,
+    and then attach it to the module object owning the current
+    block.
+
+interleavestepw:
+  opcode: 518
+  context:
+  - beha_def
+  operations:
+    pre: [ablk, pblk, bblk, name]
+    post: []
+  description: |+
+    Define an interleavestep object from a block pblk containing its
+    parameters, bblk containing its behaviour and a name, attach
+    the attributes from block ablk, and then attach it to the
+    module object owning the current block.
+
 isbound:
   opcode: 429
   context:
