@@ -85,6 +85,9 @@ func (n *BehaviourSpec) FirstTok() Token {
 	case n.Kind != nil:
 		return n.Kind
 
+	case n.Interleave != nil:
+		return n.Interleave
+
 	case n.Params != nil:
 		return n.Params.FirstTok()
 
@@ -117,6 +120,9 @@ func (n *BehaviourSpec) LastTok() Token {
 	case n.Params != nil:
 		return n.Params.LastTok()
 
+	case n.Interleave != nil:
+		return n.Interleave
+
 	case n.Kind != nil:
 		return n.Kind
 
@@ -126,10 +132,14 @@ func (n *BehaviourSpec) LastTok() Token {
 }
 
 func (n *BehaviourSpec) Children() []Node {
-	ret := make([]Node, 0, 5)
+	ret := make([]Node, 0, 6)
 
 	if n.Kind != nil {
 		ret = append(ret, n.Kind)
+	}
+
+	if n.Interleave != nil {
+		ret = append(ret, n.Interleave)
 	}
 
 	if n.Params != nil {
@@ -206,6 +216,9 @@ func (n *BehaviourTypeDecl) FirstTok() Token {
 	case n.Kind != nil:
 		return n.Kind
 
+	case n.Interleave != nil:
+		return n.Interleave
+
 	case n.Name != nil:
 		return n.Name.FirstTok()
 
@@ -256,6 +269,9 @@ func (n *BehaviourTypeDecl) LastTok() Token {
 	case n.Name != nil:
 		return n.Name.LastTok()
 
+	case n.Interleave != nil:
+		return n.Interleave
+
 	case n.Kind != nil:
 		return n.Kind
 
@@ -268,7 +284,7 @@ func (n *BehaviourTypeDecl) LastTok() Token {
 }
 
 func (n *BehaviourTypeDecl) Children() []Node {
-	ret := make([]Node, 0, 9)
+	ret := make([]Node, 0, 10)
 
 	if n.TypeTok != nil {
 		ret = append(ret, n.TypeTok)
@@ -276,6 +292,10 @@ func (n *BehaviourTypeDecl) Children() []Node {
 
 	if n.Kind != nil {
 		ret = append(ret, n.Kind)
+	}
+
+	if n.Interleave != nil {
+		ret = append(ret, n.Interleave)
 	}
 
 	if n.Name != nil {
@@ -3436,6 +3456,9 @@ func (n *FuncDecl) FirstTok() Token {
 	case n.Kind != nil:
 		return n.Kind
 
+	case n.Interleave != nil:
+		return n.Interleave
+
 	case n.Name != nil:
 		return n.Name.FirstTok()
 
@@ -3504,6 +3527,9 @@ func (n *FuncDecl) LastTok() Token {
 	case n.Name != nil:
 		return n.Name.LastTok()
 
+	case n.Interleave != nil:
+		return n.Interleave
+
 	case n.Kind != nil:
 		return n.Kind
 
@@ -3516,7 +3542,7 @@ func (n *FuncDecl) LastTok() Token {
 }
 
 func (n *FuncDecl) Children() []Node {
-	ret := make([]Node, 0, 12)
+	ret := make([]Node, 0, 13)
 
 	if n.External != nil {
 		ret = append(ret, n.External)
@@ -3524,6 +3550,10 @@ func (n *FuncDecl) Children() []Node {
 
 	if n.Kind != nil {
 		ret = append(ret, n.Kind)
+	}
+
+	if n.Interleave != nil {
+		ret = append(ret, n.Interleave)
 	}
 
 	if n.Name != nil {

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/log"
 )
 
 // A Mode value is a set of flags (or 0).
@@ -1819,6 +1820,11 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
 	x := new(BehaviourTypeDecl)
 	x.TypeTok = p.consume()
 	x.Kind = p.consume()
+	log.Debugf("@@BehaviourTypeDecl: %s", p.tok)
+	if p.tok == INTERLEAVE {
+		x.Interleave = p.consume()
+	}
+
 	x.Name = p.parseName()
 	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
@@ -1987,6 +1993,11 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
 
 	x := new(BehaviourSpec)
 	x.Kind = p.consume()
+
+	if p.tok == INTERLEAVE {
+		x.Interleave = p.consume()
+	}
+
 	x.Params = p.parseFormalPars()
 
 	if p.tok == RUNS {
@@ -2163,6 +2174,10 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 
 	x := new(FuncDecl)
 	x.Kind = p.consume()
+	log.Debugf("@@parseFuncDecl: %s", p.tok)
+	if p.tok == INTERLEAVE {
+		x.Interleave = p.consume()
+	}
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}

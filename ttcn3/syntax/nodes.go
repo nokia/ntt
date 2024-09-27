@@ -566,11 +566,12 @@ type (
 
 	// A BehaviourSpec represents a behaviour type specification.
 	BehaviourSpec struct {
-		Kind   Token       // TESTCASE, FUNCTION, ALTSTEP
-		Params *FormalPars // Parameter list or nil
-		RunsOn *RunsOnSpec // runs on spec or nil
-		System *SystemSpec // system spec or nil
-		Return *ReturnSpec // return value spec or nil
+		Kind       Token       // TESTCASE, FUNCTION, ALTSTEP
+		Interleave Token       // INTERLEAVE or nil
+		Params     *FormalPars // Parameter list or nil
+		RunsOn     *RunsOnSpec // runs on spec or nil
+		System     *SystemSpec // system spec or nil
+		Return     *ReturnSpec // return value spec or nil
 	}
 )
 
@@ -626,18 +627,19 @@ type (
 
 	// A FuncDecl represents a behaviour definition.
 	FuncDecl struct {
-		External Token // Position of "external" or nil
-		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
-		Name     *Ident
-		Modif    Token // Position of "@deterministic" or nil
-		TypePars *FormalPars
-		Params   *FormalPars // Formal parameter list or nil
-		RunsOn   *RunsOnSpec // Optional runs-on-spec
-		Mtc      *MtcSpec    // Optional mtc-spec
-		System   *SystemSpec // Optional system-spec
-		Return   *ReturnSpec // Optional return-spec
-		Body     *BlockStmt  // Body or nil
-		With     *WithSpec
+		External   Token // Position of "external" or nil
+		Kind       Token // TESTCASE, ALTSTEP, FUNCTION
+		Interleave Token // INTERLEAVE or nil
+		Name       *Ident
+		Modif      Token // Position of "@deterministic" or nil
+		TypePars   *FormalPars
+		Params     *FormalPars // Formal parameter list or nil
+		RunsOn     *RunsOnSpec // Optional runs-on-spec
+		Mtc        *MtcSpec    // Optional mtc-spec
+		System     *SystemSpec // Optional system-spec
+		Return     *ReturnSpec // Optional return-spec
+		Body       *BlockStmt  // Body or nil
+		With       *WithSpec
 	}
 
 	// A ConstructorDecl represents a class constructor definition.
@@ -718,15 +720,16 @@ type (
 
 	// A BehaviourTypeDecl represents a named behaviour type.
 	BehaviourTypeDecl struct {
-		TypeTok  Token // Position of "type"
-		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
-		Name     *Ident
-		TypePars *FormalPars
-		Params   *FormalPars // Formal parameter list
-		RunsOn   *RunsOnSpec // Optional runs-on spec
-		System   *SystemSpec // Optional system spec
-		Return   *ReturnSpec // Optional return spec
-		With     *WithSpec
+		TypeTok    Token // Position of "type"
+		Kind       Token // TESTCASE, ALTSTEP, FUNCTION
+		Interleave Token // INTERLEAVE or nil
+		Name       *Ident
+		TypePars   *FormalPars
+		Params     *FormalPars // Formal parameter list
+		RunsOn     *RunsOnSpec // Optional runs-on spec
+		System     *SystemSpec // Optional system spec
+		Return     *ReturnSpec // Optional return spec
+		With       *WithSpec
 	}
 
 	PortTypeDecl struct {
