@@ -76,36 +76,38 @@ func printJSON(report *ConfigReport, keys []string) error {
 		return err
 	}
 
-	var list []project.TestConfig
-	for _, file := range files {
-		tree := ttcn3.ParseFile(file)
-		if tree.Err != nil {
-			report.err = errors.Join(report.err, tree.Err)
-		}
-		tree.Inspect(func(n syntax.Node) bool {
-			switch n := n.(type) {
-			case *syntax.FuncDecl:
-				if n.IsTest() || n.IsControl() {
+	if dumb {
+		var list []project.TestConfig
+		for _, file := range files {
+			tree := ttcn3.ParseFile(file)
+			if tree.Err != nil {
+				report.err = errors.Join(report.err, tree.Err)
+			}
+			tree.Inspect(func(n syntax.Node) bool {
+				switch n := n.(type) {
+				case *syntax.FuncDecl:
+					if n.IsTest() || n.IsControl() {
+						break
+					}
+					return false
+				case *syntax.ControlPart:
 					break
+				default:
+					return true
+				}
+				name := tree.QualifiedName(n)
+				tc, err := report.TestConfigs(name, presets...)
+				if err != nil {
+					log.Debugf("implementation error: %s\n", err)
+				}
+				if len(tc) > 0 {
+					list = append(list, tc...)
 				}
 				return false
-			case *syntax.ControlPart:
-				break
-			default:
-				return true
-			}
-			name := tree.QualifiedName(n)
-			tc, err := report.TestConfigs(name, presets...)
-			if err != nil {
-				log.Debugf("implementation error: %s\n", err)
-			}
-			if len(tc) > 0 {
-				list = append(list, tc...)
-			}
-			return false
-		})
+			})
+		}
+		report.Execute = list
 	}
-	report.Execute = list
 
 	b, err := yaml.MarshalJSON(report)
 	if err != nil {
