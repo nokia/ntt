@@ -14,7 +14,21 @@ default:
   tags:
     - k3-nks-tiny
 
-image: k3-local.artifactory-espoo2.int.net.nokia.com/k3ci/default:latest
+image: $NKS_DOCKER_K3_REGISTRY_LOCAL/k3ci/default:latest
+
+include:
+  - project: 'k3/k3ci'
+    ref: "master"
+    file: "/gitlab/templates/nks/container-resources-template.yml"
+  - project: 'k3/k3ci'
+    ref: "master"
+    file: "/gitlab/templates/ntt/test-template-tiny.yml"
+  - project: 'k3/k3ci'
+    ref: "master"
+    file: "/gitlab/templates/ntt/test-template-medium.yml"
+  - project: 'k3/k3ci'
+    ref: "master"
+    file: "/gitlab/templates/ntt/deploy-template-tiny.yml"
 
 variables:
   XCACHE: "/xcache"
@@ -26,14 +40,18 @@ stages:
 
 golang:1.20:
   stage: test
-  image: golang:1.20
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golang:1.20
+  extends:
+    - .ntt:test-template-medium
   script:
     - go test ./...
 
 golang:latest:
   stage: test
-  image: golang:latest
-  extends: .go-cache
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golang:latest
+  extends:
+    - .go-cache
+    - .ntt:test-template-medium
   script:
     - go install gotest.tools/gotestsum@latest
     - $GOPATH/bin/gotestsum --junitfile report-junit.xml --format testname -- -race ./...
@@ -43,8 +61,10 @@ golang:latest:
 
 coverage:
   stage: test
-  image: golang:latest
-  extends: .go-cache
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golang:latest
+  extends:
+    - .go-cache
+    - .ntt:test-template-tiny
   needs: []
   script:
     - go install github.com/boumenot/gocover-cobertura@latest
@@ -56,12 +76,15 @@ coverage:
       coverage_report:
         coverage_format: cobertura
         path: report-coverage.xml
+
 lint:
   stage: test
-  image: golangci/golangci-lint:v1.59.1
+  image: $NKS_DOCKER_IO_REGISTRY_MIRROR/golangci/golangci-lint:v1.59.1
+  extends:
+    - .ntt:test-template-tiny
   needs: []
   script:
-    - golangci-lint run --color=always --issues-exit-code=0 --out-format=code-climate:report-lint.json,colored-line-number:stdout
+    - golangci-lint -v run --color=always --issues-exit-code=0 --out-format=code-climate:report-lint.json,colored-line-number:stdout
   artifacts:
     reports:
       codequality: report-lint.json
@@ -79,6 +102,8 @@ trigger-k3:
 
 update-k3:
   stage: deploy
+  extends:
+    - .ntt:deploy-template-tiny
   only:
     refs:
       - master

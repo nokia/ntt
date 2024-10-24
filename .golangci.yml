@@ -1,23 +1,7 @@
 run:
   tests: false
-  exclude-dirs:
-    - internal/env
-    - internal/fs
-    - internal/loc
-    - internal/lsp/fakenet
-    - internal/lsp/helper
-    - internal/lsp/jsonrpc2
-    - internal/lsp/protocol
-    - internal/lsp/span
-    - internal/lsp/telemetry
-    - internal/lsp/xcontext
-    - internal/memoize
-    - internal/session/flock
-    - ttcn3/v2/syntax/internal/gen
-    - ttcn3/syntax/internal/gen
-    - ttcn3/printer
-  exclude-files:
-    - ".*_gen.go$"
+  concurrency: 0
+  timeout: 5m
 
 output:
   sort-results: true
@@ -61,3 +45,32 @@ linters-settings:
       rules:
         json: snake
         yaml: snake
+
+issues:
+  exclude-dirs:
+    - internal/env
+    - internal/fs
+    - internal/loc
+    - internal/lsp/fakenet
+    - internal/lsp/helper
+    - internal/lsp/jsonrpc2
+    - internal/lsp/protocol
+    - internal/lsp/span
+    - internal/lsp/telemetry
+    - internal/lsp/xcontext
+    - internal/memoize
+    - internal/session/flock
+    - ttcn3/v2/syntax/internal/gen
+    - ttcn3/syntax/internal/gen
+    - ttcn3/printer
+
+  exclude-files:
+    - ".*_gen.go$"
+
+  exclude-use-default: true
+  exclude-case-sensitive: true
+  exclude-dirs-use-default: true
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  new: false
+  fix: false
