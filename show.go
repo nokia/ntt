@@ -76,7 +76,7 @@ func printJSON(report *ConfigReport, keys []string) error {
 		return err
 	}
 
-	if dumb {
+	if !dumb {
 		var list []project.TestConfig
 		for _, file := range files {
 			tree := ttcn3.ParseFile(file)
