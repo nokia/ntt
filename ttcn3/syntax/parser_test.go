@@ -65,6 +65,7 @@ func TestExprs(t *testing.T) {
 		{pass, `{[0] := 1, [1] := 2 }`},
 		{pass, `x[i][j] := 1, y[k] := 2 }`},
 		{pass, `{(1+2)*3, a.f()}`},
+		{pass, `x.class := 23`},
 		{pass, `{-,-}`},
 		{pass, `(1,*,?,-,2)`},
 		{pass, `t length(5..23)`},

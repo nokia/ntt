@@ -1001,7 +1001,7 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 
 func (p *parser) parseName() *Ident {
 	switch p.tok {
-	case IDENT, ADDRESS, CONTROL:
+	case IDENT, ADDRESS, CONTROL, CLASS:
 		id := &Ident{Tok: p.consume(), IsName: true}
 		p.names[id.String()] = true
 		return id
@@ -1015,7 +1015,7 @@ func (p *parser) parseIdent() *Ident {
 	switch p.tok {
 	case UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM, CREATE:
+	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM, CREATE, CLASS:
 		return p.make_use(p.consume())
 	default:
 		p.expect(IDENT) // use expect() error handling
