@@ -424,9 +424,7 @@ type (
 	ForRangeStmt struct {
 		Tok    Token
 		LParen Token
-		VarTok Token
-		Type   TypeSpec
-		Var    *Ident
+		Init   Stmt
 		InTok  Token
 		Range  Expr
 		RParen Token

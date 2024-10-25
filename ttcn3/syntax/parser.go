@@ -2469,9 +2469,6 @@ func (p *parser) parseStmt() Stmt {
 	case LBRACK:
 		return p.parseAltGuard()
 	case FOR:
-		if p.peek(4).Kind() == IN || p.peek(5).Kind() == IN || p.peek(6).Kind() == IN {
-			return p.parseForRangeLoop()
-		}
 		return p.parseForLoop()
 	case WHILE:
 		return p.parseWhileLoop()
@@ -2522,15 +2519,36 @@ func (p *parser) parseStmt() Stmt {
 	}
 }
 
-func (p *parser) parseForLoop() *ForStmt {
-	x := new(ForStmt)
-	x.Tok = p.consume()
-	x.LParen = p.expect(LPAREN)
+func (p *parser) parseForLoop() Stmt {
+	forTok := p.consume()
+	lParen := p.expect(LPAREN)
+
+	var init Stmt
 	if p.tok == VAR {
-		x.Init = &DeclStmt{Decl: p.parseValueDecl()}
+		init = &DeclStmt{Decl: p.parseValueDecl()}
 	} else {
-		x.Init = &ExprStmt{Expr: p.parseExpr()}
+		init = &ExprStmt{Expr: p.parseExpr()}
 	}
+
+	if p.tok == IN {
+		if hasAssignment(init) {
+			p.error(p.peek(1), "unexpected token %s", p.tok)
+		}
+		x := new(ForRangeStmt)
+		x.Tok = forTok
+		x.LParen = lParen
+		x.Init = init
+		x.InTok = p.consume()
+		x.Range = p.parseExpr()
+		x.RParen = p.expect(RPAREN)
+		x.Body = p.parseBlockStmt()
+		return x
+	}
+
+	x := new(ForStmt)
+	x.Tok = forTok
+	x.LParen = lParen
+	x.Init = init
 	x.InitSemi = p.expect(SEMICOLON)
 	x.Cond = p.parseExpr()
 	x.CondSemi = p.expect(SEMICOLON)
@@ -2540,24 +2558,27 @@ func (p *parser) parseForLoop() *ForStmt {
 	return x
 }
 
-func (p *parser) parseForRangeLoop() *ForRangeStmt {
-	x := new(ForRangeStmt)
-	x.Tok = p.consume()
-	x.LParen = p.expect(LPAREN)
-	if p.tok == VAR {
-		x.VarTok = p.consume()
-		if p.peek(2).Kind() != IN {
-			x.Type = p.parseTypeSpec()
+func hasAssignment(n Node) bool {
+	switch n := n.(type) {
+	case *DeclStmt:
+		return hasAssignment(n.Decl)
+	case *ExprStmt:
+		return hasAssignment(n.Expr)
+	case *ValueDecl:
+		for _, d := range n.Decls {
+			if d.AssignTok != nil {
+				return true
+			}
 		}
-		x.Var = p.parseName()
-	} else {
-		x.Var = p.parseIdent()
+		return false
+	case *BinaryExpr:
+		if n.Op.Kind() == ASSIGN {
+			return true
+		}
+		return false
+	default:
+		return false
 	}
-	x.InTok = p.expect(IN)
-	x.Range = p.parseExpr()
-	x.RParen = p.expect(RPAREN)
-	x.Body = p.parseBlockStmt()
-	return x
 }
 
 func (p *parser) parseWhileLoop() *WhileStmt {
