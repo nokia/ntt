@@ -2717,14 +2717,8 @@ func (n *ForRangeStmt) FirstTok() Token {
 	case n.LParen != nil:
 		return n.LParen
 
-	case n.VarTok != nil:
-		return n.VarTok
-
-	case n.Type != nil:
-		return n.Type.FirstTok()
-
-	case n.Var != nil:
-		return n.Var.FirstTok()
+	case n.Init != nil:
+		return n.Init.FirstTok()
 
 	case n.InTok != nil:
 		return n.InTok
@@ -2758,14 +2752,8 @@ func (n *ForRangeStmt) LastTok() Token {
 	case n.InTok != nil:
 		return n.InTok
 
-	case n.Var != nil:
-		return n.Var.LastTok()
-
-	case n.Type != nil:
-		return n.Type.LastTok()
-
-	case n.VarTok != nil:
-		return n.VarTok
+	case n.Init != nil:
+		return n.Init.LastTok()
 
 	case n.LParen != nil:
 		return n.LParen
@@ -2779,7 +2767,7 @@ func (n *ForRangeStmt) LastTok() Token {
 }
 
 func (n *ForRangeStmt) Children() []Node {
-	ret := make([]Node, 0, 9)
+	ret := make([]Node, 0, 7)
 
 	if n.Tok != nil {
 		ret = append(ret, n.Tok)
@@ -2789,16 +2777,8 @@ func (n *ForRangeStmt) Children() []Node {
 		ret = append(ret, n.LParen)
 	}
 
-	if n.VarTok != nil {
-		ret = append(ret, n.VarTok)
-	}
-
-	if n.Type != nil {
-		ret = append(ret, n.Type)
-	}
-
-	if n.Var != nil {
-		ret = append(ret, n.Var)
+	if n.Init != nil {
+		ret = append(ret, n.Init)
 	}
 
 	if n.InTok != nil {
@@ -2822,14 +2802,7 @@ func (n *ForRangeStmt) Children() []Node {
 
 func (n *ForRangeStmt) Inspect(f func(Node) bool) {
 
-	if c := n.Type; c != nil {
-		if f(c) {
-			c.Inspect(f)
-		}
-		f(nil)
-	}
-
-	if c := n.Var; c != nil {
+	if c := n.Init; c != nil {
 		if f(c) {
 			c.Inspect(f)
 		}
