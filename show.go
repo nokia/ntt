@@ -83,6 +83,7 @@ func printJSON(report *ConfigReport, keys []string) error {
 		wg.Add(len(files))
 		glist := make([]project.TestConfig, 0, len(files))
 		for _, file := range files {
+			file := file
 			go func() {
 				defer wg.Done()
 
