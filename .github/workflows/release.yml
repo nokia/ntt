@@ -1,14 +1,15 @@
-name: Release with goreleaser
+name: Release
 on:
   push:
     tags:
       - v*.*
 jobs:
+  # Create packages, archives, ...
   goreleaser:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v2
-      - name: Unshallow Fetch
+      - name: Fetch history
         run:  git fetch --prune --unshallow
       - uses: actions/setup-go@v2
         with:
@@ -19,6 +20,8 @@ jobs:
           args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Create MSI (Microsoft Installer) for ntt
   msi:
     needs: goreleaser
     runs-on: windows-latest
