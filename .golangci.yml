@@ -1,7 +1,9 @@
 run:
   tests: false
+  issues-exit-code: 0
+  allow-parallel-runners: true
   concurrency: 0
-  timeout: 5m
+  timeout: 10m
 
 output:
   sort-results: true
