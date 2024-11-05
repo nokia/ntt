@@ -1,3 +1,4 @@
+version: 2
 before:
   hooks:
     - go mod download
@@ -11,10 +12,7 @@ builds:
       - darwin
       - windows
     ignore:
-      - goos: darwin
-        goarch: '386'
-      - goos: windows
-        goarch: '386'
+      - goarch: '386'
       - goos: windows
         goarch: arm64
 
@@ -40,7 +38,20 @@ nfpms:
     bindir: /usr/bin
 
 archives:
-  - name_template:  >-
+  - id: binaries
+    format: binary
+    wrap_in_directory: true
+    name_template:  >-
+      {{- .Binary }}_
+      {{- tolower .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end -}}
+
+  - id: archives
+    format: tar.gz
+    name_template:  >-
       {{- .ProjectName }}_
       {{- tolower .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
@@ -53,9 +64,6 @@ archives:
 
 checksum:
   name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ .Tag }}-next"
 
 release:
   draft: true
