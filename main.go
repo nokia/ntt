@@ -108,7 +108,7 @@ var (
 	testsFiles     []string
 	chdir          string
 
-	version = "dev"
+	version = "devel"
 	commit  = "none"
 	date    = "unknown"
 
