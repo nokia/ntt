@@ -19,10 +19,8 @@ var (
 
 func init() {
 	RootCommand.AddCommand(VersionCommand)
-}
 
-func versionInfo(cmd *cobra.Command, args []string) {
-	if version == "dev" {
+	if version == "devel" {
 		info, ok := debug.ReadBuildInfo()
 		if ok && strings.HasPrefix(info.Main.Version, "v") {
 			version = info.Main.Version
@@ -41,5 +39,8 @@ func versionInfo(cmd *cobra.Command, args []string) {
 		}
 	}
 
+}
+
+func versionInfo(cmd *cobra.Command, args []string) {
 	fmt.Printf("ntt %v, commit %s, built at %s\n", version, commit, date)
 }
