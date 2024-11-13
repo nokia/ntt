@@ -691,15 +691,15 @@ func inGlobalScope(stack []syntax.Node) bool {
 }
 
 func isPort(d *syntax.ValueDecl) bool {
-	return d.Kind.Kind() == syntax.PORT
+	return d.Kind != nil && d.Kind.Kind() == syntax.PORT
 }
 
 func isConst(d *syntax.ValueDecl) bool {
-	return d.Kind.Kind() == syntax.CONST
+	return d.Kind != nil && d.Kind.Kind() == syntax.CONST
 }
 
 func isVar(d *syntax.ValueDecl) bool {
-	return !isVarTemplate(d) && d.Kind.Kind() == syntax.VAR
+	return !isVarTemplate(d) && d.Kind != nil && d.Kind.Kind() == syntax.VAR
 }
 
 func isVarTemplate(d *syntax.ValueDecl) bool {
