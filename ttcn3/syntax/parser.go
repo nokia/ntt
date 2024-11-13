@@ -765,6 +765,7 @@ func (p *parser) parseOperand() Expr {
 
 	case ADDRESS,
 		CHARSTRING,
+		CLASS,
 		MAP,
 		MTC,
 		SYSTEM,
