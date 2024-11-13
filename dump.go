@@ -11,8 +11,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/ttcn3"
+	printer "github.com/nokia/ntt/ttcn3/format"
 	"github.com/nokia/ntt/ttcn3/syntax"
-	"github.com/nokia/ntt/ttcn3/v2/printer"
 	syntax2 "github.com/nokia/ntt/ttcn3/v2/syntax"
 	"github.com/spf13/cobra"
 )

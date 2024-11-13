@@ -1,5 +1,5 @@
-// Package printer implements pretty printers for TTCN-3 source code.
-package printer
+// Package format implements pretty printers for TTCN-3 source code.
+package format
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/nokia/ntt/ttcn3/v2/syntax"
+	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
 type whiteSpace byte
@@ -45,6 +45,7 @@ type CanonicalPrinter struct {
 	lastPos, currPos syntax.Position
 	whiteBuf         string
 	firstToken       bool
+	stack            []syntax.Node
 }
 
 // NewCanonicalPrinter returns a new printer that formats source code.
@@ -73,7 +74,7 @@ func (p *CanonicalPrinter) Fprint(v interface{}) error {
 	// The simple formatting rules do not need much context information.
 	// This allows us to use the tokeniser and release initial
 	// formatting experiments even before the parser is ready.
-	n := syntax.Tokenize(b)
+	n, _, _ := syntax.Parse(b)
 
 	// Only pretty print if there are no syntax errors.
 	if n.Err() != nil {
@@ -91,72 +92,9 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 	// white-spaces before the first token.
 	p.firstToken = true
 
-	n.Inspect(func(n syntax.Node) bool {
-
-		// We figure out spacing by looking at the token stream only.
-		// Because the parser for creating a syntax tree is not yet
-		// implemented.
-		if !n.IsToken() {
-			return true
-		}
-
-		// Incorporate user-defined line breaks and token separators
-		// into output stream.
-		currPos := n.Span()
-		switch {
-		case currPos.Begin.Line > p.lastPos.Line:
-			p.print(newline)
-			if currPos.Begin.Line-p.lastPos.Line > 1 {
-				p.print(newline)
-			}
-		case currPos.Begin.Column > p.lastPos.Column:
-			p.print(blank)
-		}
-		p.lastPos = currPos.End
-
-		switch k, s := n.Kind(), n.Text(); {
-
-		// Increment indentation after opening {, [, (.
-		case k == syntax.LeftBrace, k == syntax.LeftBracket, k == syntax.LeftParen:
-			p.print(s, indent)
-
-		// Decrement indentation before closing }, ], ).
-		case k == syntax.RightBrace, k == syntax.RightBracket, k == syntax.RightParen:
-			p.print(unindent, s)
-
-		// Add space after comma
-		case k == syntax.Comma:
-			p.print(",", blank)
-
-		// Align assignments.
-		case k == syntax.Assign:
-			p.print(blank, ":=", blank)
-
-		// Every line of a comment has to be indented individually.
-		case k == syntax.Comment:
-			p.print(cell)
-
-			// Before we split a comment into its lines, we have to
-			// remove the trailing newline of `//` comments.
-			//
-			// This makes the logic of p.comment easier, because
-			// printing `//` comments is then identical to printing
-			// single line `/*` comments.
-			p.comment(currPos.Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
-			if strings.HasSuffix(s, "\n") {
-				p.print(newline)
-			}
-
-		// Only literals may contain newlines and \t and need to be quoted.
-		case n.Kind().IsLiteral():
-			p.print(quote(s))
-
-		// All other tokens are printed as is.
-		default:
-			p.print(s)
-		}
-		return true
-	})
+	for tok := n.FirstTok(); tok != nil && tok.Kind() != syntax.EOF; tok = tok.NextTok() {
+		p.printToken(tok)
+	}
 
 	// Terminate the last line with a newline.
 	if !p.firstToken {
@@ -168,6 +106,64 @@ func (p *CanonicalPrinter) tree(n syntax.Node) error {
 	}
 
 	return nil
+}
+
+func (p *CanonicalPrinter) printToken(n syntax.Token) {
+	// Incorporate user-defined line breaks and token separators
+	// into output stream.
+	currPos := syntax.SpanOf(n)
+	switch {
+	case currPos.Begin.Line > p.lastPos.Line:
+		p.print(newline)
+		if currPos.Begin.Line-p.lastPos.Line > 1 {
+			p.print(newline)
+		}
+	case currPos.Begin.Column > p.lastPos.Column:
+		p.print(blank)
+	}
+	p.lastPos = currPos.End
+
+	switch k, s := n.Kind(), n.String(); {
+
+	// Increment indentation after opening {, [, (.
+	case k == syntax.LBRACE, k == syntax.LBRACK, k == syntax.LPAREN:
+		p.print(s, indent)
+
+	// Decrement indentation before closing }, ], ).
+	case k == syntax.RBRACE, k == syntax.RBRACK, k == syntax.RPAREN:
+		p.print(unindent, s)
+
+	// Add space after comma
+	case k == syntax.COMMA:
+		p.print(",", blank)
+
+	// Align assignments.
+	case k == syntax.ASSIGN:
+		p.print(blank, ":=", blank)
+
+	// Every line of a comment has to be indented individually.
+	case k == syntax.COMMENT:
+		p.print(cell)
+
+		// Before we split a comment into its lines, we have to
+		// remove the trailing newline of `//` comments.
+		//
+		// This makes the logic of p.comment easier, because
+		// printing `//` comments is then identical to printing
+		// single line `/*` comments.
+		p.comment(currPos.Begin.Column-1, strings.Split(strings.TrimSpace(s), "\n"))
+		if strings.HasSuffix(s, "\n") {
+			p.print(newline)
+		}
+
+	// Only literals may contain newlines and \t and need to be quoted.
+	case n.Kind().IsLiteral():
+		p.print(quote(s))
+
+	// All other tokens are printed as is.
+	default:
+		p.print(s)
+	}
 }
 
 // comment prints a comment line by line. It removes white-space prefixes from

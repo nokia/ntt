@@ -93,8 +93,20 @@ func (n *Root) PosFor(line, col int) int {
 	return n.lines[line] + col - 1
 }
 
-func (n *Root) FirstTok() Token           { return n.NodeList.FirstTok() }
-func (n *Root) LastTok() Token            { return n.NodeList.LastTok() }
+func (n *Root) FirstTok() Token {
+	if len(n.tokens) == 0 {
+		return nil
+	}
+	return &tokenNode{n, 0}
+}
+
+func (n *Root) LastTok() Token {
+	if len(n.tokens) == 0 {
+		return nil
+	}
+	return &tokenNode{n, len(n.tokens) - 1}
+}
+
 func (n *Root) Inspect(f func(Node) bool) { n.NodeList.Inspect(f) }
 func (n *Root) Children() []Node          { return n.NodeList.Children() }
 

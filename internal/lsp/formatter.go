@@ -8,7 +8,7 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3"
-	"github.com/nokia/ntt/ttcn3/v2/printer"
+	"github.com/nokia/ntt/ttcn3/format"
 )
 
 func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormattingParams) ([]protocol.TextEdit, error) {
@@ -29,7 +29,7 @@ func (s *Server) formatting(ctx context.Context, params *protocol.DocumentFormat
 	}
 
 	var out bytes.Buffer
-	p := printer.NewCanonicalPrinter(&out)
+	p := format.NewCanonicalPrinter(&out)
 	p.TabWidth = int(params.Options.TabSize)
 	if params.Options.InsertSpaces {
 		p.UseSpaces = true
