@@ -2,6 +2,10 @@
 
 package syntax
 
+func (n *AltStmt) Kind() Kind {
+	return AltStmtNode
+}
+
 func (n *AltStmt) FirstTok() Token {
 	switch {
 
@@ -77,6 +81,10 @@ func (n *AltStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *BehaviourSpec) Kind() Kind {
+	return BehaviourSpecNode
 }
 
 func (n *BehaviourSpec) FirstTok() Token {
@@ -195,6 +203,10 @@ func (n *BehaviourSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *BehaviourTypeDecl) Kind() Kind {
+	return BehaviourTypeDeclNode
 }
 
 func (n *BehaviourTypeDecl) FirstTok() Token {
@@ -376,6 +388,10 @@ func (n *BehaviourTypeDecl) End() int {
 	return -1
 }
 
+func (n *BinaryExpr) Kind() Kind {
+	return BinaryExprNode
+}
+
 func (n *BinaryExpr) FirstTok() Token {
 	switch {
 
@@ -460,6 +476,10 @@ func (n *BinaryExpr) End() int {
 	return -1
 }
 
+func (n *BlockStmt) Kind() Kind {
+	return BlockStmtNode
+}
+
 func (n *BlockStmt) FirstTok() Token {
 	switch {
 
@@ -537,6 +557,10 @@ func (n *BlockStmt) End() int {
 	return -1
 }
 
+func (n *BranchStmt) Kind() Kind {
+	return BranchStmtNode
+}
+
 func (n *BranchStmt) FirstTok() Token {
 	switch {
 
@@ -602,6 +626,10 @@ func (n *BranchStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *CallExpr) Kind() Kind {
+	return CallExprNode
 }
 
 func (n *CallExpr) FirstTok() Token {
@@ -678,6 +706,10 @@ func (n *CallExpr) End() int {
 	return -1
 }
 
+func (n *CallStmt) Kind() Kind {
+	return CallStmtNode
+}
+
 func (n *CallStmt) FirstTok() Token {
 	switch {
 
@@ -750,6 +782,10 @@ func (n *CallStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *CaseClause) Kind() Kind {
+	return CaseClauseNode
 }
 
 func (n *CaseClause) FirstTok() Token {
@@ -834,6 +870,10 @@ func (n *CaseClause) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ClassTypeDecl) Kind() Kind {
+	return ClassTypeDeclNode
 }
 
 func (n *ClassTypeDecl) FirstTok() Token {
@@ -1055,6 +1095,10 @@ func (n *ClassTypeDecl) End() int {
 	return -1
 }
 
+func (n *CommClause) Kind() Kind {
+	return CommClauseNode
+}
+
 func (n *CommClause) FirstTok() Token {
 	switch {
 
@@ -1174,6 +1218,10 @@ func (n *CommClause) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ComponentTypeDecl) Kind() Kind {
+	return ComponentTypeDeclNode
 }
 
 func (n *ComponentTypeDecl) FirstTok() Token {
@@ -1331,6 +1379,10 @@ func (n *ComponentTypeDecl) End() int {
 	return -1
 }
 
+func (n *CompositeLiteral) Kind() Kind {
+	return CompositeLiteralNode
+}
+
 func (n *CompositeLiteral) FirstTok() Token {
 	switch {
 
@@ -1406,6 +1458,10 @@ func (n *CompositeLiteral) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ConstructorDecl) Kind() Kind {
+	return ConstructorDeclNode
 }
 
 func (n *ConstructorDecl) FirstTok() Token {
@@ -1490,6 +1546,10 @@ func (n *ConstructorDecl) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ControlPart) Kind() Kind {
+	return ControlPartNode
 }
 
 func (n *ControlPart) FirstTok() Token {
@@ -1583,6 +1643,10 @@ func (n *ControlPart) End() int {
 	return -1
 }
 
+func (n *DeclStmt) Kind() Kind {
+	return DeclStmtNode
+}
+
 func (n *DeclStmt) FirstTok() Token {
 	switch {
 
@@ -1638,6 +1702,10 @@ func (n *DeclStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *Declarator) Kind() Kind {
+	return DeclaratorNode
 }
 
 func (n *Declarator) FirstTok() Token {
@@ -1741,6 +1809,10 @@ func (n *Declarator) End() int {
 	return -1
 }
 
+func (n *DecmatchExpr) Kind() Kind {
+	return DecmatchExprNode
+}
+
 func (n *DecmatchExpr) FirstTok() Token {
 	switch {
 
@@ -1823,6 +1895,10 @@ func (n *DecmatchExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *DecodedExpr) Kind() Kind {
+	return DecodedExprNode
 }
 
 func (n *DecodedExpr) FirstTok() Token {
@@ -1909,6 +1985,10 @@ func (n *DecodedExpr) End() int {
 	return -1
 }
 
+func (n *DefKindExpr) Kind() Kind {
+	return DefKindExprNode
+}
+
 func (n *DefKindExpr) FirstTok() Token {
 	switch {
 
@@ -1974,6 +2054,10 @@ func (n *DefKindExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *DoWhileStmt) Kind() Kind {
+	return DoWhileStmtNode
 }
 
 func (n *DoWhileStmt) FirstTok() Token {
@@ -2090,6 +2174,10 @@ func (n *DoWhileStmt) End() int {
 	return -1
 }
 
+func (n *EnumSpec) Kind() Kind {
+	return EnumSpecNode
+}
+
 func (n *EnumSpec) FirstTok() Token {
 	switch {
 
@@ -2175,6 +2263,10 @@ func (n *EnumSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *EnumTypeDecl) Kind() Kind {
+	return EnumTypeDeclNode
 }
 
 func (n *EnumTypeDecl) FirstTok() Token {
@@ -2325,6 +2417,10 @@ func (n *EnumTypeDecl) End() int {
 	return -1
 }
 
+func (n *ErrorNode) Kind() Kind {
+	return ErrorNodeNode
+}
+
 func (n *ErrorNode) FirstTok() Token {
 	switch {
 
@@ -2383,6 +2479,10 @@ func (n *ErrorNode) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ExceptExpr) Kind() Kind {
+	return ExceptExprNode
 }
 
 func (n *ExceptExpr) FirstTok() Token {
@@ -2489,6 +2589,10 @@ func (n *ExceptExpr) End() int {
 	return -1
 }
 
+func (n *ExprStmt) Kind() Kind {
+	return ExprStmtNode
+}
+
 func (n *ExprStmt) FirstTok() Token {
 	switch {
 
@@ -2544,6 +2648,10 @@ func (n *ExprStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *Field) Kind() Kind {
+	return FieldNode
 }
 
 func (n *Field) FirstTok() Token {
@@ -2708,6 +2816,10 @@ func (n *Field) End() int {
 	return -1
 }
 
+func (n *ForRangeStmt) Kind() Kind {
+	return ForRangeStmtNode
+}
+
 func (n *ForRangeStmt) FirstTok() Token {
 	switch {
 
@@ -2837,6 +2949,10 @@ func (n *ForRangeStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ForStmt) Kind() Kind {
+	return ForStmtNode
 }
 
 func (n *ForStmt) FirstTok() Token {
@@ -2997,6 +3113,10 @@ func (n *ForStmt) End() int {
 	return -1
 }
 
+func (n *FormalPar) Kind() Kind {
+	return FormalParNode
+}
+
 func (n *FormalPar) FirstTok() Token {
 	switch {
 
@@ -3152,6 +3272,10 @@ func (n *FormalPar) End() int {
 	return -1
 }
 
+func (n *FormalPars) Kind() Kind {
+	return FormalParsNode
+}
+
 func (n *FormalPars) FirstTok() Token {
 	switch {
 
@@ -3227,6 +3351,10 @@ func (n *FormalPars) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *FriendDecl) Kind() Kind {
+	return FriendDeclNode
 }
 
 func (n *FriendDecl) FirstTok() Token {
@@ -3323,6 +3451,10 @@ func (n *FriendDecl) End() int {
 	return -1
 }
 
+func (n *FromExpr) Kind() Kind {
+	return FromExprNode
+}
+
 func (n *FromExpr) FirstTok() Token {
 	switch {
 
@@ -3398,6 +3530,10 @@ func (n *FromExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *FuncDecl) Kind() Kind {
+	return FuncDeclNode
 }
 
 func (n *FuncDecl) FirstTok() Token {
@@ -3623,6 +3759,10 @@ func (n *FuncDecl) End() int {
 	return -1
 }
 
+func (n *GroupDecl) Kind() Kind {
+	return GroupDeclNode
+}
+
 func (n *GroupDecl) FirstTok() Token {
 	switch {
 
@@ -3744,6 +3884,10 @@ func (n *GroupDecl) End() int {
 	return -1
 }
 
+func (n *Ident) Kind() Kind {
+	return IdentNode
+}
+
 func (n *Ident) FirstTok() Token {
 	switch {
 
@@ -3802,6 +3946,10 @@ func (n *Ident) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *IfStmt) Kind() Kind {
+	return IfStmtNode
 }
 
 func (n *IfStmt) FirstTok() Token {
@@ -3933,6 +4081,10 @@ func (n *IfStmt) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ImportDecl) Kind() Kind {
+	return ImportDeclNode
 }
 
 func (n *ImportDecl) FirstTok() Token {
@@ -4083,6 +4235,10 @@ func (n *ImportDecl) End() int {
 	return -1
 }
 
+func (n *IndexExpr) Kind() Kind {
+	return IndexExprNode
+}
+
 func (n *IndexExpr) FirstTok() Token {
 	switch {
 
@@ -4177,6 +4333,10 @@ func (n *IndexExpr) End() int {
 	return -1
 }
 
+func (n *LanguageSpec) Kind() Kind {
+	return LanguageSpecNode
+}
+
 func (n *LanguageSpec) FirstTok() Token {
 	switch {
 
@@ -4242,6 +4402,10 @@ func (n *LanguageSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *LengthExpr) Kind() Kind {
+	return LengthExprNode
 }
 
 func (n *LengthExpr) FirstTok() Token {
@@ -4326,6 +4490,10 @@ func (n *LengthExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ListSpec) Kind() Kind {
+	return ListSpecNode
 }
 
 func (n *ListSpec) FirstTok() Token {
@@ -4420,6 +4588,10 @@ func (n *ListSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *MapSpec) Kind() Kind {
+	return MapSpecNode
 }
 
 func (n *MapSpec) FirstTok() Token {
@@ -4524,6 +4696,10 @@ func (n *MapSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *MapTypeDecl) Kind() Kind {
+	return MapTypeDeclNode
 }
 
 func (n *MapTypeDecl) FirstTok() Token {
@@ -4644,6 +4820,10 @@ func (n *MapTypeDecl) End() int {
 	return -1
 }
 
+func (n *ModifiesExpr) Kind() Kind {
+	return ModifiesExprNode
+}
+
 func (n *ModifiesExpr) FirstTok() Token {
 	switch {
 
@@ -4736,6 +4916,10 @@ func (n *ModifiesExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *Module) Kind() Kind {
+	return ModuleNode
 }
 
 func (n *Module) FirstTok() Token {
@@ -4876,6 +5060,10 @@ func (n *Module) End() int {
 	return -1
 }
 
+func (n *ModuleDef) Kind() Kind {
+	return ModuleDefNode
+}
+
 func (n *ModuleDef) FirstTok() Token {
 	switch {
 
@@ -4941,6 +5129,10 @@ func (n *ModuleDef) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ModuleParameterGroup) Kind() Kind {
+	return ModuleParameterGroupNode
 }
 
 func (n *ModuleParameterGroup) FirstTok() Token {
@@ -5047,6 +5239,10 @@ func (n *ModuleParameterGroup) End() int {
 	return -1
 }
 
+func (n *MtcSpec) Kind() Kind {
+	return MtcSpecNode
+}
+
 func (n *MtcSpec) FirstTok() Token {
 	switch {
 
@@ -5114,6 +5310,10 @@ func (n *MtcSpec) End() int {
 	return -1
 }
 
+func (n *NodeList) Kind() Kind {
+	return NodeListNode
+}
+
 func (n *NodeList) FirstTok() Token {
 	switch {
 
@@ -5169,6 +5369,10 @@ func (n *NodeList) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ParamExpr) Kind() Kind {
+	return ParamExprNode
 }
 
 func (n *ParamExpr) FirstTok() Token {
@@ -5255,6 +5459,10 @@ func (n *ParamExpr) End() int {
 	return -1
 }
 
+func (n *ParametrizedIdent) Kind() Kind {
+	return ParametrizedIdentNode
+}
+
 func (n *ParametrizedIdent) FirstTok() Token {
 	switch {
 
@@ -5327,6 +5535,10 @@ func (n *ParametrizedIdent) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ParenExpr) Kind() Kind {
+	return ParenExprNode
 }
 
 func (n *ParenExpr) FirstTok() Token {
@@ -5406,6 +5618,10 @@ func (n *ParenExpr) End() int {
 	return -1
 }
 
+func (n *PatternExpr) Kind() Kind {
+	return PatternExprNode
+}
+
 func (n *PatternExpr) FirstTok() Token {
 	switch {
 
@@ -5483,6 +5699,10 @@ func (n *PatternExpr) End() int {
 	return -1
 }
 
+func (n *PortAttribute) Kind() Kind {
+	return PortAttributeNode
+}
+
 func (n *PortAttribute) FirstTok() Token {
 	switch {
 
@@ -5548,6 +5768,10 @@ func (n *PortAttribute) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *PortMapAttribute) Kind() Kind {
+	return PortMapAttributeNode
 }
 
 func (n *PortMapAttribute) FirstTok() Token {
@@ -5625,6 +5849,10 @@ func (n *PortMapAttribute) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *PortTypeDecl) Kind() Kind {
+	return PortTypeDeclNode
 }
 
 func (n *PortTypeDecl) FirstTok() Token {
@@ -5795,6 +6023,10 @@ func (n *PortTypeDecl) End() int {
 	return -1
 }
 
+func (n *PostExpr) Kind() Kind {
+	return PostExprNode
+}
+
 func (n *PostExpr) FirstTok() Token {
 	switch {
 
@@ -5860,6 +6092,10 @@ func (n *PostExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *RedirectExpr) Kind() Kind {
+	return RedirectExprNode
 }
 
 func (n *RedirectExpr) FirstTok() Token {
@@ -6074,6 +6310,10 @@ func (n *RedirectExpr) End() int {
 	return -1
 }
 
+func (n *RefSpec) Kind() Kind {
+	return RefSpecNode
+}
+
 func (n *RefSpec) FirstTok() Token {
 	switch {
 
@@ -6129,6 +6369,10 @@ func (n *RefSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *RegexpExpr) Kind() Kind {
+	return RegexpExprNode
 }
 
 func (n *RegexpExpr) FirstTok() Token {
@@ -6206,6 +6450,10 @@ func (n *RegexpExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *RestrictionSpec) Kind() Kind {
+	return RestrictionSpecNode
 }
 
 func (n *RestrictionSpec) FirstTok() Token {
@@ -6286,6 +6534,10 @@ func (n *RestrictionSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ReturnSpec) Kind() Kind {
+	return ReturnSpecNode
 }
 
 func (n *ReturnSpec) FirstTok() Token {
@@ -6382,6 +6634,10 @@ func (n *ReturnSpec) End() int {
 	return -1
 }
 
+func (n *ReturnStmt) Kind() Kind {
+	return ReturnStmtNode
+}
+
 func (n *ReturnStmt) FirstTok() Token {
 	switch {
 
@@ -6463,6 +6719,10 @@ func (n *Root) End() int {
 	return -1
 }
 
+func (n *RunsOnSpec) Kind() Kind {
+	return RunsOnSpecNode
+}
+
 func (n *RunsOnSpec) FirstTok() Token {
 	switch {
 
@@ -6538,6 +6798,10 @@ func (n *RunsOnSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *SelectStmt) Kind() Kind {
+	return SelectStmtNode
 }
 
 func (n *SelectStmt) FirstTok() Token {
@@ -6654,6 +6918,10 @@ func (n *SelectStmt) End() int {
 	return -1
 }
 
+func (n *SelectorExpr) Kind() Kind {
+	return SelectorExprNode
+}
+
 func (n *SelectorExpr) FirstTok() Token {
 	switch {
 
@@ -6736,6 +7004,10 @@ func (n *SelectorExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *SignatureDecl) Kind() Kind {
+	return SignatureDeclNode
 }
 
 func (n *SignatureDecl) FirstTok() Token {
@@ -6910,6 +7182,10 @@ func (n *SignatureDecl) End() int {
 	return -1
 }
 
+func (n *StructSpec) Kind() Kind {
+	return StructSpecNode
+}
+
 func (n *StructSpec) FirstTok() Token {
 	switch {
 
@@ -6995,6 +7271,10 @@ func (n *StructSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *StructTypeDecl) Kind() Kind {
+	return StructTypeDeclNode
 }
 
 func (n *StructTypeDecl) FirstTok() Token {
@@ -7145,6 +7425,10 @@ func (n *StructTypeDecl) End() int {
 	return -1
 }
 
+func (n *SubTypeDecl) Kind() Kind {
+	return SubTypeDeclNode
+}
+
 func (n *SubTypeDecl) FirstTok() Token {
 	switch {
 
@@ -7229,6 +7513,10 @@ func (n *SubTypeDecl) End() int {
 	return -1
 }
 
+func (n *SystemSpec) Kind() Kind {
+	return SystemSpecNode
+}
+
 func (n *SystemSpec) FirstTok() Token {
 	switch {
 
@@ -7294,6 +7582,10 @@ func (n *SystemSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *TemplateDecl) Kind() Kind {
+	return TemplateDeclNode
 }
 
 func (n *TemplateDecl) FirstTok() Token {
@@ -7502,6 +7794,10 @@ func (n *TemplateDecl) End() int {
 	return -1
 }
 
+func (n *UnaryExpr) Kind() Kind {
+	return UnaryExprNode
+}
+
 func (n *UnaryExpr) FirstTok() Token {
 	switch {
 
@@ -7567,6 +7863,10 @@ func (n *UnaryExpr) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *ValueDecl) Kind() Kind {
+	return ValueDeclNode
 }
 
 func (n *ValueDecl) FirstTok() Token {
@@ -7697,6 +7997,10 @@ func (n *ValueDecl) End() int {
 	return -1
 }
 
+func (n *ValueExpr) Kind() Kind {
+	return ValueExprNode
+}
+
 func (n *ValueExpr) FirstTok() Token {
 	switch {
 
@@ -7781,6 +8085,10 @@ func (n *ValueExpr) End() int {
 	return -1
 }
 
+func (n *ValueLiteral) Kind() Kind {
+	return ValueLiteralNode
+}
+
 func (n *ValueLiteral) FirstTok() Token {
 	switch {
 
@@ -7829,6 +8137,10 @@ func (n *ValueLiteral) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *WhileStmt) Kind() Kind {
+	return WhileStmtNode
 }
 
 func (n *WhileStmt) FirstTok() Token {
@@ -7935,6 +8247,10 @@ func (n *WhileStmt) End() int {
 	return -1
 }
 
+func (n *WithSpec) Kind() Kind {
+	return WithSpecNode
+}
+
 func (n *WithSpec) FirstTok() Token {
 	switch {
 
@@ -8020,6 +8336,10 @@ func (n *WithSpec) End() int {
 		return tok.End()
 	}
 	return -1
+}
+
+func (n *WithStmt) Kind() Kind {
+	return WithStmtNode
 }
 
 func (n *WithStmt) FirstTok() Token {
@@ -8135,3 +8455,89 @@ func (n *WithStmt) End() int {
 	}
 	return -1
 }
+
+const (
+	nodes_begin Kind = token_end + iota
+	AltStmtNode
+	BehaviourSpecNode
+	BehaviourTypeDeclNode
+	BinaryExprNode
+	BlockStmtNode
+	BranchStmtNode
+	CallExprNode
+	CallStmtNode
+	CaseClauseNode
+	ClassTypeDeclNode
+	CommClauseNode
+	ComponentTypeDeclNode
+	CompositeLiteralNode
+	ConstructorDeclNode
+	ControlPartNode
+	DeclStmtNode
+	DeclaratorNode
+	DecmatchExprNode
+	DecodedExprNode
+	DefKindExprNode
+	DoWhileStmtNode
+	EnumSpecNode
+	EnumTypeDeclNode
+	ErrorNodeNode
+	ExceptExprNode
+	ExprStmtNode
+	FieldNode
+	ForRangeStmtNode
+	ForStmtNode
+	FormalParNode
+	FormalParsNode
+	FriendDeclNode
+	FromExprNode
+	FuncDeclNode
+	GroupDeclNode
+	IdentNode
+	IfStmtNode
+	ImportDeclNode
+	IndexExprNode
+	LanguageSpecNode
+	LengthExprNode
+	ListSpecNode
+	MapSpecNode
+	MapTypeDeclNode
+	ModifiesExprNode
+	ModuleNode
+	ModuleDefNode
+	ModuleParameterGroupNode
+	MtcSpecNode
+	NodeListNode
+	ParamExprNode
+	ParametrizedIdentNode
+	ParenExprNode
+	PatternExprNode
+	PortAttributeNode
+	PortMapAttributeNode
+	PortTypeDeclNode
+	PostExprNode
+	RedirectExprNode
+	RefSpecNode
+	RegexpExprNode
+	RestrictionSpecNode
+	ReturnSpecNode
+	ReturnStmtNode
+	RootNode
+	RunsOnSpecNode
+	SelectStmtNode
+	SelectorExprNode
+	SignatureDeclNode
+	StructSpecNode
+	StructTypeDeclNode
+	SubTypeDeclNode
+	SystemSpecNode
+	TemplateDeclNode
+	UnaryExprNode
+	ValueDeclNode
+	ValueExprNode
+	ValueLiteralNode
+	WhileStmtNode
+	WithSpecNode
+	WithStmtNode
+	tokenNodeNode
+)

@@ -192,6 +192,7 @@ const (
 	WHILE
 	WITH
 	keyword_end
+	token_end
 )
 
 var tokens = [...]string{

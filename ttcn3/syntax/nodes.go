@@ -8,6 +8,7 @@ import "github.com/hashicorp/go-multierror"
 
 // All node types implement the Node interface.
 type Node interface {
+	Kind() Kind
 	Pos() int
 	End() int
 	FirstTok() Token
@@ -18,7 +19,6 @@ type Node interface {
 
 type Token interface {
 	Node
-	Kind() Kind
 	String() string
 	PrevTok() Token
 	NextTok() Token
