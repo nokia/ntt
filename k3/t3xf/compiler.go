@@ -139,7 +139,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		c.Compile(n.Def)
 
 	case *syntax.FuncDecl:
-		switch k := n.Kind.Kind(); {
+		switch k := n.KindTok.Kind(); {
 		case k == syntax.FUNCTION && n.External == nil:
 			c.compileFunction(n)
 		case k == syntax.FUNCTION && n.External != nil:
@@ -154,8 +154,8 @@ func (c *Compiler) Compile(n syntax.Node) error {
 
 	case *syntax.ValueDecl:
 		k := syntax.VAR
-		if n.Kind != nil {
-			k = n.Kind.Kind()
+		if n.KindTok != nil {
+			k = n.KindTok.Kind()
 		}
 
 		fn := c.compileVar
@@ -367,7 +367,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 
 	case *syntax.WithStmt:
 		c.Compile(n.Value)
-		switch n.Kind.Kind() {
+		switch n.KindTok.Kind() {
 		case syntax.EXTENSION:
 			c.emit(opcode.EXTENSION, 0)
 		case syntax.ENCODE:
@@ -375,7 +375,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 		case syntax.VARIANT:
 			c.emit(opcode.VARIANT, 0)
 		default:
-			c.errorf("unsupported attribute %s", n.Kind)
+			c.errorf("unsupported attribute %s", n.KindTok)
 		}
 
 	case *syntax.FormalPars:
@@ -433,7 +433,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 			op = opcode.TYPEW
 			c.Compile(n.With)
 		}
-		c.compileStruct(n.Kind.Kind(), n.Fields)
+		c.compileStruct(n.KindTok.Kind(), n.Fields)
 		c.emit(opcode.NAME, n.Name.String())
 		addr := c.emit(op, 0)
 		c.scope = c.scope.parent
@@ -462,7 +462,7 @@ func (c *Compiler) Compile(n syntax.Node) error {
 
 	case *syntax.StructSpec:
 		c.scope = newScope(c.scope)
-		c.compileStruct(n.Kind.Kind(), n.Fields)
+		c.compileStruct(n.KindTok.Kind(), n.Fields)
 		c.scope = c.scope.parent
 
 	default:
@@ -508,13 +508,13 @@ func (c *Compiler) compileStruct(k syntax.Kind, fields []*syntax.Field) error {
 func (c *Compiler) compileNestedType(ty syntax.TypeSpec, vc *syntax.ParenExpr, le *syntax.LengthExpr) error {
 	if ls, ok := ty.(*syntax.ListSpec); ok {
 		c.compileNestedType(ls.ElemType, vc, le)
-		switch ls.Kind.Kind() {
+		switch ls.KindTok.Kind() {
 		case syntax.RECORD:
 			c.emit(opcode.RECORDOF, 0)
 		case syntax.SET:
 			c.emit(opcode.SETOF, 0)
 		default:
-			c.errorf("unsupported list type %s", ls.Kind)
+			c.errorf("unsupported list type %s", ls.KindTok)
 
 		}
 		if ls.Length != nil {

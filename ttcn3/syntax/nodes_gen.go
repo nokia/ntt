@@ -82,8 +82,8 @@ func (n *AltStmt) End() int {
 func (n *BehaviourSpec) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Params != nil:
 		return n.Params.FirstTok()
@@ -117,8 +117,8 @@ func (n *BehaviourSpec) LastTok() Token {
 	case n.Params != nil:
 		return n.Params.LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -128,8 +128,8 @@ func (n *BehaviourSpec) LastTok() Token {
 func (n *BehaviourSpec) Children() []Node {
 	ret := make([]Node, 0, 5)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Params != nil {
@@ -203,8 +203,8 @@ func (n *BehaviourTypeDecl) FirstTok() Token {
 	case n.TypeTok != nil:
 		return n.TypeTok
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Name != nil:
 		return n.Name.FirstTok()
@@ -256,8 +256,8 @@ func (n *BehaviourTypeDecl) LastTok() Token {
 	case n.Name != nil:
 		return n.Name.LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.TypeTok != nil:
 		return n.TypeTok
@@ -274,8 +274,8 @@ func (n *BehaviourTypeDecl) Children() []Node {
 		ret = append(ret, n.TypeTok)
 	}
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Name != nil {
@@ -842,8 +842,8 @@ func (n *ClassTypeDecl) FirstTok() Token {
 	case n.TypeTok != nil:
 		return n.TypeTok
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Modif != nil:
 		return n.Modif
@@ -919,8 +919,8 @@ func (n *ClassTypeDecl) LastTok() Token {
 	case n.Modif != nil:
 		return n.Modif
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.TypeTok != nil:
 		return n.TypeTok
@@ -937,8 +937,8 @@ func (n *ClassTypeDecl) Children() []Node {
 		ret = append(ret, n.TypeTok)
 	}
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Modif != nil {
@@ -1912,8 +1912,8 @@ func (n *DecodedExpr) End() int {
 func (n *DefKindExpr) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case len(n.List) > 0:
 		return n.List[0].FirstTok()
@@ -1929,8 +1929,8 @@ func (n *DefKindExpr) LastTok() Token {
 	case len(n.List) > 0:
 		return n.List[len(n.List)-1].LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -1940,8 +1940,8 @@ func (n *DefKindExpr) LastTok() Token {
 func (n *DefKindExpr) Children() []Node {
 	ret := make([]Node, 0, 2)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	for _, c := range n.List {
@@ -3326,8 +3326,8 @@ func (n *FriendDecl) End() int {
 func (n *FromExpr) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.FromTok != nil:
 		return n.FromTok
@@ -3349,8 +3349,8 @@ func (n *FromExpr) LastTok() Token {
 	case n.FromTok != nil:
 		return n.FromTok
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -3360,8 +3360,8 @@ func (n *FromExpr) LastTok() Token {
 func (n *FromExpr) Children() []Node {
 	ret := make([]Node, 0, 3)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.FromTok != nil {
@@ -3406,8 +3406,8 @@ func (n *FuncDecl) FirstTok() Token {
 	case n.External != nil:
 		return n.External
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Name != nil:
 		return n.Name.FirstTok()
@@ -3477,8 +3477,8 @@ func (n *FuncDecl) LastTok() Token {
 	case n.Name != nil:
 		return n.Name.LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.External != nil:
 		return n.External
@@ -3495,8 +3495,8 @@ func (n *FuncDecl) Children() []Node {
 		ret = append(ret, n.External)
 	}
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Name != nil {
@@ -4331,8 +4331,8 @@ func (n *LengthExpr) End() int {
 func (n *ListSpec) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Length != nil:
 		return n.Length.FirstTok()
@@ -4360,8 +4360,8 @@ func (n *ListSpec) LastTok() Token {
 	case n.Length != nil:
 		return n.Length.LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -4371,8 +4371,8 @@ func (n *ListSpec) LastTok() Token {
 func (n *ListSpec) Children() []Node {
 	ret := make([]Node, 0, 4)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Length != nil {
@@ -5486,8 +5486,8 @@ func (n *PatternExpr) End() int {
 func (n *PortAttribute) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case len(n.Types) > 0:
 		return n.Types[0].FirstTok()
@@ -5503,8 +5503,8 @@ func (n *PortAttribute) LastTok() Token {
 	case len(n.Types) > 0:
 		return n.Types[len(n.Types)-1].LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -5514,8 +5514,8 @@ func (n *PortAttribute) LastTok() Token {
 func (n *PortAttribute) Children() []Node {
 	ret := make([]Node, 0, 2)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	for _, c := range n.Types {
@@ -5642,8 +5642,8 @@ func (n *PortTypeDecl) FirstTok() Token {
 	case n.TypePars != nil:
 		return n.TypePars.FirstTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Realtime != nil:
 		return n.Realtime
@@ -5683,8 +5683,8 @@ func (n *PortTypeDecl) LastTok() Token {
 	case n.Realtime != nil:
 		return n.Realtime
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.TypePars != nil:
 		return n.TypePars.LastTok()
@@ -5722,8 +5722,8 @@ func (n *PortTypeDecl) Children() []Node {
 		ret = append(ret, n.TypePars)
 	}
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Realtime != nil {
@@ -6913,8 +6913,8 @@ func (n *SignatureDecl) End() int {
 func (n *StructSpec) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.LBrace != nil:
 		return n.LBrace
@@ -6942,8 +6942,8 @@ func (n *StructSpec) LastTok() Token {
 	case n.LBrace != nil:
 		return n.LBrace
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -6953,8 +6953,8 @@ func (n *StructSpec) LastTok() Token {
 func (n *StructSpec) Children() []Node {
 	ret := make([]Node, 0, 4)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.LBrace != nil {
@@ -7003,8 +7003,8 @@ func (n *StructTypeDecl) FirstTok() Token {
 	case n.TypeTok != nil:
 		return n.TypeTok
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Name != nil:
 		return n.Name.FirstTok()
@@ -7050,8 +7050,8 @@ func (n *StructTypeDecl) LastTok() Token {
 	case n.Name != nil:
 		return n.Name.LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.TypeTok != nil:
 		return n.TypeTok
@@ -7068,8 +7068,8 @@ func (n *StructTypeDecl) Children() []Node {
 		ret = append(ret, n.TypeTok)
 	}
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Name != nil {
@@ -7572,8 +7572,8 @@ func (n *UnaryExpr) End() int {
 func (n *ValueDecl) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.TemplateRestriction != nil:
 		return n.TemplateRestriction.FirstTok()
@@ -7613,8 +7613,8 @@ func (n *ValueDecl) LastTok() Token {
 	case n.TemplateRestriction != nil:
 		return n.TemplateRestriction.LastTok()
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -7624,8 +7624,8 @@ func (n *ValueDecl) LastTok() Token {
 func (n *ValueDecl) Children() []Node {
 	ret := make([]Node, 0, 6)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.TemplateRestriction != nil {
@@ -8025,8 +8025,8 @@ func (n *WithSpec) End() int {
 func (n *WithStmt) FirstTok() Token {
 	switch {
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	case n.Override != nil:
 		return n.Override
@@ -8066,8 +8066,8 @@ func (n *WithStmt) LastTok() Token {
 	case n.Override != nil:
 		return n.Override
 
-	case n.Kind != nil:
-		return n.Kind
+	case n.KindTok != nil:
+		return n.KindTok
 
 	default:
 		return nil
@@ -8077,8 +8077,8 @@ func (n *WithStmt) LastTok() Token {
 func (n *WithStmt) Children() []Node {
 	ret := make([]Node, 0, 6)
 
-	if n.Kind != nil {
-		ret = append(ret, n.Kind)
+	if n.KindTok != nil {
+		ret = append(ret, n.KindTok)
 	}
 
 	if n.Override != nil {

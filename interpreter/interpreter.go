@@ -304,13 +304,13 @@ func evalListSpec(t *syntax.ListSpec, env runtime.Scope) runtime.Object {
 	if listElement == nil || runtime.IsError(listElement) {
 		return listElement
 	}
-	switch t.Kind.String() {
+	switch t.KindTok.String() {
 	case "set":
 		return runtime.NewSetOf(listElement)
 	case "record":
 		return runtime.NewRecordOf(listElement)
 	default:
-		return runtime.Errorf("unknown list spec type %s", t.Kind.String())
+		return runtime.Errorf("unknown list spec type %s", t.KindTok.String())
 	}
 }
 

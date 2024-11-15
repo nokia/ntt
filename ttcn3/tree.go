@@ -199,7 +199,7 @@ func (t *Tree) ModulePars() []*Node {
 			return true
 
 		case *syntax.ValueDecl:
-			if n.Kind.Kind() != syntax.MODULEPAR && n.Kind.Kind() != syntax.ILLEGAL {
+			if n.KindTok.Kind() != syntax.MODULEPAR && n.KindTok.Kind() != syntax.ILLEGAL {
 				return false
 			}
 			return true

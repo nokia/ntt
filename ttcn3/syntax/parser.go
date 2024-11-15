@@ -752,7 +752,7 @@ func (p *parser) parseOperand() Expr {
 			return p.make_use(tok, p.consume())
 		case FROM:
 			return &FromExpr{
-				Kind:    tok,
+				KindTok: tok,
 				FromTok: p.consume(),
 				X:       p.parsePrimaryExpr(),
 			}
@@ -1351,7 +1351,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
 		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		if p.tok == ALL {
 			var y Expr = p.make_use(p.consume())
 			if p.tok == EXCEPT {
@@ -1366,7 +1366,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 			x.List = p.parseRefList()
 		}
 	case GROUP:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		for {
 			y := p.parseTypeRef()
 			if p.tok == EXCEPT {
@@ -1385,7 +1385,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 			p.consume()
 		}
 	case IMPORT:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		x.List = []Expr{p.make_use(p.expect(ALL))}
 	default:
 		p.errorExpected("import definition qualifier")
@@ -1410,7 +1410,7 @@ func (p *parser) parseExceptStmt() *DefKindExpr {
 	case ALTSTEP, CONST, FUNCTION, GROUP,
 		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
 		TESTCASE, TYPE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 	default:
 		p.errorExpected("definition qualifier")
 	}
@@ -1485,7 +1485,7 @@ func (p *parser) parseWithStmt() *WithStmt {
 		OPTIONAL,
 		STEPSIZE,
 		OVERRIDE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 	default:
 		p.errorExpected("with-attribute")
 		p.advance(stmtStart)
@@ -1535,7 +1535,7 @@ func (p *parser) parseWithQualifier() Expr {
 		return p.parseIndexExpr(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
 		x := new(DefKindExpr)
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		var y Expr = p.make_use(p.expect(ALL))
 		if p.tok == EXCEPT {
 			y = &ExceptExpr{
@@ -1609,7 +1609,7 @@ func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 
 	switch p.tok {
 	case MIXED, MESSAGE, PROCEDURE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 	default:
 		p.errorExpected("'message' or 'procedure'")
 	}
@@ -1636,8 +1636,8 @@ func (p *parser) parsePortAttribute() Node {
 	switch p.tok {
 	case IN, OUT, INOUT, ADDRESS:
 		return &PortAttribute{
-			Kind:  p.consume(),
-			Types: p.parseRefList(),
+			KindTok: p.consume(),
+			Types:   p.parseRefList(),
 		}
 	case MAP, UNMAP:
 		return &PortMapAttribute{
@@ -1686,7 +1686,7 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 	}
 	x := new(StructTypeDecl)
 	x.TypeTok = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	x.Name = p.parseName()
 	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
@@ -1716,7 +1716,7 @@ func (p *parser) parseClassTypeDecl() *ClassTypeDecl {
 	x := new(ClassTypeDecl)
 
 	x.TypeTok = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
@@ -1824,7 +1824,7 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
 	}
 	x := new(BehaviourTypeDecl)
 	x.TypeTok = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	x.Name = p.parseName()
 	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
@@ -1928,7 +1928,7 @@ func (p *parser) parseStructSpec() *StructSpec {
 		defer un(trace(p, "StructSpec"))
 	}
 	x := new(StructSpec)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		x.Fields = append(x.Fields, p.parseField())
@@ -1977,7 +1977,7 @@ func (p *parser) parseListSpec() *ListSpec {
 		defer un(trace(p, "ListSpec"))
 	}
 	x := new(ListSpec)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == LENGTH {
 		x.Length = p.parseLength(nil)
 	}
@@ -1992,7 +1992,7 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
 	}
 
 	x := new(BehaviourSpec)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	x.Params = p.parseFormalPars()
 
 	if p.tok == RUNS {
@@ -2081,7 +2081,7 @@ func (p *parser) parseModulePar() Decl {
 		return x
 	}
 
-	x := &ValueDecl{Kind: tok}
+	x := &ValueDecl{KindTok: tok}
 	x.TemplateRestriction = p.parseRestrictionSpec()
 	x.Type = p.parseTypeRef()
 	x.Decls = p.parseDeclList()
@@ -2099,7 +2099,7 @@ func (p *parser) parseValueDecl() *ValueDecl {
 	}
 	x := &ValueDecl{}
 	if p.tok != TIMER {
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		x.TemplateRestriction = p.parseRestrictionSpec()
 		if p.tok == MODIF {
 			x.Modif = p.consume()
@@ -2168,7 +2168,7 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	}
 
 	x := new(FuncDecl)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
@@ -2232,7 +2232,7 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 
 	x := new(FuncDecl)
 	x.External = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}

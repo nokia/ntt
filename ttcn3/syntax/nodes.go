@@ -285,7 +285,7 @@ type (
 
 	// A FromExpr represents a "from" expression, like "any from a".
 	FromExpr struct {
-		Kind    Token // ANY or ALL
+		KindTok Token // ANY or ALL
 		FromTok Token // Position of "from"
 		X       Expr  // Expression
 	}
@@ -329,8 +329,8 @@ type (
 	// A DefKindExpr represents a definition kind expression, used by imports
 	// and with-attributes.
 	DefKindExpr struct {
-		Kind Token  // Definition kind, "type", "group", ...
-		List []Expr // List of identifiers or except-expressions
+		KindTok Token  // Definition kind, "type", "group", ...
+		List    []Expr // List of identifiers or except-expressions
 	}
 
 	// A ExceptExpr is used by DefKindExpr to express exlusion of specific
@@ -543,15 +543,15 @@ type (
 
 	// A StructSpec represents a struct type specification.
 	StructSpec struct {
-		Kind   Token    // RECORD, SET, UNION
-		LBrace Token    // Position of "{"
-		Fields []*Field // Member list
-		RBrace Token    // Position of "}"
+		KindTok Token    // RECORD, SET, UNION
+		LBrace  Token    // Position of "{"
+		Fields  []*Field // Member list
+		RBrace  Token    // Position of "}"
 	}
 
 	// A ListSpec represents a list type specification.
 	ListSpec struct {
-		Kind     Token       // RECORD, SET
+		KindTok  Token       // RECORD, SET
 		Length   *LengthExpr // Length constraint or nil
 		OfTok    Token       // Position of "of"
 		ElemType TypeSpec    // Element type specification
@@ -576,11 +576,11 @@ type (
 
 	// A BehaviourSpec represents a behaviour type specification.
 	BehaviourSpec struct {
-		Kind   Token       // TESTCASE, FUNCTION, ALTSTEP
-		Params *FormalPars // Parameter list or nil
-		RunsOn *RunsOnSpec // runs on spec or nil
-		System *SystemSpec // system spec or nil
-		Return *ReturnSpec // return value spec or nil
+		KindTok Token       // TESTCASE, FUNCTION, ALTSTEP
+		Params  *FormalPars // Parameter list or nil
+		RunsOn  *RunsOnSpec // runs on spec or nil
+		System  *SystemSpec // system spec or nil
+		Return  *ReturnSpec // return value spec or nil
 	}
 )
 
@@ -595,7 +595,7 @@ func (x *BehaviourSpec) typeSpecNode() {}
 type (
 	// A ValueDecl represents a value declaration.
 	ValueDecl struct {
-		Kind                Token // VAR, CONST, TIMER, PORT, TEMPLATE, MODULEPAR
+		KindTok             Token // VAR, CONST, TIMER, PORT, TEMPLATE, MODULEPAR
 		TemplateRestriction *RestrictionSpec
 		Modif               Token // "@lazy", "@fuzzy" or nil
 		Type                Expr
@@ -637,7 +637,7 @@ type (
 	// A FuncDecl represents a behaviour definition.
 	FuncDecl struct {
 		External Token // Position of "external" or nil
-		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
+		KindTok  Token // TESTCASE, ALTSTEP, FUNCTION
 		Name     *Ident
 		Modif    Token // Position of "@deterministic" or nil
 		TypePars *FormalPars
@@ -680,7 +680,7 @@ type (
 	// A StructTypeDecl represents a name struct type.
 	StructTypeDecl struct {
 		TypeTok  Token  // Position of "type"
-		Kind     Token  // RECORD, SET, UNION
+		KindTok  Token  // RECORD, SET, UNION
 		Name     *Ident // Name
 		TypePars *FormalPars
 		LBrace   Token    // Position of "{"
@@ -692,7 +692,7 @@ type (
 	// A StructTypeDecl represents a name struct type.
 	ClassTypeDecl struct {
 		TypeTok    Token  // Position of "type"
-		Kind       Token  // CLASS
+		KindTok    Token  // CLASS
 		Modif      Token  // "@abstract" or nil
 		Name       *Ident // Name
 		ExtendsTok Token
@@ -729,7 +729,7 @@ type (
 	// A BehaviourTypeDecl represents a named behaviour type.
 	BehaviourTypeDecl struct {
 		TypeTok  Token // Position of "type"
-		Kind     Token // TESTCASE, ALTSTEP, FUNCTION
+		KindTok  Token // TESTCASE, ALTSTEP, FUNCTION
 		Name     *Ident
 		TypePars *FormalPars
 		Params   *FormalPars // Formal parameter list
@@ -744,7 +744,7 @@ type (
 		PortTok  Token
 		Name     *Ident
 		TypePars *FormalPars
-		Kind     Token // MIXED, MESSAGE, PROCEDURE
+		KindTok  Token // MIXED, MESSAGE, PROCEDURE
 		Realtime Token
 		LBrace   Token
 		Attrs    []Node
@@ -753,8 +753,8 @@ type (
 	}
 
 	PortAttribute struct {
-		Kind  Token // IN, OUT, INOUT, ADDRESS
-		Types []Expr
+		KindTok Token // IN, OUT, INOUT, ADDRESS
+		Types   []Expr
 	}
 
 	PortMapAttribute struct {
@@ -780,7 +780,7 @@ func (x *FuncDecl) IsControl() bool {
 }
 
 func (x *FuncDecl) IsTest() bool {
-	return x.Kind.Kind() == TESTCASE
+	return x.KindTok.Kind() == TESTCASE
 }
 
 func (x *ValueDecl) declNode()            {}
@@ -917,7 +917,7 @@ type (
 	}
 
 	WithStmt struct {
-		Kind     Token
+		KindTok  Token
 		Override Token
 		LParen   Token
 		List     []Expr

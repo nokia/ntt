@@ -86,7 +86,7 @@ func getFunctionDecl(tree *ttcn3.Tree, node *syntax.FuncDecl) protocol.DocumentS
 			Range:          setProtocolRange(idBegin, idEnd),
 			SelectionRange: setProtocolRange(idBegin, idEnd)})
 	}
-	detail := node.Kind.String() + " definition"
+	detail := node.KindTok.String() + " definition"
 	if node.External != nil {
 		detail = "external " + detail
 	}
@@ -117,8 +117,8 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.Docum
 	begin := syntax.Begin(node)
 	end := syntax.End(node)
 	kindstr := ""
-	if node.Kind != nil {
-		kindstr = node.Kind.String()
+	if node.KindTok != nil {
+		kindstr = node.KindTok.String()
 	}
 	retv := protocol.DocumentSymbol{
 		Name:           node.Name.String(),
@@ -132,7 +132,7 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.Docum
 		end := syntax.End(attr)
 		switch node := attr.(type) {
 		case *syntax.PortAttribute:
-			switch node.Kind.Kind() {
+			switch node.KindTok.Kind() {
 			case syntax.ADDRESS:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
 					Name:           "address",
@@ -142,7 +142,7 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.Docum
 					SelectionRange: setProtocolRange(begin, end)})
 			case syntax.IN, syntax.OUT, syntax.INOUT:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
-					Name:           node.Kind.String(),
+					Name:           node.KindTok.String(),
 					Kind:           protocol.Array,
 					Range:          setProtocolRange(begin, end),
 					SelectionRange: setProtocolRange(begin, end),
@@ -202,7 +202,7 @@ func getSubTypeDecl(tree *ttcn3.Tree, node *syntax.SubTypeDecl) protocol.Documen
 	detail := "subtype"
 	kind := protocol.Struct
 	if listNode, ok := node.Field.Type.(*syntax.ListSpec); ok {
-		detail = kindToStringMap[listNode.Kind.Kind()] + " of type"
+		detail = kindToStringMap[listNode.KindTok.Kind()] + " of type"
 		kind = protocol.Array
 		children = getElemTypeInfo(tree, listNode.ElemType)
 	}
@@ -246,9 +246,9 @@ func getValueDecls(tree *ttcn3.Tree, val *syntax.ValueDecl) []protocol.DocumentS
 	if typeName == "timer" {
 		kind = protocol.Event
 	}
-	if val.Kind != nil {
-		typeName = val.Kind.String() + " " + typeName
-		switch val.Kind.Kind() {
+	if val.KindTok != nil {
+		typeName = val.KindTok.String() + " " + typeName
+		switch val.KindTok.Kind() {
 		case syntax.PORT:
 			kind = protocol.Interface
 		case syntax.CONST, syntax.TEMPLATE, syntax.MODULEPAR:
@@ -348,7 +348,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 			if node.Name == nil {
 				return false
 			}
-			detail := kindToStringMap[node.Kind.Kind()] + " type"
+			detail := kindToStringMap[node.KindTok.Kind()] + " type"
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: protocol.Struct,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),

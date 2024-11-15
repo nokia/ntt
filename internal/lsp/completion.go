@@ -355,9 +355,9 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 				// * inside the exception list after { while typing the kind
 				if l == 8 {
 					if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
-						if scndNode.Kind != nil {
+						if scndNode.KindTok != nil {
 							if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
-								return CompleteImportSpecs(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+								return CompleteImportSpecs(suite, scndNode.KindTok.Kind(), impDecl.Module.Tok.String())
 							}
 						}
 						return CompleteImportkinds()
@@ -365,7 +365,7 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 					break
 				}
 				if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
-					return CompleteImportSpecs(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+					return CompleteImportSpecs(suite, scndNode.KindTok.Kind(), impDecl.Module.Tok.String())
 				}
 
 			case *syntax.ExceptExpr:
@@ -396,15 +396,15 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 				return CompleteAllModules(suite, ownModName, " ")
 			}
 		case *syntax.DefKindExpr:
-			if n.Kind == nil {
+			if n.KindTok == nil {
 				return CompleteImportkinds()
 			}
 			if impDecl, ok := nodes[l-2].(*syntax.ImportDecl); ok {
-				return CompleteImportSpecs(suite, n.Kind.Kind(), impDecl.Module.Tok.String())
+				return CompleteImportSpecs(suite, n.KindTok.Kind(), impDecl.Module.Tok.String())
 			}
 			if _, ok := nodes[l-2].(*syntax.ExceptExpr); ok {
 				if impDecl, ok := nodes[l-4].(*syntax.ImportDecl); ok {
-					return CompleteImportSpecs(suite, n.Kind.Kind(), impDecl.Module.Tok.String())
+					return CompleteImportSpecs(suite, n.KindTok.Kind(), impDecl.Module.Tok.String())
 				}
 			}
 		case *syntax.RunsOnSpec, *syntax.SystemSpec:
@@ -424,11 +424,11 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 				// NOTE: not able to reproduce this situation. Maybe it is safe to remove this code.
 				// happens streight after the altstep kw if ctrl+space is pressed
 				if impDecl, ok := nodes[l-3].(*syntax.ImportDecl); ok {
-					return CompleteImportSpecs(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+					return CompleteImportSpecs(suite, scndNode.KindTok.Kind(), impDecl.Module.Tok.String())
 				}
 				if _, ok := nodes[l-3].(*syntax.ExceptExpr); ok {
 					if impDecl, ok := nodes[l-5].(*syntax.ImportDecl); ok {
-						return CompleteImportSpecs(suite, scndNode.Kind.Kind(), impDecl.Module.Tok.String())
+						return CompleteImportSpecs(suite, scndNode.KindTok.Kind(), impDecl.Module.Tok.String())
 					}
 				}
 			}
@@ -437,7 +437,7 @@ func Complete(suite *Suite, pos int, nodes []syntax.Node, ownModName string) []p
 				return nil
 			}
 			if valueDecl, ok := nodes[l-2].(*syntax.ValueDecl); ok {
-				if valueDecl.Kind.Kind() == syntax.PORT {
+				if valueDecl.KindTok.Kind() == syntax.PORT {
 					list = CompleteAllPortTypes(suite, ownModName)
 					list = append(list, CompleteAllModules(suite, ownModName, " 3")...)
 					return list
@@ -560,7 +560,7 @@ func CompleteValueDecls(tree *ttcn3.Tree, kind syntax.Kind, withDetail bool) []p
 			// component type
 			return false
 		case *syntax.ValueDecl:
-			if node.Kind.Kind() != kind {
+			if node.KindTok.Kind() != kind {
 				return false
 			}
 			return true
@@ -624,7 +624,7 @@ func CompleteImportSpecs(suite *Suite, kind syntax.Kind, mname string) []protoco
 				return true
 			}
 
-			if f.Kind.Kind() == kind {
+			if f.KindTok.Kind() == kind {
 				ret = append(ret, protocol.CompletionItem{Label: syntax.Name(f), Kind: protocol.FunctionCompletion})
 			}
 			return false
@@ -1025,13 +1025,13 @@ func behaviourInfos(tree *ttcn3.Tree, kind syntax.Kind) []*BehaviourInfo {
 			return true
 		}
 
-		if node.Kind.Kind() != kind {
+		if node.KindTok.Kind() != kind {
 			return false
 		}
 
 		var sig bytes.Buffer
 		textFormat := protocol.PlainTextTextFormat
-		sig.WriteString(node.Kind.String() + " " + joinNames(mname, node.Name.String()))
+		sig.WriteString(node.KindTok.String() + " " + joinNames(mname, node.Name.String()))
 		len1 := len(sig.String())
 		printer.Print(&sig, node.Params)
 		hasParams := (len(sig.String()) - len1) > 2

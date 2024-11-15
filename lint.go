@@ -277,7 +277,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						ccID = n
 						cc[ccID] = 1 // Intial McCabe value
 
-						switch n.Kind.Kind() {
+						switch n.KindTok.Kind() {
 						case syntax.TESTCASE:
 							checkNaming(n, style.Naming.Tests)
 							checkTags(n, style.Tags.Tests)
@@ -360,7 +360,7 @@ func lint(cmd *cobra.Command, args []string) error {
 					case *syntax.StructTypeDecl:
 						checkBraces(n.LBrace, n.RBrace)
 						var nameRules, fieldRules map[string]string
-						switch n.Kind.Kind() {
+						switch n.KindTok.Kind() {
 						case syntax.RECORD:
 							nameRules = style.Naming.Record
 							fieldRules = style.Naming.RecordFields
@@ -371,7 +371,7 @@ func lint(cmd *cobra.Command, args []string) error {
 							nameRules = style.Naming.Union
 							fieldRules = style.Naming.UnionFields
 						default:
-							log.Verbosef("unknown struct type %q. Ignoring\n", n.Kind.Kind())
+							log.Verbosef("unknown struct type %q. Ignoring\n", n.KindTok.Kind())
 							return true
 
 						}
@@ -391,7 +391,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						}
 
 						if lt, ok := n.Field.Type.(*syntax.ListSpec); ok {
-							switch lt.Kind.Kind() {
+							switch lt.KindTok.Kind() {
 							case syntax.RECORD:
 								checkNaming(n, style.Naming.RecordOf)
 							case syntax.SET:
@@ -691,15 +691,15 @@ func inGlobalScope(stack []syntax.Node) bool {
 }
 
 func isPort(d *syntax.ValueDecl) bool {
-	return d.Kind != nil && d.Kind.Kind() == syntax.PORT
+	return d.KindTok != nil && d.KindTok.Kind() == syntax.PORT
 }
 
 func isConst(d *syntax.ValueDecl) bool {
-	return d.Kind != nil && d.Kind.Kind() == syntax.CONST
+	return d.KindTok != nil && d.KindTok.Kind() == syntax.CONST
 }
 
 func isVar(d *syntax.ValueDecl) bool {
-	return !isVarTemplate(d) && d.Kind != nil && d.Kind.Kind() == syntax.VAR
+	return !isVarTemplate(d) && d.KindTok != nil && d.KindTok.Kind() == syntax.VAR
 }
 
 func isVarTemplate(d *syntax.ValueDecl) bool {
