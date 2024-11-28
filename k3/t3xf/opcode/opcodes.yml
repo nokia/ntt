@@ -707,7 +707,7 @@ deactivatea:
     Deactivate all altsteps activated on the current component.
 
 decmatch:
-  opcode: 511
+  opcode: 515
   context:
   - value
   operations:
