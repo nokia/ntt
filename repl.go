@@ -21,7 +21,7 @@ func repl() error {
 			break
 		}
 
-		root, _, _ := syntax.Parse([]byte(s.Text()))
+		root := syntax.Parse([]byte(s.Text()))
 		if err := root.Err(); err != nil {
 			fmt.Println(err.Error())
 			continue

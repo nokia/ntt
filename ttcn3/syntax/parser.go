@@ -22,9 +22,28 @@ type Mode uint
 
 type ParserOption func(*parser) error
 
+// WithFilename sets the filename of the source code.
 func WithFilename(filename string) ParserOption {
 	return func(p *parser) error {
 		p.Filename = filename
+		return nil
+	}
+}
+
+// WithNames sets the names map in which the parser will store the names of the
+// parsed entities.
+func WithNames(names map[string]bool) ParserOption {
+	return func(p *parser) error {
+		p.names = names
+		return nil
+	}
+}
+
+// WithUses sets the uses map in which the parser will store the uses of the
+// parsed entities.
+func WithUses(uses map[string]bool) ParserOption {
+	return func(p *parser) error {
+		p.uses = uses
 		return nil
 	}
 }
@@ -48,9 +67,6 @@ func NewParser(src []byte) *parser {
 	p.ppDefs["0"] = false
 	p.ppDefs["1"] = true
 
-	p.names = make(map[string]bool)
-	p.uses = make(map[string]bool)
-
 	p.Root = newRoot(src)
 
 	// fetch first token
@@ -60,24 +76,8 @@ func NewParser(src []byte) *parser {
 	return &p
 }
 
-// Parse the source code of a single file and return the corresponding syntax
-// tree. The source code may be provided via the filename of the source file,
-// or via the src parameter.
-//
-// If src != nil, Parse parses the source from src and the filename is only
-// used when recording position information. The type of the argument for the
-// src parameter must be string, []byte, or io.Reader. If src == nil, Parse
-// parses the file specified by filename.
-//
-// The mode parameter controls the amount of source text parsed and other
-// optional parser functionality.
-//
-// If the source couldn't be read, the returned AST is nil and the error
-// indicates the specific failure. If the source was read but syntax errors
-// were found, the result is a partial AST (with Bad* nodes representing the
-// fragments of erroneous source code). Multiple errors are returned via a
-// ErrorList which is sorted by file position.
-func Parse(src []byte, opts ...ParserOption) (root *Root, names map[string]bool, uses map[string]bool) {
+// Parse parses the source code of a TTCN-3 module and returns the corresponding AST.
+func Parse(src []byte, opts ...ParserOption) (root *Root) {
 
 	region := trc.StartRegion(context.Background(), "syntax.Parse")
 	defer region.End()
@@ -86,7 +86,7 @@ func Parse(src []byte, opts ...ParserOption) (root *Root, names map[string]bool,
 	for _, opt := range opts {
 		if err := opt(p); err != nil {
 			p.Root.errs = append(p.Root.errs, err)
-			return p.Root, p.names, p.uses
+			return p.Root
 		}
 	}
 	for p.tok != EOF {
@@ -102,7 +102,7 @@ func Parse(src []byte, opts ...ParserOption) (root *Root, names map[string]bool,
 		}
 
 	}
-	return p.Root, p.names, p.uses
+	return p.Root
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
@@ -1009,7 +1009,9 @@ func (p *parser) parseName() *Ident {
 	switch p.tok {
 	case IDENT, ADDRESS, CONTROL, CLASS:
 		id := &Ident{Tok: p.consume(), IsName: true}
-		p.names[id.String()] = true
+		if p.names != nil {
+			p.names[id.String()] = true
+		}
 		return id
 	}
 	p.expect(IDENT)
@@ -1278,7 +1280,7 @@ func (p *parser) addName(n Node) {
 			p.addName(n)
 		}
 	default:
-		if name := Name(n); name != "" {
+		if name := Name(n); p.names != nil && name != "" {
 			p.names[name] = true
 		}
 	}
@@ -1293,10 +1295,14 @@ func (p *parser) make_use(toks ...Token) *Ident {
 		panic("No support for multi-token identifiers.")
 	}
 	id := &Ident{Tok: toks[0]}
-	p.uses[toks[0].String()] = true
+	if p.uses != nil {
+		p.uses[toks[0].String()] = true
+	}
 	if len(toks) == 2 {
 		id.Tok2 = toks[1]
-		p.uses[toks[1].String()] = true
+		if p.uses != nil {
+			p.uses[toks[1].String()] = true
+		}
 	}
 	return id
 }
@@ -1807,7 +1813,7 @@ func (p *parser) parseEnum() Expr {
 		}
 	}
 	x := p.parseExpr()
-	if id := firstIdent(x); id != nil {
+	if id := firstIdent(x); p.names != nil && id != nil {
 		p.names[id.String()] = true
 		id.IsName = true
 	}

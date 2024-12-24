@@ -345,7 +345,7 @@ func TestCompiler(t *testing.T) {
 			if tt.skip {
 				t.Skip()
 			}
-			root, _, _ := syntax.Parse([]byte(tt.input))
+			root := syntax.Parse([]byte(tt.input))
 			if root.Err() != nil {
 				t.Fatalf("syntax.Parse(%q) returned error: %v", tt.input, root.Err())
 			}

@@ -27,7 +27,7 @@ func TestFindChildOf(t *testing.T) {
 	}
 	for _, tt := range tests {
 		input, cursor := ntttest.CutCursor(tt.input)
-		root, _, _ := syntax.Parse([]byte(input), syntax.WithFilename(tt.input))
+		root := syntax.Parse([]byte(input), syntax.WithFilename(tt.input))
 		actual := printNode(syntax.FindChildOf(root, cursor))
 		if actual != tt.want {
 			t.Errorf("FindChildOf(%q) = %q, want %q", tt.input, actual, tt.want)

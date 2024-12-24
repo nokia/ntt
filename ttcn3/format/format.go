@@ -74,7 +74,7 @@ func (p *CanonicalPrinter) Fprint(v interface{}) error {
 	// The simple formatting rules do not need much context information.
 	// This allows us to use the tokeniser and release initial
 	// formatting experiments even before the parser is ready.
-	n, _, _ := syntax.Parse(b)
+	n := syntax.Parse(b)
 
 	// Only pretty print if there are no syntax errors.
 	if n.Err() != nil {
