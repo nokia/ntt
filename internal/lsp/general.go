@@ -98,6 +98,11 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 
 	setTrace(params.Trace)
 
+	version := "devel"
+	if v, ok := ctx.Value("version").(string); ok {
+		version = v
+	}
+
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			InlayHintProvider:               s.registerInlayHintIfNoDynReg(),
@@ -133,7 +138,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 		ServerInfo: struct {
 			Name    string `json:"name"`
 			Version string `json:"version,omitempty"`
-		}{Name: "ntt", Version: "0.12.0"},
+		}{Name: "ntt", Version: version},
 	}, nil
 }
 

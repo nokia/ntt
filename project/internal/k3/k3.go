@@ -333,7 +333,7 @@ var DefaultEnv = map[string]string{
 	"CXX":        "g++",
 	"CC":         "gcc",
 	"ASN1C":      "asn1",
-	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed",
+	"ASN1CFLAGS": "-reservedWords ffs -c -charIntegers -listingFile -messageFormat emacs -noDefines -valuerefs -debug -root -soed -compat decoderUpdatesInputAddress",
 	"ASN2TTCN":   "asn1tottcn3",
 }
 

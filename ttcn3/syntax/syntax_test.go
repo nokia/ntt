@@ -11,7 +11,7 @@ func TestDoc(t *testing.T) {
 	t.Parallel()
 
 	testDoc := func(t *testing.T, input string) string {
-		root, _, _ := syntax.Parse([]byte(input), syntax.WithFilename(t.Name()))
+		root := syntax.Parse([]byte(input), syntax.WithFilename(t.Name()))
 		if err := root.Err(); err != nil {
 			t.Fatal(err)
 		}

@@ -268,7 +268,7 @@ func Discover(path string) []Suite {
 		}
 		list = append(list, readIndices(fs.JoinPath(path, IndexFile))...)
 
-		// Check build directories
+		// Check parallel build directories
 		for _, file := range fs.Glob(path + "/*build*/" + IndexFile) {
 			list = append(list, readIndices(file)...)
 		}
@@ -288,6 +288,12 @@ func Discover(path string) []Suite {
 			}
 			return true
 		})
+	}
+
+	// If we still could not find any coherent test suite, just add the
+	// current directory in the hopes it contains TTCN-3 files.
+	if len(list) == 0 {
+		return []Suite{{RootDir: path, SourceDir: path}}
 	}
 
 	// Remove duplicate entries

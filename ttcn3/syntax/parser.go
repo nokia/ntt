@@ -2,11 +2,13 @@ package syntax
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	trc "runtime/trace"
 	"strconv"
 	"strings"
 
@@ -20,9 +22,28 @@ type Mode uint
 
 type ParserOption func(*parser) error
 
+// WithFilename sets the filename of the source code.
 func WithFilename(filename string) ParserOption {
 	return func(p *parser) error {
 		p.Filename = filename
+		return nil
+	}
+}
+
+// WithNames sets the names map in which the parser will store the names of the
+// parsed entities.
+func WithNames(names map[string]bool) ParserOption {
+	return func(p *parser) error {
+		p.names = names
+		return nil
+	}
+}
+
+// WithUses sets the uses map in which the parser will store the uses of the
+// parsed entities.
+func WithUses(uses map[string]bool) ParserOption {
+	return func(p *parser) error {
+		p.uses = uses
 		return nil
 	}
 }
@@ -46,9 +67,6 @@ func NewParser(src []byte) *parser {
 	p.ppDefs["0"] = false
 	p.ppDefs["1"] = true
 
-	p.names = make(map[string]bool)
-	p.uses = make(map[string]bool)
-
 	p.Root = newRoot(src)
 
 	// fetch first token
@@ -58,30 +76,17 @@ func NewParser(src []byte) *parser {
 	return &p
 }
 
-// Parse the source code of a single file and return the corresponding syntax
-// tree. The source code may be provided via the filename of the source file,
-// or via the src parameter.
-//
-// If src != nil, Parse parses the source from src and the filename is only
-// used when recording position information. The type of the argument for the
-// src parameter must be string, []byte, or io.Reader. If src == nil, Parse
-// parses the file specified by filename.
-//
-// The mode parameter controls the amount of source text parsed and other
-// optional parser functionality.
-//
-// If the source couldn't be read, the returned AST is nil and the error
-// indicates the specific failure. If the source was read but syntax errors
-// were found, the result is a partial AST (with Bad* nodes representing the
-// fragments of erroneous source code). Multiple errors are returned via a
-// ErrorList which is sorted by file position.
-func Parse(src []byte, opts ...ParserOption) (root *Root, names map[string]bool, uses map[string]bool) {
+// Parse parses the source code of a TTCN-3 module and returns the corresponding AST.
+func Parse(src []byte, opts ...ParserOption) (root *Root) {
+
+	region := trc.StartRegion(context.Background(), "syntax.Parse")
+	defer region.End()
 
 	p := NewParser(src)
 	for _, opt := range opts {
 		if err := opt(p); err != nil {
 			p.Root.errs = append(p.Root.errs, err)
-			return p.Root, p.names, p.uses
+			return p.Root
 		}
 	}
 	for p.tok != EOF {
@@ -97,7 +102,7 @@ func Parse(src []byte, opts ...ParserOption) (root *Root, names map[string]bool,
 		}
 
 	}
-	return p.Root, p.names, p.uses
+	return p.Root
 }
 
 // If src != nil, readSource converts src to a []byte if possible;
@@ -747,7 +752,7 @@ func (p *parser) parseOperand() Expr {
 			return p.make_use(tok, p.consume())
 		case FROM:
 			return &FromExpr{
-				Kind:    tok,
+				KindTok: tok,
 				FromTok: p.consume(),
 				X:       p.parsePrimaryExpr(),
 			}
@@ -760,6 +765,7 @@ func (p *parser) parseOperand() Expr {
 
 	case ADDRESS,
 		CHARSTRING,
+		CLASS,
 		MAP,
 		MTC,
 		SYSTEM,
@@ -1001,9 +1007,11 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 
 func (p *parser) parseName() *Ident {
 	switch p.tok {
-	case IDENT, ADDRESS, CONTROL:
+	case IDENT, ADDRESS, CONTROL, CLASS:
 		id := &Ident{Tok: p.consume(), IsName: true}
-		p.names[id.String()] = true
+		if p.names != nil {
+			p.names[id.String()] = true
+		}
 		return id
 	}
 	p.expect(IDENT)
@@ -1015,7 +1023,7 @@ func (p *parser) parseIdent() *Ident {
 	switch p.tok {
 	case UNIVERSAL:
 		return p.parseUniversalCharstring()
-	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM, CREATE:
+	case IDENT, ADDRESS, ALIVE, CHARSTRING, CONTROL, TO, FROM, CREATE, CLASS:
 		return p.make_use(p.consume())
 	default:
 		p.expect(IDENT) // use expect() error handling
@@ -1272,7 +1280,7 @@ func (p *parser) addName(n Node) {
 			p.addName(n)
 		}
 	default:
-		if name := Name(n); name != "" {
+		if name := Name(n); p.names != nil && name != "" {
 			p.names[name] = true
 		}
 	}
@@ -1287,10 +1295,14 @@ func (p *parser) make_use(toks ...Token) *Ident {
 		panic("No support for multi-token identifiers.")
 	}
 	id := &Ident{Tok: toks[0]}
-	p.uses[toks[0].String()] = true
+	if p.uses != nil {
+		p.uses[toks[0].String()] = true
+	}
 	if len(toks) == 2 {
 		id.Tok2 = toks[1]
-		p.uses[toks[1].String()] = true
+		if p.uses != nil {
+			p.uses[toks[1].String()] = true
+		}
 	}
 	return id
 }
@@ -1345,7 +1357,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 	switch p.tok {
 	case ALTSTEP, CONST, FUNCTION, MODULEPAR,
 		SIGNATURE, TEMPLATE, TESTCASE, TYPE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		if p.tok == ALL {
 			var y Expr = p.make_use(p.consume())
 			if p.tok == EXCEPT {
@@ -1360,7 +1372,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 			x.List = p.parseRefList()
 		}
 	case GROUP:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		for {
 			y := p.parseTypeRef()
 			if p.tok == EXCEPT {
@@ -1379,7 +1391,7 @@ func (p *parser) parseImportStmt() *DefKindExpr {
 			p.consume()
 		}
 	case IMPORT:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		x.List = []Expr{p.make_use(p.expect(ALL))}
 	default:
 		p.errorExpected("import definition qualifier")
@@ -1404,7 +1416,7 @@ func (p *parser) parseExceptStmt() *DefKindExpr {
 	case ALTSTEP, CONST, FUNCTION, GROUP,
 		IMPORT, MODULEPAR, SIGNATURE, TEMPLATE,
 		TESTCASE, TYPE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 	default:
 		p.errorExpected("definition qualifier")
 	}
@@ -1479,7 +1491,7 @@ func (p *parser) parseWithStmt() *WithStmt {
 		OPTIONAL,
 		STEPSIZE,
 		OVERRIDE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 	default:
 		p.errorExpected("with-attribute")
 		p.advance(stmtStart)
@@ -1529,7 +1541,7 @@ func (p *parser) parseWithQualifier() Expr {
 		return p.parseIndexExpr(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
 		x := new(DefKindExpr)
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		var y Expr = p.make_use(p.expect(ALL))
 		if p.tok == EXCEPT {
 			y = &ExceptExpr{
@@ -1603,7 +1615,7 @@ func (p *parser) parsePortTypeDecl() *PortTypeDecl {
 
 	switch p.tok {
 	case MIXED, MESSAGE, PROCEDURE:
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 	default:
 		p.errorExpected("'message' or 'procedure'")
 	}
@@ -1630,8 +1642,8 @@ func (p *parser) parsePortAttribute() Node {
 	switch p.tok {
 	case IN, OUT, INOUT, ADDRESS:
 		return &PortAttribute{
-			Kind:  p.consume(),
-			Types: p.parseRefList(),
+			KindTok: p.consume(),
+			Types:   p.parseRefList(),
 		}
 	case MAP, UNMAP:
 		return &PortMapAttribute{
@@ -1680,7 +1692,7 @@ func (p *parser) parseStructTypeDecl() *StructTypeDecl {
 	}
 	x := new(StructTypeDecl)
 	x.TypeTok = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	x.Name = p.parseName()
 	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
@@ -1710,7 +1722,7 @@ func (p *parser) parseClassTypeDecl() *ClassTypeDecl {
 	x := new(ClassTypeDecl)
 
 	x.TypeTok = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
@@ -1801,7 +1813,7 @@ func (p *parser) parseEnum() Expr {
 		}
 	}
 	x := p.parseExpr()
-	if id := firstIdent(x); id != nil {
+	if id := firstIdent(x); p.names != nil && id != nil {
 		p.names[id.String()] = true
 		id.IsName = true
 	}
@@ -1818,7 +1830,7 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
 	}
 	x := new(BehaviourTypeDecl)
 	x.TypeTok = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 
 	if p.tok == INTERLEAVE {
 		x.Interleave = p.consume()
@@ -1927,7 +1939,7 @@ func (p *parser) parseStructSpec() *StructSpec {
 		defer un(trace(p, "StructSpec"))
 	}
 	x := new(StructSpec)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	x.LBrace = p.expect(LBRACE)
 	for p.tok != RBRACE && p.tok != EOF {
 		x.Fields = append(x.Fields, p.parseField())
@@ -1976,7 +1988,7 @@ func (p *parser) parseListSpec() *ListSpec {
 		defer un(trace(p, "ListSpec"))
 	}
 	x := new(ListSpec)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == LENGTH {
 		x.Length = p.parseLength(nil)
 	}
@@ -1991,7 +2003,7 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
 	}
 
 	x := new(BehaviourSpec)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 
 	if p.tok == INTERLEAVE {
 		x.Interleave = p.consume()
@@ -2085,7 +2097,7 @@ func (p *parser) parseModulePar() Decl {
 		return x
 	}
 
-	x := &ValueDecl{Kind: tok}
+	x := &ValueDecl{KindTok: tok}
 	x.TemplateRestriction = p.parseRestrictionSpec()
 	x.Type = p.parseTypeRef()
 	x.Decls = p.parseDeclList()
@@ -2103,7 +2115,7 @@ func (p *parser) parseValueDecl() *ValueDecl {
 	}
 	x := &ValueDecl{}
 	if p.tok != TIMER {
-		x.Kind = p.consume()
+		x.KindTok = p.consume()
 		x.TemplateRestriction = p.parseRestrictionSpec()
 		if p.tok == MODIF {
 			x.Modif = p.consume()
@@ -2172,7 +2184,7 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	}
 
 	x := new(FuncDecl)
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 
 	if p.tok == INTERLEAVE {
 		x.Interleave = p.consume()
@@ -2240,7 +2252,7 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 
 	x := new(FuncDecl)
 	x.External = p.consume()
-	x.Kind = p.consume()
+	x.KindTok = p.consume()
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
@@ -2483,9 +2495,6 @@ func (p *parser) parseStmt() Stmt {
 	case LBRACK:
 		return p.parseAltGuard()
 	case FOR:
-		if p.peek(4).Kind() == IN || p.peek(5).Kind() == IN || p.peek(6).Kind() == IN {
-			return p.parseForRangeLoop()
-		}
 		return p.parseForLoop()
 	case WHILE:
 		return p.parseWhileLoop()
@@ -2536,15 +2545,36 @@ func (p *parser) parseStmt() Stmt {
 	}
 }
 
-func (p *parser) parseForLoop() *ForStmt {
-	x := new(ForStmt)
-	x.Tok = p.consume()
-	x.LParen = p.expect(LPAREN)
+func (p *parser) parseForLoop() Stmt {
+	forTok := p.consume()
+	lParen := p.expect(LPAREN)
+
+	var init Stmt
 	if p.tok == VAR {
-		x.Init = &DeclStmt{Decl: p.parseValueDecl()}
+		init = &DeclStmt{Decl: p.parseValueDecl()}
 	} else {
-		x.Init = &ExprStmt{Expr: p.parseExpr()}
+		init = &ExprStmt{Expr: p.parseExpr()}
 	}
+
+	if p.tok == IN {
+		if hasAssignment(init) {
+			p.error(p.peek(1), "unexpected token %s", p.tok)
+		}
+		x := new(ForRangeStmt)
+		x.Tok = forTok
+		x.LParen = lParen
+		x.Init = init
+		x.InTok = p.consume()
+		x.Range = p.parseExpr()
+		x.RParen = p.expect(RPAREN)
+		x.Body = p.parseBlockStmt()
+		return x
+	}
+
+	x := new(ForStmt)
+	x.Tok = forTok
+	x.LParen = lParen
+	x.Init = init
 	x.InitSemi = p.expect(SEMICOLON)
 	x.Cond = p.parseExpr()
 	x.CondSemi = p.expect(SEMICOLON)
@@ -2554,24 +2584,27 @@ func (p *parser) parseForLoop() *ForStmt {
 	return x
 }
 
-func (p *parser) parseForRangeLoop() *ForRangeStmt {
-	x := new(ForRangeStmt)
-	x.Tok = p.consume()
-	x.LParen = p.expect(LPAREN)
-	if p.tok == VAR {
-		x.VarTok = p.consume()
-		if p.peek(2).Kind() != IN {
-			x.Type = p.parseTypeSpec()
+func hasAssignment(n Node) bool {
+	switch n := n.(type) {
+	case *DeclStmt:
+		return hasAssignment(n.Decl)
+	case *ExprStmt:
+		return hasAssignment(n.Expr)
+	case *ValueDecl:
+		for _, d := range n.Decls {
+			if d.AssignTok != nil {
+				return true
+			}
 		}
-		x.Var = p.parseName()
-	} else {
-		x.Var = p.parseIdent()
+		return false
+	case *BinaryExpr:
+		if n.Op.Kind() == ASSIGN {
+			return true
+		}
+		return false
+	default:
+		return false
 	}
-	x.InTok = p.expect(IN)
-	x.Range = p.parseExpr()
-	x.RParen = p.expect(RPAREN)
-	x.Body = p.parseBlockStmt()
-	return x
 }
 
 func (p *parser) parseWhileLoop() *WhileStmt {

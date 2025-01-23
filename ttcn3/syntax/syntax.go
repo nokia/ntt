@@ -119,6 +119,11 @@ func Doc(n Node) string {
 		return ""
 	}
 
+	// Root is the only node that can have comments as first token.
+	if r, ok := n.(*Root); ok && len(r.Nodes) > 0 {
+		n = r.Nodes[0]
+	}
+
 	tok := n.FirstTok()
 	if tok == nil {
 		return ""

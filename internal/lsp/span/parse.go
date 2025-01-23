@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+	"math"
 )
 
 // Parse returns the location represented by the input.
@@ -86,8 +87,10 @@ func rstripSuffix(input string) suffix {
 	if last >= 0 && last < len(remains)-1 {
 		number, err := strconv.ParseInt(remains[last+1:], 10, 64)
 		if err == nil {
-			num = int(number)
-			remains = remains[:last+1]
+			if number >= math.MinInt && number <= math.MaxInt {
+				num = int(number)
+				remains = remains[:last+1]
+			}
 		}
 	}
 	// now see if we have a trailing separator

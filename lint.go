@@ -57,12 +57,18 @@ Naming Convention Checks
     naming.component_consts   Checks for component scoped constant identifiers.
     naming.templates          Checks for constant template identifiers.
     naming.locals             Checks for local variable identifiers.
-	naming.record             Checks for record identifiers.
-	naming.set                Checks for set identifiers.
-	naming.union              Checks for union identifiers.
-	naming.enum               Checks for enum identifiers
+    naming.record             Checks for record identifiers.
+    naming.record_fields      Checks for identifiers of record fields.
+    naming.record_of          Checks for record-of identifiers.
+    naming.set                Checks for set identifiers.
+    naming.set_fields         Checks for identifiers of set fields.
+    naming.set_of             Checks for set-of identifiers.
+    naming.union              Checks for union identifiers.
+    naming.union_fields       Checks for identifiers of union fields.
+    naming.enum               Checks for enum identifiers
+    naming.enum_label         Checks for labels of enumerated types.
 
-	tags.modules              Checks for module tags.
+    tags.modules              Checks for module tags.
     tags.tests                Checks for test-case tags.
 
 
@@ -163,9 +169,15 @@ For information on writing new checks, see <TBD>.
 			Templates       map[string]string
 			Locals          map[string]string
 			Record          map[string]string
+			RecordFields    map[string]string `yaml:"record_fields"`
+			RecordOf        map[string]string `yaml:"record_of"`
 			Set             map[string]string
+			SetFields       map[string]string `yaml:"set_fields"`
+			SetOf           map[string]string `yaml:"set_of"`
 			Union           map[string]string
+			UnionFields     map[string]string `yaml:"union_fields"`
 			Enum            map[string]string
+			EnumLabels      map[string]string `yaml:"enum_labels"`
 		}
 		Tags struct {
 			Modules map[string]string
@@ -265,7 +277,7 @@ func lint(cmd *cobra.Command, args []string) error {
 						ccID = n
 						cc[ccID] = 1 // Intial McCabe value
 
-						switch n.Kind.Kind() {
+						switch n.KindTok.Kind() {
 						case syntax.TESTCASE:
 							checkNaming(n, style.Naming.Tests)
 							checkTags(n, style.Tags.Tests)
@@ -340,21 +352,53 @@ func lint(cmd *cobra.Command, args []string) error {
 						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.EnumSpec:
 						checkBraces(n.LBrace, n.RBrace)
+						for _, x := range n.Enums {
+							checkNaming(x, style.Naming.EnumLabels)
+						}
 					case *syntax.ModuleParameterGroup:
 						checkBraces(n.LBrace, n.RBrace)
 					case *syntax.StructTypeDecl:
 						checkBraces(n.LBrace, n.RBrace)
-						switch n.Kind.Kind() {
+						var nameRules, fieldRules map[string]string
+						switch n.KindTok.Kind() {
 						case syntax.RECORD:
-							checkNaming(n, style.Naming.Record)
+							nameRules = style.Naming.Record
+							fieldRules = style.Naming.RecordFields
 						case syntax.SET:
-							checkNaming(n, style.Naming.Set)
+							nameRules = style.Naming.Set
+							fieldRules = style.Naming.SetFields
 						case syntax.UNION:
-							checkNaming(n, style.Naming.Union)
+							nameRules = style.Naming.Union
+							fieldRules = style.Naming.UnionFields
+						default:
+							log.Verbosef("unknown struct type %q. Ignoring\n", n.KindTok.Kind())
+							return true
+
+						}
+						checkNaming(n, nameRules)
+						for _, f := range n.Fields {
+							checkNaming(f, fieldRules)
 						}
 					case *syntax.EnumTypeDecl:
 						checkBraces(n.LBrace, n.RBrace)
 						checkNaming(n, style.Naming.Enum)
+						for _, x := range n.Enums {
+							checkNaming(x, style.Naming.EnumLabels)
+						}
+					case *syntax.SubTypeDecl:
+						if n.Field == nil {
+							break
+						}
+
+						if lt, ok := n.Field.Type.(*syntax.ListSpec); ok {
+							switch lt.KindTok.Kind() {
+							case syntax.RECORD:
+								checkNaming(n, style.Naming.RecordOf)
+							case syntax.SET:
+								checkNaming(n, style.Naming.SetOf)
+							}
+						}
+
 					case *syntax.ImportDecl:
 						checkBraces(n.LBrace, n.RBrace)
 						checkImport(n, mod, tree)
@@ -647,15 +691,15 @@ func inGlobalScope(stack []syntax.Node) bool {
 }
 
 func isPort(d *syntax.ValueDecl) bool {
-	return d.Kind.Kind() == syntax.PORT
+	return d.KindTok != nil && d.KindTok.Kind() == syntax.PORT
 }
 
 func isConst(d *syntax.ValueDecl) bool {
-	return d.Kind.Kind() == syntax.CONST
+	return d.KindTok != nil && d.KindTok.Kind() == syntax.CONST
 }
 
 func isVar(d *syntax.ValueDecl) bool {
-	return !isVarTemplate(d) && d.Kind.Kind() == syntax.VAR
+	return !isVarTemplate(d) && d.KindTok != nil && d.KindTok.Kind() == syntax.VAR
 }
 
 func isVarTemplate(d *syntax.ValueDecl) bool {
@@ -738,7 +782,27 @@ func buildRegexCache() error {
 			return err
 		}
 	}
+	for p := range style.Naming.RecordFields {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.RecordOf {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
 	for p := range style.Naming.Set {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.SetFields {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.SetOf {
 		if err := cacheRegex(p); err != nil {
 			return err
 		}
@@ -748,7 +812,17 @@ func buildRegexCache() error {
 			return err
 		}
 	}
+	for p := range style.Naming.UnionFields {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
 	for p := range style.Naming.Enum {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.EnumLabels {
 		if err := cacheRegex(p); err != nil {
 			return err
 		}

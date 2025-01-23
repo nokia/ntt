@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/fs"
-	"github.com/nokia/ntt/ttcn3/v2/printer"
+	printer "github.com/nokia/ntt/ttcn3/format"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/spf13/cobra"
 )

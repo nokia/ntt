@@ -176,7 +176,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.FromTok)
 			p.print(n.X)
 
@@ -225,7 +225,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.List)
 
 		case *syntax.ExceptExpr:
@@ -306,8 +306,7 @@ func (p *printer) print(values ...interface{}) {
 			}
 			p.print(n.Tok)
 			p.print(n.LParen)
-			p.print(n.VarTok)
-			p.print(n.Var)
+			p.print(n.Init)
 			p.print(n.InTok)
 			p.print(n.Range)
 			p.print(n.RParen)
@@ -393,7 +392,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.LBrace, indent)
 			p.print(n.Fields)
 			p.print(unindent, n.RBrace)
@@ -412,7 +411,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Length)
 			p.print(n.OfTok)
 			p.print(n.ElemType)
@@ -430,7 +429,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Params)
 			p.print(n.Return)
 			p.print(n.System)
@@ -440,7 +439,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.TemplateRestriction)
 			p.print(n.Modif)
 			p.print(n.Type)
@@ -487,7 +486,7 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.External)
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Name)
 			p.print(n.Modif)
 			p.print(n.TypePars)
@@ -526,7 +525,7 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.TypeTok)
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Name)
 			p.print(n.TypePars)
 			p.print(n.LBrace, indent)
@@ -562,7 +561,7 @@ func (p *printer) print(values ...interface{}) {
 				return
 			}
 			p.print(n.TypeTok)
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Name)
 			p.print(n.TypePars)
 			p.print(n.Params)
@@ -579,7 +578,7 @@ func (p *printer) print(values ...interface{}) {
 			p.print(n.PortTok)
 			p.print(n.Name)
 			p.print(n.TypePars)
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Realtime)
 			p.print(n.LBrace, indent)
 			p.print(n.Attrs)
@@ -590,7 +589,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Types)
 
 		case *syntax.PortMapAttribute:
@@ -756,7 +755,7 @@ func (p *printer) print(values ...interface{}) {
 			if n == nil {
 				return
 			}
-			p.print(n.Kind)
+			p.print(n.KindTok)
 			p.print(n.Override)
 			p.print(n.LParen)
 			p.print(n.List)

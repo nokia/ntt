@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 )
@@ -16,8 +19,28 @@ var (
 
 func init() {
 	RootCommand.AddCommand(VersionCommand)
+
+	if version == "devel" {
+		info, ok := debug.ReadBuildInfo()
+		if ok && strings.HasPrefix(info.Main.Version, "v") {
+			version = info.Main.Version
+		}
+		for _, s := range info.Settings {
+			switch s.Key {
+			case "vcs.time":
+				date = s.Value
+			case "vcs.revision":
+				commit = s.Value
+			case "vcs.modified":
+				if s.Value == "true" {
+					commit += "-dirty"
+				}
+			}
+		}
+	}
+
 }
 
 func versionInfo(cmd *cobra.Command, args []string) {
-	fmt.Printf("ntt %v, commit %v, built at %v\n", version, commit, date)
+	fmt.Printf("ntt %v, commit %s, built at %s\n", version, commit, date)
 }

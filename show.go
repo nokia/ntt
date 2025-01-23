@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/nokia/ntt/internal/env"
@@ -76,36 +77,51 @@ func printJSON(report *ConfigReport, keys []string) error {
 		return err
 	}
 
-	var list []project.TestConfig
-	for _, file := range files {
-		tree := ttcn3.ParseFile(file)
-		if tree.Err != nil {
-			report.err = errors.Join(report.err, tree.Err)
-		}
-		tree.Inspect(func(n syntax.Node) bool {
-			switch n := n.(type) {
-			case *syntax.FuncDecl:
-				if n.IsTest() || n.IsControl() {
-					break
+	if !dumb {
+		mu := sync.Mutex{}
+		wg := sync.WaitGroup{}
+		wg.Add(len(files))
+		glist := make([]project.TestConfig, 0, len(files))
+		for _, file := range files {
+			file := file
+			go func() {
+				defer wg.Done()
+
+				tree := ttcn3.ParseFile(file)
+				if tree.Err != nil {
+					report.err = errors.Join(report.err, tree.Err)
 				}
-				return false
-			case *syntax.ControlPart:
-				break
-			default:
-				return true
-			}
-			name := tree.QualifiedName(n)
-			tc, err := report.TestConfigs(name, presets...)
-			if err != nil {
-				log.Debugf("implementation error: %s\n", err)
-			}
-			if len(tc) > 0 {
-				list = append(list, tc...)
-			}
-			return false
-		})
+				list := make([]project.TestConfig, 0, len(tree.Names))
+				tree.Inspect(func(n syntax.Node) bool {
+					switch n := n.(type) {
+					case *syntax.FuncDecl:
+						if n.IsTest() || n.IsControl() {
+							break
+						}
+						return false
+					case *syntax.ControlPart:
+						break
+					default:
+						return true
+					}
+					name := tree.QualifiedName(n)
+					tc, err := report.TestConfigs(name, presets...)
+					if err != nil {
+						log.Debugf("implementation error: %s\n", err)
+					}
+					if len(tc) > 0 {
+						list = append(list, tc...)
+					}
+					return false
+				})
+				mu.Lock()
+				glist = append(glist, list...)
+				mu.Unlock()
+			}()
+		}
+		wg.Wait()
+		report.Execute = glist
 	}
-	report.Execute = list
 
 	b, err := yaml.MarshalJSON(report)
 	if err != nil {

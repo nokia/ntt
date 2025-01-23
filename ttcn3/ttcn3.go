@@ -70,7 +70,9 @@ func parse(path string, input []byte) *Tree {
 		input = b
 	}
 
-	root, names, uses := syntax.Parse(input, syntax.WithFilename(path))
+	names := make(map[string]bool)
+	uses := make(map[string]bool)
+	root := syntax.Parse(input, syntax.WithFilename(path), syntax.WithNames(names), syntax.WithUses(uses))
 	return &Tree{Root: root, Names: names, Uses: uses, Err: root.Err(), filename: path}
 }
 

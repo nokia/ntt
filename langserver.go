@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/nokia/ntt/internal/lsp/fakenet"
 	"github.com/nokia/ntt/internal/lsp"
+	"github.com/nokia/ntt/internal/lsp/fakenet"
 	"github.com/nokia/ntt/internal/lsp/jsonrpc2"
 	"github.com/spf13/cobra"
 )
@@ -21,5 +21,6 @@ var (
 
 func langserver(cmd *cobra.Command, args []string) error {
 	stream := jsonrpc2.NewHeaderStream(fakenet.NewConn("stdio", os.Stdin, os.Stdout))
-	return lsp.NewServer(stream).Serve(context.TODO())
+	ctx := context.WithValue(context.Background(), "version", version)
+	return lsp.NewServer(stream).Serve(ctx)
 }

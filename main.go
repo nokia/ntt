@@ -99,6 +99,7 @@ var (
 
 	verbose        int
 	ShSetup        bool
+	dumb           bool
 	outputQuiet    bool
 	outputJSON     bool
 	outputPlain    bool
@@ -107,7 +108,7 @@ var (
 	testsFiles     []string
 	chdir          string
 
-	version = "dev"
+	version = "devel"
 	commit  = "none"
 	date    = "unknown"
 
@@ -145,6 +146,7 @@ func init() {
 	root.AddCommand(T3xfasmCommand)
 
 	ShowCommand.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
+	ShowCommand.PersistentFlags().BoolVarP(&dumb, "dumb", "", false, "do not evaluate testcase configuration")
 }
 
 func Format() string {

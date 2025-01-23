@@ -25,6 +25,12 @@ package syntax
 {{ range $name, $type := . }}
 
 {{ if ($type.NotImplemented "FirstTok" ) }}
+func (n *{{ $name }}) Kind() Kind {
+	return {{$name}}Node
+}
+{{ end }}
+
+{{ if ($type.NotImplemented "FirstTok" ) }}
 func (n *{{ $name }}) FirstTok() Token {
 	switch {
 	{{ range $i, $field := $type.Fields }}
@@ -116,6 +122,13 @@ func (n *{{ $name }}) End() int {
 {{ end }}
 
 {{ end }}
+
+const (
+	nodes_begin Kind = token_end + iota
+{{ range $name, $type := . }}{{$name}}Node
+{{ end }}
+)
+
 `
 
 type Type struct {
