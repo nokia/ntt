@@ -80,7 +80,7 @@ func Build(cmd *cobra.Command, args []string) error {
 	}
 	for _, t := range tasks {
 		if err := t.Run(); err != nil {
-			return fmt.Errorf("+%s\n%w", t.String(), err)
+			return fmt.Errorf("+ %s\n%w", t.String(), err)
 		}
 	}
 	return nil
