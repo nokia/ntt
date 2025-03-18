@@ -52,7 +52,10 @@ var (
 			}
 
 			// If we have a k3 installtion, we'll prepend libexec before PATH
-			conf, err := project.NewConfig(project.WithK3())
+			conf, err := project.NewConfig(
+				project.WithDefaults(),
+				project.WithK3(),
+			)
 			if conf != nil && conf.K3.Root != "" {
 				os.Setenv("PATH", fmt.Sprintf("%s%c%s", filepath.Join(conf.K3.Root, "libexec"), os.PathListSeparator, os.Getenv("PATH")))
 			}
