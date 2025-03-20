@@ -115,6 +115,10 @@ func TestEvents(t *testing.T) {
 			var actual []string
 			tst := NewTest(conf.K3.T3XF, tsts.NewJob(tt.input, conf))
 			for e := range tst.Run(ctx) {
+				if _, ok := e.(tsts.LogEvent); ok {
+					continue
+				}
+
 				s := strings.TrimPrefix(fmt.Sprintf("%T", e), "control.")
 				switch e := e.(type) {
 				case tsts.StartEvent:
