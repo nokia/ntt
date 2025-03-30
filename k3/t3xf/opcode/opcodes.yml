@@ -1555,17 +1555,6 @@ int2char:
     Convert integer int into a single character string and push it
     onto the stack.
 
-mapfromto:
-  opcode: 252
-  context:
-  - type_new
-  operations:
-    pre: [from, to]
-    post: [obj]
-  description: |+
-    Build a map type object from the types from and to and push the
-    resulting object onto the stack.
-
 int2enum:
   opcode: 426
   context:
