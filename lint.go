@@ -50,6 +50,8 @@ Naming Convention Checks
     naming.altsteps           Checks for altstep identifiers.
     naming.parameters         Checks for parameter identifiers.
     naming.component_vars     Checks for component variable identifiers.
+    naming.component_var_templates
+                              Checks for var templates that are component variables.
     naming.var_templates      Checks for variable template identifiers.
     naming.port_types         Checks for port type identifiers.
     naming.ports              Checks for port instance identifiers.
@@ -155,29 +157,30 @@ For information on writing new checks, see <TBD>.
 			IgnoreGuards bool `yaml:"ignore_guards"`
 		}
 		Naming struct {
-			Modules         map[string]string
-			Tests           map[string]string
-			Functions       map[string]string
-			Altsteps        map[string]string
-			Parameters      map[string]string
-			ComponentVars   map[string]string `yaml:"component_vars"`
-			VarTemplates    map[string]string `yaml:"var_templates"`
-			PortTypes       map[string]string `yaml:"port_types"`
-			Ports           map[string]string
-			GlobalConsts    map[string]string `yaml:"global_consts"`
-			ComponentConsts map[string]string `yaml:"component_consts"`
-			Templates       map[string]string
-			Locals          map[string]string
-			Record          map[string]string
-			RecordFields    map[string]string `yaml:"record_fields"`
-			RecordOf        map[string]string `yaml:"record_of"`
-			Set             map[string]string
-			SetFields       map[string]string `yaml:"set_fields"`
-			SetOf           map[string]string `yaml:"set_of"`
-			Union           map[string]string
-			UnionFields     map[string]string `yaml:"union_fields"`
-			Enum            map[string]string
-			EnumLabels      map[string]string `yaml:"enum_labels"`
+			Modules               map[string]string
+			Tests                 map[string]string
+			Functions             map[string]string
+			Altsteps              map[string]string
+			Parameters            map[string]string
+			ComponentVars         map[string]string `yaml:"component_vars"`
+			ComponentVarTemplates map[string]string `yaml:"component_var_templates"`
+			VarTemplates          map[string]string `yaml:"var_templates"`
+			PortTypes             map[string]string `yaml:"port_types"`
+			Ports                 map[string]string
+			GlobalConsts          map[string]string `yaml:"global_consts"`
+			ComponentConsts       map[string]string `yaml:"component_consts"`
+			Templates             map[string]string
+			Locals                map[string]string
+			Record                map[string]string
+			RecordFields          map[string]string `yaml:"record_fields"`
+			RecordOf              map[string]string `yaml:"record_of"`
+			Set                   map[string]string
+			SetFields             map[string]string `yaml:"set_fields"`
+			SetOf                 map[string]string `yaml:"set_of"`
+			Union                 map[string]string
+			UnionFields           map[string]string `yaml:"union_fields"`
+			Enum                  map[string]string
+			EnumLabels            map[string]string `yaml:"enum_labels"`
 		}
 		Tags struct {
 			Modules map[string]string
@@ -324,7 +327,12 @@ func lint(cmd *cobra.Command, args []string) error {
 								checkNaming(n, style.Naming.ComponentConsts)
 							}
 						case isVarTemplate(parent):
-							checkNaming(n, style.Naming.VarTemplates)
+							switch {
+							case inComponentScope(scope):
+								checkNaming(n, style.Naming.ComponentVarTemplates)
+							default:
+								checkNaming(n, style.Naming.VarTemplates)
+							}
 						case isVar(parent):
 							switch {
 							case inComponentScope(scope):
@@ -738,6 +746,11 @@ func buildRegexCache() error {
 		}
 	}
 	for p := range style.Naming.ComponentVars {
+		if err := cacheRegex(p); err != nil {
+			return err
+		}
+	}
+	for p := range style.Naming.ComponentVarTemplates {
 		if err := cacheRegex(p); err != nil {
 			return err
 		}
