@@ -2524,6 +2524,25 @@ func (p *parser) parseStmt() Stmt {
 	//
 	case INT, FLOAT, STRING, BSTRING, TRUE, FALSE, PASS, FAIL, NONE, INCONC, ERROR:
 		return p.parseSimpleStmt()
+
+	case MODIF:
+		// This enables parsing of Titan specific try/catch blocks.
+		// Note, we only parse the structure for prevent syntax-errors,
+		// Titan exceptions are not implemented in the rest of ntt.
+		switch v := p.lit(1); v {
+		case "@try":
+			p.consume()
+			return p.parseBlockStmt()
+		case "@catch":
+			p.consume()
+			if p.tok == LPAREN {
+				p.consume()
+				p.parseIdent()
+				p.expect(RPAREN)
+			}
+			return p.parseBlockStmt()
+		}
+		fallthrough
 	default:
 		p.errorExpected("statement")
 		p.advance(stmtStart)

@@ -296,6 +296,9 @@ func TestStmts(t *testing.T) {
 		{pass, `alt {}`},
 		{pass, `alt { [] receive; [23<foo()] p.timeout { var i x:=23; } [else] {}}`},
 
+		// Titan try/catch extension
+		{pass, `@try {} @catch (e) {} @catch(r2) {}`},
+
 		// Value Declaration Statements
 		{pass, `var comp C := C.create;`},
 		{pass, `var comp C := C.create("han solo") alive;`},
