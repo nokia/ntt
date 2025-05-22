@@ -167,7 +167,7 @@ func ProcessHover(params *protocol.HoverParams, db *ttcn3.DB, capability HoverCo
 			continue
 		} else {
 			if node, ok := def.Node.(*syntax.ValueDecl); ok {
-				if node.KindTok.Kind() == syntax.PORT {
+				if tok := node.KindTok; tok != nil && tok.Kind() == syntax.PORT {
 					locations := FindMapConnectStatementForPortIdMatchingTheName(db, syntax.Name(x))
 					for _, l := range locations {
 						capability.GatherMapOrConnectLinks(l.URI.SpanURI().Filename(), l.Range.Start.Line, l.URI)
