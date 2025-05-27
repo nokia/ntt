@@ -703,7 +703,10 @@ func (p *parser) parseUnaryExpr() Expr {
 //	["@index" ["value"] PrimaryExpr]
 //	["timestamp"        PrimaryExpr]
 func (p *parser) parsePrimaryExpr() Expr {
-	x := p.parseOperand()
+	return p.parsePrimaryExprTail(p.parseOperand())
+}
+
+func (p *parser) parsePrimaryExprTail(x Expr) Expr {
 L:
 	for {
 		switch p.tok {
@@ -720,7 +723,6 @@ L:
 			break L
 		}
 	}
-
 	return x
 }
 
@@ -1538,7 +1540,7 @@ func (p *parser) parseWithQualifier() Expr {
 	case IDENT:
 		return p.parseTypeRef()
 	case LBRACK:
-		return p.parseIndexExpr(nil)
+		return p.parsePrimaryExprTail(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
 		x := new(DefKindExpr)
 		x.KindTok = p.consume()

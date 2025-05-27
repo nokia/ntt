@@ -37,6 +37,7 @@ func TestWithStmts(t *testing.T) {
 		{pass, `encode @local          "str";`},
 		{pass, `encode @local          "str"."ruleA";`},
 		{pass, `encode ([-])           "str";`},
+		{pass, `encode ([-].bar)       "str";`},
 		{pass, `encode (a[-])          "str";`},
 		{pass, `encode (group all)     "str";`},
 		{pass, `encode (type all)      "str";`},
