@@ -18,7 +18,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/nokia/ntt/internal/cache"
@@ -27,7 +26,6 @@ import (
 	"github.com/nokia/ntt/internal/log"
 	"github.com/nokia/ntt/internal/results"
 	"github.com/nokia/ntt/internal/yaml"
-	"github.com/nokia/ntt/project/internal/k3"
 )
 
 var (
@@ -63,13 +61,6 @@ type Config struct {
 
 	// ResultsFile is the path to the results file.
 	ResultsFile string `json:"results_file"`
-
-	K3 struct {
-		k3.Instance `json:",inline"`
-
-		// T3XF is the path to the T3XF file.
-		T3XF string `json:"t3xf"`
-	}
 
 	// what toolchain to use.
 	toolchain string
@@ -323,130 +314,6 @@ type Task interface {
 	String() string
 }
 
-// Build builds a project.
-func Build(c *Config) error {
-	since := time.Now()
-	defer func() {
-		log.Debugf("build took %s\n", time.Since(since))
-	}()
-
-	tasks, err := BuildTasks(c)
-	if err != nil {
-		return err
-	}
-	for _, tsk := range tasks {
-		if err := tsk.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// BuildTasks returns the build tasks required to generate and build the test
-// executable and its dependencies.
-func BuildTasks(c *Config) ([]Task, error) {
-	var (
-		ret  []Task
-		merr *multierror.Error
-	)
-
-	for _, imp := range c.Imports {
-		tasks, err := ImportTasks(c, imp)
-		if err != nil {
-			merr = multierror.Append(merr, err)
-			continue
-		}
-		ret = append(ret, tasks...)
-	}
-
-	srcs, err := fs.TTCN3Files(c.Sources...)
-	if err != nil {
-		merr = multierror.Append(merr, err)
-	}
-
-	var imports []string
-	for _, t := range ret {
-		for _, output := range t.Outputs() {
-			if fs.HasTTCN3Extension(output) {
-				imports = append(imports, output)
-			}
-		}
-	}
-
-	for _, t := range k3.NewT3XF(c.Variables, c.K3.T3XF, srcs, imports...) {
-		ret = append(ret, t)
-	}
-
-	return ret, merr.ErrorOrNil()
-}
-
-// ImportTasks returns the build tasks required to generate and build a given
-// test suite dependency.
-func ImportTasks(c *Config, uri string) ([]Task, error) {
-	dir := fs.Path(uri)
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	var (
-		tasks                         []Task
-		asn1Files, ttcn3Files, cFiles []string
-		processed                     int
-	)
-
-	// Collect and categorize all the files!
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		switch path := filepath.Join(dir, f.Name()); filepath.Ext(path) {
-		case ".asn1", ".asn":
-			asn1Files = append(asn1Files, path)
-			processed++
-		case ".ttcn3", ".ttcn":
-			ttcn3Files = append(ttcn3Files, path)
-			processed++
-		case ".c", ".cxx", ".cpp", ".cc":
-			// Skip ASN1 codecs
-			if strings.HasSuffix(path, ".enc.c") {
-				continue
-			}
-			cFiles = append(cFiles, path)
-			processed++
-		}
-	}
-	if processed == 0 {
-		return nil, fmt.Errorf("%s: %w", dir, ErrNoSources)
-	}
-
-	name, err := NameFromURI(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(asn1Files) > 0 {
-		encoding, err := EncodingFromURI(dir)
-		if err != nil {
-			return nil, err
-		}
-		for _, t := range k3.NewASN1Codec(c.Variables, name, encoding, asn1Files...) {
-			tasks = append(tasks, t)
-		}
-	}
-	if len(cFiles) > 0 {
-		for _, t := range k3.NewPlugin(c.Variables, name, cFiles...) {
-			tasks = append(tasks, t)
-		}
-	}
-	if len(ttcn3Files) > 0 {
-		for _, t := range k3.NewTTCN3Library(c.Variables, name, ttcn3Files...) {
-			tasks = append(tasks, t)
-		}
-	}
-	return tasks, nil
-}
-
 // NameFromURI derives a TTCN-3 compatible name from a path or URI.
 func NameFromURI(uri string) (string, error) {
 	uri = fs.Path(uri)
@@ -479,7 +346,6 @@ func Files(c *Config) ([]string, error) {
 	var files []string
 	files = append(files, c.Sources...)
 	files = append(files, c.Imports...)
-	files = append(files, c.K3.Includes...)
 	return fs.TTCN3Files(files...)
 }
 
@@ -640,7 +506,6 @@ func Open(args ...string) (*Config, error) {
 		AutomaticEnv(),
 		WithIndex(cache.Lookup(IndexFile)),
 		WithDefaults(),
-		WithK3(),
 	)
 
 	cwd, err := os.Getwd()
@@ -774,20 +639,6 @@ func WithManifest(file string) ConfigOption {
 		env.ExpandAll(&c.Manifest, c.Variables)
 		c.Manifest.expandPaths(c.Root)
 		log.Debugf("project: using manifest %s\n", file)
-		return nil
-	}
-}
-
-func WithK3() ConfigOption {
-	return func(c *Config) error {
-		c.toolchain = "k3"
-		c.K3.Instance = k3.Find()
-		c.K3.T3XF = cache.Lookup(fmt.Sprintf("%s.t3xf", c.Name))
-		log.Debugf("project: k3 compiler : %v\n", c.K3.Compiler)
-		log.Debugf("project: k3 runtime  : %v\n", c.K3.Runtime)
-		log.Debugf("project: k3 t3xf     : %v\n", c.K3.T3XF)
-		log.Debugf("project: k3 includes : %v\n", c.K3.Includes)
-		log.Debugf("project: k3 plugins  : %v\n", c.K3.Plugins)
 		return nil
 	}
 }
@@ -1023,11 +874,6 @@ func (m *Manifest) updateVariables() {
 			v = s
 		}
 		m.Variables[k] = v
-	}
-	for k, v := range k3.DefaultEnv {
-		if _, ok := m.Variables[k]; !ok {
-			m.Variables[k] = v
-		}
 	}
 	for k, v := range env.EnvironMap() {
 		if strings.HasPrefix(k, "NTT_") || strings.HasPrefix(k, "K3_") || strings.HasPrefix(k, "SCT_") {

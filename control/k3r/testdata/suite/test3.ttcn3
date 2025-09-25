@@ -1,7 +1,0 @@
-module test3 {
-	type component MTC {}
-	testcase A() runs on MTC {
-		setverdict(pass, "success");
-	}
-}
-
