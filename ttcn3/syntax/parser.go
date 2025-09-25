@@ -2492,7 +2492,7 @@ func (p *parser) parseStmt() Stmt {
 		return p.parseIfStmt()
 	case LBRACE:
 		return p.parseBlockStmt()
-	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
+	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC, INC, DEC:
 		x := p.parseSimpleStmt()
 
 		// try call-statement block
