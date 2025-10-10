@@ -99,7 +99,10 @@ func getSignature(def *ttcn3.Node) string {
 	content, _ := fh.Bytes()
 	switch node := def.Node.(type) {
 	case *syntax.FuncDecl:
-		sig.WriteString(node.KindTok.String() + " " + node.Name.String())
+		if tok := node.KindTok; tok != nil {
+			sig.WriteString(node.KindTok.String() + " ")
+		}
+		sig.WriteString(node.Name.String())
 		sig.Write(content[node.Params.Pos():node.Params.End()])
 		if node.RunsOn != nil {
 			sig.WriteString("\n  ")
@@ -167,7 +170,7 @@ func ProcessHover(params *protocol.HoverParams, db *ttcn3.DB, capability HoverCo
 			continue
 		} else {
 			if node, ok := def.Node.(*syntax.ValueDecl); ok {
-				if node.KindTok.Kind() == syntax.PORT {
+				if tok := node.KindTok; tok != nil && tok.Kind() == syntax.PORT {
 					locations := FindMapConnectStatementForPortIdMatchingTheName(db, syntax.Name(x))
 					for _, l := range locations {
 						capability.GatherMapOrConnectLinks(l.URI.SpanURI().Filename(), l.Range.Start.Line, l.URI)

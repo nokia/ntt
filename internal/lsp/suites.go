@@ -33,11 +33,6 @@ func (s *Suite) Files() []string {
 	if s.files == nil {
 		s.files = make(map[string]bool)
 		files, _ := project.Files(s.Config)
-		for _, dir := range s.Config.K3.Includes {
-			for _, file := range fs.FindTTCN3Files(dir) {
-				files = append(files, file)
-			}
-		}
 		for _, dir := range files {
 			s.files[string(fs.URI(dir))] = true
 		}
@@ -145,7 +140,6 @@ func (s *Suites) AddSuite(root project.Suite) {
 		project.AutomaticEnv(),
 		project.WithSourceDir(root.SourceDir),
 		project.WithDefaults(),
-		project.WithK3(),
 	)
 
 	// If opening a project fails, we want to continue with what we have.

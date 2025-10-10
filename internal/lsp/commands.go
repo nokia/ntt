@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"errors"
 
 	"github.com/nokia/ntt/internal/lsp/protocol"
 	"github.com/nokia/ntt/ttcn3/syntax"
@@ -26,11 +27,6 @@ func NewCommand(pos syntax.Position, title string, command string, args ...inter
 	}, nil
 }
 
-type nttTestParams struct {
-	TestID      // TestID identifies a testcase in a ttch3 source file.
-	Stop   bool // Stop the test
-}
-
 func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCommandParams) (interface{}, error) {
 	switch params.Command {
 	case "ntt.debug.toggle":
@@ -38,12 +34,7 @@ func (s *Server) executeCommand(ctx context.Context, params *protocol.ExecuteCom
 	case "ntt.status":
 		return s.status(ctx)
 	case "ntt.test":
-		var tp nttTestParams
-		if err := unmarshalRaw(params.Arguments, &tp); err != nil {
-			return nil, err
-		}
-
-		return nil, s.testCtrl.RunTest(tp.TestID)
+		return nil, errors.New("command ntt.test: not implemented")
 	}
 	return nil, nil
 }

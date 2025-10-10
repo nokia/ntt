@@ -1,12 +1,10 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime/pprof"
 	"strings"
 	"syscall"
@@ -49,12 +47,6 @@ var (
 				if err := pprof.StartCPUProfile(f); err != nil {
 					return err
 				}
-			}
-
-			// If we have a k3 installtion, we'll prepend libexec before PATH
-			conf, err := project.NewConfig(project.WithK3())
-			if conf != nil && conf.K3.Root != "" {
-				os.Setenv("PATH", fmt.Sprintf("%s%c%s", filepath.Join(conf.K3.Root, "libexec"), os.PathListSeparator, os.Getenv("PATH")))
 			}
 
 			// Skip opening the project if we're running a custom command or version.
@@ -124,26 +116,20 @@ func init() {
 	flags.BoolVarP(&outputQuiet, "quiet", "q", false, "quiet output")
 	flags.BoolVarP(&outputJSON, "json", "", false, "output in JSON format")
 	flags.BoolVarP(&outputPlain, "plain", "", false, "output in plain format (for grep and awk)")
-	RunCommand.PersistentFlags().BoolVarP(&outputTAP, "tap", "", false, "output in test anything (TAP) format")
 	flags.StringVarP(&cpuprofile, "cpuprofile", "", "", "write cpu profile to `file`")
 	flags.StringVarP(&chdir, "chdir", "C", "", "change to DIR before doing anything else")
 
 	RootCommand.Flags().BoolP("interactive", "i", false, "run in interactive mode")
 
-	root.AddCommand(BuildCommand)
 	root.AddCommand(CompileCommand)
 	root.AddCommand(DumpCommand)
 	root.AddCommand(FormatCommand)
 	root.AddCommand(LangserverCommand)
 	root.AddCommand(LintCommand)
 	root.AddCommand(ListCommand)
-	root.AddCommand(LocateFileCommand)
 	root.AddCommand(ReportCommand)
-	root.AddCommand(RunCommand)
 	root.AddCommand(ShowCommand)
 	root.AddCommand(TagsCommand)
-	root.AddCommand(ObjdumpCommand)
-	root.AddCommand(T3xfasmCommand)
 
 	ShowCommand.PersistentFlags().BoolVarP(&ShSetup, "sh", "", false, "output test suite data for shell consumption")
 	ShowCommand.PersistentFlags().BoolVarP(&dumb, "dumb", "", false, "do not evaluate testcase configuration")
@@ -215,10 +201,7 @@ func fatal(err error) {
 		}
 		os.Exit(waitStatus.ExitStatus())
 	default:
-		// Run command has its own error logging.
-		if !errors.Is(err, ErrCommandFailed) {
-			fmt.Fprintln(os.Stderr, err.Error())
-		}
+		fmt.Fprintln(os.Stderr, err.Error())
 	}
 
 	os.Exit(1)

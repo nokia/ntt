@@ -703,7 +703,10 @@ func (p *parser) parseUnaryExpr() Expr {
 //	["@index" ["value"] PrimaryExpr]
 //	["timestamp"        PrimaryExpr]
 func (p *parser) parsePrimaryExpr() Expr {
-	x := p.parseOperand()
+	return p.parsePrimaryExprTail(p.parseOperand())
+}
+
+func (p *parser) parsePrimaryExprTail(x Expr) Expr {
 L:
 	for {
 		switch p.tok {
@@ -720,7 +723,6 @@ L:
 			break L
 		}
 	}
-
 	return x
 }
 
@@ -1538,7 +1540,7 @@ func (p *parser) parseWithQualifier() Expr {
 	case IDENT:
 		return p.parseTypeRef()
 	case LBRACK:
-		return p.parseIndexExpr(nil)
+		return p.parsePrimaryExprTail(nil)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
 		x := new(DefKindExpr)
 		x.KindTok = p.consume()
@@ -2504,7 +2506,7 @@ func (p *parser) parseStmt() Stmt {
 		return p.parseIfStmt()
 	case LBRACE:
 		return p.parseBlockStmt()
-	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC:
+	case IDENT, TESTCASE, ANYKW, ALL, MAP, UNMAP, MTC, INC, DEC:
 		x := p.parseSimpleStmt()
 
 		// try call-statement block
@@ -2538,6 +2540,25 @@ func (p *parser) parseStmt() Stmt {
 	//
 	case INT, FLOAT, STRING, BSTRING, TRUE, FALSE, PASS, FAIL, NONE, INCONC, ERROR:
 		return p.parseSimpleStmt()
+
+	case MODIF:
+		// This enables parsing of Titan specific try/catch blocks.
+		// Note, we only parse the structure for prevent syntax-errors,
+		// Titan exceptions are not implemented in the rest of ntt.
+		switch v := p.lit(1); v {
+		case "@try":
+			p.consume()
+			return p.parseBlockStmt()
+		case "@catch":
+			p.consume()
+			if p.tok == LPAREN {
+				p.consume()
+				p.parseIdent()
+				p.expect(RPAREN)
+			}
+			return p.parseBlockStmt()
+		}
+		fallthrough
 	default:
 		p.errorExpected("statement")
 		p.advance(stmtStart)

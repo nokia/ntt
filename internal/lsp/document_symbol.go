@@ -10,10 +10,6 @@ import (
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
 
-var kindToStringMap = map[syntax.Kind]string{
-	syntax.ALTSTEP: "altstep", syntax.FUNCTION: "function", syntax.TESTCASE: "testcase",
-	syntax.UNION: "union", syntax.RECORD: "record", syntax.SET: "set"}
-
 func getComponentTypeDecl(tree *ttcn3.Tree, node *syntax.ComponentTypeDecl) protocol.DocumentSymbol {
 	var children []protocol.DocumentSymbol = nil
 
@@ -86,7 +82,10 @@ func getFunctionDecl(tree *ttcn3.Tree, node *syntax.FuncDecl) protocol.DocumentS
 			Range:          setProtocolRange(idBegin, idEnd),
 			SelectionRange: setProtocolRange(idBegin, idEnd)})
 	}
-	detail := node.KindTok.String() + " definition"
+	detail := "definition"
+	if tok := node.KindTok; tok != nil {
+		detail = tok.String() + " " + detail
+	}
 	if node.External != nil {
 		detail = "external " + detail
 	}
@@ -113,16 +112,19 @@ func getTypeList(tree *ttcn3.Tree, types []syntax.Expr) []protocol.DocumentSymbo
 	return retv
 }
 
+func kindString(tok syntax.Token) string {
+	if tok == nil {
+		return ""
+	}
+	return tok.String()
+}
+
 func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.DocumentSymbol {
 	begin := syntax.Begin(node)
 	end := syntax.End(node)
-	kindstr := ""
-	if node.KindTok != nil {
-		kindstr = node.KindTok.String()
-	}
 	retv := protocol.DocumentSymbol{
 		Name:           node.Name.String(),
-		Detail:         kindstr + " port type",
+		Detail:         kindString(node.KindTok) + " port type",
 		Kind:           protocol.Interface,
 		Range:          setProtocolRange(begin, end),
 		SelectionRange: setProtocolRange(begin, end)}
@@ -132,7 +134,7 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.Docum
 		end := syntax.End(attr)
 		switch node := attr.(type) {
 		case *syntax.PortAttribute:
-			switch node.KindTok.Kind() {
+			switch tok := node.KindTok; tok.Kind() {
 			case syntax.ADDRESS:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
 					Name:           "address",
@@ -142,7 +144,7 @@ func getPortTypeDecl(tree *ttcn3.Tree, node *syntax.PortTypeDecl) protocol.Docum
 					SelectionRange: setProtocolRange(begin, end)})
 			case syntax.IN, syntax.OUT, syntax.INOUT:
 				portChildren = append(portChildren, protocol.DocumentSymbol{
-					Name:           node.KindTok.String(),
+					Name:           tok.String(),
 					Kind:           protocol.Array,
 					Range:          setProtocolRange(begin, end),
 					SelectionRange: setProtocolRange(begin, end),
@@ -202,7 +204,7 @@ func getSubTypeDecl(tree *ttcn3.Tree, node *syntax.SubTypeDecl) protocol.Documen
 	detail := "subtype"
 	kind := protocol.Struct
 	if listNode, ok := node.Field.Type.(*syntax.ListSpec); ok {
-		detail = kindToStringMap[listNode.KindTok.Kind()] + " of type"
+		detail = kindString(listNode.KindTok) + " of type"
 		kind = protocol.Array
 		children = getElemTypeInfo(tree, listNode.ElemType)
 	}
@@ -348,7 +350,7 @@ func NewAllDefinitionSymbolsFromCurrentModule(tree *ttcn3.Tree) []interface{} {
 			if node.Name == nil {
 				return false
 			}
-			detail := kindToStringMap[node.KindTok.Kind()] + " type"
+			detail := kindString(node.KindTok) + " type"
 			list = append(list, protocol.DocumentSymbol{Name: node.Name.String(), Detail: detail, Kind: protocol.Struct,
 				Range:          setProtocolRange(begin, end),
 				SelectionRange: setProtocolRange(begin, end),

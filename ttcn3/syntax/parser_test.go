@@ -37,6 +37,7 @@ func TestWithStmts(t *testing.T) {
 		{pass, `encode @local          "str";`},
 		{pass, `encode @local          "str"."ruleA";`},
 		{pass, `encode ([-])           "str";`},
+		{pass, `encode ([-].bar)       "str";`},
 		{pass, `encode (a[-])          "str";`},
 		{pass, `encode (group all)     "str";`},
 		{pass, `encode (type all)      "str";`},
@@ -299,6 +300,9 @@ func TestStmts(t *testing.T) {
 		{pass, `interleave {}`},
 		{pass, `alt {}`},
 		{pass, `alt { [] receive; [23<foo()] p.timeout { var i x:=23; } [else] {}}`},
+
+		// Titan try/catch extension
+		{pass, `@try {} @catch (e) {} @catch(r2) {}`},
 
 		// Value Declaration Statements
 		{pass, `var comp C := C.create;`},
