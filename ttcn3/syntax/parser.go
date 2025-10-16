@@ -1833,6 +1833,11 @@ func (p *parser) parseBehaviourTypeDecl() *BehaviourTypeDecl {
 	x := new(BehaviourTypeDecl)
 	x.TypeTok = p.consume()
 	x.KindTok = p.consume()
+
+	if p.tok == INTERLEAVE {
+		x.Interleave = p.consume()
+	}
+
 	x.Name = p.parseName()
 	if p.tok == LT {
 		x.TypePars = p.parseTypeFormalPars()
@@ -2001,6 +2006,11 @@ func (p *parser) parseBehaviourSpec() *BehaviourSpec {
 
 	x := new(BehaviourSpec)
 	x.KindTok = p.consume()
+
+	if p.tok == INTERLEAVE {
+		x.Interleave = p.consume()
+	}
+
 	x.Params = p.parseFormalPars()
 
 	if p.tok == RUNS {
@@ -2177,6 +2187,10 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 
 	x := new(FuncDecl)
 	x.KindTok = p.consume()
+
+	if p.tok == INTERLEAVE {
+		x.Interleave = p.consume()
+	}
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}

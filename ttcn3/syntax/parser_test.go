@@ -105,6 +105,7 @@ func TestFuncDecls(t *testing.T) {
 		{pass, `function f() mtc C {}`},
 		{pass, `function f() runs on C mtc C system C {}`},
 		{pass, `altstep as() { var roi[-] a[4][4]; [] receive; [else] {}}`},
+		{pass, `altstep interleave interleaveStep() {  [] p1.receive; [] p2.check{}}`},
 		{pass, `signature f();`},
 		{pass, `signature f() exception (integer);`},
 		{pass, `signature f() return int;`},
@@ -235,6 +236,8 @@ func TestTypes(t *testing.T) {
 		{pass, `type set s {int a optional }`},
 		{pass, `type set s {set length(1) of set length(2) of int() f1[-][-] length(3) optional}`},
 		{pass, `type set s {function () runs on self return template int callback}`},
+		{pass, `type set s {altstep (integer p_i) runs on self as_callback}`},
+		{pass, `type set s {altstep interleave(integer p_i) runs on C is_callback}`},
 		{pass, `type union s {@default set of int f1 optional}`},
 		{pass, `type union s {enumerated { e(1) } foo}`},
 		{pass, `type enumerated a {e, e(1), e(1)}`},
@@ -260,6 +263,7 @@ func TestTypes(t *testing.T) {
 		// Behaviour Types
 		{pass, `type function fn() runs on self return template int`},
 		{pass, `type altstep  as() runs on self return int`},
+		{pass, `type altstep interleave iStep() runs on C`},
 		{pass, `type testcase tc() runs on C system TSI`},
 
 		// Class Types
