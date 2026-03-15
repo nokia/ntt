@@ -661,9 +661,9 @@ type (
 
 	// A ConstructorDecl represents a class constructor definition.
 	ConstructorDecl struct {
-		CreateTok Token       // CREATE
-		Params    *FormalPars // Formal parameter list
-		Body      *BlockStmt  // Body
+		Name   *Ident      // CREATE
+		Params *FormalPars // Formal parameter list
+		Body   *BlockStmt  // Body
 	}
 
 	// A SignatureDecl represents a signature type for procedure based communication.

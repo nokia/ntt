@@ -2253,7 +2253,7 @@ func (p *parser) parseConstructorDecl() *ConstructorDecl {
 	}
 
 	x := new(ConstructorDecl)
-	x.CreateTok = p.consume()
+	x.Name = p.parseIdent()
 	x.Params = p.parseFormalPars()
 	x.Body = p.parseBlockStmt()
 

@@ -1487,8 +1487,8 @@ func (n *ConstructorDecl) Kind() Kind {
 func (n *ConstructorDecl) FirstTok() Token {
 	switch {
 
-	case n.CreateTok != nil:
-		return n.CreateTok
+	case n.Name != nil:
+		return n.Name.FirstTok()
 
 	case n.Params != nil:
 		return n.Params.FirstTok()
@@ -1510,8 +1510,8 @@ func (n *ConstructorDecl) LastTok() Token {
 	case n.Params != nil:
 		return n.Params.LastTok()
 
-	case n.CreateTok != nil:
-		return n.CreateTok
+	case n.Name != nil:
+		return n.Name.LastTok()
 
 	default:
 		return nil
@@ -1521,8 +1521,8 @@ func (n *ConstructorDecl) LastTok() Token {
 func (n *ConstructorDecl) Children() []Node {
 	ret := make([]Node, 0, 3)
 
-	if n.CreateTok != nil {
-		ret = append(ret, n.CreateTok)
+	if n.Name != nil {
+		ret = append(ret, n.Name)
 	}
 
 	if n.Params != nil {
@@ -1537,6 +1537,13 @@ func (n *ConstructorDecl) Children() []Node {
 }
 
 func (n *ConstructorDecl) Inspect(f func(Node) bool) {
+
+	if c := n.Name; c != nil {
+		if f(c) {
+			c.Inspect(f)
+		}
+		f(nil)
+	}
 
 	if c := n.Params; c != nil {
 		if f(c) {
