@@ -271,8 +271,14 @@ func Discover(path string) []Suite {
 
 	// If we could not find any manifest, try guess a root directory based on known naming schemes.
 	if len(list) == 0 {
+		patterns := []string{
+			"testcases/*",
+			"*_Testsuite_*.ttcn*",
+			"test_purposes/*.tplan2",
+			"PicsPixit/*.ttcn*",
+		}
 		fs.WalkUp(path, func(path string) bool {
-			if tests := fs.Glob(path + "/testcases/*"); len(tests) > 0 {
+			if match(path, patterns...) {
 				log.Debugf("discovered testcases folder in %q\n", path)
 				list = append(list, Suite{RootDir: path, SourceDir: path})
 				return false
@@ -297,6 +303,15 @@ func Discover(path string) []Suite {
 		}
 	}
 	return result
+}
+
+func match(path string, patterns ...string) bool {
+	for _, pattern := range patterns {
+		if files := fs.Glob(filepath.Join(path, pattern)); len(files) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // Task is a build task.
