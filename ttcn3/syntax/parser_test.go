@@ -177,6 +177,11 @@ func TestValueDecls(t *testing.T) {
 		{pass, `timer x, y := 1.0, y;`},
 		{pass, `port P x[len], y := 1, z := 2 ;`},
 		{pass, `modulepar RoI[-] x, y:=23, z;`},
+		{pass, `const x := 23`},
+		{pass, `var template t := 23`},
+		{pass, `var t := true`},
+		{pass, `var x := 23, y := 10`},
+		{pass, `var r := {1,2,3}`},
 	}
 
 	testParse(t, valueDecls, func(p *parser) { p.parseValueDecl() })

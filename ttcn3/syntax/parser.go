@@ -2140,7 +2140,9 @@ func (p *parser) parseValueDecl() *ValueDecl {
 			x.Modif = p.consume()
 		}
 	}
-	x.Type = p.parseTypeRef()
+	if p.tok != IDENT || p.peek(2).Kind() != ASSIGN {
+		x.Type = p.parseTypeRef()
+	}
 	x.Decls = p.parseDeclList()
 	x.With = p.parseWith()
 	return x
