@@ -271,15 +271,9 @@ func Discover(path string) []Suite {
 
 	// If we could not find any manifest, try guess a root directory based on known naming schemes.
 	if len(list) == 0 {
-		patterns := []string{
-			"testcases/*",
-			"*_Testsuite_*.ttcn*",
-			"test_purposes/*.tplan2",
-			"PicsPixit/*.ttcn*",
-		}
 		fs.WalkUp(path, func(path string) bool {
-			if match(path, patterns...) {
-				log.Debugf("discovered testcases folder in %q\n", path)
+			if isRoot(path) {
+				log.Debugf("discovered potential project root folder in %q\n", path)
 				list = append(list, Suite{RootDir: path, SourceDir: path})
 				return false
 			}
@@ -869,12 +863,20 @@ func WithDefaults() ConfigOption {
 
 // isRoot returns true if the given path contains typical project root files.
 func isRoot(root string) bool {
-	return fs.IsRegular(fs.JoinPath(root, ManifestFile)) ||
-		fs.IsRegular(fs.JoinPath(root, "build.sh")) ||
-		fs.IsRegular(fs.JoinPath(root, "project.xml")) ||
-		fs.IsDir(fs.JoinPath(root, "testcases")) ||
-		len(fs.Glob(fs.JoinPath(root, "*.cfg"))) > 0 ||
-		len(fs.Glob(fs.JoinPath(root, "*.parameters"))) > 0
+	patterns := []string{
+		"testcases/*",
+		"*_Testsuite_*.ttcn*",
+		"test_purposes/*.tplan2",
+		"PicsPixit/*.ttcn*",
+		ManifestFile,
+		"build.sh",
+		"project.xml",
+		"*.cfg",
+		"*.parameters",
+		".git",
+		"sct",
+	}
+	return match(root, patterns...)
 }
 
 // updateVariables updates the given variable with the variables from
