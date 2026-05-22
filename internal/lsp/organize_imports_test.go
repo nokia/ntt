@@ -8,6 +8,15 @@ import (
 	"github.com/nokia/ntt/internal/lsp/protocol"
 )
 
+// changesKey is the key organizeImports uses for its WorkspaceEdit
+// changes map. The production code derives the key from the URI's
+// filename so we can't just look up by the original URI literal -
+// Windows in particular round-trips file:///foo through Filename()
+// (which prepends a drive letter) before keying the map.
+func changesKey(file string) string {
+	return string(fs.URI(protocol.DocumentURI(file).SpanURI().Filename()))
+}
+
 func TestOrganizeImports_SortsAndDedupes(t *testing.T) {
 	const src = `module M {
 	import from Zeta all;
@@ -29,9 +38,10 @@ func TestOrganizeImports_SortsAndDedupes(t *testing.T) {
 		t.Fatalf("got kind %q, want %q", action.Kind, protocol.SourceOrganizeImports)
 	}
 
-	edits := action.Edit.Changes[string(fs.URI(file))]
+	edits := action.Edit.Changes[changesKey(file)]
 	if len(edits) != 1 {
-		t.Fatalf("expected exactly one TextEdit, got %d", len(edits))
+		t.Fatalf("expected exactly one TextEdit, got %d (keys: %v)",
+			len(edits), keysOf(action.Edit.Changes))
 	}
 
 	got := edits[0].NewText
@@ -97,9 +107,10 @@ module B {
 	if !ok {
 		t.Fatalf("expected an action")
 	}
-	edits := action.Edit.Changes[string(fs.URI(file))]
+	edits := action.Edit.Changes[changesKey(file)]
 	if len(edits) != 2 {
-		t.Fatalf("expected one edit per module, got %d", len(edits))
+		t.Fatalf("expected one edit per module, got %d (keys: %v)",
+			len(edits), keysOf(action.Edit.Changes))
 	}
 }
 
@@ -130,4 +141,14 @@ func precedes(s, first, second string) bool {
 	i := strings.Index(s, first)
 	j := strings.Index(s, second)
 	return i >= 0 && j > i
+}
+
+// keysOf returns the keys of a map[string][]TextEdit. We only use it
+// for failure messages, so we don't bother sorting.
+func keysOf(m map[string][]protocol.TextEdit) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }

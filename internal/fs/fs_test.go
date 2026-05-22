@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nokia/ntt/internal/fs"
+	"github.com/nokia/ntt/internal/lsp/span"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +24,10 @@ func TestBytesFromURL(t *testing.T) {
 		panic(err)
 	}
 
-	f := fs.Open("file://" + path)
+	// Constructing the URL by literal concatenation produces broken
+	// URIs on Windows ("file://D:\\..."). Defer to URIFromPath which
+	// knows how to encode drive letters and convert backslashes.
+	f := fs.Open(string(span.URIFromPath(path)))
 	b, err := f.Bytes()
 	assert.Nil(t, err)
 	assert.Equal(t, expected, b)
@@ -38,27 +42,36 @@ func TestCaching(t *testing.T) {
 }
 
 func TestJoinPath(t *testing.T) {
-	tests := []struct {
+	// JoinPath returns OS-native file paths but keeps URLs untouched.
+	// We mark URL expectations explicitly so we don't accidentally
+	// run them through filepath.FromSlash.
+	type joinCase struct {
 		first, second string
 		want          string
-	}{
-		{"", "", ""},
-		{".", "", "."},
-		{".", "a", "a"},
-		{"/", "b", "/b"},
-		{"//", "c", "/c"},
-		{"/", "/d", "/d"},
-		{"e", "f", "e/f"},
-		{"/g", "h", "/g/h"},
-		{"/i", "../j", "/j"},
-		{"file://k", "l", "file://k/l"},
-		{"file:///m", "n", "file:///m/n"},
-		{"file:///o", "../p", "file:///p"},
+		isURL         bool
+	}
+	tests := []joinCase{
+		{"", "", "", false},
+		{".", "", ".", false},
+		{".", "a", "a", false},
+		{"/", "b", "/b", false},
+		{"//", "c", "/c", false},
+		{"/", "/d", "/d", false},
+		{"e", "f", "e/f", false},
+		{"/g", "h", "/g/h", false},
+		{"/i", "../j", "/j", false},
+		{"file://k", "l", "file://k/l", true},
+		{"file:///m", "n", "file:///m/n", true},
+		{"file:///o", "../p", "file:///p", true},
 	}
 
 	for _, test := range tests {
+		want := test.want
+		if !test.isURL {
+			want = filepath.FromSlash(want)
+		}
 		got := fs.JoinPath(test.first, test.second)
-		assert.Equal(t, test.want, got)
+		assert.Equal(t, want, got)
 	}
 
 }
