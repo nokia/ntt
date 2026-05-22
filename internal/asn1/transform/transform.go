@@ -2,13 +2,16 @@
 // that can be re-parsed by ttcn3.Parse. The resulting *ttcn3.Tree
 // flows through the existing semantic, formatter, and LSP layers as
 // if the user had hand-written a TTCN-3 module - which is the trick
-// vanadium pulls with its AstTransformer.
+// Vanadium's Asn1AstTransformer uses, and the design here follows it.
 //
 // We emit text rather than constructing ttcn3/syntax nodes directly
 // because the ttcn3 syntax tree is not meant to be built piecemeal
 // from outside; it owns position information tied to the source
 // buffer the parser scanned. Round-tripping through text gives us a
 // real tree with consistent positions for free.
+//
+// Vanadium is BSD-3, copyright (c) 2025 Mikhail Krylov. See
+// THIRD_PARTY_NOTICES.md at the repository root.
 package transform
 
 import (

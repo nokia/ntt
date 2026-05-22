@@ -9,7 +9,12 @@ import (
 // combinator library. It exists primarily for the wrapping printer that
 // reflows over-long parameter lists and composite literals. The
 // combinators are intentionally minimal: Text, Line, Nest, Group, Concat
-// and HardLine cover the cases vanadium's AstPrinter uses.
+// and HardLine cover the cases Vanadium's AstPrinter uses, and the
+// vocabulary here (SoftLine / HardLine / Group / Nest) follows
+// Vanadium's PrintDirective set.
+//
+// Vanadium is BSD-3, copyright (c) 2025 Mikhail Krylov. See
+// THIRD_PARTY_NOTICES.md at the repository root.
 
 // Doc is the abstract document type that combinators build.
 type Doc interface {

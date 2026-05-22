@@ -12,6 +12,11 @@
 //     isolation.
 //   - A Linter that runs a configurable set of rules across a parsed Tree.
 //
+// The Rule lifecycle (Register / Check / Exit) and the Reporter-based
+// problem-emission API follow the design of Vanadium's lint Rule /
+// Context (https://github.com/makekryl/vanadium) by Mikhail Krylov,
+// BSD-3. See THIRD_PARTY_NOTICES.md at the repository root.
+//
 // The package intentionally ships with only a small, opinionated set of
 // rules. Additional rules can be added by satisfying the Rule interface and
 // passing them to NewLinter.

@@ -6,6 +6,11 @@
 // Cross-module resolution is mediated by a Basket - a registry of
 // resolved modules keyed by module name. Editors and the compiler use
 // the same Basket so the same name resolves consistently everywhere.
+//
+// The Basket concept and the cross-module reference-chaining design
+// are adopted from Asn1ModuleBasket in Vanadium
+// (https://github.com/makekryl/vanadium) by Mikhail Krylov, BSD-3.
+// See THIRD_PARTY_NOTICES.md at the repository root.
 package resolver
 
 import (

@@ -129,3 +129,13 @@ automation environment.
 ## License
 
 This project is licensed under the BSD-3-Clause license - see the [LICENSE](https://github.com/nokia/ntt/blob/master/LICENSE).
+
+## Acknowledgements
+
+Parts of ntt's architecture (the pure-Go ASN.1 frontend, the
+Wadler-style formatter combinators, the schema-driven AST generator
+and the lint Rule lifecycle) were inspired by
+[Vanadium](https://github.com/makekryl/vanadium) by Mikhail Krylov.
+Vanadium is BSD-3-licensed; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the full notice
+and a list of the borrowed concepts.

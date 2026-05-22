@@ -4,11 +4,14 @@
 //   - WithSyntaxParser walks an object literal body against the
 //     declaring class's WITH SYNTAX template, returning (fieldRef ->
 //     value/type) settings. This is the Go equivalent of asn1c's
-//     `asn1fix_cws.c` driver and vanadium's ClassObjectParser.
+//     `asn1fix_cws.c` driver and Vanadium's ClassObjectParser.
 //
 //   - ObjectSetResolver flattens an ObjectSet expression (literals,
 //     references, unions, ALL EXCEPT) into a sequence of resolved
-//     objects.
+//     objects. The design follows Vanadium's ClassSetResolver.
+//
+// Vanadium is BSD-3, copyright (c) 2025 Mikhail Krylov. See
+// THIRD_PARTY_NOTICES.md at the repository root.
 //
 //   - ComponentRelationSolver narrows an open-type field given a
 //     `({Set}{@discriminator})` table constraint, producing the
