@@ -48,6 +48,18 @@ type Root struct {
 	Filename string
 	tokens   []token
 	errs     []error
+
+	// lineCache memoises the line lookup result from the previous
+	// Position() call. Most LSP traversals visit tokens in source
+	// order, so the next position lands either on the same line or
+	// shortly after - both cases short-circuit the binary search.
+	// Concurrent reads are tolerated because the cache only stores
+	// a hint; a stale read produces the correct answer via the
+	// fallback search below.
+	lineCacheLine int
+	lineCacheLo   int // first byte of the cached line
+	lineCacheHi   int // first byte of the next line (or len(src))
+	lineCacheOk   bool
 }
 
 func (n *Root) Err() error {
@@ -67,19 +79,41 @@ func (n *Root) Position(offset int) Position {
 	return Position{}
 }
 
+// searchLines returns the index of the line that contains the byte
+// offset pos. The result is cached so that the common access pattern
+// (looking up positions in monotonically non-decreasing order, as
+// happens when the LSP walks a tree from start to end) collapses to a
+// single bounds check on the cache.
 func (n *Root) searchLines(pos int) int {
-	// TODO(5nord) add line cache
+	if n.lineCacheOk && pos >= n.lineCacheLo && pos < n.lineCacheHi {
+		return n.lineCacheLine
+	}
+
 	i, j := 0, len(n.lines)
 	for i < j {
 		h := int(uint(i+j) >> 1) // avoid overflow when computing h
-		// i ≤ h < j
 		if n.lines[h] <= pos {
 			i = h + 1
 		} else {
 			j = h
 		}
 	}
-	return int(i) - 1
+	idx := i - 1
+
+	if idx >= 0 {
+		n.lineCacheLine = idx
+		n.lineCacheLo = n.lines[idx]
+		if idx+1 < len(n.lines) {
+			n.lineCacheHi = n.lines[idx+1]
+		} else {
+			// We don't know the buffer length here, but any
+			// position past the last newline still belongs to
+			// the last line. Mark hi as a sentinel.
+			n.lineCacheHi = 1 << 62
+		}
+		n.lineCacheOk = true
+	}
+	return idx
 }
 
 func (n *Root) PosFor(line, col int) int {

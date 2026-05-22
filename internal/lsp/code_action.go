@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"strings"
 
 	"github.com/nokia/ntt/internal/fs"
 	"github.com/nokia/ntt/internal/log"
@@ -43,6 +44,16 @@ func (s *Server) codeAction(ctx context.Context, params *protocol.CodeActionPara
 	}
 
 	var actions []protocol.CodeAction
+
+	// Source actions are filtered by Context.Only: if the client
+	// asks for a specific kind, only emit the actions matching it.
+	// When Only is empty we emit everything we can compute.
+	if wantsKind(params.Context.Only, protocol.SourceOrganizeImports) {
+		if a, ok := s.organizeImports(uri); ok {
+			actions = append(actions, a)
+		}
+	}
+
 	for _, diag := range diags {
 		fix, ok := extractAutofix(diag.Data)
 		if !ok {
@@ -123,6 +134,27 @@ func numberToInt(v interface{}) (int, bool) {
 		return int(n), true
 	}
 	return 0, false
+}
+
+// wantsKind reports whether the client wants actions of kind k. An
+// empty `only` list means "the client wants everything", which keeps
+// the keyboard-shortcut path working (those requests don't filter).
+func wantsKind(only []protocol.CodeActionKind, k protocol.CodeActionKind) bool {
+	if len(only) == 0 {
+		return true
+	}
+	for _, candidate := range only {
+		// Source action kinds are hierarchical (e.g. `source` is
+		// the parent of `source.organizeImports`). Treat a request
+		// for the parent as a request for every child.
+		if candidate == k {
+			return true
+		}
+		if strings.HasPrefix(string(k), string(candidate)+".") {
+			return true
+		}
+	}
+	return false
 }
 
 // overlaps returns true when the two LSP ranges share at least one

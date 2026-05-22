@@ -101,6 +101,13 @@ You may control installation by specifying PREFIX and DESTDIR variables. For exa
 	make install DESTDIR=$HOME/.local
 
 
+# Getting started
+
+For a five-minute, end-to-end walkthrough that takes you from "I just
+installed ntt" to running a TTCN-3 test in your editor, see
+[docs/getting-started.md](docs/getting-started.md).
+
+
 # Contact us
 
 If you have questions, you are welcome to contact us at

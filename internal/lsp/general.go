@@ -106,7 +106,15 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
 			InlayHintProvider:               s.registerInlayHintIfNoDynReg(),
-			CodeActionProvider:              true,
+			// Advertise the kinds we actually emit so clients can
+			// surface them in their menus (e.g. "Source Action"
+			// in VS Code) and pre-filter via the `Only` field.
+			CodeActionProvider: protocol.CodeActionOptions{
+				CodeActionKinds: []protocol.CodeActionKind{
+					protocol.QuickFix,
+					protocol.SourceOrganizeImports,
+				},
+			},
 			CompletionProvider: protocol.CompletionOptions{
 				TriggerCharacters: []string{"."},
 				ResolveProvider:   true,
