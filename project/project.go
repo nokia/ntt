@@ -123,6 +123,12 @@ type Manifest struct {
 	// Diagnostics is a list of diagnostics flags used by compilator
 	Diagnostics []string `json:"diagnostics"`
 
+	// Tools holds per-tool configuration sections so individual
+	// editors (and CI jobs) can override the defaults without
+	// resorting to per-project flags. See the docs on Tools for the
+	// full schema.
+	Tools Tools `yaml:"tools,omitempty" json:"tools,omitempty"`
+
 	// Parameters is an embedded parameters file.
 	Parameters `json:",inline"`
 
