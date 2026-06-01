@@ -41,6 +41,25 @@ environment. There are many options, you can use [GitHub
 Codespaces](https://docs.github.com/en/codespaces) and develop in your browser
 remotely. Or you install everything on your machine and develop locally:
 
+
+### Using AI
+
+The use of AI tools is generally permitted. However, AI-generated code is not
+free: someone must review, understand, test, and maintain it over the long
+term. For this reason, please avoid submitting large AI-generated changesets
+that cannot reasonably be reviewed.
+
+Please also keep fair use and licensing obligations in mind. If you incorporate
+code from other projects—whether directly or indirectly through an AI
+assistant—ensure that the original license permits such use. When appropriate,
+provide attribution to the authors and contributors whose work you are building
+upon.
+
+For significant or critical code sections, consider documenting that AI tools
+were involved in their creation. This can help clarify provenance and may
+reduce complications related to intellectual property, copyright, or patent
+considerations.
+
 ### Installing Go
 
 Install Go using your package manager or a manual installation as [described
