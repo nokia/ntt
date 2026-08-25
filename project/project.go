@@ -161,6 +161,11 @@ type TestConfig struct {
 	// A pattern describing a test. Optional testcase parameters are allowed.
 	Test string `json:",omitempty"`
 
+	// Description is an optional human-readable label for this test
+	// configuration (variant). It mirrors the "description" field used by
+	// k3 in .parameters execute entries.
+	Description string `json:",omitempty"`
+
 	// Presets is a list of preset configurations to be used to execute
 	// the test.
 	Preset []string `json:",omitempty"`
@@ -466,6 +471,10 @@ func MergeTestConfig(a, b TestConfig) TestConfig {
 	result.Test = a.Test
 	if b.Test != "" {
 		result.Test = b.Test
+	}
+	result.Description = a.Description
+	if b.Description != "" {
+		result.Description = b.Description
 	}
 	result.Timeout = a.Timeout
 	if b.Timeout.Duration > 0 {

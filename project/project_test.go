@@ -321,6 +321,27 @@ func TestParametersMergeRules(t *testing.T) {
 	assert.Equal(t, expected.Execute, actual.Execute)
 }
 
+func TestParametersDescription(t *testing.T) {
+  // A "description" field (as used by k3 in .paramters execute entries)
+  // must be accepted by the strict YAML parser and preserved
+  p := NewParameters(t, `
+  execute:
+    - test: "TC1"
+      description: "Timeout is 300"
+      timeout: 300
+    - test: "TC1"
+      description: "Timeout is 500"
+      timeout: 500`)
+  assert.Equal(t, "Timeout is 300", p.Execute[0].Description)
+  assert.Equal(t, "Timeout is 500", p.Execute[1].Description)
+
+  // Description must survive the merge with global configuration.
+  got, err := p.TestConfigs("TC1")
+  assert.Nil(t, err)
+  assert.Equal(t, []string{"Timeout is 300", "Timeout is 500"},
+    []string{got[0].Description, got[1].Description})
+}
+
 func TestRules(t *testing.T) {
 	tests := []struct {
 		Presets, Except, Only []string
