@@ -337,6 +337,25 @@ Independent of the two clocks:
   clock, as expired default timers did before.
 - **A call's signature no longer reaches a PTC** for the unqualified
   `getreply` / `catch` rule (22.3.1 h).
+- **An error in a PTC's behaviour makes the testcase verdict `error`.** An
+  unknown identifier, say, in a started behaviour ended the component with
+  verdict `none`, so the testcase passed on the MTC's verdict alone. The
+  component now ends with `error` — `c.done -> value v` reads it — the
+  testcase takes it on, and the test log's `tliCTerminated` gives the error
+  as its reason.
+- **A killed component cannot be started again** (ETSI 21.3.2). A
+  non-alive component is killed when its behaviour ends or is stopped, and
+  any component by `kill`; starting it again ran the new behaviour, and is
+  now an error. An alive component stays alive after a `call`, to be
+  called or started again; `c.alive` said false.
+- **A blocking call has a response and exception handling part** (ETSI
+  22.3.1 j). `p.call(S:{...});` on a signature that is not `noblock`, with
+  neither that part nor `nowait`, was sent and the caller went on as if it
+  had said `nowait`; it is now an error.
+- **An index-range array declared without an initialiser starts at its
+  lower bound.** After `var charstring a[2..3]` — or a variable of `type
+  integer T[1..2]` — `a[2] := "x"` stored the element third, after two
+  unbound ones, and `lengthof(a)` was 4.
 - **A block's declarations are its own** (ETSI 5.2.2). An `if` branch or
   a plain `{ }` block declared into the scope around it, so two branches
   of an interleave — running between each other's statements — that each
@@ -501,7 +520,12 @@ These are older than this release and are recorded, with their diagnosis,
 in [`docs/conformance/remaining-work.md`](docs/conformance/remaining-work.md)
 §1s.
 
-- Starting a non-alive component again after its behaviour ended is
-  accepted, where ETSI 21.3.2 makes it an error.
+- `match(v, t)` with `v` or `t` unbound answers, where ETSI 15.9 b makes
+  it an error. Making it one turns 26 conformance fixtures from pass to
+  error: in each, a value the engine should have bound is left undefined
+  — fields of modified and parameterised templates, elements of a
+  record-of template, a field set to `omit`, a map's keys, a testcase's
+  parameters when it runs on its own, a check's redirects, attribute
+  values — and `match` takes it for a wildcard.
 
 [0.24.0]: https://github.com/nokia/ntt/compare/v0.23.2...ntt-titan

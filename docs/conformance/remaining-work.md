@@ -434,8 +434,13 @@ verdict the same and every event valid.
     (20.4).
   - On `--live`, each `start` of a PTC that blocks costs its starter the
     50 ms start barrier.
-  - A blocking signature called with no response block and no `nowait`
-    is sent without waiting, where the standard makes it an error.
+  - *Fixed 2026-10-13: an error (22.3.1 j), on either clock; 0 gained,
+    0 lost.* A blocking signature called with no response block and no
+    `nowait` is sent without waiting, where the standard makes it an error.
+    Still not told: a call of a parameterised signature template
+    (`p.call(s_par(4))`), of an inline qualified signature
+    (`p.call(Lib.SB:{...})`), or of a template formal parameter, whose
+    signature the engine does not record.
 - **Found reviewing the started-bodies change, not fixed:**
   - *Fixed 2026-09-30.* (Each million or so iterations with no wait count as a
     second of virtual time.) A loop that waits on a zero-length timer for good
@@ -549,8 +554,17 @@ passed over for a thousand turns — and a parameter's default and a
   component variable initialised from a module constant (`var R cr :=
   c_R`) is undefined in the MTC: the MTC's members are bound when the
   module is loaded, before the constant has its value.
-- Starting a non-alive component again after its behaviour ended is
-  accepted (ETSI 21.3.2 makes it an error).
+- *Fixed 2026-10-13: an error, and so is starting any killed component;
+  0 gained, 0 lost (the NegSem fixtures were already rejected by the
+  analyzer). An alive component stays alive after a `call`, as 21.3.10's
+  example has it; it was left not alive.* Starting a non-alive component
+  again after its behaviour ended is accepted (ETSI 21.3.2 makes it an
+  error).
+- `all component.kill` leaves alive a component created but never
+  started, which can then be started (21.3.4). (One that ran a behaviour
+  by `call` is killed since 2026-10-13: a call counts as a start.)
+- `getverdict` in the MTC reads the testcase verdict, which every
+  component's `setverdict` and error moves, not the MTC's own (24.3).
 - `any from cs.done -> @index value i` binds nothing.
 - A class declared `runs on C` (ES 203 790) does not see the component's
   variables in its methods.
@@ -561,10 +575,28 @@ passed over for a thousand turns — and a parameter's default and a
   modules one wins: a type extending `Base` in module X can get module M's
   `Base`, and its own members then fall back to one copy every component
   shares.
-- An error in a PTC's behaviour (an unknown identifier, say) ends it with
-  verdict `none`, not `error`; the testcase can then pass on the MTC's
-  verdict alone.
-- `match(v, t)` with `v` undefined is true.
+- *Fixed 2026-10-13: the component ends with `error`, the testcase takes
+  it on, and `tliCTerminated` gives the reason; 0 gained, 0 lost — no
+  fixture's PTC fails.* An error in a PTC's behaviour (an unknown
+  identifier, say) ends it with verdict `none`, not `error`; the testcase
+  can then pass on the MTC's verdict alone.
+- `match(v, t)` with `v` undefined is true. *Tried 2026-10-13 and
+  reverted:* an error for a wholly unbound operand (15.9 b) measured
+  **-24**: 26 fixtures that pass become errors, and two NegSem fixtures
+  (NegSem_060206_anytype_001, NegSem_150603_ReferencingRecordOfAndSetElements_010)
+  go from pass to error, and so match. In each a value the engine should have bound reaches `match`
+  as Undefined, which the matcher takes for a wildcard, so each is a
+  defect of its own to fix first: fields of modified and parameterised
+  templates (Sem_1505_ModifiedTemplates_002-004, 006, 007,
+  Sem_1508_TemplateRestrictions_031-036, Sem_1512_ThePresentOperation_001),
+  record-of template elements (Sem_150603_ReferencingRecordOfAndSetElements_002,
+  003, 005), a field set to omit (Sem_0602_TopLevel_018), map keys and
+  values (Sem_06021505_accessing_the_keys_002,
+  Sem_06021506_accessing_the_values_002), parameters of a testcase run on
+  its own and of an imported function (Sem_050402_actual_parameters_001,
+  Sem_08020301_GeneralFormatOfImport_014), check redirects
+  (Sem_2204_the_check_operation_018, 022, 066, 070), attribute values
+  (Sem_2708_Retrieving_attribute_values_001, 004).
 - *Fixed 2026-10-02: a module resolves its own names first (a scope per
   module, inside the flat one), so a like-named definition elsewhere no
   longer stands in for its own, and the log names a function's module; a
@@ -610,8 +642,20 @@ passed over for a thousand turns — and a parameter's default and a
   read B's. A `.cfg` setting a parameter both by its bare and its
   qualified name gives the qualified one, whatever their order in the
   file (some tools let the later line win).
-- An index-range array declared without an initialiser
-  (`var charstring a[2..3]`) is stored at the wrong offsets.
+- *Fixed 2026-10-13, and for a variable of an index-range array type
+  (`type integer T[1..2]`); 0 gained, 0 lost.* An index-range array
+  declared without an initialiser (`var charstring a[2..3]`) is stored at
+  the wrong offsets.
+- Found reviewing that fix, older than it: an index range still does not
+  reach a second dimension (`var integer m[2..3][2]`, `m[2][1..2]`, `var
+  Row m[3..4]; m[3][1] := 5`), a component variable with a range of its
+  own (`var integer cv[1..2]` as a member, bound by bindComponentMembers),
+  an array of a record, union or enumerated type (`var Rec r[2..3]`, whose
+  declaration takes another path), an `out` parameter, a record field
+  (`r.f[2] := 1`), an inner array assigned whole (`m[0] := {1, 2}` on an
+  array of `Row`), or an array assigned whole and then grown (`a := {1,
+  2}; a[3] := 9` gives `{1, 2, -, 9}`); and an index past the upper bound
+  is no error, writing or reading.
 - *Partly fixed 2026-10-06: charstrings are shared (never changed in
   place) and appended to in place; a function that keeps to itself gets
   its actuals uncopied. A record or list is still copied when assigned,

@@ -283,6 +283,27 @@ func waitComponentState(ref *runtime.ComponentRef, op string, env runtime.Scope)
 	return runtime.NewBool(pred(ref, env))
 }
 
+// startOfKilled returns the error of starting a behaviour on ref, or of
+// calling one, when ref was killed: a killed component runs no behaviour
+// again. A non-alive one is killed with the end of its first behaviour,
+// or its stop (ETSI 21.3.2, 21.3.3), so having had one is enough — its
+// goroutine may not have recorded the kill yet when the starter, seeing
+// it done, asks — and may still be unwinding, so nothing of the
+// component is touched before this is asked.
+func startOfKilled(exec *runtime.TestcaseExec, ref *runtime.ComponentRef, op string) runtime.Object {
+	if exec == nil || ref == nil {
+		return nil
+	}
+	prev := exec.PTCExit(ref.ID)
+	if !ref.AliveModifier && prev != nil && !prev.Stopped() && !ref.IsDone() {
+		return runtime.Errorf("%s of component %s, which is still running a behaviour (ETSI ES 201 873-1 21.3.2)", op, ref.Inspect())
+	}
+	if !ref.IsAlive() || (!ref.AliveModifier && prev != nil) {
+		return runtime.Errorf("%s of component %s, which was killed (ETSI ES 201 873-1 21.3.2)", op, ref.Inspect())
+	}
+	return nil
+}
+
 // waitPreviousBehaviour waits until the behaviour last started on ref, if
 // one was stopped and is still unwinding, has finished; on the cooperative
 // scheduler it parks, so that behaviour can run to its end. Starting a

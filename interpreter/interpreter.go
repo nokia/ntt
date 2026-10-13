@@ -435,6 +435,11 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 					l.IndexOffset = lo
 				}
 			}
+		} else if len(n.ArrayDef) > 0 {
+			// Declared without one, the array is unbound until an element
+			// is assigned, and that element lives at the lower bound too —
+			// its own, 0 included, not its element type's.
+			env.Set(arrayLowerKey(n.Name.String()), runtime.NewInt(arrayLowerBound(n, env)))
 		}
 		env.Set(n.Name.String(), val)
 		return nil
@@ -1183,6 +1188,9 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 	case *syntax.ExprStmt:
 		if n, ok := n.Expr.(*syntax.BinaryExpr); ok && n.Op.Kind() == syntax.ASSIGN {
 			return evalAssign(n.X, n.Y, env)
+		}
+		if sig := blockingCallWithoutBlock(n.Expr, env); sig != "" {
+			return runtime.Errorf("call of the blocking signature %s has no response and exception handling part, nor nowait (ETSI ES 201 873-1 22.3.1)", sig)
 		}
 		// A receiving operation used as a statement is an alt with that one
 		// alternative (ETSI 20.1): it waits for a match, and the active
@@ -3234,6 +3242,54 @@ func rangeBound(o runtime.Object) runtime.Object {
 	return o
 }
 
+// arrayLowerKey names the binding recording the lower index bound of an
+// index-range array declared without an initialiser (`var T v[2..3]`).
+// The NUL prefix keeps it out of the user identifier namespace.
+func arrayLowerKey(name string) string { return "\x00arraylower:" + name }
+
+// declaredArrayLowerBound returns the lower index bound the variable name
+// was declared with: by a dimension of its own, else by its type's index
+// range (`type integer T[1..2]`), as recorded by the scope that binds
+// name; 0 for none.
+func declaredArrayLowerBound(env runtime.Scope, name string) int {
+	o := ownerOf(env, name)
+	if o == nil {
+		return 0
+	}
+	if o.Binds(arrayLowerKey(name)) {
+		if v, ok := o.Get(arrayLowerKey(name)); ok {
+			if lo, ok := v.(runtime.Int); ok {
+				return int(lo.Int64())
+			}
+		}
+		return 0
+	}
+	if td := lookupTypeDesc(ownDeclaredTypeName(env, name), o); td != nil {
+		return td.IndexOffset
+	}
+	return 0
+}
+
+// ownerOf returns the scope that binds name, or nil.
+func ownerOf(env runtime.Scope, name string) *runtime.Env {
+	if e, ok := env.(*runtime.Env); ok {
+		return e.Owner(name)
+	}
+	return nil
+}
+
+// ownDeclaredTypeName is declaredTypeName as recorded by the scope that
+// binds name: "" for a name — a formal parameter, say — whose scope
+// records none, rather than the type of a like-named definition further
+// out.
+func ownDeclaredTypeName(env runtime.Scope, name string) string {
+	o := ownerOf(env, name)
+	if o == nil || !o.Binds(declaredTypeKey(name)) {
+		return ""
+	}
+	return declaredTypeName(o, name)
+}
+
 // arrayLowerBound returns the declared lower index bound of an array
 // declarator written with an index range (`v[2..5]` -> 2, ETSI 6.2.7).
 // A plain `v[N]` dimension, a missing dimension or a non-integer bound
@@ -3916,9 +3972,11 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 		// `v_rec.field1[2] := X` where `field1` is currently
 		// `omit` / undefined (TTCN-3 6.2.7).
 		if container == runtime.Undefined || container == runtime.Omit || container == nil {
-			container = &runtime.List{ListType: runtime.RECORD_OF}
+			list := &runtime.List{ListType: runtime.RECORD_OF}
+			container = list
 			switch lx := l.X.(type) {
 			case *syntax.Ident:
+				list.IndexOffset = declaredArrayLowerBound(env, lx.String())
 				assignOrSet(env, lx.String(), container)
 			default:
 				if store != nil {
@@ -8009,6 +8067,31 @@ func loopStopped(env runtime.Scope) runtime.Object {
 // on the virtual clock before it lets the others run.
 const loopYieldEvery = 1000
 
+// endBehaviour gives the component the verdict error when its behaviour
+// ended in a dynamic error or an uncaught exception, and returns what the
+// error was ("" when the behaviour ended normally or was stopped). The
+// testcase verdict takes it on as it does a setverdict: a testcase cannot
+// pass while one of its components failed to run its behaviour.
+func endBehaviour(exec *runtime.TestcaseExec, ref *runtime.ComponentRef, result runtime.Object) string {
+	var reason string
+	switch r := result.(type) {
+	case *runtime.Error:
+		reason = r.Inspect()
+	case *runtime.RaisedValue:
+		reason = "uncaught exception"
+	default:
+		return ""
+	}
+	// A component stopped, or a testcase torn down, unwinds its
+	// behaviour; what fails on the way out is not the behaviour's error.
+	if exec.Stopped() || componentStopRequested(exec) {
+		return ""
+	}
+	ref.MergeVerdict(runtime.ErrorVerdict)
+	exec.SetVerdict(runtime.ErrorVerdict, fmt.Sprintf("component %s: %s", ref.Inspect(), reason))
+	return reason
+}
+
 // componentStopRequested reports whether the current PTC has been asked
 // to stop via `comp.stop` / `all component.stop` (both close the PTC's
 // PTCExit.StopChan). It is the per-PTC analogue of exec.Stopped() and
@@ -8365,6 +8448,9 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 			return runtime.Undefined, true
 		}
 		body := n.Args.List[0]
+		if err := startOfKilled(runtime.FindTestcaseExec(env), ref, op); err != nil {
+			return err, true
+		}
 		if lexec := tlExec(env); lexec != nil && ref != nil {
 			tlOp := "tliCStart"
 			if op == "call" {
@@ -8376,9 +8462,10 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 			})
 		}
 		// Record that behaviour was started on this component (even
-		// when the body is skipped below). `all component.done` /
-		// `.killed` consider only ever-started PTCs (ETSI 21.3.7).
-		if op == "start" && ref != nil {
+		// when the body is skipped below), by start or by call, which
+		// starts one too. `all component.done` / `.killed` / `.kill`
+		// consider only ever-started PTCs (ETSI 21.3.7).
+		if ref != nil {
 			ref.Started = true
 		}
 		// Skip the body when running it synchronously would
@@ -8558,15 +8645,17 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 					exec.PushComponent(ref)
 					defer exec.PopComponent()
 					initComponentVars(ref)
+					var result runtime.Object
 					if fn != nil {
-						_, _, _ = applyFunctionWithCallSite(functionWithEnv(fn, runEnv), snapArgs, callArgExprs)
+						result, _, _ = applyFunctionWithCallSite(functionWithEnv(fn, runEnv), snapArgs, callArgExprs)
 					} else {
-						_ = eval(body, runEnv)
+						result = eval(body, runEnv)
 					}
+					reason := endBehaviour(exec, ref, result)
 					// The defaults a behaviour activated end with it: an
 					// alive component started again begins with none.
 					exec.ClearDefaultsOf(ref.ID)
-					tlTerminated(exec, ref)
+					tlTerminated(exec, ref, reason)
 					// Don't drain port maps on natural
 					// body exit: a daemon-style PTC
 					// that "completes" by returning
@@ -8786,6 +8875,10 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 				stopped = true
 			}
 		}
+		reason := ""
+		if op != "call" && ref != nil && exec != nil {
+			reason = endBehaviour(exec, ref, result)
+		}
 		if ref != nil {
 			if lexec := tlExec(env); lexec != nil {
 				if op == "call" {
@@ -8797,19 +8890,17 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 						return args
 					})
 				} else {
-					tlTerminated(lexec, ref)
+					tlTerminated(lexec, ref, reason)
 				}
 			}
 			// if exec := runtime.FindTestcaseExec(env); exec != nil {
 			//     drainComponentPortMaps(exec, ref.ID)
 			// }
 			ref.SetDone(true)
-			// `comp.call(f)` is a different operation: TTCN-3
-			// 21.3.10 says it blocks until f returns and the
-			// component is finished afterwards. For `.start`
-			// we keep `.alive` true on AliveModifier refs so
-			// they can be re-`.start`-ed.
-			if op == "call" || !ref.AliveModifier {
+			// A non-alive component ends with its behaviour, started
+			// or called; an alive one stays, to be started or called
+			// again (ETSI 21.3.2, 21.3.10).
+			if !ref.AliveModifier {
 				ref.SetAlive(false)
 			}
 			if op == "call" {
@@ -11335,6 +11426,59 @@ func procSignatureName(arg syntax.Expr) string {
 		}
 	}
 	return ""
+}
+
+// blockingCallWithoutBlock returns the name of the signature e calls when
+// e is a call statement, `p.call(S:{...})` or `p.call(t) to c`, that has
+// neither a response and exception handling part nor nowait, and S is not
+// noblock: such a call waits for its reply in that part, which it lacks
+// (ETSI ES 201 873-1 22.3.1, restriction j). A component's `c.call(f())`
+// calls no signature.
+func blockingCallWithoutBlock(e syntax.Expr, env runtime.Scope) string {
+	if b, ok := e.(*syntax.BinaryExpr); ok && b.Op != nil && b.Op.Kind() == syntax.TO {
+		e = b.X
+	}
+	ce, ok := e.(*syntax.CallExpr)
+	if !ok || ce.Args == nil || len(ce.Args.List) == 0 {
+		return ""
+	}
+	sel, ok := ce.Fun.(*syntax.SelectorExpr)
+	if !ok {
+		return ""
+	}
+	if op, ok := sel.Sel.(*syntax.Ident); !ok || op.String() != "call" {
+		return ""
+	}
+	if len(ce.Args.List) > 1 {
+		if id, ok := ce.Args.List[1].(*syntax.Ident); ok && id.String() == "nowait" {
+			return ""
+		}
+	}
+	sd := callSignatureDecl(ce.Args.List[0], env)
+	if sd == nil || sd.NoBlock != nil {
+		return ""
+	}
+	return syntax.Name(sd.Name)
+}
+
+// callSignatureDecl returns the declaration of the signature a call's
+// argument is of, when it can be told: `S:{...}`, or a template whose
+// declared type its scope records — a module's, a variable's — as S or,
+// from another module, M.S. A parameterised template records none.
+func callSignatureDecl(arg syntax.Expr, env runtime.Scope) *syntax.SignatureDecl {
+	sigOf := func(name string) *syntax.SignatureDecl {
+		if td := lookupTypeDesc(name, env); td != nil {
+			return td.Signature
+		}
+		return nil
+	}
+	if sd := sigOf(procSignatureName(arg)); sd != nil {
+		return sd
+	}
+	if id, ok := arg.(*syntax.Ident); ok {
+		return sigOf(ownDeclaredTypeName(env, id.String()))
+	}
+	return nil
 }
 
 // procCallSigKey stashes the signature of the enclosing blocking

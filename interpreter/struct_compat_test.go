@@ -100,6 +100,31 @@ func TestStructCompat_ConstrainedArrayIndexOffset(t *testing.T) {
 	}`)
 }
 
+// An index-range array declared without an initialiser keeps its lower
+// bound when its elements are assigned one by one, whether the range is
+// the variable's own or its type's. The first assignment grew a 0-based
+// list, so `a[2] := "x"` left two unbound elements before it.
+func TestStructCompat_UninitialisedArrayIndexOffset(t *testing.T) {
+	runPass(t, "M.tc", `module M {
+		type integer ConstrainedInt[1..2];
+		type component C {}
+		testcase tc() runs on C {
+			var charstring a[2..3];
+			var ConstrainedInt v;
+			if (isbound(a)) { setverdict(fail, "bound before any assignment"); }
+			a[3] := "y"; a[2] := "x";
+			var ConstrainedInt m[2];
+			v[2] := 4; v[1] := 5;
+			// m's own dimension starts at 0, whatever its elements' does.
+			m[1] := {3, 4}; m[0] := {1, 2};
+			if (a[2] == "x" and a[3] == "y" and lengthof(a) == 2 and
+			    v[1] == 5 and v[2] == 4 and lengthof(v) == 2 and
+			    lengthof(m) == 2 and m[0] == {1, 2} and m[1] == {3, 4}) { setverdict(pass); }
+			else { setverdict(fail, a, v, m); }
+		}
+	}`)
+}
+
 // The source array keeps its own 0-based offset after the assignment
 // (the remap is copy-on-write, not in-place) - regression guard for the
 // index-offset adoption above.

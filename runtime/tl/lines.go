@@ -203,7 +203,12 @@ func (lw *LinesWriter) lines(e *Event, n *Node) []string {
 	case "tliCRunning":
 		return one("coru", arg("comp"), status(arg("status"), "running", "stopped"))
 	case "tliCAlive":
-		return one("coal", arg("comp"), status(arg("status"), "alive", "killed"))
+		// Stopped and inactive components are alive: only killed is not.
+		alive := "alive"
+		if st := arg("status"); st == ComponentKilled || st == "false" {
+			alive = "killed"
+		}
+		return one("coal", arg("comp"), alive)
 
 	// Ports.
 	case "tliPConnect":

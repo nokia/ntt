@@ -240,15 +240,19 @@ func createComponent(typeName, name string, n syntax.Node, env runtime.Scope) *r
 	return ref
 }
 
-// tlTerminated logs, on behalf of a PTC, that its behaviour has ended.
-func tlTerminated(exec *runtime.TestcaseExec, ref *runtime.ComponentRef) {
+// tlTerminated logs, on behalf of a PTC, that its behaviour has ended,
+// with the error it ended in, if any.
+func tlTerminated(exec *runtime.TestcaseExec, ref *runtime.ComponentRef, reason string) {
 	defer tlRecover(exec)
 	if exec == nil || ref == nil {
 		return
 	}
 	if l := exec.TestLogger(); l != nil {
-		exec.TLogFrom(l, exec.TLComponent(ref), "tliCTerminated", "", 0,
-			tlArg("verdict", tl.Verdict(tlVerdict(ref.GetVerdict()))))
+		args := []tl.Arg{tlArg("verdict", tl.Verdict(tlVerdict(ref.GetVerdict())))}
+		if reason != "" {
+			args = append(args, tlArg("reason", tl.String(reason)))
+		}
+		exec.TLogFrom(l, exec.TLComponent(ref), "tliCTerminated", "", 0, args...)
 	}
 }
 
