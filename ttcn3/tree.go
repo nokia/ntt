@@ -540,12 +540,6 @@ func (f *finder) typeOf(def *Node) []*Node {
 				q = append(q, &Node{Node: n.Return.Type, Tree: def.Tree})
 			}
 
-		case *syntax.IndexExpr:
-			q = append(q, f.lookup(n, def.Tree)...)
-
-		case syntax.Expr:
-			q = append(q, f.lookup(n, def.Tree)...)
-
 		case *syntax.RefSpec:
 			r := f.lookup(n.X, def.Tree)
 			for _, v := range r {
@@ -568,6 +562,13 @@ func (f *finder) typeOf(def *Node) []*Node {
 			*syntax.MapTypeDecl,
 			*syntax.ClassTypeDecl:
 			result = append(result, &Node{Node: n, Tree: def.Tree})
+
+		// After the nested type definitions, which are expressions too.
+		case *syntax.IndexExpr:
+			q = append(q, f.lookup(n, def.Tree)...)
+
+		case syntax.Expr:
+			q = append(q, f.lookup(n, def.Tree)...)
 		}
 
 		prev = def.Node

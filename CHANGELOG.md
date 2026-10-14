@@ -378,6 +378,15 @@ Independent of the two clocks:
   message left the message without them, for the next to fail on; the
   template of a `subset` lost its own. An element is now paired with
   another when the first it matched leaves one without a partner.
+- **A declaration may define its type** (ETSI 11.2, `TypeOrNestedTypeDef`):
+  `var record of integer v := {1, 2, 3}`, and so constants, template
+  variables, module parameters, component variables, formal parameters,
+  return types and a signature's exceptions. None of these parsed. The
+  type is the one a named definition would give: a record written
+  positionally has its fields, an enumerated type's values are known. A
+  template definition takes a named type, as before (15.3).
+- **`ntt list modulepars` lists the module parameters.** It listed none,
+  and panicked on a `modulepar { ... }` group.
 - **An altstep alternative without a block may precede a guarded one**
   (ES 201 873-1 A.1.6.8.2, `GuardStatement`). In `[] as1() [g] t.timeout
   {}` the parser read `[g]` as an index of the altstep's result, and the

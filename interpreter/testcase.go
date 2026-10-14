@@ -281,6 +281,9 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 	env = newModuleScope(root, modNode)
 	defs := flattenModuleDefs(modNode.Defs, []*syntax.WithSpec{modNode.With})
 	for _, pass := range []int{0, 1} {
+		if pass == 1 {
+			bindNestedTypes(env, modNode)
+		}
 		for _, fd := range defs {
 			d := fd.def
 			if _, ok := d.Def.(*syntax.ControlPart); ok {
@@ -2036,6 +2039,9 @@ func initModuleDefs(root runtime.Scope, mod *syntax.Module) {
 	defer publishModuleScope(root, env)
 	defs := flattenModuleDefs(mod.Defs, []*syntax.WithSpec{mod.With})
 	for _, pass := range []int{0, 1} {
+		if pass == 1 {
+			bindNestedTypes(env, mod)
+		}
 		for _, fd := range defs {
 			d := fd.def
 			if d == nil {
@@ -3879,4 +3885,42 @@ func takeAltstepResult() runtime.Object {
 		return r
 	}
 	return nil
+}
+
+// bindNestedTypes binds the nested type definitions the module's
+// declarations, parameters and return values have for a type
+// (TypeOrNestedTypeDef): `var record of integer v` declares v of the
+// type `type record of integer T` would define, bound under the name
+// nestedTypeName gives it, as the module's named types are bound.
+func bindNestedTypes(env runtime.Scope, mod *syntax.Module) {
+	for _, d := range nestedTypeDecls(mod) {
+		eval(d, env)
+		bindDeclNameScoped(env, d, []*syntax.WithSpec{mod.With})
+	}
+}
+
+// nestedTypeDecls is the type definitions bindNestedTypes binds for a
+// module, one for each notation of its nested types.
+func nestedTypeDecls(mod *syntax.Module) []syntax.Node {
+	var decls []syntax.Node
+	seen := map[string]bool{}
+	for _, t := range syntax.NestedTypes(mod) {
+		name := nestedTypeName(t)
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		id := &syntax.Ident{Tok: nameTok(name)}
+		switch spec := t.(type) {
+		case *syntax.StructSpec:
+			decls = append(decls, &syntax.StructTypeDecl{KindTok: spec.KindTok, Name: id, LBrace: spec.LBrace, Fields: spec.Fields, RBrace: spec.RBrace})
+		case *syntax.EnumSpec:
+			decls = append(decls, &syntax.EnumTypeDecl{EnumTok: spec.Tok, Name: id, LBrace: spec.LBrace, Enums: spec.Enums, RBrace: spec.RBrace})
+		case *syntax.MapSpec:
+			decls = append(decls, &syntax.MapTypeDecl{Spec: spec, Name: id})
+		case *syntax.ListSpec:
+			decls = append(decls, &syntax.SubTypeDecl{Field: &syntax.Field{Type: spec, Name: id}})
+		}
+	}
+	return decls
 }

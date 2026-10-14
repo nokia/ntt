@@ -5452,7 +5452,7 @@ func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 			}
 			return nil
 		}
-		if valueType, ok := env.Get(syntax.Name(vd.Type)); ok {
+		if valueType, ok := env.Get(typeExprName(vd.Type)); ok {
 			switch n := forceThunk(valueType).(type) {
 			case *runtime.TypeDesc:
 				// Type-directed coercion of a positional record/set
@@ -5561,7 +5561,7 @@ func coerceToDeclaredStruct(val runtime.Object, typeExpr, valueExpr syntax.Expr,
 	if typeExpr == nil || val == nil {
 		return val
 	}
-	binding, ok := env.Get(syntax.Name(typeExpr))
+	binding, ok := env.Get(typeExprName(typeExpr))
 	if !ok {
 		return val
 	}
@@ -6044,9 +6044,39 @@ func recordDeclaredType(env runtime.Scope, name string, typ syntax.Expr) {
 	if env == nil || name == "" || typ == nil {
 		return
 	}
-	if tn := syntax.Name(typ); tn != "" {
+	if tn := typeExprName(typ); tn != "" {
 		env.Set(declaredTypeKey(name), runtime.NewCharstring(tn))
 	}
+}
+
+// typeExprName is the name of the type a declaration's type expression
+// names, or the one its nested type definition is bound under.
+func typeExprName(t syntax.Expr) string {
+	if name := nestedTypeName(t); name != "" {
+		return name
+	}
+	return syntax.Name(t)
+}
+
+// nestedTypeName names a nested type definition of a declaration by its
+// notation, `record of integer` (bindNestedTypes); "" for anything else.
+func nestedTypeName(t syntax.Expr) string {
+	switch t.(type) {
+	case *syntax.StructSpec, *syntax.ListSpec, *syntax.MapSpec, *syntax.EnumSpec:
+	default:
+		return ""
+	}
+	var b strings.Builder
+	prev := ""
+	for tok := t.FirstTok(); tok != nil && tok.Pos() < t.End(); tok = tok.NextTok() {
+		s := tok.String()
+		if b.Len() > 0 && s != "," && s != "}" && s != ")" && prev != "{" && prev != "(" {
+			b.WriteByte(' ')
+		}
+		b.WriteString(s)
+		prev = s
+	}
+	return b.String()
 }
 
 // declaredVariantKey names the env binding recording the `variant`
@@ -7403,7 +7433,7 @@ func coerceWritebackStruct(val runtime.Object, param *syntax.FormalPar, lhs synt
 	if param == nil || param.Type == nil {
 		return val
 	}
-	src := structDeclOf(lookupTypeDesc(syntax.Name(param.Type), env))
+	src := structDeclOf(lookupTypeDesc(typeExprName(param.Type), env))
 	dst := structDeclOf(lvalueTypeDesc(lhs, env))
 	if out, ok := remapStructByPosition(val, src, dst); ok {
 		return out

@@ -873,6 +873,31 @@ func (p *parser) parseRef() Expr {
 	return id
 }
 
+// ExceptionSpec ::= "exception" "(" TypeOrNestedTypeDef {"," TypeOrNestedTypeDef} [","] ")"
+//
+// A type of the list that is a reference is parsed as an expression is
+// (parseParenExpr).
+func (p *parser) parseExceptionList() *ParenExpr {
+	item := func() Expr {
+		switch p.tok {
+		case RECORD, SET, UNION, MAP, ENUMERATED:
+			return p.parseTypeOrNestedTypeDef()
+		}
+		return p.parseExpr()
+	}
+	x := &ParenExpr{LParen: p.expect(LPAREN)}
+	x.List = append(x.List, item())
+	for p.tok == COMMA {
+		p.consume()
+		if p.tok == RPAREN {
+			break
+		}
+		x.List = append(x.List, item())
+	}
+	x.RParen = p.expect(RPAREN)
+	return x
+}
+
 func (p *parser) parseParenExpr() *ParenExpr {
 	return &ParenExpr{
 		LParen: p.expect(LPAREN),
@@ -1148,6 +1173,22 @@ func (p *parser) parseRefList() []Expr {
 		p.consume()
 	}
 	return l
+}
+
+// TypeOrNestedTypeDef ::= Type | NestedTypeDef
+//
+// The type of a declaration, a parameter or a return value may be a
+// type definition of its own: `var record of integer v`.
+func (p *parser) parseTypeOrNestedTypeDef() Expr {
+	switch p.tok {
+	case RECORD, SET, UNION, MAP, ENUMERATED:
+		if x, ok := p.parseTypeSpec().(Expr); ok {
+			p.Root.nested = append(p.Root.nested, x)
+			return x
+		}
+		return &ErrorNode{From: p.peek(1), To: p.peek(1)}
+	}
+	return p.parseTypeRef()
 }
 
 func (p *parser) parseTypeRef() Expr {
@@ -2281,7 +2322,7 @@ func (p *parser) parseModulePar() Decl {
 		for p.tok != RBRACE && p.tok != EOF {
 			d := new(ValueDecl)
 			d.TemplateRestriction = p.parseRestrictionSpec()
-			d.Type = p.parseTypeRef()
+			d.Type = p.parseTypeOrNestedTypeDef()
 			d.Decls = p.parseDeclList()
 			p.expectSemi(d.Decls[len(d.Decls)-1].LastTok())
 			x.Decls = append(x.Decls, d)
@@ -2293,7 +2334,7 @@ func (p *parser) parseModulePar() Decl {
 
 	x := &ValueDecl{KindTok: tok}
 	x.TemplateRestriction = p.parseRestrictionSpec()
-	x.Type = p.parseTypeRef()
+	x.Type = p.parseTypeOrNestedTypeDef()
 	x.Decls = p.parseDeclList()
 	x.With = p.parseWith()
 	return x
@@ -2325,7 +2366,7 @@ func (p *parser) parseValueDecl() *ValueDecl {
 		}
 	}
 	if tok := p.peek(2).Kind(); tok != ASSIGN && tok != IN {
-		x.Type = p.parseTypeRef()
+		x.Type = p.parseTypeOrNestedTypeDef()
 	}
 	x.Decls = p.parseDeclList()
 	x.With = p.parseWith()
@@ -2425,7 +2466,7 @@ func (p *parser) parseFuncDecl() *FuncDecl {
 	// `function f() ... exception(T1, T2) { ... }`.
 	if p.tok == EXCEPTION {
 		x.ExceptionTok = p.consume()
-		x.Exception = p.parseParenExpr()
+		x.Exception = p.parseExceptionList()
 	}
 
 	if p.tok == LBRACE {
@@ -2525,7 +2566,7 @@ func (p *parser) parseExtFuncDecl() *FuncDecl {
 	// (ETSI 5.2.2): `external function f() exception(T);`.
 	if p.tok == EXCEPTION {
 		x.ExceptionTok = p.consume()
-		x.Exception = p.parseParenExpr()
+		x.Exception = p.parseExceptionList()
 	}
 	x.With = p.parseWith()
 	return x
@@ -2559,7 +2600,7 @@ func (p *parser) parseSignatureDecl() *SignatureDecl {
 
 	if p.tok == EXCEPTION {
 		x.ExceptionTok = p.consume()
-		x.Exception = p.parseParenExpr()
+		x.Exception = p.parseExceptionList()
 	}
 	x.With = p.parseWith()
 	return x
@@ -2594,7 +2635,7 @@ func (p *parser) parseReturn() *ReturnSpec {
 	if p.tok == MODIF {
 		x.Modif = p.consume()
 	}
-	x.Type = p.parseTypeRef()
+	x.Type = p.parseTypeOrNestedTypeDef()
 	return x
 }
 
@@ -2648,7 +2689,7 @@ func (p *parser) parseFormalPar() *FormalPar {
 	for p.tok == MODIF {
 		p.consume()
 	}
-	x.Type = p.parseTypeRef()
+	x.Type = p.parseTypeOrNestedTypeDef()
 	x.Name = p.parseName()
 
 	if p.tok == LBRACK {

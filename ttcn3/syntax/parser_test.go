@@ -467,3 +467,47 @@ func TestAltstepGuardWithoutBlock(t *testing.T) {
 		}
 	}
 }
+
+// TestNestedTypeOfADeclaration: a declaration, a parameter and a return
+// value may have a type definition of their own (ES 201 873-1 A.1.6,
+// TypeOrNestedTypeDef): `var record of integer v`.
+func TestNestedTypeOfADeclaration(t *testing.T) {
+	for src, want := range map[string]string{
+		`var record of integer v := {1, 2}`:              "*syntax.ListSpec",
+		`var set length(2) of charstring v`:              "*syntax.ListSpec",
+		`const record { integer f } c := {f := 1}`:       "*syntax.StructSpec",
+		`var template union { integer i } t := {i := ?}`: "*syntax.StructSpec",
+		`var map from charstring to integer m`:           "*syntax.MapSpec",
+		`var enumerated { e1, e2 } e := e1`:              "*syntax.EnumSpec",
+		`modulepar record of integer mp := {}`:           "*syntax.ListSpec",
+		`var R v`:                                        "*syntax.Ident",
+	} {
+		p := NewParser([]byte(src))
+		var typ Expr
+		if p.tok == MODULEPAR {
+			typ = p.parseModulePar().(*ValueDecl).Type
+		} else {
+			typ = p.parseValueDecl().Type
+		}
+		if err := p.Err(); err != nil {
+			t.Errorf("%s: %v", src, err)
+			continue
+		}
+		if got := fmt.Sprintf("%T", typ); got != want {
+			t.Errorf("%s: type is %s, want %s", src, got, want)
+		}
+	}
+	for _, src := range []string{
+		`function f(record of integer p, in set { integer f } q) return record of integer {}`,
+		`template R t(record of integer p) := {f := p[0]}`,
+		`signature S() exception (record of integer, charstring, M.T)`,
+		`signature S() exception (integer, record of integer,)`,
+		`type component C { var record of integer v }`,
+	} {
+		p := NewParser([]byte(src))
+		p.parseModuleDef()
+		if err := p.Err(); err != nil {
+			t.Errorf("%s: %v", src, err)
+		}
+	}
+}

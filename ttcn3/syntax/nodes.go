@@ -53,6 +53,10 @@ type Root struct {
 	tokens   []token
 	errs     []error
 
+	// nested holds the nested type definitions that declarations have
+	// for a type, as the parser met them (NestedTypes).
+	nested []Expr
+
 	// lineCache memoises the line lookup result from the previous
 	// Position() call. Most LSP traversals visit tokens in source
 	// order, so the next position lands either on the same line or
@@ -138,6 +142,24 @@ func (n *Root) LastTok() Token {
 		return nil
 	}
 	return &tokenNode{n, len(n.tokens) - 1}
+}
+
+// NestedTypes returns the nested type definitions the declarations,
+// parameters and return values of module m have for a type
+// (TypeOrNestedTypeDef), `record of integer` of `var record of integer
+// v`, in the order the parser finished them.
+func NestedTypes(m *Module) []Expr {
+	tok, ok := m.Tok.(*tokenNode)
+	if !ok || tok.Root == nil {
+		return nil
+	}
+	var l []Expr
+	for _, x := range tok.Root.nested {
+		if m.Pos() <= x.Pos() && x.End() <= m.End() {
+			l = append(l, x)
+		}
+	}
+	return l
 }
 
 func (n *Root) Inspect(f func(Node) bool) { n.NodeList.Inspect(f) }
@@ -656,6 +678,13 @@ func (x *ListSpec) typeSpecNode()      {}
 func (x *MapSpec) typeSpecNode()       {}
 func (x *EnumSpec) typeSpecNode()      {}
 func (x *BehaviourSpec) typeSpecNode() {}
+
+// A nested type definition is also the type of a declaration
+// (TypeOrNestedTypeDef): `var record of integer v`.
+func (x *StructSpec) exprNode() {}
+func (x *ListSpec) exprNode()   {}
+func (x *MapSpec) exprNode()    {}
+func (x *EnumSpec) exprNode()   {}
 
 type (
 	// A ValueDecl represents a value declaration.

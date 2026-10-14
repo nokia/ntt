@@ -771,14 +771,27 @@ changed only as intended. Found, older than this work:
 - Found fixing that, older than it: a declaration of a nested type,
   `var record of integer a := {1, 2, 3}` (ES 201 873-1 11.2; also const,
   template, module parameter, formal parameter and return type, A.1.6
-  `TypeOrNestedTypeDef`), does not parse. Two `set of` values were
+  `TypeOrNestedTypeDef`), does not parse (*fixed 2026-10-14*). A nested
+  type is bound once in its module, under its notation, so two whose
+  notations agree are one type even where a `length(n)` names another
+  `n` (subtype constraints are not checked yet, of named types either);
+  an enumerated one gets no enum-to-integer diagnostic, and the editor's
+  document symbols show no type for it. An enumerated type nested in a
+  field, `record { enumerated { d1, d2 } f }`, has no values: `{f := d2}`
+  is "identifier not found". A catch's type is not checked against the
+  exception raised: `p.catch(S, charstring:?)` catches a value of a
+  record of type `S` may raise. Two `set of` values were
   equal only when all their elements were one value (*fixed 2026-10-14*);
   a variable of a `set of` type still holds its value as a record of, so
   `s == {"b", "a"}` is false for `var SC s := {"a", "b"}` (a template of
   the type, a field and `m.from` are sets). A record written positionally
   and assigned to a variable declared before, `b := rr[1]` (also `for (b
   in rr)`), has no field names, so `b.f` is undefined; `var R b := rr[1]`
-  has them. Only a map literal with charstring keys is a map: `var MT m
+  has them; so has neither a component variable initialised so, `var R
+  cv := {1, 2}` in the component type, nor a parameter given one, `f({7})`
+  for `function f(R p)`. `ntt check` reports missing-call-parens on a
+  field named as a function is, `p.f` beside `function f`. Only a map
+  literal with charstring keys is a map: `var MT m
   := {}` then `m["a"] := 1` stays `{}`, and integer keys make a record of
   (`{ [1] := "a" }` is `{-, "a"}`), so its `m.from` is undefined.
 - Found reviewing that fix, older than it: `all from p.getcall` takes the
