@@ -759,14 +759,21 @@ changed only as intended. Found, older than this work:
 - Found reviewing the 2026-10-14 fixes, older than them: a `repeat` in
   an `if` or a loop of an alt branch was lost unless the branch's last
   statement (*fixed 2026-10-14*); `for (x in a)` is parsed but not
-  executed ("unknown syntax node type"); like-named signatures of two
+  executed ("unknown syntax node type") (*fixed 2026-10-14*, with map
+  `m.from` / `m.to`, which had no value); like-named signatures of two
   modules are one to a getreply, the recorded name being unqualified;
   `connect(mtc:a, mtc:b)` delivers nothing; a parameterised template or
   one a function returns gives the 22.3.1 h filter no signature; `var T
   v := {3, 4}` of `type integer T[1..2]` ignores the lower bound (so does
   an `in` or `inout` parameter of T), where an assignment keeps it; an
   alternative `[] as1()` followed by a guarded one parses as an index,
-  `as1()[guard]`, and panics.
+  `as1()[guard]`, and panics (*fixed 2026-10-14*).
+- Found fixing that, older than it: a declaration of a nested type,
+  `var record of integer a := {1, 2, 3}` (ES 201 873-1 11.2; also const,
+  template, module parameter, formal parameter and return type, A.1.6
+  `TypeOrNestedTypeDef`), does not parse. Two `set of` values are unequal
+  when their elements are in another order: `s == {"b", "a"}` is false
+  for `s := {"a", "b"}`.
 - Found reviewing that fix, older than it: `all from p.getcall` takes the
   calls when every element *with a queue* has one, so an element no call
   ever reached is not asked (`all from` is no form of getcall in 22.3.2;

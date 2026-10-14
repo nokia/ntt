@@ -360,6 +360,16 @@ Independent of the two clocks:
 - **A `repeat` in an `if` or a loop repeats the alt** (20.2). Unless it
   was a branch's last statement, the statements after it ran and the alt
   ended.
+- **`for (x in a)` runs** (ETSI 19.4.2). The range-based loop was parsed
+  and then refused as an unknown statement. It iterates a record of, set
+  of, array or string, evaluating the range once; a variable declared in
+  its header is a new one in each iteration, one declared outside keeps
+  the last element. A map's keys and values, `m.from` and `m.to`
+  (6.2.15.5, 6.2.15.6), are lists in the order of the keys.
+- **An altstep alternative without a block may precede a guarded one**
+  (ES 201 873-1 A.1.6.8.2, `GuardStatement`). In `[] as1() [g] t.timeout
+  {}` the parser read `[g]` as an index of the altstep's result, and the
+  run panicked.
 - **A call made with a template passed as a parameter gets its reply.**
   An unqualified getreply in its block (22.3.1 h) compared the
   parameter's name with the reply's signature and refused it.

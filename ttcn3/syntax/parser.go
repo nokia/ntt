@@ -162,6 +162,9 @@ type parser struct {
 	// loops across multiple parser functions during error recovery)
 	syncPos int // last synchronization position
 	syncCnt int // number of advance calls without progress
+
+	// Source position of the alt guard operation being parsed, 0 if none
+	guardOp int
 }
 
 func newRoot(src []byte) *Root {
@@ -703,22 +706,29 @@ func (p *parser) parseUnaryExpr() Expr {
 //	["@index" ["value"] PrimaryExpr]
 //	["timestamp"        PrimaryExpr]
 func (p *parser) parsePrimaryExpr() Expr {
-	return p.parsePrimaryExprTail(p.parseOperand())
+	guardOp := p.guardOp != 0 && p.pos(1) == p.guardOp
+	return p.parsePrimaryExprTail(p.parseOperand(), guardOp)
 }
 
-func (p *parser) parsePrimaryExprTail(x Expr) Expr {
+// parsePrimaryExprTail parses the field references following x. When x
+// begins an alt guard operation, a "[" after a call opens the next guard
+// instead of indexing the result, as in `[] as1() [g] t.timeout {}`.
+func (p *parser) parsePrimaryExprTail(x Expr, guardOp bool) Expr {
+	afterCall := false
 L:
 	for {
 		switch p.tok {
 		case DOT:
 			x = p.parseSelectorExpr(x)
+			afterCall = false
 		case LBRACK:
+			if guardOp && afterCall {
+				break L
+			}
 			x = p.parseIndexExpr(x)
 		case LPAREN:
 			x = p.parseCallExpr(x)
-			// Not supporting chained function calls like 'get().x'
-			// eleminates conflicts with alt-guards.
-			break
+			afterCall = true
 		default:
 			break L
 		}
@@ -1681,7 +1691,7 @@ func (p *parser) parseWithQualifier() Expr {
 	case IDENT:
 		return p.parseTypeRef()
 	case LBRACK:
-		return p.parsePrimaryExprTail(nil)
+		return p.parsePrimaryExprTail(nil, false)
 	case TYPE, TEMPLATE, CONST, ALTSTEP, TESTCASE, FUNCTION, SIGNATURE, MODULEPAR, GROUP:
 		x := new(DefKindExpr)
 		x.KindTok = p.consume()
@@ -3002,7 +3012,10 @@ func (p *parser) parseAltGuard() *CommClause {
 		x.X = p.parseExpr()
 	}
 	x.RBrack = p.expect(RBRACK)
+	outer := p.guardOp
+	p.guardOp = p.pos(1)
 	x.Comm = p.parseSimpleStmt()
+	p.guardOp = outer
 	if p.tok == LBRACE {
 		x.Body = p.parseBlockStmt()
 	}

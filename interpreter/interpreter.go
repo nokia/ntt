@@ -653,6 +653,15 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 			return left
 		}
 
+		// The keys of a map, m.from, and its values, m.to (ETSI
+		// 6.2.15.5, 6.2.15.6), in the order of the keys, so that a run
+		// repeats and m.to[i] is the value of m.from[i].
+		if m, ok := left.(*runtime.Map); ok {
+			if sel, ok := n.Sel.(*syntax.Ident); ok && (sel.String() == "from" || sel.String() == "to") {
+				return mapKeysOrValues(m, sel.String() == "from")
+			}
+		}
+
 		// Accessing a member through a null object reference is a
 		// dynamic error (ETSI 5.1.2.2): the reference points at no
 		// object, so there is no field, method or nested class to
@@ -1881,6 +1890,9 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 			}
 
 		}
+
+	case *syntax.ForRangeStmt:
+		return evalForRange(n, env)
 
 	case *syntax.BranchStmt:
 		switch n.Tok.Kind() {
@@ -4449,6 +4461,102 @@ func needBreak(v interface{}) bool {
 		// it — an if's, a loop's — for the alt, which re-evaluates.
 		return v == runtime.Break || v == runtime.Continue || v == runtime.Repeat
 	}
+}
+
+// mapKeysOrValues is m.from (keys) or m.to (values), in the order of
+// the keys' notation; a list as a set of variable holds one.
+func mapKeysOrValues(m *runtime.Map, keys bool) *runtime.List {
+	pairs := m.Pairs()
+	sort.SliceStable(pairs, func(i, j int) bool {
+		return pairs[i].Key.Inspect() < pairs[j].Key.Inspect()
+	})
+	out := make([]runtime.Object, len(pairs))
+	for i, p := range pairs {
+		if keys {
+			out[i] = p.Key
+		} else {
+			out[i] = p.Value
+		}
+	}
+	return runtime.NewList(out...)
+}
+
+// evalForRange runs a range-based loop (ETSI 19.4.2). The range is
+// evaluated once, before the loop; each element in turn is assigned to
+// the iteration variable, an uninitialised one leaving it unbound. A
+// variable the header declares is a new one in every iteration, scoped
+// to the block; one declared outside keeps the last element.
+func evalForRange(n *syntax.ForRangeStmt, env runtime.Scope) runtime.Object {
+	rng := eval(n.Range, env)
+	if runtime.IsError(rng) {
+		return rng
+	}
+	var elems []runtime.Object
+	switch r := runtime.CopyValue(rng).(type) {
+	case *runtime.List:
+		elems = r.Elements
+	case *runtime.String, *runtime.Binarystring:
+		l := r.(interface{ Len() int }).Len()
+		for i := 0; i < l; i++ {
+			e := indexValueOf(r, runtime.NewInt(i), env)
+			if runtime.IsError(e) {
+				return e
+			}
+			elems = append(elems, e)
+		}
+	default:
+		return runtime.Errorf("range of a for loop is not a record of, set of, array or string: %s", rng.Inspect())
+	}
+
+	var ref syntax.Expr
+	decl, isDecl := n.Init.(*syntax.DeclStmt)
+	if isDecl {
+		vd, ok := decl.Decl.(*syntax.ValueDecl)
+		if !ok || len(vd.Decls) != 1 || vd.Decls[0].Name == nil {
+			return runtime.Errorf("for loop declares no iteration variable")
+		}
+		ref = vd.Decls[0].Name
+	} else if es, ok := n.Init.(*syntax.ExprStmt); ok {
+		ref = es.Expr
+	}
+
+	for _, e := range elems {
+		if r := loopStopped(env); r != nil {
+			return r
+		}
+		iterEnv := env
+		if isDecl {
+			iterEnv = runtime.NewEnv(env)
+			if r := eval(decl, iterEnv); runtime.IsError(r) {
+				return r
+			}
+		}
+		if e == nil {
+			e = runtime.Undefined
+		}
+		assignToLHS(ref, e, iterEnv)
+
+		result := eval(n.Body, iterEnv)
+		switch {
+		case runtime.IsError(result):
+			return result
+		case result == runtime.Break:
+			return nil
+		case result == runtime.Continue:
+		default:
+			if _, ok := result.(*runtime.ReturnValue); ok {
+				return result
+			}
+			if _, ok := result.(*runtime.Goto); ok {
+				return result
+			}
+			// A repeat leaves the loop for the alt (20.2).
+			if result == runtime.Repeat {
+				return result
+			}
+		}
+	}
+	return nil
 }
 
 // evalBlockStmts evaluates a statement list with `goto`/`label` support

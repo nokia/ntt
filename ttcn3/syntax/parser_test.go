@@ -1,6 +1,7 @@
 package syntax
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -425,5 +426,44 @@ func TestRedirectValueAndParam(t *testing.T) {
 	p := NewParser([]byte(`p.getreply(S:{} value ?) -> value v param (x) sender s`))
 	if r, _ := p.parseExpr().(*RedirectExpr); r == nil || r.Sender == nil {
 		t.Errorf("sender part lost after value and param")
+	}
+}
+
+// TestAltstepGuardWithoutBlock: an altstep alternative needs no block
+// (ES 201 873-1 A.1.6.8.2, GuardStatement), so in `[] as1() [g] ...` the
+// "[" opens the next guard. Elsewhere a call's result may still be
+// indexed or selected (OpCall).
+func TestAltstepGuardWithoutBlock(t *testing.T) {
+	src := `alt { [] as1() [g] t.timeout {} [] M.as2(f()[1]) [else] {} [] pa[1].receive(m(2).f) {} [x] as3() { y := 1 } }`
+	p := NewParser([]byte(src))
+	alt, ok := p.parseStmt().(*AltStmt)
+	if err := p.Err(); err != nil || !ok {
+		t.Fatalf("not an alt (%v)", err)
+	}
+	var comms []string
+	for _, s := range alt.Body.Stmts {
+		cc, ok := s.(*CommClause)
+		if !ok {
+			t.Fatalf("%T in alt body", s)
+		}
+		if cc.Else != nil {
+			comms = append(comms, "else")
+			continue
+		}
+		comms = append(comms, fmt.Sprintf("%T", cc.Comm.(*ExprStmt).Expr))
+	}
+	want := "[*syntax.CallExpr *syntax.SelectorExpr *syntax.CallExpr else *syntax.CallExpr *syntax.CallExpr]"
+	if got := fmt.Sprint(comms); got != want {
+		t.Errorf("alternatives %s, want %s", got, want)
+	}
+	arg := alt.Body.Stmts[2].(*CommClause).Comm.(*ExprStmt).Expr.(*CallExpr).Args.List[0]
+	if _, ok := arg.(*IndexExpr); !ok {
+		t.Errorf("f()[1] in an argument is %T, want *IndexExpr", arg)
+	}
+	for src, want := range map[string]string{`f()[1]`: "*syntax.IndexExpr", `m(2).field1`: "*syntax.SelectorExpr"} {
+		p := NewParser([]byte(src))
+		if got := fmt.Sprintf("%T", p.parseExpr()); got != want {
+			t.Errorf("%s is %s, want %s", src, got, want)
+		}
 	}
 }

@@ -771,6 +771,10 @@ func scanStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.Stmt, arg
 		if args := scanBlockOrStmtForExecute(mod, tcName, s.Body, argEnv, visited); args != nil {
 			return args
 		}
+	case *syntax.ForRangeStmt:
+		if args := scanBlockOrStmtForExecute(mod, tcName, s.Body, argEnv, visited); args != nil {
+			return args
+		}
 	case *syntax.WhileStmt:
 		if args := scanBlockOrStmtForExecute(mod, tcName, s.Body, argEnv, visited); args != nil {
 			return args
