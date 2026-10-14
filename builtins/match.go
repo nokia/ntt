@@ -261,6 +261,11 @@ func match(a, b runtime.Object) (bool, error) {
 		case runtime.SUBSET:
 			return matchIsASubsetB(a.(*runtime.List), b)
 		default:
+			// A value list, `{...}`, matched against a set of is one
+			// of its type (6.2.3.0, 6.2.15.6).
+			if al, ok := a.(*runtime.List); ok && al.ListType == runtime.SET_OF && b.ListType == runtime.RECORD_OF {
+				return matchSetOf(al, b)
+			}
 			// A permutation(...) block consumes a contiguous run of
 			// values in any order, which the positional matchRecordOf
 			// can't express; route those patterns to the dedicated
@@ -994,33 +999,41 @@ func matchRecordOfPerm(vals, pats []runtime.Object) bool {
 // `fixed`). Values beyond len(fixed) are taken to be soaked by a `*`
 // inside the permutation, so they need not be covered.
 func permBijection(vals, fixed []runtime.Object) bool {
-	if len(vals) < len(fixed) {
-		return false
-	}
-	used := make([]bool, len(vals))
-	var assign func(fi int) bool
-	assign = func(fi int) bool {
-		if fi == len(fixed) {
-			return true
-		}
-		// An Undefined member is an unexpanded / unmodelled element
-		// (e.g. an `all from` operand the interpreter didn't spread).
-		// match() would treat it as a wildcard and over-accept, so a
-		// permutation that can't be faithfully expanded matches
-		// nothing - the NegSem all-from-restriction tests rely on this.
-		if fixed[fi] == runtime.Undefined {
+	// An Undefined member is an unexpanded / unmodelled element
+	// (e.g. an `all from` operand the interpreter didn't spread).
+	// match() would treat it as a wildcard and over-accept, so a
+	// permutation that can't be faithfully expanded matches
+	// nothing - the NegSem all-from-restriction tests rely on this.
+	for _, t := range fixed {
+		if t == runtime.Undefined {
 			return false
 		}
-		for vi := range vals {
-			if used[vi] {
-				continue
-			}
-			if ok, _ := match(vals[vi], fixed[fi]); ok {
-				used[vi] = true
-				if assign(fi + 1) {
+	}
+	return pairDistinct(len(fixed), len(vals), func(i, j int) bool {
+		ok, _ := match(vals[j], fixed[i])
+		return ok
+	})
+}
+
+// pairDistinct reports whether each i < n pairs with a distinct j < m
+// for which ok(i, j), trying another pairing when one leads nowhere.
+func pairDistinct(n, m int, ok func(i, j int) bool) bool {
+	if n > m {
+		return false
+	}
+	used := make([]bool, m)
+	var assign func(i int) bool
+	assign = func(i int) bool {
+		if i == n {
+			return true
+		}
+		for j := 0; j < m; j++ {
+			if !used[j] && ok(i, j) {
+				used[j] = true
+				if assign(i + 1) {
 					return true
 				}
-				used[vi] = false
+				used[j] = false
 			}
 		}
 		return false
@@ -1028,99 +1041,67 @@ func permBijection(vals, fixed []runtime.Object) bool {
 	return assign(0)
 }
 
-// matchSetOf returns true given sets match.
+// matchSetOf returns true given sets match: each element of the
+// template b, but a `*`, matches an element of its own of the value a,
+// and, without a `*`, there are no others.
 func matchSetOf(a, b *runtime.List) (bool, error) {
 	containsStar := false
-	temp := runtime.NewSetOf()
+	var tmpls []runtime.Object
 	for _, y := range b.Elements {
 		if y == runtime.AnyOrNone {
 			containsStar = true
 		} else {
-			temp.Elements = append(temp.Elements, y)
+			tmpls = append(tmpls, y)
 		}
 	}
-	if !containsStar && len(a.Elements) > len(temp.Elements) {
+	if !containsStar && len(a.Elements) > len(tmpls) {
 		return false, runtime.Errorf("First List contains more Elements than second")
 	}
-	if len(a.Elements) < len(temp.Elements) {
+	if len(a.Elements) < len(tmpls) {
 		return false, runtime.Errorf("First List doesn't contain enough elements")
 	}
-	return matchIsASupersetB(a, temp)
+	return supersetOf(a.Elements, tmpls)
 }
 
-// matchIsASupersetB returns true if a is a superset of b
+// matchIsASupersetB returns true if a is a superset of b: each element
+// of b matches an element of a of its own (B.1.2.6).
 func matchIsASupersetB(a, b *runtime.List) (bool, error) {
-	var (
-		cloneA    = a
-		isMissing = true
-		numOfAny  = 0
-	)
-
-	for _, valueB := range b.Elements {
-		if valueB == runtime.AnyOrNone {
-			continue
+	var tmpls []runtime.Object
+	for _, y := range b.Elements {
+		if y != runtime.AnyOrNone {
+			tmpls = append(tmpls, y)
 		}
-		if valueB == runtime.Any {
-			numOfAny++
-			continue
-		}
-		isMissing = true
-		for i, valueA := range cloneA.Elements {
-			if ok, _ := match(valueA, valueB); ok {
-				cloneA.Elements[i] = cloneA.Elements[len(cloneA.Elements)-1]
-				cloneA.Elements = cloneA.Elements[:len(cloneA.Elements)-1]
-				isMissing = false
-				break
-			}
-			isMissing = true
-		}
-		if !isMissing {
-			continue
-		}
-		return false, runtime.Errorf("At least one %s missing in first List", valueB)
 	}
-	if len(cloneA.Elements) < numOfAny {
-		return false, runtime.Errorf("%d element/s missing in first List", numOfAny-len(cloneA.Elements))
+	return supersetOf(a.Elements, tmpls)
+}
+
+// supersetOf pairs each template with a value of its own. Neither list
+// is changed: the value may be a message still queued, the template
+// one to match again.
+func supersetOf(vals, tmpls []runtime.Object) (bool, error) {
+	if !pairDistinct(len(tmpls), len(vals), func(i, j int) bool {
+		ok, _ := match(vals[j], tmpls[i])
+		return ok
+	}) {
+		return false, runtime.Errorf("no element of its own in the first list for each of the second")
 	}
 	return true, nil
 }
 
-// matchIsASubsetB returns true if a is a subset of b
+// matchIsASubsetB returns true if a is a subset of b: each element of a
+// is matched by an element of b of its own, any number by a `*`
+// (B.1.2.7).
 func matchIsASubsetB(a, b *runtime.List) (bool, error) {
-	var (
-		cloneB    = b
-		isMissing = true
-		isAny     = -1
-	)
-	for _, valueA := range a.Elements {
-		isMissing = true
-		for i, valueB := range cloneB.Elements {
-			if valueB == runtime.AnyOrNone {
-				return true, nil
-			}
-
-			if valueB == runtime.Any {
-				isAny = i
-			} else if ok, _ := match(valueA, valueB); ok {
-				cloneB.Elements[i] = cloneB.Elements[len(cloneB.Elements)-1]
-				cloneB.Elements = cloneB.Elements[:len(cloneB.Elements)-1]
-				isMissing = false
-				isAny = -1
-				break
-			}
-			isMissing = true
+	for _, y := range b.Elements {
+		if y == runtime.AnyOrNone {
+			return true, nil
 		}
-		if !isMissing {
-			continue
-		}
-		if isAny >= 0 {
-			cloneB.Elements[isAny] = cloneB.Elements[len(cloneB.Elements)-1]
-			cloneB.Elements = cloneB.Elements[:len(cloneB.Elements)-1]
-			isMissing = false
-			isAny = -1
-			continue
-		}
-		return false, runtime.Errorf("At least one %s or '?' missing in second List", valueA)
+	}
+	if !pairDistinct(len(a.Elements), len(b.Elements), func(i, j int) bool {
+		ok, _ := match(a.Elements[i], b.Elements[j])
+		return ok
+	}) {
+		return false, runtime.Errorf("no element of its own in the second list for each of the first")
 	}
 	return true, nil
 }

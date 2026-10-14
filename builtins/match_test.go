@@ -247,3 +247,41 @@ func makeObj(v interface{}) runtime.Object {
 		return v.(runtime.Object)
 	}
 }
+
+// TestSetMatchingKeepsItsOperands: matching a set of, superset or
+// subset changes neither the value — a message may still be queued —
+// nor the template, and finds a pairing where the first choice fails.
+// The value lost an element per matched template element, so a second
+// match of it failed.
+func TestSetMatchingKeepsItsOperands(t *testing.T) {
+	ints := func(v ...int) []runtime.Object {
+		var l []runtime.Object
+		for _, x := range v {
+			l = append(l, runtime.NewInt(x))
+		}
+		return l
+	}
+	oneOrTwo := &runtime.List{ListType: runtime.VALUE_LIST, Elements: ints(1, 2)}
+	for _, c := range []struct {
+		val, pat *runtime.List
+		want     bool
+	}{
+		{runtime.NewSetOf(ints(1, 2)...), runtime.NewList(ints(2, 1)...), true},
+		{runtime.NewSetOf(ints(1, 2)...), runtime.NewSetOf(ints(2, 1)...), true},
+		{runtime.NewSetOf(ints(1, 2, 2)...), runtime.NewSetOf(append([]runtime.Object{oneOrTwo}, ints(1, 2)...)...), true},
+		{runtime.NewSetOf(ints(1, 2)...), runtime.NewSetOf(ints(2, 2)...), false},
+		{runtime.NewSetOf(ints(1, 2, 3)...), runtime.NewSuperset(ints(3, 1)...), true},
+		{runtime.NewSetOf(ints(1, 3)...), runtime.NewSubset(ints(3, 2, 1)...), true},
+		{runtime.NewSetOf(ints(1, 1)...), runtime.NewSubset(ints(1, 2)...), false},
+	} {
+		val, pat := c.val.Inspect(), c.pat.Inspect()
+		for round := 0; round < 2; round++ {
+			if got, _ := match(c.val, c.pat); got != c.want {
+				t.Errorf("match(%s, %s) round %d: %v, want %v", val, pat, round, got, c.want)
+			}
+		}
+		if c.val.Inspect() != val || c.pat.Inspect() != pat {
+			t.Errorf("match(%s, %s) changed them to %s, %s", val, pat, c.val.Inspect(), c.pat.Inspect())
+		}
+	}
+}

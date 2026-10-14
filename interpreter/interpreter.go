@@ -4260,6 +4260,11 @@ var (
 	slotIndex  = &syntax.Ident{Tok: nameTok(slotIndexKey)}
 )
 
+// rangeElement names, in a scope of evalForRange, the element assigned.
+const rangeElementKey = "\x00ttcn3:range-element"
+
+var rangeElement = &syntax.Ident{Tok: nameTok(rangeElementKey)}
+
 // nameTok is an identifier token of the interpreter's own making, for an
 // expression it builds (slotParent); it stands nowhere in a source.
 type nameTok string
@@ -4274,6 +4279,20 @@ func (t nameTok) Inspect(f func(syntax.Node) bool) { f(t) }
 func (t nameTok) String() string                   { return string(t) }
 func (t nameTok) PrevTok() syntax.Token            { return nil }
 func (t nameTok) NextTok() syntax.Token            { return nil }
+
+// opTok is an operator token of the interpreter's own making (nameTok).
+type opTok syntax.Kind
+
+func (t opTok) Kind() syntax.Kind                { return syntax.Kind(t) }
+func (t opTok) Pos() int                         { return -1 }
+func (t opTok) End() int                         { return -1 }
+func (t opTok) FirstTok() syntax.Token           { return t }
+func (t opTok) LastTok() syntax.Token            { return t }
+func (t opTok) Children() []syntax.Node          { return nil }
+func (t opTok) Inspect(f func(syntax.Node) bool) { f(t) }
+func (t opTok) String() string                   { return syntax.Kind(t).String() }
+func (t opTok) PrevTok() syntax.Token            { return nil }
+func (t opTok) NextTok() syntax.Token            { return nil }
 
 // isPortReference reports, without evaluating anything, whether e names
 // a port: a port identifier, or an element of a port array (`pa[i]`).
@@ -4463,8 +4482,8 @@ func needBreak(v interface{}) bool {
 	}
 }
 
-// mapKeysOrValues is m.from (keys) or m.to (values), in the order of
-// the keys' notation; a list as a set of variable holds one.
+// mapKeysOrValues is m.from (keys) or m.to (values), a set of
+// (6.2.15.5, 6.2.15.6) in the order of the keys' notation.
 func mapKeysOrValues(m *runtime.Map, keys bool) *runtime.List {
 	pairs := m.Pairs()
 	sort.SliceStable(pairs, func(i, j int) bool {
@@ -4478,14 +4497,15 @@ func mapKeysOrValues(m *runtime.Map, keys bool) *runtime.List {
 			out[i] = p.Value
 		}
 	}
-	return runtime.NewList(out...)
+	return runtime.NewSetOf(out...)
 }
 
 // evalForRange runs a range-based loop (ETSI 19.4.2). The range is
 // evaluated once, before the loop; each element in turn is assigned to
-// the iteration variable, an uninitialised one leaving it unbound. A
-// variable the header declares is a new one in every iteration, scoped
-// to the block; one declared outside keeps the last element.
+// the iteration variable as by `var T x := e` or `x := e` (19.1.1), so
+// it takes the variable's type, an uninitialised one leaving it unbound.
+// A variable the header declares is a new one in every iteration,
+// scoped to the block; one declared outside keeps the last element.
 func evalForRange(n *syntax.ForRangeStmt, env runtime.Scope) runtime.Object {
 	rng := eval(n.Range, env)
 	if runtime.IsError(rng) {
@@ -4508,16 +4528,26 @@ func evalForRange(n *syntax.ForRangeStmt, env runtime.Scope) runtime.Object {
 		return runtime.Errorf("range of a for loop is not a record of, set of, array or string: %s", rng.Inspect())
 	}
 
+	// decl declares the variable without a value, init with the element
+	// (rangeElement); without them, ref is a variable of outside.
+	var decl, init *syntax.DeclStmt
 	var ref syntax.Expr
-	decl, isDecl := n.Init.(*syntax.DeclStmt)
-	if isDecl {
-		vd, ok := decl.Decl.(*syntax.ValueDecl)
+	switch x := n.Init.(type) {
+	case *syntax.DeclStmt:
+		vd, ok := x.Decl.(*syntax.ValueDecl)
 		if !ok || len(vd.Decls) != 1 || vd.Decls[0].Name == nil {
 			return runtime.Errorf("for loop declares no iteration variable")
 		}
+		d := *vd.Decls[0]
+		d.AssignTok, d.Value = opTok(syntax.ASSIGN), rangeElement
+		withValue := *vd
+		withValue.Decls = []*syntax.Declarator{&d}
+		decl, init = x, &syntax.DeclStmt{Decl: &withValue}
 		ref = vd.Decls[0].Name
-	} else if es, ok := n.Init.(*syntax.ExprStmt); ok {
-		ref = es.Expr
+	case *syntax.ExprStmt:
+		ref = x.Expr
+	default:
+		return runtime.Errorf("for loop has no iteration variable")
 	}
 
 	for _, e := range elems {
@@ -4525,16 +4555,28 @@ func evalForRange(n *syntax.ForRangeStmt, env runtime.Scope) runtime.Object {
 			return r
 		}
 		iterEnv := env
-		if isDecl {
+		if decl != nil {
 			iterEnv = runtime.NewEnv(env)
-			if r := eval(decl, iterEnv); runtime.IsError(r) {
-				return r
+		}
+		var r runtime.Object
+		switch {
+		case e == nil || e == runtime.Undefined:
+			// An uninitialised element leaves the variable unbound.
+			if decl != nil {
+				r = eval(decl, iterEnv)
 			}
+			assignToLHS(ref, runtime.Undefined, iterEnv)
+		case decl != nil:
+			iterEnv.Set(rangeElementKey, e)
+			r = eval(init, iterEnv)
+		default:
+			tmp := runtime.NewEnv(env)
+			tmp.Set(rangeElementKey, e)
+			r = evalAssign(ref, rangeElement, tmp)
 		}
-		if e == nil {
-			e = runtime.Undefined
+		if runtime.IsError(r) {
+			return r
 		}
-		assignToLHS(ref, e, iterEnv)
 
 		result := eval(n.Body, iterEnv)
 		switch {
@@ -4839,6 +4881,11 @@ func collectWrittenNames(body *syntax.BlockStmt) map[string]bool {
 				for _, a := range x.Args.List {
 					mark(a)
 				}
+			}
+		case *syntax.ForRangeStmt:
+			// for (v in a) assigns each element to v.
+			if es, ok := x.Init.(*syntax.ExprStmt); ok {
+				mark(es.Expr)
 			}
 		}
 		return true

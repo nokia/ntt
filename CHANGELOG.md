@@ -364,8 +364,20 @@ Independent of the two clocks:
   and then refused as an unknown statement. It iterates a record of, set
   of, array or string, evaluating the range once; a variable declared in
   its header is a new one in each iteration, one declared outside keeps
-  the last element. A map's keys and values, `m.from` and `m.to`
-  (6.2.15.5, 6.2.15.6), are lists in the order of the keys.
+  the last element, and each element is assigned as `var T x := e` or `x
+  := e` would assign it. A map's keys and values, `m.from` and `m.to`
+  (6.2.15.5, 6.2.15.6), are `set of` values.
+- **Two `set of` values are equal in any order**, a `set of` being an
+  unordered collection (ETSI 6.2.3.0; 6.2.15.6 matches a map's values
+  with `{0, 1, 0}` in an order left unspecified). They were equal only
+  when all their elements were one value, and a value list `{...}`
+  compared or matched with a `set of` was taken in order.
+- **Matching a `set of`, a `superset` or a `subset` changes neither side**
+  (B.1.2.6, B.1.2.7). The value lost an element for each template element
+  it matched, so an alternative whose template did not match a queued
+  message left the message without them, for the next to fail on; the
+  template of a `subset` lost its own. An element is now paired with
+  another when the first it matched leaves one without a partner.
 - **An altstep alternative without a block may precede a guarded one**
   (ES 201 873-1 A.1.6.8.2, `GuardStatement`). In `[] as1() [g] t.timeout
   {}` the parser read `[g]` as an index of the altstep's result, and the

@@ -1419,7 +1419,14 @@ func (l *List) Equal(obj Object) bool {
 		return EqualObjects(l.Elements, other.Elements)
 	}
 
-	return l.ListType == other.ListType && EqualObjectSet(l.Elements, other.Elements)
+	// A value list, `{...}`, compared with a set of is one of its type.
+	lt, ot := l.ListType, other.ListType
+	if lt == SET_OF && ot == RECORD_OF {
+		ot = SET_OF
+	} else if ot == SET_OF && lt == RECORD_OF {
+		lt = SET_OF
+	}
+	return lt == ot && EqualObjectSet(l.Elements, other.Elements)
 
 }
 
@@ -1946,12 +1953,18 @@ func EqualObjectSet(a, b []Object) bool {
 		return false
 	}
 
+	// Each element of a pairs with one of b equal to it: equality being
+	// an equivalence, the first free one will do.
+	paired := make([]bool, len(b))
+next:
 	for _, v := range a {
-		for _, v2 := range b {
-			if !v.Equal(v2) {
-				return false
+		for j, v2 := range b {
+			if !paired[j] && v.Equal(v2) {
+				paired[j] = true
+				continue next
 			}
 		}
+		return false
 	}
 	return true
 }

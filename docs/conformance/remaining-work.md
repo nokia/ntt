@@ -771,9 +771,16 @@ changed only as intended. Found, older than this work:
 - Found fixing that, older than it: a declaration of a nested type,
   `var record of integer a := {1, 2, 3}` (ES 201 873-1 11.2; also const,
   template, module parameter, formal parameter and return type, A.1.6
-  `TypeOrNestedTypeDef`), does not parse. Two `set of` values are unequal
-  when their elements are in another order: `s == {"b", "a"}` is false
-  for `s := {"a", "b"}`.
+  `TypeOrNestedTypeDef`), does not parse. Two `set of` values were
+  equal only when all their elements were one value (*fixed 2026-10-14*);
+  a variable of a `set of` type still holds its value as a record of, so
+  `s == {"b", "a"}` is false for `var SC s := {"a", "b"}` (a template of
+  the type, a field and `m.from` are sets). A record written positionally
+  and assigned to a variable declared before, `b := rr[1]` (also `for (b
+  in rr)`), has no field names, so `b.f` is undefined; `var R b := rr[1]`
+  has them. Only a map literal with charstring keys is a map: `var MT m
+  := {}` then `m["a"] := 1` stays `{}`, and integer keys make a record of
+  (`{ [1] := "a" }` is `{-, "a"}`), so its `m.from` is undefined.
 - Found reviewing that fix, older than it: `all from p.getcall` takes the
   calls when every element *with a queue* has one, so an element no call
   ever reached is not asked (`all from` is no form of getcall in 22.3.2;

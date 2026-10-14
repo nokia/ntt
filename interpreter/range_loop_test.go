@@ -64,7 +64,7 @@ func TestRangeLoop(t *testing.T) {
 			n := 0;
 			for (var charstring k in m.from) { n := n + m[k] }
 			for (var integer v in m.to) { n := n + 10 * v }
-			if (n != 33 or m.from != {"a", "b"}) { setverdict(fail, "map: ", n) }
+			if (n != 33 or m.from != {"b", "a"} or not match(m.to, {2, 1})) { setverdict(fail, "map: ", n) }
 			setverdict(pass)
 		}
 	}`, runtime.PassVerdict)
@@ -104,6 +104,75 @@ func TestAltstepAlternativeBeforeAGuard(t *testing.T) {
 			alt {
 				[] as1()
 				[g] t.timeout { setverdict(pass) }
+			}
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestRangeLoopAssigns: each element is assigned as `var T x := e` or
+// `x := e` would assign it: a declared variable takes its type, so a
+// record written positionally has its fields, and writing through the
+// loop's variable is a write, which an in parameter keeps to itself.
+func TestRangeLoopAssigns(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type record R { integer f, integer g optional }
+		type record of R RR;
+		type record of integer RI;
+		type component C { var RI cv := {1, 2} }
+		function fw(RI p) return integer { for (p[0] in RI:{9}) {} return p[0] }
+		function fr(R p) return integer { for (p.f in RI:{7}) {} return p.f }
+		testcase tc() runs on C {
+			var RR rr := {{1, omit}, {2, 3}};
+			var integer n := 0;
+			for (var R r in rr) { n := n + r.f }
+			if (n != 3) { setverdict(fail, "fields: ", n) }
+			var RI a := {1, 2};
+			var R r := {f := 1, g := omit};
+			if (fw(a) != 9 or fr(r) != 7 or fw(cv) != 9) { setverdict(fail, "loop variable not written") }
+			if (a != {1, 2} or r.f != 1 or cv != {1, 2}) { setverdict(fail, "in parameter aliased: ", a, r, cv) }
+			setverdict(pass)
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestMapKeysAndValuesAreSets: m.from and m.to are set of values
+// (6.2.15.5, 6.2.15.6), compared and matched in any order.
+func TestMapKeysAndValuesAreSets(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type component C {}
+		type map from charstring to integer MT;
+		type set of charstring SC;
+		testcase tc() runs on C {
+			var MT m := { ["a"] := 0, ["b"] := 0, ["c"] := 1 };
+			var SC s := {"c", "b", "a"};
+			if (m.from == {"c", "b", "a"} and m.from == s and match(m.to, {0, 1, 0}) and m.to != {1, 1, 0}) {
+				setverdict(pass)
+			} else {
+				setverdict(fail, m.from, m.to)
+			}
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestSetOfMessageSurvivesAFailedMatch: an alternative whose template
+// does not match leaves the message queued as it was, for the next to
+// match in any order (6.2.3, 22.2.2): matching it took its elements.
+func TestSetOfMessageSurvivesAFailedMatch(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type set of integer SI;
+		type record R { SI s, integer k }
+		type port P message { inout R }
+		type component C { port P p }
+		testcase tc() runs on C {
+			connect(mtc:p, mtc:p);
+			var R v;
+			p.send(R:{s := {1, 2}, k := 0});
+			alt {
+				[] p.receive(R:{s := {2, 1}, k := 1}) { setverdict(fail, "k := 1") }
+				[] p.receive(R:{s := {2, 1}, k := 0}) -> value v {
+					if (v == {s := {1, 2}, k := 0}) { setverdict(pass) } else { setverdict(fail, "changed: ", v) }
+				}
+				[] p.receive(R:?) -> value v { setverdict(fail, "not matched: ", v) }
 			}
 		}
 	}`, runtime.PassVerdict)
