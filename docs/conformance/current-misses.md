@@ -1,9 +1,9 @@
 # Current Conformance Misses
 
-Generated from `ntt-full.json` using the current workspace runner.
+Generated from `conformance-report.json` using the current workspace runner.
 
-- Summary: `ran 4948 files: 4797 matched, 23 skipped (97.40% match rate)`
-- Misses: `151`
+- Summary: `ran 4948 files: 4802 matched, 23 skipped (97.50% match rate)`
+- Misses: `146`
 
 ## Misses By Outcome
 
@@ -11,13 +11,13 @@ Generated from `ntt-full.json` using the current workspace runner.
 - `reject->none`: `24`
 - `->`: `23`
 - `pass->error`: `13`
-- `pass->fail`: `9`
+- `pass->fail`: `4`
 - `pass->none`: `3`
 - `pass->parse-error`: `2`
 
 ## Misses By Chapter
 
-- `core_language/22_communication_operations`: `41` (`pass->error`=12, `pass->fail`=9, `reject->none`=1, `reject->pass`=19)
+- `core_language/22_communication_operations`: `36` (`pass->error`=12, `pass->fail`=4, `reject->none`=1, `reject->pass`=19)
 - `core_language/06_types_and_values`: `34` (`->`=9, `reject->none`=10, `reject->pass`=15)
 - `core_language/05_basic_language_elements`: `20` (`->`=3, `reject->none`=1, `reject->pass`=16)
 - `core_language/15_templates`: `16` (`->`=2, `reject->none`=3, `reject->pass`=11)
@@ -50,17 +50,17 @@ Generated from `ntt-full.json` using the current workspace runner.
 - `core_language/22_communication_operations/2203_procedure_based_communication/220301_call_operation/NegSem_220301_CallOperation_020.ttcn`: `reject -> none`
 - `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/NegSem_220302_getcall_operation_012.ttcn`: `reject -> pass`
 - `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/NegSem_220302_getcall_operation_017.ttcn`: `reject -> pass`
-- `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_007.ttcn`: `pass -> fail` - The any from getcall operation didn't match for some reason
-- `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_010.ttcn`: `pass -> fail` - The any from getcall operation didn't match for some reason
-- `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_011.ttcn`: `pass -> fail` - The any from getcall operation didn't match for some reason
-- `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_012.ttcn`: `pass -> fail` - The any from getcall didn't match for some reason
-- `core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_013.ttcn`: `pass -> fail` - The any from getcall didn't match for some reason
 - `core_language/22_communication_operations/2203_procedure_based_communication/220303_reply_operation/NegSem_220303_ReplyOperation_008.ttcn`: `reject -> pass`
 - `core_language/22_communication_operations/2203_procedure_based_communication/220303_reply_operation/NegSem_220303_ReplyOperation_010.ttcn`: `reject -> pass`
 - `core_language/22_communication_operations/2203_procedure_based_communication/220304_getreply_operation/NegSem_220304_getreply_operation_009.ttcn`: `reject -> pass`
 - `core_language/22_communication_operations/2203_procedure_based_communication/220304_getreply_operation/NegSem_220304_getreply_operation_014.ttcn`: `reject -> pass`
 - `core_language/22_communication_operations/2203_procedure_based_communication/220304_getreply_operation/NegSem_220304_getreply_operation_016.ttcn`: `reject -> pass`
-- ... `21` more in `current-misses.json`
+- `core_language/22_communication_operations/2203_procedure_based_communication/220304_getreply_operation/NegSem_220304_getreply_operation_020.ttcn`: `reject -> pass`
+- `core_language/22_communication_operations/2203_procedure_based_communication/220305_raise_operation/NegSem_220305_raise_operation_004.ttcn`: `reject -> pass`
+- `core_language/22_communication_operations/2203_procedure_based_communication/220305_raise_operation/NegSem_220305_raise_operation_009.ttcn`: `reject -> pass`
+- `core_language/22_communication_operations/2203_procedure_based_communication/220306_catch_operation/NegSem_220306_catch_operation_014.ttcn`: `reject -> pass`
+- `core_language/22_communication_operations/2204_the_check_operation/NegSem_2204_the_check_operation_005.ttcn`: `reject -> pass`
+- ... `16` more in `current-misses.json`
 
 ### `core_language/06_types_and_values`
 

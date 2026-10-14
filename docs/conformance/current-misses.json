@@ -1,25 +1,25 @@
 {
- "summary": "ran 4948 files: 4797 matched, 23 skipped (97.40% match rate)",
- "source": "ntt-full.json",
- "miss_count": 151,
+ "summary": "ran 4948 files: 4802 matched, 23 skipped (97.50% match rate)",
+ "source": "conformance-report.json",
+ "miss_count": 146,
  "outcomes": {
   "reject->pass": 77,
   "reject->none": 24,
   "->": 23,
   "pass->error": 13,
-  "pass->fail": 9,
+  "pass->fail": 4,
   "pass->none": 3,
   "pass->parse-error": 2
  },
  "chapters": [
   {
    "chapter": "core_language/22_communication_operations",
-   "misses": 41,
+   "misses": 36,
    "outcomes": {
     "reject->pass": 19,
     "reject->none": 1,
-    "pass->fail": 9,
-    "pass->error": 12
+    "pass->error": 12,
+    "pass->fail": 4
    }
   },
   {
@@ -1012,46 +1012,6 @@
    "outcome": "reject->pass",
    "relpath": "core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/NegSem_220302_getcall_operation_017.ttcn",
    "message": ""
-  },
-  {
-   "chapter": "core_language/22_communication_operations",
-   "expected": "pass",
-   "actual": "fail",
-   "outcome": "pass->fail",
-   "relpath": "core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_007.ttcn",
-   "message": "The any from getcall operation didn't match for some reason"
-  },
-  {
-   "chapter": "core_language/22_communication_operations",
-   "expected": "pass",
-   "actual": "fail",
-   "outcome": "pass->fail",
-   "relpath": "core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_010.ttcn",
-   "message": "The any from getcall operation didn't match for some reason"
-  },
-  {
-   "chapter": "core_language/22_communication_operations",
-   "expected": "pass",
-   "actual": "fail",
-   "outcome": "pass->fail",
-   "relpath": "core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_011.ttcn",
-   "message": "The any from getcall operation didn't match for some reason"
-  },
-  {
-   "chapter": "core_language/22_communication_operations",
-   "expected": "pass",
-   "actual": "fail",
-   "outcome": "pass->fail",
-   "relpath": "core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_012.ttcn",
-   "message": "The any from getcall didn't match for some reason"
-  },
-  {
-   "chapter": "core_language/22_communication_operations",
-   "expected": "pass",
-   "actual": "fail",
-   "outcome": "pass->fail",
-   "relpath": "core_language/22_communication_operations/2203_procedure_based_communication/220302_getcall_operation/Sem_220302_getcall_operation_013.ttcn",
-   "message": "The any from getcall didn't match for some reason"
   },
   {
    "chapter": "core_language/22_communication_operations",
