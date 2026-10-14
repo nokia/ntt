@@ -919,6 +919,131 @@ func TestStrictInterleave_BodiesWait(t *testing.T) {
 				if (got == 11) { setverdict(pass) } else { setverdict(fail, got) }
 			}
 		}`,
+		"any from a timer array in a body": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2], t1 := 1.0, t2 := 0.5;
+				var charstring order := "";
+				ta[0].start(3.0); ta[1].start(4.0);
+				t1.start; t2.start;
+				interleave {
+					[] t2.timeout { any from ta.timeout; order := order & "ta," }
+					[] t1.timeout { order := order & "t1," }
+				}
+				if (order == "t1,ta,") { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
+		"timers of the array started and stopped by another branch": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2], t1 := 1.0, t2 := 0.5;
+				var charstring order := "";
+				var integer i := -1;
+				ta[0].start(5.0);
+				t1.start; t2.start;
+				interleave {
+					[] t2.timeout { any from ta.timeout -> @index value i; order := order & "ta," }
+					[] t1.timeout { ta[0].stop; ta[1].start(0.5); order := order & "t1," }
+				}
+				if (order == "t1,ta," and i == 1) { setverdict(pass) } else { setverdict(fail, order, i) }
+			}
+		}`,
+		// `break` in a body ends the interleave, and the others' bodies
+		// with it (20.4 d); the behaviour goes on after it.
+		"break in a body": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer t1 := 1.0, t2 := 0.5, t3 := 3.0;
+				var charstring order := "";
+				t1.start; t2.start; t3.start;
+				interleave {
+					[] t2.timeout { t3.timeout; order := order & "t3," }
+					[] t1.timeout { order := order & "t1,"; break }
+				}
+				if (order == "t1," and t3.running) { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
+		// A body waits for a timeout, as a statement or an alt, though no
+		// timer it waits on runs yet: another branch may start one.
+		"a timeout in a body started by another branch": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2], t1 := 1.0, t2 := 0.5;
+				var charstring order := "";
+				t1.start; t2.start;
+				interleave {
+					[] t2.timeout {
+						any from ta.timeout;
+						order := order & "ta,";
+						alt { [] any from ta.timeout { order := order & "alt," } }
+					}
+					[] t1.timeout { ta[0].start(0.5); ta[1].start(1.0); order := order & "t1," }
+				}
+				if (order == "t1,ta,alt,") { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
+		"break in an alt in a body": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer t1 := 1.0, t2 := 0.5, t3 := 0.7;
+				var charstring order := "";
+				t1.start; t2.start; t3.start;
+				interleave {
+					[] t2.timeout { alt { [] t3.timeout { order := order & "t3,"; break } }; order := order & "after," }
+					[] t1.timeout { order := order & "t1," }
+				}
+				if (order == "t3,after,t1,") { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
+		// A component's call is not a reception statement (20.4 a, NOTE
+		// 1): the body runs it to its end, the interleave with it.
+		"a call in a body": `module M {
+			type component C {}
+			function f() runs on C { timer d := 3.0; d.start; d.timeout }
+			testcase tc() runs on C {
+				var C c := C.create;
+				timer t1 := 1.0, t2 := 0.5;
+				var charstring order := "";
+				t1.start; t2.start;
+				interleave {
+					[] t2.timeout { c.call(f()); order := order & "call," }
+					[] t1.timeout { order := order & "t1," }
+				}
+				if (order == "call,t1,") { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
+		"a call that times out in a body": `module M {
+			type component C {}
+			function f() runs on C { timer d := 3.0; d.start; d.timeout }
+			testcase tc() runs on C {
+				var C c := C.create;
+				timer t1 := 1.0, t2 := 0.5;
+				var charstring order := "";
+				t1.start; t2.start;
+				interleave {
+					[] t2.timeout { c.call(f(), 1.0) catch(timeout) { order := order & "late," } }
+					[] t1.timeout { order := order & "t1," }
+				}
+				if (order == "late,t1," and not c.running) { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
+		"a restart in a body": `module M {
+			type component C {}
+			function f() runs on C { timer d := 3.0; d.start; d.timeout }
+			function g() runs on C { setverdict(pass) }
+			testcase tc() runs on C {
+				var C c := C.create alive;
+				timer t1 := 1.0, t2 := 0.5;
+				var charstring order := "";
+				c.start(f());
+				t1.start; t2.start;
+				interleave {
+					[] t2.timeout { c.stop; c.start(g()); c.done; order := order & "start," }
+					[] t1.timeout { order := order & "t1," }
+				}
+				if (order == "start,t1,") { setverdict(pass) } else { setverdict(fail, order) }
+			}
+		}`,
 		"in a PTC": `module M {
 			type port P message { inout integer }
 			type component C { port P p }

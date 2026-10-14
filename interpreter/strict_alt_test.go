@@ -1385,3 +1385,27 @@ func TestPollingAltWaitsForItsTimer(t *testing.T) {
 		t.Fatalf("verdict = %s (%s), err %v, want pass", v, reason, err)
 	}
 }
+
+// TestBothClocks_BreakLeavesTheAlt: `break` in an alternative leaves the
+// innermost alt, and execution goes on after it (ETSI 19.12) — not the
+// loop around it, nor the behaviour; one an altstep's top alternative ends
+// in leaves the alt the altstep is an alternative of.
+func TestBothClocks_BreakLeavesTheAlt(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type component C {}
+		altstep a() runs on C { [] any timer.timeout { break } }
+		testcase tc() runs on C {
+			timer t := 0.1;
+			var integer n := 0;
+			for (var integer i := 0; i < 3; i := i + 1) {
+				t.start;
+				alt { [] t.timeout { n := n + 1; break } }
+				n := n + 10;
+			}
+			t.start;
+			alt { [] a() { n := n + 1000 } }
+			n := n + 100;
+			if (n == 133) { setverdict(pass) } else { setverdict(fail, n) }
+		}
+	}`, runtime.PassVerdict)
+}

@@ -168,7 +168,11 @@ func evalInterleaveStmtStrict(n *syntax.AltStmt, env runtime.Scope) (result runt
 		if ev.panicked != nil {
 			panic(ev.panicked)
 		}
-		// `repeat` is not permitted in interleave (20.4); ignore it.
+		// `break` ends the interleave (20.4 d), and only it; `repeat` is
+		// not permitted in one (20.4); ignore it.
+		if ev.res == runtime.Break {
+			return nil, true, true
+		}
 		if ev.res != runtime.Repeat && needBreak(ev.res) {
 			return ev.res, true, true
 		}

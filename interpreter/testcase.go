@@ -2655,10 +2655,9 @@ func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, 
 	if currentInterleaveBranch() != nil {
 		vd, hasVD := nextAltTimerVirtualDeadline(n, env)
 		rd, hasRD := nextAltTimerDeadlineLenient(n, env)
+		// With nothing of its own to wait for, it waits too: another
+		// branch may start a timer of its guards, or make one true.
 		events := altHasEventGuard(n)
-		if !hasVD && !hasRD && !events {
-			return false // only boolean / [else] guards: nothing to await
-		}
 		return interleaveWait(ilEvent{at: at, deadline: vd, hasTimer: hasVD, real: rd, hasReal: hasRD, events: events})
 	}
 	exec := runtime.FindTestcaseExec(env)
@@ -2702,6 +2701,44 @@ func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, 
 		return waitForAltCombined(dur, hasTimer, wake, env)
 	}
 	return false
+}
+
+// timerArrayTimeoutGuard returns the timers of the array a guard `any
+// from ta.timeout`, with an index redirect or not, waits on, and false for
+// any other guard.
+func timerArrayTimeoutGuard(e syntax.Expr, env runtime.Scope) ([]*runtime.TimerHandle, bool) {
+	if r, ok := e.(*syntax.RedirectExpr); ok {
+		e = r.X
+	}
+	fe, ok := e.(*syntax.FromExpr)
+	if !ok || fe.KindTok == nil || !strings.EqualFold(fe.KindTok.String(), "any") {
+		return nil, false
+	}
+	sel, ok := fe.X.(*syntax.SelectorExpr)
+	if !ok || syntax.Name(sel.Sel) != "timeout" {
+		return nil, false
+	}
+	base, ok := sel.X.(*syntax.Ident)
+	if !ok {
+		return nil, false
+	}
+	v, ok := env.Get(base.String())
+	if !ok {
+		return nil, false
+	}
+	list, ok := v.(*runtime.List)
+	if !ok {
+		return nil, false
+	}
+	if _, isTimer := firstArrayLeaf(list).(*runtime.TimerHandle); !isTimer {
+		return nil, false
+	}
+	var timers []*runtime.TimerHandle
+	walkTimerArray(list, nil, func(_ []int, th *runtime.TimerHandle) bool {
+		timers = append(timers, th)
+		return true
+	})
+	return timers, true
 }
 
 // nextAltTimerVirtualDeadline returns the soonest virtual-clock deadline
@@ -2748,6 +2785,12 @@ func nextAltTimerVirtualDeadline(n *syntax.AltStmt, env runtime.Scope) (float64,
 		}
 		es, ok := comm.(*syntax.ExprStmt)
 		if !ok {
+			return
+		}
+		if timers, ok := timerArrayTimeoutGuard(es.Expr, scope); ok {
+			for _, th := range timers {
+				consider(th)
+			}
 			return
 		}
 		switch x := es.Expr.(type) {
@@ -2978,27 +3021,45 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 		if !ok {
 			continue
 		}
-		sel, ok := es.Expr.(*syntax.SelectorExpr)
-		if !ok {
-			continue
+		timers, several := timerArrayTimeoutGuard(es.Expr, env)
+		var rn string
+		if !several {
+			sel, ok := es.Expr.(*syntax.SelectorExpr)
+			if !ok {
+				continue
+			}
+			recvIdent, ok := sel.X.(*syntax.Ident)
+			if !ok {
+				continue
+			}
+			opIdent, ok := sel.Sel.(*syntax.Ident)
+			if !ok || opIdent.String() != "timeout" {
+				continue
+			}
+			rn = recvIdent.String()
+			if rn == "any timer" || rn == "all timer" {
+				timers, several = collectScopeTimers(env), true
+			}
 		}
-		recvIdent, ok := sel.X.(*syntax.Ident)
-		if !ok {
-			continue
-		}
-		opIdent, ok := sel.Sel.(*syntax.Ident)
-		if !ok || opIdent.String() != "timeout" {
-			continue
-		}
-		if rn := recvIdent.String(); rn == "any timer" || rn == "all timer" {
-			for _, th := range collectScopeTimers(env) {
+		if several {
+			for _, th := range timers {
 				if th == nil || !th.Running || th.StartedAt.IsZero() {
 					continue
 				}
 				deadline := th.StartedAt.Add(time.Duration(th.Duration * float64(time.Second)))
 				remaining := deadline.Sub(now)
 				if remaining <= 0 {
-					continue
+					// An array's timer due and not taken came due since
+					// the guards were scanned, unless the guard is false.
+					if rn != "" {
+						continue
+					}
+					if cc.X != nil {
+						if gv, ok := eval(cc.X, env).(runtime.Bool); ok && !bool(gv) {
+							continue
+						}
+					}
+					remaining = 0
 				}
 				if !have || remaining < soonest {
 					soonest = remaining
@@ -3007,7 +3068,7 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 			}
 			continue
 		}
-		v, ok := env.Get(recvIdent.String())
+		v, ok := env.Get(rn)
 		if !ok {
 			continue
 		}

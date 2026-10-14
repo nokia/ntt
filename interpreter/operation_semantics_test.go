@@ -528,3 +528,69 @@ func TestExecuteTimeoutWhileExchanging(t *testing.T) {
 		}
 	}
 }
+
+// TestTimerArrays: an element of a timer array starts with the duration
+// given (ETSI 23.2), and `any from ta.timeout` takes the first timer of the
+// array, in index order, that has timed out (ETSI 23.6) — as a statement,
+// once the first of them times out; as an alt guard, waking the alt then.
+func TestTimerArrays(t *testing.T) {
+	for name, src := range map[string]string{
+		"start with a duration": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2];
+				ta[0].start(3.0); ta[1].start(2.0);
+				var float r := ta[0].read;
+				any from ta.timeout;
+				if (ta[0].running and not ta[1].running and r < 1.0) { setverdict(pass) } else { setverdict(fail) }
+			}
+		}`,
+		"the first in index order": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2], w := 3.0;
+				var integer i := -1, j := -1;
+				ta[0].start(2.0); ta[1].start(1.0);
+				w.start; w.timeout;
+				any from ta.timeout -> @index value i;
+				any from ta.timeout -> @index value j;
+				if (i == 0 and j == 1) { setverdict(pass) } else { setverdict(fail, i, j) }
+			}
+		}`,
+		"started at different times": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2], w := 2.0;
+				var integer i := -1;
+				ta[0].start(3.0);
+				w.start; w.timeout;
+				ta[1].start(2.0);
+				any from ta.timeout -> @index value i;
+				if (i == 0) { setverdict(pass) } else { setverdict(fail, i) }
+			}
+		}`,
+		"an alt guard": `module M {
+			type component C {}
+			testcase tc() runs on C {
+				timer ta[2], g := 5.0;
+				var integer i := -1;
+				ta[0].start(3.0); ta[1].start(2.0); g.start;
+				alt {
+					[] any from ta.timeout -> @index value i { if (i == 1 and ta[0].running) { setverdict(pass) } else { setverdict(fail, i) } }
+					[] g.timeout { setverdict(fail, "guard") }
+				}
+			}
+		}`,
+	} {
+		for _, k := range clocks {
+			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+			opts := k.opts
+			opts.Context = ctx
+			v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", opts)
+			cancel()
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
+			}
+		}
+	}
+}

@@ -685,11 +685,49 @@ passed over for a thousand turns — and a parameter's default and a
   for a default on a timer or on a message.* An activated default does
   not fire in a blocking receive or alt inside a function without `runs
   on` called from a component.
-- In an interleave branch body, a few waits still wait as the whole
-  component instead of letting the other branches go on: `any from` over a
-  timer array, `c.call(f())`, and starting a component whose previous
-  behaviour is still ending. A body given up when the interleave is left
-  still logs the end of the alt it waited in.
+- *Fixed 2026-10-14, for `any from` over a timer array; the rest are no
+  waits of a body.* In an interleave branch body, a few waits still wait
+  as the whole component instead of letting the other branches go on.
+  `c.call(f())` is not a reception statement (20.4 a, NOTE 1): the body
+  runs it to its end, and the interleave with it, as the expansion into
+  nested alts has it. Starting a component whose previous behaviour is
+  still ending waits as the component too: the wait is the engine's, for
+  the stopped behaviour to unwind, and takes no time, where letting the
+  other branches go on let the clock pass. Found fixing it, older than
+  it: an element of a timer array started for its default duration, not
+  the one given, `ta[0].start(3.0)` timing out at once; `any from
+  ta.timeout` took the timer due first by the wall clock, not the first
+  in index order (23.6), and as an alt guard did not wake the alt;
+  `break` in a body ended the behaviour, not the interleave (20.4 d), and
+  in an alt's alternative the loop around the alt or the behaviour, not
+  the alt (19.12); and a body's timeout or alt with no timer of its own
+  running went on, where another branch may start one — all *fixed
+  2026-10-14*. Still open: an interleave or alt with nothing left to wait
+  for — no event guard, no timer running — goes on as if it had ended:
+  `interleave { [] t1.timeout {} [] t2.timeout { any timer.timeout } }`
+  ends with the first branch never taken once the body's `any timer`
+  took `t1`, where the standard has it wait for good, and so `any from
+  ta.timeout` outside a body with no timer of the array running. A
+  timeout statement, `T.timeout`, `any timer.timeout` or `any from
+  ta.timeout`, does not try the activated defaults, though 23.6 makes it
+  the alt with that one alternative. A timer array passed to an altstep
+  does not wake an alt the altstep is an alternative of on the virtual
+  clock: the deadline scan binds timer parameters, not arrays of them
+  (not reproduced). `break` in a call's response block leaves the loop
+  around the call, where the block is executed like an alt (22.3.1) and
+  break would leave only it; in an altstep that is an alternative of
+  another altstep, a break runs the blocks of both alternatives, which
+  19.12's NOTE skips. A body whose only alternative is a timer with a
+  false guard leaves the interleave once the timer is due, on the virtual
+  clock — the wall-clock deadline it reports marks the wait as one on a
+  timer — and on the live clock once the wall-clock one has passed; it
+  would wait for good. An interleave gives up after 1<<20 rounds, about
+  45 minutes of a body waiting on the live clock. A `c.call` whose callee is
+  stopped, with no `catch(stop)`, is no test case error (21.3.10). A body
+  given up when the interleave is left still logs the end of the alt it
+  waited in; in the expansion into nested alts the alt the component
+  waits in is left, so the log is of one alt for each waiting body, not
+  one.
 - *Fixed 2026-10-14: every repeated round is a loop's iteration
   (loopStopped), so a stop or the testcase's time limit ends it and on
   the virtual clock time passes in it, at the cost a computing loop has

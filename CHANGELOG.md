@@ -378,6 +378,24 @@ Independent of the two clocks:
   message left the message without them, for the next to fail on; the
   template of a `subset` lost its own. An element is now paired with
   another when the first it matched leaves one without a partner.
+- **An element of a timer array runs for the time it is started with**
+  (ETSI 23.2). `ta[0].start(3.0)` started the timer for its default
+  duration, none when the array declares none, so it timed out at once.
+- **`any from ta.timeout` takes the first timer of the array, in index
+  order, that has timed out** (ETSI 23.6), not the one due first by the
+  wall clock, which on the virtual clock may not be the one due first.
+  As an alt guard it wakes the alt when the first of them times out; the
+  alt waited for its other guards.
+- **In an interleave branch body, `any from ta.timeout` waits as the
+  body**, the other branches going on (ETSI 20.4); it waited as the whole
+  component. A timer another branch starts meanwhile counts, and a body's
+  timeout or alt with no timer of its own running yet waits for one; it
+  went on.
+- **`break` leaves the innermost alt or interleave, and only it** (ETSI
+  19.12, 20.4 d). In an alternative's body it ended the loop around the
+  alt, or the behaviour; in an interleave branch body, the behaviour. One
+  an altstep's top alternative ends in leaves the alt around the altstep,
+  as before.
 - **A declaration may define its type** (ETSI 11.2, `TypeOrNestedTypeDef`):
   `var record of integer v := {1, 2, 3}`, and so constants, template
   variables, module parameters, component variables, formal parameters,

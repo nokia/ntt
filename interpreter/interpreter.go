@@ -159,7 +159,13 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		if n.Tok != nil && n.Tok.Kind() == syntax.INTERLEAVE {
 			return evalInterleaveStmtStrict(n, env)
 		}
-		return evalAltStmtStrict(n, env)
+		// `break` in an alternative leaves the alt, and only it (ETSI
+		// 19.12); one an altstep's top alternative ends in leaves the alt
+		// around it, which is this one.
+		if r := evalAltStmtStrict(n, env); r != runtime.Break {
+			return r
+		}
+		return nil
 
 	case *syntax.CommClause:
 		// CommClause is one branch of an `alt`; reaching it outside
@@ -1500,6 +1506,16 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 					if th, ok := v.(*runtime.TimerHandle); ok {
 						return evalTimerMethod(th, sel.Sel, n, env)
 					}
+				}
+			}
+			// `ta[i].start(5.0)`: an element of a timer array.
+			if isTimerArrayElement(sel.X, env) {
+				v := eval(sel.X, env)
+				if th, ok := v.(*runtime.TimerHandle); ok {
+					return evalTimerMethod(th, sel.Sel, n, env)
+				}
+				if runtime.IsError(v) {
+					return v
 				}
 			}
 		}
@@ -6445,6 +6461,36 @@ func walkComponentArray(list *runtime.List, prefix []int, fn func(idx []int, ref
 	return true
 }
 
+// isTimerArrayElement reports whether x indexes a timer array, `ta[i]` or
+// `ta[i][j]`, telling it from its base without evaluating the index.
+func isTimerArrayElement(x syntax.Expr, env runtime.Scope) bool {
+	ie, ok := x.(*syntax.IndexExpr)
+	if !ok {
+		return false
+	}
+	for {
+		inner, ok := ie.X.(*syntax.IndexExpr)
+		if !ok {
+			break
+		}
+		ie = inner
+	}
+	base, ok := ie.X.(*syntax.Ident)
+	if !ok {
+		return false
+	}
+	v, ok := env.Get(base.String())
+	if !ok {
+		return false
+	}
+	list, ok := v.(*runtime.List)
+	if !ok {
+		return false
+	}
+	_, isTimer := firstArrayLeaf(list).(*runtime.TimerHandle)
+	return isTimer
+}
+
 // firstArrayLeaf descends a (possibly nested) List and returns its first
 // non-List leaf element, or nil for an empty array. Used to classify an
 // array by element type (component vs timer).
@@ -6530,45 +6576,41 @@ func evalAnyAllFromTimer(n *syntax.FromExpr, op string, list *runtime.List, redi
 			return runtime.NewBool(allRunning), true
 		}
 	case "timeout":
-		// Find the running timer with the earliest deadline (row-major
-		// order breaks ties), wait for it, mark it stopped, bind index.
-		var bestIdx []int
-		var bestTh *runtime.TimerHandle
-		var bestDeadline time.Time
-		walkTimerArray(list, nil, func(idx []int, th *runtime.TimerHandle) bool {
-			if th == nil || !th.Running || th.StartedAt.IsZero() {
+		// The array's timers are looked at in index order, and the first
+		// one that has timed out is taken (ETSI 23.6). As an alt guard
+		// that look is all; as a statement it is the alt with this one
+		// alternative, which waits for the first of them to time out.
+		first := func() (idx []int, th *runtime.TimerHandle) {
+			walkTimerArray(list, nil, func(i []int, t *runtime.TimerHandle) bool {
+				if timerExpired(t, env) {
+					idx, th = i, t
+					return false
+				}
 				return true
+			})
+			return idx, th
+		}
+		idx, th := first()
+		if th == nil && !altCtx.active() {
+			var timers []*runtime.TimerHandle
+			walkTimerArray(list, nil, func(_ []int, t *runtime.TimerHandle) bool {
+				timers = append(timers, t)
+				return true
+			})
+			if awaitTimeout(timers, true, env) != nil {
+				idx, th = first()
 			}
-			deadline := th.StartedAt.Add(time.Duration(th.Duration * float64(time.Second)))
-			if bestTh == nil || deadline.Before(bestDeadline) {
-				bestTh = th
-				bestDeadline = deadline
-				bestIdx = append([]int(nil), idx...)
-			}
-			return true
-		})
-		if bestTh == nil {
+		}
+		if th == nil {
 			return runtime.NewBool(false), true
 		}
-		if deterministicSchedulerEnabled(env) {
-			// Park until the virtual clock reaches this timer's deadline,
-			// letting earlier events/timers in other participants fire.
-			if exec := runtime.FindTestcaseExec(env); exec != nil {
-				deadline := bestTh.StartedAtVirtual + bestTh.Duration
-				stop := currentStopChan(exec)
-				for exec.VirtualClock() < deadline {
-					re, stopped := exec.SchedPark(currentCompID(exec), deadline, true, stop)
-					if stopped || !re {
-						break
-					}
-				}
-			}
-		} else if remaining := time.Until(bestDeadline); remaining > 0 {
-			waitForAltTimerDeadline(remaining, env)
+		if altCtx.active() && !deterministicClockEnabled(env) && !deterministicSchedulerEnabled(env) && th.Duration > 0 {
+			advanceVirtual(env, th.StartedAtVirtual+th.Duration)
 		}
-		bestTh.Running = false
-		bestTh.StartedAt = time.Time{}
-		bindAnyIndex(redirect, bestIdx, env)
+		th.Ticks = th.MaxTicks
+		th.Running = false
+		th.StartedAt = time.Time{}
+		bindAnyIndex(redirect, idx, env)
 		return runtime.NewBool(true), true
 	}
 	return nil, false
@@ -13779,29 +13821,59 @@ func evalJSONDefaultExpr(expr string, env runtime.Scope) runtime.Object {
 // With no running timer there is nothing to wait for and nothing to
 // consume, which is reported as false rather than blocking forever.
 func timerAggregateBlockingTimeout(timers []*runtime.TimerHandle, anyKind bool, env runtime.Scope) runtime.Object {
-	var target *runtime.TimerHandle
-	var running []*runtime.TimerHandle
-	for _, th := range timers {
-		if th == nil || !th.Running {
-			continue
-		}
-		running = append(running, th)
-		if target == nil {
-			target = th
-			continue
-		}
-		// `any` fires on the earliest deadline, `all` only once the
-		// latest has passed.
-		sooner := th.StartedAtVirtual+th.Duration < target.StartedAtVirtual+target.Duration
-		if sooner == anyKind {
-			target = th
-		}
-	}
+	target := awaitTimeout(timers, anyKind, env)
 	if target == nil {
 		return runtime.NewBool(false)
 	}
-	// In an interleave branch body, the interleave waits.
-	for at := new(byte); !timerExpired(target, env) && interleaveWait(timerWait(target, at)); {
+	if anyKind {
+		target.Ticks = target.MaxTicks
+		target.Running = false
+	} else {
+		for _, th := range timers {
+			if th != nil && th.Running {
+				th.Ticks = th.MaxTicks
+				th.Running = false
+			}
+		}
+	}
+	return runtime.NewBool(true)
+}
+
+// awaitTimeout waits until the earliest (anyKind) or the latest of the
+// running timers among timers runs out, and returns it, nil when none is
+// running. It consumes no timeout.
+func awaitTimeout(timers []*runtime.TimerHandle, anyKind bool, env runtime.Scope) *runtime.TimerHandle {
+	pick := func() *runtime.TimerHandle {
+		var target *runtime.TimerHandle
+		for _, th := range timers {
+			if th == nil || !th.Running {
+				continue
+			}
+			if target == nil {
+				target = th
+				continue
+			}
+			// `any` fires on the earliest deadline, `all` only once the
+			// latest has passed.
+			sooner := timerDue(th, env) < timerDue(target, env)
+			if sooner == anyKind {
+				target = th
+			}
+		}
+		return target
+	}
+	target := pick()
+	if target == nil && currentInterleaveBranch() == nil {
+		return nil
+	}
+	// In an interleave branch body, the interleave waits. Another branch
+	// may start or stop the timers meanwhile: with none running the body
+	// waits, for the timeout to come of a timer started later.
+	for at := new(byte); (target == nil || !timerExpired(target, env)) && interleaveWait(timerWait(target, at)); {
+		target = pick()
+	}
+	if target == nil {
+		return nil
 	}
 	exec := runtime.FindTestcaseExec(env)
 	if exec != nil && target.Duration > 0 && deterministicSchedulerEnabled(env) {
@@ -13827,16 +13899,16 @@ func timerAggregateBlockingTimeout(timers []*runtime.TimerHandle, anyKind bool, 
 			waitForTimerTimeout(target, env)
 		}
 	}
-	if anyKind {
-		target.Ticks = target.MaxTicks
-		target.Running = false
-	} else {
-		for _, th := range running {
-			th.Ticks = th.MaxTicks
-			th.Running = false
-		}
+	return target
+}
+
+// timerDue returns when th runs out, in seconds, on the clock its expiry is
+// told by (timerExpired): the virtual one, or the wall clock.
+func timerDue(th *runtime.TimerHandle, env runtime.Scope) float64 {
+	if useVirtualClock(env) || th.StartedAt.IsZero() {
+		return th.StartedAtVirtual + th.Duration
 	}
-	return runtime.NewBool(true)
+	return float64(th.StartedAt.UnixNano())/1e9 + th.Duration
 }
 
 // clearPort empties the current component's port pname (ETSI 22.5.1).
