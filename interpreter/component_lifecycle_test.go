@@ -1,6 +1,7 @@
 package interpreter_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/interpreter"
@@ -207,5 +208,32 @@ func TestBareUnmapClearsOnlyCurrentComponentMappings(t *testing.T) {
 	}
 	if v != runtime.PassVerdict {
 		t.Fatalf("verdict = %s (%s), want pass", v, reason)
+	}
+}
+
+// TestAnyFromDoneRedirects: `any from cs.done -> value v @index value i`
+// waits, as a statement and as the alt's only alternative, and binds the
+// index and the verdict of the component that ended first (ETSI 21.3.7).
+// Neither waited — the alt did not count it as an event — and the
+// verdict was never bound.
+func TestAnyFromDoneRedirects(t *testing.T) {
+	src := `module M {
+		type component C {}
+		function f(float d) runs on C { timer t := d; t.start; t.timeout; setverdict(pass) }
+		testcase tc() runs on C {
+			var C cs[3];
+			for (var integer k := 0; k < 3; k := k + 1) { cs[k] := C.create }
+			cs[0].start(f(0.5)); cs[1].start(f(0.1)); cs[2].start(f(0.9));
+			var integer i := -1;
+			var verdicttype v := none;
+			WAIT
+			if (i == 1 and v == pass) { setverdict(pass) } else { setverdict(fail, i, v) }
+		}
+	}`
+	for _, wait := range []string{
+		"any from cs.done -> value v @index value i;",
+		"alt { [] any from cs.done -> value v @index value i {} }",
+	} {
+		assertSameVerdictBothClocks(t, strings.Replace(src, "WAIT", wait, 1), runtime.PassVerdict)
 	}
 }

@@ -565,7 +565,10 @@ passed over for a thousand turns — and a parameter's default and a
   by `call` is killed since 2026-10-13: a call counts as a start.)
 - `getverdict` in the MTC reads the testcase verdict, which every
   component's `setverdict` and error moves, not the MTC's own (24.3).
-- `any from cs.done -> @index value i` binds nothing.
+- *Fixed 2026-10-14: as a statement it waits, as the alt's alternative
+  it counts as an event, and `-> value v` takes the verdict of the
+  component that ended; 0 gained, 0 lost.* `any from cs.done -> @index
+  value i` binds nothing.
 - A class declared `runs on C` (ES 203 790) does not see the component's
   variables in its methods.
 - *Fixed 2026-10-02 with the scope per module: a component type and what
@@ -678,18 +681,45 @@ passed over for a thousand turns — and a parameter's default and a
   timer.running` also asks timers of blocks that have ended.*
   `while (t.running) { ... }` stops after a few iterations on either
   clock: `t.running` counts polls instead of reading the clock.
-- An activated default does not fire in a blocking receive or alt inside
-  a function without `runs on` called from a component.
+- *Not reproduced 2026-10-14, on either clock, from the MTC or a PTC,
+  for a default on a timer or on a message.* An activated default does
+  not fire in a blocking receive or alt inside a function without `runs
+  on` called from a component.
 - In an interleave branch body, a few waits still wait as the whole
   component instead of letting the other branches go on: `any from` over a
   timer array, `c.call(f())`, and starting a component whose previous
   behaviour is still ending. A body given up when the interleave is left
   still logs the end of the alt it waited in.
-- An alt that repeats for good — a default `[else] { repeat }` beside a
-  timer that can never fire on the virtual clock, since nothing waits —
-  ends quietly after about a million rounds, as if it had finished.
-- `p.getreply(S2:{-} value ?)` takes a reply to another signature, S1,
-  so of two blocking calls in a row the second can take the first's
+- *Fixed 2026-10-14: every repeated round is a loop's iteration
+  (loopStopped), so a stop or the testcase's time limit ends it and on
+  the virtual clock time passes in it, at the cost a computing loop has
+  (about a second of virtual time per million rounds, nearly two of real
+  time); an alt whose `[else]` is `repeat` and nothing else, with a timer
+  guard, polled a thousand times at one instant waits for its events and
+  timer, as a timer polled that often is taken to run out, so the timer
+  fires at once; 0 gained, 0 lost. Two reviews shaped it: waiting
+  whatever the `[else]` did, or when a default repeated, let a timeout
+  win over a counter the `[else]` kept or messages a default discarded.
+  It waits only when no boolean guard reads a timer or calls a function,
+  which time alone may make true. Left, all on the virtual clock: an
+  `[else]` that restarts the timer each round lets it run out once a
+  second's worth of rounds passed; a guard on `t.read` comes true at the
+  next whole second of computing, and one on `not w.running` at once
+  (a timer polled a thousand times at one instant is taken to have run
+  out); an alt a default repeats, or one with no timer guard, waits for a
+  far event at a loop's cost, about two seconds of real time per virtual
+  second. The real clock has none of these.* An alt that repeats for good — a default `[else] { repeat }`
+  beside a timer that can never fire on the virtual clock, since nothing
+  waits — ends quietly after about a million rounds, as if it had
+  finished.
+- *Fixed 2026-10-14: a getcall, getreply or catch qualified by a
+  signature, inline (also as M.S) or by a template of it, takes nothing
+  of another; a call made with a template passed as a parameter no
+  longer has its reply refused by its block's unqualified getreply; and
+  the parser took `-> value v param (x)` for a value target `v param (x)`
+  (a map's parameters), anywhere, not only in a call's block; 0 gained, 0
+  lost.* `p.getreply(S2:{-} value ?)` takes a reply to another signature,
+  S1, so of two blocking calls in a row the second can take the first's
   reply. And in a blocking call's block, a getreply's `-> value v
   param(...)` redirects leave their variables unset (its `sender`
   redirect works).
@@ -718,10 +748,32 @@ changed only as intended. Found, older than this work:
   an MTC/echo ping-pong runs at about 37000 round trips a second, and at
   about 290 with 20 PTCs parked in an alt on a long timer. It bears on
   live testing and profiling.
-- `alt { [] any from pa.receive(8) {} }` over a port array never takes a
-  message waiting on `pa[2]` (`pa[2].receive` and `any port.receive` do).
-- `any from pa.getcall(...)` over a port array does not match (5
-  conformance files, Sem_220302_getcall_operation_007, _010 to _013).
+- *Fixed 2026-10-14, +5 (Sem_220302_getcall_operation_007, _010 to _013),
+  0 lost: in a PTC, whose queues are keyed by the component, `any from`
+  looked for the bare names of the array's ports, which only the MTC's
+  queues have.* `alt { [] any from pa.receive(8) {} }` over a port array
+  never takes a message waiting on `pa[2]` (`pa[2].receive` and `any
+  port.receive` do). `any from pa.getcall(...)` over a port array does
+  not match (5 conformance files, Sem_220302_getcall_operation_007, _010
+  to _013).
+- Found reviewing the 2026-10-14 fixes, older than them: a `repeat` in
+  an `if` or a loop of an alt branch was lost unless the branch's last
+  statement (*fixed 2026-10-14*); `for (x in a)` is parsed but not
+  executed ("unknown syntax node type"); like-named signatures of two
+  modules are one to a getreply, the recorded name being unqualified;
+  `connect(mtc:a, mtc:b)` delivers nothing; a parameterised template or
+  one a function returns gives the 22.3.1 h filter no signature; `var T
+  v := {3, 4}` of `type integer T[1..2]` ignores the lower bound (so does
+  an `in` or `inout` parameter of T), where an assignment keeps it; an
+  alternative `[] as1()` followed by a guarded one parses as an index,
+  `as1()[guard]`, and panics.
+- Found reviewing that fix, older than it: `all from p.getcall` takes the
+  calls when every element *with a queue* has one, so an element no call
+  ever reached is not asked (`all from` is no form of getcall in 22.3.2;
+  the engine accepts it); a port array is not a value the engine can
+  measure. `any from cs.done` matches
+  a slot of the array never given a component, where 21.3.7 c makes that
+  an error.
 - The C test-port bridge's `TestRegisterAndSend` fails when run more than
   once in a process (`-count=2`): its fixture's call counter is not reset.
 

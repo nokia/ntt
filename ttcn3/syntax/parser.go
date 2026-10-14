@@ -1037,6 +1037,15 @@ func (p *parser) parseRedirect(x Expr) *RedirectExpr {
 	if p.tok == VALUE {
 		r.ValueTok = p.expect(VALUE)
 		r.Value = p.parseExprList()
+		// An expression takes a following `param (...)` as map's or
+		// unmap's: in `-> value v param (x)` it is the redirect's own.
+		if n := len(r.Value); n > 0 {
+			if pe, ok := r.Value[n-1].(*ParamExpr); ok {
+				r.Value[n-1] = pe.X
+				r.ParamTok = pe.Tok
+				r.Param = []Expr{pe.Y}
+			}
+		}
 	}
 
 	// `-> verdict v` captures a called/terminated component's verdict

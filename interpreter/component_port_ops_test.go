@@ -1,6 +1,7 @@
 package interpreter_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nokia/ntt/interpreter"
@@ -75,4 +76,40 @@ var componentAndPortOps = map[string]string{
 			alt { [] s.done {} [] g3.timeout { setverdict(fail, "server did not finish") } }
 		}
 	}`,
+}
+
+// TestAnyFromPortArrayInAPTC: `any from p.getcall` and `any from
+// p.receive` over a PTC's port array see its queues, which are keyed by
+// the component; they looked for the bare names, which only the MTC's
+// queues have, and never matched in a PTC (Sem_220302_getcall_operation_007).
+func TestAnyFromPortArrayInAPTC(t *testing.T) {
+	src := `module M {
+		signature S();
+		type port P procedure { inout S }
+		type port Q message { inout integer }
+		type component G { port P p[12]; port Q m[12] }
+		function f() runs on G {
+			var integer i := -1;
+			alt {
+				[] OP -> @index value i { if (i == 10) { setverdict(pass) } else { setverdict(fail, i) } }
+				[else] { setverdict(fail, "no match") }
+			}
+		}
+		testcase tc() runs on G {
+			var G v := G.create;
+			for (var integer i := 0; i < 12; i := i + 1) {
+				connect(self:p[i], v:p[i]); connect(self:m[i], v:m[i]);
+			}
+			SEND
+			v.start(f());
+			v.done;
+		}
+	}`
+	for _, c := range []struct{ op, send string }{
+		{"any from p.getcall", "p[10].call(S:{}, nowait);"},
+		{"any from p.getcall(S:{})", "p[10].call(S:{}, nowait);"},
+		{"any from m.receive(integer:?)", "m[10].send(1);"},
+	} {
+		assertSameVerdictBothClocks(t, strings.NewReplacer("OP", c.op, "SEND", c.send).Replace(src), runtime.PassVerdict)
+	}
 }

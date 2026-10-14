@@ -637,6 +637,7 @@ func bindTestcaseParamsWithValues(env runtime.Scope, tc *syntax.FuncDecl, args [
 			val = runtime.Any
 		}
 		env.Set(fp.Name.String(), val)
+		recordDeclaredType(env, fp.Name.String(), fp.Type)
 	}
 }
 
@@ -678,6 +679,9 @@ func bindTestcaseParamsWithArgs(env runtime.Scope, tc *syntax.FuncDecl, args []s
 			val = runtime.Any
 		}
 		env.Set(fp.Name.String(), val)
+		// The declared type, as for a function's parameter: a template
+		// parameter's signature, say (22.3.1 h).
+		recordDeclaredType(env, fp.Name.String(), fp.Type)
 	}
 }
 
@@ -2314,11 +2318,12 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 		defer lexec.TLScanEnd(currentCompID(lexec))
 	}
 	waiting := false
-	// Bounded only as a backstop against a `repeat` whose state never
-	// changes; genuine blocking is ended by a matching event, this PTC's
-	// stop, or the harness/testcase timeout.
-	const maxRounds = 1 << 20
-	for round := 0; round < maxRounds; round++ {
+	// Rounds its [else] repeated at one virtual instant (altIdleRound).
+	var idle idleRounds
+	// Blocking is ended by a matching event, this component's stop, or
+	// the testcase's time limit, which a repeated round checks as a
+	// loop's iteration does.
+	for {
 		// Alt-local declarations are re-evaluated each round (ETSI 20.2).
 		for _, s := range n.Body.Stmts {
 			if _, ok := s.(*syntax.CommClause); ok {
@@ -2407,6 +2412,9 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 						lexec.TLAltBump(currentCompID(lexec))
 						tlEmit(lexec, n, "tliARepeat")
 					}
+					if r := loopStopped(env); r != nil {
+						return r
+					}
 					waitAt = new(byte)
 					continue
 				case r == runtime.Break:
@@ -2437,6 +2445,9 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 					if lexec != nil {
 						tlEmit(lexec, n, "tliARepeat")
 					}
+					if r := loopStopped(env); r != nil {
+						return r
+					}
 					waitAt = new(byte)
 					continue // a body returned Repeat -> re-snapshot
 				} else {
@@ -2466,6 +2477,9 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 				if lexec != nil {
 					tlEmit(lexec, n, "tliARepeat")
 				}
+				if r := altIdleRound(n, elseClause, env, &idle); r != nil {
+					return r
+				}
 				waiting = false
 				waitAt = new(byte)
 				continue
@@ -2488,6 +2502,9 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 					// The default repeats this alt (20.5.2).
 					if lexec != nil {
 						tlEmit(lexec, n, "tliARepeat")
+					}
+					if r := loopStopped(env); r != nil {
+						return r
 					}
 					waiting = false
 					waitAt = new(byte)
@@ -2522,7 +2539,99 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 			return nil
 		}
 	}
-	return nil
+}
+
+// idleRounds counts the rounds of an alt that its [else] repeated at one
+// virtual instant, and holds the token its waits are known by meanwhile.
+type idleRounds struct {
+	n   int
+	at  float64
+	tok *byte
+}
+
+// altIdleRound accounts for a round of an alt that its [else] repeated.
+// It is a loop's iteration, and checked as one (loopStopped): a stop or
+// the testcase's time limit ends it, and on the virtual clock time passes
+// in it as in any computation. There, an alt whose [else] does nothing
+// but repeat, and that has a timer guard, polled busyWaitPolls times at
+// one instant is taken to be waiting for that timer, as a timer polled
+// that often is: nothing it does changes between its rounds, so it waits
+// as it would without its [else] — the timer fires when the clock
+// reaches it, rather than at a second of virtual time per million
+// rounds — and a message wakes it. An [else] that does more may be what
+// ends the alt, and goes on as a loop. The alt used to end after a
+// million rounds as if it had finished.
+func altIdleRound(n *syntax.AltStmt, elseClause *syntax.CommClause, env runtime.Scope, idle *idleRounds) runtime.Object {
+	if r := loopStopped(env); r != nil {
+		return r
+	}
+	if !useVirtualClock(env) || !onlyRepeats(elseClause) {
+		return nil
+	}
+	exec := runtime.FindTestcaseExec(env)
+	if exec == nil {
+		return nil
+	}
+	if now := exec.VirtualClock(); now != idle.at || idle.tok == nil {
+		// The same token for the waits of one stretch: an interleave
+		// takes a new one for progress (interleave.go).
+		idle.at, idle.n, idle.tok = now, 0, new(byte)
+	}
+	if idle.n++; idle.n < busyWaitPolls {
+		return nil
+	}
+	idle.n = 0
+	if _, ok := nextAltTimerVirtualDeadline(n, env); !ok || !guardsTimeless(n) {
+		return nil
+	}
+	blockForAltEvents(n, idle.tok, nil, env)
+	return loopStopped(env)
+}
+
+// guardsTimeless reports whether no boolean guard of the alt can change
+// while it waits, with nothing happening but time passing: a guard that
+// reads a timer (`t.read > 5.0`, `not w.running`) or calls a function may
+// come true between two events, which a wait would sleep past.
+func guardsTimeless(n *syntax.AltStmt) bool {
+	if n == nil || n.Body == nil {
+		return true
+	}
+	timeless := true
+	for _, st := range n.Body.Stmts {
+		cc, ok := st.(*syntax.CommClause)
+		if !ok || cc.X == nil {
+			continue
+		}
+		syntax.Inspect(cc.X, func(x syntax.Node) bool {
+			switch x := x.(type) {
+			case *syntax.CallExpr:
+				timeless = false
+			case *syntax.SelectorExpr:
+				switch syntax.Name(x.Sel) {
+				case "read", "running":
+					timeless = false
+				}
+			}
+			return timeless
+		})
+		if !timeless {
+			return false
+		}
+	}
+	return true
+}
+
+// onlyRepeats reports whether an [else] clause's body is `repeat` and
+// nothing else.
+func onlyRepeats(cc *syntax.CommClause) bool {
+	if cc == nil || cc.Body == nil || len(cc.Body.Stmts) != 1 {
+		return false
+	}
+	switch st := cc.Body.Stmts[0].(type) {
+	case *syntax.BranchStmt:
+		return st.Tok != nil && st.Tok.Kind() == syntax.REPEAT
+	}
+	return false
 }
 
 // blockForAltEvents parks a strict alt on its event sources — inbound
@@ -2809,6 +2918,12 @@ func commClauseOp(cc *syntax.CommClause) string {
 			continue
 		case *syntax.BinaryExpr:
 			if e.Op != nil && (e.Op.Kind() == syntax.FROM || e.Op.Kind() == syntax.TO) && e.X != nil {
+				expr = e.X
+				continue
+			}
+		case *syntax.FromExpr:
+			// `any from cs.done`, `all from ts.timeout`: the array's op.
+			if e.X != nil {
 				expr = e.X
 				continue
 			}
@@ -3660,7 +3775,7 @@ func bareProcGuard(exec *runtime.TestcaseExec, sel *syntax.SelectorExpr, port st
 	// branch.
 	if kind == runtime.MsgReply || kind == runtime.MsgException {
 		if csig := currentCallSignature(env); csig != "" {
-			if head, ok := exec.PeekKindLimited(qkey, kind, limit); ok && head.Signature != "" && head.Signature != csig {
+			if head, ok := exec.PeekKindLimited(qkey, kind, limit); ok && head.Signature != "" && differentSignatures(csig, head.Signature, env) {
 				if exec.TestLogger() != nil {
 					tlProcReceive(exec, sel, qkey, head, nil, nil, nil, "mismatch",
 						"answers "+head.Signature+", not the called "+csig, true)

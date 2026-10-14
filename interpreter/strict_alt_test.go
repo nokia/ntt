@@ -1300,3 +1300,88 @@ func TestBothClocks_DoneWaitsForModelledPTC(t *testing.T) {
 		}
 	}`, runtime.PassVerdict)
 }
+
+// TestElseRepeatLetsATimerFire: an alt its [else] repeats is a loop; on
+// the virtual clock time passes in it as in any loop, and the timer
+// beside the [else] fires. It ended after about a million rounds, as if
+// it had finished, and the testcase went on.
+func TestElseRepeatLetsATimerFire(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type component C { timer t }
+		testcase tc() runs on C {
+			var integer n := 0;
+			t.start(0.3);
+			alt {
+				[] t.timeout { setverdict(pass) }
+				[else] { n := n + 1; repeat }
+			}
+			if (n == 0) { setverdict(fail, "no round repeated") }
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestElseRepeatWithoutTimerIsALoop: with no timer guard beside it, what
+// the [else] does may be what ends the alt, and it runs as a loop does.
+// A repeat after a matched alternative is a loop's iteration too.
+func TestElseRepeatWithoutTimerIsALoop(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type port Q message { inout integer }
+		type component C { port Q p }
+		function f() runs on C {}
+		testcase tc() runs on C {
+			var integer i := 0, k := 0;
+			alt {
+				[] p.receive { setverdict(fail, "received") }
+				[else] { i := i + 1; if (i < 3000) { repeat } }
+			}
+			var C c := C.create; c.start(f()); c.done;
+			alt { [] c.done { k := k + 1; if (k < 3000) { repeat } } }
+			if (i == 3000 and k == 3000) { setverdict(pass) } else { setverdict(fail, i, k) }
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestRepeatInsideAnIf: a repeat that is not a branch's last statement —
+// in an if, in a loop — leaves them for the alt, which re-evaluates
+// (ETSI 20.2). The statements after the if ran, and the alt ended.
+func TestRepeatInsideAnIf(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type component C { timer t }
+		testcase tc() runs on C {
+			var integer k := 0;
+			t.start(0.1);
+			alt {
+				[] t.timeout {
+					k := k + 1;
+					if (k < 3) { t.start(0.1); repeat }
+					for (var integer i := 0; i < 1; i := i + 1) { if (k < 4) { t.start(0.1); repeat } }
+					if (k == 4) { setverdict(pass) } else { setverdict(fail, k) }
+				}
+			}
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestPollingAltWaitsForItsTimer: an alt whose [else] does nothing but
+// repeat waits for its timer as it would without the [else]: on the
+// virtual clock a 30-second timer fires at once rather than after thirty
+// million rounds, while a PTC is alive too.
+func TestPollingAltWaitsForItsTimer(t *testing.T) {
+	src := `module M {
+		type component C { timer t }
+		function idle() runs on C { timer u := 60.0; u.start; u.timeout }
+		testcase tc() runs on C {
+			var C c := C.create; c.start(idle());
+			t.start(30.0);
+			alt {
+				[] t.timeout { setverdict(pass) }
+				[else] { repeat }
+			}
+			c.stop;
+		}
+	}`
+	v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", clocks[0].opts)
+	if err != nil || v != runtime.PassVerdict {
+		t.Fatalf("verdict = %s (%s), err %v, want pass", v, reason, err)
+	}
+}

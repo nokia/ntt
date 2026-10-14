@@ -397,3 +397,33 @@ func anyParse(input string, f func(p *parser)) error {
 	// TODO(5nord) temporary hack until we have proper error handling
 	return p.Err()
 }
+
+// TestRedirectValueAndParam: in `-> value v param (x)` the param list is
+// the redirect's, not a map's or unmap's parameters on the value
+// expression, which left the redirect with no param part and its value
+// a ParamExpr.
+func TestRedirectValueAndParam(t *testing.T) {
+	for _, src := range []string{
+		`p.getreply(S:{} value ?) -> value v param (x)`,
+		`p.getreply(S:{} value ?) -> value v param (x) sender s`,
+	} {
+		p := NewParser([]byte(src))
+		r, ok := p.parseExpr().(*RedirectExpr)
+		if err := p.Err(); err != nil || !ok {
+			t.Fatalf("%s: not a redirect (%v)", src, err)
+		}
+		if len(r.Value) != 1 {
+			t.Fatalf("%s: %d value targets, want 1", src, len(r.Value))
+		}
+		if _, ok := r.Value[0].(*Ident); !ok {
+			t.Errorf("%s: value target is %T, want *Ident", src, r.Value[0])
+		}
+		if r.ParamTok == nil || len(r.Param) != 1 {
+			t.Errorf("%s: no param part", src)
+		}
+	}
+	p := NewParser([]byte(`p.getreply(S:{} value ?) -> value v param (x) sender s`))
+	if r, _ := p.parseExpr().(*RedirectExpr); r == nil || r.Sender == nil {
+		t.Errorf("sender part lost after value and param")
+	}
+}

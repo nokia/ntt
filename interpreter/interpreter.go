@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1785,6 +1786,10 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 				if _, ok := result.(*runtime.Goto); ok {
 					return result
 				}
+				// A repeat leaves the loop for the alt (20.2).
+				if result == runtime.Repeat {
+					return result
+				}
 			}
 		}
 
@@ -1805,6 +1810,10 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 					return result
 				}
 				if _, ok := result.(*runtime.Goto); ok {
+					return result
+				}
+				// A repeat leaves the loop for the alt (20.2).
+				if result == runtime.Repeat {
 					return result
 				}
 			}
@@ -1858,6 +1867,10 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 					return result
 				}
 				if _, ok := result.(*runtime.Goto); ok {
+					return result
+				}
+				// A repeat leaves the loop for the alt (20.2).
+				if result == runtime.Repeat {
 					return result
 				}
 			}
@@ -3284,7 +3297,16 @@ func ownerOf(env runtime.Scope, name string) *runtime.Env {
 // out.
 func ownDeclaredTypeName(env runtime.Scope, name string) string {
 	o := ownerOf(env, name)
-	if o == nil || !o.Binds(declaredTypeKey(name)) {
+	if o == nil {
+		return ""
+	}
+	if !o.Binds(declaredTypeKey(name)) {
+		// A formal parameter: its function's parameter list has it.
+		if o.Binds(currentFunctionKey) {
+			if t, ok := paramType(o, name); ok {
+				return t.name
+			}
+		}
 		return ""
 	}
 	return declaredTypeName(o, name)
@@ -4423,7 +4445,9 @@ func needBreak(v interface{}) bool {
 	case *runtime.Goto:
 		return true
 	default:
-		return v == runtime.Break || v == runtime.Continue
+		// A repeat in an alt branch's body leaves the statements around
+		// it — an if's, a loop's — for the alt, which re-evaluates.
+		return v == runtime.Break || v == runtime.Continue || v == runtime.Repeat
 	}
 }
 
@@ -6167,16 +6191,27 @@ func evalAnyAllFrom(n *syntax.FromExpr, redirect *syntax.RedirectExpr, env runti
 	switch kind {
 	case "any":
 		var matchIdx []int
+		var matched *runtime.ComponentRef
 		found := false
 		walkComponentArray(list, nil, func(idx []int, ref *runtime.ComponentRef) bool {
 			if predicate(ref, env) {
 				matchIdx = append([]int(nil), idx...)
+				matched = ref
 				found = true
 				return false
 			}
 			return true
 		})
 		if found {
+			// `-> value v` takes the verdict of the component that
+			// matched, as `c.done -> value v` does (ETSI 21.3.7).
+			if matched != nil && redirect != nil && len(redirect.Value) > 0 && (op == "done" || op == "killed") {
+				v := matched.GetVerdict()
+				if v == "" {
+					v = runtime.NoneVerdict
+				}
+				storeReceiver(redirect.Value[0], v, env)
+			}
 			bindAnyIndex(redirect, matchIdx, env)
 			return runtime.NewBool(true), true
 		}
@@ -6374,18 +6409,12 @@ func evalAnyAllFromProc(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synt
 		return nil, false
 	}
 	name := base.String()
-	prefix := name + "["
-	belongs := func(pn string) bool {
-		return pn == name || strings.HasPrefix(pn, prefix)
-	}
+	ports := arrayPortNames(exec, name)
 	op := strings.ToLower(syntax.Name(sel.Sel))
 	switch strings.ToLower(n.KindTok.String()) {
 	case "any":
-		for _, pn := range exec.PortNames() {
-			if !belongs(pn) {
-				continue
-			}
-			head, ok := exec.PeekKind(pn, kind)
+		for _, pn := range ports {
+			head, ok := exec.PeekKind(exec.PortKey(pn), kind)
 			if !ok {
 				continue
 			}
@@ -6393,7 +6422,7 @@ func evalAnyAllFromProc(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synt
 			if !matched {
 				continue
 			}
-			exec.DequeueKind(pn, kind)
+			exec.DequeueKind(exec.PortKey(pn), kind)
 			if exec.TestLogger() != nil {
 				tlProcReceive(exec, call, pn, head, pars, val, nil, "receive", "", false)
 			}
@@ -6407,11 +6436,8 @@ func evalAnyAllFromProc(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synt
 		// The templates each port was matched with, for the log.
 		type matchedTmpl struct{ pars, val runtime.Object }
 		tmpls := map[string]matchedTmpl{}
-		for _, pn := range exec.PortNames() {
-			if !belongs(pn) {
-				continue
-			}
-			head, ok := exec.PeekKind(pn, kind)
+		for _, pn := range ports {
+			head, ok := exec.PeekKind(exec.PortKey(pn), kind)
 			if !ok {
 				return runtime.NewBool(false), true
 			}
@@ -6425,11 +6451,8 @@ func evalAnyAllFromProc(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synt
 		if !matched {
 			return runtime.NewBool(false), true
 		}
-		for _, pn := range exec.PortNames() {
-			if !belongs(pn) {
-				continue
-			}
-			if head, ok := exec.DequeueKind(pn, kind); ok {
+		for _, pn := range ports {
+			if head, ok := exec.DequeueKind(exec.PortKey(pn), kind); ok {
 				if exec.TestLogger() != nil {
 					tlProcReceive(exec, call, pn, head, tmpls[pn].pars, tmpls[pn].val, nil, "receive", "", false)
 				}
@@ -6439,6 +6462,52 @@ func evalAnyAllFromProc(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synt
 		return runtime.NewBool(true), true
 	}
 	return nil, false
+}
+
+// arrayPortNames returns the instances of the port array name that hold a
+// queue of the calling component — name[0], name[1], ... — in index order,
+// as bare names: PortKey gives each one's queue. The queues of a PTC are
+// keyed by the component, so the testcase's port names, which are those
+// keys, never begin with the array's name there.
+func arrayPortNames(exec *runtime.TestcaseExec, name string) []string {
+	prefix := name + "["
+	var out []string
+	for _, pn := range exec.CurrentComponentPortNames() {
+		if pn == name || strings.HasPrefix(pn, prefix) {
+			out = append(out, pn)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool { return portIndicesLess(out[i], out[j]) })
+	return out
+}
+
+// portIndicesLess orders port instance names by their subscripts as
+// numbers, `p[2]` before `p[10]`.
+func portIndicesLess(a, b string) bool {
+	ia, ib := portIndices(a), portIndices(b)
+	for k := 0; k < len(ia) && k < len(ib); k++ {
+		if ia[k] != ib[k] {
+			return ia[k] < ib[k]
+		}
+	}
+	return len(ia) < len(ib)
+}
+
+func portIndices(name string) []int {
+	var out []int
+	for {
+		i := strings.IndexByte(name, '[')
+		j := strings.IndexByte(name, ']')
+		if i < 0 || j < i {
+			return out
+		}
+		n, err := strconv.Atoi(name[i+1 : j])
+		if err != nil {
+			return out
+		}
+		out = append(out, n)
+		name = name[j+1:]
+	}
 }
 
 // evalAnyAllFromMsg answers `any from <portArray>.receive` /
@@ -6461,17 +6530,11 @@ func evalAnyAllFromMsg(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synta
 		return nil, false
 	}
 	name := base.String()
-	prefix := name + "["
-	belongs := func(pn string) bool {
-		return pn == name || strings.HasPrefix(pn, prefix)
-	}
 	isTrigger := op == "trigger"
-	for _, pn := range exec.PortNames() {
-		if !belongs(pn) {
-			continue
-		}
+	for _, pn := range arrayPortNames(exec, name) {
+		key := exec.PortKey(pn)
 		for {
-			head, ok := exec.PeekKind(pn, runtime.MsgMessage)
+			head, ok := exec.PeekKind(key, runtime.MsgMessage)
 			if !ok {
 				break
 			}
@@ -6483,13 +6546,13 @@ func evalAnyAllFromMsg(n *syntax.FromExpr, sel *syntax.SelectorExpr, call *synta
 						tlReceive(exec, call, pn, head, tmpl, nil, "mismatch", false, !isTrigger)
 					}
 					if isTrigger {
-						exec.DequeueKind(pn, runtime.MsgMessage)
+						exec.DequeueKind(key, runtime.MsgMessage)
 						continue
 					}
 					break
 				}
 			}
-			exec.DequeueKind(pn, runtime.MsgMessage)
+			exec.DequeueKind(key, runtime.MsgMessage)
 			if exec.TestLogger() != nil {
 				tlReceive(exec, call, pn, head, tmpl, nil, "receive", false, false)
 			}
@@ -11188,7 +11251,7 @@ func evalProcedureCallTo(port string, call *syntax.CallExpr, toExpr syntax.Expr,
 	var sig string
 	if call.Args != nil && len(call.Args.List) > 0 {
 		params, _ = procSignatureArg(call.Args.List[0], env)
-		sig = procSignatureName(call.Args.List[0])
+		sig = procSignatureOf(call.Args.List[0], env)
 	}
 	msg := runtime.PortMessage{
 		Kind:      runtime.MsgCall,
@@ -11261,7 +11324,7 @@ func evalProcedurePortOp(op, port string, n *syntax.CallExpr, env runtime.Scope)
 		var sig string
 		if n != nil && n.Args != nil && len(n.Args.List) > 0 {
 			params, _ = procSignatureArg(n.Args.List[0], env)
-			sig = procSignatureName(n.Args.List[0])
+			sig = procSignatureOf(n.Args.List[0], env)
 		}
 		// Route to a bound port driver that opts into PortCaller (a
 		// pure-Go or C test port): the driver answers the call and we
@@ -11306,7 +11369,7 @@ func evalProcedurePortOp(op, port string, n *syntax.CallExpr, env runtime.Scope)
 		var sig string
 		if n != nil && n.Args != nil && len(n.Args.List) > 0 {
 			params, ret = procSignatureArg(n.Args.List[0], env)
-			sig = procSignatureName(n.Args.List[0])
+			sig = procSignatureOf(n.Args.List[0], env)
 		}
 		replyMsg := runtime.PortMessage{
 			Kind:      runtime.MsgReply,
@@ -11328,7 +11391,7 @@ func evalProcedurePortOp(op, port string, n *syntax.CallExpr, env runtime.Scope)
 		var exc runtime.Object
 		var sig string
 		if n != nil && n.Args != nil && len(n.Args.List) >= 1 {
-			sig = procSignatureName(n.Args.List[0])
+			sig = procSignatureOf(n.Args.List[0], env)
 		}
 		if n != nil && n.Args != nil && len(n.Args.List) >= 2 {
 			exc = evalExceptionValue(n.Args.List[1], env)
@@ -11424,6 +11487,9 @@ func procSignatureName(arg syntax.Expr) string {
 		if v != nil && v.Tok != nil {
 			return v.String()
 		}
+	case *syntax.SelectorExpr:
+		// `M.S:{...}`: module M's S.
+		return syntax.Name(v)
 	}
 	return ""
 }
@@ -11475,10 +11541,68 @@ func callSignatureDecl(arg syntax.Expr, env runtime.Scope) *syntax.SignatureDecl
 	if sd := sigOf(procSignatureName(arg)); sd != nil {
 		return sd
 	}
+	// `t value ?`, `(t)`: the template is t.
+	for {
+		switch x := arg.(type) {
+		case *syntax.ValueExpr:
+			arg = x.X
+			continue
+		case *syntax.ParenExpr:
+			if len(x.List) == 1 {
+				arg = x.List[0]
+				continue
+			}
+		}
+		break
+	}
 	if id, ok := arg.(*syntax.Ident); ok {
 		return sigOf(ownDeclaredTypeName(env, id.String()))
 	}
 	return nil
+}
+
+// procSignatureOf names the signature a procedure operation's first
+// argument is of — S for `S:{...}`, and for a template of S, which
+// procSignatureName would name after itself — or else what
+// procSignatureName gives.
+func procSignatureOf(arg syntax.Expr, env runtime.Scope) string {
+	if sd := callSignatureDecl(arg, env); sd != nil {
+		return syntax.Name(sd.Name)
+	}
+	return procSignatureName(arg)
+}
+
+// otherSignature reports whether head is a call, reply or exception of a
+// signature other than the one the operation's first argument is of:
+// getcall(S1:...) takes no call of S2, getreply(S2:...) no reply to S1,
+// catch(S2, ...) no exception of S1 (ETSI 22.3.2, 22.3.4, 22.3.6). Told
+// only when both are known to be signatures.
+func otherSignature(arg syntax.Expr, head runtime.PortMessage, env runtime.Scope) bool {
+	if head.Signature == "" {
+		return false
+	}
+	sd := callSignatureDecl(arg, env)
+	if sd == nil {
+		return false
+	}
+	return differentSignatures(syntax.Name(sd.Name), head.Signature, env)
+}
+
+// differentSignatures reports whether the signatures recorded as a and b
+// differ. Each is the signature's name or, where the engine could not
+// tell it — a template passed as a formal parameter — the name it was
+// referred to by; two names are taken to differ only when both name
+// signatures, so a reply is not refused for how its call was written.
+func differentSignatures(a, b string, env runtime.Scope) bool {
+	if a == b {
+		return false
+	}
+	for _, name := range []string{a, b} {
+		if td := lookupTypeDesc(name, env); td == nil || td.Signature == nil {
+			return false
+		}
+	}
+	return true
 }
 
 // procCallSigKey stashes the signature of the enclosing blocking
@@ -11496,7 +11620,7 @@ func pushCallSignature(ce *syntax.CallExpr, env runtime.Scope) func() {
 	if ce == nil || ce.Args == nil || len(ce.Args.List) == 0 {
 		return nil
 	}
-	sig := procSignatureName(ce.Args.List[0])
+	sig := procSignatureOf(ce.Args.List[0], env)
 	if sig == "" {
 		return nil
 	}
@@ -11680,6 +11804,9 @@ func procReceiveMatches(op string, call *syntax.CallExpr, head runtime.PortMessa
 func procReceiveMatch(op string, call *syntax.CallExpr, head runtime.PortMessage, env runtime.Scope) (ok bool, pars, val runtime.Object) {
 	if call == nil || call.Args == nil || len(call.Args.List) == 0 {
 		return true, nil, nil
+	}
+	if otherSignature(call.Args.List[0], head, env) {
+		return false, nil, nil
 	}
 	switch op {
 	case "catch":
@@ -12323,14 +12450,14 @@ func evalProcedureReplyRaiseTo(op, bareName string, call *syntax.CallExpr, toExp
 		var sig string
 		if call != nil && call.Args != nil && len(call.Args.List) > 0 {
 			params, ret = procSignatureArg(call.Args.List[0], env)
-			sig = procSignatureName(call.Args.List[0])
+			sig = procSignatureOf(call.Args.List[0], env)
 		}
 		msg = runtime.PortMessage{Kind: runtime.MsgReply, Sender: exec.CurrentComponent(), Payload: params, RetValue: ret, Signature: sig}
 	case "raise":
 		var exc runtime.Object
 		var sig string
 		if call != nil && call.Args != nil && len(call.Args.List) >= 1 {
-			sig = procSignatureName(call.Args.List[0])
+			sig = procSignatureOf(call.Args.List[0], env)
 		}
 		if call != nil && call.Args != nil && len(call.Args.List) >= 2 {
 			exc = evalExceptionValue(call.Args.List[1], env)
@@ -12753,7 +12880,7 @@ func evalPortReceiveInfo(port string, info commOpInfo, env runtime.Scope, consum
 		// reply/exception left over from a different, unhandled call.
 		if payloadOk && (kind == runtime.MsgReply || kind == runtime.MsgException) &&
 			procReceiveIsUnqualified(info.call) && head.Signature != "" {
-			if csig := currentCallSignature(env); csig != "" && csig != head.Signature {
+			if csig := currentCallSignature(env); csig != "" && differentSignatures(csig, head.Signature, env) {
 				payloadOk = false
 				mismatchDesc = "answers " + head.Signature + ", not the called " + csig
 			}
@@ -13570,11 +13697,34 @@ func standaloneAlt(s *syntax.ExprStmt) (*syntax.AltStmt, bool) {
 		return alt, alt != nil
 	}
 	var alt *syntax.AltStmt
-	if isReceivingOp(s.Expr) {
+	if isReceivingOp(s.Expr) || isComponentArrayWait(s.Expr) {
 		alt = &syntax.AltStmt{NoDefault: s.NoDefault, Body: &syntax.BlockStmt{Stmts: []syntax.Stmt{&syntax.CommClause{Comm: s}}}}
 	}
 	standaloneAlts.Store(s, alt)
 	return alt, alt != nil
+}
+
+// isComponentArrayWait reports whether e is `any from cs.done` or `all
+// from cs.killed`, with a redirect or not: as a statement, it waits as
+// the alt with that one alternative does, as `c.done` does (ETSI 21.3.7,
+// 21.3.8).
+func isComponentArrayWait(e syntax.Expr) bool {
+	if r, ok := e.(*syntax.RedirectExpr); ok {
+		e = r.X
+	}
+	fe, ok := e.(*syntax.FromExpr)
+	if !ok {
+		return false
+	}
+	sel, ok := fe.X.(*syntax.SelectorExpr)
+	if !ok {
+		return false
+	}
+	switch syntax.Name(sel.Sel) {
+	case "done", "killed":
+		return true
+	}
+	return false
 }
 
 // isReceivingOp reports whether e is a receiving operation on a port:

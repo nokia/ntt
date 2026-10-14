@@ -337,6 +337,32 @@ Independent of the two clocks:
   clock, as expired default timers did before.
 - **A call's signature no longer reaches a PTC** for the unqualified
   `getreply` / `catch` rule (22.3.1 h).
+- **`any from` over a PTC's port array matches** (ETSI 22.2.2, 22.3.2).
+  A PTC's queues are its own, and `any from p.getcall` or `any from
+  p.receive` looked in none of them, so it never matched there; five
+  conformance fixtures now pass.
+- **A getreply, getcall or catch qualified by a signature takes nothing of
+  another** (22.3.4). With the reply to `S1` at the head of the queue,
+  `p.getreply(S2:{} value ?)` took it, so of two calls in a row the second
+  could take the first's reply.
+- **`-> value v param (x)` binds both.** The parser read `v param (x)` as
+  one value target, as map's parameters are written, and neither was
+  bound.
+- **`any from cs.done -> value v @index value i` waits and binds** (21.3.7).
+  As a statement it did not wait, as an alt's only alternative it was not
+  taken for an event, and the verdict was never bound.
+- **An alt its `[else]` repeats is a loop.** A stop and the testcase's
+  time limit end it, as they end a loop, and on the virtual clock time
+  passes in it as in any computation; it ended after about a million
+  rounds as if it had finished. An `[else] { repeat }` that does nothing
+  else, beside a timer, waits for its events and the timer as it would
+  without the `[else]`, so on the virtual clock the timer fires at once.
+- **A `repeat` in an `if` or a loop repeats the alt** (20.2). Unless it
+  was a branch's last statement, the statements after it ran and the alt
+  ended.
+- **A call made with a template passed as a parameter gets its reply.**
+  An unqualified getreply in its block (22.3.1 h) compared the
+  parameter's name with the reply's signature and refused it.
 - **An error in a PTC's behaviour makes the testcase verdict `error`.** An
   unknown identifier, say, in a started behaviour ended the component with
   verdict `none`, so the testcase passed on the MTC's verdict alone. The
