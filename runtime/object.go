@@ -1881,6 +1881,9 @@ type ClassDesc struct {
 	Name string
 	Decl *syntax.ClassTypeDecl
 	Env  Scope
+	// Members caches, for the interpreter, what it finds of the class's
+	// members by name.
+	Members sync.Map
 }
 
 func (c *ClassDesc) Type() ObjectType { return CLASS_DESC }
@@ -1900,6 +1903,9 @@ func (c *ClassDesc) Equal(obj Object) bool {
 type ClassInstance struct {
 	Class  *ClassDesc
 	Fields map[string]Object
+	// Self is, for `super`, the object it is a view of, as its base
+	// class.
+	Self *ClassInstance
 }
 
 func (ci *ClassInstance) Get(name string) (Object, bool) {

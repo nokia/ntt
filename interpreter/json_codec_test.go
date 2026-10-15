@@ -362,3 +362,163 @@ func TestSharedConstantIsNotReordered(t *testing.T) {
 		}
 	}
 }
+
+// TestJSONVariants: the JSON encoding instructions of ES 201 873-11 Annex
+// B a type or field carries — name as (a text, a case change, name all
+// as), omit as null, asValue, fractionDigits, escape as, noType and the
+// JSON type identifications at encoding; default, name as, asValue and
+// useMinus at decoding — each as the annex's examples have them; and
+// decoding a bitstring of JSON text, as encvalue gives it.
+func TestJSONVariants(t *testing.T) {
+	src := `module M {
+type component C {}
+type record PhoneNumber {
+  integer countryPrefix optional,
+  integer networkPrefix,
+  integer localNumber
+} with { variant(countryPrefix) "omit as null"; variant(networkPrefix) "name as 'net'"; variant(localNumber) "name as uppercased" }
+type union PersonID { integer numericID, charstring email, charstring name }
+  with { variant(numericID) "name as 'ID'"; variant(email) "name as 'Email'"; variant(name) "name as 'Name'" }
+type record of PersonID PersonIDs;
+type union U1 { integer i, float f, octetstring os, charstring cs } with { variant "asValue" }
+type record of U1 RoU1;
+type record Product {
+  charstring name,
+  float price,
+  octetstring id optional,
+  charstring origin,
+  universal charstring text
+} with { variant(id) "default (FFFF)"; variant(origin) "default(Hungary)"; variant(text) "default (char(0,0,0,65) & ""?"")" }
+type record Lc { integer fieldOne, charstring fieldTwo } with { variant "name all as capitalized" }
+type float Num with { variant "fractionDigits 3" }
+type record Nums { Num a, Num b, float c } with { variant(c) "fractionDigits 0" }
+type charstring Esc with { variant "escape as usi" }
+type record Strs { Esc u, charstring s, charstring t } with { variant(s) "escape as short"; variant(t) "escape as transparent" }
+type float MZ with { variant "useMinus" }
+type record Z { float plain, MZ minus }
+type charstring NT with { variant "noType"; variant "JSON:string" }
+function enc(charstring what, charstring got, charstring want) {
+  if (got != want) { setverdict(fail, what, ": ", got, " /= ", want) }
+}
+testcase tc() runs on C {
+  enc("omit as null, name as", oct2char(bit2oct(encvalue(PhoneNumber:{ omit, 20, 1234567 }))), "{""countryPrefix"":null,""net"":20,""LOCALNUMBER"":1234567}");
+  enc("union names", oct2char(bit2oct(encvalue(PersonIDs:{ { numericID := 189249214 }, { email := "jdoe@mail.com" }, { name := "John Doe" } }))), "[{""ID"":189249214},{""Email"":""jdoe@mail.com""},{""Name"":""John Doe""}]");
+  enc("asValue", oct2char(bit2oct(encvalue(RoU1:{ { i := 10 }, { f := 6.4 }, { os := '1ED5'O }, { cs := "hello" } }))), "[10,6.4,""1ED5"",""hello""]");
+  enc("name all as", oct2char(bit2oct(encvalue(Lc:{ 1, "x" }))), "{""FieldOne"":1,""FieldTwo"":""x""}");
+  enc("fractionDigits", oct2char(bit2oct(encvalue(Nums:{ 3.1415, 3.14, 3.14 }))), "{""a"":31.415E-1,""b"":3.14,""c"":314E-2}");
+  var charstring bsl := char(0,0,0,92);
+  enc("escape", oct2char(bit2oct(encvalue(Strs:{ "a""b", "x/y", "q""r" }))), "{""u"":""a" & bsl & "u0022b"",""s"":""x" & bsl & "/y"",""t"":""q""r""}");
+  enc("noType", oct2char(bit2oct(encvalue(NT:"abc"))), """abc""");
+  var Product p;
+  var bitstring bs := oct2bit(char2oct("{ ""name"" : ""Shoe"", ""price"" : 29.50, ""text"" : ""available"" }"));
+  if (decvalue(bs, p) != 0 or p != { name := "Shoe", price := 29.5, id := 'FFFF'O, origin := "Hungary", text := "available" }) { setverdict(fail, "default: ", p) }
+  bs := oct2bit(char2oct("{ ""name"" : ""Shirt"", ""price"" : 12.99, ""id"" : null }"));
+  if (decvalue(bs, p) != 0 or p != { name := "Shirt", price := 12.99, id := omit, origin := "Hungary", text := char(0,0,0,65) & "?" }) { setverdict(fail, "default 2: ", p) }
+  var RoU1 r;
+  bs := oct2bit(char2oct("[10,6.4,""1ED5"",""hello""]"));
+  if (decvalue(bs, r) != 0 or r != { { i := 10 }, { f := 6.4 }, { os := '1ED5'O }, { cs := "hello" } }) { setverdict(fail, "asValue dec: ", r) }
+  var PhoneNumber pn;
+  bs := oct2bit(char2oct("{""net"":20,""LOCALNUMBER"":7}"));
+  var PhoneNumber want := { countryPrefix := omit, networkPrefix := 20, localNumber := 7 };
+  if (decvalue(bs, pn) != 0 or pn != want) { setverdict(fail, "name as dec: ", pn) }
+  var Z z;
+  bs := oct2bit(char2oct("{""plain"":-0.0,""minus"":-0.0}"));
+  if (decvalue(bs, z) != 0) { setverdict(fail, "useMinus dec") }
+  log(z, " ", 1.0 / z.minus);
+  setverdict(pass)
+}
+} with { encode "JSON" }`
+	for _, k := range clocks {
+		v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", k.opts)
+		if err != nil || v != runtime.PassVerdict {
+			t.Errorf("%s clock: %s (%s) %v", k.name, v, reason, err)
+		}
+	}
+}
+
+// TestJSONVariantNotApplied: a type with an instruction the codec does not
+// apply goes as before there was a JSON codec — its value round-trips —
+// and another codec's instruction is not the JSON codec's.
+func TestJSONVariantNotApplied(t *testing.T) {
+	src := `module M {
+		type component C {}
+		type record R { integer a } with { variant "useOrder" }
+		type record S { integer a } with { variant "XER"."name as 'X'"; variant(a) "name as 'A'" }
+		testcase tc() runs on C {
+			var R r := { a := 1 }, r2;
+			var bitstring b := encvalue(r);
+			if (decvalue(b, r2) != 0 or r2 != r) { setverdict(fail, "round trip ", r2) }
+			var universal charstring e := encvalue_unichar(S:{ a := 2 });
+			if (e != "{""A"":2}") { setverdict(fail, "encoded ", e) }
+			setverdict(pass)
+		}
+	} with { encode "JSON" }`
+	for _, k := range clocks {
+		v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", k.opts)
+		if err != nil || v != runtime.PassVerdict {
+			t.Errorf("%s clock: %s (%s) %v", k.name, v, reason, err)
+		}
+	}
+}
+
+// TestJSONVariantsWhereTheyBelong: an instruction applies to what it is
+// written for — a field qualifier to the type's own field, or to the field
+// of the type an enclosing scope names (`variant (Q.x)`), not to a
+// like-named field of a type it was not written on, nor to a field named
+// so but for its case; a rename to another member's name leaves the type
+// to the placeholder codec; JSON that does not fit the type does not
+// decode; a default's value is the declaring module's, a
+// structured one written as a value, whoever decodes. The type identifications
+// the codec does not apply (JSON:literal) leave the type to the placeholder
+// codec; a bitstring encvalue gave decodes to its value whichever
+// encoding is named; empty strings and an integral float round-trip.
+func TestJSONVariantsWhereTheyBelong(t *testing.T) {
+	src := `module M {
+		type component C { const integer c_k := 99 }
+		const integer c_k := 7;
+		type record P { integer a, integer b }
+		type record R { integer foo, integer b }
+		type record Two { integer aB, integer ab } with { variant(aB) "name as 'X'" }
+		type record D { integer x, integer k, charstring s, P p } with {
+			variant(k) "default (c_k)"; variant(s) "default (abc)"; variant(p) "default ({3, 4})"
+		}
+		type enumerated Null { null_ } with { variant "JSON:literal" }
+		type integer I with { variant "normalize" }
+		type record E { octetstring o, hexstring h, bitstring b, float f }
+		type record Clash { integer a, integer b } with { variant(a) "name as 'b'" }
+		type record Q { integer x, integer y }
+		function dec(universal charstring s) return D {
+			const integer c_k := 42; var charstring abc := "shadow";
+			var D d;
+			if (decvalue_unichar(s, d) != 0) { setverdict(fail, "decode ", s) }
+			return d
+		}
+		testcase tc() runs on C {
+			var universal charstring e := encvalue_unichar(R:{ foo := 1, b := 2 });
+			if (e != "{""foo"":1,""b"":2}") { setverdict(fail, "R ", e) }
+			var Two two := { aB := 1, ab := 2 }, two2;
+			if (decvalue(encvalue(two), two2) != 0 or two2 != two) { setverdict(fail, "case ", two2) }
+			var D d := dec("{""x"":1}");
+			if (d.k != 7 or d.s != "abc" or d.p.a != 3 or d.p.b != 4) { setverdict(fail, "defaults ", d) }
+			var Null n := null_, n2;
+			if (decvalue(encvalue(n), n2) != 0 or n2 != n) { setverdict(fail, "literal ", n2) }
+			var I i := 53, i2;
+			if (decvalue(encvalue(i), i2, "", "JSON") != 0 or i2 != 53) { setverdict(fail, "cache ", i2) }
+			var E x := { o := ''O, h := ''H, b := ''B, f := 1.0 }, x2;
+			if (decvalue(encvalue(x), x2) != 0 or x2 != x) { setverdict(fail, "empty ", x2) }
+			if (encvalue_unichar(x) != "{""o"":"""",""h"":"""",""b"":"""",""f"":1.0}") { setverdict(fail, encvalue_unichar(x)) }
+			var Clash cl := { a := 1, b := 2 }, cl2;
+			if (decvalue(encvalue(cl), cl2) != 0 or cl2 != cl) { setverdict(fail, "clash ", cl2) }
+			if (encvalue_unichar(Q:{ x := 1, y := 2 }) != "{""X"":1,""y"":2}") { setverdict(fail, "Q ", encvalue_unichar(Q:{ x := 1, y := 2 })) }
+			var P pp;
+			if (decvalue(encvalue(R:{ foo := 1, b := 2 }), pp) == 0) { setverdict(fail, "an R decoded as a P ", pp) }
+			setverdict(pass)
+		}
+	} with { encode "JSON"; variant (Foo) "name as 'ZZ'"; variant (Q.x) "name as 'X'" }`
+	for _, k := range clocks {
+		v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", k.opts)
+		if err != nil || v != runtime.PassVerdict {
+			t.Errorf("%s clock: %s (%s) %v", k.name, v, reason, err)
+		}
+	}
+}

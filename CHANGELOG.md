@@ -122,8 +122,24 @@ single functional test doubles as a performance probe. See
   `valueof`, or an element or field of one — each as its own declaration
   gives it — and may be qualified (`A.R`); its field types are the
   declaring module's. A value wrapped in an object naming its type,
-  `{"M.T": value}`, decodes too. A type with JSON `variant` attributes, its
-  own or a field type's, is not handled by this codec yet.
+  `{"M.T": value}`, decodes too; a value is encoded without that wrapper,
+  as `variant "noType"` has it. The encoding instructions of the
+  standard's Annex B apply: `name as` (a name, or `capitalized`,
+  `uncapitalized`, `lowercased`, `uppercased`, and `name all as` for every
+  field), `omit as null`, `asValue` for a union, `default (...)` for a
+  field the text leaves out, `fractionDigits`, `escape as` (`short`,
+  `usi`, `transparent`), `useMinus`, `noType` and the `JSON:array`,
+  `integer`, `number` and `string` identifications. A field's instruction
+  is the type's own, or an enclosing scope's naming the type (`variant
+  (T.f) "..."`); a default's value is the declaring module's. A type
+  with `useOrder`, `normalize`, `errorbehavior`, `JSON:literal`,
+  `JSON:object` or `JSON:objectMember`, an instruction qualified by a field
+  of a field, or by a name two fields share but for its case, or with a
+  `name as` that names two members alike, is left to
+  the round-trip placeholder codec, as before; an instruction qualified by
+  another codec (`variant "XER"."..."`) is that codec's. A float is
+  written with a fraction or an exponent, `1.0`, so it is no integer;
+  empty octet, hex and bit strings decode as `''O`, `''H`, `''B`.
 - **`[EXECUTE] Module.control`** — a `.cfg` may name a module's control
   part, as `Module.control` or the module's bare name, and so may
   `--pattern Module.control`; `ntt exec` then runs it as one case: its
@@ -396,6 +412,65 @@ Independent of the two clocks:
   alt, or the behaviour; in an interleave branch body, the behaviour. One
   an altstep's top alternative ends in leaves the alt around the altstep,
   as before.
+- **A component type's `template` members are bound** (ETSI 6.2.10):
+  plain, modified, parameterised, inherited through `extends`, for the
+  MTC and each PTC. Naming one was `identifier not found`.
+- **The methods of a class declared `runs on` a component type see the
+  component's variables** (ES 203 790 5.1.1), of whichever component
+  runs them, as a function with `runs on` does; they read and wrote a
+  copy of the module's. A subclass of such a class has them too.
+- **Inside a class, its members are named without `this.`** (ES 203 790
+  5.1.1, 5.1.1.9): a field, constant or method by its name alone, a
+  parameter or local of the method hiding it and it hiding a like-named
+  definition of the module. A method sees its own class's members and
+  those it inherits, not a private one of a base class nor a subclass's;
+  a method called by its name is the object's most specific one, but a
+  private one, which is its class's own (5.1.1.10), with `this.` too. Each was
+  `identifier not found`. A field's initialiser may name a field declared
+  after it (5.1.1.6).
+- **A method called through `super` runs on the object itself**: a
+  method it calls, with `this.` or without, is the object's most specific
+  one (5.1.1.8); it was the base class's.
+- **A module's names resolve through its imports** (ETSI 8.2.3): a name
+  the module does not define is the definition it imports — by `all`, by
+  kind and name, by group, less what it excepts — where it was whichever
+  like-named definition of any module the run loaded last, so a module
+  importing `c` from A could read B's `c`. A private definition is not
+  imported, and a friend one only into a module its module declares a
+  friend. A name no import statement names resolves as before, in every
+  module of the run. A module
+  parameter set by its qualified name in a `.cfg` (`A.p := 11`) is A's
+  only, and is what a module importing A's `p` reads.
+- **A testcase run on its own takes its arguments and time limit as its
+  control part computes them.** Where they name anything (`var float x :=
+  1.0; execute(tc(k), x)`), the control part runs, on a clock of its own,
+  up to its `execute()` of the testcase: a helper setting an `inout`
+  argument, a loop, a condition count, its timers wait for nothing, what
+  it logs is not written, and the testcases it executes are not run,
+  each giving `none`. It runs once for the module, for all its
+  testcases, and for at most 100000 iterations of its loops; an actual
+  that is an object, a function or a reference is made in the
+  testcase's own run, from the control part's declarations. A limit in a variable was
+  not applied. The control part's statements before the `execute()` used
+  to run in the testcase, its timers' timeouts included, so a testcase
+  whose control part waited 30 s before executing it waited 30 s too, and
+  a `stop` in a helper stopped it. An `execute()` anywhere in a statement
+  — assigned, in a condition, an argument — counts, and `-` as an actual
+  takes the formal's default, there and in a control part; it was left
+  unbound.
+- **A control part's alt waits for its timers on the real clock**; it
+  returned at once, taking no branch. **And a control part's timer wait
+  ends when the control part's time is up** (`--timeout`), as its loops
+  did: it waited the timer out.
+- **`decvalue` reads a bitstring of whole octets as JSON text**, as
+  `encvalue` gives it, unless the testcase's own `encvalue` gave it; it
+  read only octetstrings and character strings.
+- **The analyzer rejects a constant or module parameter of class type**,
+  or of a type with a field or element of one (ES 203 790 5.1.1 d), and a
+  `@fuzzy` or `@lazy` template referenced in the actual of a
+  `@deterministic` parameter (ETSI 16.1.4 m), as it rejected such a
+  variable; a method's local constant counts. Both fixtures had been rejected only for the engine failing
+  on something else.
 - **A declaration may define its type** (ETSI 11.2, `TypeOrNestedTypeDef`):
   `var record of integer v := {1, 2, 3}`, and so constants, template
   variables, module parameters, component variables, formal parameters,

@@ -34,6 +34,8 @@ type jsonType struct {
 	name  string
 	spec  syntax.TypeSpec
 	scope runtime.Scope
+	// fv: the instructions of the field of this type, if it is one.
+	fv *jsonVariants
 }
 
 // jsonShape is a type resolved: its kind (record, set, union, list,
@@ -46,14 +48,17 @@ type jsonShape struct {
 	elem   jsonType
 	enum   *runtime.EnumType
 	scope  runtime.Scope
-	// variant: the type carries JSON variant attributes, which the codec
-	// does not apply (errJSONUnsupported).
-	variant bool
+	// The JSON encoding instructions of the type, and of its fields by
+	// name (json_variants.go); unsupported: one the codec does not apply
+	// (errJSONUnsupported).
+	tv          jsonVariants
+	fv          map[string]*jsonVariants
+	unsupported bool
 }
 
 // errJSONUnsupported: the type is one the codec does not handle; the
 // caller falls back to what it did before there was a JSON codec.
-var errJSONUnsupported = errors.New("JSON: a type with variant attributes")
+var errJSONUnsupported = errors.New("JSON: a type with variant attributes the codec does not apply")
 
 // jsonSyntaxError: the text is no JSON.
 type jsonSyntaxError struct{ err error }
@@ -79,17 +84,6 @@ func resolveTypeName(name string, scope runtime.Scope) (runtime.Object, runtime.
 	return nil, scope, false
 }
 
-// hasVariant reports whether td carries a variant attribute, its own or
-// one of a field's.
-func hasVariant(td *runtime.TypeDesc) bool {
-	for k, v := range td.Attrs {
-		if (k == "variant" || strings.HasSuffix(k, ".variant")) && len(v) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
 // jsonTypeOf resolves t: to a struct declaration (record, set, union), a
 // list, an enumerated type, or a base type. ok is false when the codec
 // cannot tell, and goes by the value instead.
@@ -98,13 +92,15 @@ func jsonTypeOf(t jsonType, env runtime.Scope) (jsonShape, bool) {
 	if t.scope != nil {
 		scope = t.scope
 	}
+	// The instructions of the types named on the way, an alias's first.
+	var tv jsonVariants
 	for depth := 0; depth < 32; depth++ {
 		if t.spec != nil {
 			switch s := t.spec.(type) {
 			case *syntax.StructSpec:
-				return jsonShape{kind: strings.ToLower(s.KindTok.String()), fields: s.Fields, scope: scope}, true
+				return jsonShape{kind: strings.ToLower(s.KindTok.String()), fields: s.Fields, scope: scope, tv: tv}, true
 			case *syntax.ListSpec:
-				return jsonShape{kind: "list", elem: jsonType{spec: s.ElemType, scope: scope}, scope: scope}, true
+				return jsonShape{kind: "list", elem: jsonType{spec: s.ElemType, scope: scope}, scope: scope, tv: tv}, true
 			case *syntax.RefSpec:
 				t = jsonType{name: syntax.Name(s.X)}
 				continue
@@ -117,7 +113,7 @@ func jsonTypeOf(t jsonType, env runtime.Scope) (jsonShape, bool) {
 			return jsonShape{}, false
 		}
 		if _, isBase := baseObjectTypeForName(name); isBase || strings.EqualFold(name, "verdicttype") {
-			return jsonShape{kind: strings.ToLower(name), scope: scope}, true
+			return jsonShape{kind: strings.ToLower(name), scope: scope, tv: tv}, true
 		}
 		v, where, found := resolveTypeName(name, scope)
 		if !found {
@@ -127,26 +123,50 @@ func jsonTypeOf(t jsonType, env runtime.Scope) (jsonShape, bool) {
 		switch d := v.(type) {
 		case *runtime.EnumType:
 			if a, ok := scope.Get(enumAttrKey(d.Name)); ok {
-				if td, ok := a.(*runtime.TypeDesc); ok && hasVariant(td) {
-					return jsonShape{variant: true}, true
+				if td, ok := a.(*runtime.TypeDesc); ok {
+					own, _, ok := jsonVariantsOf(td, nil)
+					if !ok {
+						return jsonShape{unsupported: true}, true
+					}
+					tv.fill(own)
 				}
 			}
-			return jsonShape{kind: "enumerated", enum: d, scope: scope}, true
+			return jsonShape{kind: "enumerated", enum: d, scope: scope, tv: tv}, true
 		case *runtime.TypeDesc:
-			if hasVariant(d) {
-				return jsonShape{variant: true}, true
+			var fields []*syntax.Field
+			if d.Struct != nil {
+				fields = d.Struct.Fields
 			}
+			own, fv, ok := jsonVariantsOf(d, fields)
+			if !ok {
+				return jsonShape{unsupported: true}, true
+			}
+			tv.fill(own)
 			// The type's own names resolve where it was declared.
 			if d.Home != nil {
 				scope = d.Home
 			}
 			if d.Struct != nil {
-				return jsonShape{kind: strings.ToLower(d.Struct.KindTok.String()), fields: d.Struct.Fields, scope: scope}, true
+				shape := jsonShape{kind: strings.ToLower(d.Struct.KindTok.String()), fields: d.Struct.Fields, scope: scope, tv: tv, fv: fv}
+				// A member named twice is no object (`name as` another
+				// field's name).
+				members := map[string]bool{}
+				for _, f := range shape.fields {
+					if f == nil || f.Name == nil {
+						continue
+					}
+					if m := shape.jsonName(f); members[m] {
+						return jsonShape{unsupported: true}, true
+					} else {
+						members[m] = true
+					}
+				}
+				return shape, true
 			}
 			if d.Spec != nil {
 				if _, isList := d.Spec.(*syntax.ListSpec); !isList && d.IsList {
 					// An array of the referenced type: `type integer A[3]`.
-					return jsonShape{kind: "list", elem: jsonType{spec: d.Spec, scope: scope}, scope: scope}, true
+					return jsonShape{kind: "list", elem: jsonType{spec: d.Spec, scope: scope}, scope: scope, tv: tv}, true
 				}
 				t = jsonType{spec: d.Spec}
 				continue
@@ -172,11 +192,12 @@ func (s jsonShape) field(name string) (*syntax.Field, jsonType) {
 }
 
 func (s jsonShape) fieldType(f *syntax.Field) jsonType {
+	fv := s.fv[f.Name.String()]
 	if len(f.ArrayDef) > 0 {
 		// `integer a[3]` in a record: a list of the field's type.
-		return jsonType{spec: &syntax.ListSpec{ElemType: f.Type}, scope: s.scope}
+		return jsonType{spec: &syntax.ListSpec{ElemType: f.Type}, scope: s.scope, fv: fv}
 	}
-	return jsonType{spec: f.Type, scope: s.scope}
+	return jsonType{spec: f.Type, scope: s.scope, fv: fv}
 }
 
 // encodeJSON renders v as JSON text by its type t.
@@ -190,9 +211,10 @@ func encodeJSON(v runtime.Object, t jsonType, env runtime.Scope) (string, error)
 
 func writeJSON(b *bytes.Buffer, v runtime.Object, t jsonType, env runtime.Scope) error {
 	shape, known := jsonTypeOf(t, env)
-	if shape.variant {
+	if shape.unsupported {
 		return errJSONUnsupported
 	}
+	eff := shape.tv.over(t.fv)
 	switch x := v.(type) {
 	case runtime.Int:
 		b.WriteString(x.String())
@@ -206,12 +228,24 @@ func writeJSON(b *bytes.Buffer, v runtime.Object, t jsonType, env runtime.Scope)
 			b.WriteString(`"-infinity"`)
 		case math.IsNaN(f):
 			b.WriteString(`"not_a_number"`)
+		case eff.hasFrac:
+			b.WriteString(formatJSONFloat(f, eff.fraction))
 		default:
-			b.WriteString(strconv.FormatFloat(f, 'g', -1, 64))
+			// A float as a number with a fraction or an exponent, which
+			// no integer is (7.2.10).
+			t := strconv.FormatFloat(f, 'g', -1, 64)
+			if !strings.ContainsAny(t, ".e") {
+				t += ".0"
+			}
+			b.WriteString(t)
 		}
 	case runtime.Bool:
 		b.WriteString(strconv.FormatBool(bool(x)))
 	case *runtime.String:
+		if eff.escape != "" {
+			writeJSONStringEscaped(b, string(x.Value), eff.escape)
+			return nil
+		}
 		return writeJSONString(b, string(x.Value))
 	case *runtime.EnumValue:
 		return writeJSONString(b, x.Key())
@@ -225,9 +259,17 @@ func writeJSON(b *bytes.Buffer, v runtime.Object, t jsonType, env runtime.Scope)
 				return fmt.Errorf("JSON: a union value with %d alternatives", len(x.Fields))
 			}
 			for k, fv := range x.Fields {
-				_, ft := shape.field(k)
+				f, ft := shape.field(k)
+				// As its alternative's value alone (B.3.10).
+				if eff.asValue {
+					return writeJSON(b, fv, ft, env)
+				}
+				member := k
+				if f != nil {
+					member = shape.jsonName(f)
+				}
 				b.WriteByte('{')
-				writeJSONString(b, k)
+				writeJSONString(b, member)
 				b.WriteByte(':')
 				err := writeJSON(b, fv, ft, env)
 				b.WriteByte('}')
@@ -302,6 +344,10 @@ func writeJSONObject(b *bytes.Buffer, m map[string]runtime.Object, order []strin
 	first := true
 	for _, n := range names {
 		f, ft := shape.field(n)
+		member := n
+		if f != nil {
+			member = shape.jsonName(f)
+		}
 		fv, ok := m[n]
 		if !ok || fv == nil || fv == runtime.Omit || fv == runtime.Undefined {
 			if known && f != nil && f.Optional == nil {
@@ -310,13 +356,22 @@ func writeJSONObject(b *bytes.Buffer, m map[string]runtime.Object, order []strin
 			if known && f != nil && fv == runtime.Undefined {
 				return fmt.Errorf("JSON: optional field %s is unbound", n)
 			}
+			// An omitted field as null (B.3.8).
+			if known && f != nil && ft.fv != nil && ft.fv.omitAsNull {
+				if !first {
+					b.WriteByte(',')
+				}
+				first = false
+				writeJSONString(b, member)
+				b.WriteString(":null")
+			}
 			continue
 		}
 		if !first {
 			b.WriteByte(',')
 		}
 		first = false
-		writeJSONString(b, n)
+		writeJSONString(b, member)
 		b.WriteByte(':')
 		if err := writeJSON(b, fv, ft, env); err != nil {
 			return err
@@ -445,12 +500,13 @@ func readJSONValue(dec *json.Decoder) (interface{}, error) {
 
 func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object, error) {
 	shape, known := jsonTypeOf(t, env)
-	if shape.variant {
+	if shape.unsupported {
 		return nil, errJSONUnsupported
 	}
 	if !known {
 		return inferJSONValue(x), nil
 	}
+	eff := shape.tv.over(t.fv)
 	kind := shape.kind
 	switch kind {
 	case "record", "set":
@@ -465,7 +521,17 @@ func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object
 			}
 			name := f.Name.String()
 			rec.Order = append(rec.Order, name)
-			jv, present := m[name]
+			ft := shape.fieldType(f)
+			jv, present := m[shape.jsonName(f)]
+			// A field left out takes its default (B.3.9).
+			if !present && ft.fv != nil && ft.fv.hasDefault {
+				dv, err := jsonDefault(ft.fv.def, ft, env)
+				if err != nil {
+					return nil, fmt.Errorf("%s: %w", name, err)
+				}
+				rec.Fields[name] = dv
+				continue
+			}
 			if !present || jv == nil {
 				if f.Optional != nil {
 					rec.Fields[name] = runtime.Omit
@@ -473,7 +539,7 @@ func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object
 				}
 				return nil, fmt.Errorf("JSON: field %s missing", name)
 			}
-			fv, err := fromJSONValue(jv, shape.fieldType(f), env)
+			fv, err := fromJSONValue(jv, ft, env)
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", name, err)
 			}
@@ -481,12 +547,31 @@ func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object
 		}
 		return rec, nil
 	case "union":
+		// The value alone: the first alternative it is a value of
+		// (B.3.10).
+		if eff.asValue {
+			for _, f := range shape.fields {
+				if f == nil || f.Name == nil {
+					continue
+				}
+				fv, err := fromJSONValue(x, shape.fieldType(f), env)
+				if errors.Is(err, errJSONUnsupported) {
+					return nil, err
+				}
+				if err == nil {
+					rec := runtime.NewRecord()
+					rec.Fields[f.Name.String()] = fv
+					return rec, nil
+				}
+			}
+			return nil, fmt.Errorf("JSON: %v is a value of no alternative of the union", x)
+		}
 		m, ok := x.(map[string]interface{})
 		if !ok || len(m) != 1 {
 			return nil, fmt.Errorf("JSON: want an object with one alternative for a union")
 		}
 		for k, jv := range m {
-			f, ft := shape.field(k)
+			f, ft := shape.fieldOfMember(k)
 			if f == nil {
 				return nil, fmt.Errorf("JSON: %s is no alternative of the union", k)
 			}
@@ -495,7 +580,7 @@ func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object
 				return nil, fmt.Errorf("%s: %w", k, err)
 			}
 			rec := runtime.NewRecord()
-			rec.Fields[k] = fv
+			rec.Fields[f.Name.String()] = fv
 			return rec, nil
 		}
 	case "list":
@@ -545,6 +630,10 @@ func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object
 			f, err := v.Float64()
 			if err != nil {
 				return nil, fmt.Errorf("JSON: %v", err)
+			}
+			// A negative zero is a zero, unless useMinus (B.3.6).
+			if f == 0 && !eff.useMinus {
+				f = 0
 			}
 			return runtime.Float(f), nil
 		case string:
@@ -622,10 +711,14 @@ func binaryFromDigits(s, kind string) (runtime.Object, error) {
 	if unit == runtime.Octet && len(s)%2 != 0 {
 		return nil, fmt.Errorf("JSON: %q is no whole number of octets", s)
 	}
+	suffix := map[string]string{"octetstring": "O", "bitstring": "B", "hexstring": "H"}[kind]
 	if s == "" {
+		// As the literal ''O is.
+		if v, err := runtime.NewBinarystring("''" + suffix); err == nil {
+			return v, nil
+		}
 		return &runtime.Binarystring{Unit: unit, Value: big.NewInt(0), Length: 0}, nil
 	}
-	suffix := map[string]string{"octetstring": "O", "bitstring": "B", "hexstring": "H"}[kind]
 	v, err := runtime.NewBinarystring("'" + s + "'" + suffix)
 	if err != nil {
 		return nil, fmt.Errorf("JSON: %q is no %s", s, kind)

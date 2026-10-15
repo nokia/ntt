@@ -61,6 +61,120 @@ func (a *Analyzer) checkClassMemberRules(mod *syntax.Module) []Diagnostic {
 	diags = append(diags, classCreateRunsOnDiags(mod, classes, ext)...)
 	diags = append(diags, classPrivateFieldAccessDiags(mod, classes)...)
 	diags = append(diags, classAnytypeFieldDiags(mod, classes)...)
+	diags = append(diags, classConstantDiags(mod, classes)...)
+	return diags
+}
+
+// classConstantDiags flags a constant, local or global, or a module
+// parameter whose type is a class type or a structured type with a field
+// or element of class type (ES 203 790 5.1.1, restriction d).
+func classConstantDiags(mod *syntax.Module, classes map[string]classMeta) []Diagnostic {
+	types := map[string]syntax.Node{}
+	syntax.Inspect(mod, func(n syntax.Node) bool {
+		switch t := n.(type) {
+		case *syntax.StructTypeDecl:
+			if t.Name != nil {
+				types[t.Name.String()] = t
+			}
+		case *syntax.SubTypeDecl:
+			if t.Field != nil && t.Field.Name != nil {
+				types[t.Field.Name.String()] = t.Field
+			}
+		}
+		return true
+	})
+	memo := map[string]bool{}
+	var holdsClass func(t syntax.Node) bool
+	holdsClass = func(t syntax.Node) bool {
+		switch t := t.(type) {
+		case *syntax.Ident, *syntax.SelectorExpr:
+			name := identOf(t.(syntax.Expr))
+			if sel, ok := t.(*syntax.SelectorExpr); ok {
+				name = identOf(sel.Sel)
+			}
+			if _, ok := classes[name]; ok {
+				return true
+			}
+			if v, ok := memo[name]; ok {
+				return v
+			}
+			memo[name] = false // a recursive type holds no class through itself
+			if d, ok := types[name]; ok {
+				memo[name] = holdsClass(d)
+			}
+			return memo[name]
+		case *syntax.RefSpec:
+			return holdsClass(t.X)
+		case *syntax.Field:
+			return t != nil && holdsClass(t.Type)
+		case *syntax.ListSpec:
+			return holdsClass(t.ElemType)
+		case *syntax.MapSpec:
+			return holdsClass(t.FromType) || holdsClass(t.ToType)
+		case *syntax.StructSpec:
+			for _, f := range t.Fields {
+				if holdsClass(f) {
+					return true
+				}
+			}
+		case *syntax.StructTypeDecl:
+			for _, f := range t.Fields {
+				if holdsClass(f) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	var diags []Diagnostic
+	check := func(vd *syntax.ValueDecl, kind string) {
+		if vd == nil || vd.Type == nil || !holdsClass(vd.Type) {
+			return
+		}
+		diags = append(diags, Diagnostic{
+			Code:     "class-typed-constant",
+			Severity: SeverityError,
+			Message: fmt.Sprintf(
+				"a %s cannot be of class type, or of a type with a field or element of class type (ETSI 5.1.1.0)",
+				kind),
+			Node: vd,
+			Span: syntax.SpanOf(vd),
+		})
+	}
+	var visit func(n syntax.Node) bool
+	visit = func(n syntax.Node) bool {
+		switch v := n.(type) {
+		case *syntax.ModuleParameterGroup:
+			for _, vd := range v.Decls {
+				check(vd, "module parameter")
+			}
+			return false
+		case *syntax.ValueDecl:
+			if v.KindTok == nil {
+				return true
+			}
+			switch v.KindTok.Kind() {
+			case syntax.CONST:
+				check(v, "constant")
+			case syntax.MODULEPAR:
+				check(v, "module parameter")
+			}
+		case *syntax.ClassTypeDecl:
+			// A class's own constant members are fields of the
+			// object, which may refer to objects; its methods'
+			// constants are local ones.
+			for _, d := range v.Defs {
+				if d != nil {
+					if _, ok := d.Def.(*syntax.ValueDecl); !ok {
+						syntax.Inspect(d.Def, visit)
+					}
+				}
+			}
+			return false
+		}
+		return true
+	}
+	syntax.Inspect(mod, visit)
 	return diags
 }
 

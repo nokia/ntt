@@ -158,6 +158,70 @@ func TestComponentVariables(t *testing.T) {
 				if (seen != 0) { setverdict(fail, "MTC seen=", seen) }
 			}
 		}`,
+		// A template member is the component's, as a variable is: plain,
+		// modified, parameterised, inherited, initialised from a
+		// variable, in the MTC and in a PTC.
+		"template members": `module M {
+			type record R { integer a, charstring b }
+			type port P message { inout R } with { extension "internal" }
+			type component B { template R t_base := { a := 1, b := "x" } }
+			type component C extends B {
+				var integer n := 5;
+				port P p;
+				template R t_mod modifies t_base := { b := "y" };
+				template R t_par(integer v) := { a := v, b := ? };
+				template integer t_n := n;
+			}
+			function f() runs on C {
+				if (not match(R:{1, "x"}, t_base) or not match(R:{1, "y"}, t_mod) or not match(5, t_n)) {
+					setverdict(fail, t_base, t_mod, t_n)
+				}
+				p.send(R:{ a := 3, b := "q" });
+				alt {
+					[] p.receive(t_par(4)) { setverdict(fail) }
+					[] p.receive(t_par(3)) { setverdict(pass) }
+				}
+			}
+			testcase tc() runs on C system C {
+				var C c := C.create;
+				connect(c:p, c:p);
+				connect(self:p, self:p);
+				c.start(f());
+				c.done;
+				f();
+			}
+		}`,
+		// The methods of a class declared runs on a component type read
+		// and write the variables of the component running them (ES 203
+		// 790 5.1.1), a subclass's too, in the MTC and in a PTC.
+		"a class that runs on the component": `module M {
+			type port P message { inout integer } with { extension "internal" }
+			type component C { var integer n := 5; port P p; timer t := 1.0 }
+			type class K runs on C {
+				var integer own := 1;
+				public function bump() { n := n + own; own := own + 1 }
+				public function ping() { p.send(n); t.start; p.receive(integer:?); t.stop }
+			}
+			type class K2 extends K {
+				public function twice() { bump(); bump() }
+			}
+			function f() runs on C {
+				var K2 k := K2.create();
+				k.twice();
+				k.ping();
+				if (n == 8) { setverdict(pass) } else { setverdict(fail, "n=", n) }
+			}
+			testcase tc() runs on C system C {
+				var C c := C.create;
+				connect(c:p, c:p);
+				c.start(f());
+				c.done;
+				if (n != 5) { setverdict(fail, "the MTC's changed: ", n) }
+				var K k := K.create();
+				k.bump();
+				if (n != 6) { setverdict(fail, "MTC n=", n) }
+			}
+		}`,
 	} {
 		for _, k := range clocks {
 			v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", k.opts)

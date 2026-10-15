@@ -37,3 +37,43 @@ func TestControlPartEndsWithItsContext(t *testing.T) {
 		t.Fatalf("verdict = %s (%s), want error, the control part stopped", v, reason)
 	}
 }
+
+// TestControlPartsOwnWaits: a control part's alt waits for its timers and
+// takes the one due first, on either clock; and on the real clock its time
+// running out ends a timer's wait, as it ends a loop.
+func TestControlPartsOwnWaits(t *testing.T) {
+	src := `module M {
+		type component C {}
+		testcase tp() runs on C { setverdict(pass) }
+		testcase tf() runs on C { setverdict(fail) }
+		control {
+			var integer which := 0;
+			timer t := 2.0, u := 0.2;
+			t.start; u.start;
+			alt {
+				[] t.timeout { which := 1 }
+				[] u.timeout { which := 2 }
+			}
+			if (which == 2 and t.running) { execute(tp()) } else { execute(tf()) }
+		}
+	}`
+	for _, k := range clocks {
+		v, reason, _ := interpreter.RunControlWith([]*ttcn3.Tree{parse(t, src)}, "M", k.opts)
+		if v != runtime.PassVerdict {
+			t.Errorf("%s clock: %s (%s), want pass", k.name, v, reason)
+		}
+	}
+	src = `module M {
+		type component C {}
+		testcase quick() runs on C { setverdict(pass) }
+		control { timer w := 30.0; w.start; w.timeout; execute(quick()) }
+	}`
+	start := time.Now()
+	v, reason, _ := interpreter.RunControlWith([]*ttcn3.Tree{parse(t, src)}, "M", interpreter.TestcaseOptions{TestcaseTimeout: 300 * time.Millisecond})
+	if v != runtime.ErrorVerdict || !strings.Contains(reason, "did not terminate") {
+		t.Errorf("verdict = %s (%s), want error, the control part did not terminate", v, reason)
+	}
+	if time.Since(start) > 10*time.Second {
+		t.Errorf("took %v, the control part's time is 300ms", time.Since(start))
+	}
+}

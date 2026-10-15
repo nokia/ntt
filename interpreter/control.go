@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"runtime/debug"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,6 +50,10 @@ type controlBudget struct {
 	ctx     context.Context
 	expired chan struct{}
 	once    sync.Once
+	// steps counts the iterations of the control part's loops, which
+	// maxSteps, when positive, bounds: time of a control part run for
+	// a testcase's actuals is told by them, not the clock.
+	steps, maxSteps int64
 }
 
 const controlBudgetKey = "\x00ttcn3:control-budget"
@@ -85,6 +91,9 @@ func (b *controlBudget) pause() {
 }
 
 func (b *controlBudget) spent() bool {
+	if b.maxSteps > 0 && b.steps >= b.maxSteps {
+		return true
+	}
 	select {
 	case <-b.expired:
 		return true
@@ -128,15 +137,40 @@ func controlClockOf(env runtime.Scope) *controlClock {
 	return c
 }
 
+// controlWait waits d on the real clock, for a timer of the control part
+// env is the scope of, and reports whether it waited it all: the control
+// part's time running out, or the run's, cuts it short.
+func controlWait(env runtime.Scope, d time.Duration) bool {
+	var expired, done <-chan struct{}
+	if v, ok := env.Get(controlBudgetKey); ok {
+		if b, ok := v.(*controlBudget); ok {
+			expired, done = b.expired, b.ctx.Done()
+		}
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-t.C:
+		return true
+	case <-expired:
+	case <-done:
+	}
+	return false
+}
+
 // controlBudgetSpent reports whether env is a control part's whose budget
-// is spent.
+// is spent, at a loop's iteration, which it counts.
 func controlBudgetSpent(env runtime.Scope) bool {
 	v, ok := env.Get(controlBudgetKey)
 	if !ok {
 		return false
 	}
 	b, ok := v.(*controlBudget)
-	return ok && b.spent()
+	if !ok {
+		return false
+	}
+	b.steps++
+	return b.spent()
 }
 
 // ControlPartIsLoadBearing reports whether a module's `control` part
@@ -291,6 +325,158 @@ func RunControlWith(trees []*ttcn3.Tree, module string, opts TestcaseOptions) (v
 	return agg, aggReason, nil
 }
 
+// controlRunTo returns what module's control part gives testcase tcName
+// at its first execute() of it — the actual parameters and the time
+// limit — for a testcase run on its own; found is false when the control
+// part does not reach one. The control part is run once for the module's
+// tree, the run's other trees and module parameters (controlActuals).
+func controlRunTo(trees []*ttcn3.Tree, modNode *syntax.Module, module, tcName string, opts TestcaseOptions) (args []runtime.Object, timeout float64, hasTimeout, found bool) {
+	var own *ttcn3.Tree
+	for _, t := range trees {
+		if t == nil || t.Root == nil {
+			continue
+		}
+		for _, m := range t.Modules() {
+			if m.Node == syntax.Node(modNode) {
+				own = t
+			}
+		}
+	}
+	if own == nil {
+		return nil, 0, false, false
+	}
+	var key strings.Builder
+	key.WriteString("interpreter.control:" + module)
+	for _, t := range trees {
+		fmt.Fprintf(&key, " %p", t)
+	}
+	params := make([]string, 0, len(opts.ModuleParameters))
+	for k, v := range opts.ModuleParameters {
+		params = append(params, k+"="+v)
+	}
+	sort.Strings(params)
+	key.WriteString(" " + strings.Join(params, ";"))
+	calls := own.Memo(key.String(), func() interface{} { return controlActuals(trees, modNode, module, opts) }).(map[string]executeCall)
+	c, ok := calls[tcName]
+	if !ok {
+		return nil, 0, false, false
+	}
+	for _, a := range c.args {
+		if a != nil && !plainValue(a) {
+			return nil, 0, false, false
+		}
+	}
+	args = make([]runtime.Object, len(c.args))
+	for i, a := range c.args {
+		if a != nil {
+			args[i] = runtime.CopyValue(a)
+		}
+	}
+	return args, c.timeout, c.hasTimeout, true
+}
+
+// executeCall is what an execute() gives its testcase.
+type executeCall struct {
+	args       []runtime.Object
+	timeout    float64
+	hasTimeout bool
+}
+
+// controlActuals runs module's control part and returns, for each testcase
+// it executes, what its first execute() of it gives. The control part runs
+// on a virtual clock of its own, whatever the run's, so its timers wait
+// for nothing; the testcases it executes are not run, each yielding none,
+// nor is anything it logs written; and it stops once it has executed every
+// testcase of the module, or after controlRunSteps loop iterations. An
+// actual that is no plain value (an object, say) is not taken.
+func controlActuals(trees []*ttcn3.Tree, modNode *syntax.Module, module string, opts TestcaseOptions) (calls map[string]executeCall) {
+	calls = map[string]executeCall{}
+	cp := findControlPart(modNode)
+	if cp == nil {
+		return calls
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			calls = map[string]executeCall{}
+		}
+	}()
+	own := map[string]bool{}
+	for _, d := range modNode.Defs {
+		if fn, ok := d.Def.(*syntax.FuncDecl); ok && fn.IsTest() {
+			own[syntax.Name(fn.Name)] = true
+		}
+	}
+	captured := 0
+	inner := opts
+	inner.TestLogger, inner.ModuleParamWarning, inner.actualArgs = nil, nil, nil
+	env, initErr := newModuleEnv(trees, modNode, module, inner)
+	if initErr != "" {
+		return calls
+	}
+	// Bounded by the iterations of its loops, so a run is like the
+	// last whatever the machine's load; and, should one iteration take
+	// long, by the clock.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	budget := newControlBudget(ctx, 10*time.Second)
+	budget.maxSteps = controlRunSteps
+	defer budget.pause()
+	env.Set(controlBudgetKey, budget)
+	env.Set(controlClockKey, &controlClock{})
+	env.Set(controlQuietKey, runtime.NewBool(true))
+	env.Set(executeHandlerKey, executeHandler{
+		run: func(name string, a []runtime.Object, d float64, hasD bool, _ string, _ bool) runtime.Verdict {
+			if _, seen := calls[name]; !seen {
+				calls[name] = executeCall{args: a, timeout: d, hasTimeout: hasD}
+				if own[name] {
+					captured++
+				}
+				if captured >= len(own) {
+					// The control part's loops end, as when its time is up.
+					budget.once.Do(func() { close(budget.expired) })
+				}
+			}
+			return runtime.NoneVerdict
+		}})
+	ctrlEnv := runtime.NewEnv(moduleScopeOf(env, module))
+	ctrlEnv.Set(runtime.ScopeNameKey, runtime.NewCharstring("control"))
+	eval(cp.Body, ctrlEnv)
+	return calls
+}
+
+// controlRunSteps bounds the loop iterations of a control part run for
+// a testcase's actuals.
+const controlRunSteps = 100000
+
+// plainValue reports whether v is a value of its own, which a testcase
+// can take from a control part run for its actuals: not an object, a
+// function, a component, port or timer reference, nor a value
+// holding one — those belong to the run.
+func plainValue(v runtime.Object) bool {
+	switch x := v.(type) {
+	case *runtime.ClassInstance, *runtime.ClassDesc, *runtime.Function, *runtime.ComponentRef,
+		*runtime.PortRef, *runtime.TimerHandle:
+		return false
+	case *runtime.Record:
+		for _, f := range x.Fields {
+			if !plainValue(f) {
+				return false
+			}
+		}
+	case *runtime.List:
+		for _, e := range x.Elements {
+			if !plainValue(e) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// controlQuietKey marks a control part that runs to compute a testcase's
+// actuals (controlActuals): what it logs is not written.
+const controlQuietKey = "\x00ttcn3:control-quiet"
+
 // runOneExecute runs a single testcase named by an execute() statement.
 //
 // The `timeout` and `host` operands are the two ways execute() can fail
@@ -420,7 +606,7 @@ func evalExecute(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 			// `-` selects the formal's default; carry it as a nil slot
 			// so bindTestcaseParamsWithValues falls back rather than
 			// binding the literal dash.
-			if dash, ok := a.(*syntax.Ident); ok && dash.String() == "-" {
+			if isDashExpr(a) {
 				args = append(args, nil)
 				continue
 			}
@@ -435,7 +621,7 @@ func evalExecute(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 	timeout, hasTimeout := 0.0, false
 	host, hasHost := "", false
 	for i, extra := range n.Args.List[1:] {
-		if dash, ok := extra.(*syntax.Ident); ok && dash.String() == "-" {
+		if isDashExpr(extra) {
 			continue
 		}
 		v := eval(extra, env)

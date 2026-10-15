@@ -2,6 +2,8 @@ package interpreter_test
 
 import (
 	"context"
+	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -529,6 +531,72 @@ func TestExecuteTimeoutWhileExchanging(t *testing.T) {
 	}
 }
 
+// TestRunOnItsOwnTakesTheControlParts: a testcase run on its own takes its
+// arguments and time limit from the control part's execute() of it, a
+// limit held in a control-part variable too, and does none of the control
+// part's waiting: the control part's own timers are not its.
+func TestRunOnItsOwnTakesTheControlParts(t *testing.T) {
+	for name, tc := range map[string]struct {
+		src  string
+		want runtime.Verdict
+	}{
+		"a limit in a variable": {`module M {
+			type component C {}
+			testcase tc() runs on C { setverdict(pass); timer g := 8.0; g.start; g.timeout; }
+			control { var float x := 0.5; execute(tc(), x) }
+		}`, runtime.ErrorVerdict},
+		"the control part's timer": {`module M {
+			type component C {}
+			testcase tc(integer k) runs on C {
+				timer g := 1.0; g.start; g.timeout;
+				if (k == 7) { setverdict(pass) } else { setverdict(fail, k) }
+			}
+			control {
+				timer w := 30.0;
+				w.start; w.timeout;
+				var integer k := 7;
+				var verdicttype v := execute(tc(k), 5.0);
+			}
+		}`, runtime.PassVerdict},
+		"an argument a helper sets, and a loop": {`module M {
+			type component C {}
+			testcase tc(integer k, integer a := 3) runs on C {
+				if (k == 13 and a == 3) { setverdict(pass) } else { setverdict(fail, k, a) }
+			}
+			function f_set(inout integer x) { x := 7 }
+			control {
+				var integer k := 1;
+				f_set(k);
+				for (var integer i := 0; i < 6; i := i + 1) { k := k + 1 }
+				if (k > 100) { k := 0 }
+				execute(tc(k, -));
+			}
+		}`, runtime.PassVerdict},
+		"an argument a waiting function gives": {`module M {
+			type component C {}
+			testcase tc(integer k) runs on C { if (k == 7) { setverdict(pass) } else { setverdict(fail, k) } }
+			function f_slow() return integer { timer t := 30.0; t.start; t.timeout; return 7 }
+			control { var integer k := f_slow(); execute(tc(k), 1.0) }
+		}`, runtime.PassVerdict},
+		"a limit in a condition": {`module M {
+			type component C {}
+			testcase tc() runs on C { setverdict(pass); timer g := 8.0; g.start; g.timeout; }
+			control { if (execute(tc(), 0.5) != pass) { log("not passed") } }
+		}`, runtime.ErrorVerdict},
+	} {
+		for _, k := range clocks {
+			start := time.Now()
+			v, reason, _ := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, tc.src)}, "M.tc", k.opts)
+			if v != tc.want {
+				t.Errorf("%s, %s clock: %s (%s), want %s", name, k.name, v, reason, tc.want)
+			}
+			if time.Since(start) > 10*time.Second {
+				t.Errorf("%s, %s clock: took %v", name, k.name, time.Since(start))
+			}
+		}
+	}
+}
+
 // TestTimerArrays: an element of a timer array starts with the duration
 // given (ETSI 23.2), and `any from ta.timeout` takes the first timer of the
 // array, in index order, that has timed out (ETSI 23.6) — as a statement,
@@ -591,6 +659,69 @@ func TestTimerArrays(t *testing.T) {
 			if err != nil || v != runtime.PassVerdict {
 				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
 			}
+		}
+	}
+}
+
+// TestRunOnItsOwnWritesNothingOfTheControlPart: what the control part logs
+// while it runs for a testcase's actuals is not written to the output.
+func TestRunOnItsOwnWritesNothingOfTheControlPart(t *testing.T) {
+	src := `module M {
+		type component C {}
+		testcase tc(integer k) runs on C { if (k == 1) { setverdict(pass) } else { setverdict(fail, k) } }
+		control { var integer k := 1; log("control side effect"); execute(tc(k)); log("after") }
+	}`
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stdout := os.Stdout
+	os.Stdout = w
+	v, reason, _ := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", interpreter.TestcaseOptions{})
+	os.Stdout = stdout
+	w.Close()
+	out, _ := io.ReadAll(r)
+	if v != runtime.PassVerdict {
+		t.Errorf("verdict = %s (%s), want pass", v, reason)
+	}
+	if len(out) > 0 {
+		t.Errorf("wrote %q", out)
+	}
+}
+
+// TestRunOnItsOwnWithAnObject: an object the control part creates for a
+// testcase's actual is the testcase's own, made in its run — its methods
+// see the testcase, and a second run of the testcase gets one of its own,
+// not the first's as that left it; and a control part that loops for good
+// once its testcases are executed costs a testcase run on its own little
+// time.
+func TestRunOnItsOwnWithAnObject(t *testing.T) {
+	tree := parse(t, `module M {
+		type component C {}
+		type class K {
+			var integer n := 0;
+			public function inc() return integer { n := n + 1; return n }
+			public function hello() { setverdict(pass) }
+		}
+		testcase t1(K o) runs on C { o.hello() }
+		testcase t2(K o) runs on C { if (o.inc() == 1) { setverdict(pass) } else { setverdict(fail, "n ", o.inc()) } }
+		testcase t3() runs on C { setverdict(pass) }
+		control {
+			var K o := K.create();
+			execute(t1(o));
+			execute(t2(o));
+			execute(t3());
+			while (true) {}
+		}
+	}`)
+	for _, tc := range []string{"M.t1", "M.t2", "M.t2", "M.t3"} {
+		start := time.Now()
+		v, reason, _ := interpreter.RunTestcaseWith([]*ttcn3.Tree{tree}, tc, interpreter.TestcaseOptions{})
+		if v != runtime.PassVerdict {
+			t.Errorf("%s: %s (%s), want pass", tc, v, reason)
+		}
+		if d := time.Since(start); d > 3*time.Second {
+			t.Errorf("%s: took %v", tc, d)
 		}
 	}
 }

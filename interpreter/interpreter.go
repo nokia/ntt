@@ -8136,12 +8136,13 @@ func waitForTimerTimeout(th *runtime.TimerHandle, env runtime.Scope) {
 		defer markWaiting(exec)()
 	}
 	exec := runtime.FindTestcaseExec(env)
-	t := time.NewTimer(remaining)
-	defer t.Stop()
 	if exec == nil {
-		<-t.C
+		// A control part's timer.
+		controlWait(env, remaining)
 		return
 	}
+	t := time.NewTimer(remaining)
+	defer t.Stop()
 	// Poll Stopped() alongside the timer fire so `self.stop` /
 	// `comp.stop` on a MTC unwinds the wait promptly. MessageReady
 	// is signalled on Stop, so we piggyback on its channel rather
@@ -9612,16 +9613,24 @@ func evalDecValue(fn string, n *syntax.CallExpr, env runtime.Scope) (res runtime
 					assignToLHS(n.Args.List[1], val, env)
 					return runtime.NewInt(0)
 				}
-				if res, ok := decodeExplicitJSON(n, enc, env); ok {
-					return res
-				}
 				// JSON that does not fit the type is no value of it,
 				// whatever value encoded to the same text. Text that is
 				// no JSON, or a type the codec does not handle, goes as
-				// before there was a JSON codec.
+				// before there was a JSON codec: a bitstring this
+				// testcase's encvalue gave is that value's (below),
+				// whatever encoding is named.
 				var syntaxErr jsonSyntaxError
 				if !errors.As(err, &syntaxErr) && !errors.Is(err, errJSONUnsupported) {
 					return runtime.NewInt(1)
+				}
+				placeholder := false
+				if bs, ok := enc.(*runtime.Binarystring); ok && bs.Unit == runtime.Bit {
+					_, placeholder = recallEncoded(env, bs)
+				}
+				if !placeholder {
+					if res, ok := decodeExplicitJSON(n, enc, env); ok {
+						return res
+					}
 				}
 			}
 		}
@@ -9695,9 +9704,6 @@ func jsonEncodedTypeOf(fn string, e syntax.Expr, call *syntax.CallExpr, env runt
 	}
 	if td == nil {
 		return t, inherited
-	}
-	if hasVariant(td) {
-		return jsonType{}, false
 	}
 	if isJSONEncodedType(td) {
 		return t, true
@@ -10108,15 +10114,23 @@ func parseErrorBehaviourSpec(s string, into map[string]string) {
 }
 
 // encodedText renders the encoded blob as text: octetstrings are read
-// as their raw bytes, charstrings as-is. Bitstrings and hexstrings
+// as their raw bytes, a bitstring of whole octets (what encvalue gives)
+// as those octets, charstrings as-is. Hexstrings, and other bitstrings,
 // don't carry whole octets, so they are not treated as JSON text.
 func encodedText(enc runtime.Object) (string, bool) {
 	switch v := enc.(type) {
 	case *runtime.Binarystring:
-		if v.Unit != runtime.Octet || v.Length <= 0 || v.Value == nil {
+		octets := v.Length
+		switch {
+		case v.Unit == runtime.Bit && v.Length%8 == 0:
+			octets = v.Length / 8
+		case v.Unit != runtime.Octet:
 			return "", false
 		}
-		raw := fmt.Sprintf("%0*X", v.Length*2, v.Value)
+		if octets <= 0 || v.Value == nil {
+			return "", false
+		}
+		raw := fmt.Sprintf("%0*X", octets*2, v.Value)
 		out := make([]byte, 0, v.Length)
 		for i := 0; i+1 < len(raw); i += 2 {
 			b, err := strconv.ParseUint(raw[i:i+2], 16, 8)
@@ -13802,10 +13816,26 @@ func jsonDefaultVariantBody(variant string) (string, bool) {
 
 func evalJSONDefaultExpr(expr string, env runtime.Scope) runtime.Object {
 	nodes := syntax.Parse([]byte(expr))
-	if nodes == nil || nodes.Err() != nil {
+	if nodes != nil && nodes.Err() == nil {
+		return eval(nodes, env)
+	}
+	// A value of a structured type, `{...}`, is no expression by itself:
+	// as a constant's value.
+	root := syntax.Parse([]byte("module __json_default { const integer __v := " + expr + "; }"))
+	if root == nil || root.Err() != nil {
 		return nil
 	}
-	return eval(nodes, env)
+	var value syntax.Expr
+	syntax.Inspect(root, func(n syntax.Node) bool {
+		if d, ok := n.(*syntax.Declarator); ok && value == nil {
+			value = d.Value
+		}
+		return value == nil
+	})
+	if value == nil {
+		return nil
+	}
+	return eval(value, env)
 }
 
 // timerAggregateBlockingTimeout implements `any timer.timeout` /

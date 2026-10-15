@@ -224,3 +224,31 @@ func TestModuleParamBareNameSetsEveryModule(t *testing.T) {
 		}
 	}
 }
+
+// TestModuleParamQualifiedSetsItsModule: `A.p` in a .cfg sets module A's
+// parameter only; a module importing p from A sees it, and one importing
+// B's like-named p does not.
+func TestModuleParamQualifiedSetsItsModule(t *testing.T) {
+	a := ttcn3.Parse(`module A { modulepar integer p := 1; }`)
+	b := ttcn3.Parse(`module B { modulepar integer p := 2; }`)
+	m := ttcn3.Parse(`module M {
+		import from A all;
+		type component C {}
+		testcase tc() runs on C { if (p == 11) { setverdict(pass) } else { setverdict(fail, p) } }
+	}`)
+	n := ttcn3.Parse(`module N {
+		import from B { modulepar p };
+		type component C {}
+		testcase tc() runs on C { if (p == 2) { setverdict(pass) } else { setverdict(fail, p) } }
+	}`)
+	for _, tc := range []string{"M.tc", "N.tc"} {
+		for _, order := range [][]*ttcn3.Tree{{a, b, m, n}, {b, a, n, m}} {
+			v, reason, err := interpreter.RunTestcaseWith(order, tc, interpreter.TestcaseOptions{
+				ModuleParameters: map[string]string{"A.p": "11"},
+			})
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s: verdict = %s (%s) %v, want pass", tc, v, reason, err)
+			}
+		}
+	}
+}

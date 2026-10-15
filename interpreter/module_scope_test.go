@@ -195,3 +195,76 @@ func TestFunctionWritesTheComponentsRecord(t *testing.T) {
 		}
 	}
 }
+
+// TestImportedNamesFirst: a name a module does not define resolves to the
+// definition it imports (ETSI ES 201 873-1 8.2.3), not to a like-named one
+// of another module of the run — by `all`, by kind and name, by group, less
+// what it excepts — whichever module the run loaded last.
+func TestImportedNamesFirst(t *testing.T) {
+	a := parse(t, `module A {
+		modulepar integer p := 1;
+		const integer c := 1;
+		group g1 { const integer gc := 1; template integer t := 1; }
+		function fa() return integer { return p }
+	}`)
+	b := parse(t, `module B {
+		modulepar integer p := 2;
+		const integer c := 2;
+		const integer gc := 2;
+		template integer t := 2;
+		function fa() return integer { return 20 }
+	}`)
+	m := parse(t, `module M {
+		import from A { modulepar p; group g1; function fa };
+		import from B all except { modulepar p; const gc; template all; function fa };
+		type component C {}
+		testcase tc() runs on C {
+			if (p == 1 and c == 2 and gc == 1 and match(1, t) and fa() == 1) { setverdict(pass) }
+			else { setverdict(fail, p, c, gc, t, fa()) }
+		}
+	}`)
+	n := parse(t, `module N {
+		import from A all;
+		type component C {}
+		testcase tc() runs on C {
+			if (p == 1 and c == 1 and gc == 1 and fa() == 1) { setverdict(pass) } else { setverdict(fail, p, c, gc, fa()) }
+		}
+	}`)
+	for _, tc := range []string{"M.tc", "N.tc"} {
+		for _, order := range [][]*ttcn3.Tree{{m, n, a, b}, {m, n, b, a}, {a, b, m, n}, {b, a, n, m}} {
+			for _, k := range clocks {
+				v, reason, err := interpreter.RunTestcaseWith(order, tc, k.opts)
+				if err != nil || v != runtime.PassVerdict {
+					t.Errorf("%s, %s clock: %s (%s) %v", tc, k.name, v, reason, err)
+				}
+			}
+		}
+	}
+}
+
+// TestImportVisibility: a private definition is not imported (ETSI 8.2.3),
+// so a like-named public one imported after it is the module's; a friend
+// definition is imported only by a module declared the friend.
+func TestImportVisibility(t *testing.T) {
+	a := parse(t, `module A { private const integer c := 1; friend module N; friend const integer d := 1; }`)
+	b := parse(t, `module B { public const integer c := 2; const integer d := 2; }`)
+	m := parse(t, `module M {
+		import from A all;
+		import from B all;
+		type component C {}
+		testcase tc() runs on C { if (c == 2 and d == 2) { setverdict(pass) } else { setverdict(fail, c, d) } }
+	}`)
+	n := parse(t, `module N {
+		import from A all;
+		type component C {}
+		testcase tc() runs on C { if (d == 1) { setverdict(pass) } else { setverdict(fail, d) } }
+	}`)
+	for _, tc := range []string{"M.tc", "N.tc"} {
+		for _, order := range [][]*ttcn3.Tree{{a, b, m, n}, {b, a, n, m}} {
+			v, reason, err := interpreter.RunTestcaseWith(order, tc, interpreter.TestcaseOptions{})
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s: %s (%s) %v", tc, v, reason, err)
+			}
+		}
+	}
+}

@@ -27,6 +27,20 @@ type Assigner interface {
 type Env struct {
 	outer Scope
 	*bindings
+	via Resolver
+}
+
+// A Resolver binds, for a scope, names the scope holds none of itself:
+// what a module imports.
+type Resolver interface {
+	// Resolve returns what name is bound to, and the scope binding it,
+	// if one does.
+	Resolve(name string) (Object, *Env, bool)
+}
+
+// NewEnvVia returns a scope inside outer that binds what via resolves.
+func NewEnvVia(outer Scope, via Resolver) *Env {
+	return &Env{outer: outer, bindings: &bindings{}, via: via}
 }
 
 // bindings is what a scope binds. A view (Env.View) shares it with the
@@ -54,6 +68,11 @@ func (env *Env) Get(name string) (Object, bool) {
 	if ok {
 		return val, true
 	}
+	if env.via != nil {
+		if val, _, ok := env.via.Resolve(name); ok {
+			return val, true
+		}
+	}
 	if env.outer != nil {
 		return env.outer.Get(name)
 	}
@@ -69,6 +88,11 @@ func (env *Env) Owner(name string) *Env {
 		e.mu.RUnlock()
 		if ok {
 			return e
+		}
+		if e.via != nil {
+			if _, owner, ok := e.via.Resolve(name); ok && owner != nil {
+				return owner
+			}
 		}
 		outer, isEnv := e.outer.(*Env)
 		if !isEnv {
@@ -113,6 +137,11 @@ func (env *Env) Assign(name string, val Object) bool {
 		return true
 	}
 	env.mu.Unlock()
+	if env.via != nil {
+		if _, owner, ok := env.via.Resolve(name); ok && owner != nil {
+			return owner.Assign(name, val)
+		}
+	}
 	if env.outer != nil {
 		if a, ok := env.outer.(Assigner); ok {
 			return a.Assign(name, val)
@@ -131,6 +160,12 @@ func RootScope(s Scope) Scope {
 		}
 		s = e.outer
 	}
+}
+
+// NewEnvOver returns a scope inside outer that binds what store holds,
+// shared, not copied: an object's fields seen by name from its methods.
+func NewEnvOver(outer Scope, store map[string]Object) *Env {
+	return &Env{outer: outer, bindings: &bindings{store: store}}
 }
 
 func NewEnv(outer Scope) *Env {

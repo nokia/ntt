@@ -208,6 +208,18 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 	env := runtime.NewEnv(nil)
 	bindVerdictConstants(env)
 	env.Set(runtime.ModuleNameKey, runtime.NewCharstring(module))
+	allMods := make([]*syntax.Module, 0, len(trees)+1)
+	for _, t := range trees {
+		if t == nil || t.Root == nil {
+			continue
+		}
+		for _, m := range t.Modules() {
+			if mod, ok := m.Node.(*syntax.Module); ok {
+				allMods = append(allMods, mod)
+			}
+		}
+	}
+	bindRunModules(env, trees)
 
 	// Initialise every other module first - templates, functions,
 	// constants etc. that the testcase's module imports will then be
@@ -330,17 +342,6 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 	// `OtherModule.PX_FOO` can target an import too, not just the
 	// testcase's own module.
 	if len(opts.ModuleParameters) > 0 {
-		allMods := make([]*syntax.Module, 0, len(trees)+1)
-		for _, t := range trees {
-			if t == nil || t.Root == nil {
-				continue
-			}
-			for _, m := range t.Modules() {
-				if mod, ok := m.Node.(*syntax.Module); ok {
-					allMods = append(allMods, mod)
-				}
-			}
-		}
 		for _, w := range ApplyModuleParameters(env, allMods, opts.ModuleParameters) {
 			if opts.ModuleParamWarning != nil {
 				opts.ModuleParamWarning(w)
@@ -376,8 +377,36 @@ func runTestcaseIn(env runtime.Scope, exec *runtime.TestcaseExec, trees []*ttcn3
 	// virtual time on the virtual clock (the scheduler stops the testcase
 	// when its clock would pass the limit), real time on the real clock.
 	limit, hasLimit := opts.executeTimeout, opts.hasExecuteTimeout
-	if !hasLimit && opts.actualArgs == nil {
-		limit, hasLimit = findExecuteTimeout(modNode, fnName, env)
+	// Run on its own, the testcase takes its arguments and time limit from
+	// the control part's first execute() of it, found and evaluated in a
+	// scope of the control part's declarations (findExecuteCall).
+	var ctrlEnv runtime.Scope
+	var execCall *syntax.CallExpr
+	var ranArgs []runtime.Object
+	if opts.actualArgs == nil {
+		ctrlEnv = runtime.NewEnv(moduleScopeOf(env, module))
+		execCall = findExecuteCall(modNode, fnName, nil)
+		// Arguments or a limit the control part computes: as it
+		// computes them, running it, on a clock of its own, up to the
+		// execute() (controlRunTo); failing that, evaluated in a scope
+		// of the control part's declarations.
+		if execCall != nil && needsControlRun(execCall) {
+			if args, d, hasD, ok := controlRunTo(trees, modNode, module, fnName, opts); ok {
+				ranArgs = args
+				if ranArgs == nil {
+					ranArgs = []runtime.Object{}
+				}
+				if !hasLimit {
+					limit, hasLimit = d, hasD
+				}
+				execCall = nil
+			} else {
+				execCall = findExecuteCall(modNode, fnName, ctrlEnv)
+			}
+		}
+		if !hasLimit {
+			limit, hasLimit = executeTimeout(execCall, ctrlEnv)
+		}
 	}
 	var limitCtx, outerCtx context.Context
 	if hasLimit && !opts.DeterministicScheduler {
@@ -506,10 +535,10 @@ func runTestcaseIn(env runtime.Scope, exec *runtime.TestcaseExec, trees []*ttcn3
 	// only exists once the control part has run.
 	if opts.actualArgs != nil {
 		bindTestcaseParamsWithValues(tcEnv, tcNode, opts.actualArgs)
+	} else if ranArgs != nil {
+		bindTestcaseParamsWithValues(tcEnv, tcNode, ranArgs)
 	} else {
-		ctrlEnv := runtime.NewEnv(env)
-		actualArgs := findExecuteArgs(modNode, fnName, ctrlEnv)
-		bindTestcaseParamsWithArgs(tcEnv, tcNode, actualArgs, ctrlEnv)
+		bindTestcaseParamsWithArgs(tcEnv, tcNode, executeArgs(execCall), ctrlEnv)
 	}
 	if lexec := tlExec(tcEnv); lexec != nil {
 		// tliTcTerminated is logged by the caller, once the verdict is
@@ -659,7 +688,7 @@ func bindTestcaseParamsWithArgs(env runtime.Scope, tc *syntax.FuncDecl, args []s
 		var val runtime.Object = runtime.Undefined
 		used := false
 		if i < len(args) && args[i] != nil {
-			if id, ok := args[i].(*syntax.Ident); ok && id.String() == "-" {
+			if isDashExpr(args[i]) {
 				// `-` means "use the default" - leave used
 				// false so the formal's default value (or
 				// the template wildcard) applies.
@@ -688,27 +717,27 @@ func bindTestcaseParamsWithArgs(env runtime.Scope, tc *syntax.FuncDecl, args []s
 	}
 }
 
-// findExecuteArgs scans the module's control part for the first
-// `execute(tcName(...))` call and returns its argument list. The
+// findExecuteCall scans the module's control part for the first
+// `execute(tcName(...))` call and returns it. A non-nil
 // argEnv scope is populated with the control body's preceding
 // var/const declarations so the captured argument expressions can be
-// evaluated against locally-bound identifiers. Returns nil if no such
-// call exists.
+// evaluated against locally-bound identifiers; with a nil one nothing is
+// evaluated. Returns nil if no such call exists.
 //
 // If a control statement is a call to a helper function (e.g.
 // `f_caller(6)`), the scanner recurses into the helper to look for
 // the `execute` call there. The helper's formal parameters are
 // pre-bound to the actual values so argument expressions inside the
 // helper that reference parameters evaluate correctly.
-func findExecuteArgs(mod *syntax.Module, tcName string, argEnv runtime.Scope) []syntax.Expr {
+func findExecuteCall(mod *syntax.Module, tcName string, argEnv runtime.Scope) *syntax.CallExpr {
 	if mod == nil {
 		return nil
 	}
 	visited := map[string]bool{}
-	return findExecuteArgsIn(mod, tcName, mod.Defs, argEnv, visited)
+	return findExecuteCallIn(mod, tcName, mod.Defs, argEnv, visited)
 }
 
-func findExecuteArgsIn(mod *syntax.Module, tcName string, defs []*syntax.ModuleDef, argEnv runtime.Scope, visited map[string]bool) []syntax.Expr {
+func findExecuteCallIn(mod *syntax.Module, tcName string, defs []*syntax.ModuleDef, argEnv runtime.Scope, visited map[string]bool) *syntax.CallExpr {
 	for _, d := range defs {
 		cp, ok := d.Def.(*syntax.ControlPart)
 		if !ok || cp.Body == nil {
@@ -721,7 +750,7 @@ func findExecuteArgsIn(mod *syntax.Module, tcName string, defs []*syntax.ModuleD
 	return nil
 }
 
-func scanBlockForExecute(mod *syntax.Module, tcName string, body *syntax.BlockStmt, argEnv runtime.Scope, visited map[string]bool) []syntax.Expr {
+func scanBlockForExecute(mod *syntax.Module, tcName string, body *syntax.BlockStmt, argEnv runtime.Scope, visited map[string]bool) *syntax.CallExpr {
 	if body == nil {
 		return nil
 	}
@@ -729,11 +758,15 @@ func scanBlockForExecute(mod *syntax.Module, tcName string, body *syntax.BlockSt
 		if args := scanStmtForExecute(mod, tcName, stmt, argEnv, visited); args != nil {
 			return args
 		}
-		// Pre-execute body statements so any locally-declared
-		// vars / consts referenced by the argument expressions
-		// exist in argEnv. Best-effort: a single bad statement
-		// can't poison the whole scan.
-		eval(stmt, argEnv)
+		// Pre-execute the declarations and assignments, so any
+		// locally-declared vars / consts referenced by the argument
+		// expressions exist in argEnv; nothing else — a timer's
+		// timeout, an alt — the control part waits on, or that
+		// logs. Best-effort: a single bad statement can't poison the
+		// whole scan.
+		if argEnv != nil && preparesArgs(stmt) {
+			eval(stmt, argEnv)
+		}
 	}
 	return nil
 }
@@ -743,12 +776,9 @@ func scanBlockForExecute(mod *syntax.Module, tcName string, body *syntax.BlockSt
 // so executes that live inside conditional or iteration bodies are
 // still discoverable. We don't try to evaluate the guard - we just
 // scan the body. The first match wins.
-func scanStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv runtime.Scope, visited map[string]bool) []syntax.Expr {
+func scanStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv runtime.Scope, visited map[string]bool) *syntax.CallExpr {
 	if call, ok := executeCallFor(stmt, tcName); ok {
-		if call.Args == nil {
-			return []syntax.Expr{}
-		}
-		return call.Args.List
+		return call
 	}
 	if args := scanHelperCall(mod, tcName, stmt, argEnv, visited); args != nil {
 		return args
@@ -800,7 +830,7 @@ func scanStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.Stmt, arg
 	return nil
 }
 
-func scanBlockOrStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv runtime.Scope, visited map[string]bool) []syntax.Expr {
+func scanBlockOrStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv runtime.Scope, visited map[string]bool) *syntax.CallExpr {
 	if stmt == nil {
 		return nil
 	}
@@ -816,7 +846,7 @@ func scanBlockOrStmtForExecute(mod *syntax.Module, tcName string, stmt syntax.St
 // helper's formals are bound to the actual call's arguments in a
 // fresh child scope so references inside resolve. Cycles are guarded
 // by a visited set keyed on function name.
-func scanHelperCall(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv runtime.Scope, visited map[string]bool) []syntax.Expr {
+func scanHelperCall(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv runtime.Scope, visited map[string]bool) *syntax.CallExpr {
 	es, ok := stmt.(*syntax.ExprStmt)
 	if !ok {
 		return nil
@@ -842,7 +872,7 @@ func scanHelperCall(mod *syntax.Module, tcName string, stmt syntax.Stmt, argEnv 
 	// Bind the helper's formal parameters in argEnv (shadowing any
 	// outer binding) so `execute(TC(p_val))` inside the helper
 	// resolves `p_val` to the actual value passed in.
-	if helper.Params != nil && call.Args != nil {
+	if argEnv != nil && helper.Params != nil && call.Args != nil {
 		for i, fp := range helper.Params.List {
 			if i >= len(call.Args.List) {
 				break
@@ -882,81 +912,123 @@ func bindFormalParam(env runtime.Scope, fp *syntax.FormalPar, v runtime.Object) 
 	env.Set(syntax.Name(fp.Name), v)
 }
 
-// executeCallFor reports whether stmt is `execute(tcName(...))` (or
-// `execute(tcName(...), ...)`) and returns the inner testcase call.
-// findExecuteTimeout returns the timeout operand of the control part's
-// first `execute(tcName(...), T)`, evaluated in the module scope, when it
-// has one that evaluates to a positive duration.
-func findExecuteTimeout(mod *syntax.Module, tcName string, env runtime.Scope) (float64, bool) {
-	cp := findControlPart(mod)
-	if cp == nil || cp.Body == nil {
-		return 0, false
-	}
-	// The first execute() of the testcase, as its arguments are taken
-	// from the first (findExecuteArgs).
-	var timeout syntax.Expr
-	found := false
-	cp.Body.Inspect(func(n syntax.Node) bool {
-		if found {
-			return false
-		}
-		call, ok := n.(*syntax.CallExpr)
-		if !ok {
-			return true
-		}
-		if id, ok := call.Fun.(*syntax.Ident); !ok || id.String() != "execute" || call.Args == nil || len(call.Args.List) == 0 {
-			return true
-		}
-		if tc, ok := call.Args.List[0].(*syntax.CallExpr); ok {
-			if id, ok := tc.Fun.(*syntax.Ident); ok && id.String() == tcName {
-				found = true
-				if len(call.Args.List) > 1 {
-					timeout = call.Args.List[1]
-				}
-			}
-		}
+// preparesArgs reports whether a control-part statement is one the
+// search for an execute()'s arguments runs: a declaration or an
+// assignment.
+func preparesArgs(stmt syntax.Stmt) bool {
+	switch s := stmt.(type) {
+	case *syntax.DeclStmt:
 		return true
-	})
-	if timeout == nil {
-		return 0, false
+	case *syntax.ExprStmt:
+		be, ok := s.Expr.(*syntax.BinaryExpr)
+		return ok && be.Op.Kind() == syntax.ASSIGN
 	}
-	var d float64
-	switch v := eval(timeout, runtime.NewEnv(env)).(type) {
-	case runtime.Float:
-		d = float64(v)
-	case runtime.Int:
-		d = float64(v.Int64())
-	default:
-		return 0, false
-	}
-	return d, d > 0
+	return false
 }
 
+// executeTimeout is the timeout operand of execute call, evaluated in env,
+// when it has one that evaluates to a positive duration.
+func executeTimeout(call *syntax.CallExpr, env runtime.Scope) (float64, bool) {
+	if call == nil || call.Args == nil || len(call.Args.List) < 2 {
+		return 0, false
+	}
+	if isDashExpr(call.Args.List[1]) {
+		return 0, false
+	}
+	d, ok := numericSeconds(eval(call.Args.List[1], runtime.NewEnv(env)))
+	return d, ok && d > 0
+}
+
+// executeArgs are the actual parameters execute call gives its testcase.
+func executeArgs(call *syntax.CallExpr) []syntax.Expr {
+	if call == nil || call.Args == nil || len(call.Args.List) == 0 {
+		return nil
+	}
+	tc, ok := call.Args.List[0].(*syntax.CallExpr)
+	if !ok || tc.Args == nil {
+		return []syntax.Expr{}
+	}
+	return tc.Args.List
+}
+
+// executeCallFor reports whether stmt executes testcase tcName —
+// `execute(tcName(...) [, ...])` anywhere in the statement's own
+// expressions, not those of a block it holds — and returns the execute
+// call.
 func executeCallFor(stmt syntax.Stmt, tcName string) (*syntax.CallExpr, bool) {
-	es, ok := stmt.(*syntax.ExprStmt)
-	if !ok {
-		return nil, false
+	var own []syntax.Node
+	switch s := stmt.(type) {
+	case *syntax.ExprStmt:
+		own = append(own, s.Expr)
+	case *syntax.DeclStmt:
+		own = append(own, s.Decl)
+	case *syntax.IfStmt:
+		own = append(own, s.Cond)
+	case *syntax.WhileStmt:
+		own = append(own, s.Cond)
+	case *syntax.DoWhileStmt:
+		own = append(own, s.Cond)
+	case *syntax.ForStmt:
+		own = append(own, s.Init, s.Cond, s.Post)
+	case *syntax.SelectStmt:
+		own = append(own, s.Tag)
+	case *syntax.ReturnStmt:
+		own = append(own, s.Result)
 	}
-	call, ok := es.Expr.(*syntax.CallExpr)
-	if !ok {
-		return nil, false
+	var found *syntax.CallExpr
+	for _, n := range own {
+		if n == nil || found != nil {
+			continue
+		}
+		syntax.Inspect(n, func(n syntax.Node) bool {
+			if found != nil {
+				return false
+			}
+			if call, ok := n.(*syntax.CallExpr); ok && isExecuteOf(call, tcName) {
+				found = call
+				return false
+			}
+			return true
+		})
 	}
+	return found, found != nil
+}
+
+// isExecuteOf reports whether call is `execute(tcName(...) [, ...])`.
+func isExecuteOf(call *syntax.CallExpr, tcName string) bool {
 	id, ok := call.Fun.(*syntax.Ident)
-	if !ok || id.String() != "execute" {
-		return nil, false
-	}
-	if call.Args == nil || len(call.Args.List) == 0 {
-		return nil, false
+	if !ok || id.String() != "execute" || call.Args == nil || len(call.Args.List) == 0 {
+		return false
 	}
 	tcCall, ok := call.Args.List[0].(*syntax.CallExpr)
 	if !ok {
-		return nil, false
+		return false
 	}
-	tcId, ok := tcCall.Fun.(*syntax.Ident)
-	if !ok || tcId.String() != tcName {
-		return nil, false
+	tcID, ok := tcCall.Fun.(*syntax.Ident)
+	return ok && tcID.String() == tcName
+}
+
+// needsControlRun reports whether execute call's arguments or time limit
+// name anything, which only running the control part gives its value.
+func needsControlRun(call *syntax.CallExpr) bool {
+	names := false
+	for i, a := range call.Args.List {
+		n := syntax.Node(a)
+		if i == 0 {
+			tc := a.(*syntax.CallExpr)
+			if tc.Args == nil {
+				continue
+			}
+			n = tc.Args
+		}
+		syntax.Inspect(n, func(n syntax.Node) bool {
+			if _, ok := n.(*syntax.Ident); ok {
+				names = true
+			}
+			return !names
+		})
 	}
-	return tcCall, true
+	return names
 }
 
 // bindVerdictConstants pre-populates env with the five TTCN-3 verdict
@@ -1270,6 +1342,10 @@ func evalLog(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 		if exec.TestLogger() != nil {
 			tlEmit(exec, n, "tliLog", tlArg("log", tl.String(line)))
 		}
+		return nil
+	}
+	// A control part run for a testcase's actuals writes nothing.
+	if _, quiet := env.Get(controlQuietKey); quiet {
 		return nil
 	}
 	// Fall back to the global builtin (which prints to stdout).
@@ -2080,12 +2156,14 @@ func initModuleDefs(root runtime.Scope, mod *syntax.Module) {
 // there (moduleScopeOf).
 func newModuleScope(root runtime.Scope, mod *syntax.Module) *runtime.Env {
 	name := syntax.Name(mod.Name)
-	s := runtime.NewEnv(root)
+	// Inside the scope of what the module imports (see imports.go).
+	imports := newImportResolver(root, mod)
+	s := runtime.NewEnv(runtime.NewEnvVia(root, imports))
 	s.Set(runtime.ModuleNameKey, runtime.NewCharstring(name))
 	// What a behaviour of the module encodes by, outside a testcase's own
 	// with (ETSI 27.1.2).
 	s.Set(activeAttrsKey, typeDescForScoped("", nil, []*syntax.WithSpec{mod.With}))
-	root.Set(moduleScopeKey(name), moduleScope{s})
+	root.Set(moduleScopeKey(name), moduleScope{env: s, imports: imports, mod: mod, defs: &moduleDefIndex{}})
 	return s
 }
 
@@ -2099,33 +2177,39 @@ func publishModuleScope(root runtime.Scope, s *runtime.Env) {
 		case runtime.ModuleNameKey, activeAttrsKey:
 			return
 		}
-		// A definition's declared type, seen from another module, is
-		// this module's type of that name: say so.
-		if strings.HasPrefix(name, declaredTypeKey("")) && mod != "" {
-			if tn, ok := val.(*runtime.String); ok && !strings.Contains(string(tn.Value), ".") && s.Binds(string(tn.Value)) {
-				val = runtime.NewCharstring(mod + "." + string(tn.Value))
-			}
-		}
-		root.Set(name, val)
+		root.Set(name, exportedValue(s, mod, name, val))
 	})
 }
 
 // moduleScopeOf returns module name's scope in the run whose flat scope is
 // root, or root when it has none.
 func moduleScopeOf(root runtime.Scope, name string) runtime.Scope {
-	if v, ok := root.Get(moduleScopeKey(name)); ok {
-		if m, ok := v.(moduleScope); ok {
-			return m.env
-		}
+	if m, ok := lookupModuleScope(root, name); ok {
+		return m.env
 	}
 	return root
 }
 
+func lookupModuleScope(root runtime.Scope, name string) (moduleScope, bool) {
+	if v, ok := root.Get(moduleScopeKey(name)); ok {
+		if m, ok := v.(moduleScope); ok {
+			return m, true
+		}
+	}
+	return moduleScope{}, false
+}
+
 func moduleScopeKey(name string) string { return "\x00ttcn3:module:" + name }
 
-// moduleScope carries a module's scope in the flat one; it is no TTCN-3
+// moduleScope carries a module's scope in the flat one, with the scope of
+// what the module imports, around it, and the module; it is no TTCN-3
 // value.
-type moduleScope struct{ env *runtime.Env }
+type moduleScope struct {
+	env     *runtime.Env
+	imports *importResolver
+	mod     *syntax.Module
+	defs    *moduleDefIndex
+}
 
 func (moduleScope) Type() runtime.ObjectType { return runtime.ObjectType("MODULE_SCOPE") }
 func (moduleScope) Inspect() string          { return "module scope" }
@@ -3391,7 +3475,11 @@ func commGuardMatches(g syntax.Node, env runtime.Scope) bool {
 // woke — with many components waiting, it is seldom this one.
 func waitForAltCombined(dur time.Duration, haveTimer bool, wake <-chan struct{}, env runtime.Scope) bool {
 	exec := runtime.FindTestcaseExec(env)
-	if exec == nil || exec.Stopped() {
+	if exec == nil {
+		// A control part's alt: only its timers can come due.
+		return haveTimer && controlWait(env, dur)
+	}
+	if exec.Stopped() {
 		return false
 	}
 	defer markWaiting(exec)()
@@ -3680,6 +3768,12 @@ func bindComponentMembers(env runtime.Scope, body *syntax.BlockStmt) {
 	for _, stmt := range body.Stmts {
 		ds, ok := stmt.(*syntax.DeclStmt)
 		if !ok {
+			continue
+		}
+		// A template member is the component's, as its variables are
+		// (6.2.10): bound as a template declared there.
+		if td, ok := ds.Decl.(*syntax.TemplateDecl); ok {
+			eval(td, env)
 			continue
 		}
 		vd, ok := ds.Decl.(*syntax.ValueDecl)

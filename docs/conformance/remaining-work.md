@@ -569,7 +569,12 @@ passed over for a thousand turns — and a parameter's default and a
   it counts as an event, and `-> value v` takes the verdict of the
   component that ended; 0 gained, 0 lost.* `any from cs.done -> @index
   value i` binds nothing.
-- A class declared `runs on C` (ES 203 790) does not see the component's
+- *Fixed 2026-10-15: its methods run in the variables of the component
+  running them, as a function with runs on does, and a class's members are
+  named without `this.` (5.1.1, 5.1.1.9), which they were not at all; 0
+  gained, 0 lost (NegSem_50101_top_level_006, rejected before only for the
+  bare member it names, is rejected now by a rule of its own, 5.1.1 d).*
+  A class declared `runs on C` (ES 203 790) does not see the component's
   variables in its methods.
 - *Fixed 2026-10-02 with the scope per module: a component type and what
   it extends are looked up in the run's scopes, in the declaring module.*
@@ -623,28 +628,102 @@ passed over for a thousand turns — and a parameter's default and a
   On a port mapped to the system with no driver, whose loopback stands in
   for the SUT's codec, a string-typed template still takes a value of any
   type.
-- A component type's `template` members are not bound.
-- An `execute()` timeout held in a control-part variable
+- *Fixed 2026-10-15; 0 gained, 0 lost (NegSem_050402_actual_parameters_187,
+  rejected before only for the member it names, is rejected now by the
+  16.1.4 m rule, which knows @fuzzy templates).* A component type's
+  `template` members are not bound.
+- *Fixed 2026-10-15: the arguments and the limit come from one execute();
+  where they name anything, the control part runs, on a virtual clock of
+  its own and running no testcase, up to it (controlRunTo), else they are
+  literals. The search ran every statement before the execute() in the
+  testcase — a timer's timeout, an alt, a `stop` in a helper, which
+  stopped the testcase; +1 (Sem_1909_stop_statement_004).*
+  An `execute()` timeout held in a control-part variable
   (`var float x := 1.0; execute(tc(), x)`) is not applied when `ntt exec`
   runs the testcase by name, reading the control part without running it;
   running the control part (`Module.control`) applies it.
-- The JSON codec applies no JSON `variant` attributes (ES 201 873-11
+- *Fixed 2026-10-15 but for `useOrder`, `normalize`, `errorbehavior` and an
+  instruction qualified by a field of a field, which still leave the type
+  to the placeholder codec; 0 gained, 0 lost (no fixture uses JSON).* The
+  JSON codec applies no JSON `variant` attributes (ES 201 873-11
   Annex B: `name as`, `as value`, `omit as null`, ...): a type carrying one,
   or whose fields' types do, is left to the round-trip placeholder codec,
   as before. `refers` and `anytype` are not encoded either.
-- On the real clock, a control part's own timer wait is not cut short by
+- The JSON codec writes a value without the type-name wrapper object
+  (`{"M.T": value}`) that ES 201 873-11 7.1 makes the default, as if every
+  type had `variant "noType"`; it reads a value with or without one. The
+  wrapper as default would change what every encvalue of a JSON type gives
+  — a request body sent to a service, say — so it is left for a decision.
+- Found writing the JSON variants, older: decvalue did not read a
+  bitstring as JSON text (*fixed 2026-10-15*), and empty octet, hex and bit
+  strings decoded as `'0'O`, `'0'H`, `'0'B` (*fixed 2026-10-15*).
+- **A record compared with a positional value pairs the fields by their
+  names in alphabetical order**, not the type's: `type record PN { integer
+  countryPrefix optional, integer networkPrefix, integer localNumber }`, a
+  decoded `p` or `var PN w := { omit, 20, 7 }` and `p == w` or `p == {
+  omit, 20, 7 }` is false. The record's own field order is no help: built
+  field by field, it is the order of the assignments. The comparison
+  needs the declared type of an operand. (Tried 2026-10-15 with the
+  record's order, and reverted: `rl[0].b := 2; rl[0].a := 1; rl[0] == {1,
+  2}` became false.)
+- Left by the JSON variants: an instruction qualified by an element
+  (`variant ([-]) "..."`) is dropped when the attributes are collected, so
+  the type encodes as though it had none; `name as` to another field's
+  name gives an object naming a member twice; `fractionDigits 0` writes
+  zero as `0E0` where the annex's table has `0E1`; a qualifier is kept in
+  lower case, so `variant(AB)` applies to a field `ab`.
+- *Fixed 2026-10-15; 0 gained, 0 lost.* On the real clock, a control part's own timer wait is not cut short by
   `--timeout`; its loops are. An `alt` in a control part with no branch
   ready returns at once.
+- A control part's own statements are not in the test log: its `log()`,
+  its timers, its alts. Only its start, its execute()s and its end are.
+- A testcase run on its own whose actual is another testcase's verdict
+  (`v := execute(other()); execute(tc(v))`) gets `none` for it: the
+  control part runs for the actuals without running the others, so a
+  branch on such a verdict takes the path `none` takes, which may execute
+  the testcase with other actuals than the control part itself would.
 - *Fixed 2026-10-07: a block that declares anything has a scope of its
   own.* `var R x` declared in an inner block (`if (...) { var R x ... }`)
   overwrites the value of a like-named variable of the enclosing block.
-- A testcase run on its own, not from a control part, has its
+- *Not reproduced 2026-10-15: since 2026-10-13 its parameters have their
+  declared types, so a field assigned and the whole value encoded take the
+  type's encoding; unbound, they stay unbound, as no actual gives them a
+  value.* A testcase run on its own, not from a control part, has its
   parameters unbound and untyped (its JSON encoding falls back).
-- Module parameters still live in the shared scope too: a module that
+- *Fixed 2026-10-15, for every kind of definition: a module's scope sits
+  inside one of what it imports (interpreter/imports.go), which resolves a
+  name, when first asked, through the import statements to the defining
+  module's scope; 0 gained, 0 lost. What no import statement names still
+  resolves in the run's flat scope: an enumerated value of a type imported
+  by name — so a bare enumerated value is any module's of that name —
+  and what a module imports through another's imports (`import from
+  X { import all }`). On a run of 40 modules each importing all the others,
+  setting up a testcase takes about a third more time.* Module parameters
+  still live in the shared scope too: a module that
   imports `p` from module A, where module B declares a `p` as well, may
-  read B's. A `.cfg` setting a parameter both by its bare and its
+  read B's.
+- A `.cfg` setting a parameter both by its bare and its
   qualified name gives the qualified one, whatever their order in the
   file (some tools let the later line win).
+- Left by the imports: a private or friend definition a module does not
+  import still resolves in the run's flat scope when no import names a
+  like-named one. (*Fixed 2026-10-15:* `this.p()` in a class called a
+  subclass's `p`, a private `p` of the class notwithstanding.)
+- A testcase run on its own whose control part loops more than 100000
+  times before executing it takes its actuals as the control part's
+  declarations alone give them, as before 2026-10-15; and one whose
+  actual is an object, function or reference, so.
+- Found reviewing the classes, older: a class's `template` and `timer`
+  members are undefined; a field initialised with a value list (`var R r
+  := {1, 2}`) stays untyped, so `r.a` is undefined.
+- Found reviewing the JSON codec, older, in the placeholder codec's
+  cache: decvalue of an encvalue'd value gives the value as it is now,
+  not as it was encoded; an emptied or failed placeholder shares one key,
+  so decvalue on it can give an unrelated cached value of another type.
+- Found probing a testcase's parameters, older: arithmetic on an unbound
+  value is no error (`var integer i; log(i + 1)` logs "undefined value"),
+  where ETSI makes using an unbound value an error; a testcase can then
+  pass on a value it never had.
 - *Fixed 2026-10-13, and for a variable of an index-range array type
   (`type integer T[1..2]`); 0 gained, 0 lost.* An index-range array
   declared without an initialiser (`var charstring a[2..3]`) is stored at

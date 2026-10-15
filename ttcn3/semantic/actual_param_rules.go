@@ -472,6 +472,14 @@ func nonPortArgReason(arg syntax.Expr, portTypes map[string]bool, varTypes map[s
 func collectLazyFuzzyVars(mod *syntax.Module) map[string]string {
 	out := map[string]string{}
 	syntax.Inspect(mod, func(n syntax.Node) bool {
+		// A template declared @lazy or @fuzzy, at module level or a
+		// component type's member, too.
+		if td, ok := n.(*syntax.TemplateDecl); ok && td != nil && td.Modif != nil && td.Name != nil {
+			if modif := td.Modif.String(); modif == "@lazy" || modif == "@fuzzy" {
+				out[td.Name.String()] = modif
+			}
+			return true
+		}
 		vd, ok := n.(*syntax.ValueDecl)
 		if !ok || vd == nil || vd.Modif == nil {
 			return true

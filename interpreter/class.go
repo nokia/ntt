@@ -9,6 +9,8 @@ package interpreter
 // the union of own and inherited members.
 
 import (
+	"strings"
+
 	"github.com/nokia/ntt/runtime"
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
@@ -21,10 +23,11 @@ import (
 // while still reading and writing the receiver's shared field map
 // (ETSI 5.1.1.9).
 func newMethodEnv(defClass *runtime.ClassDesc, inst *runtime.ClassInstance) *runtime.Env {
-	env := runtime.NewEnv(defClass.Env)
+	env := runtime.NewEnv(objectScope(defClass, inst))
 	env.Set("this", inst)
+	env.Set(methodClassKey, defClass)
 	if parent := resolveParentClass(defClass); parent != nil {
-		env.Set("super", &runtime.ClassInstance{Class: parent, Fields: inst.Fields})
+		env.Set("super", &runtime.ClassInstance{Class: parent, Fields: inst.Fields, Self: inst})
 	}
 	// Nested classes are visible by their bare name inside the
 	// enclosing class's methods, bound to the running instance so a
@@ -44,6 +47,176 @@ func newMethodEnv(defClass *runtime.ClassDesc, inst *runtime.ClassInstance) *run
 		}
 	}
 	return env
+}
+
+// objectScope is the scope of a member of class cd running against inst:
+// the members of cd — its own and those it inherits, not a private one of
+// a base class, nor a subclass's (ES 203 790 5.1.1.1) — by their names,
+// which a method's parameters and locals hide and which hide a like-named
+// definition of the scopes around the class (5.1.1, restrictions a and b).
+// A method so named is the object's most specific one (5.1.1.8).
+func objectScope(cd *runtime.ClassDesc, inst *runtime.ClassInstance) *runtime.Env {
+	return runtime.NewEnvVia(classScope(cd), newMemberResolver(cd, inst))
+}
+
+// memberResolver resolves the members of class cd in object inst; while
+// the object's fields are initialised, a field not yet initialised is,
+// when named, first (pending).
+type memberResolver struct {
+	cd      *runtime.ClassDesc
+	inst    *runtime.ClassInstance
+	fields  *runtime.Env // over inst.Fields
+	pending map[string]syntax.Expr
+	initEnv runtime.Scope
+}
+
+func newMemberResolver(cd *runtime.ClassDesc, inst *runtime.ClassInstance) *memberResolver {
+	if inst.Fields == nil {
+		inst.Fields = map[string]runtime.Object{}
+	}
+	return &memberResolver{cd: cd, inst: inst, fields: runtime.NewEnvOver(nil, inst.Fields)}
+}
+
+// Resolve implements runtime.Resolver.
+func (r *memberResolver) Resolve(name string) (runtime.Object, *runtime.Env, bool) {
+	// The engine's own keys name no member.
+	if strings.HasPrefix(name, "\x00") || strings.HasPrefix(name, "__ntt_") {
+		return nil, nil, false
+	}
+	if init, ok := r.pending[name]; ok {
+		delete(r.pending, name)
+		v := eval(init, r.initEnv)
+		if runtime.IsError(v) || v == nil {
+			v = runtime.Undefined
+		}
+		r.inst.Fields[name] = v
+	}
+	m := classMember(r.cd, name)
+	switch m.kind {
+	case memberField:
+		if r.fields.Binds(name) {
+			v, _ := r.fields.Get(name)
+			return v, r.fields, true
+		}
+	case memberMethod:
+		// A private method is its class's own, which no subclass
+		// overrides (5.1.1.10); another is the object's most specific.
+		impl, implClass := m.method, m.class
+		if !m.private {
+			impl, implClass = findMethod(r.inst.Class, name)
+		}
+		if impl != nil && impl.Body != nil {
+			return &runtime.Function{Params: impl.Params, Body: impl.Body, Env: newMethodEnv(implClass, r.inst)}, nil, true
+		}
+	}
+	return nil, nil, false
+}
+
+// methodClassKey binds, in a method's scope, the class declaring it.
+const methodClassKey = "\x00ttcn3:method-class"
+
+const (
+	memberNone = iota
+	memberField
+	memberMethod
+)
+
+// member is what a name is among the members class cd sees: a field, a
+// method — private or not, the declaration and its class — or nothing.
+type member struct {
+	kind    int
+	private bool
+	method  *syntax.FuncDecl
+	class   *runtime.ClassDesc
+}
+
+// classMember finds name among the members class cd has: declared by cd,
+// or, not private, by a class it extends; cached on cd.
+func classMember(cd *runtime.ClassDesc, name string) member {
+	if v, ok := cd.Members.Load(name); ok {
+		return v.(member)
+	}
+	m := findClassMember(cd, name)
+	cd.Members.Store(name, m)
+	return m
+}
+
+func findClassMember(cd *runtime.ClassDesc, name string) member {
+	own := true
+	seen := map[*runtime.ClassDesc]bool{}
+	for c := cd; c != nil && !seen[c]; c = resolveParentClass(c) {
+		seen[c] = true
+		if c.Decl != nil {
+			for _, md := range c.Decl.Defs {
+				if md == nil {
+					continue
+				}
+				private := md.Visibility != nil && md.Visibility.Kind() == syntax.PRIVATE
+				switch {
+				case isFieldDecl(md.Def, name):
+					if !own && private {
+						return member{}
+					}
+					return member{kind: memberField, private: private}
+				case isMethodDecl(md.Def, name):
+					if !own && private {
+						return member{}
+					}
+					return member{kind: memberMethod, private: private, method: md.Def.(*syntax.FuncDecl), class: c}
+				}
+			}
+		}
+		own = false
+	}
+	return member{}
+}
+
+func isFieldDecl(d syntax.Node, name string) bool {
+	vd, ok := d.(*syntax.ValueDecl)
+	if !ok {
+		return false
+	}
+	for _, dec := range vd.Decls {
+		if dec != nil && dec.Name != nil && dec.Name.String() == name {
+			return true
+		}
+	}
+	return false
+}
+
+func isMethodDecl(d syntax.Node, name string) bool {
+	fn, ok := d.(*syntax.FuncDecl)
+	return ok && fn.Name != nil && fn.Name.String() == name
+}
+
+// classScope is the scope the methods of class cd run in: for a class
+// declared `runs on` a component type, or extending one that is, the
+// variables of the component running them before the defining scope, as a
+// function with runs on has them; else the defining scope.
+func classScope(cd *runtime.ClassDesc) runtime.Scope {
+	runsOn, known := cd.Members.Load("\x00runs-on")
+	if !known {
+		on := false
+		for _, c := range classChainBaseFirst(cd) {
+			if c.Decl != nil && c.Decl.RunsOn != nil {
+				on = true
+			}
+		}
+		cd.Members.Store("\x00runs-on", on)
+		runsOn = on
+	}
+	if !runsOn.(bool) {
+		return cd.Env
+	}
+	if exec := runtime.FindTestcaseExec(cd.Env); exec != nil {
+		if cur := exec.CurrentComponent(); cur != nil && cur.Vars != nil {
+			if vars, ok := cur.Vars.(*runtime.Env); ok {
+				return vars.View(cd.Env)
+			}
+			return cur.Vars
+		}
+	}
+	return cd.Env
 }
 
 // classExtendsName returns the parent class name from an `extends`
@@ -140,7 +313,7 @@ func instanceIsA(inst *runtime.ClassInstance, name string) bool {
 	if inst == nil || name == "" {
 		return false
 	}
-	for c := inst.Class; c != nil; c = resolveParentClass(c) {
+	for _, c := range classChainBaseFirst(inst.Class) {
 		if c.Name == name {
 			return true
 		}
@@ -290,7 +463,7 @@ func applySuperInit(inst *runtime.ClassInstance, y syntax.Expr, env runtime.Scop
 
 	super := resolveParentClass(inst.Class)
 	if superName != "" {
-		for c := resolveParentClass(inst.Class); c != nil; c = resolveParentClass(c) {
+		for _, c := range classChainBaseFirst(resolveParentClass(inst.Class)) {
 			if c.Name == superName {
 				super = c
 				break
@@ -325,6 +498,14 @@ func initClassFields(inst *runtime.ClassInstance, cd *runtime.ClassDesc) {
 	if cd == nil || cd.Decl == nil {
 		return
 	}
+	// The fields are initialised in their order, a field named by an
+	// initialiser first (ES 203 790 5.1.1.6).
+	r := newMemberResolver(cd, inst)
+	r.pending = map[string]syntax.Expr{}
+	fenv := runtime.NewEnv(runtime.NewEnvVia(classScope(cd), r))
+	fenv.Set("this", inst)
+	r.initEnv = fenv
+	var order []*syntax.Declarator
 	for _, md := range cd.Decl.Defs {
 		if md == nil {
 			continue
@@ -337,16 +518,16 @@ func initClassFields(inst *runtime.ClassInstance, cd *runtime.ClassDesc) {
 			if dec == nil || dec.Name == nil {
 				continue
 			}
-			var val runtime.Object = runtime.Undefined
+			order = append(order, dec)
+			inst.Fields[dec.Name.String()] = runtime.Undefined
 			if dec.Value != nil {
-				fenv := runtime.NewEnv(cd.Env)
-				fenv.Set("this", inst)
-				if v := eval(dec.Value, fenv); !runtime.IsError(v) && v != nil {
-					val = v
-				}
+				r.pending[dec.Name.String()] = dec.Value
 			}
-			inst.Fields[dec.Name.String()] = val
 		}
+	}
+	for _, dec := range order {
+		// Resolving a pending field initialises it.
+		r.Resolve(dec.Name.String())
 	}
 }
 
@@ -400,7 +581,10 @@ func findOwnConstructor(cd *runtime.ClassDesc) *syntax.ConstructorDecl {
 // cd, plus the declaring class (used as the body closure so the
 // method resolves its module-level siblings and types).
 func findMethod(cd *runtime.ClassDesc, name string) (*syntax.FuncDecl, *runtime.ClassDesc) {
-	for c := cd; c != nil; c = resolveParentClass(c) {
+	// A class extending itself (no conforming module) ends the search.
+	seen := map[*runtime.ClassDesc]bool{}
+	for c := cd; c != nil && !seen[c]; c = resolveParentClass(c) {
+		seen[c] = true
 		if c.Decl == nil {
 			continue
 		}
@@ -464,10 +648,26 @@ func dispatchClassMethod(inst *runtime.ClassInstance, name string, n *syntax.Cal
 		return nil, false
 	}
 	method, defClass := findMethod(inst.Class, name)
+	// `this.p()` with p private to the class whose method calls it is
+	// that class's p, which no subclass overrides (ES 203 790 5.1.1.10).
+	if sel, ok := n.Fun.(*syntax.SelectorExpr); ok && syntax.Name(sel.X) == "this" {
+		if v, ok := env.Get(methodClassKey); ok {
+			if from, ok := v.(*runtime.ClassDesc); ok {
+				if m := classMember(from, name); m.kind == memberMethod && m.private {
+					method, defClass = m.method, m.class
+				}
+			}
+		}
+	}
 	if method == nil || method.Body == nil {
 		return nil, false
 	}
-	menv := newMethodEnv(defClass, inst)
+	// Through `super`, the base class's method runs on the object itself.
+	self := inst
+	if inst.Self != nil {
+		self = inst.Self
+	}
+	menv := newMethodEnv(defClass, self)
 	fn := &runtime.Function{Params: method.Params, Body: method.Body, Env: menv}
 
 	var argExprs []syntax.Expr

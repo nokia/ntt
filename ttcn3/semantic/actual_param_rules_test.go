@@ -297,3 +297,19 @@ func TestActualParamOmitOnOmitParamAccepted(t *testing.T) {
 		t.Fatalf("unexpected violation on legal omit / value, got %v", codes(diags))
 	}
 }
+
+func TestDeterministicArgReferencingFuzzyTemplateMemberRejected(t *testing.T) {
+	// NegSem_050402_actual_parameters_187: the function passed to a
+	// @fuzzy @deterministic parameter references a component's @fuzzy
+	// template (ETSI 16.1.4 m).
+	tree := parse(t, `module M {
+		type component C { template @fuzzy integer m_int := 1; }
+		function f_test() runs on C return template integer { log(m_int); return ?; }
+		function f_param(template @fuzzy @deterministic integer p_param) runs on C { log(p_param); }
+		testcase tc() runs on C { f_param(f_test()); setverdict(pass); }
+	}`)
+	diags := NewAnalyzer(&ttcn3.DB{}).Analyze(tree)
+	if !containsCode(diags, "deterministic-arg-side-effect") {
+		t.Fatalf("expected deterministic-arg-side-effect, got %v", codes(diags))
+	}
+}
