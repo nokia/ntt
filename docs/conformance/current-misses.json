@@ -1,14 +1,14 @@
 {
- "summary": "ran 4948 files: 4802 matched, 23 skipped (97.50% match rate)",
- "source": "conformance-report.json",
- "miss_count": 146,
+ "summary": "ran 4948 files: 4803 matched, 23 skipped (97.52% match rate)",
+ "source": "off.json",
+ "miss_count": 145,
  "outcomes": {
   "reject->pass": 77,
   "reject->none": 24,
   "->": 23,
   "pass->error": 13,
   "pass->fail": 4,
-  "pass->none": 3,
+  "pass->none": 2,
   "pass->parse-error": 2
  },
  "chapters": [
@@ -132,13 +132,6 @@
    "outcomes": {
     "->": 1,
     "reject->none": 1
-   }
-  },
-  {
-   "chapter": "core_language/19_basic_program_statements",
-   "misses": 1,
-   "outcomes": {
-    "pass->none": 1
    }
   },
   {
@@ -883,14 +876,6 @@
    "actual": "none",
    "outcome": "pass->none",
    "relpath": "core_language/16_functions_altsteps_testcases/1602_altsteps/1602_toplevel/Sem_1602_toplevel_004.ttcn",
-   "message": ""
-  },
-  {
-   "chapter": "core_language/19_basic_program_statements",
-   "expected": "pass",
-   "actual": "none",
-   "outcome": "pass->none",
-   "relpath": "core_language/19_basic_program_statements/1909_stop_statement/Sem_1909_stop_statement_004.ttcn",
    "message": ""
   },
   {
