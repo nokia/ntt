@@ -533,6 +533,34 @@ Independent of the two clocks:
   about 29000 round trips a second alone and 640 beside 20 idle PTCs; it
   now runs about 23000. A message wakes the component it is queued for,
   and only it; a stop wakes them all.
+- **Idle components cost nothing on the real clock.** An alt waiting
+  for a message or for its own timers also looked again every 2 ms, so
+  twenty idle PTCs used half a processor between them and slowed an
+  exchange by a third: 20000 MTC/echo round trips took 0.86 s beside
+  them and 0.55 s alone. An alt now waits for what can end it — a
+  message for its component, its timers, a stop — and looks again on its
+  own only for a guard that no event announces: one that calls a
+  function, reads a timer or a component's state, waits for a
+  component's end, or for a call's timeout or a timer in an altstep it
+  calls. The same round trips take 0.57 s with the idle PTCs or without,
+  and the idle PTCs use no processor time. A component waiting for a timer
+  (`t.timeout`) no longer wakes for every message sent to anyone.
+- **Starting a component that first waits no longer holds its starter.**
+  On the real clock, `c.start(f())` with an `f` that maps a port waits
+  until it has, so that components map in the order they were started;
+  one whose `f` first waits for a message — from its starter, perhaps —
+  held the starter for 50 ms each time, or 2 s with an external port
+  driver until it sent. The start now ends when the component waits
+  for a message or another component, and for no timer, default or
+  altstep that could let it go on by itself: twenty such starts took
+  1 s, and take 3 ms.
+- **Records, lists and maps are shared until changed.** Assigning,
+  declaring, sending, receiving or passing one copied the whole of it.
+  A value is now shared by its holders and never changed in place: a
+  write copies only what lies on its way, once, and the holder it was
+  given to or taken from keeps what it had (ETSI 6). A loop declaring a
+  copy of a record holding a 2000-element list and changing one field
+  of it, twenty thousand times, took 0.49 s and takes 0.13 s.
 - **A record's fields are written in their declaration order** — by
   `log()`, in a verdict's reason and in the test log, where Annex B lists
   them so. A record held its fields in a map and wrote them as the map

@@ -358,12 +358,14 @@ func blockForInterleave(n *syntax.AltStmt, running []*ilBranch, at interface{}, 
 			return true
 		}
 		if events {
-			return waitForAltCombined(0, false, wake, env)
+			return waitForAltCombined(0, false, false, true, wake, env)
 		}
 		return false
 	}
+	// An interleave's start-barrier is not ended by its waits: a branch
+	// it has not taken may wait for a timer started later.
 	if hasRD || events {
-		return waitForAltCombined(rd, hasRD, wake, env)
+		return waitForAltCombined(rd, hasRD, false, true, wake, env)
 	}
 	return false
 }

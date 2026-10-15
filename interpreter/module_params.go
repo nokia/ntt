@@ -82,7 +82,7 @@ func ApplyModuleParameters(env runtime.Scope, modules []*syntax.Module, override
 			// And in its module's own scope, where the module's
 			// functions look first (see newModuleScope).
 			if ms := moduleScopeOf(env, decl.module); ms != env {
-				ms.Set(decl.localName, runtime.CopyValue(val))
+				ms.Set(decl.localName, runtime.Share(val))
 			}
 		}
 	}

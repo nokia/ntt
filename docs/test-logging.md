@@ -195,8 +195,10 @@ time, less when a timer is due sooner.
 These policies keep a log readable without dropping information:
 
 - A mismatch is logged once per message and receiving operation. On the
-  real clock an alt re-checks its guards on a short polling backstop; each
-  pass would otherwise log the same message failing the same clause again.
+  real clock an alt re-checks its guards whenever a message arrives for
+  its component, and, for a guard no event announces, on a short polling
+  backstop; each pass would otherwise log the same message failing the
+  same clause again.
   A different message at the head of the queue is logged again, and so is
   every message a `trigger` discards.
 - `tliANomatch`, `tliADefaults` and `tliAWait` are logged once per stretch

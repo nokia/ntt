@@ -1053,7 +1053,7 @@ func (s *String) cloneIfInterned() (*String, bool) {
 // WithRuneAt returns a new string: s with its element i set to r — or,
 // when set is false, only grown to hold i — padded with spaces up to i.
 // A string is never changed in place, so that copies of it can share it
-// (CopyValue).
+// (Share).
 func (s *String) WithRuneAt(i int, r rune, set bool) *String {
 	n := len(s.Value)
 	if i >= n {
@@ -1354,6 +1354,7 @@ type List struct {
 	// unaffected, so an offset array still compares equal to a 0-based
 	// value literal of the same elements.
 	IndexOffset int
+	shared      uint32 // see Share
 }
 
 func (l *List) IsOrdered() bool {
@@ -1650,7 +1651,8 @@ type pair struct {
 
 // Map is a map of objects.
 type Map struct {
-	pairs map[hashKey][]pair
+	pairs  map[hashKey][]pair
+	shared uint32 // see Share
 }
 
 // MapPair exposes a single key/value pair held in a Map. Returned by
@@ -1783,6 +1785,7 @@ func NewMap() *Map {
 type Record struct {
 	Fields map[string]Object
 	Order  []string
+	shared uint32 // see Share
 }
 
 func (r *Record) Get(name string) (Object, bool) {

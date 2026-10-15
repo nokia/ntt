@@ -125,6 +125,15 @@ func RunTestcaseWith(trees []*ttcn3.Tree, qname string, opts TestcaseOptions) (v
 	// settled the verdict of a testcase that panicked.
 	var exec *runtime.TestcaseExec
 	defer func() { tlTestcaseTerminated(exec, verdict, reason) }()
+	// With NTT_SHARED_CHECK set, a shared value changed in place — a
+	// write that did not take a copy of its own first — is an error.
+	defer func() {
+		if bad := runtime.CheckShared(); len(bad) > 0 {
+			verdict = runtime.ErrorVerdict
+			reason = "shared value changed in place: " + strings.Join(bad, "; ")
+			fmt.Fprintf(os.Stderr, "ntt: %s: %s\n", qname, reason)
+		}
+	}()
 	// A panic inside the tree-walking interpreter must not kill the
 	// caller. Unmodeled syntax shapes, nil-deref bugs, and the
 	// occasional malformed conformance fixture all surface as
@@ -2690,29 +2699,203 @@ func guardsTimeless(n *syntax.AltStmt) bool {
 	if n == nil || n.Body == nil {
 		return true
 	}
-	timeless := true
 	for _, st := range n.Body.Stmts {
 		cc, ok := st.(*syntax.CommClause)
 		if !ok || cc.X == nil {
 			continue
 		}
-		syntax.Inspect(cc.X, func(x syntax.Node) bool {
-			switch x := x.(type) {
-			case *syntax.CallExpr:
-				timeless = false
-			case *syntax.SelectorExpr:
-				switch syntax.Name(x.Sel) {
-				case "read", "running":
-					timeless = false
-				}
-			}
-			return timeless
-		})
-		if !timeless {
+		if !exprTimeless(cc.X) {
 			return false
 		}
 	}
 	return true
+}
+
+// exprTimeless reports whether a guard's value can change only by what
+// the component itself does: it reads no timer (`t.read > 5.0`), no
+// component's state (`not w.running`, `w.alive`) and calls nothing.
+func exprTimeless(e syntax.Node) bool {
+	timeless := true
+	syntax.Inspect(e, func(x syntax.Node) bool {
+		switch x := x.(type) {
+		case *syntax.CallExpr:
+			timeless = false
+		case *syntax.SelectorExpr:
+			switch syntax.Name(x.Sel) {
+			case "read", "running", "alive", "done", "killed":
+				timeless = false
+			}
+		}
+		return timeless
+	})
+	return timeless
+}
+
+// altNeedsPoll reports whether a wait of the alt on the real clock must
+// look again now and then, for want of an event to wake it when one of
+// its guards may have come true: a boolean guard that may change with
+// nothing happening but time passing (exprTimeless); a component's
+// done, killed or running, which no wake-up announces; or a timer the
+// wait is not bounded by (nextAltTimerDeadlineLenient) — a call's
+// timeout, one an altstep the alt calls waits on, one an activated
+// default waits on by another name than its scope's. A message for the
+// component, its stop and the testcase's wake it.
+func altNeedsPoll(n *syntax.AltStmt, env runtime.Scope) bool {
+	if n == nil || n.Body == nil {
+		return false
+	}
+	if clausesNeedPoll(n.Body.Stmts, pollInline, 4, env, nil) {
+		return true
+	}
+	if !defaultsSuppressed(n) {
+		for _, d := range activatedDefaultCalls(env) {
+			if altstepNeedsPoll(d.call, pollDefault, 4, d.scope) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Where clausesNeedPoll looks: the alt's own clauses, whose timers bound
+// its wait; an activated default's, whose timers do when named in its
+// scope; an altstep's that a clause calls, whose timers do not.
+const (
+	pollInline = iota
+	pollDefault
+	pollCalled
+)
+
+func clausesNeedPoll(stmts []syntax.Stmt, where, depth int, scope, own runtime.Scope) bool {
+	for _, st := range stmts {
+		cc, ok := st.(*syntax.CommClause)
+		if !ok || cc.Else != nil {
+			continue
+		}
+		if cc.X != nil && !exprTimeless(cc.X) {
+			return true
+		}
+		if cc.Comm == nil {
+			continue
+		}
+		if isCatchTimeoutGuard(cc.Comm) {
+			return true
+		}
+		es, ok := cc.Comm.(*syntax.ExprStmt)
+		if !ok {
+			return true
+		}
+		switch commClauseOp(cc) {
+		case "done", "killed", "running":
+			return true
+		case "timeout":
+			if !timeoutBoundsWait(es.Expr, where, scope, own) {
+				return true
+			}
+			continue
+		}
+		if ce, ok := es.Expr.(*syntax.CallExpr); ok {
+			if _, isIdent := ce.Fun.(*syntax.Ident); isIdent && altstepNeedsPoll(ce, pollCalled, depth-1, scope) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// waitsOnlyForOthers reports whether the alt waits for what other
+// components do — a message, a component's end — and for nothing that
+// can end on its own: it has an event guard, and no timeout guard, no
+// altstep call, no catch and no activated default, whose timers it may
+// wait for. Such a wait ends the start-barrier of its component's
+// starter.
+func waitsOnlyForOthers(n *syntax.AltStmt, env runtime.Scope) bool {
+	if !altHasEventGuard(n) {
+		return false
+	}
+	if !defaultsSuppressed(n) && len(activatedDefaultCalls(env)) > 0 {
+		return false
+	}
+	for _, st := range n.Body.Stmts {
+		cc, ok := st.(*syntax.CommClause)
+		if !ok || cc.Else != nil || cc.Comm == nil {
+			continue
+		}
+		switch commClauseOp(cc) {
+		case "timeout", "catch":
+			return false
+		}
+		if es, ok := cc.Comm.(*syntax.ExprStmt); ok {
+			if ce, ok := es.Expr.(*syntax.CallExpr); ok {
+				if _, isIdent := ce.Fun.(*syntax.Ident); isIdent {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+// timeoutBoundsWait reports whether the timeout guard e is one whose timer
+// nextAltTimerDeadlineLenient bounds the alt's wait by. A default's timer
+// is looked up in the scope it was activated in, which is the one its
+// altstep, seeing own, sees only if both name the same timer.
+func timeoutBoundsWait(e syntax.Expr, where int, scope, own runtime.Scope) bool {
+	if where == pollCalled {
+		return false
+	}
+	if where == pollInline {
+		if _, ok := timerArrayTimeoutGuard(e, scope); ok {
+			return true
+		}
+	}
+	sel, ok := e.(*syntax.SelectorExpr)
+	if !ok {
+		return false
+	}
+	id, ok := sel.X.(*syntax.Ident)
+	if !ok {
+		return false
+	}
+	if rn := id.String(); rn == "any timer" || rn == "all timer" {
+		return true
+	}
+	v, ok := scope.Get(id.String())
+	if !ok {
+		return false
+	}
+	th, ok := v.(*runtime.TimerHandle)
+	if ok && own != nil {
+		w, _ := own.Get(id.String())
+		return w == runtime.Object(th)
+	}
+	return ok
+}
+
+// altstepNeedsPoll applies clausesNeedPoll to the clauses of the altstep
+// call names, and is true when it names none it can see.
+func altstepNeedsPoll(call *syntax.CallExpr, where, depth int, scope runtime.Scope) bool {
+	if call == nil || depth <= 0 {
+		return true
+	}
+	v, ok := scope.Get(nameOfCallee(call))
+	if !ok {
+		return true
+	}
+	fn, ok := v.(*runtime.Function)
+	if !ok || !fn.IsAltstep || fn.Body == nil {
+		return true
+	}
+	// An activated altstep's timer parameter goes by its formal's name,
+	// which in the activation's scope may be another timer.
+	if where == pollDefault && fn.Params != nil && len(fn.Params.List) > 0 {
+		where = pollCalled
+	}
+	var own runtime.Scope
+	if where == pollDefault {
+		own = functionScope(fn)
+	}
+	return clausesNeedPoll(fn.Body.Stmts, where, depth, scope, own)
 }
 
 // onlyRepeats reports whether an [else] clause's body is `repeat` and
@@ -2731,8 +2914,7 @@ func onlyRepeats(cc *syntax.CommClause) bool {
 // blockForAltEvents parks a strict alt on its event sources — inbound
 // port traffic (MessageReady), the soonest running-timer deadline, a
 // component transition, or this PTC's stop — via waitForAltCombined,
-// whose 2ms backstop also covers component / timer guards that raise no
-// MessageReady signal. Returns true to re-snapshot, false when there is
+// which polls for the guards that no event announces (altNeedsPoll). Returns true to re-snapshot, false when there is
 // nothing to wait for or the PTC was stopped.
 func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, env runtime.Scope) bool {
 	// In an interleave branch body, the interleave waits (interleave.go).
@@ -2776,13 +2958,13 @@ func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, 
 		// concurrent PTCs deliver in real time even under the virtual
 		// clock. altHasEventGuard gates giving up on pure-boolean alts.
 		if altHasEventGuard(n) {
-			return waitForAltCombined(0, false, wake, env)
+			return waitForAltCombined(0, false, waitsOnlyForOthers(n, env), altNeedsPoll(n, env), wake, env)
 		}
 		return false
 	}
 	dur, hasTimer := nextAltTimerDeadlineLenient(n, env)
-	if hasTimer || altHasEventGuard(n) {
-		return waitForAltCombined(dur, hasTimer, wake, env)
+	if events := altHasEventGuard(n); hasTimer || events {
+		return waitForAltCombined(dur, hasTimer, waitsOnlyForOthers(n, env), altNeedsPoll(n, env), wake, env)
 	}
 	return false
 }
@@ -3125,6 +3307,34 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 				timers, several = collectScopeTimers(env), true
 			}
 		}
+		if several && rn == "all timer" {
+			// `all timer` comes true when the last of them is due: wait
+			// for that one, or look again at once when all are.
+			latest, any := time.Duration(0), false
+			for _, th := range timers {
+				if th == nil || !th.Running || th.StartedAt.IsZero() {
+					continue
+				}
+				if r := th.StartedAt.Add(time.Duration(th.Duration * float64(time.Second))).Sub(now); !any || r > latest {
+					latest, any = r, true
+				}
+			}
+			if !any {
+				continue
+			}
+			if latest <= 0 {
+				if cc.X != nil {
+					if gv, ok := eval(cc.X, env).(runtime.Bool); ok && !bool(gv) {
+						continue
+					}
+				}
+				latest = 0
+			}
+			if !have || latest < soonest {
+				soonest, have = latest, true
+			}
+			continue
+		}
 		if several {
 			for _, th := range timers {
 				if th == nil || !th.Running || th.StartedAt.IsZero() {
@@ -3133,9 +3343,11 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 				deadline := th.StartedAt.Add(time.Duration(th.Duration * float64(time.Second)))
 				remaining := deadline.Sub(now)
 				if remaining <= 0 {
-					// An array's timer due and not taken came due since
-					// the guards were scanned, unless the guard is false.
-					if rn != "" {
+					// A timer due and not taken came due since the guards
+					// were scanned, unless the guard is false — or, for
+					// `any timer` in a control part, which nothing else
+					// runs beside, it is not one the guard takes.
+					if rn != "" && runtime.FindTestcaseExec(env) == nil {
 						continue
 					}
 					if cc.X != nil {
@@ -3194,8 +3406,11 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 					continue
 				}
 				remaining := th.StartedAt.Add(time.Duration(th.Duration * float64(time.Second))).Sub(now)
-				if remaining <= 0 {
-					continue
+				if remaining < 0 {
+					// Due: the defaults were consulted before it came
+					// due, or it is not theirs to take — look again
+					// soon (waitForAltCombined polls).
+					remaining = 0
 				}
 				if !have || remaining < soonest {
 					soonest, have = remaining, true
@@ -3463,41 +3678,60 @@ func commGuardMatches(g syntax.Node, env runtime.Scope) bool {
 	return false
 }
 
-// waitForAltCombined parks a PTC on an alt that mixes an external-port
-// receive guard with a timer guard (the load-worker shape
-// `alt{ [] p.receive [] t_guard.timeout }`). It wakes on the first of:
-// inbound port traffic (MessageReady), the soonest live timer deadline
-// (when haveTimer), the PTC's own stop, or a 2ms backstop that covers a
-// coalesced cap-1 MessageReady. Returns true to re-enter the alt first
-// pass, false to unwind (the testcase or this PTC was stopped).
-// wake, when not nil, is the alt's WakeChan, taken before its snapshot:
-// any message since then ends the wait, whichever waiter MessageReady
-// woke — with many components waiting, it is seldom this one.
-func waitForAltCombined(dur time.Duration, haveTimer bool, wake <-chan struct{}, env runtime.Scope) bool {
+// waitForAltCombined parks a component on an alt that waits for
+// messages, timers or other components. It wakes on the first of: a
+// message for this component or a stop of the testcase (wake, the alt's
+// WakeChan, taken before its snapshot), the soonest live timer deadline
+// (when haveTimer), the component's own stop, or — when poll — a 2ms
+// backstop, for guards that can change with nothing to announce it
+// (altNeedsPoll). Returns true to re-enter the alt first pass, false to
+// unwind (the testcase or this PTC was stopped). events tells that the
+// alt waits for what other components do, and for nothing that ends on
+// its own, which ends its starter's start-barrier. Without a wake channel, a message to any component wakes
+// one waiter (MessageReady), so it polls too.
+func waitForAltCombined(dur time.Duration, haveTimer, events, poll bool, wake <-chan struct{}, env runtime.Scope) bool {
 	exec := runtime.FindTestcaseExec(env)
 	if exec == nil {
-		// A control part's alt: only its timers can come due.
+		// A control part's alt: only its timers can come due. One due
+		// already is looked at again after a while, as in a testcase.
+		if haveTimer && dur <= 0 {
+			dur = 2 * time.Millisecond
+		}
 		return haveTimer && controlWait(env, dur)
 	}
 	if exec.Stopped() {
 		return false
 	}
 	defer markWaiting(exec)()
+	if events {
+		markBlocked(exec)
+	}
 	var stopChan <-chan struct{}
 	if cur := exec.CurrentComponent(); cur != nil {
 		if exit := exec.PTCExit(cur.ID); exit != nil {
 			stopChan = exit.StopChan
 		}
 	}
-	// A nil timer channel is never selected, so with no live timer
-	// guard the wait reduces to MessageReady / stop / backstop.
-	var timerC <-chan time.Time
+	// A nil channel is never selected: with no live timer guard, no
+	// backstop, the wait reduces to the others.
+	var timerC, backstop <-chan time.Time
 	if haveTimer && dur > 0 {
 		t := time.NewTimer(dur)
 		defer t.Stop()
 		timerC = t.C
+	} else if haveTimer {
+		// A timer came due since the alt's snapshot: look again soon.
+		poll = true
 	}
-	ready := exec.MessageReady()
+	var ready <-chan struct{}
+	if wake == nil {
+		ready, poll = exec.MessageReady(), true
+	}
+	if poll {
+		t := time.NewTimer(2 * time.Millisecond)
+		defer t.Stop()
+		backstop = t.C
+	}
 	select {
 	case <-ready:
 		return !exec.Stopped()
@@ -3507,7 +3741,7 @@ func waitForAltCombined(dur time.Duration, haveTimer bool, wake <-chan struct{},
 		return !exec.Stopped()
 	case <-stopChan:
 		return false
-	case <-time.After(2 * time.Millisecond):
+	case <-backstop:
 		return !exec.Stopped()
 	}
 }
@@ -3839,7 +4073,7 @@ func bindComponentMembers(env runtime.Scope, body *syntax.BlockStmt) {
 			if dec.Value != nil {
 				v := eval(dec.Value, env)
 				if v != nil && !runtime.IsError(v) {
-					env.Set(name, runtime.CopyValue(v))
+					env.Set(name, runtime.Share(v))
 					continue
 				}
 			}

@@ -432,7 +432,9 @@ verdict the same and every event valid.
   - *Fixed 2026-10-02.* A receive inside an `interleave` branch body does
     not wait: the engine does not expand interleave into its alternatives
     (20.4).
-  - On `--live`, each `start` of a PTC that blocks costs its starter the
+  - *Fixed 2026-10-15: the start ends when the PTC waits for a message
+    or another component; twenty such starts took 1 s and take 3 ms.*
+    On `--live`, each `start` of a PTC that blocks costs its starter the
     50 ms start barrier.
   - *Fixed 2026-10-13: an error (22.3.1 j), on either clock; 0 gained,
     0 lost.* A blocking signature called with no response block and no
@@ -738,11 +740,14 @@ passed over for a thousand turns — and a parameter's default and a
   array of `Row`), or an array assigned whole and then grown (`a := {1,
   2}; a[3] := 9` gives `{1, 2, -, 9}`); and an index past the upper bound
   is no error, writing or reading.
-- *Partly fixed 2026-10-06: charstrings are shared (never changed in
+- *Fixed 2026-10-15: records, lists and maps are shared by their holders
+  too (runtime.Share), and a write copies only what lies on its way.
+  Partly fixed 2026-10-06: charstrings are shared (never changed in
   place) and appended to in place; a function that keeps to itself gets
   its actuals uncopied. A record or list is still copied when assigned,
   declared, sent, or passed to a function that writes, calls or waits.*
-- Copying costs time: assigning, declaring or passing (to a function with
+- *Fixed 2026-10-15: values are shared until changed (above).* Copying
+  costs time: assigning, declaring or passing (to a function with
   `runs on`) a long charstring, record or list copies it, so a scanner
   calling a helper once per character of a 100000-character string is
   about twenty times slower than when the values were shared. Copy on
@@ -860,7 +865,10 @@ changed only as intended. Found, older than this work:
   files whose two logs differ differ only in this.
 - *Fixed 2026-10-06: a message wakes the component it is queued for
   (TestcaseExec.WakeChan); 640 → 23000 round trips a second beside 20
-  idle PTCs, 29000 alone. What is left is each idle PTC's 2 ms backstop.*
+  idle PTCs, 29000 alone. What is left is each idle PTC's 2 ms backstop.
+  Fixed 2026-10-15: an alt polls only for a guard no event announces;
+  20000 round trips take 0.57 s beside 20 idle PTCs as alone, where they
+  took 0.86 s, and the idle PTCs use no processor time.*
   **On the real clock, idle components slow an exchange a hundredfold**:
   an MTC/echo ping-pong runs at about 37000 round trips a second, and at
   about 290 with 20 PTCs parked in an alt on a long timer. It bears on
@@ -920,6 +928,19 @@ changed only as intended. Found, older than this work:
   an error.
 - The C test-port bridge's `TestRegisterAndSend` fails when run more than
   once in a process (`-count=2`): its fixture's call counter is not reset.
+- Found reviewing the 2026-10-15 speed work, older than it: an alt
+  guard calling a module-qualified altstep (`[] M.a()`) is never taken,
+  and the alt waits until the testcase's time limit; a call without a
+  `catch(timeout)` clause in an altstep the alt calls, past its timeout,
+  waits so too; a standalone `t.timeout` does not try the activated
+  defaults, though it stands for an alt (20.5.1); on the virtual clock a
+  control part's `alt { [] all timer.timeout {} }` over two timers, one
+  due, never ends. An alt waiting for a
+  default's timer that came due and that the default does not take (its
+  guard is false) looks again every 2 ms until something else ends it,
+  as every alt did before. And a loop that writes into a record of and
+  then shares it (`l[i] := i; k := l`) copies it on each pass, as it
+  did, now marking it too: about a fifth slower, both quadratic.
 
 In order of what they cost a suite: component variables seen through a
 `runs on` function called from a PTC (*fixed 2026-10-01*); interleave; a

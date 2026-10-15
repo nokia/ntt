@@ -89,7 +89,7 @@ func (r *memberResolver) Resolve(name string) (runtime.Object, *runtime.Env, boo
 		if runtime.IsError(v) || v == nil {
 			v = runtime.Undefined
 		}
-		r.inst.Fields[name] = v
+		r.inst.Fields[name] = runtime.Share(v)
 	}
 	m := classMember(r.cd, name)
 	switch m.kind {
@@ -285,9 +285,9 @@ func nestedClassDecl(parent *runtime.ClassDesc, name string) *syntax.ClassTypeDe
 
 // nestedClassDesc builds a ClassDesc for a class nested in parent. When
 // outer is non-nil (the enclosing instance, as in
-// `v_parent.Child.create()`), the nested class's closure scope binds a
-// snapshot of the outer instance's fields so the inner methods can read
-// the enclosing object's members by their bare names; with outer nil it
+// `v_parent.Child.create()`), the nested class's closure scope binds the
+// outer instance's fields so the inner methods can use the enclosing
+// object's members by their bare names; with outer nil it
 // is a plain type reference (`Parent.Child` in a declaration or a
 // `select class` case).
 func nestedClassDesc(parent *runtime.ClassDesc, name string, outer *runtime.ClassInstance) *runtime.ClassDesc {
@@ -296,12 +296,10 @@ func nestedClassDesc(parent *runtime.ClassDesc, name string, outer *runtime.Clas
 		return nil
 	}
 	env := parent.Env
-	if outer != nil && env != nil {
-		scope := runtime.NewEnv(env)
-		for k, v := range outer.Fields {
-			scope.Set(k, v)
-		}
-		env = scope
+	if outer != nil && env != nil && outer.Fields != nil {
+		// The outer instance's own fields, not a copy: what an inner
+		// method writes into one, the outer object holds.
+		env = runtime.NewEnvOver(env, outer.Fields)
 	}
 	return &runtime.ClassDesc{Name: name, Decl: decl, Env: env}
 }
@@ -418,7 +416,7 @@ func runConstructorOn(inst *runtime.ClassInstance, cd *runtime.ClassDesc, argExp
 	names := classFieldNames(classChainBaseFirst(cd))
 	for i, a := range args {
 		if i < len(names) && a != nil && !runtime.IsError(a) {
-			inst.Fields[names[i]] = a
+			inst.Fields[names[i]] = runtime.Share(a)
 		}
 	}
 	return nil
@@ -435,7 +433,7 @@ func bindParamsInto(env *runtime.Env, params *syntax.FormalPars, args []runtime.
 		if p == nil || p.Name == nil || i >= len(args) {
 			continue
 		}
-		env.Set(p.Name.String(), args[i])
+		env.Set(p.Name.String(), runtime.Share(args[i]))
 	}
 }
 

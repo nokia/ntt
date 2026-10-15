@@ -296,6 +296,10 @@ type PTCExit struct {
 	// unaffected. Falls back to a timeout for receiver-only PTCs
 	// that never send.
 	SendChan chan struct{}
+	// BlockedChan closes the first time the behaviour waits on another
+	// component or on a message (Blocked). Until something else happens
+	// it can neither map nor send, so the start-barrier waits no more.
+	BlockedChan chan struct{}
 	// waiting counts the real-clock waits the behaviour is in: an alt
 	// parked, a timer's timeout, a done or killed (see WaitPTCs).
 	waiting  atomic.Int32
@@ -303,6 +307,7 @@ type PTCExit struct {
 	doneOnce sync.Once
 	mapOnce  sync.Once
 	sendOnce sync.Once
+	blkOnce  sync.Once
 }
 
 // Waiting marks the behaviour as waiting on the real clock until the
@@ -370,6 +375,20 @@ func (p *PTCExit) SignalSend() {
 	})
 }
 
+// Blocked closes BlockedChan exactly once. The interpreter calls it when
+// the behaviour waits for an event another component causes: a message,
+// a call, a component's end.
+func (p *PTCExit) Blocked() {
+	if p == nil {
+		return
+	}
+	p.blkOnce.Do(func() {
+		if p.BlockedChan != nil {
+			close(p.BlockedChan)
+		}
+	})
+}
+
 // RegisterPTC creates and stores a fresh PTCExit envelope for the
 // given component ref id. Returns the envelope so the interpreter
 // goroutine can plumb StopChan into its alt-scheduler waits.
@@ -380,10 +399,11 @@ func (p *PTCExit) SignalSend() {
 // any later Stop() on the stale envelope is a no-op.
 func (t *TestcaseExec) RegisterPTC(refID int64) *PTCExit {
 	p := &PTCExit{
-		StopChan: make(chan struct{}),
-		DoneChan: make(chan struct{}),
-		MapChan:  make(chan struct{}),
-		SendChan: make(chan struct{}),
+		StopChan:    make(chan struct{}),
+		DoneChan:    make(chan struct{}),
+		MapChan:     make(chan struct{}),
+		SendChan:    make(chan struct{}),
+		BlockedChan: make(chan struct{}),
 	}
 	t.ptcMu.Lock()
 	if t.ptcExits == nil {
@@ -955,7 +975,7 @@ func (t *TestcaseExec) EnqueueMessageFrom(port string, msg Object, sender Object
 	t.msgSeq++
 	// What is sent is a value (ETSI ES 201 873-1 22.2.1): the sender's
 	// later changes do not reach it, nor one receiver's the others'.
-	pm := PortMessage{Payload: CopyValue(msg), Sender: sender, Seq: t.msgSeq}
+	pm := PortMessage{Payload: Share(msg), Sender: sender, Seq: t.msgSeq}
 	t.ports[port] = append(t.ports[port], pm)
 	t.mu.Unlock()
 	t.tlDetected(port, pm)
@@ -1569,8 +1589,8 @@ func (t *TestcaseExec) EnqueueEnvelope(port string, msg PortMessage) {
 	}
 	t.msgSeq++
 	msg.Seq = t.msgSeq
-	msg.Payload = CopyValue(msg.Payload)
-	msg.RetValue = CopyValue(msg.RetValue)
+	msg.Payload = Share(msg.Payload)
+	msg.RetValue = Share(msg.RetValue)
 	t.ports[port] = append(t.ports[port], msg)
 	t.mu.Unlock()
 	t.tlDetected(port, msg)

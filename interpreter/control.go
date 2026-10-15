@@ -369,7 +369,7 @@ func controlRunTo(trees []*ttcn3.Tree, modNode *syntax.Module, module, tcName st
 	args = make([]runtime.Object, len(c.args))
 	for i, a := range c.args {
 		if a != nil {
-			args[i] = runtime.CopyValue(a)
+			args[i] = runtime.Share(a)
 		}
 	}
 	return args, c.timeout, c.hasTimeout, true

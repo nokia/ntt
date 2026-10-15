@@ -421,7 +421,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 	case *syntax.Declarator:
 		var val runtime.Object = runtime.Undefined
 		if n.Value != nil {
-			val = runtime.CopyValue(eval(n.Value, env))
+			val = runtime.Share(eval(n.Value, env))
 			if runtime.IsError(val) {
 				return val
 			}
@@ -438,8 +438,10 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 			// bound (ETSI 6.2.7); record the offset so `v[2]` reads
 			// the first element. Plain `v[N]` arrays have offset 0.
 			if lo := arrayLowerBound(n, env); lo != 0 {
-				if l, ok := val.(*runtime.List); ok && l != nil {
+				if l, ok := val.(*runtime.List); ok && l != nil && l.IndexOffset != lo {
+					l = runtime.Unshare(l).(*runtime.List)
 					l.IndexOffset = lo
+					val = l
 				}
 			}
 		} else if len(n.ArrayDef) > 0 {
@@ -3866,7 +3868,7 @@ func evalExprList(exprs []syntax.Expr, env runtime.Scope) []runtime.Object {
 func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtime.Object) {
 	// The target gets its own value (ETSI 6): `r2 := r` then `r.a := 3`
 	// leaves r2 as it was.
-	val := runtime.CopyValue(eval(rhs, env))
+	val := runtime.Share(eval(rhs, env))
 	if runtime.IsError(val) {
 		return val
 	}
@@ -3907,9 +3909,9 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 		// list before relabelling so the source array keeps its own
 		// offset.
 		if l, ok := val.(*runtime.List); ok && dstTd != nil && dstTd.IndexOffset != 0 && l.IndexOffset != dstTd.IndexOffset {
-			cp := *l
+			cp := runtime.Unshare(runtime.Share(l)).(*runtime.List)
 			cp.IndexOffset = dstTd.IndexOffset
-			val = &cp
+			val = cp
 		}
 	}
 
@@ -3961,6 +3963,16 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 		container, store := evalSlot(l.X, env)
 		if runtime.IsError(container) {
 			return container
+		}
+		// A shared value (runtime.Share) is not changed in place: the
+		// element goes into a copy of its own, put in its place.
+		if runtime.IsShared(container) {
+			container = runtime.Unshare(container)
+			if store != nil {
+				store(container)
+			} else {
+				storeReceiver(l.X, container, env)
+			}
 		}
 		idx := eval(l.Index, env)
 		if runtime.IsError(idx) {
@@ -4063,7 +4075,7 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 			i := idx.(runtime.Int).Int64()
 			if i >= 0 {
 				// A new string, stored back: charstrings are shared
-				// by the variables holding them (runtime.CopyValue),
+				// by the variables holding them (runtime.Share),
 				// so none is changed in place.
 				r, ok := val.(*runtime.String)
 				set := ok && r.Len() > 0
@@ -4106,7 +4118,7 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 		if !ok {
 			return nil
 		}
-		recv := eval(l.X, env)
+		recv := owned(l.X, env)
 		if runtime.IsError(recv) {
 			return recv
 		}
@@ -4164,7 +4176,7 @@ func declaresAny(stmts []syntax.Stmt) bool {
 func evalSlot(lx syntax.Expr, env runtime.Scope) (runtime.Object, func(runtime.Object)) {
 	switch x := lx.(type) {
 	case *syntax.IndexExpr:
-		parent := eval(x.X, env)
+		parent := owned(x.X, env)
 		if runtime.IsError(parent) {
 			return parent, nil
 		}
@@ -4216,7 +4228,7 @@ func evalSlot(lx syntax.Expr, env runtime.Scope) (runtime.Object, func(runtime.O
 		// again.
 		return indexValue(parent, x, env), nil
 	case *syntax.SelectorExpr:
-		parent := eval(x.X, env)
+		parent := owned(x.X, env)
 		if runtime.IsError(parent) {
 			return parent, nil
 		}
@@ -4238,6 +4250,72 @@ func evalSlot(lx syntax.Expr, env runtime.Scope) (runtime.Object, func(runtime.O
 		return selectValue(parent, x, env), nil
 	}
 	return eval(lx, env), nil
+}
+
+// owned evaluates x, the receiver of an element or field assignment —
+// the variable, field or element written into — as a value to change in
+// place: a shared value (runtime.Share) on its way is first replaced,
+// where it is held, by a copy of its own. Each index is evaluated once.
+func owned(x syntax.Expr, env runtime.Scope) runtime.Object {
+	switch e := x.(type) {
+	case *syntax.Ident:
+		v := eval(e, env)
+		if runtime.IsShared(v) {
+			v = runtime.Unshare(v)
+			storeReceiver(e, v, env)
+		}
+		return v
+	case *syntax.SelectorExpr:
+		parent := owned(e.X, env)
+		if runtime.IsError(parent) {
+			return parent
+		}
+		v := selectValue(parent, e, env)
+		if runtime.IsShared(v) {
+			v = runtime.Unshare(v)
+			setField(parent, syntax.Name(e.Sel), v)
+		}
+		return v
+	case *syntax.IndexExpr:
+		parent := owned(e.X, env)
+		if runtime.IsError(parent) {
+			return parent
+		}
+		idx := eval(e.Index, env)
+		if runtime.IsError(idx) {
+			return idx
+		}
+		v := indexValueOf(parent, idx, env)
+		if runtime.IsShared(v) {
+			v = runtime.Unshare(v)
+			putElement(parent, idx, v)
+		}
+		return v
+	}
+	return eval(x, env)
+}
+
+// putElement writes v as the element idx of c, a list or a map, where
+// one is.
+func putElement(c, idx, v runtime.Object) {
+	switch c := c.(type) {
+	case *runtime.List:
+		switch i := idx.(type) {
+		case runtime.Int:
+			if pos := int(i.Int64()) - c.IndexOffset; pos >= 0 && pos < len(c.Elements) {
+				c.Elements[pos] = v
+			}
+		case *runtime.List:
+			if allInts(i) {
+				multiIndexStore(c, i.Elements, v)
+			}
+		}
+	case *runtime.Map:
+		if _, ok := c.Get(idx); ok {
+			c.Delete(idx)
+			c.Set(idx, v)
+		}
+	}
 }
 
 // indexValueOf is parent[idx] for a parent and an index both evaluated
@@ -4393,7 +4471,8 @@ func storeReceiver(recv syntax.Expr, val runtime.Object, env runtime.Scope) runt
 		}
 		env.Set(r.String(), val)
 	case *syntax.SelectorExpr:
-		parent := eval(r.X, env)
+		// Changed, a shared value is a copy, which the chain puts back.
+		parent := runtime.Unshare(eval(r.X, env))
 		if parent == nil || parent == runtime.Undefined || parent == runtime.Omit || parent == runtime.Any || parent == runtime.AnyOrNone {
 			rec := runtime.NewRecord()
 			if st := structDeclOf(lvalueTypeDesc(r.X, env)); st != nil {
@@ -4406,7 +4485,7 @@ func storeReceiver(recv syntax.Expr, val runtime.Object, env runtime.Scope) runt
 		}
 		return storeReceiver(r.X, parent, env)
 	case *syntax.IndexExpr:
-		container := eval(r.X, env)
+		container := runtime.Unshare(eval(r.X, env))
 		if container == nil || container == runtime.Undefined || container == runtime.Omit || container == runtime.Any || container == runtime.AnyOrNone {
 			container = &runtime.List{ListType: runtime.RECORD_OF}
 		}
@@ -4528,7 +4607,7 @@ func evalForRange(n *syntax.ForRangeStmt, env runtime.Scope) runtime.Object {
 		return rng
 	}
 	var elems []runtime.Object
-	switch r := runtime.CopyValue(rng).(type) {
+	switch r := runtime.Share(rng).(type) {
 	case *runtime.List:
 		elems = r.Elements
 	case *runtime.String, *runtime.Binarystring:
@@ -5499,11 +5578,11 @@ func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 								if runtime.IsError(v) {
 									return v
 								}
-								env.Set(syntax.Name(decl.Name), v)
+								env.Set(syntax.Name(decl.Name), runtime.Share(v))
 								recordDeclaredType(env, syntax.Name(decl.Name), vd.Type)
 								continue
 							}
-							v := runtime.CopyValue(eval(decl.Value, env))
+							v := runtime.Share(eval(decl.Value, env))
 							if runtime.IsError(v) {
 								return v
 							}
@@ -5588,8 +5667,7 @@ func coerceToDeclaredStruct(val runtime.Object, typeExpr, valueExpr syntax.Expr,
 	if td.Struct == nil {
 		// A `set of` type tags its value unordered so a later
 		// `match` is order-independent (ETSI 6.2.3.2).
-		tagSetOf(val, td.ListKind)
-		return val
+		return tagSetOf(val, td.ListKind)
 	}
 	isUnion := td.Struct.KindTok.Kind() == syntax.UNION
 	if cl, ok := valueExpr.(*syntax.CompositeLiteral); ok && !isUnion && isMixedStructComposite(cl) {
@@ -5648,15 +5726,30 @@ func coerceToStruct(val runtime.Object, td *runtime.TypeDesc, env runtime.Scope)
 		}
 		names = append(names, f.Name.String())
 	}
-	list.FieldNames = names
+	// What changes goes into a new value: the given one may be another's
+	// — shared (runtime.Share), or a constant other components read.
+	own := false
+	ownIt := func() {
+		if !own {
+			list, own = runtime.Unshare(runtime.Share(list)).(*runtime.List), true
+		}
+	}
+	if !equalStrings(list.FieldNames, names) {
+		ownIt()
+		list.FieldNames = names
+	}
 	for i, f := range fields {
 		if i >= len(list.Elements) || f == nil {
 			continue
 		}
+		e := list.Elements[i]
 		if sub := fieldStructTypeDesc(f, env); sub != nil {
-			list.Elements[i] = coerceToStruct(list.Elements[i], sub, env)
+			e = coerceToStruct(e, sub, env)
 		}
-		tagSetOf(list.Elements[i], fieldListKind(f, env))
+		if e = tagSetOf(e, fieldListKind(f, env)); e != list.Elements[i] {
+			ownIt()
+			list.Elements[i] = e
+		}
 	}
 	return list
 }
@@ -5788,15 +5881,19 @@ func fieldListKind(f *syntax.Field, env runtime.Scope) runtime.ListType {
 }
 
 // tagSetOf marks a default (record-of) list value as unordered so
-// set-of matching is order-independent. Other list kinds (superset,
-// subset, permutation, value-list) and non-lists are left untouched.
-func tagSetOf(val runtime.Object, kind runtime.ListType) {
+// set-of matching is order-independent, in a new value: the given one
+// may be another's. Other list kinds (superset, subset, permutation, value-list)
+// and non-lists are left untouched.
+func tagSetOf(val runtime.Object, kind runtime.ListType) runtime.Object {
 	if kind != runtime.SET_OF {
-		return
+		return val
 	}
 	if l, ok := val.(*runtime.List); ok && l.ListType == runtime.RECORD_OF {
+		l = runtime.Unshare(runtime.Share(l)).(*runtime.List)
 		l.ListType = runtime.SET_OF
+		return l
 	}
+	return val
 }
 
 // coerceRecordFields applies type-directed coercion to the fields of a
@@ -5815,10 +5912,8 @@ func coerceRecordFields(rec *runtime.Record, td *runtime.TypeDesc, env runtime.S
 	own := false
 	ownIt := func() {
 		if !own {
-			out := &runtime.Record{Fields: make(map[string]runtime.Object, len(rec.Fields)), Order: structFieldNames(td.Struct)}
-			for k, v := range rec.Fields {
-				out.Fields[k] = v
-			}
+			out := runtime.Unshare(runtime.Share(rec)).(*runtime.Record)
+			out.Order = structFieldNames(td.Struct)
 			rec, own = out, true
 		}
 	}
@@ -5834,13 +5929,14 @@ func coerceRecordFields(rec *runtime.Record, td *runtime.TypeDesc, env runtime.S
 		if !ok {
 			continue
 		}
+		nv := cur
 		if sub := fieldStructTypeDesc(f, env); sub != nil {
-			if nv := coerceToStruct(cur, sub, env); nv != cur {
-				ownIt()
-				rec.Fields[name] = nv
-			}
+			nv = coerceToStruct(nv, sub, env)
 		}
-		tagSetOf(rec.Fields[name], fieldListKind(f, env))
+		if nv = tagSetOf(nv, fieldListKind(f, env)); nv != cur {
+			ownIt()
+			rec.Fields[name] = nv
+		}
 	}
 	return rec
 }
@@ -6294,6 +6390,9 @@ func multiIndexStore(c runtime.Object, idx []runtime.Object, val runtime.Object)
 		nxt, _ := cur.Elements[i].(*runtime.List)
 		if nxt == nil {
 			nxt = &runtime.List{ListType: runtime.RECORD_OF}
+			cur.Elements[i] = nxt
+		} else if runtime.IsShared(nxt) {
+			nxt = runtime.Unshare(nxt).(*runtime.List)
 			cur.Elements[i] = nxt
 		}
 		cur = nxt
@@ -7057,7 +7156,7 @@ func bindFunctionParams(fn *runtime.Function, args []runtime.Object) *runtime.En
 					fenv.Set(param.Name.String(), args[i])
 					continue
 				}
-				fenv.Set(param.Name.String(), runtime.CopyValue(args[i]))
+				fenv.Set(param.Name.String(), runtime.Share(args[i]))
 			case param.Value != nil:
 				// @lazy / @fuzzy defaults are *delayed*: the
 				// thunk is evaluated when the parameter is
@@ -7074,7 +7173,7 @@ func bindFunctionParams(fn *runtime.Function, args []runtime.Object) *runtime.En
 					continue
 				}
 				if v := eval(param.Value, fenv); !runtime.IsError(v) && v != nil {
-					fenv.Set(param.Name.String(), runtime.CopyValue(v))
+					fenv.Set(param.Name.String(), runtime.Share(v))
 					continue
 				}
 				fenv.Set(param.Name.String(), runtime.Undefined)
@@ -7171,7 +7270,7 @@ func forceThunk(v runtime.Object) runtime.Object {
 	}
 	// The parameter's value, of its own: a change to it in the callee
 	// does not reach the actual it was evaluated from.
-	val := runtime.CopyValue(eval(expr, t.Env))
+	val := runtime.Share(eval(expr, t.Env))
 	if !t.Fuzzy {
 		t.Cached = val
 		t.Once = true
@@ -7511,9 +7610,9 @@ func remapStructByPosition(val runtime.Object, src, dst *syntax.StructTypeDecl) 
 	case *runtime.List:
 		// Positional storage already; relabel the field-name metadata so
 		// `dst.field` access resolves (List equality ignores names).
-		cp := *v
+		cp := runtime.Unshare(runtime.Share(v)).(*runtime.List)
 		cp.FieldNames = append([]string(nil), dstNames...)
-		return &cp, true
+		return cp, true
 	}
 	return val, false
 }
@@ -7538,7 +7637,7 @@ func structDeclFieldNames(st *syntax.StructTypeDecl) []string {
 // IndexExpr targets. Falls through to assignToLHS for other LHS kinds.
 func assignToLHSWithIndex(lhs syntax.Expr, val runtime.Object, snap runtime.Object, env runtime.Scope) {
 	if idx, ok := lhs.(*syntax.IndexExpr); ok && snap != nil {
-		container := eval(idx.X, env)
+		container := owned(idx.X, env)
 		if list, ok := container.(*runtime.List); ok && snap.Type() == runtime.INTEGER {
 			i := snap.(runtime.Int).Int64()
 			if i >= 0 {
@@ -7609,7 +7708,7 @@ func assignToLHS(lhs syntax.Expr, val runtime.Object, env runtime.Scope) {
 		if !ok {
 			return
 		}
-		recv := eval(l.X, env)
+		recv := owned(l.X, env)
 		if recv == nil || recv == runtime.Undefined {
 			rec := runtime.NewRecord()
 			rec.Set(fid.String(), val)
@@ -7618,7 +7717,7 @@ func assignToLHS(lhs syntax.Expr, val runtime.Object, env runtime.Scope) {
 		}
 		setField(recv, fid.String(), val)
 	case *syntax.IndexExpr:
-		container := eval(l.X, env)
+		container := owned(l.X, env)
 		idx := eval(l.Index, env)
 		// `v_rec.field1[2] := X` where `field1` is currently
 		// omit / undefined: bootstrap a fresh record-of so the
@@ -8143,28 +8242,13 @@ func waitForTimerTimeout(th *runtime.TimerHandle, env runtime.Scope) {
 	}
 	t := time.NewTimer(remaining)
 	defer t.Stop()
-	// Poll Stopped() alongside the timer fire so `self.stop` /
-	// `comp.stop` on a MTC unwinds the wait promptly. MessageReady
-	// is signalled on Stop, so we piggyback on its channel rather
-	// than spinning.
-	for {
-		ready := exec.MessageReady()
-		select {
-		case <-t.C:
-			return
-		case <-ready:
-			if exec.Stopped() {
-				return
-			}
-			// Real-scheduler mode: `comp.stop`/`all component.stop`
-			// closes this PTC's StopChan and fires signalMessageReady,
-			// so break the pacing wait promptly instead of sleeping
-			// out the remaining duration.
-			if componentStopRequested(exec) {
-				return
-			}
-			// Stale wake from an unrelated enqueue; loop.
-		}
+	// A stop of the testcase, or of this component (`c.stop`, `all
+	// component.stop`), ends the wait. A message does not: waking for
+	// one took the wake-up of a component waiting for it.
+	select {
+	case <-t.C:
+	case <-exec.StopChan():
+	case <-currentStopChan(exec):
 	}
 }
 
@@ -8644,6 +8728,14 @@ func markWaiting(exec *runtime.TestcaseExec) (done func()) {
 	return func() {}
 }
 
+// markBlocked records that the current component's behaviour waits for
+// an event another component causes, which ends its start-barrier.
+func markBlocked(exec *runtime.TestcaseExec) {
+	if cur := exec.CurrentComponent(); cur != nil {
+		exec.PTCExit(cur.ID).Blocked()
+	}
+}
+
 // calleeFunction resolves the function a call names — `f()`, or
 // `Module.f()` — or returns nil.
 func calleeFunction(fun syntax.Expr, env runtime.Scope) *runtime.Function {
@@ -8716,7 +8808,7 @@ func snapshotPTCArgs(body syntax.Node, env runtime.Scope) (*runtime.Function, []
 					toEval = b.Y
 				}
 			}
-			snap = append(snap, runtime.CopyValue(eval(toEval, env)))
+			snap = append(snap, runtime.Share(eval(toEval, env)))
 			callArgs = append(callArgs, a)
 		}
 	}
@@ -8987,12 +9079,16 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 				// Only a body that maps, or sends through a driver, is
 				// waited for: any other would cost its starter the whole
 				// timeout.
+				// A body that waits for another component, or for a
+				// message, first can map or send only once something
+				// else happens: the barrier ends there too.
 				if exit != nil && !exec.SchedulerActive() && startBodyUses(body, env, "map", "send") {
 					dbg := os.Getenv("NTT_PORT_DEBUG") != ""
 					if startBodyUses(body, env, "map") {
 						select {
 						case <-exit.MapChan:
 						case <-exit.DoneChan:
+						case <-exit.BlockedChan:
 						case <-time.After(50 * time.Millisecond):
 							if dbg {
 								fmt.Fprintf(os.Stderr, "[start-barrier] comp=%d MAP phase TIMEOUT\n", ref.ID)
@@ -9014,6 +9110,10 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 						case <-exit.SendChan:
 							if dbg {
 								fmt.Fprintf(os.Stderr, "[start-barrier] comp=%d SEND ok\n", ref.ID)
+							}
+						case <-exit.BlockedChan:
+							if dbg {
+								fmt.Fprintf(os.Stderr, "[start-barrier] comp=%d SEND phase BLOCKED\n", ref.ID)
 							}
 						case <-exit.DoneChan:
 							if dbg {
@@ -9552,6 +9652,8 @@ func binValKey(bs *runtime.Binarystring) string {
 }
 
 func rememberEncoded(env runtime.Scope, bs *runtime.Binarystring, v runtime.Object) {
+	// The value decvalue gives back is the encoded one's, shared.
+	runtime.Share(v)
 	if exec := runtime.FindTestcaseExec(env); exec != nil {
 		exec.RememberEnc(bs, binValKey(bs), v)
 		return
@@ -10444,6 +10546,7 @@ func rememberEncodedString(env runtime.Scope, s *runtime.String, v runtime.Objec
 	if s == nil {
 		return
 	}
+	runtime.Share(v)
 	if exec := runtime.FindTestcaseExec(env); exec != nil {
 		exec.RememberEncStr(s, string(s.Value), v)
 		return
@@ -10668,7 +10771,7 @@ func snapshotActivateArgs(callExpr syntax.Expr, env runtime.Scope) runtime.Scope
 		}
 		// The value it has now, not the variable: a later change to
 		// the variable does not reach the default (ETSI 20.5.2).
-		defEnv.Set(id.String(), runtime.CopyValue(v))
+		defEnv.Set(id.String(), runtime.Share(v))
 		bound = true
 	}
 	if !bound {
@@ -12183,7 +12286,7 @@ func applyParamRedirect(pe syntax.Expr, payload runtime.Object, paramNames []str
 		}
 		if isRec && i < len(paramNames) && paramNames[i] != "" {
 			if fv, ok := rec.Fields[paramNames[i]]; ok {
-				assignToLHS(el, runtime.CopyValue(fv), env)
+				assignToLHS(el, runtime.Share(fv), env)
 				continue
 			}
 		}
@@ -12558,15 +12661,16 @@ func evalMapUnmap(opName string, n *syntax.CallExpr, env runtime.Scope) (runtime
 	if !ok {
 		return nil, false
 	}
-	m, ok := target.(*runtime.Map)
-	if !ok {
+	if _, ok := target.(*runtime.Map); !ok {
 		return nil, false
 	}
 	key := eval(n.Args.List[1], env)
 	if runtime.IsError(key) {
 		return key, true
 	}
-	m.Delete(key)
+	if m, ok := owned(id, env).(*runtime.Map); ok {
+		m.Delete(key)
+	}
 	return runtime.Undefined, true
 }
 
@@ -13298,13 +13402,13 @@ func applyRedirectValueExpr(v syntax.Expr, payload runtime.Object, env runtime.S
 			rhs = eval(b.Y, sub)
 		}
 		if !runtime.IsError(rhs) {
-			assignToLHS(b.X, runtime.CopyValue(rhs), env)
+			assignToLHS(b.X, runtime.Share(rhs), env)
 		}
 		return
 	}
 	// A redirect stores a value: a message a check leaves queued, or
 	// another redirect of the same message, does not share it.
-	assignToLHS(v, runtime.CopyValue(payload), env)
+	assignToLHS(v, runtime.Share(payload), env)
 }
 
 // encodePlaceholderForInt returns the encvalue / encvalue_o /
