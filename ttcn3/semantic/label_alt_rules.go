@@ -1,6 +1,7 @@
 // label_alt_rules.go enforces ETSI ES 201 873-1 clause 19.7:
 // "Labels are not allowed to label the alternatives within an
-//  \`alt\` statement, nor an \`interleave\` statement."
+//
+//	\`alt\` statement, nor an \`interleave\` statement."
 //
 // In the parser an \`alt { ... }\` block's \`Body.Stmts\` is a
 // mix of \`CommClause\` (\`[]\` alternatives) and any other

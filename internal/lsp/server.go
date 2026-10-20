@@ -123,21 +123,21 @@ type Server struct {
 }
 
 func (s *Server) Fatal(ctx context.Context, msg string) {
-	s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
+	_ = s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
 		Type:    protocol.Error,
 		Message: msg,
 	})
 }
 
 func (s *Server) Info(ctx context.Context, msg string) {
-	s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
+	_ = s.client.ShowMessage(ctx, &protocol.ShowMessageParams{
 		Type:    protocol.Info,
 		Message: msg,
 	})
 }
 
 func (s *Server) Log(ctx context.Context, msg string) {
-	s.client.LogMessage(ctx, &protocol.LogMessageParams{
+	_ = s.client.LogMessage(ctx, &protocol.LogMessageParams{
 		Type:    protocol.Log,
 		Message: stripansi.Strip(msg),
 	})
@@ -155,10 +155,6 @@ func (s *Server) Write(p []byte) (n int, err error) {
 	s.Log(context.Background(), str)
 	return len(str), nil
 
-}
-
-func (s *Server) cancelRequest(ctx context.Context, params *protocol.CancelParams) error {
-	return nil
 }
 
 func (s *Server) nonstandardRequest(ctx context.Context, method string, params interface{}) (interface{}, error) {

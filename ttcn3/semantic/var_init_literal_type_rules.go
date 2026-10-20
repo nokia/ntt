@@ -31,9 +31,9 @@ import (
 // any numeric/string-pattern literal kind; we only flag a clearly
 // foreign STRING literal initializer.
 var numericTypes = map[string]bool{
-	"integer":   true,
-	"boolean":   true,
-	"float":     true,
+	"integer":     true,
+	"boolean":     true,
+	"float":       true,
 	"verdicttype": true,
 }
 

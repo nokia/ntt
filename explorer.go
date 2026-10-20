@@ -8,7 +8,6 @@ import (
 
 	"github.com/nokia/ntt/runtime/dap"
 	"github.com/nokia/ntt/runtime/explorer"
-	rreport "github.com/nokia/ntt/runtime/report"
 	"github.com/nokia/ntt/ttcn3"
 	"github.com/nokia/ntt/ttcn3/syntax"
 	"github.com/spf13/cobra"
@@ -116,7 +115,7 @@ func (a dapDriverAdapter) ListTests() []string { return a.driver.List() }
 func (a dapDriverAdapter) Launch(name string, emit func(string)) (string, string, error) {
 	emit(fmt.Sprintf("launching %s", name))
 	v, reason, err := a.driver.Run(context.Background(), name)
-	verdict := rreport.Verdict(v).String()
+	verdict := v.String()
 	if err != nil {
 		return verdict, reason, err
 	}

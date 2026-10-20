@@ -34,9 +34,9 @@ const (
 // Symbol is a resolved binding. Definition is the AST node that
 // declared the name; Module is the owning module name.
 type Symbol struct {
-	Namespace Namespace
-	Module    string
-	Name      string
+	Namespace  Namespace
+	Module     string
+	Name       string
 	Definition ast.Node
 }
 
@@ -193,7 +193,7 @@ type resolver struct {
 	diags  []ast.Diagnostic
 }
 
-func (r *resolver) report(n ast.Node, sev ast.Severity, code, format string, args ...interface{}) {
+func (r *resolver) reportf(n ast.Node, sev ast.Severity, code, format string, args ...interface{}) {
 	r.diags = append(r.diags, ast.Diagnostic{
 		Pos:      n.Pos(),
 		End:      n.End(),
@@ -209,7 +209,7 @@ func (r *resolver) checkImports() {
 	for _, imp := range r.mod.Imports {
 		src := r.basket.Get(imp.From)
 		if src == nil {
-			r.report(imp, ast.SeverityWarning, "import.unknown-module",
+			r.reportf(imp, ast.SeverityWarning, "import.unknown-module",
 				"unknown imported module %q", imp.From)
 			continue
 		}
@@ -217,14 +217,14 @@ func (r *resolver) checkImports() {
 		for _, sym := range imp.Symbols {
 			if exports != nil {
 				if _, ok := exports[sym]; !ok {
-					r.report(imp, ast.SeverityError, "import.not-exported",
+					r.reportf(imp, ast.SeverityError, "import.not-exported",
 						"module %q does not export %q", imp.From, sym)
 					continue
 				}
 			}
 			// Make sure the symbol actually exists in the target.
 			if !hasAnyAssignment(src.module, sym) {
-				r.report(imp, ast.SeverityError, "import.unknown-symbol",
+				r.reportf(imp, ast.SeverityError, "import.unknown-symbol",
 					"module %q has no assignment named %q", imp.From, sym)
 			}
 		}
@@ -259,7 +259,7 @@ func (r *resolver) checkDuplicates() {
 		ns := assignmentNamespace(a)
 		k := symKey{ns, ast.AssignmentName(a)}
 		if prev, dup := seen[k]; dup {
-			r.report(a, ast.SeverityError, "duplicate-definition",
+			r.reportf(a, ast.SeverityError, "duplicate-definition",
 				"duplicate %s assignment %q (previous declaration at offset %d)",
 				namespaceLabel(ns), ast.AssignmentName(a), prev.Pos())
 			continue
@@ -399,12 +399,12 @@ func (r *resolver) checkRef(host ast.Node, ref *ast.TypeRef, ns Namespace, param
 		// Module-qualified: target module must exist.
 		scope := r.basket.Get(ref.Module)
 		if scope == nil {
-			r.report(host, ast.SeverityError, "ref.unknown-module",
+			r.reportf(host, ast.SeverityError, "ref.unknown-module",
 				"reference %q targets unknown module %q", ref.Name, ref.Module)
 			return
 		}
 		if scope.Lookup(ns, ref.Name) == nil {
-			r.report(host, ast.SeverityError, "ref.unknown-symbol",
+			r.reportf(host, ast.SeverityError, "ref.unknown-symbol",
 				"module %q has no %s named %q", ref.Module, namespaceLabel(ns), ref.Name)
 		}
 		return
@@ -432,7 +432,7 @@ func (r *resolver) checkRef(host ast.Node, ref *ast.TypeRef, ns Namespace, param
 	// Some builtin types (BMPString, etc.) are tokenised as KEYWORD
 	// and never reach this path; bare TYPEREFERENCEs we can't resolve
 	// are real errors.
-	r.report(host, ast.SeverityError, "ref.unknown",
+	r.reportf(host, ast.SeverityError, "ref.unknown",
 		"unknown %s reference %q", namespaceLabel(ns), ref.Name)
 }
 
@@ -441,10 +441,10 @@ func (r *resolver) checkValue(v ast.Value) {
 	case *ast.ReferenceValue:
 		if v.Module != "" {
 			if scope := r.basket.Get(v.Module); scope == nil {
-				r.report(v, ast.SeverityError, "value-ref.unknown-module",
+				r.reportf(v, ast.SeverityError, "value-ref.unknown-module",
 					"value reference targets unknown module %q", v.Module)
 			} else if scope.Lookup(NsValue, v.Name) == nil {
-				r.report(v, ast.SeverityError, "value-ref.unknown-symbol",
+				r.reportf(v, ast.SeverityError, "value-ref.unknown-symbol",
 					"module %q has no value named %q", v.Module, v.Name)
 			}
 			return

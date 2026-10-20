@@ -20,10 +20,10 @@ import (
 )
 
 var (
-	runTarget   string
-	runKeep     bool
-	runJSON     bool
-	runWorkdir  string
+	runTarget  string
+	runKeep    bool
+	runJSON    bool
+	runWorkdir string
 )
 
 // RunCommand is the closest ntt has today to Titan's `mctr_cli` + a
@@ -60,13 +60,13 @@ func init() {
 
 // runResult is what the harness emits (and what `--json` renders).
 type runResult struct {
-	Suite     string         `json:"suite"`
-	Target    string         `json:"target"`
-	Source    string         `json:"source"`
-	Build     time.Duration  `json:"build_ns"`
-	Run       time.Duration  `json:"run_ns"`
-	Cases     []runCaseResult `json:"cases"`
-	Verdict   string         `json:"verdict"`
+	Suite   string          `json:"suite"`
+	Target  string          `json:"target"`
+	Source  string          `json:"source"`
+	Build   time.Duration   `json:"build_ns"`
+	Run     time.Duration   `json:"run_ns"`
+	Cases   []runCaseResult `json:"cases"`
+	Verdict string          `json:"verdict"`
 }
 
 type runCaseResult struct {
@@ -175,14 +175,14 @@ func runGoTarget(dir string, m interface{}, out *runResult) error {
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "GOFLAGS=-mod=mod")
 	if msg, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("run: go build failed: %v\n%s", err, msg)
+		return fmt.Errorf("run: go build failed: %w\n%s", err, msg)
 	}
 	out.Build = time.Since(t)
 
 	t = time.Now()
 	res, err := exec.Command(bin).Output()
 	if err != nil {
-		return fmt.Errorf("run: binary failed: %v\n%s", err, res)
+		return fmt.Errorf("run: binary failed: %w\n%s", err, res)
 	}
 	out.Run = time.Since(t)
 	return parseHarnessOutput(res, out)
@@ -206,7 +206,7 @@ func runCppTarget(dir string, m interface{}, out *runResult) error {
 		return fmt.Errorf("run: codegen: %w", err)
 	}
 	src := filepath.Join(dir, "main.cpp")
-	full := string(buf.Bytes()) + "\n" + cppMainSource()
+	full := buf.String() + "\n" + cppMainSource()
 	if err := os.WriteFile(src, []byte(full), 0o644); err != nil {
 		return err
 	}
@@ -219,14 +219,14 @@ func runCppTarget(dir string, m interface{}, out *runResult) error {
 	t := time.Now()
 	cmd := exec.Command(compiler, "-std=c++17", "-O2", "-I", include, "-o", bin, src)
 	if msg, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("run: %s failed: %v\n%s", compiler, err, msg)
+		return fmt.Errorf("run: %s failed: %w\n%s", compiler, err, msg)
 	}
 	out.Build = time.Since(t)
 
 	t = time.Now()
 	res, err := exec.Command(bin).Output()
 	if err != nil {
-		return fmt.Errorf("run: binary failed: %v\n%s", err, res)
+		return fmt.Errorf("run: binary failed: %w\n%s", err, res)
 	}
 	out.Run = time.Since(t)
 	return parseHarnessOutput(res, out)

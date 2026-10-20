@@ -1,18 +1,10 @@
 package syntax
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	trc "runtime/trace"
-	"strconv"
-	"strings"
-
-	"github.com/nokia/ntt/internal/fs"
 )
 
 // A Mode value is a set of flags (or 0).
@@ -105,29 +97,6 @@ func Parse(src []byte, opts ...ParserOption) (root *Root) {
 	return p.Root
 }
 
-// If src != nil, readSource converts src to a []byte if possible;
-// otherwise it returns an error. If src == nil, readSource returns
-// the result of reading the file specified by filename.
-func readSource(filename string, src interface{}) ([]byte, error) {
-	if src != nil {
-		switch s := src.(type) {
-		case string:
-			return []byte(s), nil
-		case []byte:
-			return s, nil
-		case *bytes.Buffer:
-			// is io.Reader, but src is already available in []byte form
-			if s != nil {
-				return s.Bytes(), nil
-			}
-		case io.Reader:
-			return ioutil.ReadAll(s)
-		}
-		return nil, errors.New("invalid source")
-	}
-	return fs.Content(filename)
-}
-
 // The parser structure holds the parser's internal state.
 type parser struct {
 	// Tracing/debugging
@@ -148,8 +117,6 @@ type parser struct {
 	seenBrace bool
 
 	// Pre-processor Handling
-	ppLvl  int
-	ppCnt  int
 	ppSkip bool
 	ppDefs map[string]bool
 
@@ -177,53 +144,6 @@ func newRoot(src []byte) *Root {
 func un(p *parser) {
 	p.indent--
 	p.printTrace(")")
-}
-
-func (p *parser) handlePreproc(s string) {
-	f := strings.Fields(s)
-	switch b := false; f[0] {
-	case "#ifndef":
-		b = true
-		fallthrough
-	case "#ifdef", "#if":
-		if len(f) < 2 {
-			p.error(p.peek(1), "missing condition in preprocessor directive")
-			break
-		}
-		if p.ppSkip == false && p.ppLvl == p.ppCnt {
-			p.ppLvl++
-			p.ppSkip = (p.ppDefs[f[1]] == b)
-		}
-		p.ppCnt++
-	case "#else":
-		if p.ppLvl == p.ppCnt {
-			p.ppSkip = !p.ppSkip
-		}
-	case "#endif":
-		if p.ppLvl == p.ppCnt {
-			p.ppLvl--
-			p.ppSkip = false
-		}
-		p.ppCnt--
-
-	case "#define":
-		switch len(f) {
-		case 2:
-			p.ppDefs[f[1]] = true
-		case 3:
-			if v, err := strconv.ParseBool(f[2]); err != nil {
-				p.ppDefs[f[1]] = v
-				break
-			}
-			p.error(p.peek(1), "not a boolean expression")
-		default:
-			p.error(p.peek(1), "malformed 'define' directive")
-		}
-	default:
-		if !strings.HasPrefix(s, "#!") {
-			p.error(p.peek(1), "unknown preprocessor directive")
-		}
-	}
 }
 
 // Advance to the next token
@@ -347,9 +267,6 @@ func trace(p *parser, msg string) *parser {
 	p.indent++
 	return p
 }
-
-// A bailout panic is raised to indicate early termination.
-type bailout struct{}
 
 func (p *parser) error(n Node, msg string, args ...interface{}) {
 	err := Error{Node: n, Msg: fmt.Sprintf(msg, args...)}
@@ -815,7 +732,7 @@ func (p *parser) parseOperand() Expr {
 		return &ValueLiteral{Tok: p.consume()}
 
 	case LPAREN:
-		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`
+		// can be template `x := (1,2,3)`, but also arithmetic expression: `1*(2+3)`
 		return p.parseParenExpr()
 
 	case LBRACK:
@@ -1291,22 +1208,6 @@ func (p *parser) tryTypeIdent() Expr {
 /*************************************************************************
  * Module
  *************************************************************************/
-
-func (p *parser) parseModuleList() []*Module {
-	var list []*Module
-	if m := p.parseModule(); m != nil {
-		list = append(list, m)
-		p.expectSemi(m.LastTok())
-	}
-	for p.tok == MODULE {
-		if m := p.parseModule(); m != nil {
-			list = append(list, m)
-			p.expectSemi(m.LastTok())
-		}
-	}
-	p.expect(EOF)
-	return list
-}
 
 func (p *parser) parseModule() *Module {
 	if p.trace {
@@ -2944,29 +2845,6 @@ func (p *parser) parseForLoop() Stmt {
 		x.RParen = p.expect(RPAREN)
 		x.Body = p.parseBlockStmt()
 		return x
-	}
-}
-
-func hasAssignment(n Node) bool {
-	switch n := n.(type) {
-	case *DeclStmt:
-		return hasAssignment(n.Decl)
-	case *ExprStmt:
-		return hasAssignment(n.Expr)
-	case *ValueDecl:
-		for _, d := range n.Decls {
-			if d.AssignTok != nil {
-				return true
-			}
-		}
-		return false
-	case *BinaryExpr:
-		if n.Op.Kind() == ASSIGN {
-			return true
-		}
-		return false
-	default:
-		return false
 	}
 }
 

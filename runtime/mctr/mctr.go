@@ -8,6 +8,7 @@ package mctr
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -89,7 +90,7 @@ func (m *Master) handleConn(c net.Conn) {
 
 	for {
 		msg, err := dec.Decode()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return
 		}
 		if err != nil {

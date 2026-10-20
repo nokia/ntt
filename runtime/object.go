@@ -946,7 +946,7 @@ func NewEnumValue(enumType *EnumType, key string, id int) (*EnumValue, error) {
 	}
 	for _, enumRange := range keyRanges {
 		if enumRange.Contains(id) {
-			return &EnumValue{typeRef: enumType, key: key, value: int(id)}, nil
+			return &EnumValue{typeRef: enumType, key: key, value: id}, nil
 		}
 	}
 	return nil, fmt.Errorf("%s does no contain %d", key, id)

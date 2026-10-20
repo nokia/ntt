@@ -59,7 +59,7 @@ func (l *lowerer) line(s string) {
 	l.out.WriteByte('\n')
 }
 
-func (l *lowerer) report(n ast.Node, sev ast.Severity, code, format string, args ...interface{}) {
+func (l *lowerer) reportf(n ast.Node, sev ast.Severity, code, format string, args ...interface{}) {
 	pos, end := 0, 0
 	if n != nil {
 		pos, end = n.Pos(), n.End()
@@ -121,7 +121,7 @@ func (l *lowerer) typeAssignment(a *ast.TypeAssignment) {
 	}
 	body := l.typeExpr(a.Type)
 	if body == "" {
-		l.report(a, ast.SeverityWarning, "transform.unhandled-type",
+		l.reportf(a, ast.SeverityWarning, "transform.unhandled-type",
 			"unable to lower type assignment %q (kind %T)", a.Name, a.Type)
 		l.line(fmt.Sprintf("// type %s elided (unsupported)", t3Ident(a.Name)))
 		return
@@ -226,7 +226,7 @@ func (l *lowerer) typeExpr(t ast.Type) string {
 		// type. Emit a permissive `anytype` placeholder.
 		return "anytype"
 	}
-	l.report(t, ast.SeverityInfo, "transform.skipped-type",
+	l.reportf(t, ast.SeverityInfo, "transform.skipped-type",
 		"skipping unsupported type %T", t)
 	return ""
 }
@@ -362,47 +362,47 @@ func t3Ident(s string) string {
 // collide with ASN.1 identifiers. Not exhaustive - we only need to
 // catch the common collisions; the parser will surface anything else.
 var ttcn3Reserved = map[string]bool{
-	"address":  true,
-	"alt":      true,
-	"altstep":  true,
-	"any":      true,
+	"address":     true,
+	"alt":         true,
+	"altstep":     true,
+	"any":         true,
 	"any2unichar": true,
-	"anytype":  true,
-	"break":    true,
-	"case":     true,
-	"component": true,
-	"const":    true,
-	"continue": true,
-	"control":  true,
-	"do":       true,
-	"else":     true,
-	"enumerated": true,
-	"for":      true,
-	"function": true,
-	"goto":     true,
-	"group":    true,
-	"if":       true,
-	"import":   true,
-	"interleave": true,
-	"label":    true,
-	"map":      true,
-	"module":   true,
-	"out":      true,
-	"port":     true,
-	"return":   true,
-	"select":   true,
-	"set":      true,
-	"signature": true,
-	"system":   true,
-	"template": true,
-	"testcase": true,
-	"timer":    true,
-	"type":     true,
-	"union":    true,
-	"unmap":    true,
-	"value":    true,
-	"var":      true,
+	"anytype":     true,
+	"break":       true,
+	"case":        true,
+	"component":   true,
+	"const":       true,
+	"continue":    true,
+	"control":     true,
+	"do":          true,
+	"else":        true,
+	"enumerated":  true,
+	"for":         true,
+	"function":    true,
+	"goto":        true,
+	"group":       true,
+	"if":          true,
+	"import":      true,
+	"interleave":  true,
+	"label":       true,
+	"map":         true,
+	"module":      true,
+	"out":         true,
+	"port":        true,
+	"return":      true,
+	"select":      true,
+	"set":         true,
+	"signature":   true,
+	"system":      true,
+	"template":    true,
+	"testcase":    true,
+	"timer":       true,
+	"type":        true,
+	"union":       true,
+	"unmap":       true,
+	"value":       true,
+	"var":         true,
 	"verdicttype": true,
-	"while":    true,
-	"with":     true,
+	"while":       true,
+	"with":        true,
 }

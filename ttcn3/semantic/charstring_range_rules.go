@@ -16,8 +16,8 @@ type charRangeBound struct {
 }
 
 type charRangeSpec struct {
-	lo, hi    charRangeBound
-	universal bool
+	lo, hi       charRangeBound
+	universal    bool
 	loSrc, hiSrc string
 }
 

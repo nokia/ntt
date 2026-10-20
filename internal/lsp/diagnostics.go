@@ -44,7 +44,7 @@ func (s *Server) Diagnose(uris ...protocol.DocumentURI) {
 		// Publish an empty list first so that previously-reported
 		// diagnostics for this file are cleared. The deferred
 		// syncDiagnostics call will then push the real findings.
-		s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+		_ = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 			Diagnostics: make([]protocol.Diagnostic, 0),
 			URI:         uri,
 		})
@@ -154,7 +154,7 @@ func (s *Server) reportError(err error) {
 func (s *Server) syncDiagnostics() {
 	if s.serverConfig.DiagnosticsEnabled {
 		for k, v := range s.diags {
-			s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
+			_ = s.client.PublishDiagnostics(context.TODO(), &protocol.PublishDiagnosticsParams{
 				Diagnostics: v,
 				URI:         protocol.DocumentURI(k),
 			})

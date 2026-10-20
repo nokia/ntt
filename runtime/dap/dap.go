@@ -16,8 +16,8 @@ package dap
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -126,7 +126,7 @@ func Serve(r io.Reader, w io.Writer, h Handler) error {
 	for {
 		msg, err := in.Next()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			return err
@@ -209,22 +209,4 @@ func respond(out *Writer, req *Message, ok bool, msg string, body json.RawMessag
 		Body:    body,
 	}
 	return out.Write(resp)
-}
-
-// pipeBuffer is a simple in-memory io.ReadWriter, useful for tests
-// that loop a Serve through itself without a real socket.
-type pipeBuffer struct {
-	mu  sync.Mutex
-	buf bytes.Buffer
-}
-
-func (p *pipeBuffer) Read(b []byte) (int, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.buf.Read(b)
-}
-func (p *pipeBuffer) Write(b []byte) (int, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.buf.Write(b)
 }

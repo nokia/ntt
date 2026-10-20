@@ -636,15 +636,6 @@ func runTestcaseIn(env runtime.Scope, exec *runtime.TestcaseExec, trees []*ttcn3
 	return exec.GetVerdict(), exec.Reason(), nil
 }
 
-// bindTestcaseParams binds each formal parameter of the testcase to
-// a sensible placeholder so the body can reference them even when no
-// actual arguments were passed. Defaults from the source `:= expr`
-// clause win when present; otherwise `template` formals get the
-// wildcard `?` and value formals get Undefined.
-func bindTestcaseParams(env runtime.Scope, tc *syntax.FuncDecl) {
-	bindTestcaseParamsWithArgs(env, tc, nil, env)
-}
-
 // bindTestcaseParamsWithArgs is like bindTestcaseParams but lets the
 // caller supply an arglist (typically pulled from a `control { ... }`
 // `execute(tc(...))` call). Each positional arg is evaluated in the
@@ -1397,31 +1388,6 @@ func isUnknownNodeError(err *runtime.Error) bool {
 		strings.Contains(err.Inspect(), "unknown SubTypeDecl node type")
 }
 
-// bindDeclName extracts the user-visible name from a declaration the
-// interpreter could not evaluate and stashes a phantom Undefined
-// value under that name in env. The point is purely to keep later
-// identifier lookups from erroring; nothing about the declaration is
-// otherwise modelled. This is the difference between "interpreter
-// doesn't know about component types" causing every dependent
-// testcase to fail vs. only failing the ones that actually exercise
-// the unimplemented semantics.
-//
-// For ComponentTypeDecls we additionally walk the body and bind every
-// member's name to Undefined too. TTCN-3 component-instance lookups
-// (`p.send(...)`, `t.start`) resolve to members the running mtc/ptc
-// owns; absent a real component-instance model we put the names in
-// module scope as a coarse approximation. This is enough for the
-// conformance-suite tests that only check identifier resolution
-// succeeds; tests that actually exercise the runtime semantics still
-// produce a wrong verdict, which is the honest answer.
-//
-// moduleWith carries the enclosing module's `with { ... }` clauses so
-// that named types can inherit module-level encode/variant defaults
-// (TTCN-3 27.1.2 overriding rules).
-func bindDeclName(env runtime.Scope, n syntax.Node, moduleWith *syntax.WithSpec) {
-	bindDeclNameScoped(env, n, []*syntax.WithSpec{moduleWith})
-}
-
 // bindDeclNameScoped is bindDeclName carrying the full with-spec
 // scope stack (outermost first). Inner scopes override outer ones for
 // unqualified attrs, and any of them can carry a qualified
@@ -1701,14 +1667,6 @@ func mergeUnderlyingAttrs(td *runtime.TypeDesc, env runtime.Scope) {
 	} else {
 		delete(td.Attrs, "variant")
 	}
-}
-
-// typeDescFor distils a runtime TypeDesc for a named type, layering
-// the type-local `with { encode "..." }` clauses on top of the
-// module-level defaults. The result is what `T.encode`, `T.variant`,
-// ... evaluate to during testcase execution.
-func typeDescFor(name string, local, module *syntax.WithSpec) *runtime.TypeDesc {
-	return typeDescForScoped(name, local, []*syntax.WithSpec{module})
 }
 
 func typeDescForScoped(name string, local *syntax.WithSpec, scopes []*syntax.WithSpec) *runtime.TypeDesc {
@@ -3511,33 +3469,6 @@ func lookupAltstep(name string, scope runtime.Scope) *runtime.Function {
 		return nil
 	}
 	return fn
-}
-
-// waitForAltTimerDeadline sleeps until d elapses or the testcase
-// signals Stopped (whichever comes first). Used to back the
-// timer-only alt scheduler path.
-func waitForAltTimerDeadline(d time.Duration, env runtime.Scope) {
-	if d <= 0 {
-		return
-	}
-	exec := runtime.FindTestcaseExec(env)
-	t := time.NewTimer(d)
-	defer t.Stop()
-	if exec == nil {
-		<-t.C
-		return
-	}
-	for {
-		ready := exec.MessageReady()
-		select {
-		case <-t.C:
-			return
-		case <-ready:
-			if exec.Stopped() {
-				return
-			}
-		}
-	}
 }
 
 // evalAltClauseBody evaluates an alt-clause body with altBodyCtx

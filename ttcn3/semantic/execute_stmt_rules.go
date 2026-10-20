@@ -40,10 +40,9 @@ func (a *Analyzer) checkExecuteStmtRules(mod *syntax.Module) []Diagnostic {
 				diags = append(diags, Diagnostic{
 					Code:     "execute-explicit-infinity-timeout",
 					Severity: SeverityError,
-					Message: fmt.Sprintf(
-						"execute(...) does not accept `infinity` as an explicit timeout (ETSI 26.1)"),
-					Node: args[1],
-					Span: syntax.SpanOf(args[1]),
+					Message:  "execute(...) does not accept `infinity` as an explicit timeout (ETSI 26.1)",
+					Node:     args[1],
+					Span:     syntax.SpanOf(args[1]),
 				})
 			} else if ty != "" && ty != "-" && ty != "float" {
 				diags = append(diags, Diagnostic{

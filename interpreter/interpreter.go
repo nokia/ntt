@@ -1179,7 +1179,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		return runtime.Errorf("index operator not supported: %s", left.Type())
 
 	case *syntax.ParenExpr:
-		// can be template `x := (1,2,3)`, but also artihmetic expression: `1*(2+3)`.
+		// can be template `x := (1,2,3)`, but also arithmetic expression: `1*(2+3)`.
 		// For now, we assume it's an arithmetic expression, when there's only one child.
 		if len(n.List) == 1 {
 			return eval(n.List[0], env)
@@ -1289,7 +1289,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		}
 
 		switch {
-		case b == true:
+		case b:
 			return eval(n.Then, env)
 
 		case n.Else != nil:
@@ -1783,7 +1783,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 			if runtime.IsError(err) {
 				return err
 			}
-			if cond == false {
+			if !cond {
 				return nil
 			}
 
@@ -1850,7 +1850,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 			if runtime.IsError(err) {
 				return err
 			}
-			if cond == false {
+			if !cond {
 				return nil
 			}
 		}
@@ -1876,7 +1876,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 			if runtime.IsError(err) {
 				return err
 			}
-			if cond == false {
+			if !cond {
 				return nil
 			}
 
@@ -3777,7 +3777,7 @@ func evalBoolBinary(x bool, y bool, op syntax.Kind, env runtime.Scope) runtime.O
 
 func evalStringBinary(x string, y string, op syntax.Kind, env runtime.Scope) runtime.Object {
 	if op == syntax.CONCAT {
-		return &runtime.String{Value: []rune(string(x) + string(y))}
+		return &runtime.String{Value: []rune(x + y)}
 	}
 	return runtime.Errorf("unknown operator: charstring %s charstring", op)
 
@@ -3836,7 +3836,7 @@ func evalBoolExpr(n syntax.Expr, env runtime.Scope) (bool, runtime.Object) {
 	}
 
 	if b, ok := val.(runtime.Bool); ok {
-		return b == true, nil
+		return bool(b), nil
 	}
 
 	// Guard on an unmodelled value -> false (don't take the branch).
@@ -5179,12 +5179,12 @@ func evalEnumTypeDeclRange(expr syntax.Expr) ([]runtime.EnumRange, error) {
 				if argT.Op != nil && argT.Op.Kind() == syntax.RANGE {
 					argRet.First, argErr = evalInt(argT.X)
 					if argErr != nil {
-						argErr = fmt.Errorf("BinaryExpr l-arguments %v", argErr)
+						argErr = fmt.Errorf("BinaryExpr l-arguments %w", argErr)
 						break
 					}
 					argRet.Last, argErr = evalInt(argT.Y)
 					if argErr != nil {
-						argErr = fmt.Errorf("BinaryExpr r-arguments %v", argErr)
+						argErr = fmt.Errorf("BinaryExpr r-arguments %w", argErr)
 					}
 				} else {
 					// Treat the expression as a constant integer
@@ -5205,7 +5205,7 @@ func evalEnumTypeDeclRange(expr syntax.Expr) ([]runtime.EnumRange, error) {
 			}
 
 			if argErr != nil {
-				return enumKeyRanges, fmt.Errorf("enum element has unexpected CallExpr argument, %v", argErr)
+				return enumKeyRanges, fmt.Errorf("enum element has unexpected CallExpr argument, %w", argErr)
 			} else {
 				enumKeyRanges = append(enumKeyRanges, argRet)
 			}
@@ -5340,7 +5340,7 @@ func evalEnumElements(enums []syntax.Expr) (runtime.EnumElements, error) {
 
 		eRanges, eErr := evalEnumTypeDeclRange(e)
 		if eErr != nil {
-			return ret, fmt.Errorf("can't add key %s, %v", eName, eErr)
+			return ret, fmt.Errorf("can't add key %s, %w", eName, eErr)
 		}
 		if len(eRanges) == 0 {
 			for used[nextAuto] {
@@ -5374,7 +5374,7 @@ func evalEnumElements(enums []syntax.Expr) (runtime.EnumElements, error) {
 
 func evalEnumSpec(n *syntax.EnumSpec) runtime.Object {
 	ret := runtime.NewEnumType("")
-	var err error = nil
+	var err error
 	ret.Elements, err = evalEnumElements(n.Enums)
 	if err != nil {
 		return runtime.Errorf("%s", err.Error())
@@ -5387,7 +5387,7 @@ func evalEnumTypeDecl(n *syntax.EnumTypeDecl, env runtime.Scope) runtime.Object 
 	name := syntax.Name(n)
 	ret := runtime.NewEnumType(name)
 
-	var err error = nil
+	var err error
 	ret.Elements, err = evalEnumElements(n.Enums)
 	if err != nil {
 		return runtime.Errorf("%s", err.Error())
@@ -5477,13 +5477,13 @@ func evalInt(n syntax.Node) (int, error) {
 		}
 		val, err := strconv.Atoi(t.Tok.String())
 		if err != nil {
-			return 0, fmt.Errorf("ValueLiteral '%s' is not int, %v", t.Tok.String(), err)
+			return 0, fmt.Errorf("ValueLiteral '%s' is not int, %w", t.Tok.String(), err)
 		}
 		return val, nil
 	case *syntax.UnaryExpr:
 		val, err := evalInt(t.X)
 		if err != nil {
-			return 0, fmt.Errorf("UnaryExpr '%v', %v", t, err)
+			return 0, fmt.Errorf("UnaryExpr '%v', %w", t, err)
 		}
 		switch t.Op.Kind() {
 		case syntax.ADD:
@@ -8078,37 +8078,6 @@ func assignToLHSWithIndex(lhs syntax.Expr, val runtime.Object, snap runtime.Obje
 	assignToLHS(lhs, val, env)
 }
 
-// writebackInoutParams reflects mutations the callee made to inout /
-// out formal parameters back onto the caller-side argument slots. A
-// no-op when the call site uses a non-assignable expression for the
-// argument (literal, expression result, ...) - TTCN-3 forbids that
-// case but we'd rather silently drop the writeback than crash.
-func writebackInoutParams(fn *runtime.Function, callArgs []syntax.Expr, fenv runtime.Scope, callerEnv runtime.Scope) {
-	if fn == nil || fn.Params == nil || fenv == nil {
-		return
-	}
-	for i, param := range fn.Params.List {
-		if param == nil || param.Name == nil {
-			continue
-		}
-		if i >= len(callArgs) {
-			continue
-		}
-		if param.Direction == nil {
-			continue
-		}
-		dir := strings.ToLower(param.Direction.String())
-		if dir != "out" && dir != "inout" {
-			continue
-		}
-		val, ok := fenv.Get(param.Name.String())
-		if !ok || val == nil {
-			continue
-		}
-		assignToLHS(callArgs[i], val, callerEnv)
-	}
-}
-
 // assignToLHS is a minimal evalAssign clone that takes a pre-computed
 // value (not an expression). Used by the inout/out writeback path
 // because the value comes from the callee's environment rather than
@@ -8743,7 +8712,7 @@ func componentExecutionEnv(ref *runtime.ComponentRef, parent runtime.Scope) runt
 // initComponentVars binds ref's variables, on the component's own
 // goroutine once it runs as the component: an initialiser calling a
 // function that runs on it uses its variables (6.2.10.4), and one that
-// waits waits as the component, not as its starter.
+// waits does so as the component, not as its starter.
 func initComponentVars(ref *runtime.ComponentRef) {
 	if ref == nil {
 		return
@@ -9983,7 +9952,7 @@ func nodeLine(n syntax.Node) (int, bool) {
 	}
 	span := syntax.SpanOf(n)
 	if span.Begin.Line > 0 {
-		return int(span.Begin.Line), true
+		return span.Begin.Line, true
 	}
 	return 0, false
 }
@@ -10385,18 +10354,6 @@ func returnType(r *syntax.ReturnSpec) syntax.Expr {
 		return nil
 	}
 	return r.Type
-}
-
-// recalled is the value a matching encvalue earlier in the testcase
-// encoded as enc, if any.
-func recalled(env runtime.Scope, enc runtime.Object) (runtime.Object, bool) {
-	switch v := enc.(type) {
-	case *runtime.Binarystring:
-		return recallEncoded(env, v)
-	case *runtime.String:
-		return recallEncodedString(env, v)
-	}
-	return nil, false
 }
 
 // encodedForm is JSON text as encvalue_unichar (a universal charstring),
@@ -11409,51 +11366,6 @@ func defaultsFired(env runtime.Scope) (runtime.Object, bool) {
 	return &runtime.ReturnValue{Value: runtime.Undefined}, true
 }
 
-// isTimerOnlyDefault reports whether the call expression `n`
-// invokes an altstep whose body only contains `*.timeout` guards.
-// We use a syntactic check (no actual evaluation) so the timer
-// default never has a chance to fire its `setverdict(fail)` body
-// when we don't really know whether the timer expired.
-func isTimerOnlyDefault(n syntax.Node, env runtime.Scope) bool {
-	call, ok := n.(*syntax.CallExpr)
-	if !ok {
-		return false
-	}
-	id, ok := call.Fun.(*syntax.Ident)
-	if !ok {
-		return false
-	}
-	v, ok := env.Get(id.String())
-	if !ok {
-		return false
-	}
-	fn, ok := v.(*runtime.Function)
-	if !ok || !fn.IsAltstep || fn.Body == nil {
-		return false
-	}
-	onlyTimer := false
-	for _, stmt := range fn.Body.Stmts {
-		cc, ok := stmt.(*syntax.CommClause)
-		if !ok || cc.Comm == nil {
-			continue
-		}
-		es, ok := cc.Comm.(*syntax.ExprStmt)
-		if !ok {
-			return false
-		}
-		sel, ok := es.Expr.(*syntax.SelectorExpr)
-		if !ok {
-			return false
-		}
-		id, ok := sel.Sel.(*syntax.Ident)
-		if !ok || id.String() != "timeout" {
-			return false
-		}
-		onlyTimer = true
-	}
-	return onlyTimer
-}
-
 // evalMatchFile implements the `matchFile` external function the
 // JSON/XML codec conformance fixtures rely on (391 of the codec tests
 // route their pass/fail decision through it). The real TITAN test
@@ -11536,11 +11448,9 @@ func evalMatchFile(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 		// Pos_..._026.xml). When the directory ships exactly one
 		// candidate with the same extension, that is the intended
 		// reference.
-		alt, ok := soleSiblingWithExt(dir, filepath.Ext(refName))
-		if !ok {
+		if _, ok := soleSiblingWithExt(dir, filepath.Ext(refName)); !ok {
 			return runtime.NewBool(false)
 		}
-		refName = alt
 	}
 	recordXMLLoopbackTransform(n, env, dir)
 	return runtime.NewBool(true)
@@ -12561,17 +12471,6 @@ func procReceiveOpName(call *syntax.CallExpr) string {
 		}
 	}
 	return ""
-}
-
-// procReceiveMatches reports whether a queued procedure envelope
-// matches the template carried by a getcall / getreply / catch call.
-// A nil / parameter-less call matches unconditionally (the bare
-// form). For getreply the parameter record and the `value` return
-// template match independently; catch matches the exception value
-// against its second argument; getcall matches the parameter record.
-func procReceiveMatches(op string, call *syntax.CallExpr, head runtime.PortMessage, env runtime.Scope) bool {
-	ok, _, _ := procReceiveMatch(op, call, head, env)
-	return ok
 }
 
 // procReceiveMatch is procReceiveMatches that also returns the templates it
@@ -13925,19 +13824,6 @@ func decodeCachedFor(env runtime.Scope, blob runtime.Object) runtime.Object {
 	return nil
 }
 
-// fromAddrMatches reports whether the queued message's sender
-// satisfies the optional `from <addr>` constraint. If the constraint
-// is nil the message always matches; if it's a literal (integer,
-// charstring, ...) the sender must equal it via runtime.Equal; if
-// it's a range / template-style expression the standard match
-// builtin is used. Tests that send without `to <addr>` carry a nil
-// sender - we treat them as matching only when no constraint was
-// requested, otherwise the receive blocks.
-func fromAddrMatches(sender runtime.Object, addr syntax.Expr, env runtime.Scope) bool {
-	ok, _ := fromAddrMatch(sender, addr, env)
-	return ok
-}
-
 // fromAddrMatch is fromAddrMatches that also returns the `from` template it
 // evaluated (nil when it evaluated none), so a log can show it without
 // evaluating the clause a second time.
@@ -14041,6 +13927,8 @@ func evalPortCheck(port string, n *syntax.CallExpr, env runtime.Scope) runtime.O
 // against the head-of-queue message. Calls with no arguments accept
 // any message; calls with a single template argument compare it via
 // the same `match` builtin used by user-level `match()` expressions.
+//
+//nolint:unused // used by the package's tests
 func portReceiveMatches(head runtime.Object, n *syntax.CallExpr, env runtime.Scope) bool {
 	ok, _ := portReceiveMatch(head, true, n, env)
 	return ok

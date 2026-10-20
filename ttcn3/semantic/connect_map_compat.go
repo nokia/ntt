@@ -285,25 +285,6 @@ const (
 	portRefOK
 )
 
-// resolvePortRef walks a `<compVar>:<port>` BinaryExpr (the form
-// every connect / map argument takes) and looks up the port type
-// from the declared component's port list. Returns ok=false when any
-// step fails (unknown variable, unknown component type, unknown port
-// name) so the caller can quietly skip the check rather than report
-// a spurious diagnostic.
-//
-// `self` / `mtc` resolve to runsOn. `system` resolves to the
-// testcase's system component when known.
-func resolvePortRef(
-	expr syntax.Expr,
-	runsOn, systemComp string,
-	varTypes map[string]string,
-	compPorts map[string]map[string]string,
-) (portRef, bool) {
-	ref, st := resolvePortRefStatus(expr, runsOn, systemComp, varTypes, compPorts)
-	return ref, st == portRefOK
-}
-
 func resolvePortRefStatus(
 	expr syntax.Expr,
 	runsOn, systemComp string,
@@ -402,21 +383,21 @@ func compatViolation(a, b *portDirs) string {
 		// Out from A is wide-open; only need B's outs to fit
 		// into A's ins.
 		if !subset(out(b), in(a), a.allInDir || a.allInoutDir) {
-			return "out direction of one side not contained in in direction of the other"
+			return "out direction of one side not contained in the in direction of the other"
 		}
 		return ""
 	}
 	if b.allOutDir || b.allInoutDir {
 		if !subset(out(a), in(b), b.allInDir || b.allInoutDir) {
-			return "out direction of one side not contained in in direction of the other"
+			return "out direction of one side not contained in the in direction of the other"
 		}
 		return ""
 	}
 	if !subset(out(a), in(b), b.allInDir || b.allInoutDir) {
-		return "out direction of one side not contained in in direction of the other"
+		return "out direction of one side not contained in the in direction of the other"
 	}
 	if !subset(out(b), in(a), a.allInDir || a.allInoutDir) {
-		return "out direction of one side not contained in in direction of the other"
+		return "out direction of one side not contained in the in direction of the other"
 	}
 	return ""
 }
@@ -435,7 +416,7 @@ func mapCompatViolation(local, system *portDirs) string {
 	}
 	if !(local.allInDir || local.allInoutDir) {
 		if !subset(in(system), in(local), false) {
-			return "in direction of system port not contained in in direction of component port"
+			return "in direction of system port not contained in the in direction of component port"
 		}
 	}
 	return ""
@@ -474,7 +455,6 @@ func subset(a, b map[string]bool, bIsAll bool) bool {
 	}
 	return true
 }
-
 
 // collectVarComponentTypes walks a function body and records every
 // `var <CompType> <name>` declaration whose type is a known

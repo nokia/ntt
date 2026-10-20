@@ -269,7 +269,9 @@ func writeJSON(b *bytes.Buffer, v runtime.Object, t jsonType, env runtime.Scope)
 					member = shape.jsonName(f)
 				}
 				b.WriteByte('{')
-				writeJSONString(b, member)
+				if err := writeJSONString(b, member); err != nil {
+					return err
+				}
 				b.WriteByte(':')
 				err := writeJSON(b, fv, ft, env)
 				b.WriteByte('}')
@@ -362,7 +364,9 @@ func writeJSONObject(b *bytes.Buffer, m map[string]runtime.Object, order []strin
 					b.WriteByte(',')
 				}
 				first = false
-				writeJSONString(b, member)
+				if err := writeJSONString(b, member); err != nil {
+					return err
+				}
 				b.WriteString(":null")
 			}
 			continue
@@ -371,7 +375,9 @@ func writeJSONObject(b *bytes.Buffer, m map[string]runtime.Object, order []strin
 			b.WriteByte(',')
 		}
 		first = false
-		writeJSONString(b, member)
+		if err := writeJSONString(b, member); err != nil {
+			return err
+		}
 		b.WriteByte(':')
 		if err := writeJSON(b, fv, ft, env); err != nil {
 			return err
@@ -629,7 +635,7 @@ func fromJSONValue(x interface{}, t jsonType, env runtime.Scope) (runtime.Object
 		case json.Number:
 			f, err := v.Float64()
 			if err != nil {
-				return nil, fmt.Errorf("JSON: %v", err)
+				return nil, fmt.Errorf("JSON: %w", err)
 			}
 			// A negative zero is a zero, unless useMinus (B.3.6).
 			if f == 0 && !eff.useMinus {

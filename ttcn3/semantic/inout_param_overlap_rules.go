@@ -8,12 +8,12 @@
 //
 // We detect the unambiguous violations:
 //
-//   * `f(v.x, v.y)` where both formals are inout (different paths
+//   - `f(v.x, v.y)` where both formals are inout (different paths
 //     under the same root, NegSem_050402_143 / _144).
-//   * `f(v, v[i])` or `f(v, v.x)` where both formals are inout
+//   - `f(v, v[i])` or `f(v, v.x)` where both formals are inout
 //     and the second path is a sub-element of the first
 //     (NegSem_050402_145).
-//   * The fully-aliased `f(v, v)` shape (same root, no further
+//   - The fully-aliased `f(v, v)` shape (same root, no further
 //     path on either side).
 //
 // We only consider local user-defined functions whose formal
@@ -143,10 +143,10 @@ func (a *Analyzer) checkInoutParamOverlapRules(mod *syntax.Module) []Diagnostic 
 // sharesPath returns true if a and b refer to overlapping data
 // under the same root identifier:
 //
-//   * One side is a strict prefix of the other - the whole
+//   - One side is a strict prefix of the other - the whole
 //     structured value is passed alongside one of its sub-
 //     elements (NegSem_050402_145).
-//   * Both sides diverge through a `.field` selector at the same
+//   - Both sides diverge through a `.field` selector at the same
 //     depth - distinct fields of the same record / set / union /
 //     anytype are still aliases of "this structured value or
 //     template" for ETSI 5.4.2 purposes (NegSem_050402_143 /

@@ -11,6 +11,7 @@
 package component
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -89,10 +90,10 @@ type Component struct {
 // uses it to enumerate PTCs for `all component` operations and to
 // allocate fresh IDs.
 type Registry struct {
-	mu    sync.Mutex
-	next  uint64
-	all   map[uint64]*Component
-	mtc   *Component
+	mu     sync.Mutex
+	next   uint64
+	all    map[uint64]*Component
+	mtc    *Component
 	system *Component
 }
 
@@ -260,7 +261,7 @@ func (c *Component) Alive() bool {
 func (c *Component) finish(err error) {
 	c.mu.Lock()
 	c.err = err
-	if err == ErrKilled {
+	if errors.Is(err, ErrKilled) {
 		c.state = Killed
 	} else {
 		c.state = Done

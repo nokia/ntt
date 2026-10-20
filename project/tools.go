@@ -79,12 +79,7 @@ type FmtOptions struct {
 // Options returns the configured FmtOptions or sensible defaults when
 // the section is empty.
 func (f FmtTool) Options() FmtOptions {
-	out := FmtOptions{
-		PrintWidth:    f.PrintWidth,
-		TabWidth:      f.TabWidth,
-		UseSpaces:     f.UseSpaces,
-		MaxEmptyLines: f.MaxEmptyLines,
-	}
+	out := FmtOptions(f)
 	if out.PrintWidth == 0 {
 		out.PrintWidth = 100
 	}

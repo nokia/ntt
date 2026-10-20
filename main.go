@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -109,7 +110,6 @@ var (
 	outputPlain    bool
 	outputProgress bool
 	outputTAP      bool
-	testsFiles     []string
 	chdir          string
 
 	version = "devel"
@@ -205,16 +205,14 @@ func PrintError(w io.Writer, err error) {
 }
 
 func fatal(err error) {
-	switch err := err.(type) {
-	case *exec.ExitError:
-		waitStatus := err.Sys().(syscall.WaitStatus)
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		waitStatus := exitErr.Sys().(syscall.WaitStatus)
 		if waitStatus.ExitStatus() == -1 {
 			PrintError(os.Stderr, err)
 		}
 		os.Exit(waitStatus.ExitStatus())
-	default:
-		fmt.Fprintln(os.Stderr, err.Error())
 	}
-
+	fmt.Fprintln(os.Stderr, err.Error())
 	os.Exit(1)
 }

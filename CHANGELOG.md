@@ -167,9 +167,14 @@ single functional test doubles as a performance probe. See
 ### Changed
 
 - **Linting runs golangci-lint v2** (2.14, built with Go 1.27), which can
-  type-check this code where v1.60 could not; `.golangci.yml` is migrated
-  (`exportloopref` and `tenv` are gone from v2, `stylecheck` is part of
-  `staticcheck`). The job still reports its findings without failing.
+  type-check this code where v1.60 could not, and **fails the job** on a
+  finding. It runs the standard linters (errcheck, govet, ineffassign,
+  staticcheck, unused) and a few that find mistakes rather than style
+  (dupword, errorlint, goprintffuncname, makezero, misspell, unconvert,
+  wastedassign); what they found is fixed or removed: errors that went
+  unchecked — restoring a file `ntt format` failed to write, the
+  baskets of `ntt list`, the bash completion — dead code, wrapped errors
+  compared with `==`, misspellings.
 - **A `setverdict` reason is reported for every verdict, not just fail and
   error.** `setverdict(inconc, "why")` lost its message even though CI counts
   inconc as a failure, and `setverdict(pass, "label")` lost it too. The reason

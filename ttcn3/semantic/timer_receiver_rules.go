@@ -72,13 +72,13 @@ func (a *Analyzer) checkTimerReceiverRules(mod *syntax.Module) []Diagnostic {
 func collectModuleNonTimerIdents(mod *syntax.Module) map[string]bool {
 	out := map[string]bool{}
 	primitive := map[string]bool{
-		"integer":   true,
-		"float":     true,
-		"boolean":   true,
-		"charstring": true,
-		"universal":  true,
-		"bitstring":  true,
-		"hexstring":  true,
+		"integer":     true,
+		"float":       true,
+		"boolean":     true,
+		"charstring":  true,
+		"universal":   true,
+		"bitstring":   true,
+		"hexstring":   true,
 		"octetstring": true,
 		"verdicttype": true,
 		"anytype":     true,

@@ -174,8 +174,8 @@ func stripArraySuffix(ty string) string {
 // not flagging ambiguous shapes.
 func collectSingleFieldTypes(mod *syntax.Module) map[string]string {
 	type entry struct {
-		ty     string
-		clash  bool
+		ty    string
+		clash bool
 	}
 	tmp := map[string]*entry{}
 	add := func(name, ty string) {

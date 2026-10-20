@@ -44,7 +44,7 @@ func (a *Analyzer) checkComponentBodyDeclRules(mod *syntax.Module) []Diagnostic 
 			diags = append(diags, Diagnostic{
 				Code:     "component-body-non-decl",
 				Severity: SeverityError,
-				Message: "component body contains a non-declaration statement; only var/const/template/timer/port declarations are allowed (ETSI 8)",
+				Message:  "component body contains a non-declaration statement; only var/const/template/timer/port declarations are allowed (ETSI 8)",
 				Node:     st,
 				Span:     syntax.SpanOf(st),
 			})

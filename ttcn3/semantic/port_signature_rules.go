@@ -178,4 +178,3 @@ func collectPortTypeSignatures(mod *syntax.Module, signatures map[string]bool) m
 	}
 	return out
 }
-

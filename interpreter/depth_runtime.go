@@ -78,10 +78,6 @@ func slowGoroutineID() uint64 {
 	return id
 }
 
-// runtimeStack is retained for backwards compatibility with any
-// caller that still references it.
-func runtimeStack(buf []byte) int { return runtime.Stack(buf, false) }
-
 // NTT_DEPTH_SLOW=1 forces the slow stack-parsing form even when the
 // assembly fast path is available. Useful for measuring the speedup
 // and as an escape hatch if a future Go release breaks the layout

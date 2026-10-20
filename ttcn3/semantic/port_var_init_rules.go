@@ -6,9 +6,10 @@
 //     type is identical (or a typedef synonym) of its own port
 //     type. In particular:
 //
-//       - `var P v := self;`  (a component reference)  is invalid.
-//       - `var P2 v := p;`    where `p` is `port P p` and P!=P2 is
-//         invalid.
+//   - `var P v := self;`  (a component reference)  is invalid.
+//
+//   - `var P2 v := p;`    where `p` is `port P p` and P!=P2 is
+//     invalid.
 //
 // We only flag explicit `self`-init and identifier-init shapes
 // whose source variable has a known module-local port-type

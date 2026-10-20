@@ -228,7 +228,7 @@ func (t *Tree) ModulePars() []*Node {
 	return defs
 }
 
-// IdentifierAt returns the primary expression enclosing the identifer at the
+// IdentifierAt returns the primary expression enclosing the identifier at the
 // given position.
 func (t *Tree) IdentifierAt(line, col int) syntax.Expr {
 	pos := t.PosFor(line, col)
@@ -364,7 +364,7 @@ func (f *finder) ident(id *syntax.Ident, tree *Tree) []*Node {
 				var results []*Node
 				for _, c := range f.lookup(ppp.Fun, tree) {
 					results = append(results, Definitions(id.String(), c.Node, c.Tree)...)
-					// Bellow switch is required to handle behvaiour types references.
+					// Bellow switch is required to handle behaviour types references.
 					// See tests TestLookup/parameters#01 and TestLookup/parameters#02.
 					//
 					// This brute force solution is not ideal, but it works for now.

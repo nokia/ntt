@@ -19,6 +19,12 @@ type MarkdownHover struct {
 	mapOrConnectLinks string
 }
 
+// VersionKey is the context key of the ntt version the server reports
+// to its client.
+var VersionKey = versionKey{}
+
+type versionKey struct{}
+
 func (s *Server) registerSemanticTokensIfNoDynReg() *protocol.SemanticTokensRegistrationOptions {
 	if s.clientCapability.HasDynRegForSemTok {
 		// NOTE:
@@ -99,13 +105,13 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 	setTrace(params.Trace)
 
 	version := "devel"
-	if v, ok := ctx.Value("version").(string); ok {
+	if v, ok := ctx.Value(VersionKey).(string); ok {
 		version = v
 	}
 
 	return &protocol.InitializeResult{
 		Capabilities: protocol.ServerCapabilities{
-			InlayHintProvider:               s.registerInlayHintIfNoDynReg(),
+			InlayHintProvider: s.registerInlayHintIfNoDynReg(),
 			// Advertise the kinds we actually emit so clients can
 			// surface them in their menus (e.g. "Source Action"
 			// in VS Code) and pre-filter via the `Only` field.
@@ -119,7 +125,7 @@ func (s *Server) initialize(ctx context.Context, params *protocol.ParamInitializ
 				TriggerCharacters: []string{"."},
 				ResolveProvider:   true,
 			},
-			CallHierarchyProvider: true,
+			CallHierarchyProvider:           true,
 			DefinitionProvider:              true,
 			TypeDefinitionProvider:          true,
 			ImplementationProvider:          false,
@@ -186,7 +192,9 @@ func (s *Server) initialized(ctx context.Context, params *protocol.InitializedPa
 	s.state = serverInitialized
 	s.stateMu.Unlock()
 
-	s.didChangeConfiguration(ctx, &protocol.DidChangeConfigurationParams{})
+	if err := s.didChangeConfiguration(ctx, &protocol.DidChangeConfigurationParams{}); err != nil {
+		log.Debugf("lsp: configuration: %v\n", err)
+	}
 	for _, folder := range s.pendingFolders {
 		log.Printf("Scanning %q for possible TTCN-3 suites\n", folder.URI)
 		for _, root := range project.Discover(folder.URI) {

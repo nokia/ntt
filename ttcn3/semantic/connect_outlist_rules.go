@@ -27,8 +27,6 @@ type portDirSet struct {
 	hasOut bool
 }
 
-func (d portDirSet) empty() bool { return !d.hasIn && !d.hasOut }
-
 // collectPortDirs walks every port type declaration and records
 // which directions its PortAttribute list mentions.
 func collectPortDirs(mod *syntax.Module) map[string]portDirSet {

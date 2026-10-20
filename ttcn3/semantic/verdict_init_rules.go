@@ -79,4 +79,3 @@ func findVerdictOpCall(expr syntax.Expr) string {
 	})
 	return found
 }
-

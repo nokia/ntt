@@ -31,8 +31,8 @@ func init() {
 
 type stub struct{ name string }
 
-func (s stub) Name() string                                       { return s.name }
-func (s stub) Compile(*attr.AttributeSet) (codec.Plan, error)     { return plan{name: s.name}, nil }
+func (s stub) Name() string                                   { return s.name }
+func (s stub) Compile(*attr.AttributeSet) (codec.Plan, error) { return plan(s), nil }
 
 type plan struct{ name string }
 

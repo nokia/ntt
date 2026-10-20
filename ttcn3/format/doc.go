@@ -25,7 +25,7 @@ type (
 		indent int
 		d      Doc
 	}
-	groupDoc struct{ d Doc }
+	groupDoc  struct{ d Doc }
 	concatDoc struct{ ds []Doc }
 )
 
@@ -106,11 +106,10 @@ const (
 )
 
 type renderer struct {
-	w     io.Writer
-	opts  Options
-	col   int
-	err   error
-	atBOL bool
+	w    io.Writer
+	opts Options
+	col  int
+	err  error
 }
 
 func (r *renderer) render(d Doc, indent int, mode renderMode) {

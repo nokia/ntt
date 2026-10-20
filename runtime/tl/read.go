@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -141,7 +142,7 @@ func readXML(r io.Reader) (*Log, error) {
 	truncated := false
 	for {
 		tok, err := d.Token()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			if len(stack) > 0 {
 				truncated = true
 			}
@@ -152,7 +153,8 @@ func readXML(r io.Reader) (*Log, error) {
 			// inside a character, which the decoder reports as invalid
 			// UTF-8 — so an error once all the input is read, after the
 			// log began, is the log's end.
-			if se, ok := err.(*xml.SyntaxError); ok && root != nil && len(stack) > 0 &&
+			var se *xml.SyntaxError
+			if errors.As(err, &se) && root != nil && len(stack) > 0 &&
 				(strings.Contains(se.Msg, "unexpected EOF") || er.eof && strings.Contains(se.Msg, "invalid UTF-8")) {
 				truncated = true
 				break

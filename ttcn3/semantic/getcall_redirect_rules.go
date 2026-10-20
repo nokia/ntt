@@ -50,9 +50,9 @@ func (a *Analyzer) checkGetcallRedirectRules(mod *syntax.Module) []Diagnostic {
 			diags = append(diags, Diagnostic{
 				Code:     "getreply-anyreply-value-redirect",
 				Severity: SeverityError,
-				Message: "`getreply` without a template matches any reply; `-> value(...)` is not allowed (ETSI 22.3.4)",
-				Node:    re,
-				Span:    syntax.SpanOf(re),
+				Message:  "`getreply` without a template matches any reply; `-> value(...)` is not allowed (ETSI 22.3.4)",
+				Node:     re,
+				Span:     syntax.SpanOf(re),
 			})
 		}
 		return true

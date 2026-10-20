@@ -213,21 +213,21 @@ func checkPortOpReceiverInBody(
 // declares them. `anytype` is the canonical example: it's an alias
 // for "any data value" but never a port instance.
 var builtinNonPortTypeNames = map[string]bool{
-	"anytype":            true,
-	"integer":            true,
-	"boolean":            true,
-	"float":              true,
-	"charstring":         true,
-	"bitstring":          true,
-	"hexstring":          true,
-	"octetstring":        true,
-	"universal":          true,
-	"verdicttype":        true,
-	"default":            true,
-	"timer":              true,
-	"address":            true,
-	"object":             true,
-	"objectIdentifier":   true,
+	"anytype":          true,
+	"integer":          true,
+	"boolean":          true,
+	"float":            true,
+	"charstring":       true,
+	"bitstring":        true,
+	"hexstring":        true,
+	"octetstring":      true,
+	"universal":        true,
+	"verdicttype":      true,
+	"default":          true,
+	"timer":            true,
+	"address":          true,
+	"object":           true,
+	"objectIdentifier": true,
 }
 
 func checkNonPortRecv(declKinds map[string]typeKind, typeName string) bool {

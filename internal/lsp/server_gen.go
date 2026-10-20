@@ -45,7 +45,7 @@ func (s *Server) DidChange(ctx context.Context, params *protocol.DidChangeTextDo
 }
 
 func (s *Server) DidChangeConfiguration(ctx context.Context, params *protocol.DidChangeConfigurationParams) error {
-	return s.didChangeConfiguration(ctx, params) 
+	return s.didChangeConfiguration(ctx, params)
 }
 
 func (s *Server) DidChangeWatchedFiles(context.Context, *protocol.DidChangeWatchedFilesParams) error {

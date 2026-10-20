@@ -9,7 +9,7 @@
 // <addr>` clause of send / call / reply / raise. We catch:
 //
 //   - The bare `null` literal in either clause:
-//       `p.call(S:{}, nowait) to null`
+//     `p.call(S:{}, nowait) to null`
 //   - A variable that is statically initialised to `null` and
 //     never reassigned in the enclosing function body.
 //   - Either of the above inside a parenthesised multicast list,
@@ -190,12 +190,4 @@ func isNullLiteral(e syntax.Expr) bool {
 		return false
 	}
 	return v.Tok.Kind() == syntax.NULL
-}
-
-// fromTargetName extracts the bare identifier from the `Y` of a
-// `from Y` binary expression. Multicast / list forms are handled
-// by addrRefItems; this helper stays around for callers that
-// already expect the single-name shape.
-func fromTargetName(e syntax.Expr) string {
-	return identName(e)
 }

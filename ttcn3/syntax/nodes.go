@@ -262,7 +262,7 @@ type (
 		RBrace Token  // Position of "}"
 	}
 
-	// A UnaryExpr represents a unary expresions.
+	// A UnaryExpr represents a unary expression.
 	UnaryExpr struct {
 		Op Token // Operator token, like "+", "-", "!", ...
 		X  Expr

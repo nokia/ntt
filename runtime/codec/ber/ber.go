@@ -34,15 +34,15 @@ import (
 
 // Universal tag numbers from X.680 Annex A.
 const (
-	TagBoolean      = 0x01
-	TagInteger      = 0x02
-	TagBitString    = 0x03
-	TagOctetString  = 0x04
-	TagNull         = 0x05
-	TagEnumerated   = 0x0A
-	TagUTF8String   = 0x0C
-	TagSequence     = 0x10
-	TagSet          = 0x11
+	TagBoolean     = 0x01
+	TagInteger     = 0x02
+	TagBitString   = 0x03
+	TagOctetString = 0x04
+	TagNull        = 0x05
+	TagEnumerated  = 0x0A
+	TagUTF8String  = 0x0C
+	TagSequence    = 0x10
+	TagSet         = 0x11
 )
 
 // Class bits (high two bits of the identifier octet).
@@ -66,7 +66,7 @@ func (c Codec) Name() string { return c.name }
 // pre-computed schema today (tags come from the universal tag table
 // or from the value's runtime type).
 func (c Codec) Compile(_ *attr.AttributeSet) (codec.Plan, error) {
-	return plan{name: c.name}, nil
+	return plan(c), nil
 }
 
 type plan struct{ name string }

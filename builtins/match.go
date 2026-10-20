@@ -644,25 +644,6 @@ func containsWildcards(s string) bool {
 	return false
 }
 
-func equalIgnoreCase(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		ca, cb := a[i], b[i]
-		if ca >= 'a' && ca <= 'z' {
-			ca -= 32
-		}
-		if cb >= 'a' && cb <= 'z' {
-			cb -= 32
-		}
-		if ca != cb {
-			return false
-		}
-	}
-	return true
-}
-
 // wildcardMatch is a classic two-pointer matcher with backtracking on
 // `*`. Each `?` consumes exactly one character; `*` consumes zero or
 // more. The match is case-insensitive so '0A'H matches '0a'H.

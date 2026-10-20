@@ -30,16 +30,16 @@ import (
 // address-bound value. Anything outside this set is treated as
 // "possibly an address" and skipped to avoid false positives.
 var primitiveBuiltinAddrTypes = map[string]bool{
-	"integer":             true,
-	"charstring":          true,
+	"integer":              true,
+	"charstring":           true,
 	"universal charstring": true,
-	"float":               true,
-	"boolean":             true,
-	"bitstring":           true,
-	"octetstring":         true,
-	"hexstring":           true,
-	"verdicttype":         true,
-	"anytype":             true,
+	"float":                true,
+	"boolean":              true,
+	"bitstring":            true,
+	"octetstring":          true,
+	"hexstring":            true,
+	"verdicttype":          true,
+	"anytype":              true,
 }
 
 func (a *Analyzer) checkAddrClauseTypeRules(mod *syntax.Module) []Diagnostic {

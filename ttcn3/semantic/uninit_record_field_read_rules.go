@@ -139,9 +139,7 @@ func updateUninitCtxAfterStmt(st syntax.Stmt, ctx *uninitRecordCtx, records map[
 	switch lhs := be.X.(type) {
 	case *syntax.Ident:
 		name := lhs.String()
-		if _, hit := ctx.uninit[name]; hit {
-			delete(ctx.uninit, name)
-		}
+		delete(ctx.uninit, name)
 	case *syntax.SelectorExpr:
 		root, firstField := dotChainRootField(lhs)
 		if root == "" || firstField == "" {
@@ -160,9 +158,7 @@ func updateUninitCtxAfterStmt(st syntax.Stmt, ctx *uninitRecordCtx, records map[
 		if root == "" {
 			return
 		}
-		if _, hit := ctx.uninit[root]; hit {
-			delete(ctx.uninit, root)
-		}
+		delete(ctx.uninit, root)
 	}
 }
 

@@ -13,19 +13,19 @@ import (
 // names accepted by Annex E. They are recognised regardless of
 // any `encode` attribute in the module.
 var unicharEncodings = map[string]bool{
-	"utf-8":         true,
-	"utf-16":        true,
-	"utf-16be":      true,
-	"utf-16le":      true,
-	"utf-32":        true,
-	"utf-32be":      true,
-	"utf-32le":      true,
-	"ascii":         true,
-	"us-ascii":      true,
-	"iso-8859-1":    true,
-	"iso-8859-15":   true,
-	"latin-1":       true,
-	"windows-1252":  true,
+	"utf-8":        true,
+	"utf-16":       true,
+	"utf-16be":     true,
+	"utf-16le":     true,
+	"utf-32":       true,
+	"utf-32be":     true,
+	"utf-32le":     true,
+	"ascii":        true,
+	"us-ascii":     true,
+	"iso-8859-1":   true,
+	"iso-8859-15":  true,
+	"latin-1":      true,
+	"windows-1252": true,
 }
 
 // checkDecodedRedirectRules enforces ETSI 22.2.{2,3} / 22.3.{4,6}:

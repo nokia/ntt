@@ -62,9 +62,6 @@ type Config struct {
 
 	// ResultsFile is the path to the results file.
 	ResultsFile string `json:"results_file"`
-
-	// what toolchain to use.
-	toolchain string
 }
 
 // The Manifest file (package.yml).
@@ -672,7 +669,9 @@ func WithManifest(file string) ConfigOption {
 		if err := c.Variables.Expand(); err != nil {
 			return err
 		}
-		env.ExpandAll(&c.Manifest, c.Variables)
+		if err := env.ExpandAll(&c.Manifest, c.Variables); err != nil {
+			log.Verbosef("project: %s: %v\n", file, err)
+		}
 		c.Manifest.expandPaths(c.Root)
 		log.Debugf("project: using manifest %s\n", file)
 		return nil

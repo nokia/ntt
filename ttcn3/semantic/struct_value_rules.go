@@ -228,7 +228,7 @@ func checkRecordSetFieldSelfRefs(mod *syntax.Module) []Diagnostic {
 		if !ok || st.Name == nil || st.KindTok == nil {
 			continue
 		}
-		kindName := ""
+		var kindName string
 		switch st.KindTok.Kind() {
 		case syntax.RECORD:
 			kindName = "record"

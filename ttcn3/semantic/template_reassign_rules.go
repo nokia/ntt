@@ -79,7 +79,7 @@ func templateReassignDiags(
 			return true
 		}
 		name := id.String()
-		scope := ""
+		var scope string
 		switch {
 		case locals[name]:
 			scope = "local"

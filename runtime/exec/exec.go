@@ -116,9 +116,7 @@ func Run(ctx context.Context, opts Options) (*report.Suite, error) {
 			strings.Join(pats, ", "), len(known))
 	}
 	if len(cases) == 0 && opts.Config != nil {
-		for _, name := range opts.Config.ExecuteList() {
-			cases = append(cases, name)
-		}
+		cases = append(cases, opts.Config.ExecuteList()...)
 	}
 	if len(cases) == 0 {
 		cases = opts.Driver.List()

@@ -110,7 +110,7 @@ func collectComponentNonPortMembers(mod *syntax.Module) map[string]map[string]st
 			if !ok || vd == nil || vd.KindTok == nil {
 				continue
 			}
-			kindStr := ""
+			var kindStr string
 			switch vd.KindTok.Kind() {
 			case syntax.VAR:
 				kindStr = "var"

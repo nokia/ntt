@@ -11,15 +11,15 @@ import (
 // `ttcn3.experimental.*` keys are still honoured for backwards
 // compatibility with existing user settings.
 const (
-	DIAGNOSTICS_CONFIG_KEY    = "ttcn3.diagnostics.enabled"
-	FORMATTER_CONFIG_KEY      = "ttcn3.format.enabled"
+	DIAGNOSTICS_CONFIG_KEY     = "ttcn3.diagnostics.enabled"
+	FORMATTER_CONFIG_KEY       = "ttcn3.format.enabled"
 	SEMANTIC_TOKENS_CONFIG_KEY = "ttcn3.semanticTokens.enabled"
-	INLAY_HINT_CONFIG_KEY     = "ttcn3.inlayHint.enabled"
+	INLAY_HINT_CONFIG_KEY      = "ttcn3.inlayHint.enabled"
 
-	LEGACY_DIAGNOSTICS_CONFIG_KEY    = "ttcn3.experimental.diagnostics.enabled"
-	LEGACY_FORMATTER_CONFIG_KEY      = "ttcn3.experimental.format.enabled"
+	LEGACY_DIAGNOSTICS_CONFIG_KEY     = "ttcn3.experimental.diagnostics.enabled"
+	LEGACY_FORMATTER_CONFIG_KEY       = "ttcn3.experimental.format.enabled"
 	LEGACY_SEMANTIC_TOKENS_CONFIG_KEY = "ttcn3.experimental.semanticTokens.enabled"
-	LEGACY_INLAY_HINT_CONFIG_KEY     = "ttcn3.experimental.inlayHint.enabled"
+	LEGACY_INLAY_HINT_CONFIG_KEY      = "ttcn3.experimental.inlayHint.enabled"
 )
 
 // configBool reads a boolean configuration value from the client.
@@ -114,10 +114,10 @@ func (s *Server) didChangeConfiguration(ctx context.Context, _ *protocol.DidChan
 	}
 
 	if len(regList) > 0 {
-		s.client.RegisterCapability(ctx, &protocol.RegistrationParams{Registrations: regList})
+		_ = s.client.RegisterCapability(ctx, &protocol.RegistrationParams{Registrations: regList})
 	}
 	if len(unregList) > 0 {
-		s.client.UnregisterCapability(ctx, &protocol.UnregistrationParams{Unregisterations: unregList})
+		_ = s.client.UnregisterCapability(ctx, &protocol.UnregistrationParams{Unregisterations: unregList})
 	}
 	return nil
 }
