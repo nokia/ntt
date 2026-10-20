@@ -261,3 +261,102 @@ func TestShapedValuesAreNotWalkedAgain(t *testing.T) {
 		t.Fatalf("took %v", d)
 	}
 }
+
+// TestShapeOfTheNameInScope: a value takes the shape of the declaration
+// its name stands for there — an inner block's variable, a parameter —
+// not of a like-named outer array or component variable it hides.
+func TestShapeOfTheNameInScope(t *testing.T) {
+	for name, body := range map[string]string{
+		"inner block": `var R a[2] := {{1,2},{3,4}};
+			{ var S a := {y := 9, x := 10}; a := {11, 12}; check(a.y == 11 and a.x == 12, a) }
+			a := {{5,6},{7,8}}; check(a[1].y == 8, a)`,
+		"inner record of": `var R a[2] := {{1,2},{3,4}};
+			{ var SL a := {}; a[0] := {1, 2}; check(a[0].y == 1, a) }`,
+		"loop body": `var R a[2] := {{1,2},{3,4}};
+			for (var integer i := 0; i < 1; i := i + 1) { var SL a := {{5,6}}; a[1] := {1, 2}; check(a[1].y == 1, a) }`,
+		"parameter":      `check(g({1, 2}) == 15, "g")`,
+		"parameter list": `check(h({}) == 1, "h")`,
+	} {
+		src := `module M {
+			type record R { integer x, integer y }
+			type record S { integer y, integer x }
+			type record of S SL;
+			type component C { var R ca[2] }
+			function check(boolean ok, template anytype x) { if (ok) { setverdict(pass) } else { setverdict(fail, x) } }
+			function g(S ca) runs on C return integer { ca := {15, 16}; return ca.y }
+			function h(SL ca) runs on C return integer { ca[0] := {1, 2}; return ca[0].y }
+			testcase tc() runs on C {
+				` + body + `
+			}
+		}`
+		for _, k := range clocks {
+			v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", k.opts)
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
+			}
+		}
+	}
+}
+
+// TestPositionalRecordsCompareByName: a record written positionally is
+// the record of its fields, by name: it equals and matches the same
+// record written with them, in either order, in a record of too, and a
+// value literal compared with a variable is of the variable's type.
+func TestPositionalRecordsCompareByName(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type record R { integer a, integer b optional }
+		type record of R RR;
+		type set S { integer a, integer b }
+		type record of S SS;
+		type component C {}
+		template R t := {a := 1, b := 2};
+		function chk(boolean ok, charstring what) { if (not ok) { setverdict(fail, what) } }
+		testcase tc() runs on C {
+			var RR p := {{1,2},{3,omit}};
+			var RR n := {{a := 1, b := 2},{a := 3, b := omit}};
+			chk(p == n, "pos==named");
+			chk(n == {{1,2},{3,omit}}, "named==lit");
+			chk(p == {{a := 1, b := 2},{a := 3, b := omit}}, "pos==namedlit");
+			var SS s1 := {{1,2}};
+			var SS s2 := {{b := 2, a := 1}};
+			chk(s1 == s2, "set");
+			var RR d := {{b := 2, a := 1}, {a := 3, b := omit}};
+			chk(d == p, "reordered");
+			chk(match(p[0], t), "match");
+			chk(not match(p[1], t), "no match");
+			chk(p != {{1,3},{3,omit}}, "differs");
+			setverdict(pass);
+		}
+	}`, runtime.PassVerdict)
+}
+
+// TestCompatibleAndImplicitOmitRecordsCompare: values of compatible
+// record types, whose fields have other names, are equal when their
+// fields are, in order (ETSI 6.3.2.2, 7.1.3); a field a value with
+// implicit omit leaves out equals omit; one union alternative is not
+// another of the same value.
+func TestCompatibleAndImplicitOmitRecordsCompare(t *testing.T) {
+	assertSameVerdictBothClocks(t, `module M {
+		type record R { integer a, integer b }
+		type record T { integer x, integer y }
+		type record O { integer a, integer b optional, integer c optional } with { optional "implicit omit" }
+		type union U { integer i, integer j }
+		type component C {}
+		function chk(boolean ok, charstring what) { if (not ok) { setverdict(fail, what) } }
+		testcase tc() runs on C {
+			var R r := {1, 2};
+			var T t := {x := 1, y := 2};
+			var R rn := {a := 1, b := 2};
+			var T tp := {1, 2};
+			chk(r == t and t == r and rn == tp and rn == t, "compatible");
+			chk(r != {x := 2, y := 1}, "compatible differs");
+			var O y := {a := 1};
+			var O w := {1, omit, omit};
+			chk(y == w and w == y and y == {1, omit, omit}, "implicit omit");
+			var U u1 := {i := 1};
+			var U u2 := {j := 1};
+			chk(u1 != u2, "union alternatives");
+			setverdict(pass);
+		}
+	}`, runtime.PassVerdict)
+}

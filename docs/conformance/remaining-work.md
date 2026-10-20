@@ -659,7 +659,10 @@ passed over for a thousand turns — and a parameter's default and a
 - Found writing the JSON variants, older: decvalue did not read a
   bitstring as JSON text (*fixed 2026-10-15*), and empty octet, hex and bit
   strings decoded as `'0'O`, `'0'H`, `'0'B` (*fixed 2026-10-15*).
-- **A record compared with a positional value pairs the fields by their
+- *Fixed 2026-10-20: a positional value takes its type's field names, and
+  compares and matches by them; a literal compared with a variable is of
+  its type. `p == w`, `p == { omit, 20, 7 }` and `rl[0] == {1, 2}` hold.*
+  **A record compared with a positional value pairs the fields by their
   names in alphabetical order**, not the type's: `type record PN { integer
   countryPrefix optional, integer networkPrefix, integer localNumber }`, a
   decoded `p` or `var PN w := { omit, 20, 7 }` and `p == w` or `p == {

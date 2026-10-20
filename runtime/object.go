@@ -1413,6 +1413,11 @@ func (l *List) Inspect() string {
 func (l *List) Equal(obj Object) bool {
 	other, ok := obj.(*List)
 	if !ok {
+		// A record held positionally, with its field names, is the
+		// record of those fields.
+		if r, isRec := obj.(*Record); isRec && len(l.FieldNames) > 0 {
+			return r.equalNamedList(l)
+		}
 		return false
 	}
 
@@ -1436,6 +1441,25 @@ func (l *List) Equal(obj Object) bool {
 	}
 	return lt == ot && EqualObjectSet(l.Elements, other.Elements)
 
+}
+
+// NamedRecord returns the record a record value held positionally is —
+// its elements by its field names (FieldNames), an unbound one left out —
+// and false for a list with no field names.
+func (l *List) NamedRecord() (*Record, bool) {
+	if len(l.FieldNames) == 0 || len(l.FieldNames) < len(l.Elements) {
+		return nil, false
+	}
+	r := &Record{Fields: make(map[string]Object, len(l.Elements)), Order: append([]string(nil), l.FieldNames...)}
+	for i, e := range l.Elements {
+		if l.FieldNames[i] == "" {
+			return nil, false
+		}
+		if e != Undefined {
+			r.Fields[l.FieldNames[i]] = e
+		}
+	}
+	return r, true
 }
 
 func (l *List) Get(index int) Object {
@@ -1860,22 +1884,117 @@ func (r *Record) Inspect() string {
 func (r *Record) Equal(obj Object) bool {
 	other, ok := obj.(*Record)
 	if !ok {
+		if l, isList := obj.(*List); isList && len(l.FieldNames) > 0 {
+			return r.equalNamedList(l)
+		}
 		return false
 	}
-	if len(r.Fields) != len(other.Fields) {
-		return false
+	if !sameNames(r, other) {
+		// Values of compatible types, whose fields have other names,
+		// are equal when their fields are, in their order (ETSI 6.3.2.2,
+		// 7.1.3).
+		// Not a union's other alternative: one field, by another name.
+		an, bn := r.Names(), other.Names()
+		if len(an) != len(bn) || len(an) < 2 {
+			return false
+		}
+		for i := range an {
+			if !r.Fields[an[i]].Equal(other.Fields[bn[i]]) {
+				return false
+			}
+		}
+		return true
 	}
-
 	for k, a := range r.Fields {
-		b, ok := other.Fields[k]
-		if !ok {
-			return false
-		}
-		if !a.Equal(b) {
+		if b, ok := other.Fields[k]; ok {
+			if !a.Equal(b) {
+				return false
+			}
+		} else if a != Omit {
 			return false
 		}
 	}
+	for k, b := range other.Fields {
+		if _, ok := r.Fields[k]; !ok && b != Omit {
+			return false
+		}
+	}
+	return true
+}
 
+// sameNames reports whether two records' fields go by the same names: each
+// field of one is a field of the other, or omitted — an optional field of
+// a value with implicit omit (27.7) is absent from it, and omit.
+func sameNames(a, b *Record) bool {
+	for k, v := range a.Fields {
+		if _, ok := b.Fields[k]; !ok && v != Omit {
+			return false
+		}
+	}
+	for k, v := range b.Fields {
+		if _, ok := a.Fields[k]; !ok && v != Omit {
+			return false
+		}
+	}
+	return true
+}
+
+// NamesOf reports whether a record held positionally names its fields as
+// r does: each field it has a value for is one of r's.
+func (l *List) NamesOf(r *Record) bool {
+	if len(l.FieldNames) == 0 {
+		return false
+	}
+	for i, n := range l.FieldNames {
+		if i >= len(l.Elements) || l.Elements[i] == Undefined || l.Elements[i] == Omit {
+			continue
+		}
+		if _, ok := r.Fields[n]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// equalNamedList compares r with a record held positionally, by its field
+// names (List.FieldNames), or in order when the names are not r's — a
+// value of a compatible type. An unbound element is no field; an absent
+// one equals omit.
+func (r *Record) equalNamedList(l *List) bool {
+	if !l.NamesOf(r) {
+		lr, ok := l.NamedRecord()
+		return ok && r.Equal(lr)
+	}
+	seen := 0
+	for i, n := range l.FieldNames {
+		var e Object = Undefined
+		if i < len(l.Elements) {
+			e = l.Elements[i]
+		}
+		v, ok := r.Fields[n]
+		switch {
+		case ok:
+			seen++
+			if e == Undefined {
+				if v != Omit {
+					return false
+				}
+				continue
+			}
+			if !v.Equal(e) {
+				return false
+			}
+		case e != Undefined && e != Omit:
+			return false
+		}
+	}
+	if seen < len(r.Fields) {
+		for k, v := range r.Fields {
+			if l.FieldIndex(k) < 0 && v != Omit {
+				return false
+			}
+		}
+	}
 	return true
 }
 

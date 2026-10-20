@@ -2709,6 +2709,18 @@ func evalBinary(n *syntax.BinaryExpr, env runtime.Scope) runtime.Object {
 		return y
 	}
 
+	// A value literal compared with a variable holding records written
+	// with their names is of its type: written positionally, its records
+	// take the field names (coerceToType). Against a positional value
+	// it compares as it is.
+	if op == syntax.EQ || op == syntax.NE {
+		if _, ok := n.Y.(*syntax.CompositeLiteral); ok && holdsNamedRecords(x) {
+			y = coerceToType(y, lvalueTypeDesc(n.X, env), env)
+		} else if _, ok := n.X.(*syntax.CompositeLiteral); ok && holdsNamedRecords(y) {
+			x = coerceToType(x, lvalueTypeDesc(n.Y, env), env)
+		}
+	}
+
 	// ETSI 8.2.3.1: in the context of an enumerated type an imported
 	// enumerated value takes precedence over a same-named definition
 	// in the importing module, which then has to be referenced by its
@@ -3376,6 +3388,25 @@ func arrayDefLowerBound(arrayDef []*syntax.ParenExpr, env runtime.Scope) int {
 	return 0
 }
 
+// holdsNamedRecords reports whether v is a record held by field names, or
+// a list whose first element (at any depth) is.
+func holdsNamedRecords(v runtime.Object) bool {
+	for i := 0; i < 8; i++ {
+		switch x := v.(type) {
+		case *runtime.Record:
+			return true
+		case *runtime.List:
+			if len(x.Elements) == 0 {
+				return false
+			}
+			v = x.Elements[0]
+			continue
+		}
+		return false
+	}
+	return false
+}
+
 // normaliseForCompare reshapes a (Record, List) or (List, Record) pair
 // so both ends present as the same Object.Type. Lists are converted to
 // Records using positional field names f0, f1, ...; the symmetric
@@ -3387,6 +3418,17 @@ func normaliseForCompare(x, y runtime.Object) (runtime.Object, runtime.Object) {
 	}
 	if l := mapToList(y); l != nil {
 		y = l
+	}
+	// A record held positionally with its field names compares by them.
+	if l, ok := x.(*runtime.List); ok && y.Type() == runtime.RECORD {
+		if r, named := l.NamedRecord(); named {
+			return r, y
+		}
+	}
+	if l, ok := y.(*runtime.List); ok && x.Type() == runtime.RECORD {
+		if r, named := l.NamedRecord(); named {
+			return x, r
+		}
 	}
 	switch {
 	case x.Type() == runtime.LIST && y.Type() == runtime.RECORD:
@@ -5858,15 +5900,7 @@ func structDeclOf(td *runtime.TypeDesc) *syntax.StructTypeDecl {
 func lvalueTypeDesc(lx syntax.Expr, env runtime.Scope) *runtime.TypeDesc {
 	switch x := lx.(type) {
 	case *syntax.Ident:
-		if v, ok := env.Get(declaredArrayKey(x.String())); ok {
-			if td, ok := v.(*runtime.TypeDesc); ok {
-				return td
-			}
-		}
-		if td := lookupTypeDesc(declaredTypeName(env, x.String()), env); td != nil {
-			return td
-		}
-		return paramTypeDesc(env, x.String())
+		return identTypeDesc(env, x.String())
 	case *syntax.SelectorExpr:
 		parent := lvalueTypeDesc(x.X, env)
 		if parent == nil || parent.Struct == nil {
@@ -5896,6 +5930,34 @@ func lvalueTypeDesc(lx syntax.Expr, env runtime.Scope) *runtime.TypeDesc {
 		return elemTypeDesc(parent, env)
 	}
 	return nil
+}
+
+// identTypeDesc is the declared type of the variable or parameter name
+// names: the one of the scope that binds it, not of a like-named one
+// further out that it hides — an outer array, a component variable.
+func identTypeDesc(env runtime.Scope, name string) *runtime.TypeDesc {
+	if e, ok := env.(*runtime.Env); ok {
+		if o := e.Owner(name); o != nil {
+			if o.Binds(declaredArrayKey(name)) {
+				v, _ := o.Get(declaredArrayKey(name))
+				td, _ := v.(*runtime.TypeDesc)
+				return td
+			}
+			if o.Binds(declaredTypeKey(name)) {
+				return lookupTypeDesc(declaredTypeName(o, name), o)
+			}
+			if td := paramTypeDesc(env, name); td != nil {
+				return td
+			}
+		}
+	}
+	// A name bound somewhere its declared type was not recorded.
+	if v, ok := env.Get(declaredArrayKey(name)); ok {
+		if td, ok := v.(*runtime.TypeDesc); ok {
+			return td
+		}
+	}
+	return lookupTypeDesc(declaredTypeName(env, name), env)
 }
 
 // paramTypeDesc is the declared type of name when it is a formal

@@ -224,6 +224,15 @@ func match(a, b runtime.Object) (bool, error) {
 	if tmpl, val, ok := enumTemplatePair(a, b); ok {
 		return tmpl.MatchesEnum(val), nil
 	}
+	// A record held positionally with its field names is the record of
+	// those fields: it matches a record template by them. A value of a
+	// compatible type, by other names, matches by position.
+	if l, ok := a.(*runtime.List); ok && b.Type() == runtime.RECORD && l.NamesOf(b.(*runtime.Record)) {
+		return matchNamedList(l, b.(*runtime.Record), false)
+	}
+	if l, ok := b.(*runtime.List); ok && a.Type() == runtime.RECORD && l.NamesOf(a.(*runtime.Record)) {
+		return matchNamedList(l, a.(*runtime.Record), true)
+	}
 	if a.Type() != b.Type() {
 		// Records and lists both look like braced-init `{a,b,c}` at
 		// the source level, so a template authored as a record may
@@ -790,6 +799,52 @@ func matchRecord(a, b *runtime.Record) (bool, error) {
 		}
 		if ret, err := match(x, y); !ret {
 			return false, err
+		}
+	}
+	return true, nil
+}
+
+// matchNamedList is matchRecord of a record held positionally, by its
+// field names, with r: the list is the value, or, when listIsPattern, the
+// template. An unbound element is no field.
+func matchNamedList(l *runtime.List, r *runtime.Record, listIsPattern bool) (bool, error) {
+	pair := func(x, y runtime.Object) (bool, error) {
+		if listIsPattern {
+			return match(y, x)
+		}
+		return match(x, y)
+	}
+	seen := 0
+	for i, n := range l.FieldNames {
+		var x runtime.Object = runtime.Undefined
+		if i < len(l.Elements) {
+			x = l.Elements[i]
+		}
+		y, hasY := r.Fields[n]
+		if hasY {
+			seen++
+		}
+		switch {
+		case x == runtime.Undefined && !hasY:
+		case x == runtime.Undefined:
+			if !isAbsent(y) {
+				return false, runtime.Errorf("Value mismatch: field %s not found", n)
+			}
+		case !hasY:
+			if !isAbsent(x) {
+				return false, runtime.Errorf("Value mismatch: field %s not found", n)
+			}
+		default:
+			if ok, err := pair(x, y); !ok {
+				return false, err
+			}
+		}
+	}
+	if seen < len(r.Fields) {
+		for k, y := range r.Fields {
+			if l.FieldIndex(k) < 0 && !isAbsent(y) {
+				return false, runtime.Errorf("Value mismatch: field %s not found", k)
+			}
 		}
 	}
 	return true, nil

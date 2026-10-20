@@ -560,6 +560,16 @@ Independent of the two clocks:
   union's alternative, a component variable, a parameter given `{1, 2}`,
   an `out` parameter assigned so, and a value redirected into a field.
   The value now takes its declared type's field names at any depth.
+- **A record written positionally compares and matches by its fields'
+  names.** `{{1, 2}}` and `{{a := 1, b := 2}}` were never equal, nor did
+  a positional value match a template written with names; a value
+  literal compared with a variable (`n == {{1, 2}}`) is now of the
+  variable's type. Values of compatible record types, whose fields have
+  other names, compare by their fields' order (ETSI 6.3.2.2, 7.1.3), and
+  a field a value with implicit omit leaves out equals omit. And a value
+  takes the shape of the declaration its
+  name stands for where it is written — an inner block's variable, a
+  parameter — not of a like-named array or component variable it hides.
 - **A standalone timeout tries the active defaults** (ETSI 23.6): it
   stands for an alt with that one alternative, so a default that matches
   while `t.timeout` waits ends it; `@nodefault t.timeout` waits for the
