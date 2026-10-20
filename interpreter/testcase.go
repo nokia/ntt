@@ -719,7 +719,10 @@ func bindTestcaseParamsWithArgs(env runtime.Scope, tc *syntax.FuncDecl, args []s
 		if !used && isTemplate {
 			val = runtime.Any
 		}
-		env.Set(fp.Name.String(), val)
+		if fp.Type != nil {
+			val = coerceToType(val, formalTypeDesc(fp, env), env)
+		}
+		env.Set(fp.Name.String(), runtime.Share(val))
 		// The declared type, as for a function's parameter: a template
 		// parameter's signature, say (22.3.1 h).
 		recordDeclaredType(env, fp.Name.String(), fp.Type)
@@ -1498,7 +1501,9 @@ func bindDeclNameScoped(env runtime.Scope, n syntax.Node, scopes []*syntax.WithS
 		}
 	case *syntax.MapTypeDecl:
 		if d.Name != nil {
-			env.Set(syntax.Name(d.Name), typeDescForScoped(syntax.Name(d.Name), d.With, scopes))
+			td := typeDescForScoped(syntax.Name(d.Name), d.With, scopes)
+			td.Map, td.Home = d.Spec, env
+			env.Set(syntax.Name(d.Name), td)
 		}
 	case *syntax.SubTypeDecl:
 		if d.Field != nil && d.Field.Name != nil {
@@ -1519,6 +1524,7 @@ func bindDeclNameScoped(env runtime.Scope, n syntax.Node, scopes []*syntax.WithS
 			if lo := arrayDefLowerBound(d.Field.ArrayDef, env); lo != 0 {
 				td.IndexOffset = lo
 			}
+			td.ArrayDims = len(d.Field.ArrayDef)
 			// A `set of` subtype tags its values unordered so
 			// set-of matching is order-independent (ETSI 6.2.3.2).
 			if spec, ok := d.Field.Type.(*syntax.ListSpec); ok && spec.KindTok != nil &&
@@ -2795,7 +2801,7 @@ func clausesNeedPoll(stmts []syntax.Stmt, where, depth int, scope, own runtime.S
 			continue
 		}
 		if ce, ok := es.Expr.(*syntax.CallExpr); ok {
-			if _, isIdent := ce.Fun.(*syntax.Ident); isIdent && altstepNeedsPoll(ce, pollCalled, depth-1, scope) {
+			if altstepCallName(ce, scope) != "" && altstepNeedsPoll(ce, pollCalled, depth-1, scope) {
 				return true
 			}
 		}
@@ -2826,10 +2832,8 @@ func waitsOnlyForOthers(n *syntax.AltStmt, env runtime.Scope) bool {
 			return false
 		}
 		if es, ok := cc.Comm.(*syntax.ExprStmt); ok {
-			if ce, ok := es.Expr.(*syntax.CallExpr); ok {
-				if _, isIdent := ce.Fun.(*syntax.Ident); isIdent {
-					return false
-				}
+			if ce, ok := es.Expr.(*syntax.CallExpr); ok && altstepCallName(ce, env) != "" {
+				return false
 			}
 		}
 	}
@@ -2878,12 +2882,8 @@ func altstepNeedsPoll(call *syntax.CallExpr, where, depth int, scope runtime.Sco
 	if call == nil || depth <= 0 {
 		return true
 	}
-	v, ok := scope.Get(nameOfCallee(call))
-	if !ok {
-		return true
-	}
-	fn, ok := v.(*runtime.Function)
-	if !ok || !fn.IsAltstep || fn.Body == nil {
+	fn := lookupAltstep(altstepCallName(call, scope), scope)
+	if fn == nil || fn.Body == nil {
 		return true
 	}
 	// An activated altstep's timer parameter goes by its formal's name,
@@ -3082,16 +3082,8 @@ func nextAltTimerVirtualDeadline(n *syntax.AltStmt, env runtime.Scope) (float64,
 			if depth <= 0 {
 				return
 			}
-			id, ok := x.Fun.(*syntax.Ident)
-			if !ok {
-				return
-			}
-			v, ok := scope.Get(id.String())
-			if !ok {
-				return
-			}
-			fn, ok := v.(*runtime.Function)
-			if !ok || !fn.IsAltstep || fn.Body == nil {
+			fn := lookupAltstep(altstepCallName(x, scope), scope)
+			if fn == nil || fn.Body == nil {
 				return
 			}
 			// Inside the altstep, a timer passed to it goes by its formal
@@ -3142,8 +3134,8 @@ func nextAltTimerVirtualDeadline(n *syntax.AltStmt, env runtime.Scope) (float64,
 	// its alternatives matched, so a timer already due belongs to one
 	// whose guard is false (`[false] t.timeout`); waking on it would wake
 	// at once to the same state, for good.
-	if exec := runtime.FindTestcaseExec(env); exec != nil {
-		floor = exec.VirtualClock()
+	if now, ok := virtualNow(env); ok { // a testcase's clock, or a control part's
+		floor = now
 	}
 	for _, s := range n.Body.Stmts {
 		cc, ok := s.(*syntax.CommClause)
@@ -3171,8 +3163,8 @@ func nextAltTimerVirtualDeadline(n *syntax.AltStmt, env runtime.Scope) (float64,
 	// the altstep resolves the timer somewhere else. Parking on that
 	// deadline wakes at once to the same state and livelocks the scheduler.
 	if !defaultsSuppressed(n) {
-		if exec := runtime.FindTestcaseExec(env); exec != nil {
-			floor = exec.VirtualClock()
+		if now, ok := virtualNow(env); ok {
+			floor = now
 		}
 		for _, d := range activatedDefaultCalls(env) {
 			considerComm(&syntax.ExprStmt{Expr: d.call}, 4, d.scope)
@@ -3200,16 +3192,22 @@ func altHasEventGuard(n *syntax.AltStmt) bool {
 			"done", "killed", "running":
 			return true
 		}
-		// `[] a_altstep()` (Fun is a bare Ident): may hold event guards,
-		// so treat it as blockable rather than give up. And any receiving
-		// operation is an event guard, `any from pa.receive(t)` included.
+		// `[] a_altstep()`, or `[] M.a_altstep()`: may hold event
+		// guards, so treat it as blockable rather than give up. And any
+		// receiving operation is an event guard, `any from
+		// pa.receive(t)` included.
 		if es, ok := cc.Comm.(*syntax.ExprStmt); ok {
 			if isReceivingOp(es.Expr) {
 				return true
 			}
 			if ce, ok := es.Expr.(*syntax.CallExpr); ok {
-				if _, isIdent := ce.Fun.(*syntax.Ident); isIdent {
+				switch f := ce.Fun.(type) {
+				case *syntax.Ident:
 					return true
+				case *syntax.SelectorExpr:
+					if _, ok := f.X.(*syntax.Ident); ok {
+						return true
+					}
 				}
 			}
 		}
@@ -3432,12 +3430,8 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 // deadline to be exact — only to exist, so the alt sleeps rather than
 // spins.
 func defaultTimerHandles(dc defaultCall) []*runtime.TimerHandle {
-	v, ok := dc.scope.Get(nameOfCallee(dc.call))
-	if !ok {
-		return nil
-	}
-	fn, ok := v.(*runtime.Function)
-	if !ok || !fn.IsAltstep || fn.Body == nil {
+	fn := lookupAltstep(altstepCallName(dc.call, dc.scope), dc.scope)
+	if fn == nil || fn.Body == nil {
 		return nil
 	}
 	var out []*runtime.TimerHandle
@@ -3474,16 +3468,49 @@ func defaultTimerHandles(dc defaultCall) []*runtime.TimerHandle {
 	return out
 }
 
-// nameOfCallee returns the identifier a default's altstep call names, or
-// "" when the callee is not a plain identifier.
-func nameOfCallee(ce *syntax.CallExpr) string {
+// altstepCallName returns the name of the altstep a call — a guard, a
+// default's — names, to look up with lookupAltstep: `a` for `a(...)`,
+// `M.a` for `M.a(...)` qualified by a module; "" for anything else, such
+// as `p.receive(...)`, whose receiver is bound.
+func altstepCallName(ce *syntax.CallExpr, scope runtime.Scope) string {
 	if ce == nil {
 		return ""
 	}
-	if id, ok := ce.Fun.(*syntax.Ident); ok {
-		return id.String()
+	switch f := ce.Fun.(type) {
+	case *syntax.Ident:
+		return f.String()
+	case *syntax.SelectorExpr:
+		// `M.a(...)`, M bound to nothing — no port, no parameter — and
+		// M's a an altstep: not `pp.receive(...)` of a port parameter
+		// the altstep's own scope binds.
+		if m, ok := f.X.(*syntax.Ident); ok {
+			if _, bound := scope.Get(m.String()); !bound {
+				name := m.String() + "." + syntax.Name(f.Sel)
+				if lookupAltstep(name, scope) != nil {
+					return name
+				}
+			}
+		}
 	}
 	return ""
+}
+
+// lookupAltstep resolves an altstep's name, `a` or module-qualified
+// `M.a`, which is module M's own (resolveTypeName); nil when it names
+// no altstep.
+func lookupAltstep(name string, scope runtime.Scope) *runtime.Function {
+	if name == "" {
+		return nil
+	}
+	v, _, ok := resolveTypeName(name, scope)
+	if !ok {
+		return nil
+	}
+	fn, _ := v.(*runtime.Function)
+	if fn == nil || !fn.IsAltstep {
+		return nil
+	}
+	return fn
 }
 
 // waitForAltTimerDeadline sleeps until d elapses or the testcase
@@ -3641,12 +3668,8 @@ func commGuardMatches(g syntax.Node, env runtime.Scope) bool {
 	// care of.
 	if es, ok := g.(*syntax.ExprStmt); ok {
 		if ce, ok := es.Expr.(*syntax.CallExpr); ok {
-			if id, ok := ce.Fun.(*syntax.Ident); ok {
-				if v, ok := env.Get(id.String()); ok {
-					if fn, ok := v.(*runtime.Function); ok && fn.IsAltstep && fn.Body != nil {
-						return altstepAlternativeMatches(fn, ce, env)
-					}
-				}
+			if fn := lookupAltstep(altstepCallName(ce, env), env); fn != nil && fn.Body != nil {
+				return altstepAlternativeMatches(fn, ce, env)
 			}
 		}
 	}
@@ -4070,9 +4093,13 @@ func bindComponentMembers(env runtime.Scope, body *syntax.BlockStmt) {
 			// (e.g. references an unmodeled function) we fall back to
 			// Undefined so identifier lookups still succeed.
 			recordMemberType(env, name, vd.Type)
+			recordDeclaredArray(env, vd.Type, dec)
 			if dec.Value != nil {
 				v := eval(dec.Value, env)
 				if v != nil && !runtime.IsError(v) {
+					// A record written positionally gets its field
+					// names, as a variable's would (coerceToType).
+					v = coerceToType(v, declTypeDesc(vd.Type, dec, env), env)
 					env.Set(name, runtime.Share(v))
 					continue
 				}

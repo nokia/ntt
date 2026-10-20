@@ -909,12 +909,14 @@ changed only as intended. Found, older than this work:
   equal only when all their elements were one value (*fixed 2026-10-14*);
   a variable of a `set of` type still holds its value as a record of, so
   `s == {"b", "a"}` is false for `var SC s := {"a", "b"}` (a template of
-  the type, a field and `m.from` are sets). A record written positionally
-  and assigned to a variable declared before, `b := rr[1]` (also `for (b
-  in rr)`), has no field names, so `b.f` is undefined; `var R b := rr[1]`
-  has them; so has neither a component variable initialised so, `var R
-  cv := {1, 2}` in the component type, nor a parameter given one, `f({7})`
-  for `function f(R p)`. `ntt check` reports missing-call-parens on a
+  the type, a field and `m.from` are sets). *Fixed 2026-10-15: a record
+  written positionally takes its type's field names wherever it is bound
+  — at any depth of a record of, array, map or union, a component
+  variable, a parameter, an out parameter, a redirect, a testcase's
+  parameter — but not as an `anytype` alternative (`x.R.a`).* (It had
+  none assigned to a variable declared before, `b := rr[1]`, as a
+  component variable initialised so, `var R cv := {1, 2}`, or as a
+  parameter given one, `f({7})`.) `ntt check` reports missing-call-parens on a
   field named as a function is, `p.f` beside `function f`. Only a map
   literal with charstring keys is a map: `var MT m
   := {}` then `m["a"] := 1` stays `{}`, and integer keys make a record of
@@ -928,7 +930,9 @@ changed only as intended. Found, older than this work:
   an error.
 - The C test-port bridge's `TestRegisterAndSend` fails when run more than
   once in a process (`-count=2`): its fixture's call counter is not reset.
-- Found reviewing the 2026-10-15 speed work, older than it: an alt
+- Found reviewing the 2026-10-15 speed work, older than it (*fixed
+  2026-10-15, the qualified altstep, the standalone timeout and the
+  control part's `all timer`*): an alt
   guard calling a module-qualified altstep (`[] M.a()`) is never taken,
   and the alt waits until the testcase's time limit; a call without a
   `catch(timeout)` clause in an altstep the alt calls, past its timeout,

@@ -1212,9 +1212,10 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		}
 		// A receiving operation used as a statement is an alt with that one
 		// alternative (ETSI 20.1): it waits for a match, and the active
-		// defaults apply.
+		// defaults apply. So is a timeout (23.6); with no default to
+		// apply, it waits for its timer as the alt would.
 		if !altCtx.active() && canWait(env) {
-			if alt, ok := standaloneAlt(n); ok {
+			if alt, ok := standaloneAlt(n); ok && (!isTimeoutOp(n.Expr) || n.NoDefault == nil && len(activatedDefaultCalls(env)) > 0) {
 				res := eval(alt, env)
 				// A wait ended by stopping the component ends its
 				// behaviour, not just this statement.
@@ -3886,7 +3887,7 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 	// variable. The struct-shape guard keeps scalar / string assignments
 	// off the type-resolution path entirely.
 	switch val.(type) {
-	case *runtime.Record, *runtime.List:
+	case *runtime.Record, *runtime.List, *runtime.Map:
 		dstTd := lvalueTypeDesc(lhs, env)
 		// ETSI 6.3.2: between structurally-compatible record / set types
 		// with different field names, members map by position. When both
@@ -3901,7 +3902,13 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 		if rec, ok := val.(*runtime.Record); ok {
 			if st := structDeclOf(dstTd); st != nil && st.KindTok.Kind() != syntax.UNION {
 				val = coerceRecordFields(rec, dstTd, env)
+			} else if st != nil {
+				val = coerceToType(rec, dstTd, env)
 			}
+		} else if dstTd != nil {
+			// A record written positionally gets its field names, at
+			// any depth (coerceToType).
+			val = coerceToType(val, dstTd, env)
 		}
 		// ETSI 6.2.7 / 6.3.1: a value assigned to a constrained array
 		// subtype (`type integer T[1..2]`) adopts the type's declared
@@ -3925,7 +3932,9 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 			// merging the new value into the existing list
 			// instead of overwriting it wholesale.
 			if merged, ok := mergeIndexedReassignment(existing, val); ok {
-				val = merged
+				// What the notation names takes its shape, as a
+				// whole value does.
+				val = coerceToType(merged, lvalueTypeDesc(l, env), env)
 			}
 			// The same holds for assignment notation over named
 			// fields (ETSI 6.2): an unmentioned field keeps the
@@ -5589,14 +5598,18 @@ func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 							if l := mapToList(v); l != nil {
 								v = l
 							}
-							if isUnion {
-								val = coerceToUnionDefault(v, n, env)
+							if len(decl.ArrayDef) > 0 {
+								// An array of records: its elements are.
+								val = coerceToType(v, declTypeDesc(vd.Type, decl, env), env)
+							} else if isUnion {
+								val = coerceToType(coerceToUnionDefault(v, n, env), n, env)
 							} else {
 								val = coerceToStruct(v, n, env)
 							}
 						}
 						env.Set(syntax.Name(decl.Name), val)
 						recordDeclaredType(env, syntax.Name(decl.Name), vd.Type)
+						recordDeclaredArray(env, vd.Type, decl)
 					}
 					return n
 				}
@@ -5636,8 +5649,44 @@ func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 		}
 		recordDeclaredType(env, syntax.Name(decl.Name), vd.Type)
 		recordDeclaredVariants(env, syntax.Name(decl.Name), vd.With)
+		recordDeclaredArray(env, vd.Type, decl)
+		if decl.Value != nil {
+			coerceDeclared(env, syntax.Name(decl.Name), declTypeDesc(vd.Type, decl, env))
+		}
 	}
 	return result
+}
+
+// declTypeDesc is the type a declarator declares its name of: the
+// declaration's type, or an array of it (`var R a[2]`).
+func declTypeDesc(typ syntax.Expr, decl *syntax.Declarator, env runtime.Scope) *runtime.TypeDesc {
+	if typ == nil {
+		return nil
+	}
+	if decl != nil && len(decl.ArrayDef) > 0 {
+		return inlineTypeDesc(decl, len(decl.ArrayDef), func() *runtime.TypeDesc {
+			spec, ok := typ.(syntax.TypeSpec)
+			if !ok {
+				spec = &syntax.RefSpec{X: typ}
+			}
+			return &runtime.TypeDesc{IsList: true, ArrayDims: len(decl.ArrayDef), Spec: spec, Home: moduleHome(env)}
+		})
+	}
+	return typeDescOfSpec(typ, env)
+}
+
+// coerceDeclared gives the value just bound to name the shape of its
+// declared type td (coerceToType), when td is a list or a synonym: a
+// record's own declaration coerces already.
+func coerceDeclared(env runtime.Scope, name string, td *runtime.TypeDesc) {
+	if td == nil || td.Struct != nil && !td.IsList {
+		return
+	}
+	if v, ok := env.Get(name); ok {
+		if nv := coerceToType(v, td, env); nv != v {
+			env.Set(name, nv)
+		}
+	}
 }
 
 // coerceToStruct reshapes a positional value list onto the field names
@@ -5745,6 +5794,8 @@ func coerceToStruct(val runtime.Object, td *runtime.TypeDesc, env runtime.Scope)
 		e := list.Elements[i]
 		if sub := fieldStructTypeDesc(f, env); sub != nil {
 			e = coerceToStruct(e, sub, env)
+		} else if ftd := fieldTypeDesc(f, env); ftd != nil && ftd.IsList {
+			e = coerceToType(e, ftd, env)
 		}
 		if e = tagSetOf(e, fieldListKind(f, env)); e != list.Elements[i] {
 			ownIt()
@@ -5807,7 +5858,15 @@ func structDeclOf(td *runtime.TypeDesc) *syntax.StructTypeDecl {
 func lvalueTypeDesc(lx syntax.Expr, env runtime.Scope) *runtime.TypeDesc {
 	switch x := lx.(type) {
 	case *syntax.Ident:
-		return lookupTypeDesc(declaredTypeName(env, x.String()), env)
+		if v, ok := env.Get(declaredArrayKey(x.String())); ok {
+			if td, ok := v.(*runtime.TypeDesc); ok {
+				return td
+			}
+		}
+		if td := lookupTypeDesc(declaredTypeName(env, x.String()), env); td != nil {
+			return td
+		}
+		return paramTypeDesc(env, x.String())
 	case *syntax.SelectorExpr:
 		parent := lvalueTypeDesc(x.X, env)
 		if parent == nil || parent.Struct == nil {
@@ -5816,11 +5875,86 @@ func lvalueTypeDesc(lx syntax.Expr, env runtime.Scope) *runtime.TypeDesc {
 		name := syntax.Name(x.Sel)
 		for _, f := range parent.Struct.Fields {
 			if f != nil && f.Name != nil && f.Name.String() == name {
-				return fieldStructTypeDesc(f, env)
+				if td := fieldStructTypeDesc(f, env); td != nil {
+					return td
+				}
+				if td := fieldTypeDesc(f, env); td != nil && td.IsList {
+					return td
+				}
+				return nil
 			}
+		}
+	case *syntax.IndexExpr:
+		parent := lvalueTypeDesc(x.X, env)
+		if parent != nil && parent.Map != nil {
+			home := parent.Home
+			if home == nil {
+				home = env
+			}
+			return typeDescOfSpec(parent.Map.ToType, home)
+		}
+		return elemTypeDesc(parent, env)
+	}
+	return nil
+}
+
+// paramTypeDesc is the declared type of name when it is a formal
+// parameter of the function whose scope binds it, or nil.
+func paramTypeDesc(env runtime.Scope, name string) *runtime.TypeDesc {
+	e, ok := env.(*runtime.Env)
+	if !ok {
+		return nil
+	}
+	o := e.Owner(name)
+	if o == nil || o.Binds(declaredTypeKey(name)) || !o.Binds(currentFunctionKey) {
+		return nil
+	}
+	v, _ := o.Get(currentFunctionKey)
+	fn, ok := v.(*runtime.Function)
+	if !ok || fn.Params == nil {
+		return nil
+	}
+	for _, p := range fn.Params.List {
+		if p != nil && p.Name != nil && p.Name.String() == name && p.Type != nil {
+			home := fn.Home
+			if home == nil {
+				home = o
+			}
+			return formalTypeDesc(p, home)
 		}
 	}
 	return nil
+}
+
+// formalTypeDesc is the type of a formal parameter: its declared type, or
+// an array of it (`R p[2]`).
+func formalTypeDesc(p *syntax.FormalPar, env runtime.Scope) *runtime.TypeDesc {
+	if p == nil || p.Type == nil {
+		return nil
+	}
+	if len(p.ArrayDef) > 0 {
+		return inlineTypeDesc(p, len(p.ArrayDef), func() *runtime.TypeDesc {
+			spec, ok := p.Type.(syntax.TypeSpec)
+			if !ok {
+				spec = &syntax.RefSpec{X: p.Type}
+			}
+			return &runtime.TypeDesc{IsList: true, ArrayDims: len(p.ArrayDef), Spec: spec, Home: moduleHome(env)}
+		})
+	}
+	return typeDescOfSpec(p.Type, env)
+}
+
+// declaredArrayKey names the binding beside a variable declared an array
+// by its declarator (`var R a[2]`) of the array's type, which the type it
+// is declared of (declaredTypeName) is the element type of.
+func declaredArrayKey(name string) string { return "\x00declarray:" + name }
+
+// recordDeclaredArray remembers, for a declarator with dimensions, the
+// type of the array it declares.
+func recordDeclaredArray(env runtime.Scope, typ syntax.Expr, decl *syntax.Declarator) {
+	if decl != nil && len(decl.ArrayDef) > 0 && typ != nil {
+		env.Set(declaredArrayKey(syntax.Name(decl.Name)), declTypeDesc(typ, decl, env))
+	}
 }
 
 // lvalueImplicitOmit reports whether the struct value addressed by an
@@ -5847,7 +5981,8 @@ func lvalueImplicitOmit(lx syntax.Expr, env runtime.Scope) bool {
 // inline anonymous struct specs (`field1 record { ... }`). Returns nil
 // when the field type is not a record/set/union.
 func fieldStructTypeDesc(f *syntax.Field, env runtime.Scope) *runtime.TypeDesc {
-	if f == nil || f.Type == nil {
+	// An array field (`R f[2]`) holds a list of them (fieldTypeDesc).
+	if f == nil || f.Type == nil || len(f.ArrayDef) > 0 {
 		return nil
 	}
 	if td := lookupStructTypeName(fieldTypeName(f), env); td != nil {
@@ -5859,6 +5994,227 @@ func fieldStructTypeDesc(f *syntax.Field, env runtime.Scope) *runtime.TypeDesc {
 		}
 	}
 	return nil
+}
+
+// typeDescOfSpec is the type a type specification denotes: a named
+// type's descriptor, or one made for an inline record, set, union, record
+// of or set of; nil for one of no shape to give a value.
+func typeDescOfSpec(spec syntax.Node, env runtime.Scope) *runtime.TypeDesc {
+	switch x := spec.(type) {
+	case nil:
+		return nil
+	case *syntax.RefSpec:
+		return typeDescOfSpec(x.X, env)
+	case *syntax.StructSpec:
+		return inlineTypeDesc(x, 0, func() *runtime.TypeDesc {
+			return &runtime.TypeDesc{Struct: &syntax.StructTypeDecl{KindTok: x.KindTok, Fields: x.Fields}, Home: moduleHome(env)}
+		})
+	case *syntax.ListSpec:
+		return inlineTypeDesc(x, 0, func() *runtime.TypeDesc {
+			td := &runtime.TypeDesc{IsList: true, Spec: x, Home: moduleHome(env)}
+			if x.KindTok != nil && x.KindTok.String() == "set" {
+				td.ListKind = runtime.SET_OF
+			}
+			return td
+		})
+	case *syntax.MapSpec:
+		return inlineTypeDesc(x, 0, func() *runtime.TypeDesc { return &runtime.TypeDesc{Map: x, Home: moduleHome(env)} })
+	}
+	if e, ok := spec.(syntax.Expr); ok {
+		return lookupTypeDesc(typeExprName(e), env)
+	}
+	return nil
+}
+
+// inlineTypes holds the descriptors made for a type written where it is
+// used — an inline `record {...}`, `record of`, `map`, an array of a
+// field or a declarator — one per place and dimension, so that a value
+// shaped to one (runtime.MarkShaped) is known to be when it comes there
+// again. The first scope it is made in resolves the names in it: the
+// module the place is in.
+var inlineTypes sync.Map // inlineKey -> *runtime.TypeDesc
+
+type inlineKey struct {
+	node syntax.Node
+	dims int
+}
+
+func inlineTypeDesc(node syntax.Node, dims int, build func() *runtime.TypeDesc) *runtime.TypeDesc {
+	key := inlineKey{node, dims}
+	if td, ok := inlineTypes.Load(key); ok {
+		return td.(*runtime.TypeDesc)
+	}
+	td, _ := inlineTypes.LoadOrStore(key, build())
+	return td.(*runtime.TypeDesc)
+}
+
+// moduleHome is the scope of the module env is in, where the names of a
+// type written there resolve — not a call's, which would be kept with it.
+func moduleHome(env runtime.Scope) runtime.Scope {
+	if mod := moduleNameFromEnv(env); mod != "" {
+		if root := runtime.RootScope(env); root != nil {
+			if _, known := root.Get(moduleScopeKey(mod)); known {
+				return moduleScopeOf(root, mod)
+			}
+		}
+	}
+	return env
+}
+
+// fieldTypeDesc is the descriptor of a field's declared type, of any
+// shape (typeDescOfSpec); an array field (`R f[2]`) is a list of it.
+func fieldTypeDesc(f *syntax.Field, env runtime.Scope) *runtime.TypeDesc {
+	if f == nil || f.Type == nil {
+		return nil
+	}
+	if len(f.ArrayDef) > 0 {
+		return inlineTypeDesc(f, len(f.ArrayDef), func() *runtime.TypeDesc {
+			return &runtime.TypeDesc{IsList: true, ArrayDims: len(f.ArrayDef), Spec: f.Type, Home: moduleHome(env)}
+		})
+	}
+	return typeDescOfSpec(f.Type, env)
+}
+
+// elemTypeDesc is the descriptor of the elements of a record of, set of
+// or array type: a list type's element type, or an array subtype's
+// (`type R RA[2]`) base type.
+func elemTypeDesc(td *runtime.TypeDesc, env runtime.Scope) *runtime.TypeDesc {
+	if td == nil || !td.IsList || td.Spec == nil {
+		return nil
+	}
+	home := td.Home
+	if home == nil {
+		home = env
+	}
+	if td.ArrayDims > 1 {
+		// An element of `R a[2][3]` is an `R [3]`.
+		return inlineTypeDesc(td.Spec, td.ArrayDims-1, func() *runtime.TypeDesc {
+			return &runtime.TypeDesc{IsList: true, ArrayDims: td.ArrayDims - 1, Spec: td.Spec, Home: home}
+		})
+	}
+	if l, ok := td.Spec.(*syntax.ListSpec); ok {
+		return typeDescOfSpec(l.ElemType, home)
+	}
+	return typeDescOfSpec(td.Spec, home)
+}
+
+// coerceToType gives a value the shape of its declared type: the field
+// names of a record or set written positionally (`{1, 2}`), in it and at
+// any depth — a field, an element of a record of, set of or array — so
+// that `v[0].a` reads and writes the field. What changes goes into a new
+// value: the given one may be another's (coerceToStruct). Unions keep
+// their value.
+func coerceToType(val runtime.Object, td *runtime.TypeDesc, env runtime.Scope) runtime.Object {
+	return coerceToTypeDepth(val, td, env, 0)
+}
+
+func coerceToTypeDepth(val runtime.Object, td *runtime.TypeDesc, env runtime.Scope, depth int) runtime.Object {
+	if td == nil || depth > 16 || runtime.Shaped(val, td) {
+		return val
+	}
+	if l, ok := val.(*runtime.List); ok && l.ListType != runtime.RECORD_OF && l.ListType != runtime.SET_OF {
+		// A template's list of values — a value list, complement,
+		// permutation, superset or subset — is no value of the type.
+		return val
+	}
+	out := coerceToShape(val, td, env, depth)
+	if out == val {
+		// A shared value is not looked at again (runtime.Shaped).
+		runtime.MarkShaped(val, td)
+	}
+	return out
+}
+
+func coerceToShape(val runtime.Object, td *runtime.TypeDesc, env runtime.Scope, depth int) runtime.Object {
+	switch {
+	case td.Struct != nil:
+		if td.Struct.KindTok != nil && td.Struct.KindTok.Kind() == syntax.UNION {
+			// The chosen alternative's value takes its type's shape.
+			if rec, ok := val.(*runtime.Record); ok && len(rec.Fields) == 1 {
+				return coerceRecordFields(rec, td, env)
+			}
+			return val
+		}
+		switch val.(type) {
+		case *runtime.List, *runtime.Record:
+			return coerceToStruct(val, td, env)
+		}
+	case td.IsList:
+		l, ok := val.(*runtime.List)
+		if !ok || len(l.Elements) == 0 {
+			return val
+		}
+		elem := elemTypeDesc(td, env)
+		if !canShape(elem, env) {
+			return val
+		}
+		var out *runtime.List
+		for i, e := range l.Elements {
+			if ne := coerceToTypeDepth(e, elem, env, depth+1); ne != e {
+				if out == nil {
+					out = runtime.Unshare(runtime.Share(l)).(*runtime.List)
+				}
+				out.Elements[i] = ne
+			}
+		}
+		if out != nil {
+			return out
+		}
+	case td.Map != nil:
+		m, ok := val.(*runtime.Map)
+		if !ok {
+			return val
+		}
+		home := td.Home
+		if home == nil {
+			home = env
+		}
+		vtd := typeDescOfSpec(td.Map.ToType, home)
+		if vtd == nil {
+			return val
+		}
+		var out *runtime.Map
+		for _, p := range m.Pairs() {
+			if nv := coerceToTypeDepth(p.Value, vtd, env, depth+1); nv != p.Value {
+				if out == nil {
+					out = runtime.Unshare(runtime.Share(m)).(*runtime.Map)
+				}
+				out.Delete(p.Key)
+				out.Set(p.Key, nv)
+			}
+		}
+		if out != nil {
+			return out
+		}
+	case td.Underlying != "":
+		home := td.Home
+		if home == nil {
+			home = env
+		}
+		return coerceToTypeDepth(val, lookupTypeDesc(td.Underlying, home), env, depth+1)
+	}
+	return val
+}
+
+// canShape reports whether values of type td can take a shape
+// (coerceToType): records, sets, unions, lists and maps of them — the
+// types a synonym or subtype stands for included; not `type integer
+// Byte (0..255)`.
+func canShape(td *runtime.TypeDesc, env runtime.Scope) bool {
+	for i := 0; td != nil && i < 16; i++ {
+		if td.Struct != nil || td.IsList || td.Map != nil {
+			return true
+		}
+		if td.Underlying == "" {
+			return false
+		}
+		home := td.Home
+		if home == nil {
+			home = env
+		}
+		td = lookupTypeDesc(td.Underlying, home)
+	}
+	return false
 }
 
 // fieldListKind reports SET_OF when a field's declared type is a
@@ -5932,6 +6288,8 @@ func coerceRecordFields(rec *runtime.Record, td *runtime.TypeDesc, env runtime.S
 		nv := cur
 		if sub := fieldStructTypeDesc(f, env); sub != nil {
 			nv = coerceToStruct(nv, sub, env)
+		} else if ftd := fieldTypeDesc(f, env); ftd != nil && ftd.IsList {
+			nv = coerceToType(nv, ftd, env)
 		}
 		if nv = tagSetOf(nv, fieldListKind(f, env)); nv != cur {
 			ownIt()
@@ -7152,11 +7510,17 @@ func bindFunctionParams(fn *runtime.Function, args []runtime.Object) *runtime.En
 				// unless nothing could tell it from the actual's: an
 				// `in` parameter of an isolated function that is never
 				// written. Copying a large value on every call is costly.
+				arg := args[i]
+				// A value made for the call — `f({1, 2})` — takes its
+				// formal's shape; one a variable held has it already.
+				if param.Type != nil && !runtime.IsShared(arg) {
+					arg = coerceToType(arg, formalTypeDesc(param, fenv), fenv)
+				}
 				if modif == "" && (fn.Isolated && fn.Catch == nil && fn.Finally == nil && plainParams(fn) || keepsToItself(fn)) && !paramWritten(fn.Body, param.Name.String()) {
-					fenv.Set(param.Name.String(), args[i])
+					fenv.Set(param.Name.String(), arg)
 					continue
 				}
-				fenv.Set(param.Name.String(), runtime.Share(args[i]))
+				fenv.Set(param.Name.String(), runtime.Share(arg))
 			case param.Value != nil:
 				// @lazy / @fuzzy defaults are *delayed*: the
 				// thunk is evaluated when the parameter is
@@ -7695,6 +8059,14 @@ func assignToLHS(lhs syntax.Expr, val runtime.Object, env runtime.Scope) {
 	if b, ok := lhs.(*syntax.BinaryExpr); ok && b.Op != nil && b.Op.Kind() == syntax.ASSIGN {
 		assignToLHS(b.Y, val, env)
 		return
+	}
+	// A record written positionally gets the target's field names, at
+	// any depth (coerceToType).
+	switch val.(type) {
+	case *runtime.List, *runtime.Record, *runtime.Map:
+		if td := lvalueTypeDesc(lhs, env); td != nil {
+			val = coerceToType(val, td, env)
+		}
 	}
 	switch l := lhs.(type) {
 	case *syntax.Ident:
@@ -14080,19 +14452,34 @@ var standaloneAlts sync.Map
 
 // standaloneAlt returns the alt statement `alt { [] s }` that the
 // receiving statement s — receive, trigger, check, getcall, getreply or
-// catch, on a port, with or without a template, from, to or redirect — is
-// equivalent to (ETSI 20.1), and false for any other statement.
+// catch, on a port, with or without a template, from, to or redirect, or a
+// timeout — is equivalent to (ETSI 20.1, 23.6), and false for any other
+// statement.
 func standaloneAlt(s *syntax.ExprStmt) (*syntax.AltStmt, bool) {
 	if a, ok := standaloneAlts.Load(s); ok {
 		alt, _ := a.(*syntax.AltStmt)
 		return alt, alt != nil
 	}
 	var alt *syntax.AltStmt
-	if isReceivingOp(s.Expr) || isComponentArrayWait(s.Expr) {
+	if isReceivingOp(s.Expr) || isComponentArrayWait(s.Expr) || isTimeoutOp(s.Expr) {
 		alt = &syntax.AltStmt{NoDefault: s.NoDefault, Body: &syntax.BlockStmt{Stmts: []syntax.Stmt{&syntax.CommClause{Comm: s}}}}
 	}
 	standaloneAlts.Store(s, alt)
 	return alt, alt != nil
+}
+
+// isTimeoutOp reports whether e is a timeout operation — `t.timeout`,
+// `ta[i].timeout`, `any timer.timeout`, `any from ta.timeout`, with an
+// index redirect or not.
+func isTimeoutOp(e syntax.Expr) bool {
+	if r, ok := e.(*syntax.RedirectExpr); ok {
+		e = r.X
+	}
+	if fe, ok := e.(*syntax.FromExpr); ok {
+		e = fe.X
+	}
+	sel, ok := e.(*syntax.SelectorExpr)
+	return ok && syntax.Name(sel.Sel) == "timeout"
 }
 
 // isComponentArrayWait reports whether e is `any from cs.done` or `all

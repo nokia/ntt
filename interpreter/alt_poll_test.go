@@ -79,3 +79,32 @@ func TestAllTimerWaitsForTheLastTimer(t *testing.T) {
 		t.Fatalf("with all timers due: %v, %v; want 0, true", d, ok)
 	}
 }
+
+// TestPortOfAnAltstepIsNoAltstep: in an altstep with a port parameter,
+// `[] pp.receive` receives — it is no call of an altstep `receive` of a
+// module `pp`, whose timers would have to be polled for.
+func TestPortOfAnAltstepIsNoAltstep(t *testing.T) {
+	tree := ttcn3.Parse(`module M {
+		altstep ap(P pp) { [] pp.receive(integer:?) {} }
+		function g() { alt { [] ap(p) {} } }
+	}`)
+	var alt *syntax.AltStmt
+	var as *syntax.FuncDecl
+	tree.Inspect(func(n syntax.Node) bool {
+		switch x := n.(type) {
+		case *syntax.AltStmt:
+			alt = x
+		case *syntax.FuncDecl:
+			if x.Name != nil && x.Name.String() == "ap" {
+				as = x
+			}
+		}
+		return true
+	})
+	env := runtime.NewEnv(nil)
+	env.Set("ap", &runtime.Function{IsAltstep: true, Params: as.Params, Body: as.Body, Env: env})
+	env.Set("p", &runtime.PortRef{Name: "p"})
+	if altNeedsPoll(alt, env) {
+		t.Fatal("altNeedsPoll is true for an altstep that only receives on its port parameter")
+	}
+}

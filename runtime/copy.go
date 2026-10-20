@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"unsafe"
 )
 
 // Share gives v to one more holder — a variable, a parameter, a message
@@ -103,6 +104,36 @@ func Unshare(v Object) Object {
 		return out
 	}
 	return v
+}
+
+// Shaped reports whether v, a shared record, list or map, was given the
+// shape of type td already (MarkShaped): a shared value is never changed,
+// so that holds for good.
+func Shaped(v Object, td *TypeDesc) bool {
+	if td == nil || !IsShared(v) {
+		return false
+	}
+	return atomic.LoadPointer(shapeOf(v)) == unsafe.Pointer(td)
+}
+
+// MarkShaped records that v, when shared, has the shape of type td — the
+// field names of its records — for Shaped to tell without looking again.
+func MarkShaped(v Object, td *TypeDesc) {
+	if td != nil && IsShared(v) {
+		atomic.StorePointer(shapeOf(v), unsafe.Pointer(td))
+	}
+}
+
+func shapeOf(v Object) *unsafe.Pointer {
+	switch x := v.(type) {
+	case *Record:
+		return &x.shape
+	case *List:
+		return &x.shape
+	case *Map:
+		return &x.shape
+	}
+	return nil
 }
 
 // clone returns a copy of r of its own, holding r's members.

@@ -281,3 +281,74 @@ func TestQualifiedHelperRunsAsItsComponent(t *testing.T) {
 		}
 	}
 }
+
+// TestBothClocks_StandaloneTimeoutTriesTheDefaults: a timeout used as a
+// statement is an alt with that one alternative (ETSI 23.6): an active
+// default that matches meanwhile ends it, unless it is @nodefault.
+func TestBothClocks_StandaloneTimeoutTriesTheDefaults(t *testing.T) {
+	for name, body := range map[string]string{
+		"named":     `t.start(1.0); t.timeout; if (not t.running) { setverdict(fail, "waited past the default") }`,
+		"any timer": `t.start(1.0); any timer.timeout; if (not t.running) { setverdict(fail, "waited past the default") }`,
+		"any from":  `ta[1].start(1.0); any from ta.timeout; if (not ta[1].running) { setverdict(fail, "waited past the default") }`,
+		"@nodefault": `t.start(0.1); @nodefault t.timeout;
+			if (t.running) { setverdict(fail, "took the default") }
+			p.receive(integer:1); setverdict(pass)`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			assertSameVerdictBothClocks(t, `module M {
+			type port P message { inout integer }
+			type component C { port P p; timer t; timer ta[2] }
+			altstep d() runs on C { [] p.receive(integer:?) { setverdict(pass) } }
+			testcase tc() runs on C system C {
+				connect(self:p, self:p); activate(d());
+				p.send(1);
+				`+body+`
+			}
+		}`, runtime.PassVerdict)
+		})
+	}
+}
+
+// TestBothClocks_ModuleQualifiedAltstep: an altstep named with its
+// module, `[] M.a()`, is an alternative as `[] a()` is, its timers
+// included, and a default as activated so.
+func TestBothClocks_ModuleQualifiedAltstep(t *testing.T) {
+	for _, body := range []string{
+		`connect(self:p, self:p); tc.start(0.2); alt { [] p.receive(integer:5) {} [] M.a() {} }`,
+		`connect(self:p, self:p); activate(M.a()); tc.start(0.2); p.receive(integer:5);`,
+	} {
+		assertSameVerdictBothClocks(t, `module M {
+			type port P message { inout integer }
+			type component C { port P p; timer tc }
+			altstep a() runs on C { [] tc.timeout { setverdict(pass) } }
+			testcase tc() runs on C system C {
+				`+body+`
+			}
+		}`, runtime.PassVerdict)
+	}
+}
+
+// TestBothClocks_QualifiedAltstepOfAnotherModule: `[] Lib.a()` is Lib's
+// altstep, though the module calling it has an altstep `a` of its own.
+func TestBothClocks_QualifiedAltstepOfAnotherModule(t *testing.T) {
+	lib := parse(t, `module Lib {
+		type port P message { inout integer }
+		type component C { port P p; timer t1, t2 }
+		altstep a() runs on C { [] t1.timeout { setverdict(pass) } }
+	}`)
+	src := `module M {
+		import from Lib all;
+		altstep a() runs on C { [] t2.timeout { setverdict(fail, "M's a") } }
+		testcase tc() runs on C system C {
+			connect(self:p, self:p);
+			t1.start(0.2); t2.start(0.1);
+			alt { [] p.receive(integer:5) {} [] Lib.a() {} }
+		}
+	}`
+	for _, k := range clocks {
+		v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{lib, parse(t, src)}, "M.tc", k.opts)
+		if err != nil || v != runtime.PassVerdict {
+			t.Errorf("%s clock: verdict = %s (%s), err %v, want pass", k.name, v, reason, err)
+		}
+	}
+}

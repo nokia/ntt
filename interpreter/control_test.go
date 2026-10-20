@@ -231,3 +231,33 @@ func TestControlPartIsLoadBearing(t *testing.T) {
 		}
 	}
 }
+
+// TestControl_AllTimerWaitsForTheLastTimer: on the virtual clock, a
+// control part's `all timer.timeout` with one timer due waits for the
+// other, rather than for good.
+func TestControl_AllTimerWaitsForTheLastTimer(t *testing.T) {
+	src := `module M {
+		type component C {}
+		testcase tc() runs on C { setverdict(pass) }
+		control {
+			timer t1, t2;
+			t1.start(0.2); t2.start(3.0);
+			alt { [] all timer.timeout {} }
+			execute(tc());
+		}
+	}`
+	done := make(chan runtime.Verdict, 1)
+	go func() {
+		v, _, _ := interpreter.RunControlWith([]*ttcn3.Tree{parse(t, src)}, "M",
+			interpreter.TestcaseOptions{DeterministicClock: true, DeterministicScheduler: true})
+		done <- v
+	}()
+	select {
+	case v := <-done:
+		if v != runtime.PassVerdict {
+			t.Fatalf("verdict = %s, want pass", v)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the control part's alt did not end")
+	}
+}

@@ -554,6 +554,21 @@ Independent of the two clocks:
   for a message or another component, and for no timer, default or
   altstep that could let it go on by itself: twenty such starts took
   1 s, and take 3 ms.
+- **A record written positionally has its field names wherever it is
+  bound.** `var RR rr := {{1, 2}}` gave `rr[0].a` no value, and
+  `rr[0].a := 5` went nowhere; so too in an array, a map's value, a
+  union's alternative, a component variable, a parameter given `{1, 2}`,
+  an `out` parameter assigned so, and a value redirected into a field.
+  The value now takes its declared type's field names at any depth.
+- **A standalone timeout tries the active defaults** (ETSI 23.6): it
+  stands for an alt with that one alternative, so a default that matches
+  while `t.timeout` waits ends it; `@nodefault t.timeout` waits for the
+  timer alone, as every standalone timeout did.
+- **An altstep named with its module is an alternative too.** `[] M.a()`
+  in an alt was never taken when its timer ran out, nor was a default
+  activated as `activate(M.a())`, where `a()` was.
+- **On the virtual clock, a control part's `all timer.timeout` waits for
+  its last timer.** With one timer due and one running, it never ended.
 - **Records, lists and maps are shared until changed.** Assigning,
   declaring, sending, receiving or passing one copied the whole of it.
   A value is now shared by its holders and never changed in place: a

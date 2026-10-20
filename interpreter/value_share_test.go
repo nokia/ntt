@@ -2,6 +2,7 @@ package interpreter_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/nokia/ntt/interpreter"
 	"github.com/nokia/ntt/runtime"
@@ -166,5 +167,97 @@ func TestNestedClassWritesTheOuterObject(t *testing.T) {
 		if err != nil || v != runtime.PassVerdict {
 			t.Errorf("%s clock: %s (%s) %v", k.name, v, reason, err)
 		}
+	}
+}
+
+// TestPositionalRecordsHaveTheirFields: a record written positionally,
+// `{1, 2}`, has its type's field names wherever it is bound — an element
+// of a record of, of an array or of a map, a field, a union's
+// alternative, a component variable, a parameter, an out parameter, a
+// value redirect — so its fields read and write.
+func TestPositionalRecordsHaveTheirFields(t *testing.T) {
+	for name, body := range map[string]string{
+		"record of":      `var RR rr := {{1,2},{3,4}}; rr[0].a := 5; check(rr[0].a == 5 and rr[1].b == 4, rr)`,
+		"constant":       `var RR rr := c_rr; rr[0].a := 5; check(rr[0].a == 5 and c_rr[0].a == 1, rr)`,
+		"assigned":       `var RR rr; rr := {{1,2}}; rr[0].a := 5; check(rr[0].a == 5, rr)`,
+		"element":        `var RR rr := {}; rr[0] := {1,2}; rr[0].a := 5; check(rr[0].a == 5, rr)`,
+		"array":          `var RA a := {{1,2},{3,4}}; a[1].a := 5; check(a[1].a == 5, a)`,
+		"declared array": `var R a[2] := {{1,2},{3,4}}; a[1].a := 5; check(a[1].a == 5, a)`,
+		"field":          `var W w := { l := {{1,2}} }; w.l[0].a := 5; check(w.l[0].a == 5, w)`,
+		"map":            `var MR m := {["x"] := {1,2}}; m["x"].a := 5; m := {["z"] := {7,8}}; check(m["x"].a == 5 and m["z"].a == 7, m)`,
+		"union":          `var U u := {r := {1,2}}; u.r.a := 3; check(u.r.a == 3 and u.r.b == 2, u)`,
+		"component":      `cv.a := 7; cl[0].a := 4; check(cv.a == 7 and cl[0].a == 4, cv)`,
+		"parameter":      `check(fin({1, 2}) == 7, "in")`,
+		"inout":          `var RR rr := {{1,2},{3,4}}; fio(rr[1]); check(rr[1].a == 9, rr)`,
+		"out":            `var R r := {1, 2}; fout(r); check(r.a == 6, r)`,
+		"declarator array assigned": `var R d[2]; d := {{1,2},{3,4}}; var RA b := d; d[0] := {7,8};
+			check(lengthof(b) == 2 and b[1].b == 4 and d[0].a == 7 and d[1].b == 4, d)`,
+		"two dimensions": `var R22 t := {{{1,2},{3,4}},{{5,6},{7,8}}}; t[1][1].a := 70; check(t[1][1].a == 70 and t[0][1].b == 4, t)`,
+		"array field":    `var A w := { one := {{1,2},{3,4}} }; w.one[1].a := 5; check(w.one[1].a == 5, w)`,
+		"union assigned": `var U u; u := {r := {1,2}}; check(u.r.a == 1, u)`,
+		"index notation": `var RR rr := {{1,2}}; rr := {[1] := {9,9}}; check(rr[1].a == 9 and rr[0].a == 1, rr)`,
+		"redirect": `connect(self:p, self:p); var W w := { l := {} }; p.send(RR:{{1,2}});
+			alt { [] p.receive(RR:?) -> value w.l {} [] g.timeout { setverdict(fail, "no message"); stop } }
+			w.l[0].a := 5; check(w.l[0].a == 5, w)`,
+	} {
+		src := `module M {
+			type record R { integer a, integer b optional }
+			type record of R RR;
+			type R RA[2];
+			type map from charstring to R MR;
+			type record W { RR l }
+			type R R22[2][2];
+			type record A { R one[2] }
+			type union U { integer i, R r }
+			type port P message { inout RR }
+			type component C { port P p; var R cv := {1, 2}; var RR cl := {{1,2}}; timer g := 2.0 }
+			const RR c_rr := {{1,2},{3,4}};
+			function check(boolean ok, template anytype x) { if (ok) { setverdict(pass) } else { setverdict(fail, x) } }
+			function fio(inout R x) { x.a := 9 }
+			function fout(out R x) { x := {5, omit}; x.a := 6 }
+			function fin(R x) return integer { x.a := 7; return x.a }
+			testcase tc() runs on C system C {
+				g.start;
+				` + body + `
+			}
+		}`
+		for _, k := range clocks {
+			v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", k.opts)
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
+			}
+		}
+	}
+}
+
+// TestShapedValuesAreNotWalkedAgain: a record of records assigned again
+// and again is given its field names once, not on every assignment —
+// which walked all its elements each time.
+func TestShapedValuesAreNotWalkedAgain(t *testing.T) {
+	src := `module M {
+		type record R { integer a, integer b }
+		type record of R RR;
+		type record W { record of record { integer a, integer b } l }
+		type component C {}
+		function g(RR x) return RR { return x }
+		testcase tc() runs on C {
+			var RR rr := {};
+			for (var integer i := 0; i < 10000; i := i + 1) { rr[i] := {i, i} }
+			var RR r2;
+			for (var integer i := 0; i < 2000; i := i + 1) { r2 := rr; r2 := g(rr); var RR r3 := rr }
+			var W w := { l := {} };
+			for (var integer i := 0; i < 10000; i := i + 1) { w.l[i] := {i, i} }
+			var W w2;
+			for (var integer i := 0; i < 2000; i := i + 1) { w2 := w }
+			if (r2[9999].a == 9999 and w2.l[9999].b == 9999) { setverdict(pass) } else { setverdict(fail, r2[9999]) }
+		}
+	}`
+	start := time.Now()
+	v, reason, err := interpreter.RunTestcaseWith([]*ttcn3.Tree{parse(t, src)}, "M.tc", clocks[0].opts)
+	if err != nil || v != runtime.PassVerdict {
+		t.Fatalf("verdict = %s (%s), err %v, want pass", v, reason, err)
+	}
+	if d := time.Since(start); d > 5*time.Second {
+		t.Fatalf("took %v", d)
 	}
 }

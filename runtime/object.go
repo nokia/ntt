@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 	"unicode"
+	"unsafe"
 
 	"github.com/nokia/ntt/ttcn3/syntax"
 )
@@ -310,6 +311,11 @@ type TypeDesc struct {
 	// IsList marks an array, record of or set of type: its values are
 	// lists.
 	IsList bool
+	// ArrayDims is how many dimensions an array type has (`type R
+	// A[2][3]` has 2) — the elements of all but the last are arrays too.
+	ArrayDims int
+	// Map is a map type's specification, for the type of its values.
+	Map *syntax.MapSpec
 	// Spec is the type specification a subtype declaration gives (`type
 	// record of T L`'s list of T, `type T S`'s reference to T), for a codec
 	// that walks a value by its type; nil for a record, set or union type
@@ -1354,7 +1360,8 @@ type List struct {
 	// unaffected, so an offset array still compares equal to a 0-based
 	// value literal of the same elements.
 	IndexOffset int
-	shared      uint32 // see Share
+	shared      uint32         // see Share
+	shape       unsafe.Pointer // see Shaped
 }
 
 func (l *List) IsOrdered() bool {
@@ -1652,7 +1659,8 @@ type pair struct {
 // Map is a map of objects.
 type Map struct {
 	pairs  map[hashKey][]pair
-	shared uint32 // see Share
+	shared uint32         // see Share
+	shape  unsafe.Pointer // see Shaped
 }
 
 // MapPair exposes a single key/value pair held in a Map. Returned by
@@ -1785,7 +1793,8 @@ func NewMap() *Map {
 type Record struct {
 	Fields map[string]Object
 	Order  []string
-	shared uint32 // see Share
+	shared uint32         // see Share
+	shape  unsafe.Pointer // see Shaped
 }
 
 func (r *Record) Get(name string) (Object, bool) {
