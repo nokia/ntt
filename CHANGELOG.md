@@ -583,6 +583,18 @@ Independent of the two clocks:
   stands for an alt with that one alternative, so a default that matches
   while `t.timeout` waits ends it; `@nodefault t.timeout` waits for the
   timer alone, as every standalone timeout did.
+- **A timeout of a timer that is not running waits** (ETSI 23.6, 20.1):
+  one never started, stopped, or whose timeout was taken. Nothing can
+  satisfy the alt it stands for, so it waits for good — for a stop, or a
+  default that an event makes match — as a `receive` with nothing to come
+  does: on the virtual clock the testcase ends in `error`, the test system
+  deadlocked; under `--live`, at its time limit. It used to go on at once,
+  stand-alone or in an alt, as `any timer.timeout` and `any from
+  ta.timeout`, and so did an alt whose only branches were guarded
+  `[false]`. A control part waiting so waits until its time is up, and
+  ends in `error`. An alt now waits for a timer an array's element names
+  (`[] ta[i].timeout`) as for a named one: it ended with no verdict, on
+  either clock.
 - **An altstep named with its module is an alternative too.** `[] M.a()`
   in an alt was never taken when its timer ran out, nor was a default
   activated as `activate(M.a())`, where `a()` was.
@@ -739,5 +751,9 @@ in [`docs/conformance/remaining-work.md`](docs/conformance/remaining-work.md)
   record-of template, a field set to `omit`, a map's keys, a testcase's
   parameters when it runs on its own, a check's redirects, attribute
   values — and `match` takes it for a wildcard.
+- A default activated in a control part (ETSI 20.5.2, allowed there by
+  table 16) never fires: the control part's alts do not consult it. A
+  control part waiting with no timer of its own running, for such a
+  default, ends in `error` at its time limit.
 
 [0.24.0]: https://github.com/nokia/ntt/compare/v0.23.2...ntt-titan

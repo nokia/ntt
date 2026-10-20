@@ -2599,10 +2599,12 @@ func evalAltStmtStrict(n *syntax.AltStmt, env runtime.Scope) runtime.Object {
 		}
 		waiting = true
 		if !blockForAltEvents(n, waitAt, wake, env) {
-			// Nothing to wait for (only boolean / unmodelled guards) or
-			// this PTC was stopped: conclude without fabricating a
-			// verdict, per real alt semantics (the caller's outer
-			// context / timeout governs a genuinely blocked alt).
+			// The testcase or this PTC was stopped: conclude without
+			// fabricating a verdict. A control part whose time is up
+			// ends.
+			if altExec == nil {
+				return controlTimeUp(env)
+			}
 			return nil
 		}
 	}
@@ -2815,23 +2817,15 @@ func timeoutBoundsWait(e syntax.Expr, where int, scope, own runtime.Scope) bool 
 	if !ok {
 		return false
 	}
-	id, ok := sel.X.(*syntax.Ident)
-	if !ok {
-		return false
-	}
-	if rn := id.String(); rn == "any timer" || rn == "all timer" {
+	if id, ok := sel.X.(*syntax.Ident); ok && (id.String() == "any timer" || id.String() == "all timer") {
 		return true
 	}
-	v, ok := scope.Get(id.String())
-	if !ok {
-		return false
+	ts := guardTimers(sel.X, scope)
+	if len(ts) > 0 && own != nil {
+		w := guardTimers(sel.X, own)
+		return len(w) > 0 && w[0] == ts[0]
 	}
-	th, ok := v.(*runtime.TimerHandle)
-	if ok && own != nil {
-		w, _ := own.Get(id.String())
-		return w == runtime.Object(th)
-	}
-	return ok
+	return len(ts) > 0
 }
 
 // altstepNeedsPoll applies clausesNeedPoll to the clauses of the altstep
@@ -2872,8 +2866,13 @@ func onlyRepeats(cc *syntax.CommClause) bool {
 // blockForAltEvents parks a strict alt on its event sources — inbound
 // port traffic (MessageReady), the soonest running-timer deadline, a
 // component transition, or this PTC's stop — via waitForAltCombined,
-// which polls for the guards that no event announces (altNeedsPoll). Returns true to re-snapshot, false when there is
-// nothing to wait for or the PTC was stopped.
+// which polls for the guards that no event announces (altNeedsPoll).
+// Returns true to re-snapshot, false when the testcase or the PTC was
+// stopped. An alt with none of these to wait for — its timers not
+// running, its other guards false — waits all the same, as ETSI 20.1
+// has it: for a stop, or a default an event makes match; on the virtual
+// clock, once nothing else can happen, the scheduler finds the test
+// system deadlocked.
 func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, env runtime.Scope) bool {
 	// In an interleave branch body, the interleave waits (interleave.go).
 	if currentInterleaveBranch() != nil {
@@ -2897,9 +2896,6 @@ func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, 
 		// clock advances to fire a timer guard. No real sleep, no polling
 		// backstop — time only moves when every participant is parked.
 		vd, hasTimer := nextAltTimerVirtualDeadline(n, env)
-		if !hasTimer && !altHasEventGuard(n) {
-			return false // only boolean / [else] guards: nothing to await
-		}
 		re, _ := exec.SchedPark(currentCompID(exec), vd, hasTimer, currentStopChan(exec))
 		return re
 	}
@@ -2914,17 +2910,21 @@ func blockForAltEvents(n *syntax.AltStmt, at interface{}, wake <-chan struct{}, 
 		}
 		// No timer guard: a real wait for port / component events, which
 		// concurrent PTCs deliver in real time even under the virtual
-		// clock. altHasEventGuard gates giving up on pure-boolean alts.
-		if altHasEventGuard(n) {
-			return waitForAltCombined(0, false, waitsOnlyForOthers(n, env), altNeedsPoll(n, env), wake, env)
-		}
-		return false
+		// clock.
+		poll := altNeedsPoll(n, env)
+		return waitForAltCombined(0, false, waitsOnlyForOthers(n, env) || waitsForNothing(n, false, poll, env), poll, wake, env)
 	}
 	dur, hasTimer := nextAltTimerDeadlineLenient(n, env)
-	if events := altHasEventGuard(n); hasTimer || events {
-		return waitForAltCombined(dur, hasTimer, waitsOnlyForOthers(n, env), altNeedsPoll(n, env), wake, env)
-	}
-	return false
+	poll := altNeedsPoll(n, env)
+	return waitForAltCombined(dur, hasTimer, waitsOnlyForOthers(n, env) || waitsForNothing(n, hasTimer, poll, env), poll, wake, env)
+}
+
+// waitsForNothing reports whether an alt waits for nothing at all: no
+// running timer (hasTimer), no event guard, no guard to look at again
+// (poll), no default. Only a stop ends its wait, which ends the
+// start-barrier of its component's starter as waitsOnlyForOthers does.
+func waitsForNothing(n *syntax.AltStmt, hasTimer, poll bool, env runtime.Scope) bool {
+	return !hasTimer && !poll && !altHasEventGuard(n) && (defaultsSuppressed(n) || len(activatedDefaultCalls(env)) == 0)
 }
 
 // timerArrayTimeoutGuard returns the timers of the array a guard `any
@@ -2963,6 +2963,72 @@ func timerArrayTimeoutGuard(e syntax.Expr, env runtime.Scope) ([]*runtime.TimerH
 		return true
 	})
 	return timers, true
+}
+
+// guardTimers resolves the timer a timeout guard `recv.timeout` names: a
+// timer variable or parameter, or an element of a timer array whose
+// indexes call nothing (`ta[i]`, `ta[1][j + 1]`), so that resolving it
+// has no effect of its own. An index naming a @lazy or @fuzzy parameter,
+// whose evaluation is the guard's, stands for any timer of the array.
+// None for any other receiver.
+func guardTimers(recv syntax.Expr, scope runtime.Scope) []*runtime.TimerHandle {
+	var v runtime.Object
+	switch x := recv.(type) {
+	case *syntax.Ident:
+		v, _ = scope.Get(x.String())
+	case *syntax.IndexExpr:
+		if !exprTimeless(x) {
+			return nil
+		}
+		if !namesLazy(x, scope) {
+			v = eval(x, scope)
+			break
+		}
+		base := syntax.Expr(x)
+		for {
+			ix, ok := base.(*syntax.IndexExpr)
+			if !ok {
+				break
+			}
+			base = ix.X
+		}
+		id, ok := base.(*syntax.Ident)
+		if !ok {
+			return nil
+		}
+		list, _ := scope.Get(id.String())
+		l, ok := list.(*runtime.List)
+		if !ok {
+			return nil
+		}
+		var timers []*runtime.TimerHandle
+		walkTimerArray(l, nil, func(_ []int, th *runtime.TimerHandle) bool {
+			timers = append(timers, th)
+			return true
+		})
+		return timers
+	}
+	if th, ok := v.(*runtime.TimerHandle); ok && th != nil {
+		return []*runtime.TimerHandle{th}
+	}
+	return nil
+}
+
+// namesLazy reports whether e names a parameter whose actual is evaluated
+// where it is used (@lazy, @fuzzy), and so may be evaluated again.
+func namesLazy(e syntax.Node, scope runtime.Scope) bool {
+	lazy := false
+	syntax.Inspect(e, func(n syntax.Node) bool {
+		if id, ok := n.(*syntax.Ident); ok {
+			if v, ok := scope.Get(id.String()); ok {
+				if _, ok := v.(*runtime.LazyThunk); ok {
+					lazy = true
+				}
+			}
+		}
+		return !lazy
+	})
+	return lazy
 }
 
 // nextAltTimerVirtualDeadline returns the soonest virtual-clock deadline
@@ -3019,22 +3085,18 @@ func nextAltTimerVirtualDeadline(n *syntax.AltStmt, env runtime.Scope) (float64,
 		}
 		switch x := es.Expr.(type) {
 		case *syntax.SelectorExpr:
-			recvIdent, ok := x.X.(*syntax.Ident)
-			if !ok {
-				return
-			}
 			op, ok := x.Sel.(*syntax.Ident)
 			if !ok || op.String() != "timeout" {
 				return
 			}
-			if rn := recvIdent.String(); rn == "any timer" || rn == "all timer" {
+			if id, ok := x.X.(*syntax.Ident); ok && (id.String() == "any timer" || id.String() == "all timer") {
 				for _, th := range collectScopeTimers(scope) {
 					consider(th)
 				}
-			} else if v, ok := scope.Get(rn); ok {
-				if th, ok := v.(*runtime.TimerHandle); ok {
-					consider(th)
-				}
+				return
+			}
+			for _, th := range guardTimers(x.X, scope) {
+				consider(th)
 			}
 		case *syntax.CallExpr:
 			if depth <= 0 {
@@ -3245,12 +3307,9 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 		}
 		timers, several := timerArrayTimeoutGuard(es.Expr, env)
 		var rn string
+		var th *runtime.TimerHandle
 		if !several {
 			sel, ok := es.Expr.(*syntax.SelectorExpr)
-			if !ok {
-				continue
-			}
-			recvIdent, ok := sel.X.(*syntax.Ident)
 			if !ok {
 				continue
 			}
@@ -3258,9 +3317,15 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 			if !ok || opIdent.String() != "timeout" {
 				continue
 			}
-			rn = recvIdent.String()
+			if id, ok := sel.X.(*syntax.Ident); ok {
+				rn = id.String()
+			}
 			if rn == "any timer" || rn == "all timer" {
 				timers, several = collectScopeTimers(env), true
+			} else if ts := guardTimers(sel.X, env); len(ts) == 1 {
+				th = ts[0]
+			} else {
+				timers, several = ts, len(ts) > 1
 			}
 		}
 		if several && rn == "all timer" {
@@ -3320,12 +3385,7 @@ func nextAltTimerDeadlineLenient(n *syntax.AltStmt, env runtime.Scope) (time.Dur
 			}
 			continue
 		}
-		v, ok := env.Get(rn)
-		if !ok {
-			continue
-		}
-		th, ok := v.(*runtime.TimerHandle)
-		if !ok || th == nil || !th.Running || th.StartedAt.IsZero() {
+		if th == nil || !th.Running || th.StartedAt.IsZero() {
 			continue
 		}
 		deadline := th.StartedAt.Add(time.Duration(th.Duration * float64(time.Second)))
@@ -3648,10 +3708,17 @@ func waitForAltCombined(dur time.Duration, haveTimer, events, poll bool, wake <-
 	if exec == nil {
 		// A control part's alt: only its timers can come due. One due
 		// already is looked at again after a while, as in a testcase.
-		if haveTimer && dur <= 0 {
+		// With none running, and no guard to look at again, it waits
+		// until its time is up — on the virtual clock, whatever its
+		// guards: nothing they read changes while it waits.
+		if !haveTimer && (!poll || controlClockOf(env) != nil) {
+			controlWaitForever(env)
+			return false
+		}
+		if !haveTimer || dur <= 0 {
 			dur = 2 * time.Millisecond
 		}
-		return haveTimer && controlWait(env, dur)
+		return controlWait(env, dur)
 	}
 	if exec.Stopped() {
 		return false

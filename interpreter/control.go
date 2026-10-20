@@ -54,6 +54,9 @@ type controlBudget struct {
 	// maxSteps, when positive, bounds: time of a control part run for
 	// a testcase's actuals is told by them, not the clock.
 	steps, maxSteps int64
+	// deadlocked: on the virtual clock, the control part waited for
+	// what can never come (controlWaitForever).
+	deadlocked bool
 }
 
 const controlBudgetKey = "\x00ttcn3:control-budget"
@@ -74,7 +77,7 @@ func (b *controlBudget) resume() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.since = time.Now()
-	b.timer = time.AfterFunc(b.left, func() { b.once.Do(func() { close(b.expired) }) })
+	b.timer = time.AfterFunc(b.left, b.expire)
 }
 
 func (b *controlBudget) pause() {
@@ -88,6 +91,11 @@ func (b *controlBudget) pause() {
 			b.left = 0
 		}
 	}
+}
+
+// expire spends the budget: the control part's time is up.
+func (b *controlBudget) expire() {
+	b.once.Do(func() { close(b.expired) })
 }
 
 func (b *controlBudget) spent() bool {
@@ -156,6 +164,42 @@ func controlWait(env runtime.Scope, d time.Duration) bool {
 	case <-done:
 	}
 	return false
+}
+
+// controlWaitForever waits as a control part does for what can never
+// come: until its time, or the run's, is up. On the virtual clock that is
+// at once — no event can end the wait, so its clock runs on past every
+// limit — and it executes no further testcase (controlBudget).
+func controlWaitForever(env runtime.Scope) {
+	v, _ := env.Get(controlBudgetKey)
+	b, _ := v.(*controlBudget)
+	if b == nil {
+		// Not a control part's own run (RunControlWith gives each one
+		// a budget): nothing to wait for.
+		return
+	}
+	if controlClockOf(env) != nil {
+		// Time already up is told as it was.
+		b.deadlocked = !b.spent()
+		b.expire()
+		return
+	}
+	select {
+	case <-b.expired:
+	case <-b.ctx.Done():
+	}
+}
+
+// controlTimeUp ends a control part whose time is up — its wait for a
+// timer ended without the timeout — with an error that RunControlWith
+// reports as its budget's: nil when there is time left, or env is no
+// control part's.
+func controlTimeUp(env runtime.Scope) runtime.Object {
+	v, _ := env.Get(controlBudgetKey)
+	if b, ok := v.(*controlBudget); ok && b.spent() {
+		return runtime.Errorf("the control part's time is up")
+	}
+	return nil
 }
 
 // controlBudgetSpent reports whether env is a control part's whose budget
@@ -275,12 +319,9 @@ func RunControlWith(trees []*ttcn3.Tree, module string, opts TestcaseOptions) (v
 	// control-scope binding would be invisible there. Each execute()
 	// builds a fresh module scope of its own, which does not carry the
 	// handler, so a testcase body cannot re-enter this.
-	var budget *controlBudget
-	if opts.TestcaseTimeout > 0 || opts.Context != nil {
-		budget = newControlBudget(opts.Context, opts.TestcaseTimeout)
-		defer budget.pause()
-		env.Set(controlBudgetKey, budget)
-	}
+	budget := newControlBudget(opts.Context, opts.TestcaseTimeout)
+	defer budget.pause()
+	env.Set(controlBudgetKey, budget)
 	var clock *controlClock
 	if opts.DeterministicClock {
 		clock = &controlClock{}
@@ -288,13 +329,11 @@ func RunControlWith(trees []*ttcn3.Tree, module string, opts TestcaseOptions) (v
 	}
 	env.Set(executeHandlerKey, executeHandler{
 		run: func(tcName string, args []runtime.Object, timeout float64, hasTimeout bool, host string, hasHost bool) runtime.Verdict {
-			if budget != nil {
-				if budget.spent() {
-					return runtime.ErrorVerdict
-				}
-				budget.pause()
-				defer budget.resume()
+			if budget.spent() {
+				return runtime.ErrorVerdict
 			}
+			budget.pause()
+			defer budget.resume()
 			tlExecute(opts.TestLogger, control, modNode, module, tcName, args, timeout, hasTimeout)
 			v, r, took := runOneExecute(trees, modNode, module, tcName, args, timeout, hasTimeout, host, hasHost, opts)
 			if clock != nil {
@@ -309,15 +348,19 @@ func RunControlWith(trees []*ttcn3.Tree, module string, opts TestcaseOptions) (v
 
 	tlControl(opts.TestLogger, control, "tliSEnter", tlArg("name", tl.QualifiedName(module, "control")), tlArg("kind", tl.String("control")))
 	defer tlControl(opts.TestLogger, control, "tliSLeave", tlArg("name", tl.QualifiedName(module, "control")), tlArg("kind", tl.String("control")))
-	if res := eval(control.Body, ctrlEnv); runtime.IsError(res) {
-		e, _ := res.(*runtime.Error)
-		return runtime.ErrorVerdict, "control: " + e.Inspect(), nil
-	}
-	if budget != nil && budget.spent() {
+	res := eval(control.Body, ctrlEnv)
+	if budget.spent() {
+		if budget.deadlocked {
+			return runtime.ErrorVerdict, "control part deadlocked: it waits with no timer running", nil
+		}
 		if budget.limit <= 0 || budget.ctx.Err() != nil {
 			return runtime.ErrorVerdict, "control part stopped: " + context.Cause(budget.ctx).Error(), nil
 		}
 		return runtime.ErrorVerdict, fmt.Sprintf("control part did not terminate within %v, besides its testcases", budget.limit), nil
+	}
+	if runtime.IsError(res) {
+		e, _ := res.(*runtime.Error)
+		return runtime.ErrorVerdict, "control: " + e.Inspect(), nil
 	}
 	if !ran {
 		return runtime.NoneVerdict, "control part executed no testcase", nil
@@ -433,7 +476,7 @@ func controlActuals(trees []*ttcn3.Tree, modNode *syntax.Module, module string, 
 				}
 				if captured >= len(own) {
 					// The control part's loops end, as when its time is up.
-					budget.once.Do(func() { close(budget.expired) })
+					budget.expire()
 				}
 			}
 			return runtime.NoneVerdict

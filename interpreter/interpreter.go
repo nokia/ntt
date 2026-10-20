@@ -1214,7 +1214,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		// alternative (ETSI 20.1): it waits for a match, and the active
 		// defaults apply. So is a timeout (23.6); with no default to
 		// apply, it waits for its timer as the alt would.
-		if !altCtx.active() && canWait(env) {
+		if !altCtx.active() && (canWait(env) || runtime.FindTestcaseExec(env) == nil) {
 			if alt, ok := standaloneAlt(n); ok && (!isTimeoutOp(n.Expr) || n.NoDefault == nil && len(activatedDefaultCalls(env)) > 0) {
 				res := eval(alt, env)
 				// A wait ended by stopping the component ends its
@@ -7116,9 +7116,10 @@ func evalAnyAllFromTimer(n *syntax.FromExpr, op string, list *runtime.List, redi
 				timers = append(timers, t)
 				return true
 			})
-			if awaitTimeout(timers, true, env) != nil {
-				idx, th = first()
+			if awaitTimeout(timers, true, env) == nil {
+				return waitForNoTimer(env), true
 			}
+			idx, th = first()
 		}
 		if th == nil {
 			return runtime.NewBool(false), true
@@ -8428,6 +8429,9 @@ func evalTimerSelector(th *runtime.TimerHandle, n *syntax.SelectorExpr, env runt
 		// In an interleave branch body, the interleave waits.
 		for at := new(byte); !timerExpired(th, env) && interleaveWait(timerWait(th, at)); {
 		}
+		if !th.Running {
+			return waitForNoTimer(env)
+		}
 		// Outside an alt, under the quiescence scheduler:
 		// park until the virtual clock reaches this
 		// timer's deadline, letting any earlier event or
@@ -8553,6 +8557,9 @@ func evalTimerOp(th *runtime.TimerHandle, sel syntax.Expr, n *syntax.CallExpr, e
 		// In an interleave branch body, the interleave waits.
 		for at := new(byte); !timerExpired(th, env) && interleaveWait(timerWait(th, at)); {
 		}
+		if !th.Running {
+			return waitForNoTimer(env)
+		}
 		// Outside an alt, under the quiescence scheduler: park until the
 		// virtual clock reaches the deadline so any earlier event or timer
 		// in another participant fires first.
@@ -8653,6 +8660,37 @@ func waitForTimerTimeout(th *runtime.TimerHandle, env runtime.Scope) {
 	case <-exec.StopChan():
 	case <-currentStopChan(exec):
 	}
+}
+
+// waitForNoTimer is a stand-alone timeout with no timer running to wait
+// for, and no default to apply. The alt it stands for (ETSI 23.6) has no
+// alternative that can come, and waits as such an alt does
+// (blockForAltEvents): until the testcase or this component is stopped —
+// on the virtual clock, once nothing else can happen, the scheduler finds
+// the test system deadlocked — and its behaviour ends there. A control
+// part waits until its time is up (controlWaitForever), and ends.
+func waitForNoTimer(env runtime.Scope) runtime.Object {
+	exec := runtime.FindTestcaseExec(env)
+	if exec == nil {
+		controlWaitForever(env)
+		return controlTimeUp(env)
+	}
+	if exec.SchedulerActive() {
+		stop := currentStopChan(exec)
+		for !exec.Stopped() {
+			if re, _ := exec.SchedPark(currentCompID(exec), 0, false, stop); !re {
+				break
+			}
+		}
+	} else if !exec.Stopped() {
+		defer markWaiting(exec)()
+		markBlocked(exec)
+		select {
+		case <-exec.StopChan():
+		case <-currentStopChan(exec):
+		}
+	}
+	return &runtime.ReturnValue{Value: runtime.Undefined, Stopped: true}
 }
 
 // newComponentRef allocates a fresh component reference for
@@ -14274,10 +14312,13 @@ func evalJSONDefaultExpr(expr string, env runtime.Scope) runtime.Object {
 // waits for the earliest deadline among running timers and consumes that
 // one; `all` waits for the latest and consumes every running timer.
 //
-// With no running timer there is nothing to wait for and nothing to
-// consume, which is reported as false rather than blocking forever.
+// With no running timer, `any` has nothing to wait for and waits as the
+// alt it stands for does (waitForNoTimer); `all` reports false.
 func timerAggregateBlockingTimeout(timers []*runtime.TimerHandle, anyKind bool, env runtime.Scope) runtime.Object {
 	target := awaitTimeout(timers, anyKind, env)
+	if target == nil && anyKind {
+		return waitForNoTimer(env)
+	}
 	if target == nil {
 		return runtime.NewBool(false)
 	}

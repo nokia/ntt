@@ -671,6 +671,22 @@ passed over for a thousand turns — and a parameter's default and a
   needs the declared type of an operand. (Tried 2026-10-15 with the
   record's order, and reverted: `rl[0].b := 2; rl[0].a := 1; rl[0] == {1,
   2}` became false.)
+- *Fixed 2026-10-20; 0 gained, 0 lost.* **A timeout of a timer that is
+  not running went on at once** — never started, stopped, or its timeout
+  taken; stand-alone, in an alt, `any timer`, `any from` — where the alt
+  it stands for (23.6) waits for good. So did an alt whose branches were
+  all `[false]`-guarded, and one with a default but no event of its own,
+  whose default was never consulted again. It now waits as a `receive`
+  with nothing to come does: `error` on the virtual clock (deadlock), the
+  time limit under `--live`. Found with it: an alt on an array element's
+  timer (`[] ta[i].timeout`) found no timer to wait for and ended with no
+  verdict; a control part's alt on one ended too.
+- **A default activated in a control part never fires.** Table 16 allows
+  `activate` in a control part; its alts do not consult the defaults, so
+  `control { var default d := activate(a(tg)); tg.start; timer t;
+  t.timeout; ... }` waits for good (an `error` at the time limit) where
+  `a` should be taken when `tg` runs out. Older than the fix above, which
+  made it wait rather than go on.
 - Left by the JSON variants: an instruction qualified by an element
   (`variant ([-]) "..."`) is dropped when the attributes are collected, so
   the type encodes as though it had none; `name as` to another field's

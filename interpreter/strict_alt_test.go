@@ -893,18 +893,8 @@ func TestBothClocks_AggregateTimeoutBlocksOutsideAlt(t *testing.T) {
 		}
 	}`, runtime.PassVerdict)
 
-	// With nothing running there is nothing to wait for: it must report
-	// false rather than block forever.
-	assertSameVerdictBothClocks(t, `module M {
-		type component C {}
-		testcase tc() runs on C system C {
-			timer g := 2.0;
-			g.start;
-			g.stop;
-			any timer.timeout;
-			setverdict(pass, "returned with no running timer");
-		}
-	}`, runtime.PassVerdict)
+	// With no timer running, `any timer.timeout` waits as the alt it
+	// stands for does, for what can never come (TestTimeoutOfIdleTimerWaits).
 }
 
 // TestBothClocks_TimerOnlyDefaultFires covers ETSI 20.5.1 for the classic
