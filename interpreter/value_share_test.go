@@ -257,7 +257,11 @@ func TestShapedValuesAreNotWalkedAgain(t *testing.T) {
 	if err != nil || v != runtime.PassVerdict {
 		t.Fatalf("verdict = %s (%s), err %v, want pass", v, reason, err)
 	}
-	if d := time.Since(start); d > 5*time.Second {
+	limit := 5 * time.Second
+	if raceEnabled {
+		limit = 30 * time.Second
+	}
+	if d := time.Since(start); d > limit {
 		t.Fatalf("took %v", d)
 	}
 }
