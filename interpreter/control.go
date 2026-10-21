@@ -117,6 +117,106 @@ func (b *controlBudget) Equal(o runtime.Object) bool {
 	return ok && other == b
 }
 
+// controlDefaults are the defaults a control part activated. It may
+// activate one (ETSI ES 201 873-1 20.5.2, table 16), and its alts and
+// stand-alone receiving operations invoke them as a component's do; with
+// no component, nor testcase, it keeps them itself.
+type controlDefaults struct {
+	mu   sync.Mutex
+	next int
+	list []runtime.Default
+}
+
+const controlDefaultsKey = "\x00ttcn3:control-defaults"
+
+func (*controlDefaults) Type() runtime.ObjectType { return runtime.ObjectType("CONTROL_DEFAULTS") }
+func (*controlDefaults) Inspect() string          { return "control defaults" }
+func (c *controlDefaults) Equal(o runtime.Object) bool {
+	other, ok := o.(*controlDefaults)
+	return ok && other == c
+}
+
+// controlDefaultsOf is the defaults of the control part env is the scope
+// of, or nil: in a testcase, or out of any control part.
+func controlDefaultsOf(env runtime.Scope) *controlDefaults {
+	if env == nil {
+		return nil
+	}
+	v, ok := env.Get(controlDefaultsKey)
+	if !ok {
+		return nil
+	}
+	c, _ := v.(*controlDefaults)
+	return c
+}
+
+// add keeps d and returns its handle. The handles are negative, as
+// no testcase's are: a testcase given one deactivates none of its own with
+// it (ETSI 20.5.3).
+func (c *controlDefaults) add(d runtime.Default) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.next--
+	d.Id = c.next
+	c.list = append(c.list, d)
+	return d.Id
+}
+
+func (c *controlDefaults) remove(id int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for i, d := range c.list {
+		if d.Id == id {
+			c.list = append(c.list[:i], c.list[i+1:]...)
+			return
+		}
+	}
+}
+
+func (c *controlDefaults) clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.list = nil
+}
+
+func (c *controlDefaults) all() []runtime.Default {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]runtime.Default(nil), c.list...)
+}
+
+// controlAltScopes holds, per goroutine, the scope of a control part's
+// alt, or stand-alone receiving operation, while it invokes the defaults:
+// `any timer` and `all timer` in a default's altstep name the timers of
+// that scope (collectScopeTimers) — the control part's, or those of a
+// function it calls, that is running (ETSI 23.7, 12).
+var controlAltScopes sync.Map // map[uint64]runtime.Scope
+
+// invokingDefaults binds env as the scope invoking the defaults, until
+// the returned function restores the one before.
+func invokingDefaults(env runtime.Scope) (restore func()) {
+	gid := goroutineID()
+	prev, had := controlAltScopes.Load(gid)
+	controlAltScopes.Store(gid, env)
+	return func() {
+		if had {
+			controlAltScopes.Store(gid, prev)
+		} else {
+			controlAltScopes.Delete(gid)
+		}
+	}
+}
+
+// controlAltScope is the scope invoking a control part's defaults on this
+// goroutine, or nil.
+func controlAltScope() runtime.Scope {
+	if v, ok := controlAltScopes.Load(goroutineID()); ok {
+		s, _ := v.(runtime.Scope)
+		return s
+	}
+	return nil
+}
+
 // controlClock is a control part's virtual clock: its own timers run on
 // it, and each testcase it executes moves it on by the virtual time that
 // testcase took. Bound only on the virtual clock.
@@ -322,6 +422,7 @@ func RunControlWith(trees []*ttcn3.Tree, module string, opts TestcaseOptions) (v
 	budget := newControlBudget(opts.Context, opts.TestcaseTimeout)
 	defer budget.pause()
 	env.Set(controlBudgetKey, budget)
+	env.Set(controlDefaultsKey, &controlDefaults{})
 	var clock *controlClock
 	if opts.DeterministicClock {
 		clock = &controlClock{}
@@ -465,6 +566,7 @@ func controlActuals(trees []*ttcn3.Tree, modNode *syntax.Module, module string, 
 	budget.maxSteps = controlRunSteps
 	defer budget.pause()
 	env.Set(controlBudgetKey, budget)
+	env.Set(controlDefaultsKey, &controlDefaults{})
 	env.Set(controlClockKey, &controlClock{})
 	env.Set(controlQuietKey, runtime.NewBool(true))
 	env.Set(executeHandlerKey, executeHandler{

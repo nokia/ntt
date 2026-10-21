@@ -487,6 +487,8 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		if name == "deactivate" {
 			if exec := runtime.FindTestcaseExec(env); exec != nil {
 				exec.ClearDefaultsOf(currentCompID(exec))
+			} else if c := controlDefaultsOf(env); c != nil {
+				c.clear()
 			}
 			return runtime.Undefined
 		}
@@ -8467,6 +8469,13 @@ func collectScopeTimers(env runtime.Scope) []*runtime.TimerHandle {
 		for _, th := range exec.CurrentComponentTimers() {
 			add(th)
 		}
+	} else if e, ok := controlAltScope().(*runtime.Env); ok {
+		// A control part's default: the timers of the alt invoking it.
+		var lexical []*runtime.TimerHandle
+		e.CollectTimers(&lexical, map[string]bool{})
+		for _, th := range lexical {
+			add(th)
+		}
 	}
 	return timers
 }
@@ -11368,11 +11377,17 @@ func mergeTemplateMod(base, mod runtime.Object) (runtime.Object, bool) {
 // default-needing site fires. The returned integer (wrapped in
 // DefaultHandle) is the deactivation handle.
 func evalActivate(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
-	exec := runtime.FindTestcaseExec(env)
-	if exec == nil || n.Args == nil || len(n.Args.List) == 0 {
+	if n.Args == nil || len(n.Args.List) == 0 {
 		return runtime.Undefined
 	}
 	callExpr := n.Args.List[0]
+	exec := runtime.FindTestcaseExec(env)
+	if exec == nil {
+		if c := controlDefaultsOf(env); c != nil {
+			return runtime.NewInt(c.add(runtime.Default{Body: &astNode{n: callExpr}, Env: snapshotActivateArgs(callExpr, env)}))
+		}
+		return runtime.Undefined
+	}
 	// ETSI 20.5.2: the actual parameters of an activated altstep are
 	// bound at activation time, not at the (later) time the default
 	// mechanism invokes it. Snapshot the current value of each
@@ -11430,11 +11445,16 @@ func snapshotActivateArgs(callExpr syntax.Expr, env runtime.Scope) runtime.Scope
 // from the testcase's defaults stack.
 func evalDeactivate(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 	exec := runtime.FindTestcaseExec(env)
-	if exec == nil || n.Args == nil || len(n.Args.List) == 0 {
+	c := controlDefaultsOf(env)
+	if exec == nil && c == nil || n.Args == nil || len(n.Args.List) == 0 {
 		return runtime.Undefined
 	}
 	v := eval(n.Args.List[0], env)
 	if i, ok := v.(runtime.Int); ok && i.Int != nil && i.IsInt64() {
+		if exec == nil {
+			c.remove(int(i.Int64()))
+			return runtime.Undefined
+		}
 		exec.RemoveDefault(int(i.Int64()))
 		if lexec := tlExec(env); lexec != nil {
 			tlEmit(lexec, n, "tliADeactivate", tlArg("ref", tl.Value{Kind: "default", Text: i.Int.String()}.AsValue()))
@@ -11467,7 +11487,7 @@ func (a *astNode) Equal(o runtime.Object) bool { return a == o }
 // recursively (which would spin forever on a non-matching queue).
 func runDefaults(env runtime.Scope) (runtime.Object, bool) {
 	exec := runtime.FindTestcaseExec(env)
-	if exec == nil {
+	if exec == nil && controlDefaultsOf(env) == nil {
 		return nil, false
 	}
 	if defaultCtx.active() {
@@ -11475,12 +11495,17 @@ func runDefaults(env runtime.Scope) (runtime.Object, bool) {
 	}
 	defaultCtx.enter()
 	defer defaultCtx.leave()
-	// Only the defaults this component activated (ETSI 20.5). The list is
-	// per testcase, so without the filter one component's defaults ran in
-	// another's alts — once timer-only defaults stopped being skipped, an
-	// MTC's safety-net timer could end a PTC's alt and consume the timer.
-	defs := exec.DefaultsOf(currentCompID(exec))
-	pre := exec.GetVerdict()
+	defs := activeDefaults(env)
+	if exec == nil {
+		defer invokingDefaults(env)()
+	}
+	verdict := func() runtime.Verdict {
+		if exec == nil {
+			return runtime.NoneVerdict
+		}
+		return exec.GetVerdict()
+	}
+	pre := verdict()
 	for i := len(defs) - 1; i >= 0; i-- {
 		d := defs[i]
 		ast, ok := d.Body.(*astNode)
@@ -11524,11 +11549,27 @@ func runDefaults(env runtime.Scope) (runtime.Object, bool) {
 		if defaultBranchTook() {
 			return nil, true
 		}
-		if exec.GetVerdict() != pre {
+		if verdict() != pre {
 			return nil, true
 		}
 	}
 	return nil, false
+}
+
+// activeDefaults returns the defaults activated by whoever env runs as, in
+// activation order: a control part's (controlDefaults), or those the
+// running component activated (ETSI 20.5). The list of a testcase is its
+// components', so without the filter one component's defaults ran in
+// another's alts — once timer-only defaults stopped being skipped, an
+// MTC's safety-net timer could end a PTC's alt and consume the timer.
+func activeDefaults(env runtime.Scope) []runtime.Default {
+	if exec := runtime.FindTestcaseExec(env); exec != nil {
+		return exec.DefaultsOf(currentCompID(exec))
+	}
+	if c := controlDefaultsOf(env); c != nil {
+		return c.all()
+	}
+	return nil
 }
 
 // defaultUnwind returns the control-flow object a default body produced

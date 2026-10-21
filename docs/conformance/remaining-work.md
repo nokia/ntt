@@ -681,12 +681,36 @@ passed over for a thousand turns — and a parameter's default and a
   time limit under `--live`. Found with it: an alt on an array element's
   timer (`[] ta[i].timeout`) found no timer to wait for and ended with no
   verdict; a control part's alt on one ended too.
-- **A default activated in a control part never fires.** Table 16 allows
+- *Fixed 2026-10-21; 0 gained, 0 lost.* **A default activated in a control part never fires.** Table 16 allows
   `activate` in a control part; its alts do not consult the defaults, so
   `control { var default d := activate(a(tg)); tg.start; timer t;
   t.timeout; ... }` waits for good (an `error` at the time limit) where
   `a` should be taken when `tg` runs out. Older than the fix above, which
-  made it wait rather than go on.
+  made it wait rather than go on. The control part now keeps the defaults
+  it activates, which its alts and stand-alone timeouts invoke as a
+  component's do; a testcase it executes does not see them. Found with
+  it: `any timer` in the altstep of a default the control part activated
+  did not name its timers; there, it names those of the alt invoking the
+  default. Still open: a timer a function started stays one `any timer`
+  names after the function returns, where ETSI 12 ends it there (older,
+  in a testcase); and invoked from a function the control part calls,
+  such a default names that function's timers, not the control part's.
+- *Fixed 2026-10-21; 0 gained, 0 lost.* **A module definition naming one declared
+  after it was not found** (ETSI 8.2.0: a definition is evaluated latest
+  before the first reference to it). Definitions were evaluated in their
+  order, module by module in the run's order, so `const integer x := y +
+  1; const integer y := 1;` was `identifier not found: y`, as was a
+  constant naming one of a module the run evaluated later, whichever
+  module imported which. Each is now evaluated when first named, if it
+  has not been yet, once every module's types are bound; one that names
+  itself is an error, as it was, rather than a like-named definition of
+  another module — unless a module it imports declares an enumerated
+  value of that name, which it then takes, whatever its own type: only
+  where the enumerated type is expected should the name be the value.
+  Still open (older): a constant computed from a module
+  parameter takes the parameter's default, not a configuration file's
+  value, which is applied after the module's definitions are evaluated;
+  and `deactivate` of a handle no longer active is no error (20.5.3).
 - *Fixed 2026-10-21; 0 gained, 0 lost.* **A value made where its type is
   declared kept its positional form**: a function's or method's result,
   `T:v`, a class member, an anytype's field. So `f() == {1, 2}` was

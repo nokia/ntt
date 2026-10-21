@@ -213,6 +213,7 @@ type importResolver struct {
 	imports []importFrom
 	mu      sync.RWMutex
 	memo    map[string]*importFrom // nil: none of the imports names it
+	init    *moduleInit            // mod's, while it is set up
 }
 
 // importFrom is one import statement: the module it imports from and what
@@ -287,10 +288,25 @@ func newImportResolver(root runtime.Scope, mod *syntax.Module) *importResolver {
 
 // Resolve implements runtime.Resolver.
 func (r *importResolver) Resolve(name string) (runtime.Object, *runtime.Env, bool) {
+	def := bindingName(name)
+	// One of mod's own definitions, named before it is evaluated. One
+	// that has no value — it names itself, or what is not bound yet —
+	// fails, rather than another module's like-named definition standing
+	// in for it; but an enumerated value named like it is that value.
+	if m := r.init; m != nil && !m.closed {
+		if m.named(def); m.env.Binds(name) {
+			val, _ := m.env.Get(name)
+			return val, m.env, true
+		}
+		if def == name {
+			if err := m.unevaluated(name); err != nil && !r.namesEnumValue(name) {
+				return err, m.env, true
+			}
+		}
+	}
 	if len(r.imports) == 0 {
 		return nil, nil, false
 	}
-	def := bindingName(name)
 	r.mu.RLock()
 	from, known := r.memo[def]
 	r.mu.RUnlock()
@@ -307,11 +323,31 @@ func (r *importResolver) Resolve(name string) (runtime.Object, *runtime.Env, boo
 		return nil, nil, false
 	}
 	src, ok := lookupModuleScope(r.root, from.module)
+	if ok && src.imports.init != nil {
+		src.imports.init.named(def)
+	}
 	if !ok || !src.env.Binds(name) {
 		return nil, nil, false
 	}
 	val, _ := src.env.Get(name)
 	return exportedValue(src.env, from.module, name, val), src.env, true
+}
+
+// namesEnumValue reports whether name is a value of an enumerated type of
+// mod's, or one it imports: a definition may be named like one (ETSI
+// 6.2.4), which names the value where its type is expected.
+func (r *importResolver) namesEnumValue(name string) bool {
+	v, _ := r.root.Get(name)
+	ev, ok := v.(*runtime.EnumValue)
+	if !ok || ev.TypeName() == "" {
+		return false
+	}
+	tn := bindingName(ev.TypeName())
+	if _, own := r.own.get(r.mod)[tn]; own {
+		return true
+	}
+	from, _ := r.lookup(tn)
+	return from != nil
 }
 
 // lookup returns the first import statement that takes definition def

@@ -612,6 +612,23 @@ Independent of the two clocks:
   (ETSI 7.1.3): built element by element, a function's result, a
   record's field. `var SC s := {"a", "b"}` and `s == {"b", "a"}` was
   false, and so was `a == b` for two sets filled in another order.
+- **A module definition may name one declared after it** (ETSI 8.2.0,
+  5.3): in its module, or in a module it imports from, whatever order
+  the modules come in. Each is evaluated when first named, if it has not
+  been yet: `const integer x := y + 1; const integer y := 1;` failed
+  with `identifier not found: y`, and so did a constant naming another
+  module's constant when that module came later in the run, or a
+  function there that names one, or a module parameter declared in a
+  `modulepar { ... }` group. A definition that names itself, through
+  others or a function, is an error, not another module's like-named
+  definition.
+- **A default activated in a control part applies there** (ETSI 20.5.2,
+  table 16): to its alts and stand-alone timeouts, as a component's does
+  to its own, until deactivated. It never fired, and a control part
+  waiting with no timer of its own running, for one, ended in `error`.
+  It is the control part's alone: a testcase it executes does not see
+  it, nor deactivates one of its own with its handle. `any timer` and
+  `all timer` in a default's altstep name the control part's timers.
 - **An altstep named with its module is an alternative too.** `[] M.a()`
   in an alt was never taken when its timer ran out, nor was a default
   activated as `activate(M.a())`, where `a()` was.
@@ -768,9 +785,5 @@ in [`docs/conformance/remaining-work.md`](docs/conformance/remaining-work.md)
   record-of template, a field set to `omit`, a map's keys, a testcase's
   parameters when it runs on its own, a check's redirects, attribute
   values — and `match` takes it for a wildcard.
-- A default activated in a control part (ETSI 20.5.2, allowed there by
-  table 16) never fires: the control part's alts do not consult it. A
-  control part waiting with no timer of its own running, for such a
-  default, ends in `error` at its time limit.
 
 [0.24.0]: https://github.com/nokia/ntt/compare/v0.23.2...ntt-titan

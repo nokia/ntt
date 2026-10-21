@@ -874,6 +874,14 @@ func (ev *EnumValue) IntValue() int { return ev.value }
 
 // Key returns the enum's textual label.
 func (ev *EnumValue) Key() string { return ev.key }
+
+// TypeName is the name of ev's enumerated type.
+func (ev *EnumValue) TypeName() string {
+	if ev.typeRef == nil {
+		return ""
+	}
+	return ev.typeRef.Name
+}
 func (ev *EnumValue) Equal(obj Object) bool {
 	other, ok := obj.(*EnumValue)
 	if !ok {

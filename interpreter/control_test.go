@@ -261,3 +261,94 @@ func TestControl_AllTimerWaitsForTheLastTimer(t *testing.T) {
 		t.Fatal("the control part's alt did not end")
 	}
 }
+
+// TestControl_DefaultsApply: a default a control part activates (ETSI
+// 20.5.2, table 16) applies to its alts and stand-alone timeouts, as a
+// component's does to its own — also to a wait with no timer of its own
+// running — until it is deactivated; `any timer` there names the control
+// part's timers, not those of a function it called (ETSI 12); and it is
+// the control part's alone, not the testcases'. Each control part executes pass only if its waits
+// ended as they should, on both clocks.
+func TestControl_DefaultsApply(t *testing.T) {
+	decls := `type component C {}
+		testcase tcPass() runs on C { setverdict(pass) }
+		testcase tcFail() runs on C { setverdict(fail) }
+		testcase tcWait() runs on C { timer t := 0.5; t.start; t.timeout; setverdict(pass) }
+		altstep a(timer tg) { [] tg.timeout {} }
+		altstep anyTimer() { [] any timer.timeout {} }
+		function f() { timer tl := 0.2; tl.start }
+		function g() { timer tl := 0.2; tl.start; activate(anyTimer()) }
+		altstep own(timer tg) { [] tg.timeout { setverdict(pass) } }
+		testcase tcOwn(default d) runs on C {
+			timer tg := 0.1;
+			activate(own(tg));
+			deactivate(d);
+			tg.start;
+			timer t := 3.0;
+			t.start;
+			t.timeout;
+		}`
+	for name, body := range map[string]string{
+		"stand-alone timeout": `timer tg := 0.2;
+			var default d := activate(a(tg));
+			tg.start;
+			timer t := 3.0;
+			t.start;
+			t.timeout;
+			if (t.running) { execute(tcPass()) } else { execute(tcFail()) }`,
+		"alt": `timer tg := 0.2;
+			activate(a(tg));
+			tg.start;
+			timer t := 3.0;
+			t.start;
+			alt { [] t.timeout { execute(tcFail()) } }
+			if (t.running) { execute(tcPass()) }`,
+		"no timer of its own": `timer tg := 0.2;
+			activate(a(tg));
+			tg.start;
+			timer t;
+			t.timeout;
+			execute(tcPass())`,
+		"deactivated": `timer tg := 0.1;
+			var default d := activate(a(tg));
+			deactivate(d);
+			tg.start;
+			timer t := 0.3;
+			t.start;
+			t.timeout;
+			if (t.running) { execute(tcFail()) } else { execute(tcPass()) }`,
+		"not the testcase's": `timer tg := 0.1;
+			activate(a(tg));
+			tg.start;
+			execute(tcWait())`,
+		"any timer": `activate(anyTimer());
+			timer tx := 0.1;
+			tx.start;
+			timer t := 3.0;
+			t.start;
+			alt { [] t.timeout { execute(tcFail()) } }
+			if (t.running) { execute(tcPass()) }`,
+		"a function's timer is not": `f();
+			timer t := 0.5;
+			t.start;
+			alt { [] t.timeout {} [] any timer.timeout { execute(tcFail()) } }
+			execute(tcPass())`,
+		"nor a function's that activated it": `g();
+			timer t := 0.5;
+			t.start;
+			t.timeout;
+			if (t.running) { execute(tcFail()) } else { execute(tcPass()) }`,
+		"its handle is no testcase's": `var default d := activate(anyTimer());
+			execute(tcOwn(d))`,
+	} {
+		src := "module M {\n" + decls + "\ncontrol {\n" + body + "\n}\n}"
+		for _, k := range clocks {
+			opts := k.opts
+			opts.TestcaseTimeout = 10 * time.Second
+			v, reason, err := interpreter.RunControlWith([]*ttcn3.Tree{parse(t, src)}, "M", opts)
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
+			}
+		}
+	}
+}

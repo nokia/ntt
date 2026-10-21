@@ -2057,14 +2057,45 @@ func isTypeDecl(n syntax.Node) bool {
 // moduleInit is a module whose definitions are being evaluated, in its
 // own scope (newModuleScope).
 type moduleInit struct {
-	root runtime.Scope
-	mod  *syntax.Module
-	env  *runtime.Env
-	defs []flatDef
+	root   runtime.Scope
+	mod    *syntax.Module
+	env    *runtime.Env
+	defs   []flatDef
+	strict bool
+	// The values (pass 1) by the names they bind, and what each came to:
+	// one named before it comes is evaluated then (named).
+	byName map[string]int
+	state  []defState
+	errs   []*runtime.Error
+	typed  bool // pass 0 is done
+	closed bool // pass 1 is done
+	nested bool // bindNestedTypes is done
 }
 
+type defState uint8
+
+const (
+	defPending defState = iota
+	defEvaluating
+	defDone
+)
+
 func beginModuleInit(root runtime.Scope, mod *syntax.Module) *moduleInit {
-	return &moduleInit{root: root, mod: mod, env: newModuleScope(root, mod), defs: flattenModuleDefs(mod.Defs, []*syntax.WithSpec{mod.With})}
+	m := &moduleInit{root: root, mod: mod, env: newModuleScope(root, mod), defs: flattenModuleDefs(mod.Defs, []*syntax.WithSpec{mod.With})}
+	m.byName = map[string]int{}
+	for i, fd := range m.defs {
+		for _, name := range valueDefNames(fd.def) {
+			if _, seen := m.byName[name]; !seen {
+				m.byName[name] = i
+			}
+		}
+	}
+	m.state = make([]defState, len(m.defs))
+	m.errs = make([]*runtime.Error, len(m.defs))
+	if s, ok := lookupModuleScope(root, syntax.Name(mod.Name)); ok {
+		s.imports.init = m
+	}
+	return m
 }
 
 // eval evaluates the module's type declarations (pass 0) or its other
@@ -2077,10 +2108,15 @@ func beginModuleInit(root runtime.Scope, mod *syntax.Module) *moduleInit {
 // it.
 func (m *moduleInit) eval(pass int, strict bool) *runtime.Error {
 	defer publishModuleScope(m.root, m.env)
-	if pass == 1 {
-		bindNestedTypes(m.env, m.mod)
+	if pass == 0 {
+		m.strict = strict
+		defer func() { m.typed = true }()
+	} else {
+		m.root.Set(valuesBegunKey, runtime.NewBool(true))
+		m.bindNested()
+		defer func() { m.closed = true }()
 	}
-	for _, fd := range m.defs {
+	for i, fd := range m.defs {
 		d := fd.def
 		if d == nil {
 			continue
@@ -2091,23 +2127,141 @@ func (m *moduleInit) eval(pass int, strict bool) *runtime.Error {
 		if isType := isTypeDecl(d.Def); isType != (pass == 0) {
 			continue
 		}
-		if r := eval(d, m.env); runtime.IsError(r) {
-			err, _ := r.(*runtime.Error)
-			if strict && !isUnknownNodeError(err) {
-				return err
+		var err *runtime.Error
+		if pass == 0 {
+			if err = m.evalDef(i); err != nil {
+				bindDeclNameScoped(m.env, d, fd.scopes)
 			}
-			bindDeclNameScoped(m.env, d, fd.scopes)
-			continue
+		} else {
+			err = m.value(i)
 		}
-		// The type descriptor is bound by its name too, so attribute
-		// lookups like `MyType.encode` keep working.
-		if isTypeDecl(d.Def) {
-			bindDeclNameScoped(m.env, d, fd.scopes)
+		if err != nil && strict && !isUnknownNodeError(err) {
+			return err
 		}
-		if strict {
-			recordDefKindAttrs(m.env, d, fd.scopes)
+	}
+	return nil
+}
+
+// valuesBegunKey is bound in a run's flat scope once a module's values
+// (pass 1) are being evaluated, every module's types being bound.
+const valuesBegunKey = "\x00ttcn3:values-begun"
+
+func (m *moduleInit) bindNested() {
+	if !m.nested {
+		m.nested = true
+		bindNestedTypes(m.env, m.mod)
+	}
+}
+
+// value evaluates definition i, of pass 1, once: when pass 1 comes to it,
+// unless a definition named it before (named). One that fails is bound by
+// its name.
+func (m *moduleInit) value(i int) *runtime.Error {
+	if m.state[i] == defPending {
+		m.state[i] = defEvaluating
+		if m.errs[i] = m.evalDef(i); m.errs[i] != nil {
+			bindDeclNameScoped(m.env, m.defs[i].def, m.defs[i].scopes)
 		}
-		annotateDef(m.env, d, syntax.Name(m.mod.Name))
+		m.state[i] = defDone
+	}
+	return m.errs[i]
+}
+
+// named evaluates the definition of the module that binds name, if it is
+// a value pass 1 has not yet come to, once every module's types are bound.
+// A definition of the module part is evaluated latest before the first
+// reference to it, whatever their order (ETSI ES 201 873-1 8.2.0, 5.3): a
+// constant may name one declared after it, in its module or in one it
+// imports from. One that names itself, through others, finds it unbound.
+func (m *moduleInit) named(name string) {
+	if !m.typed || m.closed {
+		return
+	}
+	i, ok := m.byName[name]
+	if !ok || m.state[i] != defPending {
+		return
+	}
+	if _, begun := m.root.Get(valuesBegunKey); !begun {
+		return
+	}
+	m.bindNested()
+	// One that fails here is left to pass 1, which reports its error: it
+	// may name what a module not yet evaluated binds in the flat scope.
+	m.state[i] = defEvaluating
+	if m.errs[i] = m.evalDef(i); m.errs[i] == nil {
+		m.state[i] = defDone
+	} else {
+		m.state[i] = defPending
+	}
+}
+
+// unevaluated returns, for a definition of the module that binds name and
+// has no value yet, why: it is being evaluated, and names itself through
+// others, or its evaluation failed (named). It is nil for any other name.
+func (m *moduleInit) unevaluated(name string) *runtime.Error {
+	i, ok := m.byName[name]
+	if !ok || m.closed {
+		return nil
+	}
+	switch m.state[i] {
+	case defEvaluating:
+		return runtime.Errorf("%s is named in its own definition (ETSI ES 201 873-1 8.2.0)", name)
+	case defPending:
+		return m.errs[i]
+	}
+	return nil
+}
+
+// evalDef evaluates definition i.
+func (m *moduleInit) evalDef(i int) *runtime.Error {
+	fd := m.defs[i]
+	d := fd.def
+	if r := eval(d, m.env); runtime.IsError(r) {
+		err, _ := r.(*runtime.Error)
+		return err
+	}
+	// The type descriptor is bound by its name too, so attribute
+	// lookups like `MyType.encode` keep working.
+	if isTypeDecl(d.Def) {
+		bindDeclNameScoped(m.env, d, fd.scopes)
+	}
+	if m.strict {
+		recordDefKindAttrs(m.env, d, fd.scopes)
+	}
+	annotateDef(m.env, d, syntax.Name(m.mod.Name))
+	return nil
+}
+
+// valueDefNames returns the names definition d binds that another
+// definition's value may name: a constant's, a module parameter's, a
+// template's, a function's.
+func valueDefNames(d *syntax.ModuleDef) []string {
+	if d == nil {
+		return nil
+	}
+	declNames := func(n *syntax.ValueDecl) (names []string) {
+		for _, dec := range n.Decls {
+			if dec != nil {
+				names = append(names, syntax.Name(dec.Name))
+			}
+		}
+		return names
+	}
+	switch n := d.Def.(type) {
+	case *syntax.ValueDecl:
+		return declNames(n)
+	case *syntax.ModuleParameterGroup:
+		var names []string
+		for _, v := range n.Decls {
+			if v != nil {
+				names = append(names, declNames(v)...)
+			}
+		}
+		return names
+	case *syntax.TemplateDecl:
+		return []string{syntax.Name(n.Name)}
+	case *syntax.FuncDecl:
+		return []string{syntax.Name(n.Name)}
 	}
 	return nil
 }
@@ -4152,12 +4306,8 @@ type defaultCall struct {
 // activated, in a form the alt deadline scanners can walk. Entries whose
 // body is not an altstep invocation are skipped rather than guessed at.
 func activatedDefaultCalls(env runtime.Scope) []defaultCall {
-	exec := runtime.FindTestcaseExec(env)
-	if exec == nil {
-		return nil
-	}
 	var out []defaultCall
-	for _, d := range exec.DefaultsOf(currentCompID(exec)) {
+	for _, d := range activeDefaults(env) {
 		ast, ok := d.Body.(*astNode)
 		if !ok || ast == nil {
 			continue
