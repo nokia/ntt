@@ -262,6 +262,7 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 			break
 		}
 	}
+	var others []*moduleInit
 	initTreeModules := func(t *ttcn3.Tree) {
 		if t == nil || t.Root == nil {
 			return
@@ -271,7 +272,7 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 			if !ok || mod == modNode {
 				continue
 			}
-			initModuleDefs(env, mod)
+			others = append(others, beginModuleInit(env, mod))
 		}
 	}
 	for _, t := range trees {
@@ -294,51 +295,28 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 	//     signature decls, ...) cannot poison every testcase in the
 	//     file. If the body references a missing identifier the call
 	//     site will surface the failure with proper context.
-	// Two-phase walk: first the pure-declarative nodes (types, enums,
-	// component definitions) so that later phases - which may
-	// reference those types in `modulepar T x := ...` initialisers or
-	// `template T t := ...` bodies - find the symbols already bound.
+	// Two phases, each over every module: first the pure-declarative
+	// nodes (types, enums, component definitions) so that the second —
+	// which may reference those types in `modulepar T x := ...`
+	// initialisers or `template T t := ...` bodies, of any module — finds
+	// the symbols already bound. The testcase's module comes last in
+	// each, so its definitions take precedence in the flat scope.
 	root := env
-	env = newModuleScope(root, modNode)
-	defs := flattenModuleDefs(modNode.Defs, []*syntax.WithSpec{modNode.With})
-	for _, pass := range []int{0, 1} {
-		if pass == 1 {
-			bindNestedTypes(env, modNode)
-		}
-		for _, fd := range defs {
-			d := fd.def
-			if _, ok := d.Def.(*syntax.ControlPart); ok {
-				continue
-			}
-			isType := isTypeDecl(d.Def)
-			if pass == 0 && !isType {
-				continue
-			}
-			if pass == 1 && isType {
-				continue
-			}
-			if r := eval(d, env); runtime.IsError(r) {
-				err, _ := r.(*runtime.Error)
-				if isUnknownNodeError(err) {
-					bindDeclNameScoped(env, d, fd.scopes)
-					continue
-				}
-				return nil, fmt.Sprintf("module init: %s", err.Inspect())
-			}
-			// Even on successful evaluation, attach the type-
-			// descriptor binding so attribute lookups like
-			// `MyType.encode` keep working. We only do this for
-			// type declarations to avoid stomping on actual
-			// runtime values.
-			if isTypeDecl(d.Def) {
-				bindDeclNameScoped(env, d, fd.scopes)
-			}
-			recordDefKindAttrs(env, d, fd.scopes)
-			annotateDef(env, d, syntax.Name(modNode.Name))
-		}
+	target := beginModuleInit(root, modNode)
+	// Another module's definition that fails is bound by its name
+	// (best-effort import): its error is nobody's to report.
+	for _, m := range others {
+		_ = m.eval(0, false)
 	}
-
-	publishModuleScope(root, env)
+	if err := target.eval(0, true); err != nil {
+		return nil, fmt.Sprintf("module init: %s", err.Inspect())
+	}
+	for _, m := range others {
+		_ = m.eval(1, false)
+	}
+	if err := target.eval(1, true); err != nil {
+		return nil, fmt.Sprintf("module init: %s", err.Inspect())
+	}
 	env = root
 
 	// Layer `import ... with { ... }` attributes onto the imported
@@ -2076,46 +2054,62 @@ func isTypeDecl(n syntax.Node) bool {
 	return false
 }
 
-// initModuleDefs walks a module's top-level declarations and binds the ones
-// the interpreter can evaluate into env. Used to flatten sibling modules into
-// the active scope when emulating `import from <X> all` without a real
-// import resolver. Errors are swallowed (best-effort import).
-func initModuleDefs(root runtime.Scope, mod *syntax.Module) {
-	if mod == nil {
-		return
+// moduleInit is a module whose definitions are being evaluated, in its
+// own scope (newModuleScope).
+type moduleInit struct {
+	root runtime.Scope
+	mod  *syntax.Module
+	env  *runtime.Env
+	defs []flatDef
+}
+
+func beginModuleInit(root runtime.Scope, mod *syntax.Module) *moduleInit {
+	return &moduleInit{root: root, mod: mod, env: newModuleScope(root, mod), defs: flattenModuleDefs(mod.Defs, []*syntax.WithSpec{mod.With})}
+}
+
+// eval evaluates the module's type declarations (pass 0) or its other
+// definitions (pass 1), and binds what its scope then binds in the flat
+// scope too (publishModuleScope). The types of every module come before
+// the values of any: a constant or module parameter of a type another
+// module declares takes its shape whatever order the modules come in.
+// A definition that fails is bound by its name, or, when strict, ends
+// the evaluation with its error, unless the interpreter does not model
+// it.
+func (m *moduleInit) eval(pass int, strict bool) *runtime.Error {
+	defer publishModuleScope(m.root, m.env)
+	if pass == 1 {
+		bindNestedTypes(m.env, m.mod)
 	}
-	env := newModuleScope(root, mod)
-	defer publishModuleScope(root, env)
-	defs := flattenModuleDefs(mod.Defs, []*syntax.WithSpec{mod.With})
-	for _, pass := range []int{0, 1} {
-		if pass == 1 {
-			bindNestedTypes(env, mod)
+	for _, fd := range m.defs {
+		d := fd.def
+		if d == nil {
+			continue
 		}
-		for _, fd := range defs {
-			d := fd.def
-			if d == nil {
-				continue
-			}
-			if _, ok := d.Def.(*syntax.ControlPart); ok {
-				continue
-			}
-			isType := isTypeDecl(d.Def)
-			if pass == 0 && !isType {
-				continue
-			}
-			if pass == 1 && isType {
-				continue
-			}
-			if r := eval(d, env); runtime.IsError(r) {
-				bindDeclNameScoped(env, d, fd.scopes)
-				continue
-			}
-			if isTypeDecl(d.Def) {
-				bindDeclNameScoped(env, d, fd.scopes)
-			}
-			annotateDef(env, d, syntax.Name(mod.Name))
+		if _, ok := d.Def.(*syntax.ControlPart); ok {
+			continue
 		}
+		if isType := isTypeDecl(d.Def); isType != (pass == 0) {
+			continue
+		}
+		if r := eval(d, m.env); runtime.IsError(r) {
+			err, _ := r.(*runtime.Error)
+			if strict && !isUnknownNodeError(err) {
+				return err
+			}
+			bindDeclNameScoped(m.env, d, fd.scopes)
+			continue
+		}
+		// The type descriptor is bound by its name too, so attribute
+		// lookups like `MyType.encode` keep working.
+		if isTypeDecl(d.Def) {
+			bindDeclNameScoped(m.env, d, fd.scopes)
+		}
+		if strict {
+			recordDefKindAttrs(m.env, d, fd.scopes)
+		}
+		annotateDef(m.env, d, syntax.Name(m.mod.Name))
 	}
+	return nil
 }
 
 // A module's definitions are evaluated in a scope of the module's own, so
@@ -2277,7 +2271,8 @@ func evalSelectStmt(n *syntax.SelectStmt, env runtime.Scope) runtime.Object {
 				matched = true
 				break
 			}
-			if tag.Equal(v) {
+			// A case's value is compared with the tag as `==` compares.
+			if t, c := shapeCompared(tag, v, n.Tag, p, env); t.Equal(c) {
 				matched = true
 				break
 			}

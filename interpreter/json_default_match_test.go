@@ -31,7 +31,9 @@ func TestPortReceiveJSONDefaultMaterialisesOmittedField(t *testing.T) {
 	}
 
 	env := runtime.NewEnv(nil)
-	initModuleDefs(env, mod)
+	m := beginModuleInit(env, mod)
+	_ = m.eval(0, false)
+	_ = m.eval(1, false)
 
 	head, ok := env.Get("m_msg")
 	if !ok {

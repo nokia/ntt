@@ -2583,10 +2583,15 @@ func evalBinary(n *syntax.BinaryExpr, env runtime.Scope) runtime.Object {
 			}
 			return left
 		}
-		// `Type : literal` is TTCN-3's type-prefixed value notation -
-		// the type prefix is a static assertion with no runtime
-		// meaning, so we just evaluate and return the literal.
-		return eval(n.Y, env)
+		// `Type : literal` is TTCN-3's type-prefixed value notation:
+		// the literal is a value of Type, and takes its shape.
+		v := eval(n.Y, env)
+		switch v.(type) {
+		case *runtime.Record, *runtime.List, *runtime.Map:
+			td := lookupTypeDesc(typeExprName(n.X), env)
+			return coerceToType(relabelCompatible(v, td), td, env)
+		}
+		return v
 	}
 
 	// `lo .. hi` range template. We intercept it here (before the
@@ -2709,16 +2714,8 @@ func evalBinary(n *syntax.BinaryExpr, env runtime.Scope) runtime.Object {
 		return y
 	}
 
-	// A value literal compared with a variable holding records written
-	// with their names is of its type: written positionally, its records
-	// take the field names (coerceToType). Against a positional value
-	// it compares as it is.
 	if op == syntax.EQ || op == syntax.NE {
-		if _, ok := n.Y.(*syntax.CompositeLiteral); ok && holdsNamedRecords(x) {
-			y = coerceToType(y, lvalueTypeDesc(n.X, env), env)
-		} else if _, ok := n.X.(*syntax.CompositeLiteral); ok && holdsNamedRecords(y) {
-			x = coerceToType(x, lvalueTypeDesc(n.Y, env), env)
-		}
+		x, y = shapeCompared(x, y, n.X, n.Y, env)
 	}
 
 	// ETSI 8.2.3.1: in the context of an enumerated type an imported
@@ -3388,6 +3385,30 @@ func arrayDefLowerBound(arrayDef []*syntax.ParenExpr, env runtime.Scope) int {
 	return 0
 }
 
+// shapeCompared gives the operands x and y of a comparison, written xe
+// and ye, the shape the other's type gives them. A value literal compared
+// with a value holding records written with their names is of its type:
+// written positionally, its records take the field names (coerceToType).
+// Against a positional value it compares as it is. A literal compared
+// with a value of a `set of` type is one of that type, unordered.
+func shapeCompared(x, y runtime.Object, xe, ye syntax.Expr, env runtime.Scope) (runtime.Object, runtime.Object) {
+	if _, ok := ye.(*syntax.CompositeLiteral); ok && literalTakesType(x) {
+		y = coerceToType(y, lvalueTypeDesc(xe, env), env)
+	} else if _, ok := xe.(*syntax.CompositeLiteral); ok && literalTakesType(y) {
+		x = coerceToType(x, lvalueTypeDesc(ye, env), env)
+	}
+	return x, y
+}
+
+// literalTakesType reports whether a value literal compared with v takes
+// v's type: v holds records written with their names, or is a set of.
+func literalTakesType(v runtime.Object) bool {
+	if l, ok := v.(*runtime.List); ok && l.ListType == runtime.SET_OF {
+		return true
+	}
+	return holdsNamedRecords(v)
+}
+
 // holdsNamedRecords reports whether v is a record held by field names, or
 // a list whose first element (at any depth) is.
 func holdsNamedRecords(v runtime.Object) bool {
@@ -3952,6 +3973,9 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 			// any depth (coerceToType).
 			val = coerceToType(val, dstTd, env)
 		}
+		if dstTd == nil && isAnytype(lhs, env) {
+			val = shapeAnytype(val, env)
+		}
 		// ETSI 6.2.7 / 6.3.1: a value assigned to a constrained array
 		// subtype (`type integer T[1..2]`) adopts the type's declared
 		// lower index bound, so `v[lo]` reads the first element. Copy the
@@ -4085,7 +4109,7 @@ func evalAssign(lhs syntax.Expr, rhs syntax.Expr, env runtime.Scope) (res runtim
 		// `v_rec.field1[2] := X` where `field1` is currently
 		// `omit` / undefined (TTCN-3 6.2.7).
 		if container == runtime.Undefined || container == runtime.Omit || container == nil {
-			list := &runtime.List{ListType: runtime.RECORD_OF}
+			list := &runtime.List{ListType: listKindOf(lvalueTypeDesc(l.X, env), env)}
 			container = list
 			switch lx := l.X.(type) {
 			case *syntax.Ident:
@@ -4538,7 +4562,7 @@ func storeReceiver(recv syntax.Expr, val runtime.Object, env runtime.Scope) runt
 	case *syntax.IndexExpr:
 		container := runtime.Unshare(eval(r.X, env))
 		if container == nil || container == runtime.Undefined || container == runtime.Omit || container == runtime.Any || container == runtime.AnyOrNone {
-			container = &runtime.List{ListType: runtime.RECORD_OF}
+			container = &runtime.List{ListType: listKindOf(lvalueTypeDesc(r.X, env), env)}
 		}
 		idx := eval(r.Index, env)
 		if list, ok := container.(*runtime.List); ok && idx != nil && idx.Type() == runtime.INTEGER {
@@ -5694,9 +5718,36 @@ func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 		recordDeclaredArray(env, vd.Type, decl)
 		if decl.Value != nil {
 			coerceDeclared(env, syntax.Name(decl.Name), declTypeDesc(vd.Type, decl, env))
+			if typeExprName(vd.Type) == "anytype" && len(decl.ArrayDef) == 0 {
+				name := syntax.Name(decl.Name)
+				if v, ok := env.Get(name); ok {
+					if nv := shapeAnytype(v, env); nv != v {
+						env.Set(name, nv)
+					}
+				}
+			}
 		}
 	}
 	return result
+}
+
+// shapeAnytype gives the value of an anytype's chosen field, named by its
+// type (6.2.6), that type's shape (coerceToType).
+func shapeAnytype(v runtime.Object, env runtime.Scope) runtime.Object {
+	rec, ok := v.(*runtime.Record)
+	if !ok || len(rec.Fields) != 1 {
+		return v
+	}
+	for name, fv := range rec.Fields {
+		nv := coerceToType(fv, lookupTypeDesc(name, env), env)
+		if nv == fv {
+			return v
+		}
+		out := runtime.Unshare(runtime.Share(rec)).(*runtime.Record)
+		out.Fields[name] = nv
+		return out
+	}
+	return v
 }
 
 // declTypeDesc is the type a declarator declares its name of: the
@@ -5896,17 +5947,37 @@ func structDeclOf(td *runtime.TypeDesc) *syntax.StructTypeDecl {
 
 // lvalueTypeDesc resolves the declared type descriptor of an lvalue
 // expression (a variable or a chain of `.field` selectors), or nil
-// when it cannot be resolved to a known struct type.
+// when it cannot be resolved to a known struct type. A value whose type
+// is declared where it is made has it too: a function's result, `T:v`.
 func lvalueTypeDesc(lx syntax.Expr, env runtime.Scope) *runtime.TypeDesc {
 	switch x := lx.(type) {
 	case *syntax.Ident:
 		return identTypeDesc(env, x.String())
+	case *syntax.ParenExpr:
+		if len(x.List) == 1 {
+			return lvalueTypeDesc(x.List[0], env)
+		}
+	case *syntax.CallExpr:
+		return resultTypeDesc(x, env)
+	case *syntax.BinaryExpr:
+		if x.Op != nil && x.Op.Kind() == syntax.COLON && !isCreateCall(x.X) {
+			return lookupTypeDesc(typeExprName(x.X), env)
+		}
 	case *syntax.SelectorExpr:
 		parent := lvalueTypeDesc(x.X, env)
+		name := syntax.Name(x.Sel)
+		if parent == nil {
+			if id, ok := x.X.(*syntax.Ident); ok && id.String() == "this" {
+				return methodFieldTypeDesc(env, name)
+			}
+			if isAnytype(x.X, env) {
+				// An anytype's field is named by its type (6.2.6).
+				return lookupTypeDesc(name, env)
+			}
+		}
 		if parent == nil || parent.Struct == nil {
 			return nil
 		}
-		name := syntax.Name(x.Sel)
 		for _, f := range parent.Struct.Fields {
 			if f != nil && f.Name != nil && f.Name.String() == name {
 				if td := fieldStructTypeDesc(f, env); td != nil {
@@ -5932,6 +6003,40 @@ func lvalueTypeDesc(lx syntax.Expr, env runtime.Scope) *runtime.TypeDesc {
 	return nil
 }
 
+// resultTypeDesc is the declared type of the value call gives: the
+// result of the function it calls, or of valueof's operand.
+func resultTypeDesc(call *syntax.CallExpr, env runtime.Scope) *runtime.TypeDesc {
+	id, ok := call.Fun.(*syntax.Ident)
+	if !ok {
+		return nil
+	}
+	if id.String() == "valueof" {
+		if call.Args != nil && len(call.Args.List) == 1 {
+			return lvalueTypeDesc(call.Args.List[0], env)
+		}
+		return nil
+	}
+	v, ok := env.Get(id.String())
+	if !ok {
+		return nil
+	}
+	fn, ok := v.(*runtime.Function)
+	if !ok || fn.Result == nil {
+		return nil
+	}
+	home := fn.Home
+	if home == nil {
+		home = env
+	}
+	return typeDescOfSpec(fn.Result, home)
+}
+
+// isAnytype reports whether e is declared of type anytype.
+func isAnytype(e syntax.Expr, env runtime.Scope) bool {
+	t, _, ok := staticTypeOf(e, env, 0)
+	return ok && t.name == "anytype"
+}
+
 // identTypeDesc is the declared type of the variable or parameter name
 // names: the one of the scope that binds it, not of a like-named one
 // further out that it hides — an outer array, a component variable.
@@ -5949,6 +6054,13 @@ func identTypeDesc(env runtime.Scope, name string) *runtime.TypeDesc {
 			if td := paramTypeDesc(env, name); td != nil {
 				return td
 			}
+			// A field of the object a method runs on — not a parameter
+			// of the method named as one is.
+			if !isFormalOf(o, name) {
+				if td := methodFieldTypeDesc(env, name); td != nil {
+					return td
+				}
+			}
 		}
 	}
 	// A name bound somewhere its declared type was not recorded.
@@ -5958,6 +6070,25 @@ func identTypeDesc(env runtime.Scope, name string) *runtime.TypeDesc {
 		}
 	}
 	return lookupTypeDesc(declaredTypeName(env, name), env)
+}
+
+// isFormalOf reports whether name is a formal parameter of the function
+// whose call scope o is.
+func isFormalOf(o *runtime.Env, name string) bool {
+	if !o.Binds(currentFunctionKey) {
+		return false
+	}
+	v, _ := o.Get(currentFunctionKey)
+	fn, ok := v.(*runtime.Function)
+	if !ok || fn.Params == nil {
+		return false
+	}
+	for _, p := range fn.Params.List {
+		if p != nil && p.Name != nil && p.Name.String() == name {
+			return true
+		}
+	}
+	return false
 }
 
 // paramTypeDesc is the declared type of name when it is a formal
@@ -6203,20 +6334,24 @@ func coerceToShape(val runtime.Object, td *runtime.TypeDesc, env runtime.Scope, 
 		}
 	case td.IsList:
 		l, ok := val.(*runtime.List)
-		if !ok || len(l.Elements) == 0 {
+		if !ok {
 			return val
+		}
+		// A value of a `set of` type is unordered: it equals and
+		// matches another whatever the order of their elements.
+		var out *runtime.List
+		if td.ListKind == runtime.SET_OF && l.ListType == runtime.RECORD_OF {
+			out = tagSetOf(l, runtime.SET_OF).(*runtime.List)
 		}
 		elem := elemTypeDesc(td, env)
-		if !canShape(elem, env) {
-			return val
-		}
-		var out *runtime.List
-		for i, e := range l.Elements {
-			if ne := coerceToTypeDepth(e, elem, env, depth+1); ne != e {
-				if out == nil {
-					out = runtime.Unshare(runtime.Share(l)).(*runtime.List)
+		if len(l.Elements) > 0 && canShape(elem, env) {
+			for i, e := range l.Elements {
+				if ne := coerceToTypeDepth(e, elem, env, depth+1); ne != e {
+					if out == nil {
+						out = runtime.Unshare(runtime.Share(l)).(*runtime.List)
+					}
+					out.Elements[i] = ne
 				}
-				out.Elements[i] = ne
 			}
 		}
 		if out != nil {
@@ -6296,6 +6431,25 @@ func fieldListKind(f *syntax.Field, env runtime.Scope) runtime.ListType {
 		return td.ListKind
 	}
 	return ""
+}
+
+// listKindOf is the kind of list a value of type td is: SET_OF for a
+// `set of` type or a synonym of one, RECORD_OF otherwise.
+func listKindOf(td *runtime.TypeDesc, env runtime.Scope) runtime.ListType {
+	for i := 0; td != nil && i < 16; i++ {
+		if td.IsList {
+			return td.ListKind
+		}
+		if td.Underlying == "" {
+			break
+		}
+		home := td.Home
+		if home == nil {
+			home = env
+		}
+		td = lookupTypeDesc(td.Underlying, home)
+	}
+	return runtime.RECORD_OF
 }
 
 // tagSetOf marks a default (record-of) list value as unordered so
@@ -7541,7 +7695,69 @@ func applyFunctionStopped(fn *runtime.Function, args []runtime.Object) (runtime.
 	if rv, ok := raw.(*runtime.ReturnValue); ok && rv.Stopped {
 		stopped = true
 	}
-	return unwrap(raw), fenv, stopped
+	return shapeResult(unwrap(raw), fn, fenv), fenv, stopped
+}
+
+// shapeResult gives a value fn returns the shape of its declared result
+// type (coerceToType): `return {1, 2}` from a function returning a record
+// type is a record with the type's field names.
+func shapeResult(v runtime.Object, fn *runtime.Function, env runtime.Scope) runtime.Object {
+	if fn.Result == nil {
+		return v
+	}
+	switch v.(type) {
+	case *runtime.Record, *runtime.List, *runtime.Map:
+	default:
+		return v
+	}
+	home := fn.Home
+	if home == nil {
+		home = env
+	}
+	td := typeDescOfSpec(fn.Result, home)
+	return coerceToType(relabelCompatible(v, td), td, env)
+}
+
+// relabelCompatible gives a record of a compatible type — as many fields,
+// by other names, in its type's order — the field names of record or set
+// type td, by position (ETSI 6.3.2.2), as an assignment does
+// (remapStructByPosition).
+func relabelCompatible(v runtime.Object, td *runtime.TypeDesc) runtime.Object {
+	rec, ok := v.(*runtime.Record)
+	st := structDeclOf(td)
+	if !ok || st == nil || st.KindTok.Kind() == syntax.UNION {
+		return v
+	}
+	dst := structDeclFieldNames(st)
+	if dst == nil || len(rec.Order) != len(dst) {
+		return v
+	}
+	ours := make(map[string]bool, len(dst))
+	for _, n := range dst {
+		ours[n] = true
+	}
+	theirs := make(map[string]bool, len(rec.Order))
+	foreign := false
+	for _, n := range rec.Order {
+		theirs[n] = true
+		foreign = foreign || !ours[n]
+	}
+	if !foreign || len(theirs) != len(dst) {
+		return v
+	}
+	for n := range rec.Fields {
+		if !theirs[n] {
+			return v
+		}
+	}
+	out := runtime.NewRecord()
+	out.Order = dst
+	for i, n := range rec.Order {
+		if f, ok := rec.Fields[n]; ok {
+			out.Fields[dst[i]] = f
+		}
+	}
+	return out
 }
 
 // bindFunctionParams makes the scope a call of fn runs in: its formal

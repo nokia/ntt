@@ -690,8 +690,8 @@ func charEq(a, b byte) bool {
 
 // normaliseContainers tries to view both sides of a mismatched-type
 // comparison as sliceHolders so the caller can do a positional walk.
-// Records are wrapped by their map values in deterministic field-name
-// order. Returns (a, b, true) on success or (nil, nil, false) when one
+// Records are wrapped by their field values in the order of their
+// fields (runtime.Record.Names). Returns (a, b, true) on success or (nil, nil, false) when one
 // side simply doesn't have a sequence-shape representation.
 // unwrapDefaultUnion returns the sole alternative's value of a
 // single-field union record when the other operand is a plain scalar
@@ -726,11 +726,8 @@ func asSlice(o runtime.Object) (sliceHolder, bool) {
 		return s, true
 	}
 	if r, ok := o.(*runtime.Record); ok {
-		keys := make([]string, 0, len(r.Fields))
-		for k := range r.Fields {
-			keys = append(keys, k)
-		}
-		sortStrings(keys)
+		// In the order of its fields: its type's, once it has one.
+		keys := r.Names()
 		vals := make([]runtime.Object, len(keys))
 		for i, k := range keys {
 			vals[i] = r.Fields[k]
@@ -738,14 +735,6 @@ func asSlice(o runtime.Object) (sliceHolder, bool) {
 		return &runtime.List{Elements: vals, ListType: runtime.RECORD_OF}, true
 	}
 	return nil, false
-}
-
-func sortStrings(s []string) {
-	for i := 1; i < len(s); i++ {
-		for j := i; j > 0 && s[j-1] > s[j]; j-- {
-			s[j-1], s[j] = s[j], s[j-1]
-		}
-	}
 }
 
 // matchRecord returns true given records match. Field sets may differ

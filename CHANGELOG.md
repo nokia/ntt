@@ -595,6 +595,23 @@ Independent of the two clocks:
   ends in `error`. An alt now waits for a timer an array's element names
   (`[] ta[i].timeout`) as for a named one: it ended with no verdict, on
   either clock.
+- **A value has its declared type's shape wherever it is made.** A
+  function's or method's result, `T:v`, a class member — initialised,
+  assigned in a method or given to the implicit constructor — and an
+  anytype's field, written positionally (`return {1, 2}`), now have
+  their type's field names, and a value literal compared with one, by
+  `==` or as a `select` case, is of its type: `f() == {1, 2}` was false
+  when `f` built its result field by field. A constant or module
+  parameter of a type another module declares has its shape whatever
+  order the modules come in; it had only when that module came first.
+  A record of a compatible type returned as a function's result or
+  written `T:v` takes T's field names by position, as an assignment
+  gives them, and one matched against a positional template pairs the
+  fields in its fields' order, not in their names' alphabetical one.
+- **A value of a `set of` type is unordered however it is made**
+  (ETSI 7.1.3): built element by element, a function's result, a
+  record's field. `var SC s := {"a", "b"}` and `s == {"b", "a"}` was
+  false, and so was `a == b` for two sets filled in another order.
 - **An altstep named with its module is an alternative too.** `[] M.a()`
   in an alt was never taken when its timer ran out, nor was a default
   activated as `activate(M.a())`, where `a()` was.

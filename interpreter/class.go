@@ -66,8 +66,16 @@ type memberResolver struct {
 	cd      *runtime.ClassDesc
 	inst    *runtime.ClassInstance
 	fields  *runtime.Env // over inst.Fields
-	pending map[string]syntax.Expr
+	pending map[string]pendingField
 	initEnv runtime.Scope
+}
+
+// pendingField is a field not yet initialised: its initialiser, and the
+// type and declarator it is declared with.
+type pendingField struct {
+	value syntax.Expr
+	typ   syntax.Expr
+	decl  *syntax.Declarator
 }
 
 func newMemberResolver(cd *runtime.ClassDesc, inst *runtime.ClassInstance) *memberResolver {
@@ -85,9 +93,14 @@ func (r *memberResolver) Resolve(name string) (runtime.Object, *runtime.Env, boo
 	}
 	if init, ok := r.pending[name]; ok {
 		delete(r.pending, name)
-		v := eval(init, r.initEnv)
+		v := eval(init.value, r.initEnv)
 		if runtime.IsError(v) || v == nil {
 			v = runtime.Undefined
+		}
+		// A value written positionally takes its field's type's shape.
+		switch v.(type) {
+		case *runtime.Record, *runtime.List, *runtime.Map:
+			v = coerceToType(v, declTypeDesc(init.typ, init.decl, r.initEnv), r.initEnv)
 		}
 		r.inst.Fields[name] = runtime.Share(v)
 	}
@@ -106,7 +119,7 @@ func (r *memberResolver) Resolve(name string) (runtime.Object, *runtime.Env, boo
 			impl, implClass = findMethod(r.inst.Class, name)
 		}
 		if impl != nil && impl.Body != nil {
-			return &runtime.Function{Params: impl.Params, Body: impl.Body, Env: newMethodEnv(implClass, r.inst)}, nil, true
+			return &runtime.Function{Params: impl.Params, Body: impl.Body, Env: newMethodEnv(implClass, r.inst), Result: returnType(impl.Return)}, nil, true
 		}
 	}
 	return nil, nil, false
@@ -416,10 +429,57 @@ func runConstructorOn(inst *runtime.ClassInstance, cd *runtime.ClassDesc, argExp
 	names := classFieldNames(classChainBaseFirst(cd))
 	for i, a := range args {
 		if i < len(names) && a != nil && !runtime.IsError(a) {
+			// A value written positionally takes its field's type's
+			// shape.
+			switch a.(type) {
+			case *runtime.Record, *runtime.List, *runtime.Map:
+				a = coerceToType(a, classFieldTypeDesc(cd, names[i]), cd.Env)
+			}
 			inst.Fields[names[i]] = runtime.Share(a)
 		}
 	}
 	return nil
+}
+
+// classFieldTypeDesc is the declared type of field name of class cd, its
+// own or inherited, or nil.
+func classFieldTypeDesc(cd *runtime.ClassDesc, name string) *runtime.TypeDesc {
+	seen := map[*runtime.ClassDesc]bool{}
+	for c := cd; c != nil && !seen[c]; c = resolveParentClass(c) {
+		seen[c] = true
+		if c.Decl == nil {
+			continue
+		}
+		for _, md := range c.Decl.Defs {
+			if md == nil {
+				continue
+			}
+			vd, ok := md.Def.(*syntax.ValueDecl)
+			if !ok {
+				continue
+			}
+			for _, dec := range vd.Decls {
+				if dec != nil && dec.Name != nil && dec.Name.String() == name {
+					return declTypeDesc(vd.Type, dec, c.Env)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// methodFieldTypeDesc is the declared type of name where it is a field of
+// the object a method runs on, seen from the method's scope env, or nil.
+func methodFieldTypeDesc(env runtime.Scope, name string) *runtime.TypeDesc {
+	v, ok := env.Get(methodClassKey)
+	if !ok {
+		return nil
+	}
+	cd, ok := v.(*runtime.ClassDesc)
+	if !ok || classMember(cd, name).kind != memberField {
+		return nil
+	}
+	return classFieldTypeDesc(cd, name)
 }
 
 // bindParamsInto positionally binds evaluated actual arguments to the
@@ -499,7 +559,7 @@ func initClassFields(inst *runtime.ClassInstance, cd *runtime.ClassDesc) {
 	// The fields are initialised in their order, a field named by an
 	// initialiser first (ES 203 790 5.1.1.6).
 	r := newMemberResolver(cd, inst)
-	r.pending = map[string]syntax.Expr{}
+	r.pending = map[string]pendingField{}
 	fenv := runtime.NewEnv(runtime.NewEnvVia(classScope(cd), r))
 	fenv.Set("this", inst)
 	r.initEnv = fenv
@@ -519,7 +579,7 @@ func initClassFields(inst *runtime.ClassInstance, cd *runtime.ClassDesc) {
 			order = append(order, dec)
 			inst.Fields[dec.Name.String()] = runtime.Undefined
 			if dec.Value != nil {
-				r.pending[dec.Name.String()] = dec.Value
+				r.pending[dec.Name.String()] = pendingField{value: dec.Value, typ: vd.Type, decl: dec}
 			}
 		}
 	}
@@ -666,7 +726,7 @@ func dispatchClassMethod(inst *runtime.ClassInstance, name string, n *syntax.Cal
 		self = inst.Self
 	}
 	menv := newMethodEnv(defClass, self)
-	fn := &runtime.Function{Params: method.Params, Body: method.Body, Env: menv}
+	fn := &runtime.Function{Params: method.Params, Body: method.Body, Env: menv, Result: returnType(method.Return)}
 
 	var argExprs []syntax.Expr
 	if n != nil && n.Args != nil {

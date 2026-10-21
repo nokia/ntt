@@ -687,6 +687,19 @@ passed over for a thousand turns — and a parameter's default and a
   t.timeout; ... }` waits for good (an `error` at the time limit) where
   `a` should be taken when `tg` runs out. Older than the fix above, which
   made it wait rather than go on.
+- *Fixed 2026-10-21; 0 gained, 0 lost.* **A value made where its type is
+  declared kept its positional form**: a function's or method's result,
+  `T:v`, a class member, an anytype's field. So `f() == {1, 2}` was
+  false for an `f` building its result field by field, a `select` case
+  `({1, 2})` never matched a record written with names, and `m.a` of a
+  class member `m` assigned `{1, 2}` had no value. A constant or module
+  parameter of another module's type had its shape only when that
+  module came first in the run; every module's types now come before
+  any module's values. A `set of` variable compared in order unless
+  initialised with a literal, and a record matched against a positional
+  template of a compatible type paired the fields alphabetically. Still
+  not shaped: an anytype held in a record's field or an array's element
+  (`w.x.R.a`, `arr[0].R.a`).
 - Left by the JSON variants: an instruction qualified by an element
   (`variant ([-]) "..."`) is dropped when the attributes are collected, so
   the type encodes as though it had none; `name as` to another field's
@@ -926,13 +939,14 @@ changed only as intended. Found, older than this work:
   exception raised: `p.catch(S, charstring:?)` catches a value of a
   record of type `S` may raise. Two `set of` values were
   equal only when all their elements were one value (*fixed 2026-10-14*);
-  a variable of a `set of` type still holds its value as a record of, so
-  `s == {"b", "a"}` is false for `var SC s := {"a", "b"}` (a template of
-  the type, a field and `m.from` are sets). *Fixed 2026-10-15: a record
+  a variable of a `set of` type held its value as a record of, so
+  `s == {"b", "a"}` was false for `var SC s := {"a", "b"}` (*fixed
+  2026-10-21*). *Fixed 2026-10-15: a record
   written positionally takes its type's field names wherever it is bound
   — at any depth of a record of, array, map or union, a component
   variable, a parameter, an out parameter, a redirect, a testcase's
-  parameter — but not as an `anytype` alternative (`x.R.a`).* (It had
+  parameter — and, fixed 2026-10-21, as an `anytype` alternative
+  (`x.R.a`).* (It had
   none assigned to a variable declared before, `b := rr[1]`, as a
   component variable initialised so, `var R cv := {1, 2}`, or as a
   parameter given one, `f({7})`.) `ntt check` reports missing-call-parens on a
