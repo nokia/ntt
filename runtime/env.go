@@ -219,6 +219,14 @@ func (env *Env) CollectTimers(dst *[]*TimerHandle, seen map[string]bool) {
 	}
 }
 
+// TimersIn returns the timer handles val holds: val itself, or the
+// elements of a timer array.
+func TimersIn(val Object) []*TimerHandle {
+	var out []*TimerHandle
+	collectTimerObjects(val, &out)
+	return out
+}
+
 // collectTimerObjects appends val to dst when it is a timer handle, and
 // recurses into record-of timer arrays (Lists of handles).
 func collectTimerObjects(val Object, dst *[]*TimerHandle) {

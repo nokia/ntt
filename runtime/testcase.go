@@ -132,6 +132,9 @@ type TestcaseExec struct {
 	// cannot reach. Keyed by component id; deduped by handle pointer. This is
 	// the timer analogue of the exec-based dynamic port resolution.
 	componentTimers map[int64][]*TimerHandle
+	// outlivedTimers holds, by component, timers whose scope ended while
+	// an activated default held them (ETSI 20.5.2).
+	outlivedTimers map[int64][]*TimerHandle
 
 	// portTypes maps a port-instance name (e.g. "cli") to its
 	// declared port-type name (e.g. "MyClient_PT"). Populated
@@ -828,9 +831,24 @@ func (t *TestcaseExec) AddDefault(d Default) int {
 	return d.Id
 }
 
-// RemoveDefault drops the activation with the given id, if any.
-// Unknown ids are silently ignored (matching deactivate's semantics
-// per TTCN-3 20.5.3 - an already-deactivated reference is harmless).
+// RemoveDefaultOf drops the activation with the given id that component
+// owner made, and reports whether there was one: deactivating a default
+// that is not active on the component is an error (ETSI ES 201 873-1
+// 20.5.3), its caller's to raise.
+func (t *TestcaseExec) RemoveDefaultOf(owner int64, id int) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	for i, d := range t.defaults {
+		if d.Id == id && d.Owner == owner {
+			t.defaults = append(t.defaults[:i], t.defaults[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveDefault drops the activation with the given id, if any, whichever
+// component made it; an unknown id is ignored (see RemoveDefaultOf).
 func (t *TestcaseExec) RemoveDefault(id int) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -1616,6 +1634,50 @@ func (t *TestcaseExec) RegisterComponentTimer(compID int64, th *TimerHandle) {
 		}
 	}
 	t.componentTimers[compID] = append(t.componentTimers[compID], th)
+}
+
+// ForgetComponentTimers drops ths from the timers started on any
+// component: timers whose scope has ended.
+func (t *TestcaseExec) ForgetComponentTimers(ths []*TimerHandle) {
+	if len(ths) == 0 {
+		return
+	}
+	gone := make(map[*TimerHandle]bool, len(ths))
+	for _, th := range ths {
+		gone[th] = true
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	for id, ts := range t.componentTimers {
+		kept := ts[:0]
+		for _, th := range ts {
+			if !gone[th] {
+				kept = append(kept, th)
+			}
+		}
+		t.componentTimers[id] = kept
+	}
+}
+
+// KeepOutlivedTimers records timers of component id whose scope ended
+// while a default held them, to end once none does.
+func (t *TestcaseExec) KeepOutlivedTimers(id int64, ths []*TimerHandle) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.outlivedTimers == nil {
+		t.outlivedTimers = map[int64][]*TimerHandle{}
+	}
+	t.outlivedTimers[id] = append(t.outlivedTimers[id], ths...)
+}
+
+// TakeOutlivedTimers returns and forgets the timers KeepOutlivedTimers
+// recorded for component id.
+func (t *TestcaseExec) TakeOutlivedTimers(id int64) []*TimerHandle {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	ths := t.outlivedTimers[id]
+	delete(t.outlivedTimers, id)
+	return ths
 }
 
 // CurrentComponentTimers returns the timers started on the calling

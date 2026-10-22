@@ -116,9 +116,9 @@ func RunTestcase(trees []*ttcn3.Tree, qname string) (runtime.Verdict, string, er
 // captured at the moment the verdict flipped to fail/error (empty
 // otherwise).
 //
-// Module parameter overrides are applied AFTER the module's
-// in-source defaults have been bound and BEFORE the testcase body
-// starts, so the override always wins. Unknown keys / unparseable
+// A module parameter an override names takes its value in place of
+// its in-source default, before any definition computed from it is
+// evaluated, so the override always wins. Unknown keys / unparseable
 // values fire opts.ModuleParamWarning but never abort the run.
 func RunTestcaseWith(trees []*ttcn3.Tree, qname string, opts TestcaseOptions) (verdict runtime.Verdict, reason string, err error) {
 	// Registered first so it runs last, after the recover below has
@@ -210,8 +210,8 @@ func RunTestcaseWith(trees []*ttcn3.Tree, qname string, opts TestcaseOptions) (v
 
 // newModuleEnv builds the module-level scope a testcase or control part
 // runs in: verdict constants, every sibling module flattened in, the
-// target module's own definitions, `import ... with` attributes and any
-// [MODULE_PARAMETERS] overrides. Returns a non-empty reason string when
+// target module's own definitions, with any [MODULE_PARAMETERS]
+// overrides, and `import ... with` attributes. Returns a non-empty reason string when
 // module initialisation failed.
 func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, opts TestcaseOptions) (runtime.Scope, string) {
 	env := runtime.NewEnv(nil)
@@ -262,6 +262,16 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 			break
 		}
 	}
+	// [MODULE_PARAMETERS] overrides, for every loaded module, so a key
+	// like `OtherModule.PX_FOO` can target an import too, not just the
+	// testcase's own module. Each parameter takes its value as it is
+	// evaluated, before what is computed from it.
+	params, warnings := moduleParamValues(allMods, opts.ModuleParameters)
+	for _, w := range warnings {
+		if opts.ModuleParamWarning != nil {
+			opts.ModuleParamWarning(w)
+		}
+	}
 	var others []*moduleInit
 	initTreeModules := func(t *ttcn3.Tree) {
 		if t == nil || t.Root == nil {
@@ -272,7 +282,9 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 			if !ok || mod == modNode {
 				continue
 			}
-			others = append(others, beginModuleInit(env, mod))
+			mi := beginModuleInit(env, mod)
+			mi.params = params[syntax.Name(mod.Name)]
+			others = append(others, mi)
 		}
 	}
 	for _, t := range trees {
@@ -303,6 +315,7 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 	// each, so its definitions take precedence in the flat scope.
 	root := env
 	target := beginModuleInit(root, modNode)
+	target.params = params[syntax.Name(modNode.Name)]
 	// Another module's definition that fails is bound by its name
 	// (best-effort import): its error is nobody's to report.
 	for _, m := range others {
@@ -323,18 +336,6 @@ func newModuleEnv(trees []*ttcn3.Tree, modNode *syntax.Module, module string, op
 	// definitions now that every module's defs are bound.
 	applyImportWithAttrs(env, modNode)
 
-	// Apply [MODULE_PARAMETERS] overrides AFTER the in-source
-	// defaults have been bound and BEFORE the testcase body runs.
-	// We pass every loaded module so a key like
-	// `OtherModule.PX_FOO` can target an import too, not just the
-	// testcase's own module.
-	if len(opts.ModuleParameters) > 0 {
-		for _, w := range ApplyModuleParameters(env, allMods, opts.ModuleParameters) {
-			if opts.ModuleParamWarning != nil {
-				opts.ModuleParamWarning(w)
-			}
-		}
-	}
 	return env, ""
 }
 
@@ -1243,14 +1244,20 @@ func evalSetverdict(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 	return nil
 }
 
-// evalGetverdict returns the current testcase verdict, or `none` if
-// called outside a testcase.
+// evalGetverdict returns the local verdict of the component running it
+// (ETSI ES 201 873-1 24.3), the MTC's own in the MTC, not the testcase's,
+// which every component's verdict moves; `none` outside a testcase.
 func evalGetverdict(env runtime.Scope) runtime.Object {
 	exec := runtime.FindTestcaseExec(env)
 	if exec == nil {
 		return runtime.NoneVerdict
 	}
 	v := exec.GetVerdict()
+	if cur := exec.CurrentComponent(); cur != nil {
+		if v = cur.GetVerdict(); v == "" {
+			v = runtime.NoneVerdict
+		}
+	}
 	if lexec := tlExec(env); lexec != nil {
 		lexec.TLog("tliGetVerdict", "", 0, tlArg("verdict", tl.Verdict(string(v))))
 	}
@@ -2062,6 +2069,9 @@ type moduleInit struct {
 	env    *runtime.Env
 	defs   []flatDef
 	strict bool
+	// The values a configuration gives the module's parameters, by name
+	// (moduleParamValues).
+	params map[string]runtime.Object
 	// The values (pass 1) by the names they bind, and what each came to:
 	// one named before it comes is evaluated then (named).
 	byName map[string]int
@@ -2212,11 +2222,17 @@ func (m *moduleInit) unevaluated(name string) *runtime.Error {
 	return nil
 }
 
-// evalDef evaluates definition i.
+// evalDef evaluates definition i. A module parameter the configuration
+// gives a value takes it instead of its default (ETSI ES 201 873-1 8.2.1),
+// before anything names it.
 func (m *moduleInit) evalDef(i int) *runtime.Error {
 	fd := m.defs[i]
 	d := fd.def
-	if r := eval(d, m.env); runtime.IsError(r) {
+	r, ok := m.evalConfigured(d)
+	if !ok {
+		r = eval(d, m.env)
+	}
+	if runtime.IsError(r) {
 		err, _ := r.(*runtime.Error)
 		return err
 	}
@@ -2230,6 +2246,63 @@ func (m *moduleInit) evalDef(i int) *runtime.Error {
 	}
 	annotateDef(m.env, d, syntax.Name(m.mod.Name))
 	return nil
+}
+
+// evalConfigured evaluates definition d if it declares a module parameter
+// the configuration gives a value, and reports whether it did: one
+// declarator at a time, so that a parameter given a value has it before
+// the next one's default is computed from it, and its own default is not
+// evaluated.
+func (m *moduleInit) evalConfigured(d *syntax.ModuleDef) (runtime.Object, bool) {
+	if len(m.params) == 0 {
+		return nil, false
+	}
+	var decls []*syntax.ValueDecl
+	group := false
+	switch n := d.Def.(type) {
+	case *syntax.ValueDecl:
+		if n.KindTok == nil || n.KindTok.Kind() != syntax.MODULEPAR {
+			return nil, false
+		}
+		decls = []*syntax.ValueDecl{n}
+	case *syntax.ModuleParameterGroup:
+		decls, group = n.Decls, true
+	default:
+		return nil, false
+	}
+	named := false
+	for _, name := range valueDefNames(d) {
+		if _, ok := m.params[name]; ok {
+			named = true
+		}
+	}
+	if !named {
+		return nil, false
+	}
+	for _, vd := range decls {
+		if vd == nil {
+			continue
+		}
+		for _, dec := range vd.Decls {
+			if dec == nil || dec.Name == nil {
+				continue
+			}
+			if val, ok := m.params[syntax.Name(dec.Name)]; ok {
+				m.env.Set(syntax.Name(dec.Name), val)
+				continue
+			}
+			one := *vd
+			one.Decls = []*syntax.Declarator{dec}
+			var n syntax.Node = &one
+			if group {
+				n = &syntax.ModuleParameterGroup{Decls: []*syntax.ValueDecl{&one}}
+			}
+			if r := eval(n, m.env); runtime.IsError(r) {
+				return r, true
+			}
+		}
+	}
+	return nil, true
 }
 
 // valueDefNames returns the names definition d binds that another
@@ -3626,13 +3699,45 @@ func defaultTimerHandles(dc defaultCall) []*runtime.TimerHandle {
 			out = append(out, collectScopeTimers(dc.scope)...)
 			continue
 		}
-		if tv, ok := dc.scope.Get(recv.String()); ok {
-			if th, ok := tv.(*runtime.TimerHandle); ok {
-				out = append(out, th)
-			}
+		// A timer parameter's is the actual the activation gave it; any
+		// other is the default's scope's (a component's timer).
+		var tv runtime.Object
+		if arg := actualFor(fn, dc.call, recv.String()); arg != nil {
+			tv = timerArg(arg, dc.scope)
+		} else {
+			tv, _ = dc.scope.Get(recv.String())
+		}
+		if th, ok := tv.(*runtime.TimerHandle); ok {
+			out = append(out, th)
 		}
 	}
 	return out
+}
+
+// actualFor returns the actual parameter call gives fn's formal parameter
+// name, by position or by name, or nil when name is none of fn's.
+func actualFor(fn *runtime.Function, call *syntax.CallExpr, name string) syntax.Expr {
+	if fn.Params == nil || call.Args == nil {
+		return nil
+	}
+	for i, p := range fn.Params.List {
+		if p == nil || p.Name == nil || p.Name.String() != name {
+			continue
+		}
+		for _, a := range call.Args.List {
+			if b, ok := a.(*syntax.BinaryExpr); ok && b.Op != nil && b.Op.Kind() == syntax.ASSIGN {
+				if id, ok := b.X.(*syntax.Ident); ok && id.String() == name {
+					return b.Y
+				}
+			}
+		}
+		if i < len(call.Args.List) {
+			if b, ok := call.Args.List[i].(*syntax.BinaryExpr); !ok || b.Op == nil || b.Op.Kind() != syntax.ASSIGN {
+				return call.Args.List[i]
+			}
+		}
+	}
+	return nil
 }
 
 // altstepCallName returns the name of the altstep a call — a guard, a
@@ -4216,7 +4321,8 @@ func bindComponentMembers(env runtime.Scope, body *syntax.BlockStmt) {
 			// (`timer t[2] := {1.0, 1.0}`) bind a List of handles
 			// so `t[i].start` resolves element-wise.
 			if isTimer {
-				env.Set(name, newTimerObject(dec, env))
+				val, _ := newTimerObject(dec, env)
+				env.Set(name, val)
 				continue
 			}
 			// A port member binds to a PortRef carrying its instance
@@ -4377,6 +4483,7 @@ func altstepAlternativeMatches(fn *runtime.Function, ce *syntax.CallExpr, env ru
 	}
 	indexSnapshot := snapshotLHSIndices(fn, actuals, env)
 	fenv := bindFunctionParams(fn, evalCallArgsLazy(fn, actuals, env))
+	defer endScopeTimers(fenv)
 	var elseClause *syntax.CommClause
 	for _, s := range fn.Body.Stmts {
 		if _, ok := s.(*syntax.CommClause); !ok {

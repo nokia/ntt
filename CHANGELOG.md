@@ -629,6 +629,28 @@ Independent of the two clocks:
   It is the control part's alone: a testcase it executes does not see
   it, nor deactivates one of its own with its handle. `any timer` and
   `all timer` in a default's altstep name the control part's timers.
+- **A module parameter set in a configuration file has that value in
+  what is computed from it.** A constant, a template or another module
+  parameter's default computed from it took the in-source default, since
+  the file's values were applied after the definitions were evaluated:
+  `template charstring t_url := "http://" & mp_host` matched the default
+  host, and in `modulepar integer a := 1, b := a + 1` so did `b`. A
+  parameter declared in a `modulepar { ... }` group could not be set from
+  the file at all ("unknown module parameter"). A value of the wrong type
+  for its parameter (`"x"` for an integer) is still bound as it is, so a
+  definition computed from it now fails the module's initialisation.
+- **`getverdict` gives the running component's own verdict** (ETSI
+  24.3), not the testcase's, which every component's verdict moves: an
+  MTC that had set `pass` read `fail` once a PTC failed, and a PTC read
+  the MTC's.
+- **A timer declared in a function, altstep or block ends with it**
+  (ETSI 12). It stayed one `any timer` and `all timer` name, so `any
+  timer.timeout` after a call could take the called function's timer
+  instead of the caller's own. One passed to an activated default lives
+  as long as the default (20.5.2).
+- **`deactivate` of a default that is not active is an error** (ETSI
+  20.5.3): one deactivated already, an uninitialised reference, another
+  component's. It was ignored. `deactivate(null)` still has no effect.
 - **An altstep named with its module is an alternative too.** `[] M.a()`
   in an alt was never taken when its timer ran out, nor was a default
   activated as `activate(M.a())`, where `a()` was.

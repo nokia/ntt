@@ -565,8 +565,10 @@ passed over for a thousand turns — and a parameter's default and a
 - `all component.kill` leaves alive a component created but never
   started, which can then be started (21.3.4). (One that ran a behaviour
   by `call` is killed since 2026-10-13: a call counts as a start.)
-- `getverdict` in the MTC reads the testcase verdict, which every
-  component's `setverdict` and error moves, not the MTC's own (24.3).
+- *Fixed 2026-10-22: the running component's own, in a PTC too, which
+  read the testcase's as well; 0 gained, 0 lost.* `getverdict` in the MTC reads
+  the testcase verdict, which every component's `setverdict` and error
+  moves, not the MTC's own (24.3).
 - *Fixed 2026-10-14: as a statement it waits, as the alt's alternative
   it counts as an event, and `-> value v` takes the verdict of the
   component that ended; 0 gained, 0 lost.* `any from cs.done -> @index
@@ -691,10 +693,28 @@ passed over for a thousand turns — and a parameter's default and a
   component's do; a testcase it executes does not see them. Found with
   it: `any timer` in the altstep of a default the control part activated
   did not name its timers; there, it names those of the alt invoking the
-  default. Still open: a timer a function started stays one `any timer`
-  names after the function returns, where ETSI 12 ends it there (older,
-  in a testcase); and invoked from a function the control part calls,
+  default. Still open: invoked from a function the control part calls,
   such a default names that function's timers, not the control part's.
+  (*Fixed 2026-10-22, 0 gained, 0 lost:* a timer a function, altstep or block
+  declared stayed one `any timer` names after it ended, where ETSI 12
+  ends it there; it is stopped, unlogged, when its scope ends, unless a
+  default still active was given it (20.5.2), and then when that default
+  is deactivated or the behaviour that activated it ends. Older, in a
+  testcase too. Found with it, older: on the virtual clock a default
+  given an element of a timer array, `activate(a(ta[0]))`, never fires
+  (the deadline scan, nextAltTimerVirtualDeadline, binds a timer
+  parameter only to an identifier); on the real clock a control part's
+  default whose altstep waits on an element of a timer array it is
+  given whole, `[] ta[1].timeout`, never fires either (defaultTimerHandles
+  takes only a named receiver);
+  a timer given to a default as anything but its name or an element at a
+  literal or named index ends with its scope; and `activate(a(ta[i]))`
+  reads `i` each time the default runs, not once at the activation, as
+  20.5.2 evaluates actual parameters. Also *fixed 2026-10-22*: on the
+  real clock, the control part's wait did not end for a default's timer
+  whose altstep parameter is named otherwise than the timer given it, so
+  `activate(a(tl))` with `altstep a(timer t)` never fired there; in a
+  testcase the wait polls, which hid it.)
 - *Fixed 2026-10-21; 0 gained, 0 lost.* **A module definition naming one declared
   after it was not found** (ETSI 8.2.0: a definition is evaluated latest
   before the first reference to it). Definitions were evaluated in their
@@ -707,10 +727,21 @@ passed over for a thousand turns — and a parameter's default and a
   another module — unless a module it imports declares an enumerated
   value of that name, which it then takes, whatever its own type: only
   where the enumerated type is expected should the name be the value.
-  Still open (older): a constant computed from a module
-  parameter takes the parameter's default, not a configuration file's
-  value, which is applied after the module's definitions are evaluated;
-  and `deactivate` of a handle no longer active is no error (20.5.3).
+  *Fixed 2026-10-22, 0 gained, 0 lost, both older:* a constant, template or
+  module parameter's default computed from a module parameter took the
+  parameter's default, not a configuration file's value, which was
+  applied after the module's definitions were evaluated — each parameter
+  now takes it as it is evaluated, before a parameter declared after it
+  in the same declaration or group, and one declared in a `modulepar {
+  ... }` group can be set from the file at all; and `deactivate` of a
+  handle no longer active, or never initialised, or another component's,
+  was no error (20.5.3). Found with them, older: a configuration value
+  of the wrong type (`"x"` for an integer parameter) is bound as it is,
+  so a definition computed from it is a module init error, a type
+  mismatch, that names neither (where it used to be computed from the
+  default), and an integer for a float parameter is an integer; and `testcase.stop` is an unknown
+  identifier, so its testcase ends with `error`, as 21.2 has it, but
+  for that reason, not the stop's text.
 - *Fixed 2026-10-21; 0 gained, 0 lost.* **A value made where its type is
   declared kept its positional form**: a function's or method's result,
   `T:v`, a class member, an anytype's field. So `f() == {1, 2}` was

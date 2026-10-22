@@ -162,15 +162,16 @@ func (c *controlDefaults) add(d runtime.Default) int {
 	return d.Id
 }
 
-func (c *controlDefaults) remove(id int) {
+func (c *controlDefaults) remove(id int) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for i, d := range c.list {
 		if d.Id == id {
 			c.list = append(c.list[:i], c.list[i+1:]...)
-			return
+			return true
 		}
 	}
+	return false
 }
 
 func (c *controlDefaults) clear() {

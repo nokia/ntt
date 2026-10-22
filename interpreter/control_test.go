@@ -275,6 +275,7 @@ func TestControl_DefaultsApply(t *testing.T) {
 		testcase tcFail() runs on C { setverdict(fail) }
 		testcase tcWait() runs on C { timer t := 0.5; t.start; t.timeout; setverdict(pass) }
 		altstep a(timer tg) { [] tg.timeout {} }
+		altstep b(timer t_other) { [] t_other.timeout {} }
 		altstep anyTimer() { [] any timer.timeout {} }
 		function f() { timer tl := 0.2; tl.start }
 		function g() { timer tl := 0.2; tl.start; activate(anyTimer()) }
@@ -328,6 +329,13 @@ func TestControl_DefaultsApply(t *testing.T) {
 			t.start;
 			alt { [] t.timeout { execute(tcFail()) } }
 			if (t.running) { execute(tcPass()) }`,
+		"a parameter named otherwise": `timer tg := 0.2;
+			tg.start;
+			activate(b(tg));
+			timer t := 3.0;
+			t.start;
+			alt { [] t.timeout {} }
+			if (t.running) { execute(tcPass()) } else { execute(tcFail()) }`,
 		"a function's timer is not": `f();
 			timer t := 0.5;
 			t.start;
@@ -338,8 +346,6 @@ func TestControl_DefaultsApply(t *testing.T) {
 			t.start;
 			t.timeout;
 			if (t.running) { execute(tcFail()) } else { execute(tcPass()) }`,
-		"its handle is no testcase's": `var default d := activate(anyTimer());
-			execute(tcOwn(d))`,
 	} {
 		src := "module M {\n" + decls + "\ncontrol {\n" + body + "\n}\n}"
 		for _, k := range clocks {
@@ -349,6 +355,17 @@ func TestControl_DefaultsApply(t *testing.T) {
 			if err != nil || v != runtime.PassVerdict {
 				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
 			}
+		}
+	}
+	// Its handle is no testcase's: deactivating it there is deactivating
+	// a default not active on the component, an error (20.5.3).
+	src := "module M {\n" + decls + "\ncontrol {\nvar default d := activate(anyTimer()); execute(tcOwn(d))\n}\n}"
+	for _, k := range clocks {
+		opts := k.opts
+		opts.TestcaseTimeout = 10 * time.Second
+		v, reason, err := interpreter.RunControlWith([]*ttcn3.Tree{parse(t, src)}, "M", opts)
+		if err != nil || v != runtime.ErrorVerdict || !strings.Contains(reason, "not active on the component") {
+			t.Errorf("its handle is no testcase's, %s clock: %s (%s) %v; want the deactivate's error", k.name, v, reason, err)
 		}
 	}
 }

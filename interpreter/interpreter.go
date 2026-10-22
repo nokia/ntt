@@ -487,6 +487,7 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		if name == "deactivate" {
 			if exec := runtime.FindTestcaseExec(env); exec != nil {
 				exec.ClearDefaultsOf(currentCompID(exec))
+				endOutlivedTimers(exec, currentCompID(exec))
 			} else if c := controlDefaultsOf(env); c != nil {
 				c.clear()
 			}
@@ -1201,7 +1202,9 @@ func eval(n syntax.Node, env runtime.Scope) runtime.Object {
 		// block — another branch of an interleave, running between this
 		// one's statements — may declare the same names.
 		if declaresAny(n.Stmts) {
-			return evalBlockStmts(n.Stmts, runtime.NewEnv(env))
+			benv := runtime.NewEnv(env)
+			defer endScopeTimers(benv)
+			return evalBlockStmts(n.Stmts, benv)
 		}
 		return evalBlockStmts(n.Stmts, env)
 
@@ -5532,11 +5535,12 @@ func evalInt(n syntax.Node) (int, error) {
 // d1, ...}`) yields a List of TimerHandles so `t[i].start` /
 // `t[i].read` / `t[i].stop` resolve element-wise; each element's
 // default duration comes from the matching initializer entry when
-// present. Only the first array dimension is modelled.
-func newTimerObject(decl *syntax.Declarator, env runtime.Scope) runtime.Object {
+// present. Only the first array dimension is modelled. made reports
+// whether the timers are the declaration's own, not an alias's.
+func newTimerObject(decl *syntax.Declarator, env runtime.Scope) (val runtime.Object, made bool) {
 	name := syntax.Name(decl.Name)
 	if len(decl.ArrayDef) == 0 {
-		var val runtime.Object = &runtime.TimerHandle{Name: name}
+		val, made = &runtime.TimerHandle{Name: name}, true
 		if decl.Value != nil {
 			if v := eval(decl.Value, env); !runtime.IsError(v) {
 				switch x := v.(type) {
@@ -5546,17 +5550,17 @@ func newTimerObject(decl *syntax.Declarator, env runtime.Scope) runtime.Object {
 				case *runtime.TimerHandle:
 					// `var timer t := t_ref` - timer assignment is
 					// by reference, so the alias shares the handle.
-					val = x
+					val, made = x, false
 				default:
 					// `timer t := null` keeps the null sentinel so
 					// two such timers compare equal.
 					if v == runtime.Null || v == runtime.Undefined {
-						val = v
+						val, made = v, false
 					}
 				}
 			}
 		}
-		return val
+		return val, made
 	}
 	var initVal runtime.Object
 	if decl.Value != nil {
@@ -5564,7 +5568,7 @@ func newTimerObject(decl *syntax.Declarator, env runtime.Scope) runtime.Object {
 			initVal = v
 		}
 	}
-	return buildTimerArrayDims(name, decl.ArrayDef, initVal, env)
+	return buildTimerArrayDims(name, decl.ArrayDef, initVal, env), true
 }
 
 // buildTimerArrayDims constructs a (possibly multi-dimensional) timer
@@ -5620,7 +5624,11 @@ func evalValueDecl(vd *syntax.ValueDecl, env runtime.Scope) runtime.Object {
 			// TimerHandle for scalars and a List of TimerHandles for
 			// arrays so element-wise timer ops resolve.
 			for _, decl := range vd.Decls {
-				env.Set(syntax.Name(decl.Name), newTimerObject(decl, env))
+				val, made := newTimerObject(decl, env)
+				env.Set(syntax.Name(decl.Name), val)
+				if made {
+					declareScopeTimers(env, val)
+				}
 			}
 			return nil
 		}
@@ -7693,6 +7701,7 @@ func applyFunctionStopped(fn *runtime.Function, args []runtime.Object) (runtime.
 	if len(fn.Catch) > 0 || fn.Finally != nil {
 		raw = runExceptionHandlers(raw, fn.Catch, fn.Finally, fenv)
 	}
+	endScopeTimers(fenv)
 	stopped := false
 	if rv, ok := raw.(*runtime.ReturnValue); ok && rv.Stopped {
 		stopped = true
@@ -8478,6 +8487,154 @@ func collectScopeTimers(env runtime.Scope) []*runtime.TimerHandle {
 		}
 	}
 	return timers
+}
+
+// declaredTimersKey binds, in the scope of a function, altstep or block
+// declaring timers, the timers it made (declareScopeTimers), which end
+// with it (endScopeTimers).
+const declaredTimersKey = "\x00ttcn3:declared-timers"
+
+type scopeTimers struct{ timers []*runtime.TimerHandle }
+
+func (*scopeTimers) Type() runtime.ObjectType { return runtime.ObjectType("SCOPE_TIMERS") }
+func (*scopeTimers) Inspect() string          { return "scope timers" }
+func (st *scopeTimers) Equal(o runtime.Object) bool {
+	other, ok := o.(*scopeTimers)
+	return ok && other == st
+}
+
+// declareScopeTimers records the timers val holds as declared in env.
+func declareScopeTimers(env runtime.Scope, val runtime.Object) {
+	e, ok := env.(*runtime.Env)
+	if !ok {
+		return
+	}
+	var st *scopeTimers
+	if e.Binds(declaredTimersKey) {
+		v, _ := e.Get(declaredTimersKey)
+		st, _ = v.(*scopeTimers)
+	}
+	if st == nil {
+		st = &scopeTimers{}
+		e.Set(declaredTimersKey, st)
+	}
+	st.timers = append(st.timers, runtime.TimersIn(val)...)
+}
+
+// endScopeTimers ends the timers declared in env, whose function, altstep
+// or block has ended (ETSI ES 201 873-1 12): they are stopped, without a
+// stop being logged, and `any timer` and `all timer` no longer name them.
+// One passed to a default still active is the default's, and goes on
+// (20.5.2) until the default is deactivated (endOutlivedTimers).
+func endScopeTimers(env runtime.Scope) {
+	e, ok := env.(*runtime.Env)
+	if !ok || !e.Binds(declaredTimersKey) {
+		return
+	}
+	v, _ := e.Get(declaredTimersKey)
+	st, _ := v.(*scopeTimers)
+	if st == nil || len(st.timers) == 0 {
+		return
+	}
+	held := defaultsTimers(activeDefaults(env))
+	exec := runtime.FindTestcaseExec(env)
+	var kept, ended []*runtime.TimerHandle
+	for _, th := range st.timers {
+		if held[th] {
+			kept = append(kept, th)
+		} else {
+			ended = append(ended, th)
+		}
+	}
+	endTimers(exec, ended)
+	if exec != nil && len(kept) > 0 {
+		exec.KeepOutlivedTimers(currentCompID(exec), kept)
+	}
+}
+
+// endOutlivedTimers ends the timers of component id whose scope ended
+// while a default held them (endScopeTimers), and that none of its active
+// defaults holds now.
+func endOutlivedTimers(exec *runtime.TestcaseExec, id int64) {
+	ths := exec.TakeOutlivedTimers(id)
+	if len(ths) == 0 {
+		return
+	}
+	held := defaultsTimers(exec.DefaultsOf(id))
+	var kept, ended []*runtime.TimerHandle
+	for _, th := range ths {
+		if held[th] {
+			kept = append(kept, th)
+		} else {
+			ended = append(ended, th)
+		}
+	}
+	endTimers(exec, ended)
+	if len(kept) > 0 {
+		exec.KeepOutlivedTimers(id, kept)
+	}
+}
+
+// endTimers stops ths, unlogged, and has `any timer` no longer name them.
+func endTimers(exec *runtime.TestcaseExec, ths []*runtime.TimerHandle) {
+	for _, th := range ths {
+		th.Running = false
+		th.StartedAt = time.Time{}
+	}
+	if exec != nil {
+		exec.ForgetComponentTimers(ths)
+	}
+}
+
+// defaultsTimers returns the timers the activated altstep calls of defs
+// are given: an argument naming a timer, or an element of a timer array
+// at indexes written as literals or identifiers, looked up in the
+// default's scope.
+func defaultsTimers(defs []runtime.Default) map[*runtime.TimerHandle]bool {
+	held := map[*runtime.TimerHandle]bool{}
+	for _, d := range defs {
+		an, ok := d.Body.(*astNode)
+		if !ok || d.Env == nil {
+			continue
+		}
+		call, ok := an.n.(*syntax.CallExpr)
+		if !ok || call.Args == nil {
+			continue
+		}
+		for _, a := range call.Args.List {
+			for _, th := range runtime.TimersIn(timerArg(a, d.Env)) {
+				held[th] = true
+			}
+		}
+	}
+	return held
+}
+
+// timerArg returns what e names in env, if it is an identifier or an
+// element of one at indexes written as literals or identifiers, without
+// evaluating anything; else nil.
+func timerArg(e syntax.Expr, env runtime.Scope) runtime.Object {
+	switch x := e.(type) {
+	case *syntax.Ident:
+		v, _ := env.Get(x.String())
+		return v
+	case *syntax.IndexExpr:
+		l, ok := timerArg(x.X, env).(*runtime.List)
+		if !ok {
+			return nil
+		}
+		var idx runtime.Object
+		switch ix := x.Index.(type) {
+		case *syntax.ValueLiteral:
+			idx = eval(ix, env)
+		case *syntax.Ident:
+			idx, _ = env.Get(ix.String())
+		}
+		if i, ok := idx.(runtime.Int); ok && i.IsInt64() && i.Int64() >= 0 && i.Int64() < int64(len(l.Elements)) {
+			return l.Elements[i.Int64()]
+		}
+	}
+	return nil
 }
 
 // registerStartedTimer records a just-started timer with the current test
@@ -9704,6 +9861,7 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 					// The defaults a behaviour activated end with it: an
 					// alive component started again begins with none.
 					exec.ClearDefaultsOf(ref.ID)
+					endOutlivedTimers(exec, ref.ID)
 					tlTerminated(exec, ref, reason)
 					// Don't drain port maps on natural
 					// body exit: a daemon-style PTC
@@ -9856,6 +10014,7 @@ func evalComponentMethod(ref *runtime.ComponentRef, op string, n *syntax.CallExp
 					}
 				}
 				exec.ClearDefaultsOf(ref.ID)
+				endOutlivedTimers(exec, ref.ID)
 			}()
 			// The caller stopped while waiting: the called behaviour
 			// is stopped with it, and its result is not taken.
@@ -11450,15 +11609,36 @@ func evalDeactivate(n *syntax.CallExpr, env runtime.Scope) runtime.Object {
 		return runtime.Undefined
 	}
 	v := eval(n.Args.List[0], env)
-	if i, ok := v.(runtime.Int); ok && i.Int != nil && i.IsInt64() {
-		if exec == nil {
-			c.remove(int(i.Int64()))
-			return runtime.Undefined
+	if runtime.IsError(v) {
+		return v
+	}
+	// null has no effect; a reference to no default active on the
+	// component, deactivated already or never initialised, is an error
+	// (ETSI ES 201 873-1 20.5.3).
+	if v == runtime.Null {
+		return runtime.Undefined
+	}
+	i, ok := v.(runtime.Int)
+	if !ok || i.Int == nil || !i.IsInt64() {
+		if v == runtime.Undefined {
+			return runtime.Errorf("deactivate of an uninitialised default reference (ETSI ES 201 873-1 20.5.3)")
 		}
-		exec.RemoveDefault(int(i.Int64()))
-		if lexec := tlExec(env); lexec != nil {
-			tlEmit(lexec, n, "tliADeactivate", tlArg("ref", tl.Value{Kind: "default", Text: i.Int.String()}.AsValue()))
-		}
+		return runtime.Errorf("deactivate of %s, which is no default reference (ETSI ES 201 873-1 20.5.3)", v.Inspect())
+	}
+	var removed bool
+	if exec == nil {
+		removed = c.remove(int(i.Int64()))
+	} else {
+		removed = exec.RemoveDefaultOf(currentCompID(exec), int(i.Int64()))
+	}
+	if !removed {
+		return runtime.Errorf("deactivate of a default that is not active on the component (ETSI ES 201 873-1 20.5.3)")
+	}
+	if exec != nil {
+		endOutlivedTimers(exec, currentCompID(exec))
+	}
+	if lexec := tlExec(env); exec != nil && lexec != nil {
+		tlEmit(lexec, n, "tliADeactivate", tlArg("ref", tl.Value{Kind: "default", Text: i.Int.String()}.AsValue()))
 	}
 	return runtime.Undefined
 }

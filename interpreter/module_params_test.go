@@ -252,3 +252,48 @@ func TestModuleParamQualifiedSetsItsModule(t *testing.T) {
 		}
 	}
 }
+
+// TestModuleParamReachesWhatIsComputedFromIt: a module parameter the
+// configuration gives a value has it before any definition computed from
+// it is evaluated — a constant, a template, another parameter's default,
+// in its declaration or group too, in its module or one importing it,
+// whatever the order — and a default
+// that cannot be evaluated is not needed.
+func TestModuleParamReachesWhatIsComputedFromIt(t *testing.T) {
+	a := `module A {
+		const integer ca := mp_a * 10;
+		modulepar integer mp_a := 1;
+		modulepar integer mp_b := mp_a + 1;
+		modulepar integer mp_s := 1, mp_t := mp_s * 3;
+		modulepar { charstring mp_host := "localhost"; integer mp_g := 2; integer mp_h := mp_g + 1 }
+		template charstring t_url := "http://" & mp_host;
+		modulepar integer mp_bad := f_unknown();
+	}`
+	main := `module M {
+		import from A all;
+		type component C { var integer cv := ca + 1 }
+		const integer cm := ca + mp_b;
+		testcase tc() runs on C {
+			if (ca == 50 and mp_b == 6 and cm == 56 and cv == 51 and mp_bad == 3 and match("http://h", t_url) and mp_t == 12 and mp_h == 10) {
+				setverdict(pass)
+			} else {
+				setverdict(fail, "ca=", ca, " mp_b=", mp_b, " cm=", cm, " cv=", cv, " t_url=", t_url)
+			}
+		}
+	}`
+	params := map[string]string{"A.mp_a": "5", "mp_host": `"h"`, "mp_bad": "3", "mp_s": "4", "A.mp_g": "9"}
+	for name, order := range map[string][]string{"imported first": {a, main}, "importer first": {main, a}} {
+		for _, k := range clocks {
+			opts := k.opts
+			opts.ModuleParameters = params
+			var trees []*ttcn3.Tree
+			for _, src := range order {
+				trees = append(trees, parse(t, src))
+			}
+			v, reason, err := interpreter.RunTestcaseWith(trees, "M.tc", opts)
+			if err != nil || v != runtime.PassVerdict {
+				t.Errorf("%s, %s clock: %s (%s) %v", name, k.name, v, reason, err)
+			}
+		}
+	}
+}
